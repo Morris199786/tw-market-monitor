@@ -1,0 +1,58 @@
+name: Margin lending update
+
+on:
+  schedule:
+    # 台灣 21:20 = UTC 13:20
+    # TWSE 融資資料通常約 21:00 後較完整
+    - cron: "20 13 * * 1-5"
+
+    # 台灣 22:45 = UTC 14:45
+    # 補跑一次，涵蓋較晚完成的借券／櫃買資料
+    - cron: "45 14 * * 1-5"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: margin-lending
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Update margin and lending
+        run: python scripts/update_margin_lending.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/margin_lending.json data/history/margin_lending
+
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+
+          git commit -m "data: margin lending update"
+
+          git pull --rebase
+          git push
