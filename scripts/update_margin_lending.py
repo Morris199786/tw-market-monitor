@@ -60,6 +60,12 @@ def idx_contains(fields, *needles):
 
 
 def tables_of(data):
+    """
+    TWSE / TPEx 回傳格式不完全一致：
+    有些是 {"tables":[...]},
+    有些直接把 fields / data 放在最外層。
+    這裡統一轉成 table list。
+    """
     if not isinstance(data, dict):
         return []
 
@@ -68,8 +74,34 @@ def tables_of(data):
         []
     )
 
-    if isinstance(tables, list):
+    if (
+        isinstance(tables, list)
+        and tables
+    ):
         return tables
+
+    if (
+        isinstance(
+            data.get("fields"),
+            list
+        )
+        and isinstance(
+            data.get("data"),
+            list
+        )
+    ):
+        return [
+            {
+                "fields": data.get(
+                    "fields",
+                    []
+                ),
+                "data": data.get(
+                    "data",
+                    []
+                ),
+            }
+        ]
 
     return []
 
@@ -261,10 +293,10 @@ def get_tpex_margin(date):
 
 def get_borrow_balance(date, master):
     """
-    TWT72U 是「借券餘額」：
-    已借入但尚未返還的數量。
-    此表同時包含集中市場與櫃買市場。
-    原始單位是股，這裡統一換算成張。
+    借券餘額：
+    以欄名辨識，不再假設固定欄位位置。
+    同一股票可能分不同借券系統列示，因此依股票代號加總。
+    原始單位若為股，統一換算成張。
     """
     data = get_json(
         f"{TWSE_WEB}/exchangeReport/TWT72U",
@@ -279,17 +311,85 @@ def get_borrow_balance(date, master):
     out = {}
 
     for tb in tables_of(data):
+        fields = tb.get(
+            "fields",
+            []
+        )
         rows = tb.get(
             "data",
             []
         )
 
-        for row in rows:
-            if len(row) < 6:
+        ic = idx_contains(
+            fields,
+            [
+                "證券代號",
+                "標的證券代號",
+                "股票代號",
+                "代號",
+            ]
+        )
+        inn = idx_contains(
+            fields,
+            [
+                "證券名稱",
+                "中文名稱",
+                "名稱",
+            ]
+        )
+        iprev = idx_contains(
+            fields,
+            [
+                "昨日借券餘額",
+                "前日借券餘額",
+            ]
+        )
+        inew = idx_contains(
+            fields,
+            [
+                "今日新增借券",
+                "本日新增借券",
+                "新增借券",
+            ]
+        )
+        ireturn = idx_contains(
+            fields,
+            [
+                "今日還券",
+                "本日還券",
+                "還券了結",
+                "還券",
+            ]
+        )
+        ibal = idx_contains(
+            fields,
+            [
+                "今日借券餘額",
+                "本日借券餘額",
+                "借券餘額",
+            ]
+        )
+
+        if ic is None:
+            # TWT72U 另一種格式：
+            # 系統別、代號、昨餘額、新增、還券、今餘額、...
+            if rows and len(rows[0]) >= 6:
+                ic = 1
+                iprev = 2
+                inew = 3
+                ireturn = 4
+                ibal = 5
+                inn = 9 if len(rows[0]) > 9 else None
+            else:
                 continue
 
+        for row in rows:
             t = str(
-                row[0]
+                row_value(
+                    row,
+                    ic,
+                    ""
+                )
             ).strip()
 
             if (
@@ -299,48 +399,78 @@ def get_borrow_balance(date, master):
                 continue
 
             prev_shares = n(
-                row[2]
+                row_value(
+                    row,
+                    iprev,
+                    0
+                )
             )
             new_shares = n(
-                row[3]
+                row_value(
+                    row,
+                    inew,
+                    0
+                )
             )
             return_shares = n(
-                row[4]
+                row_value(
+                    row,
+                    ireturn,
+                    0
+                )
             )
             balance_shares = n(
-                row[5]
+                row_value(
+                    row,
+                    ibal,
+                    0
+                )
             )
 
-            out[t] = {
-                "ticker": t,
-                "name": clean_name(
-                    row[1]
-                ),
-                "market": master[t].get(
-                    "market"
-                ),
-                "borrow_prev_lots": (
-                    prev_shares / 1000
-                ),
-                "borrow_new_lots": (
-                    new_shares / 1000
-                ),
-                "borrow_return_lots": (
-                    return_shares / 1000
-                ),
-                "borrow_balance_lots": (
-                    balance_shares / 1000
-                ),
-            }
+            x = out.setdefault(
+                t,
+                {
+                    "ticker": t,
+                    "name": clean_name(
+                        row_value(
+                            row,
+                            inn,
+                            master[t].get(
+                                "name",
+                                ""
+                            )
+                        )
+                    ),
+                    "market": master[t].get(
+                        "market"
+                    ),
+                    "borrow_prev_lots": 0.0,
+                    "borrow_new_lots": 0.0,
+                    "borrow_return_lots": 0.0,
+                    "borrow_balance_lots": 0.0,
+                }
+            )
+
+            x["borrow_prev_lots"] += (
+                prev_shares / 1000
+            )
+            x["borrow_new_lots"] += (
+                new_shares / 1000
+            )
+            x["borrow_return_lots"] += (
+                return_shares / 1000
+            )
+            x["borrow_balance_lots"] += (
+                balance_shares / 1000
+            )
 
     return out
 
-
 def get_short_sale_balance(date, master):
     """
-    TWT93U 的「借券賣出餘額」。
+    融券／借券賣出餘額：
     只作借券異常的確認訊號，不等同借券餘額本身。
-    原始單位為股，轉為張。
+    使用欄名辨識；若欄名不可用，再使用官方固定欄位位置。
     """
     data = get_json(
         f"{TWSE_WEB}/exchangeReport/TWT93U",
@@ -354,17 +484,79 @@ def get_short_sale_balance(date, master):
     out = {}
 
     for tb in tables_of(data):
+        fields = tb.get(
+            "fields",
+            []
+        )
         rows = tb.get(
             "data",
             []
         )
 
+        ic = idx_contains(
+            fields,
+            [
+                "證券代號",
+                "股票代號",
+                "代號",
+            ]
+        )
+
+        iprev = idx_contains(
+            fields,
+            "借券賣出",
+            [
+                "前日餘額",
+                "昨日餘額",
+            ]
+        )
+        isold = idx_contains(
+            fields,
+            "借券賣出",
+            [
+                "賣出股數",
+                "市場借券賣出",
+                "本日市場借券賣出",
+            ]
+        )
+        ireturn = idx_contains(
+            fields,
+            "借券賣出",
+            [
+                "還券股數",
+                "還券",
+            ]
+        )
+        iadj = idx_contains(
+            fields,
+            "借券賣出",
+            [
+                "調整股數",
+                "調整",
+            ]
+        )
+        ibal = idx_contains(
+            fields,
+            "借券賣出",
+            [
+                "餘額股數",
+                "餘額",
+            ]
+        )
+
+        if ic is None and rows:
+            ic = 1 if len(rows[0]) >= 14 else 0
+
         for row in rows:
-            if len(row) < 13:
+            if ic is None:
                 continue
 
             t = str(
-                row[0]
+                row_value(
+                    row,
+                    ic,
+                    ""
+                )
             ).strip()
 
             if (
@@ -373,42 +565,99 @@ def get_short_sale_balance(date, master):
             ):
                 continue
 
-            prev_shares = n(
-                row[8]
-            )
-            sold_shares = n(
-                row[9]
-            )
-            returned_shares = n(
-                row[10]
-            )
-            adjusted_shares = n(
-                row[11]
-            )
-            balance_shares = n(
-                row[12]
-            )
+            # 官方 TWT93U 固定格式 fallback：
+            # 日期、證券代號、前融券...、前借券賣出餘額、
+            # 本日市場借券賣出、還券、調整、本日借券賣出餘額...
+            if (
+                iprev is None
+                or isold is None
+                or ibal is None
+            ):
+                if len(row) >= 14:
+                    # 若第一欄為日期，代號在 index 1
+                    offset = (
+                        1
+                        if ordinary_ticker(
+                            str(row[1]).strip()
+                        )
+                        else 0
+                    )
+
+                    if offset == 1:
+                        iprev2 = 8
+                        isold2 = 9
+                        ireturn2 = 10
+                        iadj2 = 11
+                        ibal2 = 12
+                    else:
+                        iprev2 = 8
+                        isold2 = 9
+                        ireturn2 = 10
+                        iadj2 = 11
+                        ibal2 = 12
+                else:
+                    continue
+            else:
+                iprev2 = iprev
+                isold2 = isold
+                ireturn2 = ireturn
+                iadj2 = iadj
+                ibal2 = ibal
 
             out[t] = {
                 "short_sell_prev_lots": (
-                    prev_shares / 1000
+                    n(
+                        row_value(
+                            row,
+                            iprev2,
+                            0
+                        )
+                    )
+                    / 1000
                 ),
                 "short_sell_today_lots": (
-                    sold_shares / 1000
+                    n(
+                        row_value(
+                            row,
+                            isold2,
+                            0
+                        )
+                    )
+                    / 1000
                 ),
                 "short_sell_return_lots": (
-                    returned_shares / 1000
+                    n(
+                        row_value(
+                            row,
+                            ireturn2,
+                            0
+                        )
+                    )
+                    / 1000
                 ),
                 "short_sell_adjust_lots": (
-                    adjusted_shares / 1000
+                    n(
+                        row_value(
+                            row,
+                            iadj2,
+                            0
+                        )
+                    )
+                    / 1000
                 ),
                 "short_sell_balance_lots": (
-                    balance_shares / 1000
+                    n(
+                        row_value(
+                            row,
+                            ibal2,
+                            0
+                        )
+                    )
+                    / 1000
                 ),
             }
 
     return out
-
 
 def history_market_dates():
     out = []
@@ -1409,7 +1658,7 @@ def rank_kind(
 
 def logic_payload():
     return {
-        "version": "2026-09-25-v2-source-fix",
+        "version": "2026-09-25-v3-parser-fix",
         "universe": (
             "全台股上市／上櫃普通股，"
             "不限科技股"
