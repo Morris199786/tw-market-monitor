@@ -190,7 +190,7 @@ def get_twse_margin(date):
 
 def get_tpex_margin(date):
     data = get_json(
-        f"{TPEX_WEB}/web/stock/margin_trading/margin_balance/margin_bal_result.php",
+        "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php",
         params={
             "l": "zh-tw",
             "o": "json",
@@ -267,7 +267,7 @@ def get_borrow_balance(date, master):
     原始單位是股，這裡統一換算成張。
     """
     data = get_json(
-        f"{TWSE_WEB}/rwd/zh/SBL/TWT72U",
+        f"{TWSE_WEB}/exchangeReport/TWT72U",
         params={
             "date": date.replace("-", ""),
             "response": "json",
@@ -343,7 +343,7 @@ def get_short_sale_balance(date, master):
     原始單位為股，轉為張。
     """
     data = get_json(
-        f"{TWSE_WEB}/rwd/zh/marginTrading/TWT93U",
+        f"{TWSE_WEB}/exchangeReport/TWT93U",
         params={
             "date": date.replace("-", ""),
             "response": "json",
@@ -1409,7 +1409,7 @@ def rank_kind(
 
 def logic_payload():
     return {
-        "version": "2026-09-25-v1-human-like",
+        "version": "2026-09-25-v2-source-fix",
         "universe": (
             "全台股上市／上櫃普通股，"
             "不限科技股"
