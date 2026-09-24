@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const st={period:"1d",inst:"foreign",market:"twse",turn:"twse",hm:"twse",hk:"400",aim:"twse",advanced:false};
 const cache={};
-async function J(p){try{let r=await fetch(p+"?v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
+async function J(p){try{let u=p;if(p.startsWith("./data/"))u="https://raw.githubusercontent.com/Morris199786/tw-market-monitor/main/"+p.slice(2);let r=await fetch(u+(u.includes("?")?"&":"?")+"v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
 function pct(v){if(v===null||v===undefined)return"—";v=Number(v);return(v>0?"+":"")+v.toFixed(2)+"%"}
 function cl(v){return Number(v)>=0?"up":"down"} function money(v){return(v>0?"+":"")+Number(v||0).toFixed(2)+"億"}
 function stock(x,rank){return`${rank?`<span class=rank>${rank}</span>`:""}<span class=stock><b>${x.name||""}</b><span>${x.ticker}</span></span>`}
@@ -31,6 +31,4 @@ $$("[data-aim]").forEach(b=>b.onclick=()=>{$$("[data-aim]").forEach(x=>x.classLi
 async function heat(){let d=await J("./data/heatmap.json");cache.heat=d;$("#heatTime").textContent=d.updated_at||"尚無資料";$("#heatGrid").innerHTML=(d.sectors||[]).map((x,i)=>`<button class="heat ${i===1?"s5 tall":i===11?"s6 tall":i%3===0?"s4":"s3"} ${heatClass(x.change_pct)}" data-sec="${x.name}"><b>${x.name}</b><strong>${pct(x.change_pct)}</strong><small>${x.complete?`${x.stocks.length}檔`:`缺${x.missing?.length||0}檔`}</small></button>`).join("");$$("[data-sec]").forEach(b=>b.onclick=()=>showSec(b.dataset.sec));if(d.sectors?.length)showSec(d.sectors[0].name)}
 function showSec(n){let s=cache.heat.sectors.find(x=>x.name===n);if(!s)return;$("#heatTitle").textContent=`${s.name} ${pct(s.change_pct)}`;let a=[...(s.stocks||[])].sort((x,y)=>(y.change_pct??-999)-(x.change_pct??-999));$("#heatRows").innerHTML=a.map(x=>`<tr class="${x.change_pct<0?"negative-row":""}"><td>${stock(x)}</td><td>${x.price??"—"}</td><td class="${x.change_pct===null?"":cl(x.change_pct)}">${pct(x.change_pct)}</td><td>${x.weight===null?"缺資料":(x.weight*100).toFixed(1)+"%"}</td></tr>`).join("")}
 
-async function reports(){let d=await J("./data/reports.json"),map={upgrade:"上調",downgrade:"下調",initiate:"初評",maintain:"維持"};$("#reportList").innerHTML=(d.items||[]).length?(d.items||[]).map(r=>`<div class=report><div class=broker>${r.broker}</div><div class=rmain><div class=rtitle>${r.broker} ${map[r.action]||r.action} ${r.name} ${r.ticker}</div><div class=rmeta>${r.summary||""} · ${r.date||""}</div></div><div class=tp>${r.target_price?`目標價 ${r.target_price}`:""}</div></div>`).join(""):`<div class=report><div class=rmain><div class=rtitle>尚無券商報告</div><div class=rmeta>收到 PDF 或連結後，把整理結果寫入 data/reports.json 即會顯示</div></div></div>`}
-
-Promise.all([home(),flows(),volume(),turnover(),holders(),ai(),heat(),reports()]);
+async function reports(){let d=await J("./data/reports.json"),map={upgrade:"上調",downgrade:"下調",initiate:"初評",maintain:"維持"};$("#reportList").innerHTML=(d.items||[]).length?(d.items||[]).map(r=>`<div class=report><div class=broker>${r.broker}</div><div class=rmain><div class=rtitle>${r.broker} ${map[r.action]||r.action} ${r.name} ${r.ticker}</div><div class=rmeta>${r.summary||""
