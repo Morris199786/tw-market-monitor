@@ -893,6 +893,11 @@ def fetch_twse_institutional(date=None):
             else foreign + trust + dealer
         )
 
+        # TWSE T86 欄位名稱偶爾改版，可能抓不到「自營商」欄位。
+        # 三大法人合計 = 外資 + 投信 + 自營商，因此可用合計反推出自營商。
+        if dealer == 0 and total != foreign + trust:
+            dealer = total - foreign - trust
+
         out[t] = {
             "ticker": t,
             "name": clean_name(
@@ -914,88 +919,46 @@ def fetch_twse_institutional(date=None):
 # ---------------------------------------------------------
 
 def _parse_tpex_inst_table(fields, rows):
+    """
+    TPEx 的 tables 格式有多層表頭。
+    有時 fields 無法唯一對到「外資／投信／自營商買賣超」，
+    但資料列固定為 24 欄，因此優先使用官方欄位位置：
+      0  代號
+      1  名稱
+      10 外資及陸資買賣超
+      13 投信買賣超
+      22 自營商買賣超
+      23 三大法人合計
+    """
     out = {}
 
-    if not fields or not rows:
-        return out
-
-    idx_code = _idx(
-        fields,
-        ["代號", "證券代號"]
-    )
-
-    idx_name = _idx(
-        fields,
-        ["名稱", "證券名稱"]
-    )
-
-    idx_foreign = _idx(
-        fields,
-        ["外資及陸資", "外資"],
-        "買賣超"
-    )
-
-    idx_trust = _idx(
-        fields,
-        "投信",
-        "買賣超"
-    )
-
-    idx_dealer_total = _idx(
-        fields,
-        "自營商",
-        "買賣超"
-    )
-
-    idx_total = _idx(
-        fields,
-        ["三大法人", "合計"],
-        "買賣超"
-    )
-
-    if idx_code is None:
+    if not rows:
         return out
 
     for row in rows:
-        try:
-            t = str(row[idx_code]).strip()
-        except Exception:
+        if not isinstance(row, (list, tuple)):
             continue
+
+        if len(row) < 24:
+            continue
+
+        t = str(row[0]).strip()
 
         if not ordinary_ticker(t):
             continue
 
-        foreign = (
-            iv(row[idx_foreign])
-            if idx_foreign is not None
-            else 0
-        )
+        foreign = iv(row[10])
+        trust = iv(row[13])
+        dealer = iv(row[22])
+        total = iv(row[23])
 
-        trust = (
-            iv(row[idx_trust])
-            if idx_trust is not None
-            else 0
-        )
-
-        dealer = (
-            iv(row[idx_dealer_total])
-            if idx_dealer_total is not None
-            else 0
-        )
-
-        total = (
-            iv(row[idx_total])
-            if idx_total is not None
-            else foreign + trust + dealer
-        )
+        # 若官方其中一欄短暫空白，仍以三大法人恆等式補 dealer
+        if dealer == 0 and total != foreign + trust:
+            dealer = total - foreign - trust
 
         out[t] = {
             "ticker": t,
-            "name": clean_name(
-                row[idx_name]
-                if idx_name is not None
-                else ""
-            ),
+            "name": clean_name(row[1]),
             "foreign": foreign,
             "trust": trust,
             "dealer": dealer,
@@ -1003,7 +966,6 @@ def _parse_tpex_inst_table(fields, rows):
         }
 
     return out
-
 
 def fetch_tpex_institutional(date=None):
     if date:
@@ -1048,6 +1010,9 @@ def fetch_tpex_institutional(date=None):
                 trust = iv(row[13])
                 dealer = iv(row[22])
                 total = iv(row[23])
+
+                if dealer == 0 and total != foreign + trust:
+                    dealer = total - foreign - trust
 
                 out[t] = {
                     "ticker": t,
@@ -1207,6 +1172,9 @@ def fetch_tpex_institutional(date=None):
                 foreign + trust + dealer
             )
         )
+
+        if dealer == 0 and total != foreign + trust:
+            dealer = total - foreign - trust
 
         out[t] = {
             "ticker": t,
