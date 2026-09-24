@@ -1,77 +1,336 @@
 from sources import *
 from datetime import timedelta
 
+
+MIN_TWSE_ROWS = 500
+MIN_TPEX_ROWS = 300
+LOOKBACK_CALENDAR_DAYS = 10
+
+
 def tracked_tickers():
-    d=load_json(ROOT/"data/sectors.json",{})
-    return {str(x.get("ticker")) for s in d.get("sectors",[]) for x in s.get("stocks",[]) if x.get("ticker")}
+    d = load_json(ROOT / "data/sectors.json", {})
+    return {
+        str(x.get("ticker"))
+        for s in d.get("sectors", [])
+        for x in s.get("stocks", [])
+        if x.get("ticker")
+    }
+
 
 def history_files():
-    return sorted((ROOT/"data/history/market").glob("*.json"))
+    return sorted((ROOT / "data/history/market").glob("*.json"))
 
-def backfill_market(master, target=21):
-    existing={p.stem for p in history_files()}
-    have=sum(1 for p in history_files() if load_json(p,{}).get("stocks"))
-    if have>=target:return
-    d=now_tpe().date()-timedelta(days=1)
-    tries=0
-    while have<target and tries<50:
-        ds=d.isoformat(); tries+=1
+
+def fetch_latest_official_close():
+    """
+    不再使用 latest OpenAPI 直接配上「今天日期」。
+
+    原本的問題：
+    TWSE / TPEx 的 latest endpoint 有時尚未切到今天，
+    但程式卻用 now_tpe().date() 寫入，造成「昨天行情 + 今天日期」。
+
+    現在改成逐日查官方指定日期收盤資料，只有同一天的
+    TWSE + TPEx 都取得足夠筆數才接受該日期。
+    """
+    today = now_tpe().date()
+
+    for offset in range(LOOKBACK_CALENDAR_DAYS):
+        d = today - timedelta(days=offset)
+
+        if d.weekday() >= 5:
+            continue
+
+        ds = d.isoformat()
+
+        try:
+            twse = fetch_twse_quotes_by_date(ds)
+            tpex = fetch_tpex_quotes_by_date(ds)
+        except Exception as e:
+            print("official close fetch failed", ds, repr(e))
+            continue
+
+        twse = {
+            str(t): q
+            for t, q in (twse or {}).items()
+            if ordinary_ticker(t)
+        }
+        tpex = {
+            str(t): q
+            for t, q in (tpex or {}).items()
+            if ordinary_ticker(t)
+        }
+
+        print(
+            "official close candidate",
+            ds,
+            "twse",
+            len(twse),
+            "tpex",
+            len(tpex),
+        )
+
+        if len(twse) < MIN_TWSE_ROWS:
+            continue
+
+        if len(tpex) < MIN_TPEX_ROWS:
+            continue
+
+        return ds, {**twse, **tpex}
+
+    raise RuntimeError("no complete official close data found")
+
+
+def remove_bad_future_snapshots(as_of_date):
+    """
+    清掉舊版程式可能留下的假日期快照。
+    例如 9/23 行情被錯寫成 9/24。
+    """
+    for p in history_files():
+        if p.stem > as_of_date:
+            print("remove invalid future market snapshot", p.name)
+            p.unlink(missing_ok=True)
+
+
+def backfill_market(master, target=21, as_of_date=None):
+    existing = {p.stem for p in history_files()}
+    have = sum(
+        1
+        for p in history_files()
+        if load_json(p, {}).get("stocks")
+    )
+
+    if have >= target:
+        return
+
+    if as_of_date:
+        d = datetime.strptime(as_of_date, "%Y-%m-%d").date() - timedelta(days=1)
+    else:
+        d = now_tpe().date() - timedelta(days=1)
+
+    tries = 0
+
+    while have < target and tries < 50:
+        ds = d.isoformat()
+        tries += 1
+
         if ds not in existing:
             try:
-                tw=fetch_twse_quotes_by_date(ds); ot=fetch_tpex_quotes_by_date(ds)
-                q={**tw,**ot}; q={t:x for t,x in q.items() if t in master and ordinary_ticker(t)}
-                if len(q)>200:
-                    save_json(ROOT/f"data/history/market/{ds}.json",{"date":ds,"updated_at":now_tpe().isoformat(timespec="minutes"),"stocks":q})
-                    have+=1; existing.add(ds); print("backfill market",ds,len(q),have)
+                tw = fetch_twse_quotes_by_date(ds)
+                ot = fetch_tpex_quotes_by_date(ds)
+                q = {**tw, **ot}
+                q = {
+                    t: x
+                    for t, x in q.items()
+                    if t in master and ordinary_ticker(t)
+                }
+
+                if len(q) > 200:
+                    save_json(
+                        ROOT / f"data/history/market/{ds}.json",
+                        {
+                            "date": ds,
+                            "updated_at": now_tpe().isoformat(timespec="minutes"),
+                            "stocks": q,
+                        },
+                    )
+                    have += 1
+                    existing.add(ds)
+                    print("backfill market", ds, len(q), have)
+
             except Exception as e:
-                print("skip market",ds,e)
-        d-=timedelta(days=1)
+                print("skip market", ds, e)
+
+        d -= timedelta(days=1)
+
 
 def main():
-    master_data=load_json(ROOT/"data/master.json",{}); master=master_data.get("stocks",{})
+    master_data = load_json(ROOT / "data/master.json", {})
+    master = master_data.get("stocks", {})
+
     if not master:
-        master=fetch_master(); save_json(ROOT/"data/master.json",{"updated_at":now_tpe().isoformat(timespec="minutes"),"stocks":master})
+        master = fetch_master()
+        save_json(
+            ROOT / "data/master.json",
+            {
+                "updated_at": now_tpe().isoformat(timespec="minutes"),
+                "stocks": master,
+            },
+        )
 
-    twse=fetch_twse_latest_quotes(); tpex=fetch_tpex_latest_quotes(); quotes={**twse,**tpex}
-    today=now_tpe().date().isoformat()
-    filtered={t:q for t,q in quotes.items() if t in master and ordinary_ticker(t)}
-    snap={"date":today,"updated_at":now_tpe().isoformat(timespec="minutes"),"stocks":filtered}
-    save_json(ROOT/f"data/history/market/{today}.json",snap); save_json(ROOT/"data/market_latest.json",snap)
+    trade_date, quotes = fetch_latest_official_close()
 
-    backfill_market(master,21)
+    filtered = {
+        t: q
+        for t, q in quotes.items()
+        if t in master and ordinary_ticker(t)
+    }
 
-    topn=load_json(ROOT/"config.json",{}).get("top_n",{}).get("turnover",30)
-    turnover={"date":today,"twse":[],"tpex":[]}
-    for market in ("twse","tpex"):
-        arr=[q for q in filtered.values() if q["market"]==market]; arr.sort(key=lambda x:x.get("turnover",0),reverse=True)
-        turnover[market]=arr[:topn]
-    save_json(ROOT/"data/turnover.json",turnover)
+    if len(filtered) < 800:
+        raise RuntimeError(
+            f"official close looks incomplete: {trade_date} rows={len(filtered)}"
+        )
 
-    hist=[]
+    # 先清除舊版可能錯標成未來日期的 market history
+    remove_bad_future_snapshots(trade_date)
+
+    updated_at = now_tpe().isoformat(timespec="minutes")
+
+    snap = {
+        "date": trade_date,
+        "updated_at": updated_at,
+        "source": "official date-specific TWSE + TPEx close",
+        "stocks": filtered,
+    }
+
+    save_json(
+        ROOT / f"data/history/market/{trade_date}.json",
+        snap,
+    )
+    save_json(ROOT / "data/market_latest.json", snap)
+
+    backfill_market(master, 21, trade_date)
+
+    topn = (
+        load_json(ROOT / "config.json", {})
+        .get("top_n", {})
+        .get("turnover", 30)
+    )
+
+    turnover = {
+        "date": trade_date,
+        "updated_at": updated_at,
+        "source": "official date-specific TWSE + TPEx close",
+        "twse": [],
+        "tpex": [],
+    }
+
+    for market in ("twse", "tpex"):
+        arr = [
+            q
+            for q in filtered.values()
+            if q.get("market") == market
+        ]
+        arr.sort(
+            key=lambda x: x.get("turnover", 0),
+            reverse=True,
+        )
+        turnover[market] = arr[:topn]
+
+    save_json(ROOT / "data/turnover.json", turnover)
+
+    hist = []
+
     for p in history_files()[-30:]:
-        d=load_json(p,{})
-        if d.get("stocks"):hist.append(d)
-    latest=hist[-1] if hist else snap
-    tracked=tracked_tickers()
-    volume_items=[]; screen_items=[]
-    if len(hist)>=6:
-        for t,q in latest["stocks"].items():
-            if tracked and t not in tracked: continue
-            prior=[h["stocks"].get(t) for h in hist[:-1] if h["stocks"].get(t)]
-            last5=prior[-5:]
-            if len(last5)<5 or any(x.get("volume",0)<=0 for x in last5): continue
-            avg5=sum(x["volume"] for x in last5)/5; ratio=q["volume"]/avg5 if avg5 else 0
-            volume_items.append({**q,"volume_ratio_5d":ratio,"low_base":avg5<100000})
-            if len(prior)>=20:
-                avg20=sum(x["volume"] for x in prior[-20:])/20; seq=prior+[q]
-                avg3=sum(x["volume"] for x in seq[-3:])/3; avg5i=sum(x["volume"] for x in seq[-5:])/5; avg10=sum(x["volume"] for x in seq[-10:])/10
-                lots=q["volume"]/1000
-                if avg20>0 and q["volume"]>=avg20*1.3 and q["volume"]<=avg20*2.0 and avg3>avg5i>avg10 and lots>=1000:
-                    screen_items.append({**q,"volume_ratio_5d":ratio,"volume_ratio_20d":q["volume"]/avg20,
-                                         "avg3":round(avg3/1000),"avg5":round(avg5i/1000),"avg10":round(avg10/1000)})
-    volume_items.sort(key=lambda x:x["volume_ratio_5d"],reverse=True); screen_items.sort(key=lambda x:x["volume_ratio_5d"],reverse=True)
-    save_json(ROOT/"data/volume.json",{"date":today,"complete":len(hist)>=6,"history_days":len(hist),"items":volume_items[:50]})
-    save_json(ROOT/"data/screener.json",{"date":today,"complete":len(hist)>=21,"history_days":len(hist),"items":screen_items})
-    print("close",len(filtered),"history",len(hist),"volume",len(volume_items),"screen",len(screen_items))
+        d = load_json(p, {})
+        if d.get("stocks"):
+            hist.append(d)
 
-if __name__=="__main__": main()
+    latest = hist[-1] if hist else snap
+    tracked = tracked_tickers()
+    volume_items = []
+    screen_items = []
+
+    if len(hist) >= 6:
+        for t, q in latest["stocks"].items():
+            if tracked and t not in tracked:
+                continue
+
+            prior = [
+                h["stocks"].get(t)
+                for h in hist[:-1]
+                if h["stocks"].get(t)
+            ]
+
+            last5 = prior[-5:]
+
+            if len(last5) < 5:
+                continue
+
+            if any(x.get("volume", 0) <= 0 for x in last5):
+                continue
+
+            avg5 = sum(x["volume"] for x in last5) / 5
+            ratio = q["volume"] / avg5 if avg5 else 0
+
+            volume_items.append(
+                {
+                    **q,
+                    "volume_ratio_5d": ratio,
+                    "low_base": avg5 < 100000,
+                }
+            )
+
+            if len(prior) >= 20:
+                avg20 = sum(x["volume"] for x in prior[-20:]) / 20
+                seq = prior + [q]
+                avg3 = sum(x["volume"] for x in seq[-3:]) / 3
+                avg5i = sum(x["volume"] for x in seq[-5:]) / 5
+                avg10 = sum(x["volume"] for x in seq[-10:]) / 10
+                lots = q["volume"] / 1000
+
+                if (
+                    avg20 > 0
+                    and q["volume"] >= avg20 * 1.3
+                    and q["volume"] <= avg20 * 2.0
+                    and avg3 > avg5i > avg10
+                    and lots >= 1000
+                ):
+                    screen_items.append(
+                        {
+                            **q,
+                            "volume_ratio_5d": ratio,
+                            "volume_ratio_20d": q["volume"] / avg20,
+                            "avg3": round(avg3 / 1000),
+                            "avg5": round(avg5i / 1000),
+                            "avg10": round(avg10 / 1000),
+                        }
+                    )
+
+    volume_items.sort(
+        key=lambda x: x["volume_ratio_5d"],
+        reverse=True,
+    )
+    screen_items.sort(
+        key=lambda x: x["volume_ratio_5d"],
+        reverse=True,
+    )
+
+    save_json(
+        ROOT / "data/volume.json",
+        {
+            "date": trade_date,
+            "updated_at": updated_at,
+            "source": "official date-specific TWSE + TPEx close",
+            "complete": len(hist) >= 6,
+            "history_days": len(hist),
+            "items": volume_items[:50],
+        },
+    )
+
+    save_json(
+        ROOT / "data/screener.json",
+        {
+            "date": trade_date,
+            "updated_at": updated_at,
+            "source": "official date-specific TWSE + TPEx close",
+            "complete": len(hist) >= 21,
+            "history_days": len(hist),
+            "items": screen_items,
+        },
+    )
+
+    print(
+        "close",
+        trade_date,
+        len(filtered),
+        "history",
+        len(hist),
+        "volume",
+        len(volume_items),
+        "screen",
+        len(screen_items),
+    )
+
+
+if __name__ == "__main__":
+    main()
