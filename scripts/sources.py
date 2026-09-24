@@ -59,6 +59,7 @@ def pick(d, names, default=None):
     for k in names:
         if k in d and d[k] not in (None,""):
             return d[k]
+    # partial / normalized match
     for k,v in d.items():
         nk=re.sub(r"\s+","",str(k))
         for name in names:
@@ -110,6 +111,7 @@ def fetch_tpex_latest_quotes():
         ch=n(pick(r,["Change","漲跌","漲跌價差"]))
         vol=iv(pick(r,["TradingShares","成交股數","成交量"]))
         value=iv(pick(r,["TransactionAmount","成交金額","成交值"]))
+        # 有些 TPEx API Change 可能直接帶百分比，優先找 pct 欄
         pct_raw=pick(r,["ChangePercent","漲跌幅","漲跌幅(%)"],None)
         if pct_raw is not None:
             pct=n(pct_raw)
@@ -149,21 +151,19 @@ def fetch_twse_institutional(date=None):
     fields=data.get("fields",[])
     rows=data.get("data",[])
     out={}
-
     def idx_contains(words):
         for i,f in enumerate(fields):
             s=re.sub(r"\s+","",str(f))
             if all(w in s for w in words): return i
         return None
-
     idx_code=idx_contains(["證券代號"])
     idx_name=idx_contains(["證券名稱"])
+    # TWSE T86 columns: 外陸(不含自營商)、投信、自營商(自行+避險)、三大法人
     idx_foreign=idx_contains(["外資及陸資","買賣超股數"])
     idx_trust=idx_contains(["投信","買賣超股數"])
     idx_dealer_self=idx_contains(["自營商","自行買賣","買賣超股數"])
     idx_dealer_hedge=idx_contains(["自營商","避險","買賣超股數"])
     idx_total=idx_contains(["三大法人","買賣超股數"])
-
     for row in rows:
         try:t=str(row[idx_code]).strip()
         except:continue
@@ -171,8 +171,7 @@ def fetch_twse_institutional(date=None):
         ds=iv(row[idx_dealer_self]) if idx_dealer_self is not None else 0
         dh=iv(row[idx_dealer_hedge]) if idx_dealer_hedge is not None else 0
         out[t]={
-            "ticker":t,
-            "name":str(row[idx_name]).strip() if idx_name is not None else "",
+            "ticker":t,"name":str(row[idx_name]).strip() if idx_name is not None else "",
             "foreign":iv(row[idx_foreign]) if idx_foreign is not None else 0,
             "trust":iv(row[idx_trust]) if idx_trust is not None else 0,
             "dealer":ds+dh,
@@ -186,4 +185,43 @@ def fetch_tpex_institutional():
     for r in arr:
         t=str(pick(r,["SecuritiesCompanyCode","證券代號","代號"],"")).strip()
         if not ordinary_ticker(t):continue
-        name=str(pick(r,["CompanyName","證券名稱
+        name=str(pick(r,["CompanyName","證券名稱","名稱"],"")).strip()
+        foreign=iv(pick(r,["ForeignInvestorsBalance","外資及陸資買賣超股數","外資及陸資買賣超"],0))
+        trust=iv(pick(r,["InvestmentTrustBalance","投信買賣超股數","投信買賣超"],0))
+        # 若有自行/避險分欄則相加
+        d1=iv(pick(r,["DealerProprietaryBalance","自營商自行買賣買賣超股數","自營商自行買賣"],0))
+        d2=iv(pick(r,["DealerHedgingBalance","自營商避險買賣超股數","自營商避險"],0))
+        dealer=d1+d2
+        total=iv(pick(r,["TotalBalance","三大法人買賣超股數","三大法人買賣超"],foreign+trust+dealer))
+        out[t]={"ticker":t,"name":name,"foreign":foreign,"trust":trust,"dealer":dealer,"total":total}
+    return out
+
+def fetch_tdcc_distribution():
+    data=get_json(f"{TDCC}/1-5",timeout=60)
+    if isinstance(data,dict):
+        for key in ("data","result","records"):
+            if isinstance(data.get(key),list): return data[key]
+    return data if isinstance(data,list) else []
+
+def fetch_mis_quotes(tickers):
+    channels=[]
+    for t in tickers:
+        channels.extend([f"tse_{t}.tw",f"otc_{t}.tw"])
+    out={}
+    for i in range(0,len(channels),120):
+        ch=channels[i:i+120]
+        params={"ex_ch":"|".join(ch),"json":"1","delay":"0"}
+        data=get_json(MIS,params=params,timeout=25)
+        for r in data.get("msgArray",[]):
+            t=str(r.get("c","")).strip()
+            if not ordinary_ticker(t) or t in out: continue
+            y=n(r.get("y"))
+            z=n(r.get("z"))
+            if z<=0:
+                bid=str(r.get("b","")).split("_")[0]
+                ask=str(r.get("a","")).split("_")[0]
+                z=n(bid) or n(ask) or y
+            if y<=0 or z<=0: continue
+            out[t]={"price":z,"prev_close":y,"change_pct":(z/y-1)*100,"exchange":r.get("ex","")}
+        time.sleep(.2)
+    return out
