@@ -80,6 +80,61 @@ def fetch_latest_official_close():
     raise RuntimeError("no complete official close data found")
 
 
+
+
+def repair_twse_changes_from_previous(quotes, trade_date):
+    """
+    TWSE 指定日期 MI_INDEX 偶爾會把漲跌價差解析成 0。
+    若今日收盤價和前一交易日收盤不同，但 change 卻是 0，
+    就用前一交易日收盤價補回 change / change_pct。
+    """
+    prev_snap = None
+
+    for hp in sorted(history_files(), reverse=True):
+        if hp.stem >= trade_date:
+            continue
+
+        d = load_json(hp, {})
+        if d.get("stocks"):
+            prev_snap = d
+            break
+
+    if not prev_snap:
+        print("no previous market snapshot for TWSE change repair")
+        return quotes
+
+    prev_stocks = prev_snap.get("stocks", {})
+    fixed = 0
+
+    for ticker, q in quotes.items():
+        if q.get("market") != "twse":
+            continue
+
+        price = float(q.get("price") or 0)
+        change = float(q.get("change") or 0)
+
+        prev = prev_stocks.get(ticker, {})
+        prev_price = float(prev.get("price") or 0)
+
+        if price <= 0 or prev_price <= 0:
+            continue
+
+        if abs(change) < 1e-12 and abs(price - prev_price) > 1e-12:
+            repaired_change = price - prev_price
+            q["change"] = repaired_change
+            q["change_pct"] = repaired_change / prev_price * 100
+            fixed += 1
+
+    print(
+        "TWSE change repaired",
+        fixed,
+        "using previous date",
+        prev_snap.get("date"),
+    )
+
+    return quotes
+
+
 def remove_bad_future_snapshots(as_of_date):
     """
     清掉舊版程式可能留下的假日期快照。
@@ -158,6 +213,11 @@ def main():
         )
 
     trade_date, quotes = fetch_latest_official_close()
+
+    quotes = repair_twse_changes_from_previous(
+        quotes,
+        trade_date,
+    )
 
     filtered = {
         t: q
