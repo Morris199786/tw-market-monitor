@@ -33,8 +33,16 @@ async function J(p) {
 }
 
 function pct(v) {
-  if (v === null || v === undefined || Number.isNaN(Number(v))) return "—";
+  if (
+    v === null ||
+    v === undefined ||
+    Number.isNaN(Number(v))
+  ) {
+    return "—";
+  }
+
   v = Number(v);
+
   return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
 }
 
@@ -43,8 +51,15 @@ function cl(v) {
 }
 
 function money(v) {
-  if (v === null || v === undefined) return "—";
-  return (Number(v) > 0 ? "+" : "") + Number(v).toFixed(2) + "億";
+  if (v === null || v === undefined) {
+    return "—";
+  }
+
+  return (
+    (Number(v) > 0 ? "+" : "") +
+    Number(v).toFixed(2) +
+    "億"
+  );
 }
 
 function cleanLegalName(name = "") {
@@ -57,7 +72,10 @@ function cleanLegalName(name = "") {
 
 function displayName(x = {}) {
   const t = String(x.ticker || "");
-  if (shortNames[t]) return shortNames[t];
+
+  if (shortNames[t]) {
+    return shortNames[t];
+  }
 
   const raw = cleanLegalName(x.name || "");
 
@@ -70,6 +88,7 @@ function stock(x, rank) {
   return `
     <span style="display:inline-flex;align-items:center;min-width:0">
       ${rank ? `<span class="rank">${rank}</span>` : ""}
+
       <span class="stock">
         <b>${name}</b>
         <span>${x.ticker || ""}</span>
@@ -79,7 +98,15 @@ function stock(x, rank) {
 }
 
 function emptyRow(text = "目前沒有符合條件的資料") {
-  return `<tr><td colspan="8"><div class="empty">${text}</div></td></tr>`;
+  return `
+    <tr>
+      <td colspan="8">
+        <div class="empty">
+          ${text}
+        </div>
+      </td>
+    </tr>
+  `;
 }
 
 /* -----------------------------
@@ -112,7 +139,10 @@ function page(id) {
   });
 
   const nav = $("#mobileNav");
-  if (nav) nav.value = id;
+
+  if (nav) {
+    nav.value = id;
+  }
 
   window.scrollTo({
     top: 0,
@@ -121,11 +151,15 @@ function page(id) {
 }
 
 $$(".nav").forEach(b => {
-  b.onclick = () => page(b.dataset.p);
+  b.onclick = () => {
+    page(b.dataset.p);
+  };
 });
 
 if ($("#mobileNav")) {
-  $("#mobileNav").onchange = e => page(e.target.value);
+  $("#mobileNav").onchange = e => {
+    page(e.target.value);
+  };
 }
 
 /* -----------------------------
@@ -134,7 +168,10 @@ if ($("#mobileNav")) {
 
 function clock() {
   const el = $("#clock");
-  if (!el) return;
+
+  if (!el) {
+    return;
+  }
 
   el.textContent = new Intl.DateTimeFormat("zh-TW", {
     timeZone: "Asia/Taipei",
@@ -154,7 +191,9 @@ setInterval(clock, 30000);
 ----------------------------- */
 
 function setupTheme() {
-  let theme = localStorage.getItem("tw-market-theme") || "light";
+  let theme =
+    localStorage.getItem("tw-market-theme") ||
+    "light";
 
   document.documentElement.dataset.theme = theme;
 
@@ -167,11 +206,15 @@ function setupTheme() {
     const clockEl = $("#clock");
 
     if (clockEl && clockEl.parentNode) {
-      clockEl.parentNode.insertBefore(actions, clockEl.nextSibling);
+      clockEl.parentNode.insertBefore(
+        actions,
+        clockEl.nextSibling
+      );
     }
   }
 
   const btn = document.createElement("button");
+
   btn.className = "icon-btn";
   btn.id = "themeToggle";
   btn.title = "切換深色模式";
@@ -192,7 +235,11 @@ function setupTheme() {
         : "dark";
 
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("tw-market-theme", next);
+
+    localStorage.setItem(
+      "tw-market-theme",
+      next
+    );
 
     icon();
   };
@@ -209,12 +256,19 @@ function setupToTop() {
 
   btn.id = "toTop";
   btn.innerHTML = "↑";
-  btn.setAttribute("aria-label", "回到最上方");
+
+  btn.setAttribute(
+    "aria-label",
+    "回到最上方"
+  );
 
   document.body.appendChild(btn);
 
   window.addEventListener("scroll", () => {
-    btn.classList.toggle("show", window.scrollY > 500);
+    btn.classList.toggle(
+      "show",
+      window.scrollY > 500
+    );
   });
 
   btn.onclick = () => {
@@ -230,19 +284,32 @@ function setupToTop() {
 ----------------------------- */
 
 function heatClass(v) {
-  if (v === null || v === undefined) return "gray";
+  if (
+    v === null ||
+    v === undefined
+  ) {
+    return "gray";
+  }
 
   const a = Math.abs(Number(v));
 
   if (Number(v) >= 0) {
-    return a >= 3 ? "r4" :
-           a >= 2 ? "r3" :
-           a >= 1 ? "r2" : "r1";
+    return a >= 3
+      ? "r4"
+      : a >= 2
+      ? "r3"
+      : a >= 1
+      ? "r2"
+      : "r1";
   }
 
-  return a >= 3 ? "g4" :
-         a >= 2 ? "g3" :
-         a >= 1 ? "g2" : "g1";
+  return a >= 3
+    ? "g4"
+    : a >= 2
+    ? "g3"
+    : a >= 1
+    ? "g2"
+    : "g1";
 }
 
 /* -----------------------------
@@ -254,9 +321,19 @@ async function home() {
   const a = await J("./data/ai_picks.json");
   const ho = await J("./data/holders.json");
 
-  const sectors = [...(h.sectors || [])]
-    .filter(x => x.change_pct !== null && x.change_pct !== undefined)
-    .sort((x, y) => y.change_pct - x.change_pct);
+  const sectors = [
+    ...(h.sectors || [])
+  ]
+    .filter(
+      x =>
+        x.change_pct !== null &&
+        x.change_pct !== undefined
+    )
+    .sort(
+      (x, y) =>
+        Number(y.change_pct) -
+        Number(x.change_pct)
+    );
 
   const top = sectors.slice(0, 3);
 
@@ -266,27 +343,60 @@ async function home() {
     cards.innerHTML = `
       <div class="card metric">
         <small>市場熱力圖</small>
-        <strong>${h.sectors?.length || 0} 族群</strong>
-        <small>盤中每 5 分鐘更新</small>
+
+        <strong>
+          ${h.sectors?.length || 0} 族群
+        </strong>
+
+        <small>
+          盤中每 5 分鐘更新
+        </small>
       </div>
 
       <div class="card metric">
         <small>AI 選股</small>
-        <strong>${(a.twse?.length || 0) + (a.tpex?.length || 0)} 檔</strong>
-        <small>每天 18:00 更新</small>
+
+        <strong>
+          ${
+            (a.twse?.length || 0) +
+            (a.tpex?.length || 0)
+          } 檔
+        </strong>
+
+        <small>
+          每天 18:00 更新
+        </small>
       </div>
 
       <div class="card metric">
         <small>大戶籌碼</small>
-        <strong>${ho.complete ? "完整" : "待補"}</strong>
-        <small>每週六 15:00</small>
+
+        <strong>
+          ${ho.complete ? "完整" : "待補"}
+        </strong>
+
+        <small>
+          每週六 15:00
+        </small>
       </div>
 
       <div class="card metric">
         <small>目前最強族群</small>
-        <strong>${top[0]?.name || "—"}</strong>
-        <small class="${cl(top[0]?.change_pct)}">
-          ${top[0] ? pct(top[0].change_pct) : "—"}
+
+        <strong>
+          ${top[0]?.name || "—"}
+        </strong>
+
+        <small
+          class="${cl(
+            top[0]?.change_pct
+          )}"
+        >
+          ${
+            top[0]
+              ? pct(top[0].change_pct)
+              : "—"
+          }
         </small>
       </div>
     `;
@@ -295,17 +405,33 @@ async function home() {
   const box = $("#topSectors");
 
   if (box) {
-    box.innerHTML = top.map((x, i) => `
-      <div class="card metric">
-        <small>0${i + 1} ${x.name}</small>
-        <strong class="${cl(x.change_pct)}">
-          ${pct(x.change_pct)}
-        </strong>
-        <small>
-          ${x.complete ? "完整市值加權" : "部分市值資料待補"}
-        </small>
-      </div>
-    `).join("");
+    box.innerHTML = top
+      .map(
+        (x, i) => `
+          <div class="card metric">
+            <small>
+              0${i + 1} ${x.name}
+            </small>
+
+            <strong
+              class="${cl(
+                x.change_pct
+              )}"
+            >
+              ${pct(x.change_pct)}
+            </strong>
+
+            <small>
+              ${
+                x.complete
+                  ? "完整市值加權"
+                  : "部分市值資料待補"
+              }
+            </small>
+          </div>
+        `
+      )
+      .join("");
   }
 }
 
@@ -314,15 +440,21 @@ async function home() {
 ----------------------------- */
 
 async function flows() {
-  const d = await J("./data/institutional.json");
+  const d = await J(
+    "./data/institutional.json"
+  );
 
   if ($("#flowDate")) {
     $("#flowDate").textContent =
-      d.date ? `截至 ${d.date}` : "尚無資料";
+      d.date
+        ? `截至 ${d.date}`
+        : "尚無資料";
   }
 
   const g =
-    d.periods?.[st.period]?.[st.market]?.[st.inst] || {
+    d.periods?.[st.period]?.[
+      st.market
+    ]?.[st.inst] || {
       buy: [],
       sell: [],
       complete: false,
@@ -330,18 +462,24 @@ async function flows() {
     };
 
   const need =
-    st.period === "1d" ? 1 :
-    st.period === "3d" ? 3 : 5;
+    st.period === "1d"
+      ? 1
+      : st.period === "3d"
+      ? 3
+      : 5;
 
   const status = $("#flowStatus");
 
   if (status) {
     status.className =
-      "status" + (g.complete ? "" : " warn");
+      "status" +
+      (g.complete ? "" : " warn");
 
     status.textContent = g.complete
       ? `資料完整 · ${g.days_used} 個交易日`
-      : `目前 ${g.days_used || 0} / ${need} 個交易日`;
+      : `目前 ${
+          g.days_used || 0
+        } / ${need} 個交易日`;
   }
 
   function rows(arr) {
@@ -349,46 +487,87 @@ async function flows() {
       return emptyRow();
     }
 
-    return arr.map((x, i) => `
-      <tr class="${x.change_pct < 0 ? "negative-row" : ""}">
-        <td>
-          ${stock(x, i + 1)}
-          <div class="mobile-meta">
-            ${Math.round((x.shares || 0) / 1000).toLocaleString()} 張
-          </div>
-        </td>
+    return arr
+      .map(
+        (x, i) => `
+          <tr
+            class="${
+              x.change_pct < 0
+                ? "negative-row"
+                : ""
+            }"
+          >
+            <td>
+              ${stock(x, i + 1)}
 
-        <td
-          data-label="估算金額"
-          class="${x.amount_100m >= 0 ? "up" : "down"}"
-        >
-          ${money(x.amount_100m)}
-        </td>
+              <div class="mobile-meta">
+                ${Math.round(
+                  (x.shares || 0) /
+                    1000
+                ).toLocaleString()} 張
+              </div>
+            </td>
 
-        <td data-label="張數">
-          ${Math.round((x.shares || 0) / 1000).toLocaleString()}
-        </td>
+            <td
+              data-label="估算金額"
+              class="${
+                x.amount_100m >= 0
+                  ? "up"
+                  : "down"
+              }"
+            >
+              ${money(
+                x.amount_100m
+              )}
+            </td>
 
-        <td
-          data-label="漲跌"
-          class="${cl(x.change_pct)}"
-        >
-          ${pct(x.change_pct)}
-        </td>
-      </tr>
-    `).join("");
+            <td data-label="張數">
+              ${Math.round(
+                (x.shares || 0) /
+                  1000
+              ).toLocaleString()}
+            </td>
+
+            <td
+              data-label="漲跌"
+              class="${cl(
+                x.change_pct
+              )}"
+            >
+              ${pct(
+                x.change_pct
+              )}
+            </td>
+          </tr>
+        `
+      )
+      .join("");
   }
 
-  if ($("#buyRows")) $("#buyRows").innerHTML = rows(g.buy);
-  if ($("#sellRows")) $("#sellRows").innerHTML = rows(g.sell);
+  if ($("#buyRows")) {
+    $("#buyRows").innerHTML =
+      rows(g.buy);
+  }
+
+  if ($("#sellRows")) {
+    $("#sellRows").innerHTML =
+      rows(g.sell);
+  }
 }
 
 $$("[data-period]").forEach(b => {
   b.onclick = () => {
-    $$("[data-period]").forEach(x => x.classList.remove("active"));
+    $$("[data-period]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
+
     b.classList.add("active");
 
-    st.period = b.dataset.period;
+    st.period =
+      b.dataset.period;
 
     flows();
   };
@@ -396,10 +575,17 @@ $$("[data-period]").forEach(b => {
 
 $$("[data-inst]").forEach(b => {
   b.onclick = () => {
-    $$("[data-inst]").forEach(x => x.classList.remove("active"));
+    $$("[data-inst]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
+
     b.classList.add("active");
 
-    st.inst = b.dataset.inst;
+    st.inst =
+      b.dataset.inst;
 
     flows();
   };
@@ -407,10 +593,17 @@ $$("[data-inst]").forEach(b => {
 
 $$("[data-market]").forEach(b => {
   b.onclick = () => {
-    $$("[data-market]").forEach(x => x.classList.remove("active"));
+    $$("[data-market]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
+
     b.classList.add("active");
 
-    st.market = b.dataset.market;
+    st.market =
+      b.dataset.market;
 
     flows();
   };
@@ -421,31 +614,45 @@ $$("[data-market]").forEach(b => {
 ----------------------------- */
 
 function ensureVolumeCriteria() {
-  if ($("#volumeCriteria")) return;
+  if ($("#volumeCriteria")) {
+    return;
+  }
 
   const status = $("#volStatus");
 
-  if (!status) return;
+  if (!status) {
+    return;
+  }
 
-  const box = document.createElement("div");
+  const box =
+    document.createElement("div");
 
   box.id = "volumeCriteria";
   box.className = "criteria";
 
-  status.insertAdjacentElement("afterend", box);
+  status.insertAdjacentElement(
+    "afterend",
+    box
+  );
 }
 
 function renderVolumeCriteria() {
   ensureVolumeCriteria();
 
-  const box = $("#volumeCriteria");
+  const box =
+    $("#volumeCriteria");
 
-  if (!box) return;
+  if (!box) {
+    return;
+  }
 
   if (!st.advanced) {
     box.innerHTML = `
       <b>篩選依據</b>
-      <p>依「今日成交量 ÷ 前 5 個交易日平均成交量」排序</p>
+
+      <p>
+        依「今日成交量 ÷ 前 5 個交易日平均成交量」排序
+      </p>
 
       <div class="criteria-grid">
         <span class="criterion">
@@ -489,102 +696,172 @@ function renderVolumeCriteria() {
 }
 
 async function volume() {
-  const v = await J("./data/volume.json");
-  const s = await J("./data/screener.json");
+  const v = await J(
+    "./data/volume.json"
+  );
+
+  const s = await J(
+    "./data/screener.json"
+  );
 
   if ($("#volDate")) {
-    $("#volDate").textContent = v.date || "尚無資料";
+    $("#volDate").textContent =
+      v.date || "尚無資料";
   }
 
   const d = st.advanced
-    ? (s.items || [])
-    : (v.items || []);
+    ? s.items || []
+    : v.items || [];
 
-  const status = $("#volStatus");
+  const status =
+    $("#volStatus");
 
   if (status) {
     status.className =
       "status" +
-      ((st.advanced ? !s.complete : !v.complete) ? " warn" : "");
+      (
+        st.advanced
+          ? !s.complete
+          : !v.complete
+      ? " warn"
+      : ""
+      );
 
-    status.textContent = st.advanced
-      ? (
-          s.complete
-            ? "20日歷史完整"
-            : `進階篩選需要 21 個交易日，目前 ${s.history_days || 0}`
-        )
-      : (
-          v.complete
-            ? "前 5 日歷史完整"
-            : `突然放量需要 6 個交易日，目前 ${v.history_days || 0}`
-        );
+    status.textContent =
+      st.advanced
+        ? s.complete
+          ? "20日歷史完整"
+          : `進階篩選需要 21 個交易日，目前 ${
+              s.history_days || 0
+            }`
+        : v.complete
+        ? "前 5 日歷史完整"
+        : `突然放量需要 6 個交易日，目前 ${
+            v.history_days || 0
+          }`;
   }
 
   renderVolumeCriteria();
 
-  const rows = $("#volRows");
+  const rows =
+    $("#volRows");
 
-  if (!rows) return;
-
-  if (!d.length) {
-    rows.innerHTML = emptyRow("目前沒有符合篩選條件的股票");
+  if (!rows) {
     return;
   }
 
-  rows.innerHTML = d.map((x, i) => {
-    const advText = st.advanced
-      ? `20日量比 ${Number(x.volume_ratio_20d || 0).toFixed(2)}x`
-      : "";
+  if (!d.length) {
+    rows.innerHTML =
+      emptyRow(
+        "目前沒有符合篩選條件的股票"
+      );
 
-    const trendText = st.advanced
-      ? `3日 ${Number(x.avg3 || 0).toLocaleString()} ＞ 5日 ${Number(x.avg5 || 0).toLocaleString()} ＞ 10日 ${Number(x.avg10 || 0).toLocaleString()}`
-      : "";
+    return;
+  }
 
-    return `
-      <tr class="${x.change_pct < 0 ? "negative-row" : ""}">
-        <td>
-          ${stock(x, i + 1)}
+  rows.innerHTML = d
+    .map((x, i) => {
+      const advText =
+        st.advanced
+          ? `20日量比 ${Number(
+              x.volume_ratio_20d ||
+                0
+            ).toFixed(2)}x`
+          : "";
 
-          <div class="mobile-meta">
-            今日量 ${Math.round((x.volume || 0) / 1000).toLocaleString()}張
-          </div>
-        </td>
+      const trendText =
+        st.advanced
+          ? `3日 ${Number(
+              x.avg3 || 0
+            ).toLocaleString()} ＞ 5日 ${Number(
+              x.avg5 || 0
+            ).toLocaleString()} ＞ 10日 ${Number(
+              x.avg10 || 0
+            ).toLocaleString()}`
+          : "";
 
-        <td
-          data-label="漲跌"
-          class="${cl(x.change_pct)}"
+      return `
+        <tr
+          class="${
+            x.change_pct < 0
+              ? "negative-row"
+              : ""
+          }"
         >
-          ${pct(x.change_pct)}
-        </td>
+          <td>
+            ${stock(x, i + 1)}
 
-        <td data-label="今日量">
-          ${Math.round((x.volume || 0) / 1000).toLocaleString()}張
-        </td>
+            <div class="mobile-meta">
+              今日量
+              ${Math.round(
+                (x.volume || 0) /
+                  1000
+              ).toLocaleString()}張
+            </div>
+          </td>
 
-        <td data-label="5日量比">
-          ${Number(x.volume_ratio_5d || 0).toFixed(2)}x
-        </td>
+          <td
+            data-label="漲跌"
+            class="${cl(
+              x.change_pct
+            )}"
+          >
+            ${pct(
+              x.change_pct
+            )}
+          </td>
 
-        <td data-label="${st.advanced ? "進階條件" : "訊號"}">
-          ${
-            st.advanced
-              ? `
-                <div>${advText}</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:3px">
-                  ${trendText}
-                </div>
-              `
-              : (x.low_base ? "低基期" : "—")
-          }
-        </td>
-      </tr>
-    `;
-  }).join("");
+          <td data-label="今日量">
+            ${Math.round(
+              (x.volume || 0) /
+                1000
+            ).toLocaleString()}張
+          </td>
+
+          <td data-label="5日量比">
+            ${Number(
+              x.volume_ratio_5d ||
+                0
+            ).toFixed(2)}x
+          </td>
+
+          <td
+            data-label="${
+              st.advanced
+                ? "進階條件"
+                : "訊號"
+            }"
+          >
+            ${
+              st.advanced
+                ? `
+                  <div>
+                    ${advText}
+                  </div>
+
+                  <div style="
+                    font-size:10px;
+                    color:var(--muted);
+                    margin-top:3px
+                  ">
+                    ${trendText}
+                  </div>
+                `
+                : x.low_base
+                ? "低基期"
+                : "—"
+            }
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
 if ($("#advanced")) {
   $("#advanced").onclick = () => {
-    st.advanced = !st.advanced;
+    st.advanced =
+      !st.advanced;
 
     $("#advanced").classList.toggle(
       "active",
@@ -605,63 +882,105 @@ if ($("#advanced")) {
 ----------------------------- */
 
 async function turnover() {
-  const d = await J("./data/turnover.json");
+  const d = await J(
+    "./data/turnover.json"
+  );
 
   if ($("#turnDate")) {
     $("#turnDate").textContent =
       d.date || "尚無資料";
   }
 
-  const arr = d[st.turn] || [];
-  const rows = $("#turnRows");
+  const arr =
+    d[st.turn] || [];
 
-  if (!rows) return;
+  const rows =
+    $("#turnRows");
 
-  if (!arr.length) {
-    rows.innerHTML = emptyRow();
+  if (!rows) {
     return;
   }
 
-  rows.innerHTML = arr.map((x, i) => `
-    <tr class="${x.change_pct < 0 ? "negative-row" : ""}">
-      <td>
-        ${stock(x, i + 1)}
+  if (!arr.length) {
+    rows.innerHTML =
+      emptyRow();
 
-        <div class="mobile-meta">
-          ${x.price || "—"} · ${pct(x.change_pct)}
-        </div>
-      </td>
+    return;
+  }
 
-      <td data-label="成交金額">
-        ${(Number(x.turnover || 0) / 1e8).toFixed(2)}億
-      </td>
+  rows.innerHTML = arr
+    .map(
+      (x, i) => `
+        <tr
+          class="${
+            x.change_pct < 0
+              ? "negative-row"
+              : ""
+          }"
+        >
+          <td>
+            ${stock(x, i + 1)}
 
-      <td data-label="成交張數">
-        ${Math.round(Number(x.volume || 0) / 1000).toLocaleString()}
-      </td>
+            <div class="mobile-meta">
+              ${
+                x.price || "—"
+              } · ${pct(
+                x.change_pct
+              )}
+            </div>
+          </td>
 
-      <td data-label="收盤">
-        ${x.price || "—"}
-      </td>
+          <td data-label="成交金額">
+            ${(
+              Number(
+                x.turnover || 0
+              ) / 1e8
+            ).toFixed(2)}億
+          </td>
 
-      <td
-        data-label="漲跌"
-        class="${cl(x.change_pct)}"
-      >
-        ${pct(x.change_pct)}
-      </td>
-    </tr>
-  `).join("");
+          <td data-label="成交張數">
+            ${Math.round(
+              Number(
+                x.volume || 0
+              ) / 1000
+            ).toLocaleString()}
+          </td>
+
+          <td data-label="收盤">
+            ${
+              x.price || "—"
+            }
+          </td>
+
+          <td
+            data-label="漲跌"
+            class="${cl(
+              x.change_pct
+            )}"
+          >
+            ${pct(
+              x.change_pct
+            )}
+          </td>
+        </tr>
+      `
+    )
+    .join("");
 }
 
 $$("[data-turn]").forEach(b => {
   b.onclick = () => {
-    $$("[data-turn]")
-      .forEach(x => x.classList.remove("active"));
+    $$("[data-turn]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
 
     b.classList.add("active");
 
-    st.turn = b.dataset.turn;
+    st.turn =
+      b.dataset.turn;
 
     turnover();
   };
@@ -672,7 +991,9 @@ $$("[data-turn]").forEach(b => {
 ----------------------------- */
 
 async function holders() {
-  const d = await J("./data/holders.json");
+  const d = await J(
+    "./data/holders.json"
+  );
 
   if ($("#holderDate")) {
     $("#holderDate").textContent =
@@ -681,65 +1002,110 @@ async function holders() {
         : "週六 15:00";
   }
 
-  const status = $("#holderStatus");
+  const status =
+    $("#holderStatus");
 
   if (status) {
     status.className =
-      "status" + (d.complete ? "" : " warn");
+      "status" +
+      (
+        d.complete
+          ? ""
+          : " warn"
+      );
 
-    status.textContent = d.complete
-      ? `比較 ${d.previous_date} → ${d.date}`
-      : "需要兩期集保資料才能計算大戶增加";
+    status.textContent =
+      d.complete
+        ? `比較 ${
+            d.previous_date
+          } → ${d.date}`
+        : "需要兩期集保資料才能計算大戶增加";
   }
 
   const arr =
-    d[st.hm]?.[st.hk] || [];
+    d[st.hm]?.[st.hk] ||
+    [];
 
-  const rows = $("#holderRows");
+  const rows =
+    $("#holderRows");
 
-  if (!rows) return;
-
-  if (!arr.length) {
-    rows.innerHTML = emptyRow();
+  if (!rows) {
     return;
   }
 
-  rows.innerHTML = arr.map((x, i) => `
-    <tr class="${x.week_change_pct < 0 ? "negative-row" : ""}">
-      <td>
-        ${stock(x, i + 1)}
+  if (!arr.length) {
+    rows.innerHTML =
+      emptyRow();
 
-        <div class="mobile-meta">
-          大戶比 ${Number(x.ratio || 0).toFixed(2)}%
-        </div>
-      </td>
+    return;
+  }
 
-      <td
-        data-label="同期股價"
-        class="${cl(x.week_change_pct)}"
-      >
-        ${pct(x.week_change_pct)}
-      </td>
+  rows.innerHTML = arr
+    .map(
+      (x, i) => `
+        <tr
+          class="${
+            x.week_change_pct <
+            0
+              ? "negative-row"
+              : ""
+          }"
+        >
+          <td>
+            ${stock(x, i + 1)}
 
-      <td data-label="大戶比率">
-        ${Number(x.ratio || 0).toFixed(2)}%
-      </td>
+            <div class="mobile-meta">
+              大戶比
+              ${Number(
+                x.ratio || 0
+              ).toFixed(2)}%
+            </div>
+          </td>
 
-      <td data-label="增加" class="up">
-        +${Number(x.delta || 0).toFixed(2)} ppt
-      </td>
-    </tr>
-  `).join("");
+          <td
+            data-label="同期股價"
+            class="${cl(
+              x.week_change_pct
+            )}"
+          >
+            ${pct(
+              x.week_change_pct
+            )}
+          </td>
+
+          <td data-label="大戶比率">
+            ${Number(
+              x.ratio || 0
+            ).toFixed(2)}%
+          </td>
+
+          <td
+            data-label="增加"
+            class="up"
+          >
+            +${Number(
+              x.delta || 0
+            ).toFixed(2)} ppt
+          </td>
+        </tr>
+      `
+    )
+    .join("");
 }
 
 $$("[data-hm]").forEach(b => {
   b.onclick = () => {
-    $$("[data-hm]")
-      .forEach(x => x.classList.remove("active"));
+    $$("[data-hm]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
 
     b.classList.add("active");
 
-    st.hm = b.dataset.hm;
+    st.hm =
+      b.dataset.hm;
 
     holders();
   };
@@ -747,12 +1113,17 @@ $$("[data-hm]").forEach(b => {
 
 $$("[data-hk]").forEach(b => {
   b.onclick = () => {
-    $$("[data-hk]")
-      .forEach(x => x.classList.remove("active"));
+    $$("[data-hk]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
 
     b.classList.add("active");
 
-    st.hk = b.dataset.hk;
+    st.hk =
+      b.dataset.hk;
 
     holders();
   };
@@ -763,16 +1134,32 @@ $$("[data-hk]").forEach(b => {
 ----------------------------- */
 
 function ensureAiCriteria() {
-  if ($("#aiCriteria")) return;
+  if ($("#aiCriteria")) {
+    return;
+  }
 
-  const status = $("#aiStatus");
-  if (!status) return;
+  const status =
+    $("#aiStatus");
 
-  const box = document.createElement("div");
-  box.id = "aiCriteria";
-  box.className = "criteria";
+  if (!status) {
+    return;
+  }
 
-  status.insertAdjacentElement("afterend", box);
+  const box =
+    document.createElement(
+      "div"
+    );
+
+  box.id =
+    "aiCriteria";
+
+  box.className =
+    "criteria";
+
+  status.insertAdjacentElement(
+    "afterend",
+    box
+  );
 }
 
 function aiFactorLabel(key) {
@@ -783,7 +1170,8 @@ function aiFactorLabel(key) {
     holders: "大戶籌碼",
     volume_price: "量價",
     turnover: "當日成交熱度",
-    turnover_5d: "近5日成交熱度"
+    turnover_5d:
+      "近5日成交熱度"
   };
 
   return map[key] || key;
@@ -792,30 +1180,72 @@ function aiFactorLabel(key) {
 function renderAiCriteria(d) {
   ensureAiCriteria();
 
-  const box = $("#aiCriteria");
-  if (!box) return;
+  const box =
+    $("#aiCriteria");
 
-  const logic = d.logic || {};
-  const factors = logic.factors || [];
-  const dates = (logic.institutional_dates || []).join("、");
+  if (!box) {
+    return;
+  }
 
-  const factorHtml = factors.length
-    ? factors.map(x => `
-        <span class="criterion">
-          ${x.label || aiFactorLabel(x.key)}
-          ${Number(x.weight_pct || 0).toFixed(0)}%
-        </span>
-      `).join("")
-    : `
-        <span class="criterion">外資 20%</span>
-        <span class="criterion">投信 25%</span>
-        <span class="criterion">自營商 10%</span>
-        <span class="criterion">大戶籌碼 25%</span>
-        <span class="criterion">量價 5%</span>
-        <span class="criterion">成交熱度 15%</span>
-      `;
+  const logic =
+    d.logic || {};
 
-  const details = logic.details || [];
+  const factors =
+    logic.factors || [];
+
+  const dates = (
+    logic.institutional_dates ||
+    []
+  ).join("、");
+
+  const factorHtml =
+    factors.length
+      ? factors
+          .map(
+            x => `
+              <span class="criterion">
+                ${
+                  x.label ||
+                  aiFactorLabel(
+                    x.key
+                  )
+                }
+                ${Number(
+                  x.weight_pct ||
+                    0
+                ).toFixed(0)}%
+              </span>
+            `
+          )
+          .join("")
+      : `
+          <span class="criterion">
+            外資 20%
+          </span>
+
+          <span class="criterion">
+            投信 25%
+          </span>
+
+          <span class="criterion">
+            自營商 10%
+          </span>
+
+          <span class="criterion">
+            大戶籌碼 25%
+          </span>
+
+          <span class="criterion">
+            量價 5%
+          </span>
+
+          <span class="criterion">
+            成交熱度 15%
+          </span>
+        `;
+
+  const details =
+    logic.details || [];
 
   box.innerHTML = `
     <details>
@@ -832,7 +1262,12 @@ function renderAiCriteria(d) {
       ">
         <span>
           AI 選股邏輯｜
-          ${d.mode === "sunday" ? "週日版" : "交易日版"}
+          ${
+            d.mode ===
+            "sunday"
+              ? "週日版"
+              : "交易日版"
+          }
         </span>
 
         <span style="
@@ -849,9 +1284,14 @@ function renderAiCriteria(d) {
         padding-top:10px;
         border-top:1px solid var(--line)
       ">
-        <p style="margin-top:0">
+        <p style="
+          margin-top:0
+        ">
           股票池：
-          ${logic.universe || "自訂科技股"}
+          ${
+            logic.universe ||
+            "自訂科技股"
+          }
         </p>
 
         ${
@@ -865,7 +1305,12 @@ function renderAiCriteria(d) {
             : ""
         }
 
-        <div class="criteria-grid" style="margin-top:8px">
+        <div
+          class="criteria-grid"
+          style="
+            margin-top:8px
+          "
+        >
           ${factorHtml}
         </div>
 
@@ -880,11 +1325,22 @@ function renderAiCriteria(d) {
                 line-height:1.7;
                 color:var(--muted)
               ">
-                ${details.map((x, i) => `
-                  <div style="margin-bottom:4px">
-                    ${i + 1}. ${x}
-                  </div>
-                `).join("")}
+                ${details
+                  .map(
+                    (
+                      x,
+                      i
+                    ) => `
+                      <div style="
+                        margin-bottom:4px
+                      ">
+                        ${
+                          i + 1
+                        }. ${x}
+                      </div>
+                    `
+                  )
+                  .join("")}
               </div>
             `
             : ""
@@ -893,22 +1349,43 @@ function renderAiCriteria(d) {
     </details>
   `;
 
-  const detail = box.querySelector("details");
-  const hint = box.querySelector("summary span:last-child");
+  const detail =
+    box.querySelector(
+      "details"
+    );
 
-  if (detail && hint) {
-    detail.addEventListener("toggle", () => {
-      hint.textContent = detail.open
-        ? "收起 ▴"
-        : "點擊展開 ▾";
-    });
+  const hint =
+    box.querySelector(
+      "summary span:last-child"
+    );
+
+  if (
+    detail &&
+    hint
+  ) {
+    detail.addEventListener(
+      "toggle",
+      () => {
+        hint.textContent =
+          detail.open
+            ? "收起 ▴"
+            : "點擊展開 ▾";
+      }
+    );
   }
 }
 
 function aiFactorBreakdown(x) {
-  const scores = x.factor_scores || {};
-  const contributions = x.contributions || {};
-  const keys = Object.keys(contributions);
+  const scores =
+    x.factor_scores || {};
+
+  const contributions =
+    x.contributions || {};
+
+  const keys =
+    Object.keys(
+      contributions
+    );
 
   if (!keys.length) {
     return `
@@ -921,11 +1398,22 @@ function aiFactorBreakdown(x) {
   const rows = keys
     .map(key => ({
       key,
-      label: aiFactorLabel(key),
-      score: Number(scores[key] || 0),
-      contribution: Number(contributions[key] || 0)
+      label:
+        aiFactorLabel(key),
+      score: Number(
+        scores[key] || 0
+      ),
+      contribution:
+        Number(
+          contributions[key] ||
+            0
+        )
     }))
-    .sort((a, b) => b.contribution - a.contribution);
+    .sort(
+      (a, b) =>
+        b.contribution -
+        a.contribution
+    );
 
   return `
     <div style="
@@ -941,35 +1429,43 @@ function aiFactorBreakdown(x) {
         因子分數拆解
       </div>
 
-      ${rows.map(r => `
-        <div style="
-          display:grid;
-          grid-template-columns:minmax(88px,1fr) 64px 72px;
-          gap:8px;
-          align-items:center;
-          padding:6px 0;
-          border-bottom:1px solid var(--line);
-          font-size:11px
-        ">
-          <div>
-            ${r.label}
-          </div>
+      ${rows
+        .map(
+          r => `
+            <div style="
+              display:grid;
+              grid-template-columns:minmax(88px,1fr) 64px 72px;
+              gap:8px;
+              align-items:center;
+              padding:6px 0;
+              border-bottom:1px solid var(--line);
+              font-size:11px
+            ">
+              <div>
+                ${r.label}
+              </div>
 
-          <div style="
-            text-align:right;
-            color:var(--muted)
-          ">
-            ${r.score.toFixed(1)} 分
-          </div>
+              <div style="
+                text-align:right;
+                color:var(--muted)
+              ">
+                ${r.score.toFixed(
+                  1
+                )} 分
+              </div>
 
-          <div style="
-            text-align:right;
-            font-weight:800
-          ">
-            +${r.contribution.toFixed(1)}
-          </div>
-        </div>
-      `).join("")}
+              <div style="
+                text-align:right;
+                font-weight:800
+              ">
+                +${r.contribution.toFixed(
+                  1
+                )}
+              </div>
+            </div>
+          `
+        )
+        .join("")}
 
       <div style="
         margin-top:8px;
@@ -985,31 +1481,47 @@ function aiFactorBreakdown(x) {
 }
 
 async function ai() {
-  const d = await J("./data/ai_picks.json");
+  const d = await J(
+    "./data/ai_picks.json"
+  );
 
-  const status = $("#aiStatus");
+  const status =
+    $("#aiStatus");
 
   if (status) {
     status.className =
-      "status" + (d.complete ? "" : " warn");
+      "status" +
+      (
+        d.complete
+          ? ""
+          : " warn"
+      );
 
-    status.textContent = d.complete
-      ? `${
-          d.mode === "sunday"
-            ? "週日版"
-            : "交易日版"
-        } · 資料完整 · ${
-          d.logic?.version || ""
-        }`
-      : "部分來源尚未完整";
+    status.textContent =
+      d.complete
+        ? `${
+            d.mode ===
+            "sunday"
+              ? "週日版"
+              : "交易日版"
+          } · 資料完整 · ${
+            d.logic
+              ?.version || ""
+          }`
+        : "部分來源尚未完整";
   }
 
   renderAiCriteria(d);
 
-  const arr = d[st.aim] || [];
-  const box = $("#aiCards");
+  const arr =
+    d[st.aim] || [];
 
-  if (!box) return;
+  const box =
+    $("#aiCards");
+
+  if (!box) {
+    return;
+  }
 
   if (!arr.length) {
     box.innerHTML = `
@@ -1017,141 +1529,186 @@ async function ai() {
         目前沒有 AI 選股資料
       </div>
     `;
+
     return;
   }
 
-  box.innerHTML = arr.map((x, i) => `
-    <div class="card aicard">
-      <div class="aitop">
-        <div>
-          <div style="
-            font-size:10px;
-            color:var(--muted);
-            margin-bottom:5px
-          ">
-            #${i + 1}
-          </div>
-
-          ${stock(x)}
-
-          <div style="
-            font-size:10px;
-            margin-top:6px
-          "
-          class="${cl(x.change_pct)}">
-            今日 ${pct(x.change_pct)}
-          </div>
-        </div>
-
-        <div style="text-align:right">
-          <div class="score">
-            ${Number(x.score || 0).toFixed(1)}
-          </div>
-
-          <div style="
-            font-size:9px;
-            color:var(--muted);
-            margin-top:2px
-          ">
-            相對分數
-          </div>
-        </div>
-      </div>
-
-      <div class="tags">
-        ${(x.tags || []).map(t => `
-          <span class="tag">
-            ${t}
-          </span>
-        `).join("")}
-      </div>
-
-      <div class="reason">
-        <div style="
-          font-weight:800;
-          color:var(--ink);
-          margin-bottom:5px
-        ">
-          主要入選原因
-        </div>
-
-        <div>
-          ${x.reason || "—"}
-        </div>
-
-        ${aiFactorBreakdown(x)}
-
-        ${
-          x.raw
-            ? `
+  box.innerHTML = arr
+    .map(
+      (x, i) => `
+        <div class="card aicard">
+          <div class="aitop">
+            <div>
               <div style="
-                margin-top:10px;
-                padding-top:8px;
-                border-top:1px solid var(--line);
                 font-size:10px;
-                line-height:1.7;
-                color:var(--muted)
+                color:var(--muted);
+                margin-bottom:5px
               ">
-                ${
-                  x.raw.holder_delta_avg_ppt !== undefined
-                    ? `
-                      <div>
-                        大戶週增幅平均：
-                        ${Number(
-                          x.raw.holder_delta_avg_ppt || 0
-                        ).toFixed(2)} ppt
-                      </div>
-                    `
-                    : ""
-                }
-
-                ${
-                  x.raw.volume_ratio_5d !== undefined
-                    ? `
-                      <div>
-                        5日量比：
-                        ${Number(
-                          x.raw.volume_ratio_5d || 0
-                        ).toFixed(2)}x
-                      </div>
-                    `
-                    : ""
-                }
+                #${i + 1}
               </div>
-            `
-            : ""
-        }
 
-        <div style="
-          margin-top:10px;
-          font-size:10px;
-          line-height:1.6;
-          color:var(--muted)
-        ">
-          分數僅代表同市場追蹤股的相對強弱，
-          不代表未來上漲機率
+              ${stock(x)}
+
+              <div
+                style="
+                  font-size:10px;
+                  margin-top:6px
+                "
+                class="${cl(
+                  x.change_pct
+                )}"
+              >
+                今日
+                ${pct(
+                  x.change_pct
+                )}
+              </div>
+            </div>
+
+            <div style="
+              text-align:right
+            ">
+              <div class="score">
+                ${Number(
+                  x.score || 0
+                ).toFixed(1)}
+              </div>
+
+              <div style="
+                font-size:9px;
+                color:var(--muted);
+                margin-top:2px
+              ">
+                相對分數
+              </div>
+            </div>
+          </div>
+
+          <div class="tags">
+            ${(x.tags || [])
+              .map(
+                t => `
+                  <span class="tag">
+                    ${t}
+                  </span>
+                `
+              )
+              .join("")}
+          </div>
+
+          <div class="reason">
+            <div style="
+              font-weight:800;
+              color:var(--ink);
+              margin-bottom:5px
+            ">
+              主要入選原因
+            </div>
+
+            <div>
+              ${
+                x.reason || "—"
+              }
+            </div>
+
+            ${aiFactorBreakdown(
+              x
+            )}
+
+            ${
+              x.raw
+                ? `
+                  <div style="
+                    margin-top:10px;
+                    padding-top:8px;
+                    border-top:1px solid var(--line);
+                    font-size:10px;
+                    line-height:1.7;
+                    color:var(--muted)
+                  ">
+                    ${
+                      x.raw
+                        .holder_delta_avg_ppt !==
+                      undefined
+                        ? `
+                          <div>
+                            大戶週增幅平均：
+                            ${Number(
+                              x.raw
+                                .holder_delta_avg_ppt ||
+                                0
+                            ).toFixed(
+                              2
+                            )} ppt
+                          </div>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      x.raw
+                        .volume_ratio_5d !==
+                      undefined
+                        ? `
+                          <div>
+                            5日量比：
+                            ${Number(
+                              x.raw
+                                .volume_ratio_5d ||
+                                0
+                            ).toFixed(
+                              2
+                            )}x
+                          </div>
+                        `
+                        : ""
+                    }
+                  </div>
+                `
+                : ""
+            }
+
+            <div style="
+              margin-top:10px;
+              font-size:10px;
+              line-height:1.6;
+              color:var(--muted)
+            ">
+              分數僅代表同市場追蹤股的相對強弱，
+              不代表未來上漲機率
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  `).join("");
+      `
+    )
+    .join("");
 
-  $$(".aicard").forEach(card => {
-    card.onclick = () => {
-      card.classList.toggle("open");
-    };
-  });
+  $$(".aicard").forEach(
+    card => {
+      card.onclick = () => {
+        card.classList.toggle(
+          "open"
+        );
+      };
+    }
+  );
 }
 
 $$("[data-aim]").forEach(b => {
   b.onclick = () => {
-    $$("[data-aim]")
-      .forEach(x =>
-        x.classList.remove("active")
-      );
+    $$("[data-aim]").forEach(
+      x =>
+        x.classList.remove(
+          "active"
+        )
+    );
 
-    b.classList.add("active");
+    b.classList.add(
+      "active"
+    );
 
-    st.aim = b.dataset.aim;
+    st.aim =
+      b.dataset.aim;
 
     ai();
   };
@@ -1162,84 +1719,173 @@ $$("[data-aim]").forEach(b => {
 ----------------------------- */
 
 function heatDetail(sec) {
-  const stocks = [...(sec.stocks || [])]
-    .sort(
-      (a, b) =>
-        (b.change_pct ?? -999) -
-        (a.change_pct ?? -999)
-    );
+  const stocks = [
+    ...(sec.stocks || [])
+  ].sort(
+    (a, b) => {
+      const av =
+        a.change_pct === null ||
+        a.change_pct === undefined
+          ? -999
+          : Number(
+              a.change_pct
+            );
+
+      const bv =
+        b.change_pct === null ||
+        b.change_pct === undefined
+          ? -999
+          : Number(
+              b.change_pct
+            );
+
+      return bv - av;
+    }
+  );
 
   return `
     <div class="heat-detail">
       <div class="heat-detail-head">
         <b>
           ${sec.name}
-          <span class="${cl(sec.change_pct)}">
-            ${pct(sec.change_pct)}
+
+          <span
+            class="${cl(
+              sec.change_pct
+            )}"
+          >
+            ${pct(
+              sec.change_pct
+            )}
           </span>
         </b>
 
         <span>
-          ${stocks.length} 檔｜依漲跌幅排序
+          ${
+            stocks.length
+          } 檔｜依漲跌幅排序
         </span>
       </div>
 
       <div class="heat-stock-list">
-        ${stocks.map(x => `
-          <div class="heat-stock">
-            <div>
-              <span class="n">
-                ${displayName(x)}
-              </span>
+        ${stocks
+          .map(
+            x => `
+              <div class="heat-stock">
+                <div>
+                  <span class="n">
+                    ${displayName(
+                      x
+                    )}
+                  </span>
 
-              <span class="t">
-                ${x.ticker}
-              </span>
-            </div>
+                  <span class="t">
+                    ${x.ticker}
+                  </span>
+                </div>
 
-            <span class="v ${cl(x.change_pct)}">
-              ${pct(x.change_pct)}
-            </span>
-          </div>
-        `).join("")}
+                <span
+                  class="v ${cl(
+                    x.change_pct
+                  )}"
+                >
+                  ${pct(
+                    x.change_pct
+                  )}
+                </span>
+              </div>
+            `
+          )
+          .join("")}
       </div>
     </div>
   `;
 }
 
 async function heat() {
-  const d = await J("./data/heatmap.json");
+  const d = await J(
+    "./data/heatmap.json"
+  );
 
   cache.heat = d;
 
   if ($("#heatTime")) {
     $("#heatTime").textContent =
-      d.updated_at || "尚無資料";
+      d.updated_at ||
+      "尚無資料";
   }
 
-  const box = $("#heatGrid");
+  const box =
+    $("#heatGrid");
 
-  if (!box) return;
+  if (!box) {
+    return;
+  }
 
   /*
-    手機版展開族群明細時，原本 grid-auto-rows 固定 100px，
-    會讓明細內容溢出並與下一排族群卡片重疊
-    展開時改成自動列高，收合後恢復原 CSS
+    手機版展開族群明細時，
+    改成自動列高，避免與下方卡片重疊
   */
   const mobileHeat =
-    window.matchMedia("(max-width: 720px)").matches;
+    window.matchMedia(
+      "(max-width: 720px)"
+    ).matches;
 
-  if (mobileHeat && st.openSector) {
-    box.style.gridAutoRows = "auto";
+  if (
+    mobileHeat &&
+    st.openSector
+  ) {
+    box.style.gridAutoRows =
+      "auto";
   } else {
-    box.style.gridAutoRows = "";
+    box.style.gridAutoRows =
+      "";
   }
 
-  const sectors = d.sectors || [];
+  /*
+    族群排序：
+    漲幅最高 → 最低
+    缺值排最後
+  */
+  const sectors = [
+    ...(d.sectors || [])
+  ].sort((a, b) => {
+    const av =
+      a.change_pct === null ||
+      a.change_pct === undefined ||
+      Number.isNaN(
+        Number(
+          a.change_pct
+        )
+      )
+        ? -999
+        : Number(
+            a.change_pct
+          );
+
+    const bv =
+      b.change_pct === null ||
+      b.change_pct === undefined ||
+      Number.isNaN(
+        Number(
+          b.change_pct
+        )
+      )
+        ? -999
+        : Number(
+            b.change_pct
+          );
+
+    return bv - av;
+  });
 
   if (!sectors.length) {
-    box.innerHTML =
-      `<div class="empty">目前沒有熱力圖資料</div>`;
+    box.innerHTML = `
+      <div class="empty">
+        目前沒有熱力圖資料
+      </div>
+    `;
+
     return;
   }
 
@@ -1256,56 +1902,84 @@ async function heat() {
             : i % 3 === 0
             ? "s4"
             : "s3"
-        } ${heatClass(x.change_pct)}"
+        } ${heatClass(
+          x.change_pct
+        )}"
         data-sec="${x.name}"
         style="min-height:100px"
       >
-        <b>${x.name}</b>
+        <b>
+          ${x.name}
+        </b>
 
         <strong>
-          ${pct(x.change_pct)}
+          ${pct(
+            x.change_pct
+          )}
         </strong>
 
         <small>
           ${
             x.complete
-              ? `${x.stocks?.length || 0}檔`
-              : `${x.stocks?.length || 0}檔 · 市值待補${x.missing?.length || 0}`
+              ? `${
+                  x.stocks
+                    ?.length || 0
+                }檔`
+              : `${
+                  x.stocks
+                    ?.length || 0
+                }檔 · 市值待補${
+                  x.missing
+                    ?.length || 0
+                }`
           }
         </small>
       </button>
     `;
 
-    if (st.openSector === x.name) {
-      html += heatDetail(x);
+    if (
+      st.openSector ===
+      x.name
+    ) {
+      html +=
+        heatDetail(x);
     }
   });
 
   box.innerHTML = html;
 
-  $$("[data-sec]").forEach(b => {
-    b.onclick = () => {
-      st.openSector =
-        st.openSector === b.dataset.sec
-          ? null
-          : b.dataset.sec;
+  $$("[data-sec]").forEach(
+    b => {
+      b.onclick = () => {
+        st.openSector =
+          st.openSector ===
+          b.dataset.sec
+            ? null
+            : b.dataset.sec;
 
-      heat();
-    };
-  });
+        heat();
+      };
+    }
+  );
 
   const oldSection =
-    $("#heatTitle")?.closest(".section");
+    $("#heatTitle")?.closest(
+      ".section"
+    );
 
   if (oldSection) {
-    oldSection.style.display = "none";
+    oldSection.style.display =
+      "none";
   }
 
   const oldTable =
-    $("#heatRows")?.closest(".card");
+    $("#heatRows")?.closest(
+      ".card"
+    );
 
   if (oldTable) {
-    oldTable.style.display = "none";
+    oldTable.style.display =
+      "none";
   }
 }
 
@@ -1314,7 +1988,9 @@ async function heat() {
 ----------------------------- */
 
 async function reports() {
-  const d = await J("./data/reports.json");
+  const d = await J(
+    "./data/reports.json"
+  );
 
   const map = {
     upgrade: "上調",
@@ -1323,11 +1999,17 @@ async function reports() {
     maintain: "維持"
   };
 
-  const box = $("#reportList");
+  const box =
+    $("#reportList");
 
-  if (!box) return;
+  if (!box) {
+    return;
+  }
 
-  if (!(d.items || []).length) {
+  if (
+    !(d.items || [])
+      .length
+  ) {
     box.innerHTML = `
       <div class="report">
         <div class="rmain">
@@ -1345,35 +2027,69 @@ async function reports() {
     return;
   }
 
-  box.innerHTML = d.items.map(r => `
-    <div class="report">
-      <div class="broker">
-        ${r.broker || ""}
-      </div>
+  box.innerHTML = d.items
+    .map(
+      r => `
+        <div class="report">
+          <div class="broker">
+            ${
+              r.broker ||
+              ""
+            }
+          </div>
 
-      <div class="rmain">
-        <div class="rtitle">
-          ${r.broker || ""}
-          ${map[r.action] || r.action || ""}
-          ${r.name || ""}
-          ${r.ticker || ""}
+          <div class="rmain">
+            <div class="rtitle">
+              ${
+                r.broker ||
+                ""
+              }
+              ${
+                map[
+                  r.action
+                ] ||
+                r.action ||
+                ""
+              }
+              ${
+                r.name ||
+                ""
+              }
+              ${
+                r.ticker ||
+                ""
+              }
+            </div>
+
+            <div class="rmeta">
+              ${
+                r.summary ||
+                ""
+              }
+
+              ${
+                r.date
+                  ? ` · ${
+                      r.date
+                    }`
+                  : ""
+              }
+            </div>
+          </div>
+
+          <div class="tp">
+            ${
+              r.target_price
+                ? `目標價 ${
+                    r.target_price
+                  }`
+                : ""
+            }
+          </div>
         </div>
-
-        <div class="rmeta">
-          ${r.summary || ""}
-          ${r.date ? ` · ${r.date}` : ""}
-        </div>
-      </div>
-
-      <div class="tp">
-        ${
-          r.target_price
-            ? `目標價 ${r.target_price}`
-            : ""
-        }
-      </div>
-    </div>
-  `).join("");
+      `
+    )
+    .join("");
 }
 
 /* -----------------------------
