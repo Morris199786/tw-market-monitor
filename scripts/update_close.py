@@ -1,66 +1,11 @@
 from sources import *
+from tech_universe import tech_tickers
 from datetime import timedelta
 
 
 MIN_TWSE_ROWS = 500
 MIN_TPEX_ROWS = 300
 LOOKBACK_CALENDAR_DAYS = 10
-
-TECH_INDUSTRY_CODES = {
-    "24",  # 半導體
-    "25",  # 電腦及週邊設備
-    "26",  # 光電
-    "27",  # 通信網路
-    "28",  # 電子零組件
-    "29",  # 電子通路
-    "30",  # 資訊服務
-    "31",  # 其他電子
-    "32",  # 數位雲端
-}
-
-
-def tech_tickers(master):
-    """
-    突然放量／進階篩選股票池 = 全台股科技普通股，
-    不再限制為 sectors.json 19 個自訂族群。
-    """
-    cfg = load_json(
-        ROOT / "config.json",
-        {}
-    )
-
-    tech_names = {
-        str(x).strip()
-        for x in cfg.get(
-            "tech_industries",
-            []
-        )
-    }
-
-    out = set()
-
-    for t, m in master.items():
-        if not ordinary_ticker(t):
-            continue
-
-        if m.get("market") not in (
-            "twse",
-            "tpex"
-        ):
-            continue
-
-        industry = str(
-            m.get("industry")
-            or ""
-        ).strip()
-
-        if (
-            industry in TECH_INDUSTRY_CODES
-            or industry in tech_names
-        ):
-            out.add(str(t))
-
-    return out
 
 
 def history_files():

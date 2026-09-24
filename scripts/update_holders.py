@@ -1,22 +1,8 @@
 from sources import *
+from tech_universe import tech_tickers
 import csv
 import io
 from datetime import datetime, timedelta
-
-
-# 台灣交易所產業代碼中，24~32 為主要電子／科技產業。
-# 同時保留 config.json 的中文產業名稱判斷，避免來源未來改成文字名稱。
-TECH_INDUSTRY_CODES = {
-    "24",  # 半導體
-    "25",  # 電腦及週邊設備
-    "26",  # 光電
-    "27",  # 通信網路
-    "28",  # 電子零組件
-    "29",  # 電子通路
-    "30",  # 資訊服務
-    "31",  # 其他電子
-    "32",  # 數位雲端
-}
 
 
 def field(r, names):
@@ -210,50 +196,6 @@ def fetch_archive_before(date):
     return None
 
 
-def tech_tickers(master):
-    """
-    大戶籌碼股票池 = 全台股科技普通股，
-    不再限制為 sectors.json 的 19 個自訂族群。
-    """
-    cfg = load_json(
-        ROOT / "config.json",
-        {}
-    )
-
-    tech_names = {
-        str(x).strip()
-        for x in cfg.get(
-            "tech_industries",
-            []
-        )
-    }
-
-    out = set()
-
-    for t, m in master.items():
-        if not ordinary_ticker(t):
-            continue
-
-        if m.get("market") not in (
-            "twse",
-            "tpex"
-        ):
-            continue
-
-        industry = str(
-            m.get("industry")
-            or ""
-        ).strip()
-
-        if (
-            industry in TECH_INDUSTRY_CODES
-            or industry in tech_names
-        ):
-            out.add(str(t))
-
-    return out
-
-
 def load_display_names():
     """
     全站顯示名稱優先使用 sectors.json 的市場簡稱。
@@ -330,7 +272,7 @@ def main():
 
     latest = aggregate(rows)
 
-    # 原始 TDCC 快照仍保留全市場，供 AI 全市場大戶因子使用。
+    # 原始 TDCC 快照仍保留全市場，供 AI 科技股股票池計算大戶因子使用。
     save_json(
         ROOT
         / f"data/history/holders/{date}.json",

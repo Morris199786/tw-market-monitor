@@ -1,4 +1,5 @@
 from sources import *
+from tech_universe import tech_tickers
 
 
 FACTOR_LABELS = {
@@ -14,17 +15,26 @@ FACTOR_LABELS = {
 
 def all_candidates(master, market):
     """
-    AI 選股股票池 = 全台股上市／上櫃普通股。
+    AI 選股股票池 = 全台股科技普通股。
 
-    master.json 本身來自上市／上櫃公司基本資料，搭配 ordinary_ticker()
-    可排除 ETF、ETN、權證等非普通公司股票。另要求當日 market_latest
-    有有效行情，避免停牌／缺行情股票進入當日排名。
+    科技股定義統一使用 tech_universe.py：
+      ① 官方科技產業
+      ② 19 個自訂科技族群成分股
+      ③ 跨產業科技供應鏈白名單
+
+    同時要求 market_latest 有有效行情，
+    避免停牌／缺行情股票進入當日排名。
     """
+    tech = tech_tickers(
+        master
+    )
+
     return {
         str(t): m
         for t, m in master.items()
         if (
-            ordinary_ticker(t)
+            str(t) in tech
+            and ordinary_ticker(t)
             and m.get("market") in ("twse", "tpex")
             and str(t) in market
         )
@@ -34,7 +44,7 @@ def all_candidates(master, market):
 def display_names(master):
     """
     全市場顯示名稱以 master.json 為底，
-    sectors.json 的自訂簡稱只作覆蓋，不再限制股票池。
+    sectors.json 的自訂簡稱只作覆蓋，不限制股票池。
     """
     out = {}
 
@@ -121,8 +131,7 @@ def hist_inst_last5():
 
 def holder_metrics_all(master):
     """
-    AI 的大戶因子直接從 TDCC 全市場原始歷史快照計算，
-    不再依賴 holders.json 的 Top30 榜單。
+    AI 的大戶因子直接從 TDCC 原始歷史快照計算。
 
     每檔股票：
       400張以上持股比率週增幅 + 1000張以上持股比率週增幅
@@ -193,7 +202,7 @@ def holder_metrics_all(master):
 def market_history_last6(latest_date=None):
     """
     取最近 6 個有效市場快照：
-    今日 + 前 5 個交易日，用來計算全市場 5 日量比。
+    今日 + 前 5 個交易日，用來計算科技股 5 日量比。
     """
     files = sorted(
         (
@@ -218,7 +227,7 @@ def market_history_last6(latest_date=None):
 
 def volume_ratio_5d_all(candidates, latest_date=None):
     """
-    全市場逐檔：
+    科技股逐檔：
     今日成交量 / 前 5 個交易日平均成交量。
     """
     hist = market_history_last6(
@@ -331,32 +340,38 @@ def logic_payload(
             }
         )
 
+    stock_pool = (
+        "股票池：全台股科技普通股。科技股＝官方科技產業"
+        "＋19個自訂科技族群成分股"
+        "＋跨產業科技供應鏈白名單；排除 ETF、ETN、權證等非普通公司股票"
+    )
+
     if mode == "sunday":
         details = [
-            "股票池：全台股上市／上櫃普通股，排除 ETF、ETN、權證等非普通公司股票",
-            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做全市場百分位排名",
-            "大戶籌碼：直接使用 TDCC 全市場最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再做同市場百分位排名",
-            "近5日成交熱度：最近 5 個交易日成交金額加總，再做同市場全市場百分位排名",
+            stock_pool,
+            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃科技股股票池各自做百分位排名",
+            "大戶籌碼：使用 TDCC 最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再於同市場科技股股票池做百分位排名",
+            "近5日成交熱度：最近 5 個交易日成交金額加總，再於同市場科技股股票池做百分位排名",
             "總分：各因子 0–100 分乘以權重後加總",
-            "排名：上市、上櫃分開排名，各取前 20 名",
-            "分數代表同市場全體股票的相對強弱，不代表未來上漲機率"
+            "排名：上市、上櫃科技股分開排名，各取前 20 名",
+            "分數代表同市場科技股股票池的相對強弱，不代表未來上漲機率"
         ]
     else:
         details = [
-            "股票池：全台股上市／上櫃普通股，排除 ETF、ETN、權證等非普通公司股票",
-            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做全市場百分位排名",
-            "大戶籌碼：直接使用 TDCC 全市場最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再做同市場百分位排名",
-            "量價：全市場逐檔以今日成交量／前 5 個交易日均量計算；股價上漲才計分，1.0x 以下 0 分、2.0x 以上 100 分，中間線性換算",
-            "當日成交熱度：當日成交金額在同市場全體普通股中的百分位排名",
+            stock_pool,
+            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃科技股股票池各自做百分位排名",
+            "大戶籌碼：使用 TDCC 最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再於同市場科技股股票池做百分位排名",
+            "量價：科技股逐檔以今日成交量／前 5 個交易日均量計算；股價上漲才計分，1.0x 以下 0 分、2.0x 以上 100 分，中間線性換算",
+            "當日成交熱度：當日成交金額在同市場科技股股票池中的百分位排名",
             "總分：各因子 0–100 分乘以權重後加總",
-            "排名：上市、上櫃分開排名，各取前 20 名",
-            "分數代表同市場全體股票的相對強弱，不代表未來上漲機率"
+            "排名：上市、上櫃科技股分開排名，各取前 20 名",
+            "分數代表同市場科技股股票池的相對強弱，不代表未來上漲機率"
         ]
 
     return {
-        "version": "2026-09-24-v3-full-market",
+        "version": "2026-09-24-v4-tech-universe",
         "mode": mode,
-        "universe": "全台股上市／上櫃普通股",
+        "universe": "全台股科技普通股",
         "lookback_days": 5,
         "institutional_dates": dates_used,
         "factors": factors,
@@ -404,9 +419,9 @@ def main():
         market
     )
 
-    if len(candidates) < 800:
+    if len(candidates) < 100:
         raise RuntimeError(
-            f"AI full-market universe looks incomplete: {len(candidates)}"
+            f"AI tech universe looks incomplete: {len(candidates)}"
         )
 
     hist = hist_inst_last5()
@@ -543,6 +558,7 @@ def main():
         ),
         "mode": mode,
         "complete": True,
+        "universe": "全台股科技普通股",
         "universe_count": {
             "twse": sum(
                 1
@@ -872,13 +888,21 @@ def main():
             )
         ]
 
+    top_n = cfg.get(
+        "top_n",
+        {}
+    ).get(
+        "ai",
+        20
+    )
+
     for mk in (
         "twse",
         "tpex"
     ):
-        if len(out[mk]) != 20:
+        if len(out[mk]) != top_n:
             raise RuntimeError(
-                f"AI {mk} expected 20 picks, got {len(out[mk])}"
+                f"AI {mk} expected {top_n} picks, got {len(out[mk])}"
             )
 
         for x in out[mk]:
