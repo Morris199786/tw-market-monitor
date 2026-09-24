@@ -1,37 +1,64 @@
 name: Weekly holders
+
 on:
   schedule:
     # 台灣週六 15:00 = UTC 07:00
     - cron: "0 7 * * 6"
+
+    # 台灣週六 15:20 = UTC 07:20
+    # 補跑一次，避免 TDCC 資料延遲
+    - cron: "20 7 * * 6"
+
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: weekly-holders
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - run: python scripts/update_master.py
+      - name: Update master
+        run: python scripts/update_master.py
 
-      - run: python scripts/update_holders.py
+      - name: Update holders
+        run: python scripts/update_holders.py
 
-      - run: python scripts/update_ai.py
+      - name: Update AI picks
+        run: python scripts/update_ai.py
 
-      - name: Commit
+      - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add data
-          if git diff --cached --quiet; then exit 0; fi
+
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+
           git commit -m "data: weekly holders update"
+
           git pull --rebase
+
           git push
