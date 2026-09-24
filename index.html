@@ -5,280 +5,329 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f1722">
 <title>台股市場監測</title>
-<link rel="stylesheet" href="./assets/styles.css">
+<link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
 </head>
 
 <body>
 
 <header>
-<div class="head">
+  <div class="head">
 
-  <div class="brand">
-    <b>台股市場監測</b>
-    <small>TAIWAN MARKET MONITOR</small>
+    <div class="brand">
+      <b>台股市場監測</b>
+      <small>TAIWAN MARKET MONITOR</small>
+    </div>
+
+    <nav>
+      <button class="nav active" data-p="home">總覽</button>
+      <button class="nav" data-p="flows">籌碼日報</button>
+      <button class="nav" data-p="volume">突然放量</button>
+      <button class="nav" data-p="turnover">成交排行</button>
+      <button class="nav" data-p="holders">大戶籌碼</button>
+      <button class="nav" data-p="ai">AI選股</button>
+      <button class="nav" data-p="heat">市場熱力圖</button>
+      <button class="nav" data-p="reports">券商報告</button>
+    </nav>
+
+    <div id="clock" class="clock"></div>
+    <div class="header-actions"></div>
+
+    <select id="mobileNav" aria-label="切換分頁">
+      <option value="home">總覽</option>
+      <option value="flows">籌碼日報</option>
+      <option value="volume">突然放量</option>
+      <option value="turnover">成交排行</option>
+      <option value="holders">大戶籌碼</option>
+      <option value="ai">AI選股</option>
+      <option value="heat">市場熱力圖</option>
+      <option value="reports">券商報告</option>
+    </select>
+
   </div>
-
-  <nav>
-    <button class="nav active" data-p="home">總覽</button>
-    <button class="nav" data-p="flows">籌碼日報</button>
-    <button class="nav" data-p="volume">突然放量</button>
-    <button class="nav" data-p="turnover">成交排行</button>
-    <button class="nav" data-p="holders">大戶籌碼</button>
-    <button class="nav" data-p="ai">AI選股</button>
-    <button class="nav" data-p="heat">市場熱力圖</button>
-    <button class="nav" data-p="reports">券商報告</button>
-  </nav>
-
-  <div id="clock" class="clock"></div>
-
-  <select id="mobileNav">
-    <option value="home">總覽</option>
-    <option value="flows">籌碼日報</option>
-    <option value="volume">突然放量</option>
-    <option value="turnover">成交排行</option>
-    <option value="holders">大戶籌碼</option>
-    <option value="ai">AI選股</option>
-    <option value="heat">市場熱力圖</option>
-    <option value="reports">券商報告</option>
-  </select>
-
-</div>
 </header>
 
 <main>
 
-<section id="home" class="page active">
-<div class="hero">
-  <div>
-    <div class="kicker">MARKET DASHBOARD</div>
-    <h1>台股市場監測</h1>
-    <p>法人籌碼、量價、大戶、AI 選股與 19 個科技族群熱力圖</p>
-  </div>
-  <div class="badges">
-    <span class="badge live">GitHub 自動更新</span>
-  </div>
-</div>
-<div id="homeCards" class="grid four"></div>
-<div class="section">
-  <h2>目前強勢族群</h2>
-  <span>市值加權</span>
-</div>
-<div id="topSectors" class="grid three"></div>
-</section>
+  <section id="home" class="page active">
 
-<section id="flows" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">INSTITUTIONAL FLOW</div>
-    <h1>籌碼日報</h1>
-    <p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p>
-  </div>
-  <span id="flowDate" class="badge"></span>
-</div>
+    <div class="hero">
+      <div>
+        <div class="kicker">MARKET DASHBOARD</div>
+        <h1>台股市場監測</h1>
+        <p>法人籌碼、量價、大戶、AI 選股與 19 個科技族群熱力圖</p>
+      </div>
 
-<div class="toolbar">
-  <div class="tabs">
-    <button class="tab active" data-period="1d">當天</button>
-    <button class="tab" data-period="3d">近三日</button>
-    <button class="tab" data-period="5d">近五日</button>
-  </div>
-  <div class="tabs">
-    <button class="tab active" data-inst="foreign">外資</button>
-    <button class="tab" data-inst="trust">投信</button>
-    <button class="tab" data-inst="dealer">自營商</button>
-    <button class="tab" data-inst="total">三大法人合計</button>
-  </div>
-  <div class="tabs">
-    <button class="tab active" data-market="twse">上市</button>
-    <button class="tab" data-market="tpex">上櫃</button>
-  </div>
-</div>
+      <div class="badges">
+        <span class="badge live">GitHub 自動更新</span>
+      </div>
+    </div>
 
-<div id="flowStatus" class="status"></div>
-<div class="grid two">
-  <div class="card tablewrap">
-    <table>
-      <thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
-      <tbody id="buyRows"></tbody>
-    </table>
-  </div>
-  <div class="card tablewrap">
-    <table>
-      <thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
-      <tbody id="sellRows"></tbody>
-    </table>
-  </div>
-</div>
-</section>
+    <div id="homeCards" class="grid four"></div>
 
-<section id="volume" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">VOLUME SURGE</div>
-    <h1>科技股突然放量</h1>
-    <p>今日成交量 ÷ 前五個交易日平均量</p>
-  </div>
-  <span id="volDate" class="badge"></span>
-</div>
-<div class="toolbar">
-  <button id="advanced" class="tab">進階篩選 ＋</button>
-</div>
-<div id="volStatus" class="status"></div>
-<div class="card tablewrap">
-  <table>
-    <thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead>
-    <tbody id="volRows"></tbody>
-  </table>
-</div>
-</section>
+    <div class="section">
+      <h2>目前強勢族群</h2>
+      <span>市值加權</span>
+    </div>
 
-<section id="turnover" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">TURNOVER</div>
-    <h1>成交金額 TOP30</h1>
-    <p>採官方每日行情實際成交金額</p>
-  </div>
-  <span id="turnDate" class="badge"></span>
-</div>
-<div class="toolbar">
-  <div class="tabs">
-    <button class="tab active" data-turn="twse">上市</button>
-    <button class="tab" data-turn="tpex">上櫃</button>
-  </div>
-</div>
-<div class="card tablewrap">
-  <table>
-    <thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead>
-    <tbody id="turnRows"></tbody>
-  </table>
-</div>
-</section>
+    <div id="topSectors" class="grid three"></div>
 
-<section id="holders" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">LARGE HOLDERS</div>
-    <h1>本週大戶籌碼集中</h1>
-    <p>400張以上與千張以上持股比例增加幅度</p>
-  </div>
-  <span id="holderDate" class="badge">週六 15:00</span>
-</div>
-<div class="toolbar">
-  <div class="tabs">
-    <button class="tab active" data-hm="twse">上市</button>
-    <button class="tab" data-hm="tpex">上櫃</button>
-  </div>
-  <div class="tabs">
-    <button class="tab active" data-hk="400">400張大戶增加</button>
-    <button class="tab" data-hk="1000">千張大戶增加</button>
-  </div>
-</div>
-<div id="holderStatus" class="status"></div>
-<div class="card tablewrap">
-  <table>
-    <thead><tr><th>排行／股票</th><th>同期股價</th><th>大戶比率</th><th>增加</th></tr></thead>
-    <tbody id="holderRows"></tbody>
-  </table>
-</div>
-</section>
+  </section>
 
-<section id="ai" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">AI PICKS</div>
-    <h1>AI選股</h1>
-    <p>固定量化權重，分數是同市場相對強弱，不是上漲機率</p>
-  </div>
-  <span class="badge">每天 18:00</span>
-</div>
-<div class="toolbar">
-  <div class="tabs">
-    <button class="tab active" data-aim="twse">上市</button>
-    <button class="tab" data-aim="tpex">上櫃</button>
-  </div>
-</div>
-<div id="aiStatus" class="status"></div>
-<div id="aiCards" class="grid three"></div>
-</section>
 
-<section id="heat" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">SECTOR HEATMAP</div>
-    <h1>市場熱力圖</h1>
-    <p>19 個自訂族群｜即時市值加權｜紅漲綠跌</p>
-  </div>
-  <div class="badges">
-    <span class="badge live">每 5 分鐘</span>
-    <span id="heatTime" class="badge"></span>
-  </div>
-</div>
-<div id="heatGrid" class="heatgrid"></div>
-<div class="section">
-  <h2 id="heatTitle">族群明細</h2>
-  <span>依漲跌幅排序</span>
-</div>
-<div class="card tablewrap">
-  <table>
-    <thead><tr><th>股票</th><th>現價</th><th>漲跌</th><th>市值權重</th></tr></thead>
-    <tbody id="heatRows"></tbody>
-  </table>
-</div>
-</section>
+  <section id="flows" class="page">
 
-<section id="reports" class="page">
-<div class="hero">
-  <div>
-    <div class="kicker">BROKER RESEARCH</div>
-    <h1>券商報告</h1>
-    <p>上調／下調／初評／維持｜點擊查看摘要</p>
-  </div>
-  <span class="badge">收到報告後更新</span>
-</div>
-<div id="reportList" class="card"></div>
-</section>
+    <div class="hero">
+      <div>
+        <div class="kicker">INSTITUTIONAL FLOW</div>
+        <h1>籌碼日報</h1>
+        <p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p>
+      </div>
+
+      <span id="flowDate" class="badge"></span>
+    </div>
+
+    <div class="toolbar">
+
+      <div class="tabs">
+        <button class="tab active" data-period="1d">當天</button>
+        <button class="tab" data-period="3d">近三日</button>
+        <button class="tab" data-period="5d">近五日</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-inst="foreign">外資</button>
+        <button class="tab" data-inst="trust">投信</button>
+        <button class="tab" data-inst="dealer">自營商</button>
+        <button class="tab" data-inst="total">三大法人合計</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-market="twse">上市</button>
+        <button class="tab" data-market="tpex">上櫃</button>
+      </div>
+
+    </div>
+
+    <div id="flowStatus" class="status"></div>
+
+    <div class="grid two">
+
+      <div class="card tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>買超 TOP20</th>
+              <th>估算金額</th>
+              <th>張數</th>
+              <th>漲跌</th>
+            </tr>
+          </thead>
+          <tbody id="buyRows"></tbody>
+        </table>
+      </div>
+
+      <div class="card tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>賣超 TOP20</th>
+              <th>估算金額</th>
+              <th>張數</th>
+              <th>漲跌</th>
+            </tr>
+          </thead>
+          <tbody id="sellRows"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <section id="volume" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">VOLUME SURGE</div>
+        <h1>科技股突然放量</h1>
+        <p>今日成交量 ÷ 前五個交易日平均量</p>
+      </div>
+
+      <span id="volDate" class="badge"></span>
+    </div>
+
+    <div class="toolbar">
+      <button id="advanced" class="tab">進階篩選 ＋</button>
+    </div>
+
+    <div id="volStatus" class="status"></div>
+
+    <div class="card tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>排行／股票</th>
+            <th>漲跌</th>
+            <th>今日量</th>
+            <th>5日量比</th>
+            <th>進階條件</th>
+          </tr>
+        </thead>
+        <tbody id="volRows"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+
+  <section id="turnover" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">TURNOVER</div>
+        <h1>成交金額 TOP30</h1>
+        <p>採官方每日行情實際成交金額</p>
+      </div>
+
+      <span id="turnDate" class="badge"></span>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-turn="twse">上市</button>
+        <button class="tab" data-turn="tpex">上櫃</button>
+      </div>
+    </div>
+
+    <div class="card tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>排行／股票</th>
+            <th>成交金額</th>
+            <th>成交張數</th>
+            <th>收盤</th>
+            <th>漲跌</th>
+          </tr>
+        </thead>
+        <tbody id="turnRows"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+
+  <section id="holders" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">LARGE HOLDERS</div>
+        <h1>本週大戶籌碼集中</h1>
+        <p>400張以上與千張以上持股比例增加幅度</p>
+      </div>
+
+      <span id="holderDate" class="badge">週六 15:00</span>
+    </div>
+
+    <div class="toolbar">
+
+      <div class="tabs">
+        <button class="tab active" data-hm="twse">上市</button>
+        <button class="tab" data-hm="tpex">上櫃</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-hk="400">400張大戶增加</button>
+        <button class="tab" data-hk="1000">千張大戶增加</button>
+      </div>
+
+    </div>
+
+    <div id="holderStatus" class="status"></div>
+
+    <div class="card tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>排行／股票</th>
+            <th>同期股價</th>
+            <th>大戶比率</th>
+            <th>增加</th>
+          </tr>
+        </thead>
+        <tbody id="holderRows"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+
+  <section id="ai" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">AI PICKS</div>
+        <h1>AI選股</h1>
+        <p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p>
+      </div>
+
+      <span class="badge">每天 18:00</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-aim="twse">上市</button>
+        <button class="tab" data-aim="tpex">上櫃</button>
+      </div>
+    </div>
+
+    <div id="aiStatus" class="status"></div>
+
+    <div id="aiCards" class="grid three"></div>
+
+  </section>
+
+
+  <section id="heat" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">SECTOR HEATMAP</div>
+        <h1>市場熱力圖</h1>
+        <p>19 個自訂族群｜市值加權｜紅漲綠跌｜點擊族群直接展開個股</p>
+      </div>
+
+      <div class="badges">
+        <span class="badge live">盤中每 5 分鐘</span>
+        <span id="heatTime" class="badge"></span>
+      </div>
+    </div>
+
+    <div id="heatGrid" class="heatgrid"></div>
+
+  </section>
+
+
+  <section id="reports" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">BROKER RESEARCH</div>
+        <h1>券商報告</h1>
+        <p>上調／下調／初評／維持｜收到報告後持續整理</p>
+      </div>
+
+      <span class="badge">收到報告後更新</span>
+    </div>
+
+    <div id="reportList" class="card"></div>
+
+  </section>
 
 </main>
 
-<script>
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-const st={period:"1d",inst:"foreign",market:"twse",turn:"twse",hm:"twse",hk:"400",aim:"twse",advanced:false};
-const cache={};
-async function J(p){try{let u=p;if(p.startsWith("./data/"))u="https://raw.githubusercontent.com/Morris199786/tw-market-monitor/main/"+p.slice(2);let r=await fetch(u+(u.includes("?")?"&":"?")+"v="+Date.now(),{cache:"no-store"});if(!r.ok)throw 0;return await r.json()}catch(e){return {}}}
-function pct(v){if(v===null||v===undefined)return"—";v=Number(v);return(v>0?"+":"")+v.toFixed(2)+"%"}
-function cl(v){return Number(v)>=0?"up":"down"} function money(v){return(v>0?"+":"")+Number(v||0).toFixed(2)+"億"}
-function stock(x,rank){return`${rank?`<span class=rank>${rank}</span>`:""}<span class=stock><b>${x.name||""}</b><span>${x.ticker}</span></span>`}
-function page(id){$$(".page").forEach(x=>x.classList.toggle("active",x.id===id));$$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.p===id));$("#mobileNav").value=id;scrollTo(0,0)}
-$$(".nav").forEach(b=>b.onclick=()=>page(b.dataset.p));$("#mobileNav").onchange=e=>page(e.target.value);
-function clock(){ $("#clock").textContent=new Intl.DateTimeFormat("zh-TW",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date())}clock();setInterval(clock,30000);
-
-function heatClass(v){if(v===null||v===undefined)return"gray";let a=Math.abs(v);if(v>=0)return a>=3?"r4":a>=2?"r3":a>=1?"r2":"r1";return a>=3?"g4":a>=2?"g3":a>=1?"g2":"g1"}
-
-async function home(){let h=await J("./data/heatmap.json"),a=await J("./data/ai_picks.json"),ho=await J("./data/holders.json");let s=[...(h.sectors||[])].filter(x=>x.change_pct!==null).sort((x,y)=>y.change_pct-x.change_pct),top=s.slice(0,3);$("#homeCards").innerHTML=`<div class="card metric"><small>市場熱力圖</small><strong>19 族群</strong><small>每 5 分鐘</small></div><div class="card metric"><small>AI 選股</small><strong>18:00</strong><small>每日更新</small></div><div class="card metric"><small>大戶籌碼</small><strong>週六 15:00</strong><small>${ho.complete?"資料完整":"等待兩期資料"}</small></div><div class="card metric"><small>最強族群</small><strong>${top[0]?.name||"—"}</strong><small class="${cl(top[0]?.change_pct)}">${top[0]?pct(top[0].change_pct):"—"}</small></div>`;$("#topSectors").innerHTML=top.map((x,i)=>`<div class="card metric"><small>0${i+1} ${x.name}</small><strong class="${cl(x.change_pct)}">${pct(x.change_pct)}</strong><small>${x.complete?"完整市值加權":"部分成分股缺資料"}</small></div>`).join("")}
-
-async function flows(){let d=await J("./data/institutional.json");$("#flowDate").textContent=d.date?`截至 ${d.date}`:"尚無資料";let g=d.periods?.[st.period]?.[st.market]?.[st.inst]||{buy:[],sell:[],complete:false,days_used:0};$("#flowStatus").className="status"+(g.complete?"":" warn");$("#flowStatus").textContent=g.complete?`資料完整 · ${g.days_used} 個交易日`:`資料尚未累積完整：目前 ${g.days_used||0} / ${st.period==="1d"?1:st.period==="3d"?3:5} 個交易日`;function rows(a){return(a||[]).map((x,i)=>`<tr class="${x.change_pct<0?"negative-row":""}"><td>${stock(x,i+1)}</td><td class="${x.amount_100m>=0?"up":"down"}">${money(x.amount_100m)}</td><td>${Math.round((x.shares||0)/1000).toLocaleString()}</td><td class="${cl(x.change_pct)}">${pct(x.change_pct)}</td></tr>`).join("")}$("#buyRows").innerHTML=rows(g.buy);$("#sellRows").innerHTML=rows(g.sell)}
-$$("[data-period]").forEach(b=>b.onclick=()=>{$$("[data-period]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.period=b.dataset.period;flows()});$$("[data-inst]").forEach(b=>b.onclick=()=>{$$("[data-inst]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.inst=b.dataset.inst;flows()});$$("[data-market]").forEach(b=>b.onclick=()=>{$$("[data-market]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.market=b.dataset.market;flows()});
-
-async function volume(){let v=await J("./data/volume.json"),s=await J("./data/screener.json");$("#volDate").textContent=v.date||"尚無資料";let d=st.advanced?s.items:v.items;$("#volStatus").className="status"+((st.advanced?!s.complete:!v.complete)?" warn":"");$("#volStatus").textContent=st.advanced?(s.complete?"進階篩選：20D歷史完整":`進階篩選需要21個交易日，目前 ${s.history_days||0}`):(v.complete?"前五日量比資料完整":`突然放量需要6個交易日，目前 ${v.history_days||0}`);$("#volRows").innerHTML=(d||[]).map((x,i)=>`<tr class="${x.change_pct<0?"negative-row":""}"><td>${stock(x,i+1)}</td><td class="${cl(x.change_pct)}">${pct(x.change_pct)}</td><td>${Math.round((x.volume||0)/1000).toLocaleString()}張</td><td>${Number(x.volume_ratio_5d||0).toFixed(2)}x</td><td>${st.advanced?`${Number(x.volume_ratio_20d||0).toFixed(2)}x / ${x.avg3}>${x.avg5}>${x.avg10}`:(x.low_base?"低基期":"—")}</td></tr>`).join("")}
-$("#advanced").onclick=()=>{st.advanced=!st.advanced;$("#advanced").classList.toggle("active",st.advanced);$("#advanced").textContent=st.advanced?"進階篩選 ✓":"進階篩選 ＋";volume()};
-
-async function turnover(){let d=await J("./data/turnover.json");$("#turnDate").textContent=d.date||"尚無資料";$("#turnRows").innerHTML=(d[st.turn]||[]).map((x,i)=>`<tr class="${x.change_pct<0?"negative-row":""}"><td>${stock(x,i+1)}</td><td>${(Number(x.turnover||0)/1e8).toFixed(2)}億</td><td>${Math.round(Number(x.volume||0)/1000).toLocaleString()}</td><td>${x.price||"—"}</td><td class="${cl(x.change_pct)}">${pct(x.change_pct)}</td></tr>`).join("")}
-$$("[data-turn]").forEach(b=>b.onclick=()=>{$$("[data-turn]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.turn=b.dataset.turn;turnover()});
-
-async function holders(){let d=await J("./data/holders.json");$("#holderDate").textContent=d.date?`${d.date}｜週六 15:00`:"週六 15:00";$("#holderStatus").className="status"+(d.complete?"":" warn");$("#holderStatus").textContent=d.complete?`比較 ${d.previous_date} → ${d.date}`:"首次部署需累積兩期集保快照；有第二期後自動開始排名";$("#holderRows").innerHTML=(d[st.hm]?.[st.hk]||[]).map((x,i)=>`<tr class="${x.week_change_pct<0?"negative-row":""}"><td>${stock(x,i+1)}</td><td class="${cl(x.week_change_pct)}">${pct(x.week_change_pct)}</td><td>${Number(x.ratio).toFixed(2)}%</td><td class=up>+${Number(x.delta).toFixed(2)}ppt</td></tr>`).join("")}
-$$("[data-hm]").forEach(b=>b.onclick=()=>{$$("[data-hm]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.hm=b.dataset.hm;holders()});$$("[data-hk]").forEach(b=>b.onclick=()=>{$$("[data-hk]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.hk=b.dataset.hk;holders()});
-
-async function ai(){let d=await J("./data/ai_picks.json");$("#aiStatus").className="status"+(d.complete?"":" warn");$("#aiStatus").textContent=d.complete?`${d.mode==="sunday"?"週日版":"交易日版"} · 資料完整`:"資料尚未累積完整；排行只會使用目前已取得的來源";$("#aiCards").innerHTML=(d[st.aim]||[]).map((x,i)=>`<div class="card aicard"><div class=aitop><div>${stock(x,null)}</div><div class=score>${x.score}</div></div><div class=tags>${(x.tags||[]).map(t=>`<span class=tag>${t}</span>`).join("")}</div><div class=reason>${x.reason}</div></div>`).join("");$$(".aicard").forEach(x=>x.onclick=()=>x.classList.toggle("open"))}
-$$("[data-aim]").forEach(b=>b.onclick=()=>{$$("[data-aim]").forEach(x=>x.classList.remove("active"));b.classList.add("active");st.aim=b.dataset.aim;ai()});
-
-async function heat(){let d=await J("./data/heatmap.json");cache.heat=d;$("#heatTime").textContent=d.updated_at||"尚無資料";$("#heatGrid").innerHTML=(d.sectors||[]).map((x,i)=>`<button class="heat ${i===1?"s5 tall":i===11?"s6 tall":i%3===0?"s4":"s3"} ${heatClass(x.change_pct)}" data-sec="${x.name}"><b>${x.name}</b><strong>${pct(x.change_pct)}</strong><small>${x.complete?`${x.stocks.length}檔`:`缺${x.missing?.length||0}檔`}</small></button>`).join("");$$("[data-sec]").forEach(b=>b.onclick=()=>showSec(b.dataset.sec));if(d.sectors?.length)showSec(d.sectors[0].name)}
-function showSec(n){let s=cache.heat.sectors.find(x=>x.name===n);if(!s)return;$("#heatTitle").textContent=`${s.name} ${pct(s.change_pct)}`;let a=[...(s.stocks||[])].sort((x,y)=>(y.change_pct??-999)-(x.change_pct??-999));$("#heatRows").innerHTML=a.map(x=>`<tr class="${x.change_pct<0?"negative-row":""}"><td>${stock(x)}</td><td>${x.price??"—"}</td><td class="${x.change_pct===null?"":cl(x.change_pct)}">${pct(x.change_pct)}</td><td>${x.weight===null?"缺資料":(x.weight*100).toFixed(1)+"%"}</td></tr>`).join("")}
-
-async function reports(){let d=await J("./data/reports.json"),map={upgrade:"上調",downgrade:"下調",initiate:"初評",maintain:"維持"};$("#reportList").innerHTML=(d.items||[]).length?(d.items||[]).map(r=>`<div class=report><div class=broker>${r.broker}</div><div class=rmain><div class=rtitle>${r.broker} ${map[r.action]||r.action} ${r.name} ${r.ticker}</div><div class=rmeta>${r.summary||""} · ${r.date||""}</div></div><div class=tp>${r.target_price?`目標價 ${r.target_price}`:""}</div></div>`).join(""):`<div class=report><div class=rmain><div class=rtitle>尚無券商報告</div><div class=rmeta>收到 PDF 或連結後，把整理結果寫入 data/reports.json 即會顯示</div></div></div>`}
-
-Promise.all([home(),flows(),volume(),turnover(),holders(),ai(),heat(),reports()]);
-</script>
+<script src="./assets/app.js?v=20260924-ui2"></script>
 
 </body>
 </html>
