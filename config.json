@@ -1,0 +1,42 @@
+{
+  "timezone": "Asia/Taipei",
+  "tech_industries": [
+    "半導體業",
+    "電腦及週邊設備業",
+    "光電業",
+    "通信網路業",
+    "電子零組件業",
+    "電子通路業",
+    "資訊服務業",
+    "其他電子業",
+    "數位雲端業",
+    "電子商務"
+  ],
+  "screener": {
+    "min_volume_lots": 1000,
+    "min_ratio_20d": 1.3,
+    "max_ratio_20d": 2.0
+  },
+  "ai_weights_trade_day": {
+    "foreign": 0.2,
+    "trust": 0.25,
+    "dealer": 0.1,
+    "holders": 0.25,
+    "volume_price": 0.05,
+    "turnover": 0.15
+  },
+  "ai_weights_sunday": {
+    "foreign": 0.2,
+    "trust": 0.25,
+    "dealer": 0.1,
+    "holders": 0.3,
+    "turnover_5d": 0.15
+  },
+  "top_n": {
+    "institutional": 20,
+    "turnover": 30,
+    "volume": 50,
+    "holders": 30,
+    "ai": 20
+  }
+}
