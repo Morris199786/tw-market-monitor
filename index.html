@@ -24,6 +24,7 @@
       <button class="nav" data-p="volume">突然放量</button>
       <button class="nav" data-p="turnover">成交排行</button>
       <button class="nav" data-p="holders">大戶籌碼</button>
+      <button class="nav" data-p="marginLending">融資／借券</button>
       <button class="nav" data-p="ai">AI選股</button>
       <button class="nav" data-p="heat">市場熱力圖</button>
       <button class="nav" data-p="reports">券商報告</button>
@@ -38,6 +39,7 @@
       <option value="volume">突然放量</option>
       <option value="turnover">成交排行</option>
       <option value="holders">大戶籌碼</option>
+      <option value="marginLending">融資／借券</option>
       <option value="ai">AI選股</option>
       <option value="heat">市場熱力圖</option>
       <option value="reports">券商報告</option>
@@ -263,6 +265,42 @@
   </section>
 
 
+  <section id="marginLending" class="page">
+
+    <div class="hero">
+      <div>
+        <div class="kicker">MARGIN / SECURITIES LENDING</div>
+        <h1>融資／借券異動</h1>
+        <p>先抓單日突然暴增，再找近期持續累積｜上市、上櫃各 TOP30</p>
+      </div>
+
+      <div class="badges">
+        <span class="badge">盤後更新</span>
+        <span id="mlDate" class="badge"></span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-ml-kind="margin">融資增加</button>
+        <button class="tab" data-ml-kind="borrow">借券增加</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-ml-market="twse">上市</button>
+        <button class="tab" data-ml-market="tpex">上櫃</button>
+      </div>
+    </div>
+
+    <div id="mlStatus" class="status"></div>
+
+    <div id="mlLogic"></div>
+
+    <div id="mlCards" class="grid three"></div>
+
+  </section>
+
+
   <section id="ai" class="page">
 
     <div class="hero">
@@ -328,6 +366,7 @@
 </main>
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
+<script src="./assets/margin_lending.js?v=20260925-ml1"></script>
 
 </body>
 </html>
