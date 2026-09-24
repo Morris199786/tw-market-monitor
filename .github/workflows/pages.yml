@@ -3,7 +3,17 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
+
   workflow_dispatch:
+
+  # 資料更新 workflow 完成後，自動重新部署網站
+  workflow_run:
+    workflows:
+      - Daily close update
+      - Heatmap 5min
+      - Weekly holders
+    types:
+      - completed
 
 permissions:
   contents: read
@@ -16,6 +26,11 @@ concurrency:
 
 jobs:
   deploy:
+    # workflow_run 只有前一個 workflow 成功才部署
+    if: >
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -23,13 +38,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
 
-      - uses: actions/configure-pages@v5
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
-      - id: deployment
+      - name: Deploy Pages
+        id: deployment
         uses: actions/deploy-pages@v4
