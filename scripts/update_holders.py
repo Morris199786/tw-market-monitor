@@ -4,6 +4,21 @@ import io
 from datetime import datetime, timedelta
 
 
+# 台灣交易所產業代碼中，24~32 為主要電子／科技產業。
+# 同時保留 config.json 的中文產業名稱判斷，避免來源未來改成文字名稱。
+TECH_INDUSTRY_CODES = {
+    "24",  # 半導體
+    "25",  # 電腦及週邊設備
+    "26",  # 光電
+    "27",  # 通信網路
+    "28",  # 電子零組件
+    "29",  # 電子通路
+    "30",  # 資訊服務
+    "31",  # 其他電子
+    "32",  # 數位雲端
+}
+
+
 def field(r, names):
     return pick(r, names, None)
 
@@ -195,25 +210,54 @@ def fetch_archive_before(date):
     return None
 
 
-def tracked_tickers():
-    d = load_json(
-        ROOT / "data/sectors.json",
+def tech_tickers(master):
+    """
+    大戶籌碼股票池 = 全台股科技普通股，
+    不再限制為 sectors.json 的 19 個自訂族群。
+    """
+    cfg = load_json(
+        ROOT / "config.json",
         {}
     )
 
-    return {
-        str(x.get("ticker"))
-        for s in d.get("sectors", [])
-        for x in s.get("stocks", [])
-        if x.get("ticker")
+    tech_names = {
+        str(x).strip()
+        for x in cfg.get(
+            "tech_industries",
+            []
+        )
     }
+
+    out = set()
+
+    for t, m in master.items():
+        if not ordinary_ticker(t):
+            continue
+
+        if m.get("market") not in (
+            "twse",
+            "tpex"
+        ):
+            continue
+
+        industry = str(
+            m.get("industry")
+            or ""
+        ).strip()
+
+        if (
+            industry in TECH_INDUSTRY_CODES
+            or industry in tech_names
+        ):
+            out.add(str(t))
+
+    return out
 
 
 def load_display_names():
     """
     全站顯示名稱優先使用 sectors.json 的市場簡稱。
-    若不在 sectors.json，再 fallback 到 master.json，
-    並去除法定公司名稱尾綴。
+    若不在 sectors.json，再 fallback 到 master.json。
     """
     names = {}
 
@@ -286,6 +330,7 @@ def main():
 
     latest = aggregate(rows)
 
+    # 原始 TDCC 快照仍保留全市場，供 AI 全市場大戶因子使用。
     save_json(
         ROOT
         / f"data/history/holders/{date}.json",
@@ -341,7 +386,15 @@ def main():
         {}
     )
 
-    tracked = tracked_tickers()
+    tech = tech_tickers(
+        master
+    )
+
+    if len(tech) < 100:
+        raise RuntimeError(
+            f"tech stock universe looks incomplete: {len(tech)}"
+        )
+
     display_names = load_display_names()
 
     out = {
@@ -352,6 +405,8 @@ def main():
             else None
         ),
         "complete": bool(prev),
+        "universe": "全台股科技普通股",
+        "universe_count": len(tech),
         "twse": {
             "400": [],
             "1000": []
@@ -372,12 +427,7 @@ def main():
             if (
                 t not in pstocks
                 or t not in master
-            ):
-                continue
-
-            if (
-                tracked
-                and t not in tracked
+                or t not in tech
             ):
                 continue
 
@@ -474,6 +524,8 @@ def main():
         date,
         "previous",
         out["previous_date"],
+        "universe",
+        len(tech),
         "twse400",
         len(
             out["twse"]["400"]

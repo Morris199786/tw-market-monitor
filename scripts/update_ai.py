@@ -12,35 +12,41 @@ FACTOR_LABELS = {
 }
 
 
-def tracked_candidates(master):
+def all_candidates(master, market):
     """
-    AI 選股股票池 = sectors.json 內所有自訂追蹤股
-    只保留 master.json 有市場別資訊的股票。
+    AI 選股股票池 = 全台股上市／上櫃普通股。
+
+    master.json 本身來自上市／上櫃公司基本資料，搭配 ordinary_ticker()
+    可排除 ETF、ETN、權證等非普通公司股票。另要求當日 market_latest
+    有有效行情，避免停牌／缺行情股票進入當日排名。
     """
-    d = load_json(
-        ROOT / "data/sectors.json",
-        {}
-    )
-
-    tickers = {
-        str(x.get("ticker"))
-        for s in d.get("sectors", [])
-        for x in s.get("stocks", [])
-        if x.get("ticker")
-    }
-
     return {
-        t: m
+        str(t): m
         for t, m in master.items()
-        if t in tickers
+        if (
+            ordinary_ticker(t)
+            and m.get("market") in ("twse", "tpex")
+            and str(t) in market
+        )
     }
 
 
-def display_names():
+def display_names(master):
     """
-    顯示名稱優先使用 sectors.json 的市場簡稱。
+    全市場顯示名稱以 master.json 為底，
+    sectors.json 的自訂簡稱只作覆蓋，不再限制股票池。
     """
     out = {}
+
+    for t, m in master.items():
+        name = str(m.get("name") or "").strip()
+        name = (
+            name.replace("股份有限公司", "")
+                .replace("有限公司", "")
+                .strip()
+        )
+        if name:
+            out[str(t)] = name
 
     d = load_json(
         ROOT / "data/sectors.json",
@@ -49,13 +55,8 @@ def display_names():
 
     for s in d.get("sectors", []):
         for x in s.get("stocks", []):
-            t = str(
-                x.get("ticker") or ""
-            ).strip()
-
-            name = str(
-                x.get("name") or ""
-            ).strip()
+            t = str(x.get("ticker") or "").strip()
+            name = str(x.get("name") or "").strip()
 
             if t and name:
                 out[t] = name
@@ -65,8 +66,8 @@ def display_names():
 
 def healthy_inst_day(d):
     """
-    避免 AI 又吃到過去錯誤 cache：
-    TWSE / TPEx 都必須有資料，而且四大分類不是整體全 0。
+    避免 AI 吃到錯誤 cache：
+    TWSE / TPEx 都必須有資料，而且各法人分類不能整體全 0。
     """
     if not d.get("date") or not d.get("closes"):
         return False
@@ -94,8 +95,7 @@ def healthy_inst_day(d):
 
 def hist_inst_last5():
     """
-    往回找最近 5 個「通過健康檢查」的法人交易日，
-    不再單純取資料夾最後 5 個 JSON。
+    往回找最近 5 個通過健康檢查的法人交易日。
     """
     files = sorted(
         (
@@ -108,10 +108,7 @@ def hist_inst_last5():
     out = []
 
     for p in files:
-        d = load_json(
-            p,
-            {}
-        )
+        d = load_json(p, {})
 
         if healthy_inst_day(d):
             out.append(d)
@@ -122,51 +119,167 @@ def hist_inst_last5():
     return list(reversed(out))
 
 
-def holder_metrics(holders):
+def holder_metrics_all(master):
     """
-    大戶籌碼因子：
-    同一檔股票若同時進入 400 張與 1000 張大戶增加榜，
-    取兩者「週增幅 percentage points」平均。
+    AI 的大戶因子直接從 TDCC 全市場原始歷史快照計算，
+    不再依賴 holders.json 的 Top30 榜單。
+
+    每檔股票：
+      400張以上持股比率週增幅 + 1000張以上持股比率週增幅
+      取兩者平均 percentage points
     """
+    files = sorted(
+        (
+            ROOT
+            / "data/history/holders"
+        ).glob("*.json")
+    )
+
+    valid = []
+
+    for p in files:
+        d = load_json(p, {})
+        if d.get("stocks"):
+            valid.append(d)
+
     result = {
         "twse": {},
         "tpex": {}
     }
 
-    for mk in (
-        "twse",
-        "tpex"
-    ):
-        by = {}
+    if len(valid) < 2:
+        return result
 
-        for kind in (
-            "400",
-            "1000"
-        ):
-            for x in (
-                holders
-                .get(mk, {})
-                .get(kind, [])
-            ):
-                by.setdefault(
-                    x["ticker"],
-                    []
-                ).append(
-                    float(
-                        x.get("delta")
-                        or 0
-                    )
+    prev = valid[-2].get("stocks", {})
+    cur = valid[-1].get("stocks", {})
+
+    for t, m in master.items():
+        t = str(t)
+        mk = m.get("market")
+
+        if mk not in ("twse", "tpex"):
+            continue
+
+        if t not in prev or t not in cur:
+            continue
+
+        deltas = []
+
+        for kind in ("400", "1000"):
+            old = float(
+                prev[t].get(
+                    f"{kind}_ratio",
+                    0
                 )
-
-        result[mk] = {
-            t: (
-                safe_mean(v)
                 or 0
             )
-            for t, v in by.items()
-        }
+            new = float(
+                cur[t].get(
+                    f"{kind}_ratio",
+                    0
+                )
+                or 0
+            )
+            deltas.append(new - old)
+
+        result[mk][t] = (
+            safe_mean(deltas)
+            or 0
+        )
 
     return result
+
+
+def market_history_last6(latest_date=None):
+    """
+    取最近 6 個有效市場快照：
+    今日 + 前 5 個交易日，用來計算全市場 5 日量比。
+    """
+    files = sorted(
+        (
+            ROOT
+            / "data/history/market"
+        ).glob("*.json")
+    )
+
+    out = []
+
+    for p in files:
+        if latest_date and p.stem > latest_date:
+            continue
+
+        d = load_json(p, {})
+
+        if d.get("stocks"):
+            out.append(d)
+
+    return out[-6:]
+
+
+def volume_ratio_5d_all(candidates, latest_date=None):
+    """
+    全市場逐檔：
+    今日成交量 / 前 5 個交易日平均成交量。
+    """
+    hist = market_history_last6(
+        latest_date
+    )
+
+    out = {}
+
+    if len(hist) < 6:
+        return out
+
+    latest = hist[-1].get("stocks", {})
+    prior = hist[:-1]
+
+    for t in candidates:
+        q = latest.get(t)
+
+        if not q:
+            continue
+
+        prev = [
+            h.get("stocks", {}).get(t)
+            for h in prior
+        ]
+
+        if (
+            len(prev) != 5
+            or any(not x for x in prev)
+            or any(
+                float(
+                    x.get("volume")
+                    or 0
+                ) <= 0
+                for x in prev
+            )
+        ):
+            continue
+
+        avg5 = (
+            sum(
+                float(
+                    x.get("volume")
+                    or 0
+                )
+                for x in prev
+            )
+            / 5
+        )
+
+        if avg5 <= 0:
+            continue
+
+        out[t] = (
+            float(
+                q.get("volume")
+                or 0
+            )
+            / avg5
+        )
+
+    return out
 
 
 def logic_payload(
@@ -175,8 +288,7 @@ def logic_payload(
     dates_used
 ):
     """
-    直接寫入 ai_picks.json，
-    前端不用再把選股邏輯硬編碼。
+    寫入 ai_picks.json，前端直接顯示實際使用的邏輯。
     """
     factors = []
 
@@ -221,30 +333,30 @@ def logic_payload(
 
     if mode == "sunday":
         details = [
-            "股票池：自訂 19 個科技族群內個股",
-            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做百分位排名",
-            "大戶籌碼：400 張與 1000 張大戶持股比率週增幅的平均值，再做同市場百分位排名",
-            "近5日成交熱度：最近 5 個交易日成交金額加總，再做同市場百分位排名",
+            "股票池：全台股上市／上櫃普通股，排除 ETF、ETN、權證等非普通公司股票",
+            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做全市場百分位排名",
+            "大戶籌碼：直接使用 TDCC 全市場最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再做同市場百分位排名",
+            "近5日成交熱度：最近 5 個交易日成交金額加總，再做同市場全市場百分位排名",
             "總分：各因子 0–100 分乘以權重後加總",
             "排名：上市、上櫃分開排名，各取前 20 名",
-            "分數代表同市場追蹤股的相對強弱，不代表未來上漲機率"
+            "分數代表同市場全體股票的相對強弱，不代表未來上漲機率"
         ]
     else:
         details = [
-            "股票池：自訂 19 個科技族群內個股",
-            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做百分位排名",
-            "大戶籌碼：400 張與 1000 張大戶持股比率週增幅的平均值，再做同市場百分位排名",
-            "量價：只有當日股價上漲才計分；5日量比 1.0x 以下為 0 分，2.0x 以上封頂 100 分，中間線性換算",
-            "當日成交熱度：當日成交金額在同市場追蹤股中的百分位排名",
+            "股票池：全台股上市／上櫃普通股，排除 ETF、ETN、權證等非普通公司股票",
+            "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃各自做全市場百分位排名",
+            "大戶籌碼：直接使用 TDCC 全市場最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再做同市場百分位排名",
+            "量價：全市場逐檔以今日成交量／前 5 個交易日均量計算；股價上漲才計分，1.0x 以下 0 分、2.0x 以上 100 分，中間線性換算",
+            "當日成交熱度：當日成交金額在同市場全體普通股中的百分位排名",
             "總分：各因子 0–100 分乘以權重後加總",
             "排名：上市、上櫃分開排名，各取前 20 名",
-            "分數代表同市場追蹤股的相對強弱，不代表未來上漲機率"
+            "分數代表同市場全體股票的相對強弱，不代表未來上漲機率"
         ]
 
     return {
-        "version": "2026-09-24-v2",
+        "version": "2026-09-24-v3-full-market",
         "mode": mode,
-        "universe": "sectors.json 自訂科技股",
+        "universe": "全台股上市／上櫃普通股",
         "lookback_days": 5,
         "institutional_dates": dates_used,
         "factors": factors,
@@ -269,36 +381,33 @@ def main():
         {}
     )
 
-    names = display_names()
-    candidates = tracked_candidates(
-        master
-    )
-
-    market = load_json(
+    market_data = load_json(
         ROOT / "data/market_latest.json",
         {}
-    ).get(
+    )
+
+    market = market_data.get(
         "stocks",
         {}
     )
 
-    holders = load_json(
-        ROOT / "data/holders.json",
-        {}
+    latest_date = market_data.get(
+        "date"
     )
 
-    volume = load_json(
-        ROOT / "data/volume.json",
-        {}
-    ).get(
-        "items",
-        []
+    names = display_names(
+        master
     )
 
-    volmap = {
-        x["ticker"]: x
-        for x in volume
-    }
+    candidates = all_candidates(
+        master,
+        market
+    )
+
+    if len(candidates) < 800:
+        raise RuntimeError(
+            f"AI full-market universe looks incomplete: {len(candidates)}"
+        )
 
     hist = hist_inst_last5()
 
@@ -400,8 +509,13 @@ def main():
 
         turn5[mk][t] = trn
 
-    holder_metric = holder_metrics(
-        holders
+    holder_metric = holder_metrics_all(
+        candidates
+    )
+
+    volume_ratio = volume_ratio_5d_all(
+        candidates,
+        latest_date
     )
 
     is_sunday = (
@@ -429,6 +543,18 @@ def main():
         ),
         "mode": mode,
         "complete": True,
+        "universe_count": {
+            "twse": sum(
+                1
+                for m in candidates.values()
+                if m.get("market") == "twse"
+            ),
+            "tpex": sum(
+                1
+                for m in candidates.values()
+                if m.get("market") == "tpex"
+            ),
+        },
         "logic": logic_payload(
             mode,
             weights,
@@ -494,10 +620,8 @@ def main():
             )
 
             volume_ratio_5d = float(
-                volmap
-                .get(t, {})
-                .get(
-                    "volume_ratio_5d",
+                volume_ratio.get(
+                    t,
                     0
                 )
                 or 0
@@ -579,7 +703,6 @@ def main():
                 )
 
             contributions = {}
-
             score = 0.0
 
             for key, weight in weights.items():
@@ -605,19 +728,13 @@ def main():
             tags = []
 
             if factor_scores["trust"] >= 75:
-                tags.append(
-                    "投信偏多"
-                )
+                tags.append("投信偏多")
 
             if factor_scores["foreign"] >= 75:
-                tags.append(
-                    "外資偏多"
-                )
+                tags.append("外資偏多")
 
             if factor_scores["dealer"] >= 75:
-                tags.append(
-                    "自營商偏多"
-                )
+                tags.append("自營商偏多")
 
             if (
                 factor_scores["holders"] >= 75
@@ -626,9 +743,7 @@ def main():
                     0
                 ) > 0
             ):
-                tags.append(
-                    "大戶增加"
-                )
+                tags.append("大戶增加")
 
             if is_sunday:
                 if (
@@ -663,8 +778,6 @@ def main():
                     "當日下跌"
                 )
 
-            # 依「實際加權貢獻」挑出前三大選股理由，
-            # 避免 reason 與真正分數來源不一致。
             ranked_reasons = sorted(
                 contributions.items(),
                 key=lambda kv: kv[1],
@@ -759,7 +872,6 @@ def main():
             )
         ]
 
-    # 自動驗證：上市／上櫃各 20 檔、分數範圍合理、邏輯 metadata 存在
     for mk in (
         "twse",
         "tpex"
@@ -795,6 +907,8 @@ def main():
     print(
         "ai",
         out["mode"],
+        "universe",
+        out["universe_count"],
         len(out["twse"]),
         len(out["tpex"]),
         "dates",
