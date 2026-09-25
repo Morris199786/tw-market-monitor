@@ -1,4 +1,5 @@
 from sources import *
+from tech_universe import tech_tickers
 from datetime import datetime
 from statistics import median
 import math
@@ -1599,6 +1600,7 @@ def rank_kind(
     master,
     market_dates,
     latest_market,
+    tech,
 ):
     items = []
 
@@ -1606,7 +1608,8 @@ def rank_kind(
         ticker = str(ticker)
 
         if (
-            not ordinary_ticker(
+            ticker not in tech
+            or not ordinary_ticker(
                 ticker
             )
             or meta.get(
@@ -1658,10 +1661,11 @@ def rank_kind(
 
 def logic_payload():
     return {
-        "version": "2026-09-25-v3-parser-fix",
+        "version": "2026-09-25-v4-tech-universe",
         "universe": (
-            "全台股上市／上櫃普通股，"
-            "不限科技股"
+            "全台股科技普通股："
+            "官方科技產業＋19個自訂科技族群成分股"
+            "＋跨產業科技供應鏈白名單"
         ),
         "lookback_days": 20,
         "top_n_each_market": TOP_N,
@@ -1703,6 +1707,15 @@ def main():
         "stocks",
         {}
     )
+
+    tech = tech_tickers(
+        master
+    )
+
+    if len(tech) < 100:
+        raise RuntimeError(
+            f"tech stock universe looks incomplete: {len(tech)}"
+        )
 
     dates = history_market_dates()
 
@@ -1770,6 +1783,25 @@ def main():
         "history_days": len(
             history
         ),
+        "universe": "全台股科技普通股",
+        "universe_count": {
+            "twse": sum(
+                1
+                for t in tech
+                if master.get(
+                    t,
+                    {}
+                ).get("market") == "twse"
+            ),
+            "tpex": sum(
+                1
+                for t in tech
+                if master.get(
+                    t,
+                    {}
+                ).get("market") == "tpex"
+            ),
+        },
         "logic": logic_payload(),
         "margin": {
             "twse": [],
@@ -1797,6 +1829,7 @@ def main():
                     master,
                     usable_dates,
                     latest_market,
+                    tech,
                 )
             )
 
