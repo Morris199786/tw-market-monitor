@@ -1,6 +1,7 @@
 from sources import *
 import os
 import re
+from revenue_records import record
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
@@ -342,15 +343,11 @@ def main():
         {}
     )
 
-    max_map = tracker.get(
-        "max_revenue_100m",
-        {}
-    )
-
-    months_seen = tracker.get(
-        "months_seen",
-        []
-    )
+    history_path = ROOT / "data/monthly_revenue_history.json"
+    history = load_json(history_path, {"schema_version": 2, "stocks": {}})
+    # Legacy maxima include the current month and are not valid historical evidence.
+    record(rows, history)
+    save_json(history_path, history)
 
     sent_path = (
         ROOT
@@ -376,44 +373,13 @@ def main():
             or 0
         )
 
-        previous_max = max_map.get(
-            t
-        )
-
-        # 第一次建立基準不推播。
-        # 後續月份只有真正突破本站已留存的歷史最高值才推播。
-        checked = (
-            previous_max is not None
-        )
-
-        is_high = (
-            checked
-            and rev > float(
-                previous_max
-            )
-        )
-
-        x["record_high"] = (
-            bool(is_high)
-        )
-
-        x["record_high_checked"] = (
-            bool(checked)
-        )
+        is_high = x["record_high"] is True
 
         x["name"] = (
             short_names.get(t)
             or x.get("name")
             or t
         )
-
-        if (
-            previous_max is None
-            or rev > float(
-                previous_max
-            )
-        ):
-            max_map[t] = rev
 
         push_id = (
             f"{latest_month}|{t}"
@@ -438,31 +404,6 @@ def main():
                 sent.add(
                     push_id
                 )
-
-    if latest_month not in months_seen:
-        months_seen.append(
-            latest_month
-        )
-
-    months_seen = months_seen[-24:]
-
-    save_json(
-        tracker_path,
-        {
-            "updated_at": (
-                now_tpe()
-                .isoformat(
-                    timespec="minutes"
-                )
-            ),
-            "months_seen": (
-                months_seen
-            ),
-            "max_revenue_100m": (
-                max_map
-            ),
-        },
-    )
 
     save_json(
         sent_path,
@@ -500,10 +441,7 @@ def main():
         if arr:
             arr.sort(
                 key=lambda x: (
-                    x.get(
-                        "record_high",
-                        False
-                    ),
+                    x.get("record_high") is True,
                     x.get(
                         "yoy",
                         0
@@ -544,7 +482,7 @@ def main():
                 "19個自訂科技族群"
             ),
             "record_high_basis": (
-                "本站開始留存後的歷史最高值"
+                "只與當月以前的完整歷史比較；資料不足不判定新高"
             ),
             "sectors": sectors_out,
         },
