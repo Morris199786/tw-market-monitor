@@ -2,8 +2,12 @@ name: Self reports update
 
 on:
   schedule:
-    # 台灣平日 09:00～23:00，每小時一次
-    - cron: "0 1-15 * * 1-5"
+    # 台灣平日 22:00
+    - cron: "0 14 * * 1-5"
+
+    # 對應前一晚 22:00 的次日早上 08:00
+    # 週一晚 → 週二早上 ... 週五晚 → 週六早上
+    - cron: "0 0 * * 2-6"
 
   workflow_dispatch:
 
