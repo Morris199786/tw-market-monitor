@@ -6,13 +6,14 @@ on:
 
   workflow_dispatch:
 
-  # 資料更新 workflow 完成後，自動重新部署網站
   workflow_run:
     workflows:
       - Daily close update
       - Heatmap 5min
       - Weekly holders
       - Margin lending update
+      - Self reports update
+      - Monthly revenue update
     types:
       - completed
 
@@ -27,7 +28,6 @@ concurrency:
 
 jobs:
   deploy:
-    # workflow_run 只有前一個 workflow 成功才部署
     if: >
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
