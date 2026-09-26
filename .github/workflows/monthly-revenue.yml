@@ -1,19 +1,6 @@
 name: Monthly revenue update
 
 on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣每月 1～15 日
-    # 10:00 / 14:00 / 18:00 / 21:00
-    - cron: "0 2 1-15 * *"
-    - cron: "0 6 1-15 * *"
-    - cron: "0 10 1-15 * *"
-    - cron: "0 13 1-15 * *"
-
-  # Cloudflare Cron 主排程
-  repository_dispatch:
-    types: [monthly_revenue]
-
   workflow_dispatch:
 
 permissions:
@@ -60,7 +47,5 @@ jobs:
           fi
 
           git commit -m "data: monthly revenue update"
-
           git pull --rebase
-
           git push
