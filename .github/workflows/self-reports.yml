@@ -1,19 +1,6 @@
 name: Self reports update
 
 on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣平日 22:00
-    - cron: "0 14 * * 1-5"
-
-    # 次日早上 08:00
-    # 週二～週六
-    - cron: "0 0 * * 2-6"
-
-  # Cloudflare Cron 主排程
-  repository_dispatch:
-    types: [self_reports]
-
   workflow_dispatch:
 
 permissions:
@@ -60,7 +47,5 @@ jobs:
           fi
 
           git commit -m "data: self reports update"
-
           git pull --rebase
-
           git push
