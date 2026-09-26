@@ -1,0 +1,60 @@
+name: Monthly revenue update
+
+on:
+  schedule:
+    # 台灣每月 1～15 日
+    # 10:00 / 14:00 / 18:00 / 21:00
+    - cron: "0 2 1-15 * *"
+    - cron: "0 6 1-15 * *"
+    - cron: "0 10 1-15 * *"
+    - cron: "0 13 1-15 * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monthly-revenue
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Update monthly revenue
+        env:
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+        run: python scripts/update_monthly_revenue.py
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/monthly_revenue.json data/monthly_revenue_tracker.json data/monthly_revenue_sent.json
+
+          if git diff --cached --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+
+          git commit -m "data: monthly revenue update"
+
+          git pull --rebase
+          git push
