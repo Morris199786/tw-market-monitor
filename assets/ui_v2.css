@@ -1304,3 +1304,15 @@ html[data-theme="dark"] #backHomeBtn{
   border-color:#34516e !important;
   box-shadow:0 12px 28px rgba(0,0,0,.26) !important;
 }
+
+/* Revenue records: amber distinguishes records from red/green price movement */
+#revenueHighFilter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}
+.revenue-filter-note,.revenue-pending,.revenue-coverage{font-size:12px;color:var(--muted)}
+.revenue-coverage{display:block;margin-top:8px;line-height:1.5}
+.revenue-high-filter.active{background:#8a5700!important;color:#fff!important;border-color:#8a5700!important}
+.revenue-card.record-high{background:#fff6dc!important;border:2px solid #d5a33c!important;box-shadow:0 4px 18px #a36b0010!important}
+.revenue-card.record-high .stock-name,.revenue-card.record-high .rev{color:#674300!important}
+.revenue-card .new-high{background:#f5d78b!important;color:#593b00!important;white-space:nowrap}
+html[data-theme="dark"] .revenue-card.record-high{background:#342b19!important;border-color:#a88436!important;box-shadow:none!important}
+html[data-theme="dark"] .revenue-card.record-high .stock-name,html[data-theme="dark"] .revenue-card.record-high .rev{color:#ffe1a0!important}
+html[data-theme="dark"] .revenue-card .new-high{background:#594622!important;color:#ffe5ac!important}
