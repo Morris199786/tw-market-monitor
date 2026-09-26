@@ -1,5 +1,5 @@
 const featureItems = [
-  ["selfReports","自結公布","▣","red","全台股"],
+  ["selfReports","自結公布","▣","red","即時監控"],
   ["heat","市場熱力圖","▦","red","19族群"],
   ["flows","籌碼日報","▤","blue","法人"],
   ["volume","突然放量","⚡","amber","科技股"],
@@ -11,7 +11,6 @@ const featureItems = [
   ["monthlyRevenue","月營收公布","▥","green","19族群"]
 ];
 
-let selfWeekSelected = null;
 let revenueSectorSelected = "all";
 
 function buildFeatureRail() {
@@ -116,82 +115,44 @@ async function selfReports() {
   if ($("#selfWeekBadge")) {
     $("#selfWeekBadge")
       .textContent =
-        d.current_week_label ||
-        "本週";
-  }
-
-  const weeks =
-    d.weeks || [];
-
-  if (
-    !selfWeekSelected &&
-    weeks.length
-  ) {
-    selfWeekSelected =
-      d.current_week_key ||
-      weeks[0].key;
+        "即時監控";
   }
 
   const tabs =
     $("#selfWeekTabs");
 
   if (tabs) {
-    tabs.innerHTML =
-      weeks
-        .map(
-          w => `
-            <button
-              class="week-pill ${
-                w.key ===
-                selfWeekSelected
-                  ? "active"
-                  : ""
-              }"
-              data-self-week="${w.key}"
-            >
-              ${w.label}
-            </button>
-          `
-        )
-        .join("");
-
-    $$(
-      "[data-self-week]"
-    ).forEach(
-      b => {
-        b.onclick = () => {
-          selfWeekSelected =
-            b.dataset.selfWeek;
-
-          selfReports();
-        };
-      }
-    );
+    tabs.innerHTML = "";
+    tabs.style.display = "none";
   }
 
   const status =
     $("#selfStatus");
 
   if (status) {
+    const twse =
+      d.source_status?.twse;
+
+    const tpex =
+      d.source_status?.tpex;
+
+    const sourceText = [
+      twse?.ok
+        ? "上市正常"
+        : "上市來源異常",
+      tpex?.ok
+        ? "上櫃正常"
+        : "上櫃來源異常"
+    ].join(" · ");
+
     status.textContent =
       d.updated_at
-        ? `最後更新 ${d.updated_at} · 全台股 · 新公告自動推播`
-        : "尚未產生自結資料";
+        ? `最後更新 ${d.updated_at} · ${sourceText} · 新公告自動推播`
+        : "尚未開始自結監控";
   }
 
-  const week =
-    weeks.find(
-      w =>
-        w.key ===
-        selfWeekSelected
-    ) ||
-    weeks[0] ||
-    {
-      items: []
-    };
-
   const arr =
-    week.items || [];
+    d.items || [];
 
   const box =
     $("#selfReportCards");
@@ -203,7 +164,7 @@ async function selfReports() {
   if (!arr.length) {
     box.innerHTML = `
       <div class="card empty">
-        這一週目前沒有偵測到自結公告
+        目前尚未偵測到新的自結公告
       </div>
     `;
 
@@ -245,7 +206,7 @@ async function selfReports() {
             <div class="metric-grid">
 
               ${selfMetric(
-                "最近一月 EPS",
+                "EPS",
                 x.eps === null
                   ? null
                   : fmtNum(
