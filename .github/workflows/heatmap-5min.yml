@@ -1,15 +1,6 @@
 name: Heatmap 5min
 
 on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣平日 09:00-13:59，每 5 分鐘
-    - cron: "*/5 1-5 * * 1-5"
-
-  # Cloudflare Cron 主排程
-  repository_dispatch:
-    types: [heatmap]
-
   workflow_dispatch:
 
 permissions:
@@ -56,7 +47,5 @@ jobs:
           fi
 
           git commit -m "data: heatmap update"
-
           git pull --rebase
-
           git push
