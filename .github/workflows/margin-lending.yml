@@ -2,13 +2,16 @@ name: Margin lending update
 
 on:
   schedule:
+    # GitHub 內建排程保留當備援
     # 台灣 21:20 = UTC 13:20
-    # TWSE 融資資料通常約 21:00 後較完整
     - cron: "20 13 * * 1-5"
 
     # 台灣 22:45 = UTC 14:45
-    # 補跑一次，涵蓋較晚完成的借券／櫃買資料
     - cron: "45 14 * * 1-5"
+
+  # Cloudflare Cron 主排程
+  repository_dispatch:
+    types: [margin_lending]
 
   workflow_dispatch:
 
@@ -55,4 +58,5 @@ jobs:
           git commit -m "data: margin lending update"
 
           git pull --rebase
+
           git push
