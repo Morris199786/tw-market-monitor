@@ -1,18 +1,6 @@
 name: Weekly holders
 
 on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣週六 17:00 = UTC 09:00
-    - cron: "0 9 * * 6"
-
-    # 台灣週六 17:20
-    - cron: "20 9 * * 6"
-
-  # Cloudflare Cron 主排程
-  repository_dispatch:
-    types: [holders]
-
   workflow_dispatch:
 
 permissions:
@@ -62,7 +50,5 @@ jobs:
           fi
 
           git commit -m "data: weekly holders update"
-
           git pull --rebase
-
           git push
