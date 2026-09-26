@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0f1722">
 <title>台股市場監測</title>
 <link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
+<link rel="stylesheet" href="./assets/ui_v2.css?v=20260926-ui1">
 </head>
 
 <body>
@@ -20,14 +21,16 @@
 
     <nav>
       <button class="nav active" data-p="home">總覽</button>
+      <button class="nav" data-p="selfReports">自結公布</button>
+      <button class="nav" data-p="heat">市場熱力圖</button>
       <button class="nav" data-p="flows">籌碼日報</button>
       <button class="nav" data-p="volume">突然放量</button>
       <button class="nav" data-p="turnover">成交排行</button>
-      <button class="nav" data-p="holders">大戶籌碼</button>
       <button class="nav" data-p="marginLending">融資／借券</button>
       <button class="nav" data-p="ai">AI選股</button>
-      <button class="nav" data-p="heat">市場熱力圖</button>
       <button class="nav" data-p="reports">券商報告</button>
+      <button class="nav" data-p="holders">大戶籌碼</button>
+      <button class="nav" data-p="monthlyRevenue">月營收公布</button>
     </nav>
 
     <div id="clock" class="clock"></div>
@@ -35,14 +38,16 @@
 
     <select id="mobileNav" aria-label="切換分頁">
       <option value="home">總覽</option>
+      <option value="selfReports">自結公布</option>
+      <option value="heat">市場熱力圖</option>
       <option value="flows">籌碼日報</option>
       <option value="volume">突然放量</option>
       <option value="turnover">成交排行</option>
-      <option value="holders">大戶籌碼</option>
       <option value="marginLending">融資／借券</option>
       <option value="ai">AI選股</option>
-      <option value="heat">市場熱力圖</option>
       <option value="reports">券商報告</option>
+      <option value="holders">大戶籌碼</option>
+      <option value="monthlyRevenue">月營收公布</option>
     </select>
 
   </div>
@@ -51,322 +56,266 @@
 <main>
 
   <section id="home" class="page active">
-
     <div class="hero">
       <div>
         <div class="kicker">MARKET DASHBOARD</div>
         <h1>台股市場監測</h1>
-        <p>法人籌碼、量價、大戶、AI 選股與 19 個科技族群熱力圖</p>
+        <p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p>
       </div>
-
       <div class="badges">
         <span class="badge live">GitHub 自動更新</span>
       </div>
     </div>
 
+    <div id="featureRail" class="feature-rail"></div>
     <div id="homeCards" class="grid four"></div>
 
     <div class="section">
       <h2>目前強勢族群</h2>
       <span>市值加權</span>
     </div>
-
     <div id="topSectors" class="grid three"></div>
-
   </section>
 
 
-  <section id="flows" class="page">
-
+  <section id="selfReports" class="page">
     <div class="hero">
       <div>
-        <div class="kicker">INSTITUTIONAL FLOW</div>
-        <h1>籌碼日報</h1>
-        <p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p>
+        <div class="kicker">SELF-REPORTED EARNINGS</div>
+        <h1>自結公布</h1>
+        <p>全台股｜依公告日期整理｜主畫面保留當週資訊</p>
       </div>
-
-      <span id="flowDate" class="badge"></span>
-    </div>
-
-    <div class="toolbar">
-
-      <div class="tabs">
-        <button class="tab active" data-period="1d">當天</button>
-        <button class="tab" data-period="3d">近三日</button>
-        <button class="tab" data-period="5d">近五日</button>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-inst="foreign">外資</button>
-        <button class="tab" data-inst="trust">投信</button>
-        <button class="tab" data-inst="dealer">自營商</button>
-        <button class="tab" data-inst="total">三大法人合計</button>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-market="twse">上市</button>
-        <button class="tab" data-market="tpex">上櫃</button>
-      </div>
-
-    </div>
-
-    <div id="flowStatus" class="status"></div>
-
-    <div class="grid two">
-
-      <div class="card tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>買超 TOP20</th>
-              <th>估算金額</th>
-              <th>張數</th>
-              <th>漲跌</th>
-            </tr>
-          </thead>
-          <tbody id="buyRows"></tbody>
-        </table>
-      </div>
-
-      <div class="card tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>賣超 TOP20</th>
-              <th>估算金額</th>
-              <th>張數</th>
-              <th>漲跌</th>
-            </tr>
-          </thead>
-          <tbody id="sellRows"></tbody>
-        </table>
-      </div>
-
-    </div>
-
-  </section>
-
-
-  <section id="volume" class="page">
-
-    <div class="hero">
-      <div>
-        <div class="kicker">VOLUME SURGE</div>
-        <h1>科技股突然放量</h1>
-        <p>今日成交量 ÷ 前五個交易日平均量</p>
-      </div>
-
-      <span id="volDate" class="badge"></span>
-    </div>
-
-    <div class="toolbar">
-      <button id="advanced" class="tab">進階篩選 ＋</button>
-    </div>
-
-    <div id="volStatus" class="status"></div>
-
-    <div class="card tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>排行／股票</th>
-            <th>漲跌</th>
-            <th>今日量</th>
-            <th>5日量比</th>
-            <th>進階條件</th>
-          </tr>
-        </thead>
-        <tbody id="volRows"></tbody>
-      </table>
-    </div>
-
-  </section>
-
-
-  <section id="turnover" class="page">
-
-    <div class="hero">
-      <div>
-        <div class="kicker">TURNOVER</div>
-        <h1>成交金額 TOP30</h1>
-        <p>採官方每日行情實際成交金額</p>
-      </div>
-
-      <span id="turnDate" class="badge"></span>
-    </div>
-
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-turn="twse">上市</button>
-        <button class="tab" data-turn="tpex">上櫃</button>
-      </div>
-    </div>
-
-    <div class="card tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>排行／股票</th>
-            <th>成交金額</th>
-            <th>成交張數</th>
-            <th>收盤</th>
-            <th>漲跌</th>
-          </tr>
-        </thead>
-        <tbody id="turnRows"></tbody>
-      </table>
-    </div>
-
-  </section>
-
-
-  <section id="holders" class="page">
-
-    <div class="hero">
-      <div>
-        <div class="kicker">LARGE HOLDERS</div>
-        <h1>本週大戶籌碼集中</h1>
-        <p>400張以上與千張以上持股比例增加幅度</p>
-      </div>
-
-      <span id="holderDate" class="badge">週六 15:00</span>
-    </div>
-
-    <div class="toolbar">
-
-      <div class="tabs">
-        <button class="tab active" data-hm="twse">上市</button>
-        <button class="tab" data-hm="tpex">上櫃</button>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-hk="400">400張大戶增加</button>
-        <button class="tab" data-hk="1000">千張大戶增加</button>
-      </div>
-
-    </div>
-
-    <div id="holderStatus" class="status"></div>
-
-    <div class="card tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>排行／股票</th>
-            <th>同期股價</th>
-            <th>大戶比率</th>
-            <th>增加</th>
-          </tr>
-        </thead>
-        <tbody id="holderRows"></tbody>
-      </table>
-    </div>
-
-  </section>
-
-
-  <section id="marginLending" class="page">
-
-    <div class="hero">
-      <div>
-        <div class="kicker">MARGIN / SECURITIES LENDING</div>
-        <h1>融資／借券異動</h1>
-        <p>先抓單日突然暴增，再找近期持續累積｜上市、上櫃各 TOP30</p>
-      </div>
-
       <div class="badges">
-        <span class="badge">盤後更新</span>
-        <span id="mlDate" class="badge"></span>
+        <span id="selfWeekBadge" class="badge"></span>
       </div>
     </div>
 
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-ml-kind="margin">融資增加</button>
-        <button class="tab" data-ml-kind="borrow">借券增加</button>
-      </div>
-
-      <div class="tabs">
-        <button class="tab active" data-ml-market="twse">上市</button>
-        <button class="tab" data-ml-market="tpex">上櫃</button>
-      </div>
-    </div>
-
-    <div id="mlStatus" class="status"></div>
-
-    <div id="mlLogic"></div>
-
-    <div id="mlCards" class="grid three"></div>
-
-  </section>
-
-
-  <section id="ai" class="page">
-
-    <div class="hero">
-      <div>
-        <div class="kicker">AI PICKS</div>
-        <h1>AI選股</h1>
-        <p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p>
-      </div>
-
-      <span class="badge">每天 18:00</span>
-    </div>
-
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-aim="twse">上市</button>
-        <button class="tab" data-aim="tpex">上櫃</button>
-      </div>
-    </div>
-
-    <div id="aiStatus" class="status"></div>
-
-    <div id="aiCards" class="grid three"></div>
-
+    <div id="selfWeekTabs" class="week-strip"></div>
+    <div id="selfStatus" class="status"></div>
+    <div id="selfReportCards" class="grid three"></div>
   </section>
 
 
   <section id="heat" class="page">
-
     <div class="hero">
       <div>
         <div class="kicker">SECTOR HEATMAP</div>
         <h1>市場熱力圖</h1>
         <p>19 個自訂族群｜市值加權｜紅漲綠跌｜點擊族群直接展開個股</p>
       </div>
-
       <div class="badges">
         <span class="badge live">盤中每 5 分鐘</span>
         <span id="heatTime" class="badge"></span>
       </div>
     </div>
-
     <div id="heatGrid" class="heatgrid"></div>
+  </section>
 
+
+  <section id="flows" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">INSTITUTIONAL FLOW</div>
+        <h1>籌碼日報</h1>
+        <p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p>
+      </div>
+      <span id="flowDate" class="badge"></span>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-period="1d">當天</button>
+        <button class="tab" data-period="3d">近三日</button>
+        <button class="tab" data-period="5d">近五日</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-inst="foreign">外資</button>
+        <button class="tab" data-inst="trust">投信</button>
+        <button class="tab" data-inst="dealer">自營商</button>
+        <button class="tab" data-inst="total">三大法人合計</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-market="twse">上市</button>
+        <button class="tab" data-market="tpex">上櫃</button>
+      </div>
+    </div>
+
+    <div id="flowStatus" class="status"></div>
+    <div class="grid two">
+      <div class="card tablewrap">
+        <table>
+          <thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
+          <tbody id="buyRows"></tbody>
+        </table>
+      </div>
+      <div class="card tablewrap">
+        <table>
+          <thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
+          <tbody id="sellRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="volume" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">VOLUME SURGE</div>
+        <h1>科技股突然放量</h1>
+        <p>今日成交量 ÷ 前五個交易日平均量</p>
+      </div>
+      <span id="volDate" class="badge"></span>
+    </div>
+    <div class="toolbar">
+      <button id="advanced" class="tab">進階篩選 ＋</button>
+    </div>
+    <div id="volStatus" class="status"></div>
+    <div class="card tablewrap">
+      <table>
+        <thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead>
+        <tbody id="volRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <section id="turnover" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">TURNOVER</div>
+        <h1>成交金額 TOP30</h1>
+        <p>採官方每日行情實際成交金額</p>
+      </div>
+      <span id="turnDate" class="badge"></span>
+    </div>
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-turn="twse">上市</button>
+        <button class="tab" data-turn="tpex">上櫃</button>
+      </div>
+    </div>
+    <div class="card tablewrap">
+      <table>
+        <thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead>
+        <tbody id="turnRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <section id="marginLending" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">MARGIN / SECURITIES LENDING</div>
+        <h1>融資／借券異動</h1>
+        <p>先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p>
+      </div>
+      <div class="badges">
+        <span class="badge">盤後更新</span>
+        <span id="mlDate" class="badge"></span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-ml-kind="margin">融資增加</button>
+        <button class="tab" data-ml-kind="borrow">借券增加</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-ml-market="twse">上市</button>
+        <button class="tab" data-ml-market="tpex">上櫃</button>
+      </div>
+    </div>
+    <div id="mlStatus" class="status"></div>
+    <div id="mlLogic"></div>
+    <div id="mlCards" class="grid three"></div>
+  </section>
+
+
+  <section id="ai" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">AI PICKS</div>
+        <h1>AI選股</h1>
+        <p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p>
+      </div>
+      <span class="badge">每天 18:00</span>
+    </div>
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-aim="twse">上市</button>
+        <button class="tab" data-aim="tpex">上櫃</button>
+      </div>
+    </div>
+    <div id="aiStatus" class="status"></div>
+    <div id="aiCards" class="grid three"></div>
   </section>
 
 
   <section id="reports" class="page">
-
     <div class="hero">
       <div>
         <div class="kicker">BROKER RESEARCH</div>
         <h1>券商報告</h1>
         <p>上調／下調／初評／維持｜收到報告後持續整理</p>
       </div>
-
       <span class="badge">收到報告後更新</span>
     </div>
-
     <div id="reportList" class="card"></div>
+  </section>
 
+
+  <section id="holders" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">LARGE HOLDERS</div>
+        <h1>本週大戶籌碼集中</h1>
+        <p>400張以上與千張以上持股比例增加幅度</p>
+      </div>
+      <span id="holderDate" class="badge">週六 15:00</span>
+    </div>
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab active" data-hm="twse">上市</button>
+        <button class="tab" data-hm="tpex">上櫃</button>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-hk="400">400張大戶增加</button>
+        <button class="tab" data-hk="1000">千張大戶增加</button>
+      </div>
+    </div>
+    <div id="holderStatus" class="status"></div>
+    <div class="card tablewrap">
+      <table>
+        <thead><tr><th>排行／股票</th><th>同期股價</th><th>大戶比率</th><th>增加</th></tr></thead>
+        <tbody id="holderRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <section id="monthlyRevenue" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">MONTHLY REVENUE</div>
+        <h1>月營收公布</h1>
+        <p>19 個科技族群｜最新已公布月份｜營收、MoM、YoY 與新高標籤</p>
+      </div>
+      <div class="badges">
+        <span id="revenueMonthBadge" class="badge"></span>
+      </div>
+    </div>
+
+    <div id="revenueStatus" class="status"></div>
+    <div id="revenueSectorTabs" class="week-strip"></div>
+    <div id="revenueSections"></div>
   </section>
 
 </main>
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
+<script src="./assets/ui_v2.js?v=20260926-ui1"></script>
 
 </body>
 </html>
