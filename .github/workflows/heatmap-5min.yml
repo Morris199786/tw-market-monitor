@@ -1,8 +1,15 @@
 name: Heatmap 5min
+
 on:
   schedule:
-    # UTC 01:00-05:59 = 台灣 09:00-13:59，週一至週五
+    # GitHub 內建排程保留當備援
+    # 台灣平日 09:00-13:59，每 5 分鐘
     - cron: "*/5 1-5 * * 1-5"
+
+  # Cloudflare Cron 主排程
+  repository_dispatch:
+    types: [heatmap]
+
   workflow_dispatch:
 
 permissions:
@@ -15,28 +22,41 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: Refresh master if missing
-        run: |
-          python scripts/update_master.py
+      - name: Refresh master
+        run: python scripts/update_master.py
 
       - name: Update heatmap
         run: python scripts/update_heatmap.py
 
-      - name: Commit
+      - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add data/master.json data/heatmap.json
-          if git diff --cached --quiet; then exit 0; fi
+
+          if git diff --cached --quiet; then
+            echo "No heatmap changes"
+            exit 0
+          fi
+
           git commit -m "data: heatmap update"
+
           git pull --rebase
+
           git push
