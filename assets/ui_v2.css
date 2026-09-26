@@ -939,3 +939,368 @@ html[data-theme="dark"] #backHomeBtn{
   background:rgba(245,247,250,.94);
   color:#111827;
 }
+
+/* =========================================================
+   2026-09-26 Dark Theme Refinement + Revenue Highlight
+   ========================================================= */
+
+:root{
+  --ui-bg:#f4f7fb;
+  --ui-bg-2:#eef3f9;
+  --ui-panel:#ffffff;
+  --ui-panel-soft:#f8fbff;
+  --ui-border:#d9e2ef;
+  --ui-title:#0f172a;
+  --ui-text:#334155;
+  --ui-muted:#7b8aa0;
+  --ui-blue:#3b82f6;
+  --ui-blue-soft:#eaf2ff;
+  --ui-green:#10b981;
+  --ui-red:#ef4444;
+  --ui-gold:#f59e0b;
+  --ui-gold-deep:#d97706;
+}
+
+/* 首頁營收新高：永遠用金色系識別，數字 > 0 時再加強 */
+.pulse-stat[data-pulse-target="monthlyRevenue"]{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(245,158,11,.34);
+  background:
+    radial-gradient(circle at 95% 5%,rgba(245,158,11,.16),transparent 42%),
+    rgba(255,255,255,.88);
+}
+
+.pulse-stat[data-pulse-target="monthlyRevenue"]::before{
+  content:"";
+  position:absolute;
+  right:-24px;
+  top:-28px;
+  width:86px;
+  height:86px;
+  border-radius:50%;
+  background:rgba(245,158,11,.10);
+  pointer-events:none;
+}
+
+.pulse-stat[data-pulse-target="monthlyRevenue"] > span{
+  color:#a16207;
+}
+
+.pulse-stat[data-pulse-target="monthlyRevenue"] > strong{
+  color:#d97706;
+}
+
+.pulse-stat[data-pulse-target="monthlyRevenue"].has-high{
+  border-color:rgba(245,158,11,.72);
+  box-shadow:
+    0 10px 30px rgba(217,119,6,.16),
+    inset 0 0 0 1px rgba(245,158,11,.12);
+  background:
+    linear-gradient(135deg,rgba(255,247,220,.98),rgba(255,255,255,.96));
+}
+
+.pulse-stat[data-pulse-target="monthlyRevenue"].has-high::after{
+  content:"NEW HIGH";
+  position:absolute;
+  right:12px;
+  top:10px;
+  padding:4px 7px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+  color:#92400e;
+  background:#fef3c7;
+  border:1px solid #f9d77f;
+}
+
+/* 真正 record_high 的月營收卡片更醒目 */
+.revenue-card.record-high{
+  position:relative;
+  overflow:hidden;
+  border:1.5px solid rgba(245,158,11,.72) !important;
+  background:
+    radial-gradient(circle at 100% 0,rgba(251,191,36,.22),transparent 38%),
+    linear-gradient(145deg,#fff9e8 0%,#ffffff 62%) !important;
+  box-shadow:
+    0 16px 36px rgba(217,119,6,.16),
+    inset 0 0 0 1px rgba(255,255,255,.7) !important;
+}
+
+.revenue-card.record-high .rev{
+  color:#d97706 !important;
+}
+
+.revenue-card.record-high .stock-name{
+  color:#7c4a03 !important;
+}
+
+.revenue-card .new-high{
+  color:#92400e !important;
+  background:#fef3c7 !important;
+  border:1px solid #f9d77f !important;
+  box-shadow:0 4px 14px rgba(217,119,6,.12);
+}
+
+/* =========================================================
+   Dark mode：深海軍藍 + 霧藍灰，不使用大片死黑
+   ========================================================= */
+
+html[data-theme="dark"]{
+  color-scheme:dark;
+}
+
+html[data-theme="dark"] body{
+  color:#e7eef8;
+  background:
+    radial-gradient(circle at 88% 0%,rgba(59,130,246,.12),transparent 34%),
+    radial-gradient(circle at 12% 28%,rgba(14,165,233,.06),transparent 28%),
+    linear-gradient(180deg,#091321 0%,#0c1727 48%,#0a1422 100%) !important;
+}
+
+html[data-theme="dark"] main{
+  background:transparent;
+}
+
+html[data-theme="dark"] .hero{
+  background:
+    radial-gradient(circle at 96% 0%,rgba(73,115,195,.14),transparent 34%),
+    linear-gradient(145deg,rgba(14,27,46,.96),rgba(11,23,39,.96)) !important;
+  border-color:#213754 !important;
+  box-shadow:0 16px 40px rgba(0,0,0,.20);
+}
+
+html[data-theme="dark"] .hero h1,
+html[data-theme="dark"] .market-pulse h2,
+html[data-theme="dark"] .section h2,
+html[data-theme="dark"] .feature-copy b,
+html[data-theme="dark"] .stock-name,
+html[data-theme="dark"] .titleline b{
+  color:#f4f8ff !important;
+}
+
+html[data-theme="dark"] .hero p,
+html[data-theme="dark"] .kicker,
+html[data-theme="dark"] .pulse-kicker,
+html[data-theme="dark"] .feature-copy small,
+html[data-theme="dark"] .revenue-card .ticker,
+html[data-theme="dark"] .rev-label,
+html[data-theme="dark"] .status,
+html[data-theme="dark"] .metric-box small{
+  color:#9cafc8 !important;
+}
+
+html[data-theme="dark"] .market-pulse{
+  border:1px solid #223a5a !important;
+  background:
+    radial-gradient(circle at 94% 0%,rgba(61,101,175,.12),transparent 34%),
+    linear-gradient(145deg,#111f34 0%,#0f1c2e 100%) !important;
+  box-shadow:
+    0 18px 46px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+html[data-theme="dark"] .pulse-main,
+html[data-theme="dark"] .pulse-stat{
+  border-color:#294361 !important;
+  background:
+    linear-gradient(145deg,#132238,#101d30) !important;
+  box-shadow:none !important;
+}
+
+html[data-theme="dark"] .pulse-main:hover,
+html[data-theme="dark"] .pulse-stat:hover{
+  border-color:#3d5f86 !important;
+  background:
+    linear-gradient(145deg,#162840,#122137) !important;
+}
+
+html[data-theme="dark"] .pulse-label,
+html[data-theme="dark"] .pulse-stat > span,
+html[data-theme="dark"] .pulse-stat small{
+  color:#9db0c9 !important;
+}
+
+html[data-theme="dark"] .pulse-main strong,
+html[data-theme="dark"] .pulse-stat strong{
+  color:#f5f8fd !important;
+}
+
+html[data-theme="dark"] .pulse-live{
+  color:#63e6ad !important;
+  background:rgba(16,185,129,.12) !important;
+  border:1px solid rgba(52,211,153,.15);
+}
+
+html[data-theme="dark"] .pulse-live i{
+  background:#34d399 !important;
+  box-shadow:0 0 0 5px rgba(52,211,153,.10);
+}
+
+/* 深色 feature cards */
+html[data-theme="dark"] .feature-card{
+  border-color:#223957 !important;
+  background:
+    linear-gradient(145deg,#122136 0%,#101c2e 100%) !important;
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+html[data-theme="dark"] .feature-card:hover{
+  transform:translateY(-2px);
+  border-color:#385a80 !important;
+  background:
+    linear-gradient(145deg,#16273e 0%,#122036 100%) !important;
+}
+
+html[data-theme="dark"] .feature-index,
+html[data-theme="dark"] .feature-arrow{
+  color:#8397b2 !important;
+}
+
+/* icons 改成較柔和的霧面色 */
+html[data-theme="dark"] .feature-card[data-tone="red"] .feature-icon{
+  color:#ff7b85 !important;
+  background:rgba(255,107,122,.12) !important;
+}
+html[data-theme="dark"] .feature-card[data-tone="amber"] .feature-icon{
+  color:#f7bd62 !important;
+  background:rgba(245,158,11,.12) !important;
+}
+html[data-theme="dark"] .feature-card[data-tone="blue"] .feature-icon{
+  color:#72aaff !important;
+  background:rgba(59,130,246,.13) !important;
+}
+html[data-theme="dark"] .feature-card[data-tone="violet"] .feature-icon{
+  color:#b69cff !important;
+  background:rgba(139,92,246,.13) !important;
+}
+html[data-theme="dark"] .feature-card[data-tone="green"] .feature-icon{
+  color:#5bd3aa !important;
+  background:rgba(16,185,129,.13) !important;
+}
+
+/* 一般卡片與資料區塊 */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .data-card,
+html[data-theme="dark"] .revenue-card,
+html[data-theme="dark"] .metric-box,
+html[data-theme="dark"] .sector-revenue{
+  background:
+    linear-gradient(145deg,#112035,#0f1c2e) !important;
+  border-color:#243d5b !important;
+  box-shadow:
+    0 14px 32px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.02) !important;
+}
+
+/* 深色營收新高：金色，但不要刺眼 */
+html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"]{
+  border-color:rgba(245,185,85,.34) !important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(245,158,11,.10),transparent 45%),
+    linear-gradient(145deg,#182438,#111d2e) !important;
+}
+
+html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"] > span{
+  color:#eab760 !important;
+}
+
+html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"] > strong{
+  color:#ffd07a !important;
+}
+
+html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"].has-high{
+  border-color:rgba(251,191,36,.58) !important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(251,191,36,.16),transparent 44%),
+    linear-gradient(145deg,#1d2838,#131f31) !important;
+  box-shadow:
+    0 14px 32px rgba(217,119,6,.10),
+    inset 0 0 0 1px rgba(251,191,36,.05) !important;
+}
+
+html[data-theme="dark"] .revenue-card.record-high{
+  border-color:rgba(251,191,36,.58) !important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(251,191,36,.15),transparent 40%),
+    linear-gradient(145deg,#1d293a,#121f31) !important;
+  box-shadow:
+    0 16px 36px rgba(217,119,6,.10),
+    inset 0 0 0 1px rgba(251,191,36,.05) !important;
+}
+
+html[data-theme="dark"] .revenue-card.record-high .rev,
+html[data-theme="dark"] .revenue-card.record-high .stock-name{
+  color:#ffd07a !important;
+}
+
+html[data-theme="dark"] .revenue-card .new-high{
+  color:#ffd88b !important;
+  background:rgba(245,158,11,.12) !important;
+  border-color:rgba(251,191,36,.30) !important;
+}
+
+/* tabs / pills */
+html[data-theme="dark"] .tab,
+html[data-theme="dark"] .week-pill,
+html[data-theme="dark"] .badge{
+  color:#aebed2;
+  background:#122137 !important;
+  border-color:#2a4361 !important;
+}
+
+html[data-theme="dark"] .tab.active,
+html[data-theme="dark"] .week-pill.active{
+  color:#f5f8fd !important;
+  background:#1b3353 !important;
+  border-color:#426b98 !important;
+}
+
+/* 表格 */
+html[data-theme="dark"] table{
+  color:#dfe8f5;
+}
+
+html[data-theme="dark"] thead th{
+  color:#92a7c0 !important;
+  background:#101d2f !important;
+  border-bottom-color:#29415e !important;
+}
+
+html[data-theme="dark"] tbody td{
+  border-bottom-color:#1f344e !important;
+}
+
+/* 漲跌色柔化 */
+html[data-theme="dark"] .up{
+  color:#ff737d !important;
+}
+
+html[data-theme="dark"] .down{
+  color:#54d29b !important;
+}
+
+/* header 仍保持深色，但與內容有層次 */
+html[data-theme="dark"] header{
+  background:
+    linear-gradient(180deg,#0c1726 0%,#0d1929 100%) !important;
+  border-bottom-color:#203651 !important;
+}
+
+html[data-theme="dark"] #mobileNav,
+html[data-theme="dark"] .icon-btn{
+  color:#eef4fc !important;
+  background:#15253a !important;
+  border-color:#304964 !important;
+}
+
+/* 返回總覽 */
+html[data-theme="dark"] #backHomeBtn{
+  color:#f3f7fd !important;
+  background:rgba(20,37,58,.94) !important;
+  border-color:#34516e !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.26) !important;
+}
