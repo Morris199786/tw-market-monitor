@@ -9,17 +9,22 @@ from html.parser import HTMLParser
 TWSE_NEWS = f"{TWSE}/opendata/t187ap04_L"
 TPEX_NEWS = f"{TPEX}/mopsfin_t187ap04_O"
 
-MOPS_LIST_URLS = (
-    "https://mops.twse.com.tw/mops/web/ajax_t05st01",
-    "https://mopsov.twse.com.tw/mops/web/ajax_t05st01",
+VERSION = "2026-09-26-v5-self-report-plus-history"
+
+MOPS_BASES = (
+    "https://mops.twse.com.tw",
+    "https://mopsov.twse.com.tw",
 )
 
-MOPS_DETAIL_URLS = (
-    "https://mops.twse.com.tw/mops/web/t05st01",
-    "https://mopsov.twse.com.tw/mops/web/t05st01",
+SELF_REPORT_PATHS = (
+    "/mops/web/t05st08_all",
+    "/mops/web/ajax_t05st08_all",
 )
 
-VERSION = "2026-09-26-v4-mops-get"
+HISTORY_PATHS = (
+    "/mops/web/t05st01",
+    "/mops/web/ajax_t05st01",
+)
 
 STRONG_SUBJECT_KEYWORDS = (
     "自結",
@@ -35,6 +40,7 @@ NOTICE_SUBJECT_KEYWORDS = (
     "達注意交易資訊標準",
     "多次達公布注意交易資訊標準",
     "有價證券達公布注意交易資訊標準",
+    "注意交易資訊標準",
 )
 
 FINANCIAL_ANCHORS = (
@@ -87,24 +93,7 @@ EXCLUDE_SUBJECT_KEYWORDS = (
 )
 
 
-class _TextParser(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.parts = []
-
-    def handle_data(self, data):
-        if data:
-            self.parts.append(data)
-
-    def text(self):
-        return " ".join(self.parts)
-
-
 class TableParser(HTMLParser):
-    """
-    解析 MOPS 重大訊息清單。
-    保留列內 href / onclick，方便取 co_id / spoke_date / spoke_time / seq_no。
-    """
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.rows = []
@@ -151,31 +140,56 @@ class TableParser(HTMLParser):
 
         elif tag == "tr" and self.in_tr:
             if self.cells:
-                self.rows.append(
-                    {
-                        "cells": self.cells[:],
-                        "attrs": " ".join(self.attr_parts),
-                    }
-                )
+                self.rows.append({
+                    "cells": self.cells[:],
+                    "attrs": " ".join(self.attr_parts),
+                })
 
             self.in_tr = False
             self.cells = []
             self.attr_parts = []
 
 
-def text_only(raw):
-    p = _TextParser()
+class TextParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+
+    def handle_data(self, data):
+        if data:
+            self.parts.append(data)
+
+    def text(self):
+        return re.sub(
+            r"\s+",
+            " ",
+            " ".join(self.parts)
+        ).strip()
+
+
+def html_text(raw):
+    p = TextParser()
 
     try:
         p.feed(str(raw or ""))
     except Exception:
         pass
 
-    return re.sub(
-        r"\s+",
-        " ",
-        p.text()
-    ).strip()
+    return p.text()
+
+
+def p(row, names, default=""):
+    return pick(row, names, default)
+
+
+def norm_text(s):
+    return (
+        str(s or "")
+        .replace("\r", " ")
+        .replace("\n", " ")
+        .replace("　", " ")
+        .strip()
+    )
 
 
 def roc_to_iso(s):
@@ -205,11 +219,7 @@ def roc_to_iso(s):
             f"{int(m.group(3)):02d}"
         )
 
-    digits = re.sub(
-        r"\D",
-        "",
-        raw
-    )
+    digits = re.sub(r"\D", "", raw)
 
     if len(digits) == 8 and digits.startswith("20"):
         return (
@@ -227,7 +237,6 @@ def roc_to_iso(s):
                 f"{digits[3:5]}-"
                 f"{digits[5:7]}"
             )
-
         except Exception:
             return ""
 
@@ -249,11 +258,7 @@ def clean_time(s):
             f"{int(m.group(3) or 0):02d}"
         )
 
-    digits = re.sub(
-        r"\D",
-        "",
-        raw
-    )
+    digits = re.sub(r"\D", "", raw)
 
     if not digits:
         return ""
@@ -264,24 +269,6 @@ def clean_time(s):
         f"{digits[:2]}:"
         f"{digits[2:4]}:"
         f"{digits[4:6]}"
-    )
-
-
-def norm_text(s):
-    return (
-        str(s or "")
-        .replace("\r", " ")
-        .replace("\n", " ")
-        .replace("　", " ")
-        .strip()
-    )
-
-
-def p(row, names, default=""):
-    return pick(
-        row,
-        names,
-        default
     )
 
 
@@ -310,7 +297,7 @@ def has_number_near_anchor(text, anchor):
     return bool(
         re.search(
             re.escape(anchor)
-            + r".{0,100}?"
+            + r".{0,120}?"
             + r"-?\d+(?:\.\d+)?",
             text,
             re.I | re.S,
@@ -322,22 +309,15 @@ def is_self_report(subject, detail):
     subject = norm_text(subject)
     detail = norm_text(detail)
 
-    if not subject_looks_like_self_report(
-        subject
-    ):
+    if not subject_looks_like_self_report(subject):
         return False
 
-    text = (
-        f"{subject}\n{detail}"
-    )
+    text = f"{subject}\n{detail}"
 
     signals = sum(
         1
         for anchor in FINANCIAL_ANCHORS
-        if has_number_near_anchor(
-            text,
-            anchor
-        )
+        if has_number_near_anchor(text, anchor)
     )
 
     if signals < 2:
@@ -389,26 +369,26 @@ def extract_metrics(detail):
     return {
         "eps": first_number(
             [
-                r"每股盈餘.{0,80}?(-?\d+(?:\.\d+)?)",
-                r"\bEPS.{0,50}?(-?\d+(?:\.\d+)?)",
+                r"每股盈餘.{0,100}?(-?\d+(?:\.\d+)?)",
+                r"\bEPS.{0,80}?(-?\d+(?:\.\d+)?)",
             ],
             text,
         ),
         "pretax_million": first_number(
             [
-                r"稅前(?:淨利|純益|損益).{0,80}?(-?\d+(?:\.\d+)?)",
+                r"稅前(?:淨利|純益|損益).{0,100}?(-?\d+(?:\.\d+)?)",
             ],
             text,
         ),
         "net_income_million": first_number(
             [
-                r"(?:歸屬母公司(?:業主)?(?:淨利|損益)|稅後(?:淨利|純益|損益)|本期淨利).{0,80}?(-?\d+(?:\.\d+)?)",
+                r"(?:歸屬母公司(?:業主)?(?:淨利|損益)|稅後(?:淨利|純益|損益)|本期淨利).{0,100}?(-?\d+(?:\.\d+)?)",
             ],
             text,
         ),
         "revenue_million": first_number(
             [
-                r"(?:營業收入|營收).{0,80}?(-?\d+(?:\.\d+)?)",
+                r"(?:營業收入|營收).{0,100}?(-?\d+(?:\.\d+)?)",
             ],
             text,
         ),
@@ -429,425 +409,195 @@ def mops_headers():
     }
 
 
-def get_mops(urls, params, timeout=45):
-    last = None
+def mops_multi_request(paths, params, label, timeout=50):
+    """
+    MOPS 新舊頁面可能要求 GET 或 POST。
+    v5 同一組參數依序嘗試 GET / POST、主站 / mopsov、一般頁 / ajax。
+    成功條件不是 HTTP 200 而已，還要有實際 HTML 內容。
+    """
+    attempts = []
 
-    for url in urls:
-        try:
-            r = S.get(
-                url,
-                params=params,
-                headers=mops_headers(),
-                timeout=timeout,
-            )
+    for base in MOPS_BASES:
+        for path in paths:
+            url = base + path
 
-            r.raise_for_status()
+            for method in ("get", "post"):
+                try:
+                    if method == "get":
+                        r = S.get(
+                            url,
+                            params=params,
+                            headers=mops_headers(),
+                            timeout=timeout,
+                        )
+                    else:
+                        r = S.post(
+                            url,
+                            data=params,
+                            headers=mops_headers(),
+                            timeout=timeout,
+                        )
 
-            txt = r.text
+                    attempts.append(
+                        f"{method.upper()} {r.status_code} {r.url}"
+                    )
 
-            if (
-                txt
-                and len(txt) > 300
-                and "查詢過於頻繁" not in txt
-                and "系統忙碌" not in txt
-                and "error.html" not in str(r.url)
-            ):
-                return txt, str(r.url)
+                    r.raise_for_status()
 
-            last = RuntimeError(
-                f"empty/blocked MOPS page: {r.url}"
-            )
+                    txt = r.text or ""
 
-        except Exception as e:
-            last = e
+                    if (
+                        len(txt) > 500
+                        and "error.html" not in str(r.url)
+                        and "查詢過於頻繁" not in txt
+                        and "系統忙碌" not in txt
+                    ):
+                        print(
+                            "MOPS request ok",
+                            label,
+                            method,
+                            len(txt),
+                            str(r.url)[:220]
+                        )
 
-        time.sleep(1.0)
+                        return txt, str(r.url)
 
-    raise RuntimeError(
-        f"MOPS GET failed: {last}"
+                except Exception as e:
+                    attempts.append(
+                        f"{method.upper()} ERR {url} {repr(e)}"
+                    )
+
+                time.sleep(0.4)
+
+    print(
+        "MOPS request exhausted",
+        label,
+        attempts[-6:]
     )
 
-
-def parse_params(blob):
-    def one(name):
-        pats = (
-            rf"{name}=([^&'\"\s)>]+)",
-            rf"{name}\s*=\s*['\"]?([^'\"&\s)>]+)",
-        )
-
-        for pat in pats:
-            m = re.search(
-                pat,
-                blob,
-                re.I
-            )
-
-            if m:
-                return m.group(1).strip()
-
-        return ""
-
-    return {
-        "co_id": one("co_id"),
-        "spoke_date": one("spoke_date"),
-        "spoke_time": one("spoke_time"),
-        "seq_no": one("seq_no"),
-    }
+    return "", ""
 
 
-def parse_list_row(row, day, market):
-    cells = row["cells"]
-    attrs = row["attrs"]
-
-    blob = (
-        attrs
-        + " "
-        + " ".join(cells)
-    )
-
-    params = parse_params(
-        blob
-    )
-
-    ticker = str(
-        params.get("co_id")
-        or ""
-    ).strip()
-
-    if not ordinary_ticker(
-        ticker
-    ):
-        for cell in cells:
-            if re.fullmatch(
-                r"\d{4}",
-                cell.strip()
-            ):
-                ticker = cell.strip()
-                break
-
-    if not ordinary_ticker(
-        ticker
-    ):
-        return None
-
-    publish_date = roc_to_iso(
-        params.get("spoke_date")
-    )
-
-    if not publish_date:
-        for cell in cells:
-            d = roc_to_iso(cell)
-
-            if d:
-                publish_date = d
-                break
-
-    publish_time = clean_time(
-        params.get("spoke_time")
-    )
-
-    if not publish_time:
-        for cell in cells:
-            if re.fullmatch(
-                r"\d{1,2}:\d{2}(?::\d{2})?",
-                cell.strip()
-            ):
-                publish_time = clean_time(
-                    cell
-                )
-                break
-
-    if (
-        publish_date
-        and publish_date != day.isoformat()
-    ):
-        return None
-
+def parse_ticker_name(cells):
+    ticker = ""
     name = ""
 
     for i, cell in enumerate(cells):
-        if (
-            cell.strip() == ticker
-            and i + 1 < len(cells)
+        c = cell.strip()
+
+        if re.fullmatch(r"\d{4}", c):
+            ticker = c
+
+            if i + 1 < len(cells):
+                cand = cells[i + 1].strip()
+
+                if cand:
+                    name = clean_name(cand)
+
+            break
+
+    return ticker, name
+
+
+def parse_date_time_from_cells(cells):
+    date = ""
+    tm = ""
+
+    for cell in cells:
+        if not date:
+            d = roc_to_iso(cell)
+
+            if d:
+                date = d
+
+        if not tm and re.search(
+            r"\d{1,2}:\d{2}(?::\d{2})?",
+            cell
         ):
-            cand = cells[
-                i + 1
-            ].strip()
+            tm = clean_time(cell)
 
-            if cand:
-                name = clean_name(
-                    cand
-                )
+    return date, tm
 
-                break
 
-    candidates = [
+def best_subject(cells):
+    strong = [
         c.strip()
         for c in cells
         if c.strip()
-        and c.strip() != ticker
-        and c.strip() != name
-    ]
-
-    strong = [
-        c
-        for c in candidates
-        if subject_looks_like_self_report(
-            c
-        )
+        and subject_looks_like_self_report(c)
     ]
 
     if strong:
-        subject = max(
+        return max(
             strong,
             key=len
         )
 
-    else:
-        subject = (
-            max(
-                candidates,
-                key=len
-            )
-            if candidates
-            else ""
+    text_candidates = [
+        c.strip()
+        for c in cells
+        if len(c.strip()) >= 10
+    ]
+
+    if text_candidates:
+        return max(
+            text_candidates,
+            key=len
         )
 
-    if not subject_looks_like_self_report(
-        subject
-    ):
-        return None
-
-    return {
-        "ticker": ticker,
-        "name": name,
-        "market": market,
-        "publish_date": (
-            publish_date
-            or day.isoformat()
-        ),
-        "publish_time": publish_time,
-        "subject": subject,
-        "seq_no": params.get(
-            "seq_no"
-        ) or "1",
-        "spoke_date": (
-            params.get(
-                "spoke_date"
-            )
-            or day.strftime("%Y%m%d")
-        ),
-        "spoke_time": (
-            params.get(
-                "spoke_time"
-            )
-            or publish_time.replace(":", "")
-        ),
-    }
+    return ""
 
 
-def fetch_mops_detail(item, roc_year):
-    params = {
-        "encodeURIComponent": "1",
-        "firstin": "true",
-        "b_date": "",
-        "e_date": "",
-        "TYPEK": "all",
-        "month": "all",
-        "type": "",
-        "e_month": "all",
-        "step": "2",
-        "off": "1",
-        "co_id": item["ticker"],
-        "spoke_date": (
-            item.get("spoke_date")
-            or item["publish_date"].replace("-", "")
-        ),
-        "spoke_time": (
-            item.get("spoke_time")
-            or item.get("publish_time", "").replace(":", "")
-        ),
-        "seq_no": item.get(
-            "seq_no"
-        ) or "1",
-        "year": str(
-            roc_year
-        ),
-    }
+def parse_self_report_summary_html(raw, month_start, month_end):
+    """
+    自結損益公告彙總表本身可能直接含數字，因此不一定要再點 detail。
+    """
+    parser = TableParser()
 
     try:
-        raw, url = get_mops(
-            MOPS_DETAIL_URLS,
-            params,
-            timeout=40
-        )
-
-        return (
-            text_only(raw),
-            url
-        )
-
-    except Exception as e:
-        print(
-            "MOPS detail fail",
-            item["ticker"],
-            item.get("publish_date"),
-            repr(e)
-        )
-
-        return "", ""
-
-
-def fetch_mops_history_day(day):
-    """
-    v4 重點：
-    - 改用 GET，符合 MOPS 歷史重大訊息既有 URL 形式
-    - TYPEK 分 sii / otc 查，避免 TYPEK=all 在歷史頁回空
-    - year 用民國年，month 用實際月份，b_date/e_date 用日
-    """
-    roc_year = (
-        day.year - 1911
-    )
-
-    all_candidates = []
-
-    for typek, market in (
-        ("sii", "twse"),
-        ("otc", "tpex"),
-    ):
-        params = {
-            "firstin": "1",
-            "TYPEK": typek,
-            "co_id": "",
-            "year": str(
-                roc_year
-            ),
-            "month": str(
-                day.month
-            ),
-            "b_date": str(
-                day.day
-            ),
-            "e_date": str(
-                day.day
-            ),
-        }
-
-        try:
-            raw, final_url = get_mops(
-                MOPS_LIST_URLS,
-                params,
-                timeout=60
-            )
-
-        except Exception as e:
-            print(
-                "MOPS history list fail",
-                day.isoformat(),
-                typek,
-                repr(e)
-            )
-            continue
-
-        parser = TableParser()
-
-        try:
-            parser.feed(
-                raw
-            )
-
-        except Exception as e:
-            print(
-                "MOPS table parse fail",
-                day.isoformat(),
-                typek,
-                repr(e)
-            )
-            continue
-
-        raw_row_count = len(
-            parser.rows
-        )
-
-        accepted_candidates = 0
-
-        for row in parser.rows:
-            item = parse_list_row(
-                row,
-                day,
-                market
-            )
-
-            if not item:
-                continue
-
-            item[
-                "list_source_url"
-            ] = final_url
-
-            all_candidates.append(
-                item
-            )
-
-            accepted_candidates += 1
-
-        print(
-            "MOPS list",
-            day.isoformat(),
-            typek,
-            "rows",
-            raw_row_count,
-            "self_candidates",
-            accepted_candidates,
-        )
-
-        time.sleep(0.6)
-
-    dedup = {}
-
-    for x in all_candidates:
-        key = (
-            x["ticker"],
-            x.get(
-                "publish_date",
-                ""
-            ),
-            x.get(
-                "publish_time",
-                ""
-            ),
-            re.sub(
-                r"\s+",
-                "",
-                x.get(
-                    "subject",
-                    ""
-                )
-            ),
-        )
-
-        dedup[
-            key
-        ] = x
+        parser.feed(raw)
+    except Exception:
+        return []
 
     out = []
 
-    for item in dedup.values():
-        detail, detail_url = (
-            fetch_mops_detail(
-                item,
-                roc_year
-            )
+    for row in parser.rows:
+        cells = row["cells"]
+
+        ticker, name = parse_ticker_name(
+            cells
         )
 
-        if not detail:
+        if not ordinary_ticker(ticker):
             continue
 
+        row_text = " | ".join(cells)
+
+        # 彙總表若沒有主旨，就自行生成一個穩定主旨
+        subject = best_subject(cells)
+
+        if not subject_looks_like_self_report(subject):
+            subject = "自結損益公告"
+
+        # 日期可能是公告日期，也可能只有資料年月
+        publish_date, publish_time = (
+            parse_date_time_from_cells(cells)
+        )
+
+        # 彙總表沒有公告日的資料，不強塞進本週
+        if publish_date:
+            if not (
+                month_start
+                <= publish_date
+                <= month_end
+            ):
+                continue
+
+        detail = row_text
+
+        # 只收真的有獲利/EPS數字的列
         if not is_self_report(
-            item.get(
-                "subject",
-                ""
-            ),
+            subject,
             detail
         ):
             continue
@@ -856,100 +606,297 @@ def fetch_mops_history_day(day):
             detail
         )
 
-        uid = "|".join(
-            [
-                "mops_history",
-                item["market"],
-                item["ticker"],
-                item.get(
-                    "publish_date",
-                    ""
-                ),
-                item.get(
-                    "publish_time",
-                    ""
-                ),
-                item.get(
-                    "subject",
-                    ""
-                ),
-            ]
-        )
-
-        out.append(
-            {
-                "id": uid,
-                "market": (
-                    item["market"]
-                ),
-                "ticker": (
-                    item["ticker"]
-                ),
-                "name": (
-                    item.get(
-                        "name",
-                        ""
-                    )
-                ),
-                "publish_date": (
-                    item.get(
-                        "publish_date",
-                        ""
-                    )
-                ),
-                "publish_time": (
-                    item.get(
-                        "publish_time",
-                        ""
-                    )
-                ),
-                "subject": (
-                    item.get(
-                        "subject",
-                        ""
-                    )
-                ),
-                "detail": (
-                    detail
-                ),
-                "source": (
-                    "mops_history"
-                ),
-                "source_url": (
-                    detail_url
-                ),
-                **metrics,
-            }
-        )
-
-        time.sleep(
-            0.25
-        )
-
-    print(
-        "MOPS history",
-        day.isoformat(),
-        "candidates",
-        len(dedup),
-        "accepted",
-        len(out),
-    )
+        out.append({
+            "id": "|".join(
+                [
+                    "mops_self_report",
+                    ticker,
+                    publish_date,
+                    publish_time,
+                    subject,
+                ]
+            ),
+            "market": "",
+            "ticker": ticker,
+            "name": name,
+            "publish_date": publish_date,
+            "publish_time": publish_time,
+            "subject": subject,
+            "detail": detail,
+            "source": "mops_self_report",
+            **metrics,
+        })
 
     return out
+
+
+def fetch_self_report_summary(today):
+    """
+    官方 MOPS:
+      單一公司 → 營運概況 → 自結損益公告
+      route: t05st08_all
+
+    v5 不再使用之前誤認的 t120sb02_q10。
+    """
+    roc_year = today.year - 1911
+
+    variants = []
+
+    for typek in ("sii", "otc"):
+        variants.extend([
+            {
+                "firstin": "1",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": str(today.month),
+            },
+            {
+                "firstin": "true",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": f"{today.month:02d}",
+            },
+            {
+                "step": "1",
+                "firstin": "1",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": str(today.month),
+                "co_id": "",
+            },
+        ])
+
+    all_rows = []
+
+    month_start = (
+        f"{today.year:04d}-"
+        f"{today.month:02d}-01"
+    )
+
+    month_end = (
+        f"{today.year:04d}-"
+        f"{today.month:02d}-31"
+    )
+
+    seen_html = set()
+
+    for i, params in enumerate(variants, 1):
+        raw, url = mops_multi_request(
+            SELF_REPORT_PATHS,
+            params,
+            f"self-report-{i}",
+            timeout=45,
+        )
+
+        if not raw:
+            continue
+
+        sig = (
+            len(raw),
+            raw[:120]
+        )
+
+        if sig in seen_html:
+            continue
+
+        seen_html.add(sig)
+
+        rows = parse_self_report_summary_html(
+            raw,
+            month_start,
+            month_end,
+        )
+
+        print(
+            "MOPS self-report summary",
+            i,
+            "rows",
+            len(rows),
+            "url",
+            url[:180],
+        )
+
+        all_rows.extend(
+            rows
+        )
+
+    dedup = {}
+
+    for x in all_rows:
+        dedup[
+            merge_identity(x)
+        ] = x
+
+    return list(
+        dedup.values()
+    )
+
+
+def parse_history_html(raw, start_date, end_date):
+    parser = TableParser()
+
+    try:
+        parser.feed(raw)
+    except Exception:
+        return []
+
+    out = []
+
+    for row in parser.rows:
+        cells = row["cells"]
+
+        ticker, name = parse_ticker_name(
+            cells
+        )
+
+        if not ordinary_ticker(ticker):
+            continue
+
+        publish_date, publish_time = (
+            parse_date_time_from_cells(cells)
+        )
+
+        if not publish_date:
+            continue
+
+        if not (
+            start_date
+            <= publish_date
+            <= end_date
+        ):
+            continue
+
+        subject = best_subject(
+            cells
+        )
+
+        if not subject_looks_like_self_report(
+            subject
+        ):
+            continue
+
+        detail = " | ".join(
+            cells
+        )
+
+        out.append({
+            "ticker": ticker,
+            "name": name,
+            "publish_date": publish_date,
+            "publish_time": publish_time,
+            "subject": subject,
+            "detail": detail,
+            "source": "mops_history_list",
+        })
+
+    return out
+
+
+def fetch_history_week(monday, friday):
+    """
+    官方 MOPS:
+      重大訊息/公告 → 歷史重大訊息
+      route: t05st01
+
+    這邊專門補『注意交易而公布近期財務業務資訊』這種重大訊息。
+    """
+    roc_year = monday.year - 1911
+
+    variants = []
+
+    for typek in ("sii", "otc"):
+        variants.extend([
+            {
+                "firstin": "1",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": str(monday.month),
+                "b_date": str(monday.day),
+                "e_date": str(friday.day),
+            },
+            {
+                "firstin": "true",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": f"{monday.month:02d}",
+                "b_date": f"{monday.day:02d}",
+                "e_date": f"{friday.day:02d}",
+                "co_id": "",
+            },
+            {
+                "step": "1",
+                "firstin": "1",
+                "TYPEK": typek,
+                "year": str(roc_year),
+                "month": str(monday.month),
+                "b_date": str(monday.day),
+                "e_date": str(friday.day),
+                "co_id": "",
+                "type": "",
+            },
+        ])
+
+    all_rows = []
+    seen_html = set()
+
+    for i, params in enumerate(variants, 1):
+        raw, url = mops_multi_request(
+            HISTORY_PATHS,
+            params,
+            f"history-{i}",
+            timeout=45,
+        )
+
+        if not raw:
+            continue
+
+        sig = (
+            len(raw),
+            raw[:120]
+        )
+
+        if sig in seen_html:
+            continue
+
+        seen_html.add(sig)
+
+        rows = parse_history_html(
+            raw,
+            monday.isoformat(),
+            friday.isoformat(),
+        )
+
+        print(
+            "MOPS history week",
+            i,
+            "rows",
+            len(rows),
+            "url",
+            url[:180],
+        )
+
+        all_rows.extend(
+            rows
+        )
+
+    dedup = {}
+
+    for x in all_rows:
+        dedup[
+            merge_identity(x)
+        ] = x
+
+    return list(
+        dedup.values()
+    )
 
 
 def fetch_current_openapi():
     out = []
 
     for market, url in (
-        (
-            "twse",
-            TWSE_NEWS
-        ),
-        (
-            "tpex",
-            TPEX_NEWS
-        ),
+        ("twse", TWSE_NEWS),
+        ("tpex", TPEX_NEWS),
     ):
         try:
             arr = get_json(
@@ -965,10 +912,7 @@ def fetch_current_openapi():
             )
             continue
 
-        if isinstance(
-            arr,
-            dict
-        ):
+        if isinstance(arr, dict):
             arr = (
                 arr.get("data")
                 or arr.get("records")
@@ -976,10 +920,7 @@ def fetch_current_openapi():
                 or []
             )
 
-        if not isinstance(
-            arr,
-            list
-        ):
+        if not isinstance(arr, list):
             continue
 
         for r in arr:
@@ -996,9 +937,7 @@ def fetch_current_openapi():
                 )
             ).strip()
 
-            if not ordinary_ticker(
-                ticker
-            ):
+            if not ordinary_ticker(ticker):
                 continue
 
             subject = str(
@@ -1058,55 +997,37 @@ def fetch_current_openapi():
                 detail
             )
 
-            uid = "|".join(
-                [
-                    "openapi",
-                    market,
-                    ticker,
-                    publish_date,
-                    publish_time,
-                    subject,
-                ]
-            )
-
-            out.append(
-                {
-                    "id": uid,
-                    "market": (
-                        market
-                    ),
-                    "ticker": (
-                        ticker
-                    ),
-                    "name": clean_name(
-                        p(
-                            r,
-                            [
-                                "公司名稱",
-                                "證券名稱",
-                                "名稱",
-                            ],
-                            "",
-                        )
-                    ),
-                    "publish_date": (
-                        publish_date
-                    ),
-                    "publish_time": (
-                        publish_time
-                    ),
-                    "subject": (
-                        subject
-                    ),
-                    "detail": (
-                        detail
-                    ),
-                    "source": (
-                        "openapi"
-                    ),
-                    **metrics,
-                }
-            )
+            out.append({
+                "id": "|".join(
+                    [
+                        "openapi",
+                        market,
+                        ticker,
+                        publish_date,
+                        publish_time,
+                        subject,
+                    ]
+                ),
+                "market": market,
+                "ticker": ticker,
+                "name": clean_name(
+                    p(
+                        r,
+                        [
+                            "公司名稱",
+                            "證券名稱",
+                            "名稱",
+                        ],
+                        "",
+                    )
+                ),
+                "publish_date": publish_date,
+                "publish_time": publish_time,
+                "subject": subject,
+                "detail": detail,
+                "source": "openapi",
+                **metrics,
+            })
 
     return out
 
@@ -1115,30 +1036,22 @@ def merge_identity(x):
     return "|".join(
         [
             str(
-                x.get(
-                    "ticker"
-                )
+                x.get("ticker")
                 or ""
             ),
             str(
-                x.get(
-                    "publish_date"
-                )
+                x.get("publish_date")
                 or ""
             ),
             str(
-                x.get(
-                    "publish_time"
-                )
+                x.get("publish_time")
                 or ""
             ),
             re.sub(
                 r"\s+",
                 "",
                 str(
-                    x.get(
-                        "subject"
-                    )
+                    x.get("subject")
                     or ""
                 )
             ),
@@ -1156,9 +1069,7 @@ def week_bounds(date_obj):
 
     friday = (
         monday
-        + timedelta(
-            days=4
-        )
+        + timedelta(days=4)
     )
 
     return (
@@ -1167,23 +1078,15 @@ def week_bounds(date_obj):
     )
 
 
-def week_label(
-    monday,
-    friday
-):
+def week_label(monday, friday):
     return (
-        f"{monday.month}/"
-        f"{monday.day}"
+        f"{monday.month}/{monday.day}"
         f"～"
-        f"{friday.month}/"
-        f"{friday.day}"
+        f"{friday.month}/{friday.day}"
     )
 
 
-def send_pushover(
-    title,
-    message
-):
+def send_pushover(title, message):
     token = os.getenv(
         "PUSHOVER_APP_TOKEN",
         ""
@@ -1198,32 +1101,22 @@ def send_pushover(
         print(
             "pushover secrets missing; skip push"
         )
-
         return False
 
     try:
         r = S.post(
             "https://api.pushover.net/1/messages.json",
             data={
-                "token": (
-                    token
-                ),
-                "user": (
-                    user
-                ),
-                "title": (
-                    title
-                ),
-                "message": (
-                    message
-                ),
+                "token": token,
+                "user": user,
+                "title": title,
+                "message": message,
                 "priority": 0,
             },
             timeout=30,
         )
 
         r.raise_for_status()
-
         return True
 
     except Exception as e:
@@ -1231,7 +1124,6 @@ def send_pushover(
             "pushover failed",
             repr(e)
         )
-
         return False
 
 
@@ -1242,99 +1134,63 @@ def push_text(x):
             f"{x['ticker']}"
         ),
         (
-            x.get(
-                "subject"
-            )
+            x.get("subject")
             or "公布自結財務資訊"
         ),
     ]
 
-    if x.get(
-        "eps"
-    ) is not None:
+    if x.get("eps") is not None:
         lines.append(
-            f"EPS "
-            f"{x['eps']:.2f} 元"
+            f"EPS {x['eps']:.2f} 元"
         )
 
-    if x.get(
-        "pretax_million"
-    ) is not None:
+    if x.get("pretax_million") is not None:
         lines.append(
             "稅前淨利 "
             f"{x['pretax_million']:.0f} 百萬"
         )
 
-    if x.get(
-        "net_income_million"
-    ) is not None:
+    if x.get("net_income_million") is not None:
         lines.append(
             "稅後／歸母淨利 "
             f"{x['net_income_million']:.0f} 百萬"
         )
 
-    return "\n".join(
-        lines
-    )
+    return "\n".join(lines)
 
 
 def enrich_name_market(items):
     master = load_json(
-        ROOT
-        / "data/master.json",
+        ROOT / "data/master.json",
         {}
     )
 
-    if isinstance(
-        master,
-        dict
-    ):
+    if isinstance(master, dict):
         stock_map = (
-            master.get(
-                "stocks"
-            )
+            master.get("stocks")
             if isinstance(
-                master.get(
-                    "stocks"
-                ),
+                master.get("stocks"),
                 dict
             )
             else master
         )
-
     else:
         stock_map = {}
 
     for x in items:
         m = stock_map.get(
-            x.get(
-                "ticker"
-            ),
+            x.get("ticker"),
             {}
         )
 
-        if not x.get(
-            "name"
-        ):
-            x[
-                "name"
-            ] = clean_name(
-                m.get(
-                    "name",
-                    ""
-                )
+        if not x.get("name"):
+            x["name"] = clean_name(
+                m.get("name", "")
             )
 
-        if not x.get(
-            "market"
-        ):
-            x[
-                "market"
-            ] = (
-                m.get(
-                    "market",
-                    ""
-                )
+        if not x.get("market"):
+            x["market"] = (
+                m.get("market", "")
             )
 
     return items
@@ -1344,9 +1200,7 @@ def main():
     today = now_tpe().date()
 
     monday, friday = (
-        week_bounds(
-            today
-        )
+        week_bounds(today)
     )
 
     current_key = (
@@ -1375,18 +1229,17 @@ def main():
 
     merged = {}
 
+    # 先保留舊的本週正確資料
     for x in old.get(
         "items",
         []
     ):
         d = str(
-            x.get(
-                "publish_date"
-            )
+            x.get("publish_date")
             or ""
         )
 
-        if not (
+        if d and not (
             monday.isoformat()
             <= d
             <= friday.isoformat()
@@ -1394,14 +1247,8 @@ def main():
             continue
 
         if not is_self_report(
-            x.get(
-                "subject",
-                ""
-            ),
-            x.get(
-                "detail",
-                ""
-            ),
+            x.get("subject", ""),
+            x.get("detail", "")
         ):
             continue
 
@@ -1409,15 +1256,12 @@ def main():
             merge_identity(x)
         ] = x
 
-    current = (
-        fetch_current_openapi()
-    )
+    # 1) 即時 OpenAPI
+    current = fetch_current_openapi()
 
     for x in current:
         d = (
-            x.get(
-                "publish_date"
-            )
+            x.get("publish_date")
             or ""
         )
 
@@ -1430,40 +1274,63 @@ def main():
                 merge_identity(x)
             ] = x
 
-    history_fresh = []
-
-    day = monday
-
-    while day <= friday:
-        if day <= today:
-            rows = (
-                fetch_mops_history_day(
-                    day
-                )
-            )
-
-            history_fresh.extend(
-                rows
-            )
-
-            for x in rows:
-                merged[
-                    merge_identity(x)
-                ] = x
-
-            time.sleep(
-                0.8
-            )
-
-        day += timedelta(
-            days=1
+    # 2) 官方自結損益公告專區
+    self_report_rows = (
+        fetch_self_report_summary(
+            today
         )
+    )
+
+    for x in self_report_rows:
+        d = (
+            x.get("publish_date")
+            or ""
+        )
+
+        # 有公告日期就限制本週
+        if d and not (
+            monday.isoformat()
+            <= d
+            <= friday.isoformat()
+        ):
+            continue
+
+        merged[
+            merge_identity(x)
+        ] = x
+
+    # 3) 官方歷史重大訊息，補注意交易財務業務公告
+    history_rows = (
+        fetch_history_week(
+            monday,
+            friday
+        )
+    )
+
+    # 歷史清單頁通常只有主旨，不一定含完整數字。
+    # 先合併候選，若之後 OpenAPI/自結專區有同筆完整內容會覆蓋。
+    for x in history_rows:
+        merged[
+            merge_identity(x)
+        ] = x
 
     items = enrich_name_market(
         list(
             merged.values()
         )
     )
+
+    # 最後只留下真正符合條件的完整資料
+    final_items = []
+
+    for x in items:
+        if is_self_report(
+            x.get("subject", ""),
+            x.get("detail", "")
+        ):
+            final_items.append(x)
+
+    items = final_items
 
     items.sort(
         key=lambda x: (
@@ -1499,29 +1366,29 @@ def main():
 
     for x in (
         current
-        + history_fresh
+        + self_report_rows
     ):
         d = (
-            x.get(
-                "publish_date"
-            )
+            x.get("publish_date")
             or ""
         )
 
-        if not (
+        if d and not (
             monday.isoformat()
             <= d
             <= friday.isoformat()
         ):
             continue
 
-        key = merge_identity(
-            x
-        )
+        key = merge_identity(x)
 
-        push_candidates[
-            key
-        ] = x
+        if is_self_report(
+            x.get("subject", ""),
+            x.get("detail", "")
+        ):
+            push_candidates[
+                key
+            ] = x
 
     for key, x in push_candidates.items():
         if key in sent:
@@ -1531,9 +1398,7 @@ def main():
             "自結公布",
             push_text(x),
         ):
-            sent.add(
-                key
-            )
+            sent.add(key)
 
     updated_at = (
         now_tpe()
@@ -1551,12 +1416,8 @@ def main():
             "updated_at": (
                 updated_at
             ),
-            "version": (
-                VERSION
-            ),
-            "items": (
-                items
-            ),
+            "version": VERSION,
+            "items": items,
         },
     )
 
@@ -1589,7 +1450,7 @@ def main():
                 VERSION
             ),
             "source_mode": (
-                "OpenAPI 即時 + MOPS 歷史重大訊息 GET 回補"
+                "OpenAPI 即時 + MOPS 自結損益公告 t05st08_all + MOPS 歷史重大訊息 t05st01"
             ),
             "weeks": [
                 {
@@ -1614,8 +1475,10 @@ def main():
         len(items),
         "openapi",
         len(current),
-        "history_new",
-        len(history_fresh),
+        "self_report_summary",
+        len(self_report_rows),
+        "history_candidates",
+        len(history_rows),
         "version",
         VERSION,
     )
