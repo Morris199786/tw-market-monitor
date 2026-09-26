@@ -1,63 +1,941 @@
-name: Daily close update
 
-on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣 18:00 = UTC 10:00
-    - cron: "0 10 * * *"
+/* =========================================================
+   Dashboard UI Pro
+   ========================================================= */
 
-    # 台灣 18:20 = UTC 10:20
-    # 補跑一次，避免官方資料尚未完全更新
-    - cron: "20 10 * * *"
+:root{
+  --pro-blue:#2563eb;
+  --pro-blue-soft:#eef4ff;
+  --pro-red:#e93b4f;
+  --pro-red-soft:#fff1f3;
+  --pro-amber:#f59e0b;
+  --pro-amber-soft:#fff7e6;
+  --pro-green:#10b981;
+  --pro-green-soft:#ecfdf5;
+  --pro-violet:#7c3aed;
+  --pro-violet-soft:#f5f0ff;
+  --pro-gold:#f4b400;
+  --pro-gold-2:#ff7a00;
+}
 
-  # Cloudflare Cron 主排程
-  repository_dispatch:
-    types: [daily_close]
+/* 整體背景更有層次 */
+body{
+  background:
+    radial-gradient(
+      circle at 88% 10%,
+      rgba(37,99,235,.07),
+      transparent 26rem
+    ),
+    radial-gradient(
+      circle at 10% 35%,
+      rgba(124,58,237,.045),
+      transparent 24rem
+    ),
+    var(--bg);
+}
 
-  workflow_dispatch:
+.hero{
+  position:relative;
+  overflow:hidden;
+}
 
-permissions:
-  contents: write
+.hero::after{
+  content:"";
+  position:absolute;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  right:-90px;
+  top:-100px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37,99,235,.09),
+      rgba(124,58,237,.03)
+    );
+  pointer-events:none;
+}
 
-concurrency:
-  group: daily-close
-  cancel-in-progress: false
+/* =========================================================
+   Market Pulse
+   ========================================================= */
 
-jobs:
-  update:
-    runs-on: ubuntu-latest
+.market-pulse{
+  margin:0 0 18px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37,99,235,.08),
+      rgba(124,58,237,.035) 48%,
+      transparent 100%
+    ),
+    var(--card);
+  box-shadow:var(--shadow);
+}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+.pulse-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+.pulse-head h2{
+  margin:2px 0 0;
+  font-size:19px;
+}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+.pulse-kicker{
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:.18em;
+  font-weight:800;
+}
 
-      - name: Run daily update
-        run: python scripts/update_all.py
+.pulse-live{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  border-radius:999px;
+  background:var(--pro-green-soft);
+  color:#047857;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
 
-      - name: Commit updated data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+.pulse-live i{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:
+    0 0 0 4px
+    rgba(34,197,94,.12);
+}
 
-          git add data
+.pulse-grid{
+  display:grid;
+  grid-template-columns:
+    minmax(0,1.7fr)
+    minmax(130px,.65fr)
+    minmax(130px,.65fr);
+  gap:10px;
+}
 
-          if git diff --cached --quiet; then
-            echo "No data changes"
-            exit 0
-          fi
+.pulse-main,
+.pulse-stat{
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(255,255,255,.72);
+  color:var(--ink);
+  text-align:left;
+  padding:15px;
+  min-height:110px;
+  position:relative;
+  overflow:hidden;
+}
 
-          git commit -m "data: daily close update"
+.pulse-main{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:end;
+}
 
-          git pull --rebase
+.pulse-main .pulse-label{
+  grid-column:1 / -1;
+  color:var(--muted);
+  font-size:10px;
+  align-self:start;
+}
 
-          git push
+.pulse-main strong{
+  font-size:22px;
+  line-height:1.1;
+}
+
+.pulse-main b{
+  font-size:20px;
+}
+
+.mini-bars{
+  position:absolute;
+  right:14px;
+  bottom:13px;
+  width:72px;
+  height:40px;
+  display:flex;
+  align-items:end;
+  justify-content:flex-end;
+  gap:4px;
+  opacity:.22;
+}
+
+.mini-bars i{
+  width:9px;
+  height:var(--bar);
+  min-height:8px;
+  border-radius:6px 6px 2px 2px;
+  background:currentColor;
+}
+
+.pulse-stat{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+.pulse-stat span,
+.pulse-stat small{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.pulse-stat strong{
+  font-size:28px;
+  line-height:1;
+}
+
+html[data-theme="dark"] .pulse-main,
+html[data-theme="dark"] .pulse-stat{
+  background:rgba(20,29,42,.78);
+}
+
+html[data-theme="dark"] .pulse-live{
+  background:#113328;
+  color:#7ae6bb;
+}
+
+/* =========================================================
+   Feature Rail
+   ========================================================= */
+
+.feature-rail{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding:2px 2px 18px;
+  margin:0 0 16px;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+
+.feature-rail::-webkit-scrollbar{
+  display:none;
+}
+
+.feature-card{
+  flex:0 0 168px;
+  min-height:154px;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:22px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.94),
+      rgba(255,255,255,.78)
+    );
+  box-shadow:
+    0 8px 24px rgba(15,23,42,.07);
+  text-align:left;
+  color:var(--ink);
+  scroll-snap-align:start;
+  position:relative;
+  overflow:hidden;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+.feature-card:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    0 12px 30px rgba(15,23,42,.10);
+}
+
+.feature-card:active{
+  transform:scale(.98);
+}
+
+.feature-card::after{
+  content:"";
+  position:absolute;
+  width:88px;
+  height:88px;
+  border-radius:50%;
+  right:-38px;
+  top:-38px;
+  background:currentColor;
+  opacity:.045;
+}
+
+.feature-card-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.feature-icon{
+  width:48px;
+  height:48px;
+  border-radius:15px;
+  display:grid;
+  place-items:center;
+  background:var(--soft);
+}
+
+.feature-icon svg{
+  width:23px;
+  height:23px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.feature-index{
+  color:var(--muted);
+  opacity:.55;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+
+.feature-copy{
+  margin-top:18px;
+}
+
+.feature-card b{
+  display:block;
+  font-size:16px;
+  line-height:1.25;
+}
+
+.feature-card small{
+  display:block;
+  color:var(--muted);
+  margin-top:6px;
+  font-size:10px;
+}
+
+.feature-arrow{
+  position:absolute;
+  right:14px;
+  bottom:13px;
+  color:var(--muted);
+  font-size:16px;
+  transition:.18s ease;
+}
+
+.feature-card:hover .feature-arrow{
+  transform:translateX(3px);
+}
+
+.feature-card[data-tone="red"]{
+  color:#d9354e;
+}
+.feature-card[data-tone="red"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="red"] .feature-icon{
+  background:var(--pro-red-soft);
+}
+
+.feature-card[data-tone="amber"]{
+  color:#d98900;
+}
+.feature-card[data-tone="amber"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="amber"] .feature-icon{
+  background:var(--pro-amber-soft);
+}
+
+.feature-card[data-tone="blue"]{
+  color:#3975dd;
+}
+.feature-card[data-tone="blue"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="blue"] .feature-icon{
+  background:var(--pro-blue-soft);
+}
+
+.feature-card[data-tone="green"]{
+  color:#12815a;
+}
+.feature-card[data-tone="green"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="green"] .feature-icon{
+  background:var(--pro-green-soft);
+}
+
+.feature-card[data-tone="violet"]{
+  color:#7053cf;
+}
+.feature-card[data-tone="violet"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="violet"] .feature-icon{
+  background:var(--pro-violet-soft);
+}
+
+html[data-theme="dark"] .feature-card{
+  background:
+    linear-gradient(
+      180deg,
+      rgba(28,39,55,.98),
+      rgba(20,29,42,.98)
+    );
+}
+
+/* =========================================================
+   Home metric cards
+   ========================================================= */
+
+#homeCards .metric,
+#topSectors .metric{
+  position:relative;
+  overflow:hidden;
+  border-top:3px solid
+    rgba(37,99,235,.68);
+}
+
+#homeCards .metric::after,
+#topSectors .metric::after{
+  content:"";
+  position:absolute;
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  right:-34px;
+  bottom:-36px;
+  background:
+    rgba(37,99,235,.05);
+}
+
+/* =========================================================
+   Status
+   ========================================================= */
+
+.status{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px;
+}
+
+.status-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:
+    0 0 0 4px
+    rgba(34,197,94,.10);
+  margin-right:3px;
+}
+
+.status-divider{
+  color:var(--muted);
+}
+
+/* =========================================================
+   Self Reports
+   ========================================================= */
+
+.self-report-card{
+  border-top:3px solid
+    rgba(245,158,11,.82);
+}
+
+.card-accent{
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:
+    linear-gradient(
+      180deg,
+      #f59e0b,
+      #fb7185
+    );
+  opacity:.7;
+}
+
+.self-empty{
+  grid-column:1 / -1;
+  min-height:180px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  gap:8px;
+}
+
+.self-empty b{
+  font-size:15px;
+}
+
+.self-empty span{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.empty-icon{
+  width:52px;
+  height:52px;
+  border-radius:17px;
+  display:grid;
+  place-items:center;
+  background:var(--pro-amber-soft);
+  color:#d98900;
+  margin-bottom:4px;
+}
+
+.empty-icon svg{
+  width:24px;
+  height:24px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+}
+
+/* =========================================================
+   Data cards
+   ========================================================= */
+
+.data-card{
+  padding:17px;
+  position:relative;
+  overflow:hidden;
+}
+
+.data-card .eyebrow{
+  color:var(--muted);
+  font-size:10px;
+  margin-bottom:8px;
+  letter-spacing:.02em;
+}
+
+.data-card .titleline{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+}
+
+.data-card .titleline b{
+  font-size:17px;
+}
+
+.data-card .titleline span{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.data-card .metric-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:13px;
+}
+
+.data-card .metric-box{
+  background:
+    linear-gradient(
+      135deg,
+      var(--soft),
+      transparent
+    );
+  border:1px solid
+    rgba(127,127,127,.08);
+  border-radius:12px;
+  padding:10px 11px;
+}
+
+.data-card .metric-box small{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  margin-bottom:4px;
+}
+
+.data-card .metric-box strong{
+  font-size:14px;
+}
+
+.data-card .subject{
+  margin-top:11px;
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.55;
+}
+
+/* =========================================================
+   Monthly Revenue / Record High
+   ========================================================= */
+
+.week-strip{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:2px 0 12px;
+  margin-bottom:2px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+
+.week-strip::-webkit-scrollbar{
+  display:none;
+}
+
+.week-pill{
+  flex:0 0 auto;
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--muted);
+  border-radius:999px;
+  padding:9px 13px;
+  font-size:11px;
+}
+
+.week-pill.active{
+  background:#111827;
+  color:#fff;
+  border-color:#111827;
+}
+
+.sector-revenue{
+  margin:20px 0 28px;
+}
+
+.sector-revenue-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 10px;
+}
+
+.sector-revenue-head > div{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.sector-revenue-head h2{
+  margin:0;
+  font-size:18px;
+}
+
+.sector-revenue-head > span{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.sector-high-count{
+  color:#b45309;
+  background:#fff7ed;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:8px;
+  font-weight:800;
+}
+
+.revenue-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:11px;
+}
+
+.revenue-card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:17px;
+  padding:15px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+  transition:.18s ease;
+}
+
+.revenue-card .top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:flex-start;
+  position:relative;
+  z-index:1;
+}
+
+.revenue-card .stock-name{
+  font-weight:900;
+  font-size:14px;
+}
+
+.revenue-card .ticker{
+  color:var(--muted);
+  font-size:9px;
+  margin-left:5px;
+}
+
+.revenue-card .rev{
+  font-size:23px;
+  font-weight:950;
+  margin:13px 0 2px;
+  position:relative;
+  z-index:1;
+}
+
+.revenue-card .rev-label{
+  color:var(--muted);
+  font-size:9px;
+  position:relative;
+  z-index:1;
+}
+
+.revenue-card .changes{
+  display:flex;
+  gap:14px;
+  margin-top:11px;
+  font-size:11px;
+  position:relative;
+  z-index:1;
+}
+
+.revenue-card .changes span small{
+  color:var(--muted);
+  display:block;
+  font-size:8px;
+  margin-bottom:2px;
+}
+
+/* 新高：顯眼金橘色 */
+.revenue-card.record-high{
+  border:2px solid
+    rgba(244,180,0,.82);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,247,217,.95),
+      rgba(255,239,219,.76) 48%,
+      var(--card) 100%
+    );
+  box-shadow:
+    0 10px 28px
+    rgba(245,158,11,.18);
+}
+
+.revenue-card.record-high::before{
+  content:"NEW HIGH";
+  position:absolute;
+  right:-24px;
+  top:14px;
+  transform:rotate(38deg);
+  width:100px;
+  text-align:center;
+  padding:4px 0;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.12em;
+  color:#fff;
+  background:
+    linear-gradient(
+      90deg,
+      var(--pro-gold),
+      var(--pro-gold-2)
+    );
+  z-index:2;
+}
+
+.record-high-glow{
+  position:absolute;
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  right:-64px;
+  bottom:-72px;
+  background:
+    radial-gradient(
+      circle,
+      rgba(245,158,11,.22),
+      transparent 68%
+    );
+  pointer-events:none;
+}
+
+.new-high{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:9px;
+  font-weight:950;
+  border-radius:999px;
+  padding:6px 9px;
+  color:#8a4a00;
+  background:
+    linear-gradient(
+      135deg,
+      #fff1a8,
+      #ffd28a
+    );
+  border:1px solid
+    rgba(245,158,11,.42);
+  box-shadow:
+    0 4px 12px
+    rgba(245,158,11,.14);
+}
+
+.new-high-icon{
+  font-size:10px;
+  color:#ff8a00;
+}
+
+html[data-theme="dark"] .revenue-card.record-high{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(80,54,7,.78),
+      rgba(50,36,19,.76) 48%,
+      var(--card) 100%
+    );
+  border-color:#c98c08;
+}
+
+html[data-theme="dark"] .new-high{
+  color:#ffe5a2;
+  background:
+    linear-gradient(
+      135deg,
+      #68460c,
+      #523015
+    );
+}
+
+html[data-theme="dark"] .sector-high-count{
+  color:#f6c56d;
+  background:#34210d;
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media(max-width:1000px){
+  .revenue-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+}
+
+@media(max-width:720px){
+  .market-pulse{
+    padding:15px;
+    border-radius:21px;
+  }
+
+  .pulse-grid{
+    grid-template-columns:
+      1fr 1fr;
+  }
+
+  .pulse-main{
+    grid-column:1 / -1;
+    min-height:118px;
+  }
+
+  .feature-card{
+    flex-basis:148px;
+    min-height:142px;
+    border-radius:20px;
+    padding:14px;
+  }
+
+  .feature-icon{
+    width:45px;
+    height:45px;
+    border-radius:14px;
+  }
+
+  .feature-copy{
+    margin-top:16px;
+  }
+
+  .feature-card b{
+    font-size:15px;
+  }
+
+  .revenue-grid{
+    grid-template-columns:1fr;
+  }
+
+  .data-card .metric-grid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .revenue-card.record-high{
+    border-width:2px;
+  }
+}
+
+
+/* =========================================================
+   固定返回總覽按鈕
+   ========================================================= */
+#backHomeBtn{
+  position:fixed;
+  left:16px;
+  bottom:
+    calc(
+      18px + env(safe-area-inset-bottom)
+    );
+  z-index:999;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:10px 14px;
+  background:rgba(15,23,34,.92);
+  color:#fff;
+  box-shadow:
+    0 10px 26px
+    rgba(15,23,42,.22);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  font-size:12px;
+  font-weight:800;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(10px);
+  transition:.18s ease;
+}
+
+#backHomeBtn.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
+}
+
+#backHomeBtn .back-home-icon{
+  font-size:18px;
+  line-height:1;
+}
+
+html[data-theme="dark"] #backHomeBtn{
+  background:rgba(245,247,250,.94);
+  color:#111827;
+}
