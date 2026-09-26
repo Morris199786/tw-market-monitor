@@ -1,15 +1,21 @@
 {
-  "updated_at": "2026-09-26T14:03+08:00",
-  "current_week_key": "2026-09-21",
-  "current_week_label": "9/21～9/25",
-  "filter_version": "2026-09-26-v6-full-market-backfill",
-  "source_mode": "OpenAPI 即時 + MOPS t05st01 全市場逐公司每週一次歷史回補",
-  "backfill_this_run": 0,
-  "weeks": [
-    {
-      "key": "2026-09-21",
-      "label": "9/21～9/25",
-      "items": []
+  "updated_at": "2026-09-26T14:41+08:00",
+  "monitor_start_date": "2026-09-26",
+  "filter_version": "2026-09-26-v7-forward-monitor",
+  "source_mode": "TWSE/TPEx OpenAPI 即時監控 + 本站永久保存",
+  "source_status": {
+    "twse": {
+      "ok": true,
+      "rows": 6,
+      "self_reports": 0,
+      "error": ""
+    },
+    "tpex": {
+      "ok": true,
+      "rows": 4,
+      "self_reports": 0,
+      "error": ""
     }
-  ]
+  },
+  "items": []
 }
