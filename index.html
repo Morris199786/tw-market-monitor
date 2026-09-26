@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f1722">
 <title>台股市場監測</title>
 <link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
-<link rel="stylesheet" href="./assets/ui_v2.css?v=20260926-ui1">
+<link rel="stylesheet" href="./assets/ui_v2.css?v=20260926-ui-pro2">
 </head>
 
 <body>
@@ -21,8 +21,8 @@
 
     <nav>
       <button class="nav active" data-p="home">總覽</button>
-      <button class="nav" data-p="selfReports">自結公布</button>
       <button class="nav" data-p="heat">市場熱力圖</button>
+      <button class="nav" data-p="selfReports">自結公布</button>
       <button class="nav" data-p="flows">籌碼日報</button>
       <button class="nav" data-p="volume">突然放量</button>
       <button class="nav" data-p="turnover">成交排行</button>
@@ -38,8 +38,8 @@
 
     <select id="mobileNav" aria-label="切換分頁">
       <option value="home">總覽</option>
-      <option value="selfReports">自結公布</option>
       <option value="heat">市場熱力圖</option>
+      <option value="selfReports">自結公布</option>
       <option value="flows">籌碼日報</option>
       <option value="volume">突然放量</option>
       <option value="turnover">成交排行</option>
@@ -78,24 +78,6 @@
   </section>
 
 
-  <section id="selfReports" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">SELF-REPORTED EARNINGS</div>
-        <h1>自結公布</h1>
-        <p>全台股｜依公告日期整理｜主畫面保留當週資訊</p>
-      </div>
-      <div class="badges">
-        <span id="selfWeekBadge" class="badge"></span>
-      </div>
-    </div>
-
-    <div id="selfWeekTabs" class="week-strip"></div>
-    <div id="selfStatus" class="status"></div>
-    <div id="selfReportCards" class="grid three"></div>
-  </section>
-
-
   <section id="heat" class="page">
     <div class="hero">
       <div>
@@ -109,6 +91,24 @@
       </div>
     </div>
     <div id="heatGrid" class="heatgrid"></div>
+  </section>
+
+
+  <section id="selfReports" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">SELF-REPORTED EARNINGS</div>
+        <h1>自結公布</h1>
+        <p>全台股即時監控｜22:00 收盤後檢查｜次日 08:00 盤前複查｜新公告自動推播</p>
+      </div>
+      <div class="badges">
+        <span id="selfWeekBadge" class="badge"></span>
+      </div>
+    </div>
+
+    <div id="selfWeekTabs" class="week-strip"></div>
+    <div id="selfStatus" class="status"></div>
+    <div id="selfReportCards" class="grid three"></div>
   </section>
 
 
@@ -272,7 +272,7 @@
         <h1>本週大戶籌碼集中</h1>
         <p>400張以上與千張以上持股比例增加幅度</p>
       </div>
-      <span id="holderDate" class="badge">週六 15:00</span>
+      <span id="holderDate" class="badge">週六 17:00</span>
     </div>
     <div class="toolbar">
       <div class="tabs">
@@ -315,7 +315,7 @@
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
-<script src="./assets/ui_v2.js?v=20260926-ui1"></script>
+<script src="./assets/ui_v2.js?v=20260926-ui-pro2"></script>
 
 </body>
 </html>
