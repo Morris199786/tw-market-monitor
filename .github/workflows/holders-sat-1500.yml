@@ -2,12 +2,16 @@ name: Weekly holders
 
 on:
   schedule:
-    # 台灣週六 15:00 = UTC 07:00
-    - cron: "0 7 * * 6"
+    # GitHub 內建排程保留當備援
+    # 台灣週六 17:00 = UTC 09:00
+    - cron: "0 9 * * 6"
 
-    # 台灣週六 15:20 = UTC 07:20
-    # 補跑一次，避免 TDCC 資料延遲
-    - cron: "20 7 * * 6"
+    # 台灣週六 17:20
+    - cron: "20 9 * * 6"
+
+  # Cloudflare Cron 主排程
+  repository_dispatch:
+    types: [holders]
 
   workflow_dispatch:
 
