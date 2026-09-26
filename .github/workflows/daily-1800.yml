@@ -2,12 +2,17 @@ name: Daily close update
 
 on:
   schedule:
+    # GitHub 內建排程保留當備援
     # 台灣 18:00 = UTC 10:00
     - cron: "0 10 * * *"
 
     # 台灣 18:20 = UTC 10:20
-    # 補跑一次，避免官方資料 18:00 尚未完全更新
+    # 補跑一次，避免官方資料尚未完全更新
     - cron: "20 10 * * *"
+
+  # Cloudflare Cron 主排程
+  repository_dispatch:
+    types: [daily_close]
 
   workflow_dispatch:
 
