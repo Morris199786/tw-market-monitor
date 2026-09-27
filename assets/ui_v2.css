@@ -1152,3 +1152,398 @@ html[data-theme="dark"] #backHomeBtn{
     gap:8px;
   }
 }
+
+/* =========================================================
+   Monthly Revenue v5 FIX
+   2026-09-27
+   - 全裝置顯示族群下拉選單
+   - 上方唯一顯示「金色標示＝MoM > 10%」
+   - 卡片內不重複顯示 MoM > 10%
+   - 手機縮小營收 / MoM / YoY 字級
+   - 平板 / 桌機維持清楚格線
+   ========================================================= */
+
+#revenueSectorTabs{
+  display:none !important;
+}
+
+/* v4 曾把 picker 強制隱藏，這裡明確覆蓋 */
+.revenue-sector-picker{
+  display:block !important;
+  width:100%;
+  margin:14px 0 20px !important;
+}
+
+.revenue-control-panel,
+.revenue-controls{
+  width:100%;
+  box-sizing:border-box;
+  display:grid !important;
+  grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);
+  gap:14px;
+  align-items:end;
+  margin:0;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(255,255,255,.56);
+  box-shadow:0 8px 24px rgba(15,23,42,.04);
+}
+
+.revenue-control-group,
+.revenue-control-block{
+  min-width:0;
+}
+
+.revenue-control-label{
+  display:block;
+  margin:0 0 7px 2px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.3;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.revenue-gold-note{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:0 0 10px 2px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.4;
+  font-weight:700;
+}
+
+.revenue-gold-note::before{
+  content:"";
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-radius:3px;
+  background:#e5b84d;
+  border:1px solid #c99425;
+  box-shadow:0 0 0 3px rgba(216,155,33,.10);
+}
+
+.revenue-select-wrap{
+  position:relative;
+}
+
+#revenueSectorSelect{
+  display:block !important;
+  width:100%;
+  min-height:44px;
+  box-sizing:border-box;
+  appearance:none;
+  -webkit-appearance:none;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:0 42px 0 13px;
+  background:var(--card);
+  color:var(--ink);
+  font:inherit;
+  font-size:12px;
+  line-height:1;
+  font-weight:800;
+  outline:none;
+}
+
+#revenueSectorSelect:focus{
+  border-color:#8091a7;
+  box-shadow:0 0 0 3px rgba(100,116,139,.10);
+}
+
+.revenue-select-arrow{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-52%);
+  color:var(--muted);
+  font-size:18px;
+  line-height:1;
+  pointer-events:none;
+}
+
+.revenue-sort-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.revenue-sort-btn{
+  min-height:44px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--card);
+  color:var(--muted);
+  padding:0 12px;
+  font-size:11px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.revenue-sort-btn.active{
+  color:#fff;
+  background:#1f2937;
+  border-color:#1f2937;
+}
+
+.revenue-sort-row,
+.revenue-sort-note,
+.mom-hot-badge,
+.sector-mom-count{
+  display:none !important;
+}
+
+.sector-revenue{
+  margin:20px 0 28px;
+}
+
+.sector-revenue-head{
+  display:flex;
+  align-items:end;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 10px;
+}
+
+.sector-revenue-head h2{
+  margin:0;
+  color:var(--ink);
+  font-size:17px;
+  line-height:1.25;
+}
+
+.sector-revenue-head > span{
+  color:var(--muted);
+  font-size:10px;
+  font-weight:700;
+}
+
+.revenue-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:11px;
+}
+
+.revenue-card{
+  min-width:0;
+  padding:14px 15px;
+  border-radius:16px;
+}
+
+.revenue-card .stock-name{
+  font-size:14px;
+  line-height:1.25;
+}
+
+.revenue-card .ticker{
+  font-size:9px;
+  margin-left:5px;
+}
+
+.revenue-card .rev{
+  font-size:24px !important;
+  line-height:1.05;
+  margin:12px 0 3px;
+  letter-spacing:-.02em;
+}
+
+.revenue-card .rev-label{
+  font-size:9px;
+}
+
+.revenue-card .changes{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:11px;
+}
+
+.revenue-card .changes span small{
+  font-size:8px;
+  margin-bottom:2px;
+}
+
+.revenue-card .changes b{
+  font-size:16px !important;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+}
+
+.revenue-card.mom-hot{
+  border:1.5px solid var(--mom-gold-border);
+  background:
+    radial-gradient(circle at 100% 0,rgba(216,155,33,.14),transparent 40%),
+    linear-gradient(145deg,#fff9e8 0%,#fffdf8 68%);
+  box-shadow:0 10px 24px rgba(152,102,18,.09);
+}
+
+.revenue-card.mom-hot .stock-name,
+.revenue-card.mom-hot .rev{
+  color:#77500d;
+}
+
+.revenue-card.mom-hot::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:linear-gradient(180deg,#d89b21,#edc768);
+  opacity:.9;
+}
+
+.mom-hot-glow{
+  position:absolute;
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  right:-68px;
+  bottom:-72px;
+  background:radial-gradient(circle,rgba(216,155,33,.12),transparent 68%);
+  pointer-events:none;
+}
+
+/* Dark */
+html[data-theme="dark"] .revenue-control-panel,
+html[data-theme="dark"] .revenue-controls{
+  border-color:#2d343d !important;
+  background:rgba(27,32,38,.78) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.14) !important;
+}
+
+html[data-theme="dark"] #revenueSectorSelect,
+html[data-theme="dark"] .revenue-sort-btn{
+  color:#eef1f4 !important;
+  background:#20252c !important;
+  border-color:#39424d !important;
+}
+
+html[data-theme="dark"] .revenue-gold-note{
+  color:#a8afb9 !important;
+}
+
+html[data-theme="dark"] .revenue-gold-note::before{
+  background:#9a7631;
+  border-color:#755820;
+  box-shadow:0 0 0 3px rgba(182,137,56,.08);
+}
+
+html[data-theme="dark"] .revenue-sort-btn.active{
+  color:#f4f6f8 !important;
+  background:#35404d !important;
+  border-color:#566372 !important;
+}
+
+html[data-theme="dark"] .revenue-card.mom-hot{
+  border-color:#84662f !important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(195,143,43,.11),transparent 42%),
+    linear-gradient(145deg,#2a251c,#211f1b) !important;
+  box-shadow:0 10px 24px rgba(0,0,0,.18) !important;
+}
+
+html[data-theme="dark"] .revenue-card.mom-hot .stock-name,
+html[data-theme="dark"] .revenue-card.mom-hot .rev{
+  color:#efca78 !important;
+}
+
+/* Desktop */
+@media(min-width:1280px){
+  .revenue-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:13px;
+  }
+
+  .revenue-control-panel,
+  .revenue-controls{
+    grid-template-columns:minmax(320px,1fr) minmax(260px,.68fr);
+  }
+}
+
+/* Tablet landscape / small desktop */
+@media(min-width:901px) and (max-width:1279px){
+  .revenue-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* Tablet portrait */
+@media(max-width:900px){
+  .revenue-control-panel,
+  .revenue-controls{
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+
+  .revenue-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .revenue-card .rev{
+    font-size:23px !important;
+  }
+
+  .revenue-card .changes b{
+    font-size:15px !important;
+  }
+}
+
+/* Phone */
+@media(max-width:720px){
+  .revenue-sector-picker{
+    margin:12px 0 18px !important;
+  }
+
+  .revenue-control-panel,
+  .revenue-controls{
+    grid-template-columns:1fr;
+    gap:12px;
+    padding:12px;
+    border-radius:15px;
+  }
+
+  #revenueSectorSelect,
+  .revenue-sort-btn{
+    min-height:42px;
+  }
+
+  .revenue-grid{
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+
+  .sector-revenue{
+    margin:18px 0 24px;
+  }
+
+  .sector-revenue-head h2{
+    font-size:17px;
+  }
+
+  .revenue-card{
+    padding:14px 15px;
+    border-radius:16px;
+  }
+
+  .revenue-card .rev{
+    font-size:22px !important;
+  }
+
+  .revenue-card .changes b{
+    font-size:15px !important;
+  }
+}
+
+@media(max-width:380px){
+  .revenue-sort-buttons{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .revenue-card .changes{
+    gap:8px;
+  }
+}
