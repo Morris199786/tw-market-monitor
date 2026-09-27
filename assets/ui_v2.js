@@ -88,7 +88,6 @@ function featureIcon(name) {
 
 function buildFeatureRail() {
   const box = $("#featureRail");
-
   if (!box) return;
 
   box.innerHTML = featureItems.map((x, i) => `
@@ -118,8 +117,7 @@ function buildFeatureRail() {
   `).join("");
 
   $$("[data-feature]").forEach(b => {
-    b.onclick = () =>
-      page(b.dataset.feature);
+    b.onclick = () => page(b.dataset.feature);
   });
 }
 
@@ -132,13 +130,10 @@ function fmtNum(v, d = 2) {
     return "—";
   }
 
-  return Number(v).toLocaleString(
-    "zh-TW",
-    {
-      minimumFractionDigits: d,
-      maximumFractionDigits: d
-    }
-  );
+  return Number(v).toLocaleString("zh-TW", {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d
+  });
 }
 
 function selfMetric(label, value, suffix = "") {
@@ -230,7 +225,6 @@ function setupPageHistory() {
 
 /* -------------------------------------------------
    首頁 Market Pulse
-   已移除「營收新高／待核對」總覽卡
 ------------------------------------------------- */
 async function buildMarketPulse() {
   const rail = $("#featureRail");
@@ -270,15 +264,10 @@ async function buildMarketPulse() {
     (selfData.items || []).length;
 
   const pulse =
-    document.createElement(
-      "section"
-    );
+    document.createElement("section");
 
-  pulse.id =
-    "marketPulse";
-
-  pulse.className =
-    "market-pulse";
+  pulse.id = "marketPulse";
+  pulse.className = "market-pulse";
 
   pulse.innerHTML = `
     <div class="pulse-head">
@@ -304,7 +293,6 @@ async function buildMarketPulse() {
         class="pulse-main"
         data-pulse-target="heat"
       >
-
         <span class="pulse-label">
           最強族群
         </span>
@@ -313,55 +301,37 @@ async function buildMarketPulse() {
           ${leaders[0]?.name || "—"}
         </strong>
 
-        <b
-          class="${
-            cl(
-              leaders[0]?.change_pct
-            )
-          }"
-        >
+        <b class="${cl(leaders[0]?.change_pct)}">
           ${
             leaders[0]
-              ? pct(
-                  leaders[0].change_pct
-                )
+              ? pct(leaders[0].change_pct)
               : "—"
           }
         </b>
 
         <span class="mini-bars">
-
           ${
-            leaders
-              .map(
-                x => `
-                  <i
-                    style="
-                      --bar:${
-                        Math.min(
-                          100,
-                          Math.max(
-                            18,
-                            Math.abs(
-                              Number(
-                                x.change_pct ||
-                                0
-                              )
-                            ) * 22
+            leaders.map(x => `
+              <i
+                style="
+                  --bar:${
+                    Math.min(
+                      100,
+                      Math.max(
+                        18,
+                        Math.abs(
+                          Number(
+                            x.change_pct || 0
                           )
-                        )
-                      }%
-                    "
-                    title="
-                      ${x.name}
-                      ${pct(x.change_pct)}
-                    "
-                  ></i>
-                `
-              )
-              .join("")
+                        ) * 22
+                      )
+                    )
+                  }%
+                "
+                title="${x.name} ${pct(x.change_pct)}"
+              ></i>
+            `).join("")
           }
-
         </span>
       </button>
 
@@ -369,17 +339,9 @@ async function buildMarketPulse() {
         class="pulse-stat"
         data-pulse-target="selfReports"
       >
-        <span>
-          自結監控
-        </span>
-
-        <strong>
-          ${selfCount}
-        </strong>
-
-        <small>
-          累積新公告
-        </small>
+        <span>自結監控</span>
+        <strong>${selfCount}</strong>
+        <small>累積新公告</small>
       </button>
 
     </div>
@@ -391,14 +353,10 @@ async function buildMarketPulse() {
   );
 
   $$("[data-pulse-target]")
-    .forEach(
-      b => {
-        b.onclick = () =>
-          page(
-            b.dataset.pulseTarget
-          );
-      }
-    );
+    .forEach(b => {
+      b.onclick = () =>
+        page(b.dataset.pulseTarget);
+    });
 }
 
 /* -------------------------------------------------
@@ -418,12 +376,9 @@ async function selfReports() {
       "全台股即時監控｜22:00 收盤後檢查｜次日 08:00 盤前複查｜新公告自動推播";
   }
 
-  if (
-    $("#selfWeekBadge")
-  ) {
-    $("#selfWeekBadge")
-      .textContent =
-        "22:00＋08:00";
+  if ($("#selfWeekBadge")) {
+    $("#selfWeekBadge").textContent =
+      "22:00＋08:00";
   }
 
   const tabs =
@@ -444,16 +399,15 @@ async function selfReports() {
     const tpex =
       d.source_status?.tpex;
 
-    const sourceText =
-      [
-        twse?.ok
-          ? "上市正常"
-          : "上市來源異常",
+    const sourceText = [
+      twse?.ok
+        ? "上市正常"
+        : "上市來源異常",
 
-        tpex?.ok
-          ? "上櫃正常"
-          : "上櫃來源異常"
-      ].join(" · ");
+      tpex?.ok
+        ? "上櫃正常"
+        : "上櫃來源異常"
+    ].join(" · ");
 
     status.innerHTML =
       d.updated_at
@@ -487,9 +441,7 @@ async function selfReports() {
           self-empty
         "
       >
-        <div
-          class="empty-icon"
-        >
+        <div class="empty-icon">
           ${featureIcon("earnings")}
         </div>
 
@@ -507,117 +459,101 @@ async function selfReports() {
   }
 
   box.innerHTML =
-    arr
-      .map(
-        x => `
-          <div
-            class="
-              card
-              data-card
-              self-report-card
-            "
-          >
+    arr.map(x => `
+      <div
+        class="
+          card
+          data-card
+          self-report-card
+        "
+      >
+        <div class="card-accent"></div>
 
-            <div
-              class="card-accent"
-            ></div>
+        <div class="eyebrow">
+          ${x.publish_date || ""}
+          ${x.publish_time || ""}
+        </div>
 
-            <div
-              class="eyebrow"
-            >
-              ${x.publish_date || ""}
-              ${x.publish_time || ""}
-            </div>
+        <div class="titleline">
+          <b>
+            ${x.name || x.ticker}
+          </b>
 
-            <div
-              class="titleline"
-            >
-              <b>
-                ${x.name || x.ticker}
-              </b>
+          <span>
+            ${x.ticker || ""}
+          </span>
+        </div>
 
-              <span>
-                ${x.ticker || ""}
-              </span>
-            </div>
+        <div class="metric-grid">
 
-            <div
-              class="metric-grid"
-            >
+          ${
+            selfMetric(
+              "EPS",
+              x.eps === null
+                ? null
+                : fmtNum(
+                    x.eps,
+                    2
+                  ),
+              " 元"
+            )
+          }
 
-              ${
-                selfMetric(
-                  "EPS",
-                  x.eps === null
-                    ? null
-                    : fmtNum(
-                        x.eps,
-                        2
-                      ),
-                  " 元"
-                )
-              }
+          ${
+            selfMetric(
+              "稅前淨利",
+              x.pretax_million === null
+                ? null
+                : fmtNum(
+                    x.pretax_million,
+                    0
+                  ),
+              " 百萬"
+            )
+          }
 
-              ${
-                selfMetric(
-                  "稅前淨利",
-                  x.pretax_million === null
-                    ? null
-                    : fmtNum(
-                        x.pretax_million,
-                        0
-                      ),
-                  " 百萬"
-                )
-              }
+          ${
+            selfMetric(
+              "稅後／歸母淨利",
+              x.net_income_million === null
+                ? null
+                : fmtNum(
+                    x.net_income_million,
+                    0
+                  ),
+              " 百萬"
+            )
+          }
 
-              ${
-                selfMetric(
-                  "稅後／歸母淨利",
-                  x.net_income_million === null
-                    ? null
-                    : fmtNum(
-                        x.net_income_million,
-                        0
-                      ),
-                  " 百萬"
-                )
-              }
+          ${
+            selfMetric(
+              "營業收入",
+              x.revenue_million === null
+                ? null
+                : fmtNum(
+                    x.revenue_million,
+                    0
+                  ),
+              " 百萬"
+            )
+          }
 
-              ${
-                selfMetric(
-                  "營業收入",
-                  x.revenue_million === null
-                    ? null
-                    : fmtNum(
-                        x.revenue_million,
-                        0
-                      ),
-                  " 百萬"
-                )
-              }
+        </div>
 
-            </div>
+        <div class="subject">
+          ${x.subject || "自結財務資訊"}
+        </div>
 
-            <div
-              class="subject"
-            >
-              ${x.subject || "自結財務資訊"}
-            </div>
-
-          </div>
-        `
-      )
-      .join("");
+      </div>
+    `).join("");
 }
 
 /* -------------------------------------------------
    月營收卡片
-   MoM > 10%：金色高亮
+   MoM > 10% 只以金色樣式標示
 ------------------------------------------------- */
 function revenueCard(x) {
-  const mom =
-    Number(x.mom);
+  const mom = Number(x.mom);
 
   const isMomHot =
     Number.isFinite(mom) &&
@@ -627,21 +563,12 @@ function revenueCard(x) {
     <div
       class="
         revenue-card
-        ${
-          isMomHot
-            ? "mom-hot"
-            : ""
-        }
+        ${isMomHot ? "mom-hot" : ""}
       "
     >
-
       ${
         isMomHot
-          ? `
-            <div
-              class="mom-hot-glow"
-            ></div>
-          `
+          ? `<div class="mom-hot-glow"></div>`
           : ""
       }
 
@@ -655,18 +582,6 @@ function revenueCard(x) {
             ${x.ticker || ""}
           </span>
         </div>
-
-        ${
-          isMomHot
-            ? `
-              <span
-                class="mom-hot-badge"
-              >
-                MoM &gt; 10%
-              </span>
-            `
-            : ""
-        }
       </div>
 
       <div class="rev">
@@ -682,30 +597,21 @@ function revenueCard(x) {
 
       <div class="changes">
         <span>
-          <small>
-            MoM
-          </small>
+          <small>MoM</small>
 
-          <b
-            class="${cl(x.mom)}"
-          >
+          <b class="${cl(x.mom)}">
             ${pct(x.mom)}
           </b>
         </span>
 
         <span>
-          <small>
-            YoY
-          </small>
+          <small>YoY</small>
 
-          <b
-            class="${cl(x.yoy)}"
-          >
+          <b class="${cl(x.yoy)}">
             ${pct(x.yoy)}
           </b>
         </span>
       </div>
-
     </div>
   `;
 }
@@ -731,6 +637,8 @@ function dedupeRevenueStocks(sectors) {
 
 /* -------------------------------------------------
    月營收頁
+   - 全裝置統一使用族群下拉選單
+   - 不再產生橫向族群按鈕
 ------------------------------------------------- */
 async function monthlyRevenue() {
   const d =
@@ -738,14 +646,11 @@ async function monthlyRevenue() {
       "./data/monthly_revenue.json"
     );
 
-  if (
-    $("#revenueMonthBadge")
-  ) {
-    $("#revenueMonthBadge")
-      .textContent =
-        d.month_label
-          ? `目前顯示 ${d.month_label}`
-          : "尚無資料";
+  if ($("#revenueMonthBadge")) {
+    $("#revenueMonthBadge").textContent =
+      d.month_label
+        ? `目前顯示 ${d.month_label}`
+        : "尚無資料";
   }
 
   const revenueHeroP =
@@ -756,14 +661,11 @@ async function monthlyRevenue() {
       "19 個科技族群｜最新已公布月份｜營收、MoM、YoY";
   }
 
-  if (
-    $("#revenueStatus")
-  ) {
-    $("#revenueStatus")
-      .textContent =
-        d.updated_at
-          ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示＋Pushover`
-          : "尚未產生月營收資料";
+  if ($("#revenueStatus")) {
+    $("#revenueStatus").textContent =
+      d.updated_at
+        ? `最後更新 ${d.updated_at}`
+        : "尚未產生月營收資料";
   }
 
   const sectors =
@@ -772,16 +674,19 @@ async function monthlyRevenue() {
   const tabs =
     $("#revenueSectorTabs");
 
-  /* 手機族群下拉選單 */
+  /* 舊橫向族群列完全清空 */
+  if (tabs) {
+    tabs.innerHTML = "";
+    tabs.style.display = "none";
+  }
+
+  /* 族群下拉選單 */
   let selector =
     document.querySelector(
       "#revenueSectorPicker"
     );
 
-  if (
-    !selector &&
-    tabs
-  ) {
+  if (!selector) {
     selector =
       document.createElement(
         "div"
@@ -793,200 +698,143 @@ async function monthlyRevenue() {
     selector.className =
       "revenue-sector-picker";
 
-    tabs.before(
-      selector
-    );
-  }
+    if (tabs) {
+      tabs.before(selector);
+    } else {
+      const status =
+        $("#revenueStatus");
 
-  if (selector) {
-    selector.innerHTML = `
-      <label
-        for="revenueSectorSelect"
-      >
-        選擇族群
-      </label>
-
-      <div
-        class="revenue-select-wrap"
-      >
-        <select
-          id="revenueSectorSelect"
-        >
-          <option
-            value="all"
-            ${
-              revenueSectorSelected === "all"
-                ? "selected"
-                : ""
-            }
-          >
-            全部族群
-          </option>
-
-          ${
-            sectors
-              .map(
-                s => `
-                  <option
-                    value="${s.name}"
-                    ${
-                      revenueSectorSelected === s.name
-                        ? "selected"
-                        : ""
-                    }
-                  >
-                    ${s.name}
-                  </option>
-                `
-              )
-              .join("")
-          }
-        </select>
-
-        <span
-          class="revenue-select-arrow"
-        >
-          ⌄
-        </span>
-      </div>
-    `;
-
-    const sectorSelect =
-      selector.querySelector(
-        "#revenueSectorSelect"
-      );
-
-    if (sectorSelect) {
-      sectorSelect.value =
-        revenueSectorSelected;
-
-      sectorSelect.onchange =
-        () => {
-          revenueSectorSelected =
-            sectorSelect.value;
-
-          monthlyRevenue();
-        };
+      if (
+        status &&
+        status.parentNode
+      ) {
+        status.parentNode.insertBefore(
+          selector,
+          status.nextSibling
+        );
+      }
     }
   }
 
-  let sortBox =
+  selector.innerHTML = `
+    <div class="revenue-control-panel">
+
+      <div class="revenue-control-group">
+        <label
+          for="revenueSectorSelect"
+          class="revenue-control-label"
+        >
+          選擇族群
+        </label>
+
+        <div class="revenue-select-wrap">
+          <select
+            id="revenueSectorSelect"
+          >
+            <option
+              value="all"
+              ${
+                revenueSectorSelected === "all"
+                  ? "selected"
+                  : ""
+              }
+            >
+              全部族群
+            </option>
+
+            ${
+              sectors.map(s => `
+                <option
+                  value="${s.name}"
+                  ${
+                    revenueSectorSelected === s.name
+                      ? "selected"
+                      : ""
+                  }
+                >
+                  ${s.name}
+                </option>
+              `).join("")
+            }
+          </select>
+
+          <span class="revenue-select-arrow">
+            ⌄
+          </span>
+        </div>
+      </div>
+
+      <div class="revenue-control-group">
+        <span class="revenue-control-label">
+          排序
+        </span>
+
+        <button
+          type="button"
+          id="revenueMomSortButton"
+          class="
+            week-pill
+            revenue-sort-pill
+            ${
+              revenueMomSort
+                ? "active"
+                : ""
+            }
+          "
+          aria-pressed="${revenueMomSort}"
+        >
+          ${
+            revenueMomSort
+              ? "恢復預設"
+              : "MoM 高→低"
+          }
+        </button>
+      </div>
+
+    </div>
+  `;
+
+  const sectorSelect =
+    selector.querySelector(
+      "#revenueSectorSelect"
+    );
+
+  if (sectorSelect) {
+    sectorSelect.value =
+      revenueSectorSelected;
+
+    sectorSelect.onchange =
+      () => {
+        revenueSectorSelected =
+          sectorSelect.value;
+
+        monthlyRevenue();
+      };
+  }
+
+  const sortButton =
+    selector.querySelector(
+      "#revenueMomSortButton"
+    );
+
+  if (sortButton) {
+    sortButton.onclick =
+      () => {
+        revenueMomSort =
+          !revenueMomSort;
+
+        monthlyRevenue();
+      };
+  }
+
+  /* 清掉舊版另外插入的排序列 */
+  const oldSort =
     document.querySelector(
       "#revenueMomSort"
     );
 
-  if (
-    !sortBox &&
-    tabs
-  ) {
-    sortBox =
-      document.createElement(
-        "div"
-      );
-
-    sortBox.id =
-      "revenueMomSort";
-
-    sortBox.className =
-      "revenue-sort-row";
-
-    tabs.before(
-      sortBox
-    );
-  }
-
-  if (sortBox) {
-    sortBox.innerHTML = `
-      <button
-        type="button"
-        class="
-          week-pill
-          revenue-sort-pill
-          ${
-            revenueMomSort
-              ? "active"
-              : ""
-          }
-        "
-        aria-pressed="${revenueMomSort}"
-      >
-        ↓ MoM 高→低
-      </button>
-
-      <span
-        class="revenue-sort-note"
-      >
-        ${
-          revenueMomSort
-            ? "再次點擊恢復族群原排序"
-            : "MoM > 10% 個股會以金色標示"
-        }
-      </span>
-    `;
-
-    sortBox
-      .querySelector("button")
-      .onclick =
-        () => {
-          revenueMomSort =
-            !revenueMomSort;
-
-          monthlyRevenue();
-        };
-  }
-
-  if (tabs) {
-    tabs.innerHTML = `
-      <button
-        class="
-          week-pill
-          ${
-            revenueSectorSelected === "all"
-              ? "active"
-              : ""
-          }
-        "
-        data-rev-sec="all"
-      >
-        全部族群
-      </button>
-
-      ${
-        sectors
-          .map(
-            s => `
-              <button
-                class="
-                  week-pill
-                  ${
-                    revenueSectorSelected === s.name
-                      ? "active"
-                      : ""
-                  }
-                "
-                data-rev-sec="${s.name}"
-              >
-                ${s.name}
-              </button>
-            `
-          )
-          .join("")
-      }
-    `;
-
-    $$(
-      "[data-rev-sec]"
-    ).forEach(
-      b => {
-        b.onclick =
-          () => {
-            revenueSectorSelected =
-              b.dataset.revSec;
-
-            monthlyRevenue();
-          };
-      }
-    );
+  if (oldSort) {
+    oldSort.remove();
   }
 
   const selectedSectors =
@@ -1004,7 +852,8 @@ async function monthlyRevenue() {
     let stocks;
 
     if (
-      revenueSectorSelected === "all"
+      revenueSectorSelected ===
+      "all"
     ) {
       stocks =
         dedupeRevenueStocks(
@@ -1037,11 +886,12 @@ async function monthlyRevenue() {
         ? [
             {
               name:
-                revenueSectorSelected === "all"
-                  ? "MoM 排序"
-                  : selectedSectors[0]?.name ||
-                    "MoM 排序",
-
+                revenueSectorSelected ===
+                "all"
+                  ? "全部族群"
+                  : selectedSectors[0]
+                      ?.name ||
+                    "月營收",
               stocks
             }
           ]
@@ -1060,9 +910,7 @@ async function monthlyRevenue() {
 
   if (!list.length) {
     box.innerHTML = `
-      <div
-        class="card empty"
-      >
+      <div class="card empty">
         目前沒有月營收資料
       </div>
     `;
@@ -1071,83 +919,46 @@ async function monthlyRevenue() {
   }
 
   box.innerHTML =
-    list
-      .map(
-        sec => {
+    list.map(sec => `
+      <section
+        class="sector-revenue"
+      >
+        <div
+          class="sector-revenue-head"
+        >
+          <div>
+            <h2>
+              ${sec.name}
+            </h2>
+          </div>
 
-          const hotCount =
+          <span>
+            ${
+              (
+                sec.stocks ||
+                []
+              ).length
+            }
+            檔
+          </span>
+        </div>
+
+        <div
+          class="revenue-grid"
+        >
+          ${
             (
               sec.stocks ||
               []
             )
-              .filter(
-                x =>
-                  Number(
-                    x.mom
-                  ) > 10
+              .map(
+                revenueCard
               )
-              .length;
-
-          return `
-            <section
-              class="sector-revenue"
-            >
-
-              <div
-                class="sector-revenue-head"
-              >
-
-                <div>
-                  <h2>
-                    ${sec.name}
-                  </h2>
-
-                  ${
-                    hotCount
-                      ? `
-                        <span
-                          class="sector-mom-count"
-                        >
-                          ${hotCount}
-                          檔 MoM &gt; 10%
-                        </span>
-                      `
-                      : ""
-                  }
-                </div>
-
-                <span>
-                  ${
-                    (
-                      sec.stocks ||
-                      []
-                    ).length
-                  }
-                  檔
-                </span>
-
-              </div>
-
-              <div
-                class="revenue-grid"
-              >
-                ${
-                  (
-                    sec.stocks ||
-                    []
-                  )
-                    .map(
-                      revenueCard
-                    )
-                    .join("")
-                }
-              </div>
-
-            </section>
-          `;
-        }
-      )
-      .join("");
+              .join("")
+          }
+        </div>
+      </section>
+    `).join("");
 }
 
 /* -------------------------------------------------
@@ -1245,10 +1056,9 @@ function setupBackHomeButton() {
       </span>
     `;
 
-    document.body
-      .appendChild(
-        btn
-      );
+    document.body.appendChild(
+      btn
+    );
   }
 
   const refresh =
@@ -1275,9 +1085,7 @@ function setupBackHomeButton() {
         typeof page ===
         "function"
       ) {
-        page(
-          "home"
-        );
+        page("home");
       }
 
       refresh();
