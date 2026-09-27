@@ -2074,3 +2074,187 @@ html[data-theme="dark"] .font-scale-menu button{
 #marketPulse .update-schedule-card{
   display:none !important;
 }
+
+
+/* =========================================================
+   Header controls fix
+   Aa 字體控制 + 深色模式按鈕穩定並排
+   ========================================================= */
+
+header .head{
+  position:relative;
+}
+
+.header-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end;
+  gap:8px !important;
+  flex:0 0 auto;
+  position:relative;
+  z-index:60;
+}
+
+.header-actions .icon-btn,
+.header-actions .font-scale-toggle{
+  flex:0 0 auto;
+}
+
+.font-scale-control{
+  position:relative;
+  display:inline-flex !important;
+  align-items:center;
+  z-index:70;
+}
+
+.font-scale-toggle{
+  display:grid !important;
+  place-items:center;
+  width:36px !important;
+  height:36px !important;
+  min-width:36px;
+  padding:0;
+  border:1px solid #344157;
+  border-radius:10px;
+  background:#1d2838;
+  color:#fff;
+  font-size:12px !important;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:-.02em;
+}
+
+.font-scale-toggle:hover{
+  background:#263347;
+}
+
+.font-scale-menu{
+  position:absolute !important;
+  top:calc(100% + 9px) !important;
+  right:0 !important;
+  z-index:9999 !important;
+  display:none;
+  align-items:center;
+  gap:7px;
+  min-width:170px;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:0 16px 38px rgba(15,23,42,.24);
+}
+
+.font-scale-menu.show{
+  display:flex !important;
+}
+
+.font-scale-menu button{
+  min-width:42px;
+  min-height:36px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--soft);
+  color:var(--ink);
+  font-weight:900;
+  font-size:11px;
+}
+
+#fontScaleValue{
+  min-width:48px;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+
+/* 深色模式 */
+html[data-theme="dark"] .font-scale-toggle{
+  color:#f3f5f7 !important;
+  background:#202a39 !important;
+  border-color:#3b4a60 !important;
+}
+
+html[data-theme="dark"] .font-scale-menu{
+  background:#1b2026 !important;
+  border-color:#39424d !important;
+  box-shadow:0 18px 44px rgba(0,0,0,.35) !important;
+}
+
+html[data-theme="dark"] .font-scale-menu button{
+  color:#eef1f4 !important;
+  background:#292f37 !important;
+  border-color:#3b444f !important;
+}
+
+/* 手機 header：品牌 + 時鐘 + 兩個控制按鈕 + 下拉選單 */
+@media(max-width:720px){
+  .head{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto auto !important;
+    grid-template-areas:
+      "brand clock actions"
+      "nav nav nav";
+    align-items:center !important;
+    column-gap:8px !important;
+    row-gap:10px !important;
+  }
+
+  .brand{
+    grid-area:brand;
+    min-width:0 !important;
+  }
+
+  .clock{
+    grid-area:clock;
+    justify-self:end;
+    font-size:9px !important;
+    white-space:nowrap;
+  }
+
+  .header-actions{
+    grid-area:actions;
+    justify-self:end;
+    margin-left:0 !important;
+    gap:6px !important;
+  }
+
+  #mobileNav{
+    grid-area:nav;
+    order:initial !important;
+    width:100%;
+    min-height:44px;
+  }
+
+  .header-actions .icon-btn,
+  .header-actions .font-scale-toggle{
+    width:38px !important;
+    height:38px !important;
+    min-width:38px;
+    border-radius:11px;
+  }
+
+  .font-scale-menu{
+    right:0 !important;
+    min-width:168px;
+  }
+}
+
+/* 窄手機再壓縮，避免 header 被擠爆 */
+@media(max-width:430px){
+  .head{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    grid-template-areas:
+      "brand actions"
+      "clock clock"
+      "nav nav";
+  }
+
+  .clock{
+    justify-self:start;
+    margin-top:-4px;
+  }
+
+  .header-actions{
+    justify-self:end;
+  }
+}
