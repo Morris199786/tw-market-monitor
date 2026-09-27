@@ -22,6 +22,7 @@ function featureIcon(name) {
       <rect x="3" y="14" width="7" height="7" rx="2"></rect>
       <rect x="14" y="14" width="7" height="7" rx="2"></rect>
     </svg>`,
+
     earnings: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M5 20V10"></path>
       <path d="M10 20V4"></path>
@@ -29,43 +30,51 @@ function featureIcon(name) {
       <path d="M20 20V7"></path>
       <path d="M3 20h19"></path>
     </svg>`,
+
     flow: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 7h12"></path>
       <path d="m13 4 3 3-3 3"></path>
       <path d="M20 17H8"></path>
       <path d="m11 14-3 3 3 3"></path>
     </svg>`,
+
     bolt: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M13 2 5 14h6l-1 8 9-13h-6z"></path>
     </svg>`,
+
     chart: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 20V10"></path>
       <path d="M10 20V4"></path>
       <path d="M16 20v-7"></path>
       <path d="M22 20H2"></path>
     </svg>`,
+
     swap: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 7h12l-3-3"></path>
       <path d="m19 7-3 3"></path>
       <path d="M17 17H5l3 3"></path>
       <path d="m5 17 3-3"></path>
     </svg>`,
+
     spark: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="m12 2 1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"></path>
       <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"></path>
     </svg>`,
+
     report: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 3h9l4 4v14H6z"></path>
       <path d="M15 3v5h5"></path>
       <path d="M9 12h7"></path>
       <path d="M9 16h7"></path>
     </svg>`,
+
     holders: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="9" cy="8" r="3"></circle>
       <circle cx="17" cy="9" r="2"></circle>
       <path d="M3 20c0-4 2.5-6 6-6s6 2 6 6"></path>
       <path d="M15 15c3 0 5 1.5 5 5"></path>
     </svg>`,
+
     revenue: `<svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 19V5"></path>
       <path d="M4 19h16"></path>
@@ -79,6 +88,7 @@ function featureIcon(name) {
 
 function buildFeatureRail() {
   const box = $("#featureRail");
+
   if (!box) return;
 
   box.innerHTML = featureItems.map((x, i) => `
@@ -89,8 +99,13 @@ function buildFeatureRail() {
       aria-label="${x[1]}"
     >
       <div class="feature-card-top">
-        <div class="feature-icon">${featureIcon(x[2])}</div>
-        <span class="feature-index">${String(i + 1).padStart(2, "0")}</span>
+        <div class="feature-icon">
+          ${featureIcon(x[2])}
+        </div>
+
+        <span class="feature-index">
+          ${String(i + 1).padStart(2, "0")}
+        </span>
       </div>
 
       <div class="feature-copy">
@@ -103,7 +118,8 @@ function buildFeatureRail() {
   `).join("");
 
   $$("[data-feature]").forEach(b => {
-    b.onclick = () => page(b.dataset.feature);
+    b.onclick = () =>
+      page(b.dataset.feature);
   });
 }
 
@@ -116,10 +132,13 @@ function fmtNum(v, d = 2) {
     return "—";
   }
 
-  return Number(v).toLocaleString("zh-TW", {
-    minimumFractionDigits: d,
-    maximumFractionDigits: d
-  });
+  return Number(v).toLocaleString(
+    "zh-TW",
+    {
+      minimumFractionDigits: d,
+      maximumFractionDigits: d
+    }
+  );
 }
 
 function selfMetric(label, value, suffix = "") {
@@ -131,7 +150,9 @@ function selfMetric(label, value, suffix = "") {
   return `
     <div class="metric-box">
       <small>${label}</small>
-      <strong>${empty ? "—" : value}${empty ? "" : suffix}</strong>
+      <strong>
+        ${empty ? "—" : value}${empty ? "" : suffix}
+      </strong>
     </div>
   `;
 }
@@ -139,24 +160,37 @@ function selfMetric(label, value, suffix = "") {
 /* -------------------------------------------------
    Browser history
 ------------------------------------------------- */
-function setupPageHistory() {
-  if (typeof page !== "function") return;
 
-  const originalPage = page;
-  let fromPopState = false;
+function setupPageHistory() {
+  if (
+    typeof page !== "function"
+  ) {
+    return;
+  }
+
+  const originalPage =
+    page;
+
+  let fromPopState =
+    false;
 
   page = function(id) {
     originalPage(id);
 
     if (!fromPopState) {
       const nextHash =
-        id === "home" ? "#home" : `#${id}`;
+        id === "home"
+          ? "#home"
+          : `#${id}`;
 
-      const current = history.state?.twPage;
+      const current =
+        history.state?.twPage;
 
       if (current !== id) {
         history.pushState(
-          { twPage: id },
+          {
+            twPage: id
+          },
           "",
           nextHash
         );
@@ -165,41 +199,66 @@ function setupPageHistory() {
   };
 
   const initial =
-    location.hash.replace("#", "") || "home";
+    location.hash.replace(
+      "#",
+      ""
+    ) ||
+    "home";
 
   history.replaceState(
-    { twPage: initial },
+    {
+      twPage: initial
+    },
     "",
     `#${initial}`
   );
 
-  if (initial && document.getElementById(initial)) {
-    originalPage(initial);
+  if (
+    initial &&
+    document.getElementById(
+      initial
+    )
+  ) {
+    originalPage(
+      initial
+    );
   }
 
-  window.addEventListener("popstate", e => {
-    fromPopState = true;
+  window.addEventListener(
+    "popstate",
+    e => {
+      fromPopState =
+        true;
 
-    const target =
-      e.state?.twPage ||
-      location.hash.replace("#", "") ||
-      "home";
+      const target =
+        e.state?.twPage ||
+        location.hash.replace(
+          "#",
+          ""
+        ) ||
+        "home";
 
-    originalPage(
-      document.getElementById(target)
-        ? target
-        : "home"
-    );
+      originalPage(
+        document.getElementById(
+          target
+        )
+          ? target
+          : "home"
+      );
 
-    fromPopState = false;
-  });
+      fromPopState =
+        false;
+    }
+  );
 }
 
 /* -------------------------------------------------
    首頁 Market Pulse
 ------------------------------------------------- */
+
 async function buildMarketPulse() {
-  const rail = $("#featureRail");
+  const rail =
+    $("#featureRail");
 
   if (
     !rail ||
@@ -223,7 +282,9 @@ async function buildMarketPulse() {
   ]);
 
   const sectors =
-    [...(heatData.sectors || [])]
+    [
+      ...(heatData.sectors || [])
+    ]
       .filter(
         x =>
           x.change_pct !== null &&
@@ -231,21 +292,35 @@ async function buildMarketPulse() {
       )
       .sort(
         (a, b) =>
-          Number(b.change_pct) -
-          Number(a.change_pct)
+          Number(
+            b.change_pct
+          ) -
+          Number(
+            a.change_pct
+          )
       );
 
   const leader =
-    sectors[0] || null;
+    sectors[0] ||
+    null;
 
   const strongSectors =
-    sectors.slice(1, 5);
+    sectors.slice(
+      1,
+      5
+    );
 
   const selfCount =
-    (selfData.items || []).length;
+    (
+      selfData.items ||
+      []
+    ).length;
 
   const volumeCount =
-    (volumeData.items || []).length;
+    (
+      volumeData.items ||
+      []
+    ).length;
 
   const aiCount =
     (
@@ -299,99 +374,194 @@ async function buildMarketPulse() {
         class="market-leader-card"
         data-pulse-target="heat"
       >
+
         <div class="market-card-label">
-          <span class="market-mini-icon">▲</span>
+          <span class="market-mini-icon">
+            ▲
+          </span>
+
           最強族群
         </div>
 
         <div class="market-leader-main">
+
           <strong>
-            ${leader?.name || "—"}
+            ${
+              leader?.name ||
+              "—"
+            }
           </strong>
 
-          <b class="${cl(leader?.change_pct)}">
+          <b
+            class="${
+              cl(
+                leader?.change_pct
+              )
+            }"
+          >
             ${
               leader
-                ? pct(leader.change_pct)
+                ? pct(
+                    leader.change_pct
+                  )
                 : "—"
             }
           </b>
+
         </div>
 
         <div class="market-leader-foot">
-          <span>依族群漲跌幅排序</span>
-          <span>查看熱力圖 →</span>
+
+          <span>
+            依族群漲跌幅排序
+          </span>
+
+          <span>
+            查看熱力圖 →
+          </span>
+
         </div>
+
       </button>
 
       <button
         class="market-strong-card market-clickable-card"
         data-pulse-target="heat"
       >
+
         <div class="market-card-label">
-          <span class="market-mini-icon">◆</span>
+
+          <span class="market-mini-icon">
+            ◆
+          </span>
+
           目前強勢族群
+
         </div>
 
         <div class="strong-sector-list">
+
           ${
             strongSectors.length
-              ? strongSectors.map((x, i) => `
-                  <div
-                    class="strong-sector-row"
-                  >
-                    <span class="strong-rank">
-                      ${String(i + 2).padStart(2, "0")}
-                    </span>
+              ? strongSectors
+                  .map(
+                    (x, i) => `
+                      <div
+                        class="strong-sector-row"
+                      >
 
-                    <span class="strong-name">
-                      ${x.name}
-                    </span>
+                        <span
+                          class="strong-rank"
+                        >
+                          ${
+                            String(
+                              i + 2
+                            ).padStart(
+                              2,
+                              "0"
+                            )
+                          }
+                        </span>
 
-                    <b class="${cl(x.change_pct)}">
-                      ${pct(x.change_pct)}
-                    </b>
-                  </div>
-                `).join("")
+                        <span
+                          class="strong-name"
+                        >
+                          ${x.name}
+                        </span>
+
+                        <b
+                          class="${
+                            cl(
+                              x.change_pct
+                            )
+                          }"
+                        >
+                          ${
+                            pct(
+                              x.change_pct
+                            )
+                          }
+                        </b>
+
+                      </div>
+                    `
+                  )
+                  .join("")
               : `
-                <div class="strong-sector-empty">
+                <div
+                  class="strong-sector-empty"
+                >
                   尚無族群資料
                 </div>
               `
           }
+
         </div>
 
-        <div class="market-card-link">
+        <div
+          class="market-card-link"
+        >
           查看完整熱力圖 →
         </div>
+
       </button>
 
       <button
         class="self-monitor-card"
         data-pulse-target="selfReports"
       >
-        <div class="market-card-label">
-          <span class="market-mini-icon">◎</span>
+
+        <div
+          class="market-card-label"
+        >
+
+          <span
+            class="market-mini-icon"
+          >
+            ◎
+          </span>
+
           自結監控
+
         </div>
 
-        <div class="self-monitor-main">
-          <strong>${selfCount}</strong>
-          <span>筆新公告</span>
+        <div
+          class="self-monitor-main"
+        >
+
+          <strong>
+            ${selfCount}
+          </strong>
+
+          <span>
+            筆新公告
+          </span>
+
         </div>
 
-        <div class="self-monitor-foot">
+        <div
+          class="self-monitor-foot"
+        >
           點擊查看自結公布
           <span>→</span>
         </div>
+
       </button>
 
     </div>
 
-    <div class="daily-signal-panel">
-      <div class="daily-signal-head">
+    <div
+      class="daily-signal-panel"
+    >
+
+      <div
+        class="daily-signal-head"
+      >
+
         <div>
-          <span class="pulse-kicker">
+          <span
+            class="pulse-kicker"
+          >
             TODAY'S SIGNALS
           </span>
 
@@ -400,78 +570,120 @@ async function buildMarketPulse() {
           </h3>
         </div>
 
-        <span class="daily-signal-note">
+        <span
+          class="daily-signal-note"
+        >
           點擊直接前往分頁
         </span>
+
       </div>
 
-      <div class="daily-signal-grid">
+      <div
+        class="daily-signal-grid"
+      >
 
         <button
           class="daily-signal-item"
           data-pulse-target="volume"
         >
-          <span class="daily-signal-icon signal-volume">
+
+          <span
+            class="daily-signal-icon signal-volume"
+          >
             ⚡
           </span>
 
           <span>
-            <small>突然放量</small>
-            <strong>${volumeCount}</strong>
+            <small>
+              突然放量
+            </small>
+
+            <strong>
+              ${volumeCount}
+            </strong>
           </span>
 
           <i>→</i>
+
         </button>
 
         <button
           class="daily-signal-item"
           data-pulse-target="ai"
         >
-          <span class="daily-signal-icon signal-ai">
+
+          <span
+            class="daily-signal-icon signal-ai"
+          >
             ✦
           </span>
 
           <span>
-            <small>AI 選股</small>
-            <strong>${aiCount || "—"}</strong>
+            <small>
+              AI 選股
+            </small>
+
+            <strong>
+              ${aiCount || "—"}
+            </strong>
           </span>
 
           <i>→</i>
+
         </button>
 
         <button
           class="daily-signal-item"
           data-pulse-target="monthlyRevenue"
         >
-          <span class="daily-signal-icon signal-revenue">
+
+          <span
+            class="daily-signal-icon signal-revenue"
+          >
             ↗
           </span>
 
           <span>
-            <small>MoM &gt; 10%</small>
-            <strong>${momHotCount}</strong>
+            <small>
+              MoM &gt; 10%
+            </small>
+
+            <strong>
+              ${momHotCount}
+            </strong>
           </span>
 
           <i>→</i>
+
         </button>
 
         <button
           class="daily-signal-item"
           data-pulse-target="selfReports"
         >
-          <span class="daily-signal-icon signal-self">
+
+          <span
+            class="daily-signal-icon signal-self"
+          >
             ◎
           </span>
 
           <span>
-            <small>自結公告</small>
-            <strong>${selfCount}</strong>
+            <small>
+              自結公告
+            </small>
+
+            <strong>
+              ${selfCount}
+            </strong>
           </span>
 
           <i>→</i>
+
         </button>
 
       </div>
+
     </div>
   `;
 
@@ -480,27 +692,608 @@ async function buildMarketPulse() {
     pulse
   );
 
-  $$("[data-pulse-target]")
+  $$(
+    "[data-pulse-target]"
+  )
     .forEach(
       b => {
-        b.onclick = () =>
-          page(
-            b.dataset.pulseTarget
-          );
+        b.onclick =
+          () =>
+            page(
+              b.dataset
+                .pulseTarget
+            );
       }
     );
 }
+
+/* -------------------------------------------------
+   自結頁
+------------------------------------------------- */
+
+async function selfReports() {
+  const d =
+    await J(
+      "./data/self_reports.json"
+    );
+
+  const heroP =
+    $(
+      "#selfReports .hero p"
+    );
+
+  if (heroP) {
+    heroP.textContent =
+      "全台股即時監控｜22:00 收盤後檢查｜次日 08:00 盤前複查｜新公告自動推播";
+  }
+
+  if (
+    $("#selfWeekBadge")
+  ) {
+    $("#selfWeekBadge")
+      .textContent =
+        "22:00＋08:00";
+  }
+
+  const tabs =
+    $("#selfWeekTabs");
+
+  if (tabs) {
+    tabs.innerHTML = "";
+    tabs.style.display =
+      "none";
+  }
+
+  const status =
+    $("#selfStatus");
+
+  if (status) {
+    const twse =
+      d.source_status
+        ?.twse;
+
+    const tpex =
+      d.source_status
+        ?.tpex;
+
+    const sourceText =
+      [
+        twse?.ok
+          ? "上市正常"
+          : "上市來源異常",
+
+        tpex?.ok
+          ? "上櫃正常"
+          : "上櫃來源異常"
+      ]
+        .join(
+          " · "
+        );
+
+    status.innerHTML =
+      d.updated_at
+        ? `
+          <span
+            class="status-dot"
+          ></span>
+
+          最後更新
+          ${d.updated_at}
+
+          <span
+            class="status-divider"
+          >
+            ·
+          </span>
+
+          ${sourceText}
+
+          <span
+            class="status-divider"
+          >
+            ·
+          </span>
+
+          Pushover 已啟用
+        `
+        : "尚未開始自結監控";
+  }
+
+  const arr =
+    d.items ||
+    [];
+
+  const box =
+    $("#selfReportCards");
+
+  if (!box) {
+    return;
+  }
+
+  if (!arr.length) {
+    box.innerHTML = `
+      <div
+        class="
+          card
+          empty
+          self-empty
+        "
+      >
+
+        <div
+          class="empty-icon"
+        >
+          ${
+            featureIcon(
+              "earnings"
+            )
+          }
+        </div>
+
+        <b>
+          目前尚未偵測到新的自結公告
+        </b>
+
+        <span>
+          系統會在 22:00 與次日 08:00 自動檢查
+        </span>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  box.innerHTML =
+    arr
+      .map(
+        x => `
+          <div
+            class="
+              card
+              data-card
+              self-report-card
+            "
+          >
+
+            <div
+              class="card-accent"
+            ></div>
+
+            <div
+              class="eyebrow"
+            >
+              ${
+                x.publish_date ||
+                ""
+              }
+
+              ${
+                x.publish_time ||
+                ""
+              }
+            </div>
+
+            <div
+              class="titleline"
+            >
+
+              <b>
+                ${
+                  x.name ||
+                  x.ticker
+                }
+              </b>
+
+              <span>
+                ${
+                  x.ticker ||
+                  ""
+                }
+              </span>
+
+            </div>
+
+            <div
+              class="metric-grid"
+            >
+
+              ${
+                selfMetric(
+                  "EPS",
+
+                  x.eps === null
+                    ? null
+                    : fmtNum(
+                        x.eps,
+                        2
+                      ),
+
+                  " 元"
+                )
+              }
+
+              ${
+                selfMetric(
+                  "稅前淨利",
+
+                  x.pretax_million
+                    === null
+                    ? null
+                    : fmtNum(
+                        x.pretax_million,
+                        0
+                      ),
+
+                  " 百萬"
+                )
+              }
+
+              ${
+                selfMetric(
+                  "稅後／歸母淨利",
+
+                  x.net_income_million
+                    === null
+                    ? null
+                    : fmtNum(
+                        x.net_income_million,
+                        0
+                      ),
+
+                  " 百萬"
+                )
+              }
+
+              ${
+                selfMetric(
+                  "營業收入",
+
+                  x.revenue_million
+                    === null
+                    ? null
+                    : fmtNum(
+                        x.revenue_million,
+                        0
+                      ),
+
+                  " 百萬"
+                )
+              }
+
+            </div>
+
+            <div
+              class="subject"
+            >
+              ${
+                x.subject ||
+                "自結財務資訊"
+              }
+            </div>
+
+          </div>
+        `
+      )
+      .join("");
+}
+/* -------------------------------------------------
+   月營收卡片
+   MoM > 10%：金色高亮
+------------------------------------------------- */
+
+function revenueCard(x) {
+  const mom =
+    Number(
+      x.mom
+    );
+
+  const isMomHot =
+    Number.isFinite(
+      mom
+    ) &&
+    mom > 10;
+
+  return `
+    <div
+      class="
+        revenue-card
+        ${
+          isMomHot
+            ? "mom-hot"
+            : ""
+        }
+      "
+    >
+
+      ${
+        isMomHot
+          ? `
+            <div
+              class="mom-hot-glow"
+            ></div>
+          `
+          : ""
+      }
+
+      <div
+        class="top"
+      >
+
+        <div>
+
+          <span
+            class="stock-name"
+          >
+            ${
+              x.name ||
+              x.ticker
+            }
+          </span>
+
+          <span
+            class="ticker"
+          >
+            ${
+              x.ticker ||
+              ""
+            }
+          </span>
+
+        </div>
+
+        ${
+          isMomHot
+            ? `
+              <span
+                class="mom-hot-badge"
+              >
+                MoM &gt; 10%
+              </span>
+            `
+            : ""
+        }
+
+      </div>
+
+      <div
+        class="rev"
+      >
+        ${
+          fmtNum(
+            x.revenue_100m,
+            2
+          )
+        }
+        億
+      </div>
+
+      <div
+        class="rev-label"
+      >
+        單月營收
+      </div>
+
+      <div
+        class="changes"
+      >
+
+        <span>
+          <small>
+            MoM
+          </small>
+
+          <b
+            class="${
+              cl(
+                x.mom
+              )
+            }"
+          >
+            ${
+              pct(
+                x.mom
+              )
+            }
+          </b>
+        </span>
+
+        <span>
+          <small>
+            YoY
+          </small>
+
+          <b
+            class="${
+              cl(
+                x.yoy
+              )
+            }"
+          >
+            ${
+              pct(
+                x.yoy
+              )
+            }
+          </b>
+        </span>
+
+      </div>
+
+    </div>
+  `;
+}
+
+function dedupeRevenueStocks(
+  sectors
+) {
+  return [
+    ...new Map(
+      (sectors || [])
+        .flatMap(
+          sec =>
+            sec.stocks ||
+            []
+        )
+        .map(
+          x => [
+            x.ticker,
+            x
+          ]
+        )
+    ).values()
+  ];
+}
+
+/* -------------------------------------------------
+   月營收頁
+------------------------------------------------- */
+
+async function monthlyRevenue() {
+  const d =
+    await J(
+      "./data/monthly_revenue.json"
+    );
+
+  if (
+    $("#revenueMonthBadge")
+  ) {
+    $(
+      "#revenueMonthBadge"
+    ).textContent =
+      d.month_label
+        ? `目前顯示 ${d.month_label}`
+        : "尚無資料";
+  }
+
+  const revenueHeroP =
+    $(
+      "#monthlyRevenue .hero p"
+    );
+
+  if (
+    revenueHeroP
+  ) {
+    revenueHeroP.textContent =
+      "19 個科技族群｜最新已公布月份｜營收、MoM、YoY";
+  }
+
+  if (
+    $("#revenueStatus")
+  ) {
+    $(
+      "#revenueStatus"
+    ).textContent =
+      d.updated_at
+        ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示＋Pushover`
+        : "尚未產生月營收資料";
+  }
+
+  const sectors =
+    d.sectors ||
+    [];
+
+  const tabs =
+    $("#revenueSectorTabs");
+
+  /* 手機族群下拉選單 */
+
+  let selector =
+    document.querySelector(
+      "#revenueSectorPicker"
+    );
+
+  if (
+    !selector &&
+    tabs
+  ) {
+    selector =
+      document.createElement(
+        "div"
+      );
+
+    selector.id =
+      "revenueSectorPicker";
+
+    selector.className =
+      "revenue-sector-picker";
+
+    tabs.before(
+      selector
+    );
+  }
+
+  if (selector) {
+    selector.innerHTML = `
+      <label
+        for="revenueSectorSelect"
+      >
+        選擇族群
+      </label>
+
+      <div
+        class="revenue-select-wrap"
+      >
+
+        <select
+          id="revenueSectorSelect"
+        >
+
+          <option
+            value="all"
+            ${
+              revenueSectorSelected === "all"
+                ? "selected"
+                : ""
+            }
+          >
+            全部族群
+          </option>
+
+          ${
+            sectors
+              .map(
+                s => `
+                  <option
+                    value="${s.name}"
+                    ${
+                      revenueSectorSelected === s.name
+                        ? "selected"
+                        : ""
+                    }
+                  >
+                    ${s.name}
+                  </option>
+                `
+              )
+              .join("")
+          }
+
+        </select>
+
+        <span
+          class="revenue-select-arrow"
+        >
+          ⌄
+        </span>
+
+      </div>
+    `;
+
     const sectorSelect =
       selector.querySelector(
         "#revenueSectorSelect"
       );
 
-    if (sectorSelect) {
+    if (
+      sectorSelect
+    ) {
       sectorSelect.value =
         revenueSectorSelected;
 
       sectorSelect.onchange =
         () => {
+
           revenueSectorSelected =
             sectorSelect.value;
 
@@ -508,6 +1301,8 @@ async function buildMarketPulse() {
         };
     }
   }
+
+  /* MoM 排序按鈕 */
 
   let sortBox =
     document.querySelector(
@@ -564,9 +1359,12 @@ async function buildMarketPulse() {
     `;
 
     sortBox
-      .querySelector("button")
+      .querySelector(
+        "button"
+      )
       .onclick =
         () => {
+
           revenueMomSort =
             !revenueMomSort;
 
@@ -574,8 +1372,11 @@ async function buildMarketPulse() {
         };
   }
 
+  /* 桌機族群按鈕 */
+
   if (tabs) {
     tabs.innerHTML = `
+
       <button
         class="
           week-pill
@@ -611,21 +1412,24 @@ async function buildMarketPulse() {
           )
           .join("")
       }
+
     `;
 
     $$(
       "[data-rev-sec]"
-    ).forEach(
-      b => {
-        b.onclick =
-          () => {
-            revenueSectorSelected =
-              b.dataset.revSec;
+    )
+      .forEach(
+        b => {
+          b.onclick =
+            () => {
 
-            monthlyRevenue();
-          };
-      }
-    );
+              revenueSectorSelected =
+                b.dataset.revSec;
+
+              monthlyRevenue();
+            };
+        }
+      );
   }
 
   const selectedSectors =
@@ -639,7 +1443,9 @@ async function buildMarketPulse() {
 
   let list;
 
-  if (revenueMomSort) {
+  if (
+    revenueMomSort
+  ) {
     let stocks;
 
     if (
@@ -688,6 +1494,7 @@ async function buildMarketPulse() {
             }
           ]
         : [];
+
   } else {
     list =
       selectedSectors;
@@ -716,6 +1523,7 @@ async function buildMarketPulse() {
     list
       .map(
         sec => {
+
           const hotCount =
             (
               sec.stocks ||
@@ -739,6 +1547,7 @@ async function buildMarketPulse() {
               >
 
                 <div>
+
                   <h2>
                     ${sec.name}
                   </h2>
@@ -755,6 +1564,7 @@ async function buildMarketPulse() {
                       `
                       : ""
                   }
+
                 </div>
 
                 <span>
@@ -792,7 +1602,6 @@ async function buildMarketPulse() {
       )
       .join("");
 }
-
 
 /* -------------------------------------------------
    導覽排序
@@ -852,7 +1661,6 @@ function reorderNavigation() {
   }
 }
 
-
 /* -------------------------------------------------
    固定返回總覽按鈕
 ------------------------------------------------- */
@@ -900,6 +1708,7 @@ function setupBackHomeButton() {
 
   const refresh =
     () => {
+
       const active =
         document.querySelector(
           ".page.active"
@@ -918,6 +1727,7 @@ function setupBackHomeButton() {
 
   btn.onclick =
     () => {
+
       if (
         typeof page ===
         "function"
@@ -941,6 +1751,7 @@ function setupBackHomeButton() {
     )
     .forEach(
       el => {
+
         observer.observe(
           el,
           {
@@ -955,65 +1766,95 @@ function setupBackHomeButton() {
 
   refresh();
 }
-
-
 /* -------------------------------------------------
    各分頁更新資訊
 ------------------------------------------------- */
 
 const pageUpdateConfig = {
   heat: {
-    label: "交易日每 5 分鐘",
-    file: "./data/heatmap.json"
+    label:
+      "交易日每 5 分鐘",
+
+    file:
+      "./data/heatmap.json"
   },
 
   selfReports: {
-    label: "22:00＋次日 08:00",
-    file: "./data/self_reports.json"
+    label:
+      "22:00＋次日 08:00",
+
+    file:
+      "./data/self_reports.json"
   },
 
   flows: {
-    label: "交易日收盤後",
-    file: "./data/institutional.json"
+    label:
+      "交易日收盤後",
+
+    file:
+      "./data/institutional.json"
   },
 
   volume: {
-    label: "交易日收盤後",
-    file: "./data/volume.json"
+    label:
+      "交易日收盤後",
+
+    file:
+      "./data/volume.json"
   },
 
   turnover: {
-    label: "交易日收盤後",
-    file: "./data/turnover.json"
+    label:
+      "交易日收盤後",
+
+    file:
+      "./data/turnover.json"
   },
 
   marginLending: {
-    label: "交易日收盤後",
-    file: "./data/margin_lending.json"
+    label:
+      "交易日收盤後",
+
+    file:
+      "./data/margin_lending.json"
   },
 
   ai: {
-    label: "每日 18:00",
-    file: "./data/ai_picks.json"
+    label:
+      "每日 18:00",
+
+    file:
+      "./data/ai_picks.json"
   },
 
   reports: {
-    label: "有新報告時更新",
-    file: "./data/reports.json"
+    label:
+      "有新報告時更新",
+
+    file:
+      "./data/reports.json"
   },
 
   holders: {
-    label: "週六 15:00",
-    file: "./data/holders.json"
+    label:
+      "週六 15:00",
+
+    file:
+      "./data/holders.json"
   },
 
   monthlyRevenue: {
-    label: "每月 1–15 日定時檢查",
-    file: "./data/monthly_revenue.json"
+    label:
+      "每月 1–15 日定時檢查",
+
+    file:
+      "./data/monthly_revenue.json"
   }
 };
 
-function formatUpdateTime(raw) {
+function formatUpdateTime(
+  raw
+) {
   if (!raw) {
     return "尚無更新紀錄";
   }
@@ -1034,7 +1875,10 @@ function formatUpdateTime(raw) {
 
 async function setupPageUpdateMeta() {
   for (
-    const [pageId, cfg]
+    const [
+      pageId,
+      cfg
+    ]
     of Object.entries(
       pageUpdateConfig
     )
@@ -1102,7 +1946,10 @@ async function setupPageUpdateMeta() {
       ></span>
 
       <span>
-        <b>更新頻率</b>
+        <b>
+          更新頻率
+        </b>
+
         ${cfg.label}
       </span>
 
@@ -1113,13 +1960,19 @@ async function setupPageUpdateMeta() {
       </span>
 
       <span>
-        <b>最後更新</b>
-        ${formatUpdateTime(actual)}
+        <b>
+          最後更新
+        </b>
+
+        ${
+          formatUpdateTime(
+            actual
+          )
+        }
       </span>
     `;
   }
 }
-
 
 /* -------------------------------------------------
    字體大小控制
@@ -1132,7 +1985,9 @@ const FONT_LEVELS = [
   1.2
 ];
 
-function applyFontScale(scale) {
+function applyFontScale(
+  scale
+) {
   const safeScale =
     FONT_LEVELS.includes(
       scale
@@ -1160,10 +2015,12 @@ function applyFontScale(scale) {
 
   if (value) {
     value.textContent =
-      `${Math.round(
-        safeScale *
-        100
-      )}%`;
+      `${
+        Math.round(
+          safeScale *
+          100
+        )
+      }%`;
   }
 }
 
@@ -1226,6 +2083,7 @@ function setupFontScaleControl() {
       id="fontScaleMenu"
       class="font-scale-menu"
     >
+
       <button
         type="button"
         data-font-action="minus"
@@ -1247,6 +2105,7 @@ function setupFontScaleControl() {
       >
         A+
       </button>
+
     </div>
   `;
 
@@ -1264,84 +2123,92 @@ function setupFontScaleControl() {
       "#fontScaleMenu"
     );
 
-  toggle.onclick = e => {
-    e.stopPropagation();
+  toggle.onclick =
+    e => {
+      e.stopPropagation();
 
-    menu.classList.toggle(
-      "show"
-    );
-  };
+      menu.classList.toggle(
+        "show"
+      );
+    };
 
   wrap
     .querySelector(
       '[data-font-action="minus"]'
     )
-    .onclick = e => {
-      e.stopPropagation();
+    .onclick =
+      e => {
 
-      const current =
-        Number(
-          localStorage.getItem(
-            "tw-font-scale"
-          ) ||
-          1
-        );
+        e.stopPropagation();
 
-      const index =
-        Math.max(
-          0,
-          FONT_LEVELS.indexOf(
-            current
-          )
-        );
+        const current =
+          Number(
+            localStorage.getItem(
+              "tw-font-scale"
+            ) ||
+            1
+          );
 
-      applyFontScale(
-        FONT_LEVELS[
+        const index =
           Math.max(
             0,
-            index - 1
-          )
-        ]
-      );
-    };
+            FONT_LEVELS.indexOf(
+              current
+            )
+          );
+
+        applyFontScale(
+          FONT_LEVELS[
+            Math.max(
+              0,
+              index - 1
+            )
+          ]
+        );
       };
 
   wrap
     .querySelector(
       '[data-font-action="plus"]'
     )
-    .onclick = e => {
-      e.stopPropagation();
+    .onclick =
+      e => {
 
-      const current =
-        Number(
-          localStorage.getItem(
-            "tw-font-scale"
-          ) ||
-          1
+        e.stopPropagation();
+
+        const current =
+          Number(
+            localStorage.getItem(
+              "tw-font-scale"
+            ) ||
+            1
+          );
+
+        const index =
+          Math.max(
+            0,
+            FONT_LEVELS.indexOf(
+              current
+            )
+          );
+
+        applyFontScale(
+          FONT_LEVELS[
+            Math.min(
+              FONT_LEVELS.length -
+              1,
+
+              index +
+              1
+            )
+          ]
         );
-
-      const index =
-        Math.max(
-          0,
-          FONT_LEVELS.indexOf(
-            current
-          )
-        );
-
-      applyFontScale(
-        FONT_LEVELS[
-          Math.min(
-            FONT_LEVELS.length - 1,
-            index + 1
-          )
-        ]
-      );
-    };
+      };
 
   document.addEventListener(
     "click",
     e => {
+
       if (
         !wrap.contains(
           e.target
@@ -1355,12 +2222,13 @@ function setupFontScaleControl() {
   );
 
   applyFontScale(
-    FONT_LEVELS.includes(saved)
+    FONT_LEVELS.includes(
+      saved
+    )
       ? saved
       : 1
   );
 }
-
 
 /* -------------------------------------------------
    首頁版面順序
@@ -1391,13 +2259,21 @@ function setupHomeOrder() {
     return;
   }
 
-  /* 將快速入口移到 hero 之前，成為 header 下第一個資訊區 */
+  /*
+    快速入口移到最上面
+    會排在首頁 hero 前方
+  */
+
   home.insertBefore(
     rail,
     hero
   );
 
-  /* 舊版首頁資訊由新版 market pulse 取代 */
+  /*
+    舊版首頁資訊
+    由新版 Market Pulse 取代
+  */
+
   const homeCards =
     document.getElementById(
       "homeCards"
@@ -1433,10 +2309,8 @@ function setupHomeOrder() {
   }
 }
 
-
 /* -------------------------------------------------
    啟動
-   此檔案須載入於 assets/app.js 之後
 ------------------------------------------------- */
 
 setupPageHistory();
