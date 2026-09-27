@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-26T19:02+08:00",
-  "mode": "trade_day",
+  "updated_at": "2026-09-27T22:07+08:00",
+  "mode": "sunday",
   "complete": true,
   "universe": "全台股科技普通股",
   "universe_count": {
@@ -9,7 +9,7 @@
   },
   "logic": {
     "version": "2026-09-24-v4-tech-universe",
-    "mode": "trade_day",
+    "mode": "sunday",
     "universe": "全台股科技普通股",
     "lookback_days": 5,
     "institutional_dates": [
@@ -41,18 +41,12 @@
       {
         "key": "holders",
         "label": "大戶籌碼",
-        "weight": 0.25,
-        "weight_pct": 25.0
+        "weight": 0.3,
+        "weight_pct": 30.0
       },
       {
-        "key": "volume_price",
-        "label": "量價",
-        "weight": 0.05,
-        "weight_pct": 5.0
-      },
-      {
-        "key": "turnover",
-        "label": "當日成交熱度",
+        "key": "turnover_5d",
+        "label": "近5日成交熱度",
         "weight": 0.15,
         "weight_pct": 15.0
       }
@@ -61,8 +55,7 @@
       "股票池：全台股科技普通股。科技股＝官方科技產業＋19個自訂科技族群成分股＋跨產業科技供應鏈白名單；排除 ETF、ETN、權證等非普通公司股票",
       "外資／投信／自營商：最近 5 個有效交易日，逐日「買賣超股數 × 當日收盤價」加總，再除以同期間成交金額，最後於上市／上櫃科技股股票池各自做百分位排名",
       "大戶籌碼：使用 TDCC 最近兩期資料，400 張與 1000 張大戶持股比率週增幅取平均，再於同市場科技股股票池做百分位排名",
-      "量價：科技股逐檔以今日成交量／前 5 個交易日均量計算；股價上漲才計分，1.0x 以下 0 分、2.0x 以上 100 分，中間線性換算",
-      "當日成交熱度：當日成交金額在同市場科技股股票池中的百分位排名",
+      "近5日成交熱度：最近 5 個交易日成交金額加總，再於同市場科技股股票池做百分位排名",
       "總分：各因子 0–100 分乘以權重後加總",
       "排名：上市、上櫃科技股分開排名，各取前 20 名",
       "分數代表同市場科技股股票池的相對強弱，不代表未來上漲機率"
@@ -73,70 +66,31 @@
   },
   "twse": [
     {
-      "ticker": "3189",
-      "name": "景碩",
-      "score": 91.5,
-      "change_pct": 6.181015452538632,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
-      ],
-      "reason": "大戶籌碼貢獻 24.3 分｜投信貢獻 22.5 分｜外資貢獻 16.7 分",
-      "factor_scores": {
-        "foreign": 83.6,
-        "trust": 90.1,
-        "dealer": 84.7,
-        "holders": 97.3,
-        "volume_price": 89.8,
-        "turnover": 100.0
-      },
-      "contributions": {
-        "foreign": 16.72,
-        "trust": 22.52,
-        "dealer": 8.47,
-        "holders": 24.32,
-        "volume_price": 4.49,
-        "turnover": 15.0
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 2.4462,
-        "volume_ratio_5d": 1.8977,
-        "turnover_today": 42422694809,
-        "turnover_5d": 130580570083.0
-      }
-    },
-    {
       "ticker": "2449",
       "name": "京元電子",
-      "score": 87.8,
+      "score": 93.1,
       "change_pct": 2.302631578947368,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.6 分｜投信貢獻 23.6 分｜外資貢獻 16.6 分",
+      "reason": "大戶籌碼貢獻 29.5 分｜投信貢獻 23.6 分｜外資貢獻 16.6 分",
       "factor_scores": {
         "foreign": 83.2,
         "trust": 94.3,
         "dealer": 87.6,
         "holders": 98.3,
-        "volume_price": 0,
-        "turnover": 95.2
+        "turnover_5d": 97.5
       },
       "contributions": {
         "foreign": 16.64,
         "trust": 23.57,
         "dealer": 8.76,
-        "holders": 24.57,
-        "volume_price": 0.0,
-        "turnover": 14.28
+        "holders": 29.49,
+        "turnover_5d": 14.62
       },
       "raw": {
         "holder_delta_avg_ppt": 4.0495,
@@ -146,33 +100,65 @@
       }
     },
     {
+      "ticker": "3189",
+      "name": "景碩",
+      "score": 91.7,
+      "change_pct": 6.181015452538632,
+      "tags": [
+        "投信偏多",
+        "外資偏多",
+        "自營商偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 29.2 分｜投信貢獻 22.5 分｜外資貢獻 16.7 分",
+      "factor_scores": {
+        "foreign": 83.6,
+        "trust": 90.1,
+        "dealer": 84.7,
+        "holders": 97.3,
+        "turnover_5d": 98.9
+      },
+      "contributions": {
+        "foreign": 16.72,
+        "trust": 22.52,
+        "dealer": 8.47,
+        "holders": 29.19,
+        "turnover_5d": 14.84
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 2.4462,
+        "volume_ratio_5d": 1.8977,
+        "turnover_today": 42422694809,
+        "turnover_5d": 130580570083.0
+      }
+    },
+    {
       "ticker": "6526",
       "name": "達發",
-      "score": 87.1,
+      "score": 91.3,
       "change_pct": 0.0,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 23.6 分｜投信貢獻 21.3 分｜外資貢獻 18.8 分",
+      "reason": "大戶籌碼貢獻 28.4 分｜投信貢獻 21.3 分｜外資貢獻 18.8 分",
       "factor_scores": {
         "foreign": 93.9,
         "trust": 85.3,
         "dealer": 97.1,
         "holders": 94.5,
-        "volume_price": 0,
-        "turnover": 91.0
+        "turnover_5d": 87.8
       },
       "contributions": {
         "foreign": 18.78,
         "trust": 21.32,
         "dealer": 9.71,
-        "holders": 23.62,
-        "volume_price": 0.0,
-        "turnover": 13.65
+        "holders": 28.35,
+        "turnover_5d": 13.17
       },
       "raw": {
         "holder_delta_avg_ppt": 1.4619,
@@ -182,68 +168,30 @@
       }
     },
     {
-      "ticker": "3042",
-      "name": "晶技",
-      "score": 86.8,
-      "change_pct": 2.525252525252525,
-      "tags": [
-        "投信偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
-      ],
-      "reason": "大戶籌碼貢獻 24.2 分｜投信貢獻 22.8 分｜當日成交熱度貢獻 14.3 分",
-      "factor_scores": {
-        "foreign": 55.5,
-        "trust": 91.2,
-        "dealer": 93.9,
-        "holders": 96.8,
-        "volume_price": 100,
-        "turnover": 95.4
-      },
-      "contributions": {
-        "foreign": 11.1,
-        "trust": 22.8,
-        "dealer": 9.39,
-        "holders": 24.2,
-        "volume_price": 5.0,
-        "turnover": 14.31
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 2.3538,
-        "volume_ratio_5d": 3.1285,
-        "turnover_today": 8378508024,
-        "turnover_5d": 18781238557.0
-      }
-    },
-    {
       "ticker": "2404",
       "name": "漢唐",
-      "score": 86.2,
+      "score": 90.2,
       "change_pct": 2.8000000000000003,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 24.8 分｜大戶籌碼貢獻 23.8 分｜外資貢獻 14.5 分",
+      "reason": "大戶籌碼貢獻 28.5 分｜投信貢獻 24.8 分｜外資貢獻 14.5 分",
       "factor_scores": {
         "foreign": 72.5,
         "trust": 99.2,
         "dealer": 90.8,
         "holders": 95.0,
-        "volume_price": 10.0,
-        "turnover": 90.5
+        "turnover_5d": 88.7
       },
       "contributions": {
         "foreign": 14.5,
         "trust": 24.8,
         "dealer": 9.08,
-        "holders": 23.75,
-        "volume_price": 0.5,
-        "turnover": 13.57
+        "holders": 28.5,
+        "turnover_5d": 13.3
       },
       "raw": {
         "holder_delta_avg_ppt": 1.8333,
@@ -255,31 +203,29 @@
     {
       "ticker": "6213",
       "name": "聯茂",
-      "score": 85.3,
+      "score": 89.9,
       "change_pct": 9.981515711645102,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.1 分｜投信貢獻 22.9 分｜外資貢獻 15.9 分",
+      "reason": "大戶籌碼貢獻 28.9 分｜投信貢獻 22.9 分｜外資貢獻 15.9 分",
       "factor_scores": {
         "foreign": 79.6,
         "trust": 91.8,
         "dealer": 78.4,
         "holders": 96.4,
-        "volume_price": 0,
-        "turnover": 96.4
+        "turnover_5d": 95.4
       },
       "contributions": {
         "foreign": 15.92,
         "trust": 22.95,
         "dealer": 7.84,
-        "holders": 24.1,
-        "volume_price": 0.0,
-        "turnover": 14.46
+        "holders": 28.92,
+        "turnover_5d": 14.31
       },
       "raw": {
         "holder_delta_avg_ppt": 2.305,
@@ -289,68 +235,30 @@
       }
     },
     {
-      "ticker": "2454",
-      "name": "聯發科",
-      "score": 84.7,
-      "change_pct": 1.9286403085824495,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍"
-      ],
-      "reason": "投信貢獻 22.2 分｜大戶籌碼貢獻 20.8 分｜外資貢獻 17.8 分",
-      "factor_scores": {
-        "foreign": 89.1,
-        "trust": 88.9,
-        "dealer": 89.7,
-        "holders": 83.0,
-        "volume_price": 0,
-        "turnover": 99.8
-      },
-      "contributions": {
-        "foreign": 17.82,
-        "trust": 22.23,
-        "dealer": 8.97,
-        "holders": 20.75,
-        "volume_price": 0.0,
-        "turnover": 14.97
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.3833,
-        "volume_ratio_5d": 0.8377,
-        "turnover_today": 41179400531,
-        "turnover_5d": 243071358456.0
-      }
-    },
-    {
       "ticker": "3037",
       "name": "欣興",
-      "score": 84.6,
+      "score": 89.1,
       "change_pct": 2.1551724137931036,
       "tags": [
         "投信偏多",
         "外資偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 23.1 分｜大戶籌碼貢獻 22.8 分｜外資貢獻 18.4 分",
+      "reason": "大戶籌碼貢獻 27.4 分｜投信貢獻 23.1 分｜外資貢獻 18.4 分",
       "factor_scores": {
         "foreign": 92.2,
         "trust": 92.4,
         "dealer": 54.4,
         "holders": 91.2,
-        "volume_price": 0.6,
-        "turnover": 98.7
+        "turnover_5d": 98.3
       },
       "contributions": {
         "foreign": 18.44,
         "trust": 23.1,
         "dealer": 5.44,
-        "holders": 22.8,
-        "volume_price": 0.03,
-        "turnover": 14.8
+        "holders": 27.36,
+        "turnover_5d": 14.74
       },
       "raw": {
         "holder_delta_avg_ppt": 0.7379,
@@ -360,69 +268,65 @@
       }
     },
     {
-      "ticker": "8150",
-      "name": "南茂",
-      "score": 84.0,
-      "change_pct": 4.672897196261682,
+      "ticker": "2454",
+      "name": "聯發科",
+      "score": 88.9,
+      "change_pct": 1.9286403085824495,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.9 分｜投信貢獻 19.9 分｜外資貢獻 16.4 分",
+      "reason": "大戶籌碼貢獻 24.9 分｜投信貢獻 22.2 分｜外資貢獻 17.8 分",
       "factor_scores": {
-        "foreign": 82.1,
-        "trust": 79.6,
-        "dealer": 76.3,
-        "holders": 99.6,
-        "volume_price": 14.5,
-        "turnover": 96.0
+        "foreign": 89.1,
+        "trust": 88.9,
+        "dealer": 89.7,
+        "holders": 83.0,
+        "turnover_5d": 99.8
       },
       "contributions": {
-        "foreign": 16.42,
-        "trust": 19.9,
-        "dealer": 7.63,
+        "foreign": 17.82,
+        "trust": 22.23,
+        "dealer": 8.97,
         "holders": 24.9,
-        "volume_price": 0.73,
-        "turnover": 14.4
+        "turnover_5d": 14.97
       },
       "raw": {
-        "holder_delta_avg_ppt": 7.3503,
-        "volume_ratio_5d": 1.145,
-        "turnover_today": 9277388010,
-        "turnover_5d": 45913080637.0
+        "holder_delta_avg_ppt": 0.3833,
+        "volume_ratio_5d": 0.8377,
+        "turnover_today": 41179400531,
+        "turnover_5d": 243071358456.0
       }
     },
     {
       "ticker": "3035",
       "name": "智原",
-      "score": 83.3,
+      "score": 88.4,
       "change_pct": 1.2254901960784315,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.5 分｜投信貢獻 20.4 分｜外資貢獻 16.3 分",
+      "reason": "大戶籌碼貢獻 29.4 分｜投信貢獻 20.4 分｜外資貢獻 16.3 分",
       "factor_scores": {
         "foreign": 81.5,
         "trust": 81.7,
         "dealer": 98.1,
         "holders": 97.9,
-        "volume_price": 0,
-        "turnover": 81.7
+        "turnover_5d": 83.6
       },
       "contributions": {
         "foreign": 16.3,
         "trust": 20.43,
         "dealer": 9.81,
-        "holders": 24.48,
-        "volume_price": 0.0,
-        "turnover": 12.26
+        "holders": 29.37,
+        "turnover_5d": 12.54
       },
       "raw": {
         "holder_delta_avg_ppt": 3.3044,
@@ -432,33 +336,65 @@
       }
     },
     {
+      "ticker": "8150",
+      "name": "南茂",
+      "score": 88.1,
+      "change_pct": 4.672897196261682,
+      "tags": [
+        "投信偏多",
+        "外資偏多",
+        "自營商偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 29.9 分｜投信貢獻 19.9 分｜外資貢獻 16.4 分",
+      "factor_scores": {
+        "foreign": 82.1,
+        "trust": 79.6,
+        "dealer": 76.3,
+        "holders": 99.6,
+        "turnover_5d": 95.0
+      },
+      "contributions": {
+        "foreign": 16.42,
+        "trust": 19.9,
+        "dealer": 7.63,
+        "holders": 29.88,
+        "turnover_5d": 14.25
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 7.3503,
+        "volume_ratio_5d": 1.145,
+        "turnover_today": 9277388010,
+        "turnover_5d": 45913080637.0
+      }
+    },
+    {
       "ticker": "6770",
       "name": "力積電",
-      "score": 82.0,
+      "score": 86.9,
       "change_pct": -1.5047879616962987,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "大戶籌碼貢獻 23.9 分｜投信貢獻 22.3 分｜當日成交熱度貢獻 14.0 分",
+      "reason": "大戶籌碼貢獻 28.7 分｜投信貢獻 22.3 分｜近5日成交熱度貢獻 14.1 分",
       "factor_scores": {
         "foreign": 66.2,
         "trust": 89.3,
         "dealer": 84.9,
         "holders": 95.8,
-        "volume_price": 0,
-        "turnover": 93.5
+        "turnover_5d": 93.9
       },
       "contributions": {
         "foreign": 13.24,
         "trust": 22.32,
         "dealer": 8.49,
-        "holders": 23.95,
-        "volume_price": 0.0,
-        "turnover": 14.03
+        "holders": 28.74,
+        "turnover_5d": 14.09
       },
       "raw": {
         "holder_delta_avg_ppt": 2.0389,
@@ -468,33 +404,63 @@
       }
     },
     {
+      "ticker": "3042",
+      "name": "晶技",
+      "score": 85.7,
+      "change_pct": 2.525252525252525,
+      "tags": [
+        "投信偏多",
+        "自營商偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 29.0 分｜投信貢獻 22.8 分｜近5日成交熱度貢獻 13.3 分",
+      "factor_scores": {
+        "foreign": 55.5,
+        "trust": 91.2,
+        "dealer": 93.9,
+        "holders": 96.8,
+        "turnover_5d": 88.9
+      },
+      "contributions": {
+        "foreign": 11.1,
+        "trust": 22.8,
+        "dealer": 9.39,
+        "holders": 29.04,
+        "turnover_5d": 13.34
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 2.3538,
+        "volume_ratio_5d": 3.1285,
+        "turnover_today": 8378508024,
+        "turnover_5d": 18781238557.0
+      }
+    },
+    {
       "ticker": "6691",
       "name": "洋基工程",
-      "score": 81.2,
+      "score": 84.8,
       "change_pct": 3.2507739938080498,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
-        "大戶增加",
-        "當日成交活躍"
+        "大戶增加"
       ],
-      "reason": "大戶籌碼貢獻 23.9 分｜投信貢獻 22.4 分｜外資貢獻 15.4 分",
+      "reason": "大戶籌碼貢獻 28.6 分｜投信貢獻 22.4 分｜外資貢獻 15.4 分",
       "factor_scores": {
         "foreign": 77.1,
         "trust": 89.5,
         "dealer": 77.9,
         "holders": 95.4,
-        "volume_price": 5.4,
-        "turnover": 76.9
+        "turnover_5d": 70.8
       },
       "contributions": {
         "foreign": 15.42,
         "trust": 22.38,
         "dealer": 7.79,
-        "holders": 23.85,
-        "volume_price": 0.27,
-        "turnover": 11.54
+        "holders": 28.62,
+        "turnover_5d": 10.62
       },
       "raw": {
         "holder_delta_avg_ppt": 2.0083,
@@ -504,66 +470,30 @@
       }
     },
     {
-      "ticker": "6531",
-      "name": "愛普*",
-      "score": 81.1,
-      "change_pct": 0.60790273556231,
-      "tags": [
-        "投信偏多",
-        "大戶增加",
-        "當日成交活躍"
-      ],
-      "reason": "大戶籌碼貢獻 23.5 分｜投信貢獻 22.7 分｜外資貢獻 14.8 分",
-      "factor_scores": {
-        "foreign": 73.9,
-        "trust": 90.8,
-        "dealer": 57.8,
-        "holders": 94.1,
-        "volume_price": 15.2,
-        "turnover": 90.3
-      },
-      "contributions": {
-        "foreign": 14.78,
-        "trust": 22.7,
-        "dealer": 5.78,
-        "holders": 23.52,
-        "volume_price": 0.76,
-        "turnover": 13.54
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 1.2736,
-        "volume_ratio_5d": 1.152,
-        "turnover_today": 3059849343,
-        "turnover_5d": 13091594351.0
-      }
-    },
-    {
       "ticker": "2327",
       "name": "國巨",
-      "score": 80.6,
+      "score": 84.5,
       "change_pct": 1.2216404886561953,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 22.5 分｜投信貢獻 22.0 分｜當日成交熱度貢獻 14.9 分",
+      "reason": "大戶籌碼貢獻 27.0 分｜投信貢獻 22.0 分｜近5日成交熱度貢獻 14.8 分",
       "factor_scores": {
         "foreign": 58.8,
         "trust": 88.0,
         "dealer": 89.3,
         "holders": 90.1,
-        "volume_price": 10.4,
-        "turnover": 99.2
+        "turnover_5d": 98.5
       },
       "contributions": {
         "foreign": 11.76,
         "trust": 22.0,
         "dealer": 8.93,
-        "holders": 22.52,
-        "volume_price": 0.52,
-        "turnover": 14.88
+        "holders": 27.03,
+        "turnover_5d": 14.77
       },
       "raw": {
         "holder_delta_avg_ppt": 0.6721,
@@ -573,32 +503,62 @@
       }
     },
     {
+      "ticker": "6531",
+      "name": "愛普*",
+      "score": 84.5,
+      "change_pct": 0.60790273556231,
+      "tags": [
+        "投信偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 28.2 分｜投信貢獻 22.7 分｜外資貢獻 14.8 分",
+      "factor_scores": {
+        "foreign": 73.9,
+        "trust": 90.8,
+        "dealer": 57.8,
+        "holders": 94.1,
+        "turnover_5d": 86.6
+      },
+      "contributions": {
+        "foreign": 14.78,
+        "trust": 22.7,
+        "dealer": 5.78,
+        "holders": 28.23,
+        "turnover_5d": 12.99
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 1.2736,
+        "volume_ratio_5d": 1.152,
+        "turnover_today": 3059849343,
+        "turnover_5d": 13091594351.0
+      }
+    },
+    {
       "ticker": "2409",
       "name": "友達",
-      "score": 79.3,
+      "score": 84.4,
       "change_pct": -1.440922190201729,
       "tags": [
         "投信偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "大戶籌碼貢獻 24.9 分｜投信貢獻 20.6 分｜當日成交熱度貢獻 14.8 分",
+      "reason": "大戶籌碼貢獻 29.8 分｜投信貢獻 20.6 分｜近5日成交熱度貢獻 14.9 分",
       "factor_scores": {
         "foreign": 60.1,
         "trust": 82.6,
         "dealer": 70.4,
         "holders": 99.4,
-        "volume_price": 0,
-        "turnover": 98.5
+        "turnover_5d": 99.2
       },
       "contributions": {
         "foreign": 12.02,
         "trust": 20.65,
         "dealer": 7.04,
-        "holders": 24.85,
-        "volume_price": 0.0,
-        "turnover": 14.77
+        "holders": 29.82,
+        "turnover_5d": 14.88
       },
       "raw": {
         "holder_delta_avg_ppt": 6.0068,
@@ -610,31 +570,29 @@
     {
       "ticker": "2303",
       "name": "聯電",
-      "score": 79.2,
+      "score": 83.8,
       "change_pct": -3.75,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "投信貢獻 23.1 分｜大戶籌碼貢獻 22.9 分｜當日成交熱度貢獻 14.9 分",
+      "reason": "大戶籌碼貢獻 27.5 分｜投信貢獻 23.1 分｜近5日成交熱度貢獻 14.9 分",
       "factor_scores": {
         "foreign": 52.7,
         "trust": 92.6,
         "dealer": 76.7,
         "holders": 91.8,
-        "volume_price": 0,
-        "turnover": 99.4
+        "turnover_5d": 99.6
       },
       "contributions": {
         "foreign": 10.54,
         "trust": 23.15,
         "dealer": 7.67,
-        "holders": 22.95,
-        "volume_price": 0.0,
-        "turnover": 14.91
+        "holders": 27.54,
+        "turnover_5d": 14.94
       },
       "raw": {
         "holder_delta_avg_ppt": 0.7488,
@@ -646,29 +604,27 @@
     {
       "ticker": "2308",
       "name": "台達電",
-      "score": 77.3,
+      "score": 80.9,
       "change_pct": 0.5263157894736842,
       "tags": [
         "投信偏多",
         "自營商偏多",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 24.7 分｜大戶籌碼貢獻 17.1 分｜當日成交熱度貢獻 14.7 分",
+      "reason": "投信貢獻 24.7 分｜大戶籌碼貢獻 20.6 分｜近5日成交熱度貢獻 14.8 分",
       "factor_scores": {
         "foreign": 58.0,
         "trust": 98.9,
         "dealer": 91.8,
         "holders": 68.5,
-        "volume_price": 0,
-        "turnover": 97.9
+        "turnover_5d": 98.7
       },
       "contributions": {
         "foreign": 11.6,
         "trust": 24.73,
         "dealer": 9.18,
-        "holders": 17.12,
-        "volume_price": 0.0,
-        "turnover": 14.69
+        "holders": 20.55,
+        "turnover_5d": 14.8
       },
       "raw": {
         "holder_delta_avg_ppt": 0.1068,
@@ -678,32 +634,63 @@
       }
     },
     {
+      "ticker": "2408",
+      "name": "南亞科",
+      "score": 80.8,
+      "change_pct": -2.3300970873786406,
+      "tags": [
+        "投信偏多",
+        "大戶增加",
+        "近5日成交活躍",
+        "當日下跌"
+      ],
+      "reason": "大戶籌碼貢獻 28.1 分｜投信貢獻 22.1 分｜近5日成交熱度貢獻 14.9 分",
+      "factor_scores": {
+        "foreign": 62.0,
+        "trust": 88.2,
+        "dealer": 33.4,
+        "holders": 93.5,
+        "turnover_5d": 99.4
+      },
+      "contributions": {
+        "foreign": 12.4,
+        "trust": 22.05,
+        "dealer": 3.34,
+        "holders": 28.05,
+        "turnover_5d": 14.91
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 1.0053,
+        "volume_ratio_5d": 0.7065,
+        "turnover_today": 20053560575,
+        "turnover_5d": 143972894647.0
+      }
+    },
+    {
       "ticker": "2412",
       "name": "中華電",
-      "score": 76.8,
+      "score": 80.4,
       "change_pct": -0.3436426116838488,
       "tags": [
         "投信偏多",
         "外資偏多",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "投信貢獻 21.9 分｜外資貢獻 19.7 分｜大戶籌碼貢獻 16.1 分",
+      "reason": "投信貢獻 21.9 分｜外資貢獻 19.7 分｜大戶籌碼貢獻 19.3 分",
       "factor_scores": {
         "foreign": 98.3,
         "trust": 87.6,
         "dealer": 70.0,
         "holders": 64.3,
-        "volume_price": 0,
-        "turnover": 81.1
+        "turnover_5d": 83.8
       },
       "contributions": {
         "foreign": 19.66,
         "trust": 21.9,
         "dealer": 7.0,
-        "holders": 16.07,
-        "volume_price": 0.0,
-        "turnover": 12.16
+        "holders": 19.29,
+        "turnover_5d": 12.57
       },
       "raw": {
         "holder_delta_avg_ppt": 0.0577,
@@ -713,73 +700,35 @@
       }
     },
     {
-      "ticker": "3016",
-      "name": "嘉晶",
-      "score": 76.5,
-      "change_pct": 9.965635738831615,
+      "ticker": "6456",
+      "name": "GIS-KY",
+      "score": 80.3,
+      "change_pct": 3.4351145038167976,
       "tags": [
-        "外資偏多",
+        "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.8 分｜外資貢獻 17.7 分｜當日成交熱度貢獻 14.1 分",
+      "reason": "大戶籌碼貢獻 29.6 分｜投信貢獻 16.2 分｜外資貢獻 14.1 分",
       "factor_scores": {
-        "foreign": 88.7,
-        "trust": 32.6,
-        "dealer": 67.2,
-        "holders": 99.2,
-        "volume_price": 100,
-        "turnover": 94.1
+        "foreign": 70.6,
+        "trust": 64.9,
+        "dealer": 82.6,
+        "holders": 98.7,
+        "turnover_5d": 80.5
       },
       "contributions": {
-        "foreign": 17.74,
-        "trust": 8.15,
-        "dealer": 6.72,
-        "holders": 24.8,
-        "volume_price": 5.0,
-        "turnover": 14.11
+        "foreign": 14.12,
+        "trust": 16.23,
+        "dealer": 8.26,
+        "holders": 29.61,
+        "turnover_5d": 12.07
       },
       "raw": {
-        "holder_delta_avg_ppt": 5.4667,
-        "volume_ratio_5d": 2.2306,
-        "turnover_today": 7567529613,
-        "turnover_5d": 18895297345.0
-      }
-    },
-    {
-      "ticker": "3045",
-      "name": "台灣大",
-      "score": 76.2,
-      "change_pct": -0.40650406504065045,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "當日成交活躍",
-        "當日下跌"
-      ],
-      "reason": "投信貢獻 23.9 分｜外資貢獻 17.6 分｜大戶籌碼貢獻 16.0 分",
-      "factor_scores": {
-        "foreign": 88.2,
-        "trust": 95.8,
-        "dealer": 69.5,
-        "holders": 64.1,
-        "volume_price": 0,
-        "turnover": 77.9
-      },
-      "contributions": {
-        "foreign": 17.64,
-        "trust": 23.95,
-        "dealer": 6.95,
-        "holders": 16.02,
-        "volume_price": 0.0,
-        "turnover": 11.69
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.0552,
-        "volume_ratio_5d": 0.4701,
-        "turnover_today": 600040969,
-        "turnover_5d": 6303319412.0
+        "holder_delta_avg_ppt": 4.7616,
+        "volume_ratio_5d": 1.0801,
+        "turnover_today": 1146567549,
+        "turnover_5d": 6087193580.0
       }
     }
   ],
@@ -787,32 +736,29 @@
     {
       "ticker": "3293",
       "name": "鈊象",
-      "score": 93.8,
+      "score": 92.7,
       "change_pct": 4.38957475994513,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 24.5 分｜大戶籌碼貢獻 21.7 分｜外資貢獻 19.3 分",
+      "reason": "大戶籌碼貢獻 26.1 分｜投信貢獻 24.5 分｜外資貢獻 19.3 分",
       "factor_scores": {
         "foreign": 96.7,
         "trust": 97.9,
         "dealer": 86.3,
         "holders": 86.9,
-        "volume_price": 100,
-        "turnover": 97.5
+        "turnover_5d": 94.6
       },
       "contributions": {
         "foreign": 19.34,
         "trust": 24.48,
         "dealer": 8.63,
-        "holders": 21.73,
-        "volume_price": 5.0,
-        "turnover": 14.62
+        "holders": 26.07,
+        "turnover_5d": 14.19
       },
       "raw": {
         "holder_delta_avg_ppt": 0.3251,
@@ -822,69 +768,30 @@
       }
     },
     {
-      "ticker": "8050",
-      "name": "廣積",
-      "score": 87.2,
-      "change_pct": 3.204047217537942,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
-      ],
-      "reason": "大戶籌碼貢獻 22.1 分｜投信貢獻 20.9 分｜外資貢獻 19.5 分",
-      "factor_scores": {
-        "foreign": 97.7,
-        "trust": 83.4,
-        "dealer": 80.9,
-        "holders": 88.4,
-        "volume_price": 94.3,
-        "turnover": 79.2
-      },
-      "contributions": {
-        "foreign": 19.54,
-        "trust": 20.85,
-        "dealer": 8.09,
-        "holders": 22.1,
-        "volume_price": 4.71,
-        "turnover": 11.88
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.4096,
-        "volume_ratio_5d": 1.943,
-        "turnover_today": 138214000,
-        "turnover_5d": 372896200.0
-      }
-    },
-    {
       "ticker": "3105",
       "name": "穩懋",
-      "score": 85.9,
+      "score": 90.8,
       "change_pct": 1.0060362173038229,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.5 分｜投信貢獻 24.0 分｜當日成交熱度貢獻 14.9 分",
+      "reason": "大戶籌碼貢獻 29.4 分｜投信貢獻 24.0 分｜近5日成交熱度貢獻 15.0 分",
       "factor_scores": {
         "foreign": 71.3,
         "trust": 96.0,
         "dealer": 82.1,
         "holders": 97.9,
-        "volume_price": 0,
-        "turnover": 99.4
+        "turnover_5d": 99.8
       },
       "contributions": {
         "foreign": 14.26,
         "trust": 24.0,
         "dealer": 8.21,
-        "holders": 24.48,
-        "volume_price": 0.0,
-        "turnover": 14.91
+        "holders": 29.37,
+        "turnover_5d": 14.97
       },
       "raw": {
         "holder_delta_avg_ppt": 1.6359,
@@ -894,139 +801,63 @@
       }
     },
     {
-      "ticker": "8121",
-      "name": "越峰",
-      "score": 83.1,
-      "change_pct": 9.85663082437276,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "自營商偏多",
-        "大戶增加",
-        "量價偏多"
-      ],
-      "reason": "投信貢獻 22.0 分｜大戶籌碼貢獻 20.9 分｜外資貢獻 16.1 分",
-      "factor_scores": {
-        "foreign": 80.5,
-        "trust": 87.9,
-        "dealer": 91.1,
-        "holders": 83.6,
-        "volume_price": 100,
-        "turnover": 66.5
-      },
-      "contributions": {
-        "foreign": 16.1,
-        "trust": 21.98,
-        "dealer": 9.11,
-        "holders": 20.9,
-        "volume_price": 5.0,
-        "turnover": 9.97
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.146,
-        "volume_ratio_5d": 3.1775,
-        "turnover_today": 37749250,
-        "turnover_5d": 85020850.0
-      }
-    },
-    {
-      "ticker": "8383",
-      "name": "千附",
-      "score": 81.5,
-      "change_pct": 2.7231467473524957,
+      "ticker": "8050",
+      "name": "廣積",
+      "score": 85.9,
+      "change_pct": 3.204047217537942,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
         "大戶增加"
       ],
-      "reason": "投信貢獻 22.6 分｜大戶籌碼貢獻 21.0 分｜外資貢獻 16.6 分",
+      "reason": "大戶籌碼貢獻 26.5 分｜投信貢獻 20.9 分｜外資貢獻 19.5 分",
       "factor_scores": {
-        "foreign": 83.2,
-        "trust": 90.6,
-        "dealer": 95.0,
-        "holders": 84.0,
-        "volume_price": 11.9,
-        "turnover": 74.4
+        "foreign": 97.7,
+        "trust": 83.4,
+        "dealer": 80.9,
+        "holders": 88.4,
+        "turnover_5d": 72.6
       },
       "contributions": {
-        "foreign": 16.64,
-        "trust": 22.65,
-        "dealer": 9.5,
-        "holders": 21.0,
-        "volume_price": 0.6,
-        "turnover": 11.16
+        "foreign": 19.54,
+        "trust": 20.85,
+        "dealer": 8.09,
+        "holders": 26.52,
+        "turnover_5d": 10.89
       },
       "raw": {
-        "holder_delta_avg_ppt": 0.167,
-        "volume_ratio_5d": 1.1193,
-        "turnover_today": 70771700,
-        "turnover_5d": 330925700.0
-      }
-    },
-    {
-      "ticker": "8227",
-      "name": "巨有科技",
-      "score": 80.9,
-      "change_pct": -1.129032258064516,
-      "tags": [
-        "投信偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍",
-        "當日下跌"
-      ],
-      "reason": "大戶籌碼貢獻 23.8 分｜投信貢獻 22.2 分｜外資貢獻 12.8 分",
-      "factor_scores": {
-        "foreign": 64.2,
-        "trust": 88.8,
-        "dealer": 94.0,
-        "holders": 95.0,
-        "volume_price": 0,
-        "turnover": 84.8
-      },
-      "contributions": {
-        "foreign": 12.84,
-        "trust": 22.2,
-        "dealer": 9.4,
-        "holders": 23.75,
-        "volume_price": 0.0,
-        "turnover": 12.72
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.9066,
-        "volume_ratio_5d": 0.5728,
-        "turnover_today": 282511000,
-        "turnover_5d": 1743424000.0
+        "holder_delta_avg_ppt": 0.4096,
+        "volume_ratio_5d": 1.943,
+        "turnover_today": 138214000,
+        "turnover_5d": 372896200.0
       }
     },
     {
       "ticker": "5439",
       "name": "高技",
-      "score": 80.7,
+      "score": 85.7,
       "change_pct": 0.0,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 24.6 分｜大戶籌碼貢獻 23.9 分｜當日成交熱度貢獻 12.2 分",
+      "reason": "大戶籌碼貢獻 28.6 分｜投信貢獻 24.6 分｜近5日成交熱度貢獻 12.4 分",
       "factor_scores": {
         "foreign": 54.5,
         "trust": 98.5,
         "dealer": 91.3,
         "holders": 95.4,
-        "volume_price": 0,
-        "turnover": 81.5
+        "turnover_5d": 82.7
       },
       "contributions": {
         "foreign": 10.9,
         "trust": 24.62,
         "dealer": 9.13,
-        "holders": 23.85,
-        "volume_price": 0.0,
-        "turnover": 12.22
+        "holders": 28.62,
+        "turnover_5d": 12.4
       },
       "raw": {
         "holder_delta_avg_ppt": 0.9848,
@@ -1036,68 +867,64 @@
       }
     },
     {
-      "ticker": "7792",
-      "name": "安葆",
-      "score": 80.4,
-      "change_pct": 4.813477737665464,
+      "ticker": "8227",
+      "name": "巨有科技",
+      "score": 85.6,
+      "change_pct": -1.129032258064516,
       "tags": [
         "投信偏多",
-        "外資偏多",
+        "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
+        "近5日成交活躍",
+        "當日下跌"
       ],
-      "reason": "大戶籌碼貢獻 22.8 分｜投信貢獻 20.0 分｜外資貢獻 17.2 分",
+      "reason": "大戶籌碼貢獻 28.5 分｜投信貢獻 22.2 分｜外資貢獻 12.8 分",
       "factor_scores": {
-        "foreign": 86.1,
-        "trust": 80.0,
-        "dealer": 21.8,
-        "holders": 91.3,
-        "volume_price": 83.0,
-        "turnover": 93.6
+        "foreign": 64.2,
+        "trust": 88.8,
+        "dealer": 94.0,
+        "holders": 95.0,
+        "turnover_5d": 84.6
       },
       "contributions": {
-        "foreign": 17.22,
-        "trust": 20.0,
-        "dealer": 2.18,
-        "holders": 22.82,
-        "volume_price": 4.15,
-        "turnover": 14.04
+        "foreign": 12.84,
+        "trust": 22.2,
+        "dealer": 9.4,
+        "holders": 28.5,
+        "turnover_5d": 12.69
       },
       "raw": {
-        "holder_delta_avg_ppt": 0.5979,
-        "volume_ratio_5d": 1.83,
-        "turnover_today": 1206636500,
-        "turnover_5d": 3891112000.0
+        "holder_delta_avg_ppt": 0.9066,
+        "volume_ratio_5d": 0.5728,
+        "turnover_today": 282511000,
+        "turnover_5d": 1743424000.0
       }
     },
     {
       "ticker": "8299",
       "name": "群聯",
-      "score": 79.5,
+      "score": 84.5,
       "change_pct": -4.063205417607223,
       "tags": [
         "投信偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "大戶籌碼貢獻 24.5 分｜投信貢獻 23.9 分｜當日成交熱度貢獻 14.8 分",
+      "reason": "大戶籌碼貢獻 29.4 分｜投信貢獻 23.9 分｜近5日成交熱度貢獻 14.9 分",
       "factor_scores": {
         "foreign": 71.7,
         "trust": 95.4,
         "dealer": 19.5,
         "holders": 98.1,
-        "volume_price": 0,
-        "turnover": 99.0
+        "turnover_5d": 99.4
       },
       "contributions": {
         "foreign": 14.34,
         "trust": 23.85,
         "dealer": 1.95,
-        "holders": 24.52,
-        "volume_price": 0.0,
-        "turnover": 14.85
+        "holders": 29.43,
+        "turnover_5d": 14.91
       },
       "raw": {
         "holder_delta_avg_ppt": 1.7341,
@@ -1107,136 +934,62 @@
       }
     },
     {
-      "ticker": "6664",
-      "name": "群翊",
-      "score": 78.5,
-      "change_pct": 3.6127167630057806,
+      "ticker": "8383",
+      "name": "千附",
+      "score": 84.5,
+      "change_pct": 2.7231467473524957,
       "tags": [
         "投信偏多",
         "外資偏多",
         "自營商偏多",
-        "當日成交活躍"
+        "大戶增加"
       ],
-      "reason": "投信貢獻 23.4 分｜外資貢獻 19.2 分｜大戶籌碼貢獻 13.1 分",
+      "reason": "大戶籌碼貢獻 25.2 分｜投信貢獻 22.6 分｜外資貢獻 16.6 分",
       "factor_scores": {
-        "foreign": 95.8,
-        "trust": 93.6,
-        "dealer": 89.0,
-        "holders": 52.4,
-        "volume_price": 47.4,
-        "turnover": 77.3
+        "foreign": 83.2,
+        "trust": 90.6,
+        "dealer": 95.0,
+        "holders": 84.0,
+        "turnover_5d": 70.1
       },
       "contributions": {
-        "foreign": 19.16,
-        "trust": 23.4,
-        "dealer": 8.9,
-        "holders": 13.1,
-        "volume_price": 2.37,
-        "turnover": 11.59
+        "foreign": 16.64,
+        "trust": 22.65,
+        "dealer": 9.5,
+        "holders": 25.2,
+        "turnover_5d": 10.51
       },
       "raw": {
-        "holder_delta_avg_ppt": 0.0,
-        "volume_ratio_5d": 1.4736,
-        "turnover_today": 101039500,
-        "turnover_5d": 342287500.0
-      }
-    },
-    {
-      "ticker": "8027",
-      "name": "鈦昇",
-      "score": 77.8,
-      "change_pct": 4.2492917847025495,
-      "tags": [
-        "投信偏多",
-        "大戶增加",
-        "當日成交活躍"
-      ],
-      "reason": "大戶籌碼貢獻 24.1 分｜投信貢獻 20.3 分｜當日成交熱度貢獻 13.4 分",
-      "factor_scores": {
-        "foreign": 65.7,
-        "trust": 81.3,
-        "dealer": 55.3,
-        "holders": 96.3,
-        "volume_price": 27.3,
-        "turnover": 89.2
-      },
-      "contributions": {
-        "foreign": 13.14,
-        "trust": 20.32,
-        "dealer": 5.53,
-        "holders": 24.07,
-        "volume_price": 1.37,
-        "turnover": 13.38
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 1.1241,
-        "volume_ratio_5d": 1.2728,
-        "turnover_today": 614584500,
-        "turnover_5d": 2508798000.0
-      }
-    },
-    {
-      "ticker": "6231",
-      "name": "系微",
-      "score": 77.7,
-      "change_pct": 4.444444444444445,
-      "tags": [
-        "外資偏多",
-        "自營商偏多",
-        "大戶增加",
-        "當日成交活躍",
-        "量價偏多"
-      ],
-      "reason": "大戶籌碼貢獻 21.1 分｜外資貢獻 15.7 分｜投信貢獻 14.4 分",
-      "factor_scores": {
-        "foreign": 78.4,
-        "trust": 57.6,
-        "dealer": 95.6,
-        "holders": 84.4,
-        "volume_price": 100,
-        "turnover": 79.4
-      },
-      "contributions": {
-        "foreign": 15.68,
-        "trust": 14.4,
-        "dealer": 9.56,
-        "holders": 21.1,
-        "volume_price": 5.0,
-        "turnover": 11.91
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.1744,
-        "volume_ratio_5d": 2.2202,
-        "turnover_today": 141435000,
-        "turnover_5d": 386673500.0
+        "holder_delta_avg_ppt": 0.167,
+        "volume_ratio_5d": 1.1193,
+        "turnover_today": 70771700,
+        "turnover_5d": 330925700.0
       }
     },
     {
       "ticker": "8064",
       "name": "東捷",
-      "score": 77.2,
+      "score": 81.5,
       "change_pct": 4.511278195488721,
       "tags": [
         "投信偏多",
         "大戶增加",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "大戶籌碼貢獻 24.2 分｜投信貢獻 20.9 分｜當日成交熱度貢獻 14.3 分",
+      "reason": "大戶籌碼貢獻 29.0 分｜投信貢獻 20.9 分｜近5日成交熱度貢獻 14.2 分",
       "factor_scores": {
         "foreign": 50.3,
         "trust": 83.8,
         "dealer": 72.6,
         "holders": 96.7,
-        "volume_price": 8.6,
-        "turnover": 95.6
+        "turnover_5d": 95.0
       },
       "contributions": {
         "foreign": 10.06,
         "trust": 20.95,
         "dealer": 7.26,
-        "holders": 24.18,
-        "volume_price": 0.43,
-        "turnover": 14.34
+        "holders": 29.01,
+        "turnover_5d": 14.25
       },
       "raw": {
         "holder_delta_avg_ppt": 1.2548,
@@ -1248,30 +1001,28 @@
     {
       "ticker": "5347",
       "name": "世界",
-      "score": 76.6,
+      "score": 81.0,
       "change_pct": -1.4450867052023122,
       "tags": [
         "投信偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "投信貢獻 24.3 分｜大戶籌碼貢獻 21.9 分｜外資貢獻 14.8 分",
+      "reason": "大戶籌碼貢獻 26.3 分｜投信貢獻 24.3 分｜外資貢獻 14.8 分",
       "factor_scores": {
         "foreign": 73.8,
         "trust": 97.3,
         "dealer": 12.5,
         "holders": 87.7,
-        "volume_price": 0,
-        "turnover": 95.4
+        "turnover_5d": 96.0
       },
       "contributions": {
         "foreign": 14.76,
         "trust": 24.32,
         "dealer": 1.25,
-        "holders": 21.93,
-        "volume_price": 0.0,
-        "turnover": 14.31
+        "holders": 26.31,
+        "turnover_5d": 14.4
       },
       "raw": {
         "holder_delta_avg_ppt": 0.3946,
@@ -1281,9 +1032,107 @@
       }
     },
     {
+      "ticker": "8027",
+      "name": "鈦昇",
+      "score": 80.9,
+      "change_pct": 4.2492917847025495,
+      "tags": [
+        "投信偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 28.9 分｜投信貢獻 20.3 分｜外資貢獻 13.1 分",
+      "factor_scores": {
+        "foreign": 65.7,
+        "trust": 81.3,
+        "dealer": 55.3,
+        "holders": 96.3,
+        "turnover_5d": 86.9
+      },
+      "contributions": {
+        "foreign": 13.14,
+        "trust": 20.32,
+        "dealer": 5.53,
+        "holders": 28.89,
+        "turnover_5d": 13.04
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 1.1241,
+        "volume_ratio_5d": 1.2728,
+        "turnover_today": 614584500,
+        "turnover_5d": 2508798000.0
+      }
+    },
+    {
+      "ticker": "7792",
+      "name": "安葆",
+      "score": 80.3,
+      "change_pct": 4.813477737665464,
+      "tags": [
+        "投信偏多",
+        "外資偏多",
+        "大戶增加",
+        "近5日成交活躍"
+      ],
+      "reason": "大戶籌碼貢獻 27.4 分｜投信貢獻 20.0 分｜外資貢獻 17.2 分",
+      "factor_scores": {
+        "foreign": 86.1,
+        "trust": 80.0,
+        "dealer": 21.8,
+        "holders": 91.3,
+        "turnover_5d": 90.4
+      },
+      "contributions": {
+        "foreign": 17.22,
+        "trust": 20.0,
+        "dealer": 2.18,
+        "holders": 27.39,
+        "turnover_5d": 13.56
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 0.5979,
+        "volume_ratio_5d": 1.83,
+        "turnover_today": 1206636500,
+        "turnover_5d": 3891112000.0
+      }
+    },
+    {
+      "ticker": "8121",
+      "name": "越峰",
+      "score": 80.3,
+      "change_pct": 9.85663082437276,
+      "tags": [
+        "投信偏多",
+        "外資偏多",
+        "自營商偏多",
+        "大戶增加"
+      ],
+      "reason": "大戶籌碼貢獻 25.1 分｜投信貢獻 22.0 分｜外資貢獻 16.1 分",
+      "factor_scores": {
+        "foreign": 80.5,
+        "trust": 87.9,
+        "dealer": 91.1,
+        "holders": 83.6,
+        "turnover_5d": 53.6
+      },
+      "contributions": {
+        "foreign": 16.1,
+        "trust": 21.98,
+        "dealer": 9.11,
+        "holders": 25.08,
+        "turnover_5d": 8.04
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 0.146,
+        "volume_ratio_5d": 3.1775,
+        "turnover_today": 37749250,
+        "turnover_5d": 85020850.0
+      }
+    },
+    {
       "ticker": "8074",
       "name": "鉅橡",
-      "score": 75.3,
+      "score": 79.7,
       "change_pct": 0.7905138339920948,
       "tags": [
         "投信偏多",
@@ -1291,22 +1140,20 @@
         "自營商偏多",
         "大戶增加"
       ],
-      "reason": "大戶籌碼貢獻 21.8 分｜投信貢獻 21.1 分｜外資貢獻 15.4 分",
+      "reason": "大戶籌碼貢獻 26.2 分｜投信貢獻 21.1 分｜外資貢獻 15.4 分",
       "factor_scores": {
         "foreign": 77.1,
         "trust": 84.6,
         "dealer": 92.9,
         "holders": 87.3,
-        "volume_price": 0,
-        "turnover": 50.9
+        "turnover_5d": 50.9
       },
       "contributions": {
         "foreign": 15.42,
         "trust": 21.15,
         "dealer": 9.29,
-        "holders": 21.82,
-        "volume_price": 0.0,
-        "turnover": 7.63
+        "holders": 26.19,
+        "turnover_5d": 7.63
       },
       "raw": {
         "holder_delta_avg_ppt": 0.3554,
@@ -1316,68 +1163,31 @@
       }
     },
     {
-      "ticker": "7703",
-      "name": "銳澤",
-      "score": 75.0,
-      "change_pct": 0.9950248756218906,
-      "tags": [
-        "投信偏多",
-        "外資偏多",
-        "自營商偏多",
-        "量價偏多"
-      ],
-      "reason": "投信貢獻 19.5 分｜外資貢獻 19.1 分｜大戶籌碼貢獻 14.4 分",
-      "factor_scores": {
-        "foreign": 95.4,
-        "trust": 78.0,
-        "dealer": 90.0,
-        "holders": 57.6,
-        "volume_price": 82.3,
-        "turnover": 59.7
-      },
-      "contributions": {
-        "foreign": 19.08,
-        "trust": 19.5,
-        "dealer": 9.0,
-        "holders": 14.4,
-        "volume_price": 4.12,
-        "turnover": 8.96
-      },
-      "raw": {
-        "holder_delta_avg_ppt": 0.0,
-        "volume_ratio_5d": 1.8229,
-        "turnover_today": 21337000,
-        "turnover_5d": 65866500.0
-      }
-    },
-    {
       "ticker": "1815",
       "name": "富喬",
-      "score": 74.1,
+      "score": 78.9,
       "change_pct": -3.3333333333333335,
       "tags": [
         "投信偏多",
         "自營商偏多",
         "大戶增加",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "投信貢獻 23.2 分｜大戶籌碼貢獻 22.9 分｜當日成交熱度貢獻 14.5 分",
+      "reason": "大戶籌碼貢獻 27.5 分｜投信貢獻 23.2 分｜近5日成交熱度貢獻 14.7 分",
       "factor_scores": {
         "foreign": 28.1,
         "trust": 92.9,
         "dealer": 78.2,
         "holders": 91.7,
-        "volume_price": 0,
-        "turnover": 96.7
+        "turnover_5d": 98.3
       },
       "contributions": {
         "foreign": 5.62,
         "trust": 23.23,
         "dealer": 7.82,
-        "holders": 22.93,
-        "volume_price": 0.0,
-        "turnover": 14.5
+        "holders": 27.51,
+        "turnover_5d": 14.74
       },
       "raw": {
         "holder_delta_avg_ppt": 0.646,
@@ -1387,31 +1197,61 @@
       }
     },
     {
+      "ticker": "6664",
+      "name": "群翊",
+      "score": 77.8,
+      "change_pct": 3.6127167630057806,
+      "tags": [
+        "投信偏多",
+        "外資偏多",
+        "自營商偏多"
+      ],
+      "reason": "投信貢獻 23.4 分｜外資貢獻 19.2 分｜大戶籌碼貢獻 15.7 分",
+      "factor_scores": {
+        "foreign": 95.8,
+        "trust": 93.6,
+        "dealer": 89.0,
+        "holders": 52.4,
+        "turnover_5d": 70.7
+      },
+      "contributions": {
+        "foreign": 19.16,
+        "trust": 23.4,
+        "dealer": 8.9,
+        "holders": 15.72,
+        "turnover_5d": 10.61
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 0.0,
+        "volume_ratio_5d": 1.4736,
+        "turnover_today": 101039500,
+        "turnover_5d": 342287500.0
+      }
+    },
+    {
       "ticker": "6823",
       "name": "濾能",
-      "score": 74.0,
+      "score": 77.1,
       "change_pct": -0.16611295681063123,
       "tags": [
         "外資偏多",
         "大戶增加",
         "當日下跌"
       ],
-      "reason": "大戶籌碼貢獻 24.9 分｜外資貢獻 19.0 分｜投信貢獻 18.4 分",
+      "reason": "大戶籌碼貢獻 29.9 分｜外資貢獻 19.0 分｜投信貢獻 18.4 分",
       "factor_scores": {
         "foreign": 95.2,
         "trust": 73.6,
         "dealer": 63.4,
         "holders": 99.6,
-        "volume_price": 0,
-        "turnover": 35.3
+        "turnover_5d": 22.9
       },
       "contributions": {
         "foreign": 19.04,
         "trust": 18.4,
         "dealer": 6.34,
-        "holders": 24.9,
-        "volume_price": 0.0,
-        "turnover": 5.29
+        "holders": 29.88,
+        "turnover_5d": 3.43
       },
       "raw": {
         "holder_delta_avg_ppt": 3.8773,
@@ -1421,31 +1261,62 @@
       }
     },
     {
+      "ticker": "6488",
+      "name": "環球晶",
+      "score": 77.0,
+      "change_pct": -0.21052631578947367,
+      "tags": [
+        "投信偏多",
+        "大戶增加",
+        "近5日成交活躍",
+        "當日下跌"
+      ],
+      "reason": "大戶籌碼貢獻 28.9 分｜投信貢獻 23.4 分｜近5日成交熱度貢獻 15.0 分",
+      "factor_scores": {
+        "foreign": 12.3,
+        "trust": 93.8,
+        "dealer": 71.3,
+        "holders": 96.5,
+        "turnover_5d": 100.0
+      },
+      "contributions": {
+        "foreign": 2.46,
+        "trust": 23.45,
+        "dealer": 7.13,
+        "holders": 28.95,
+        "turnover_5d": 15.0
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 1.1644,
+        "volume_ratio_5d": 0.5932,
+        "turnover_today": 8666445000,
+        "turnover_5d": 73546918000.0
+      }
+    },
+    {
       "ticker": "3211",
       "name": "順達",
-      "score": 72.4,
+      "score": 76.7,
       "change_pct": -0.39473684210526316,
       "tags": [
         "投信偏多",
-        "當日成交活躍",
+        "近5日成交活躍",
         "當日下跌"
       ],
-      "reason": "投信貢獻 24.8 分｜大戶籌碼貢獻 17.2 分｜當日成交熱度貢獻 13.1 分",
+      "reason": "投信貢獻 24.8 分｜大戶籌碼貢獻 20.7 分｜近5日成交熱度貢獻 14.0 分",
       "factor_scores": {
         "foreign": 51.4,
         "trust": 99.2,
         "dealer": 69.4,
         "holders": 69.0,
-        "volume_price": 0,
-        "turnover": 87.5
+        "turnover_5d": 93.3
       },
       "contributions": {
         "foreign": 10.28,
         "trust": 24.8,
         "dealer": 6.94,
-        "holders": 17.25,
-        "volume_price": 0.0,
-        "turnover": 13.12
+        "holders": 20.7,
+        "turnover_5d": 13.99
       },
       "raw": {
         "holder_delta_avg_ppt": 0.0061,
@@ -1457,35 +1328,66 @@
     {
       "ticker": "7828",
       "name": "創新服務",
-      "score": 72.4,
+      "score": 76.7,
       "change_pct": 0.0,
       "tags": [
         "投信偏多",
         "自營商偏多",
-        "當日成交活躍"
+        "近5日成交活躍"
       ],
-      "reason": "投信貢獻 20.2 分｜大戶籌碼貢獻 17.8 分｜外資貢獻 13.2 分",
+      "reason": "大戶籌碼貢獻 21.4 分｜投信貢獻 20.2 分｜近5日成交熱度貢獻 13.3 分",
       "factor_scores": {
         "foreign": 65.9,
         "trust": 80.9,
         "dealer": 86.1,
         "holders": 71.3,
-        "volume_price": 0,
-        "turnover": 84.0
+        "turnover_5d": 88.6
       },
       "contributions": {
         "foreign": 13.18,
         "trust": 20.23,
         "dealer": 8.61,
-        "holders": 17.82,
-        "volume_price": 0.0,
-        "turnover": 12.6
+        "holders": 21.39,
+        "turnover_5d": 13.29
       },
       "raw": {
         "holder_delta_avg_ppt": 0.0099,
         "volume_ratio_5d": 0.3821,
         "turnover_today": 258535000,
         "turnover_5d": 3066460000.0
+      }
+    },
+    {
+      "ticker": "3491",
+      "name": "昇達科",
+      "score": 76.2,
+      "change_pct": -0.6389776357827476,
+      "tags": [
+        "投信偏多",
+        "大戶增加",
+        "近5日成交活躍",
+        "當日下跌"
+      ],
+      "reason": "大戶籌碼貢獻 28.0 分｜投信貢獻 24.4 分｜近5日成交熱度貢獻 14.3 分",
+      "factor_scores": {
+        "foreign": 37.8,
+        "trust": 97.5,
+        "dealer": 19.8,
+        "holders": 93.3,
+        "turnover_5d": 95.2
+      },
+      "contributions": {
+        "foreign": 7.56,
+        "trust": 24.38,
+        "dealer": 1.98,
+        "holders": 27.99,
+        "turnover_5d": 14.28
+      },
+      "raw": {
+        "holder_delta_avg_ppt": 0.7427,
+        "volume_ratio_5d": 0.5329,
+        "turnover_today": 1288565000,
+        "turnover_5d": 10291745000.0
       }
     }
   ]
