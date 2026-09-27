@@ -1,7 +1,6 @@
 from sources import *
 import os
 import re
-from revenue_records import record
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
@@ -333,22 +332,6 @@ def main():
         for x in rows
     }
 
-    tracker_path = (
-        ROOT
-        / "data/monthly_revenue_tracker.json"
-    )
-
-    tracker = load_json(
-        tracker_path,
-        {}
-    )
-
-    history_path = ROOT / "data/monthly_revenue_history.json"
-    history = load_json(history_path, {"schema_version": 2, "stocks": {}})
-    # Legacy maxima include the current month and are not valid historical evidence.
-    record(rows, history)
-    save_json(history_path, history)
-
     sent_path = (
         ROOT
         / "data/monthly_revenue_sent.json"
@@ -373,7 +356,10 @@ def main():
             or 0
         )
 
-        is_high = x["record_high"] is True
+        mom = float(
+            x.get("mom")
+            or 0
+        )
 
         x["name"] = (
             short_names.get(t)
@@ -381,24 +367,27 @@ def main():
             or t
         )
 
+        # 新邏輯：
+        # 月營收 MoM > 10% 才推播
+        # ID 加 mom10 前綴，避免舊「歷史新高」推播紀錄誤擋
         push_id = (
-            f"{latest_month}|{t}"
+            f"mom10|{latest_month}|{t}"
         )
 
         if (
-            is_high
+            mom > 10
             and push_id not in sent
         ):
             msg = (
                 f"{x['name']} {t}\n"
                 f"{latest_month} 營收 "
                 f"{rev:.2f} 億\n"
-                f"MoM {x['mom']:+.2f}%｜"
+                f"MoM {mom:+.2f}%｜"
                 f"YoY {x['yoy']:+.2f}%"
             )
 
             if send_pushover(
-                "月營收創新高",
+                "月營收 MoM > 10%",
                 msg,
             ):
                 sent.add(
@@ -413,6 +402,9 @@ def main():
                 .isoformat(
                     timespec="minutes"
                 )
+            ),
+            "logic": (
+                "monthly revenue MoM > 10%"
             ),
             "ids": list(
                 sent
@@ -439,14 +431,18 @@ def main():
             )
 
         if arr:
+            # 資料檔直接先依 MoM 高到低排
+            # 前端預設仍可依族群顯示，
+            # 點按鈕則做全體去重 MoM 排序
             arr.sort(
-                key=lambda x: (
-                    x.get("record_high") is True,
-                    x.get(
-                        "yoy",
-                        0
+                key=lambda x:
+                    float(
+                        x.get(
+                            "mom",
+                            0
+                        )
+                        or 0
                     ),
-                ),
                 reverse=True,
             )
 
@@ -458,6 +454,15 @@ def main():
             )
 
     sample = rows[0]
+
+    mom10_count = len({
+        x["ticker"]
+        for x in rows
+        if float(
+            x.get("mom")
+            or 0
+        ) > 10
+    })
 
     save_json(
         ROOT
@@ -481,8 +486,11 @@ def main():
             "universe": (
                 "19個自訂科技族群"
             ),
-            "record_high_basis": (
-                "只與當月以前的完整歷史比較；資料不足不判定新高"
+            "highlight_basis": (
+                "MoM > 10%"
+            ),
+            "mom_gt_10_count": (
+                mom10_count
             ),
             "sectors": sectors_out,
         },
@@ -495,6 +503,8 @@ def main():
         len(rows),
         "sectors",
         len(sectors_out),
+        "mom > 10%",
+        mom10_count,
     )
 
 
