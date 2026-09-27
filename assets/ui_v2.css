@@ -1,10 +1,9 @@
 /* =========================================================
-   Dashboard UI v4
+   Dashboard UI v3
    2026-09-27
-   - 月營收 MoM > 10% 只用金色卡片註記，不顯示文字標籤
-   - 月營收族群只留單一下拉選單，不再橫向滑動
-   - 手機 / 平板 / 桌機完整響應式排版
-   - 深色模式：石墨藍黑 + 霧灰藍 + 低飽和金色
+   - 移除月營收歷史新高 UI
+   - MoM > 10% 金色標示
+   - 深色模式改為石墨藍黑 + 霧灰藍
    ========================================================= */
 
 :root{
@@ -28,6 +27,7 @@
 /* ---------------------------------------------------------
    整體背景
 --------------------------------------------------------- */
+
 body{
   background:
     radial-gradient(
@@ -68,6 +68,7 @@ body{
 /* ---------------------------------------------------------
    Market Pulse
 --------------------------------------------------------- */
+
 .market-pulse{
   margin:0 0 18px;
   padding:18px;
@@ -122,17 +123,23 @@ body{
   height:7px;
   border-radius:50%;
   background:#22c55e;
-  box-shadow:0 0 0 4px rgba(34,197,94,.12);
+  box-shadow:
+    0 0 0 4px
+    rgba(34,197,94,.12);
 }
 
 .pulse-grid{
   display:grid;
-  grid-template-columns:minmax(0,1.7fr) minmax(130px,.65fr);
+  grid-template-columns:
+    minmax(0,1.7fr)
+    minmax(130px,.65fr);
   gap:10px;
 }
 
 .pulse-grid-compact{
-  grid-template-columns:minmax(0,2fr) minmax(130px,.72fr);
+  grid-template-columns:
+    minmax(0,2fr)
+    minmax(130px,.72fr);
 }
 
 .pulse-main,
@@ -211,6 +218,7 @@ body{
 /* ---------------------------------------------------------
    Feature Rail
 --------------------------------------------------------- */
+
 .feature-rail{
   display:flex;
   gap:12px;
@@ -238,18 +246,23 @@ body{
       rgba(255,255,255,.94),
       rgba(255,255,255,.78)
     );
-  box-shadow:0 8px 24px rgba(15,23,42,.07);
+  box-shadow:
+    0 8px 24px rgba(15,23,42,.07);
   text-align:left;
   color:var(--ink);
   scroll-snap-align:start;
   position:relative;
   overflow:hidden;
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
 }
 
 .feature-card:hover{
   transform:translateY(-2px);
-  box-shadow:0 12px 30px rgba(15,23,42,.10);
+  box-shadow:
+    0 12px 30px rgba(15,23,42,.10);
 }
 
 .feature-card:active{
@@ -332,29 +345,60 @@ body{
   transform:translateX(3px);
 }
 
-.feature-card[data-tone="red"]{color:#d9354e;}
-.feature-card[data-tone="red"] .feature-copy{color:var(--ink);}
-.feature-card[data-tone="red"] .feature-icon{background:var(--pro-red-soft);}
+.feature-card[data-tone="red"]{
+  color:#d9354e;
+}
+.feature-card[data-tone="red"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="red"] .feature-icon{
+  background:var(--pro-red-soft);
+}
 
-.feature-card[data-tone="amber"]{color:#d98900;}
-.feature-card[data-tone="amber"] .feature-copy{color:var(--ink);}
-.feature-card[data-tone="amber"] .feature-icon{background:var(--pro-amber-soft);}
+.feature-card[data-tone="amber"]{
+  color:#d98900;
+}
+.feature-card[data-tone="amber"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="amber"] .feature-icon{
+  background:var(--pro-amber-soft);
+}
 
-.feature-card[data-tone="blue"]{color:#3975dd;}
-.feature-card[data-tone="blue"] .feature-copy{color:var(--ink);}
-.feature-card[data-tone="blue"] .feature-icon{background:var(--pro-blue-soft);}
+.feature-card[data-tone="blue"]{
+  color:#3975dd;
+}
+.feature-card[data-tone="blue"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="blue"] .feature-icon{
+  background:var(--pro-blue-soft);
+}
 
-.feature-card[data-tone="green"]{color:#12815a;}
-.feature-card[data-tone="green"] .feature-copy{color:var(--ink);}
-.feature-card[data-tone="green"] .feature-icon{background:var(--pro-green-soft);}
+.feature-card[data-tone="green"]{
+  color:#12815a;
+}
+.feature-card[data-tone="green"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="green"] .feature-icon{
+  background:var(--pro-green-soft);
+}
 
-.feature-card[data-tone="violet"]{color:#7053cf;}
-.feature-card[data-tone="violet"] .feature-copy{color:var(--ink);}
-.feature-card[data-tone="violet"] .feature-icon{background:var(--pro-violet-soft);}
+.feature-card[data-tone="violet"]{
+  color:#7053cf;
+}
+.feature-card[data-tone="violet"] .feature-copy{
+  color:var(--ink);
+}
+.feature-card[data-tone="violet"] .feature-icon{
+  background:var(--pro-violet-soft);
+}
 
 /* ---------------------------------------------------------
    Status / Self reports
 --------------------------------------------------------- */
+
 .status{
   display:flex;
   flex-wrap:wrap;
@@ -367,21 +411,31 @@ body{
   height:7px;
   border-radius:50%;
   background:#22c55e;
-  box-shadow:0 0 0 4px rgba(34,197,94,.10);
+  box-shadow:
+    0 0 0 4px
+    rgba(34,197,94,.10);
   margin-right:3px;
 }
 
-.status-divider{color:var(--muted);}
+.status-divider{
+  color:var(--muted);
+}
 
 .self-report-card{
-  border-top:3px solid rgba(245,158,11,.78);
+  border-top:3px solid
+    rgba(245,158,11,.78);
 }
 
 .card-accent{
   position:absolute;
   inset:0 auto 0 0;
   width:4px;
-  background:linear-gradient(180deg,#f59e0b,#fb7185);
+  background:
+    linear-gradient(
+      180deg,
+      #f59e0b,
+      #fb7185
+    );
   opacity:.7;
 }
 
@@ -396,8 +450,14 @@ body{
   gap:8px;
 }
 
-.self-empty b{font-size:15px;}
-.self-empty span{color:var(--muted);font-size:10px;}
+.self-empty b{
+  font-size:15px;
+}
+
+.self-empty span{
+  color:var(--muted);
+  font-size:10px;
+}
 
 .empty-icon{
   width:52px;
@@ -421,6 +481,7 @@ body{
 /* ---------------------------------------------------------
    Data cards
 --------------------------------------------------------- */
+
 .data-card{
   padding:17px;
   position:relative;
@@ -440,19 +501,32 @@ body{
   gap:7px;
 }
 
-.data-card .titleline b{font-size:17px;}
-.data-card .titleline span{color:var(--muted);font-size:10px;}
+.data-card .titleline b{
+  font-size:17px;
+}
+
+.data-card .titleline span{
+  color:var(--muted);
+  font-size:10px;
+}
 
 .data-card .metric-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
   gap:8px;
   margin-top:13px;
 }
 
 .data-card .metric-box{
-  background:linear-gradient(135deg,var(--soft),transparent);
-  border:1px solid rgba(127,127,127,.08);
+  background:
+    linear-gradient(
+      135deg,
+      var(--soft),
+      transparent
+    );
+  border:1px solid
+    rgba(127,127,127,.08);
   border-radius:12px;
   padding:10px 11px;
 }
@@ -464,7 +538,9 @@ body{
   margin-bottom:4px;
 }
 
-.data-card .metric-box strong{font-size:14px;}
+.data-card .metric-box strong{
+  font-size:14px;
+}
 
 .data-card .subject{
   margin-top:11px;
@@ -473,153 +549,119 @@ body{
   line-height:1.55;
 }
 
-/* =========================================================
-   Monthly Revenue v4
-   ========================================================= */
+/* ---------------------------------------------------------
+   Monthly Revenue
+--------------------------------------------------------- */
 
-/* 舊橫向族群 tabs 永遠隱藏，所有裝置都只使用下拉選單 */
-#revenueSectorTabs{
-  display:none !important;
+.week-strip{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding:2px 0 12px;
+  margin-bottom:2px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
 }
 
-.revenue-controls{
-  display:grid;
-  grid-template-columns:minmax(260px,1.25fr) minmax(220px,.75fr);
-  gap:16px;
-  align-items:end;
-  margin:18px 0 22px;
-  padding:16px;
+.week-strip::-webkit-scrollbar{
+  display:none;
+}
+
+.week-pill{
+  flex:0 0 auto;
   border:1px solid var(--line);
-  border-radius:18px;
-  background:rgba(255,255,255,.56);
-  box-shadow:0 8px 24px rgba(15,23,42,.04);
-}
-
-.revenue-control-block{
-  min-width:0;
-}
-
-.revenue-control-block > label,
-.revenue-control-label{
-  display:block;
-  margin:0 0 7px 2px;
-  color:var(--muted);
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.04em;
-}
-
-.revenue-select-wrap{
-  position:relative;
-}
-
-#revenueSectorSelect{
-  width:100%;
-  min-height:48px;
-  appearance:none;
-  -webkit-appearance:none;
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:0 44px 0 14px;
-  background:var(--card);
-  color:var(--ink);
-  font:inherit;
-  font-size:13px;
-  font-weight:800;
-  outline:none;
-}
-
-#revenueSectorSelect:focus{
-  border-color:#8091a7;
-  box-shadow:0 0 0 3px rgba(100,116,139,.10);
-}
-
-.revenue-select-arrow{
-  position:absolute;
-  right:15px;
-  top:50%;
-  transform:translateY(-54%);
-  color:var(--muted);
-  font-size:20px;
-  line-height:1;
-  pointer-events:none;
-}
-
-.revenue-sort-buttons{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-
-.revenue-sort-btn{
-  min-height:48px;
-  border:1px solid var(--line);
-  border-radius:14px;
   background:var(--card);
   color:var(--muted);
-  padding:0 14px;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
+  border-radius:999px;
+  padding:9px 13px;
+  font-size:11px;
+  font-weight:700;
   transition:.16s ease;
 }
 
-.revenue-sort-btn:hover{
-  border-color:#aab5c4;
+.week-pill.active{
+  background:#111827;
+  color:#fff;
+  border-color:#111827;
 }
 
-.revenue-sort-btn.active{
-  color:#fff;
-  background:#1f2937;
-  border-color:#1f2937;
+.revenue-sort-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:16px 0 10px;
+}
+
+.revenue-sort-pill{
+  padding:10px 14px;
+}
+
+.revenue-sort-pill.active{
+  background:#334155;
+  border-color:#334155;
+}
+
+.revenue-sort-note{
+  color:var(--muted);
+  font-size:10px;
 }
 
 .sector-revenue{
-  margin:24px 0 32px;
+  margin:20px 0 28px;
 }
 
 .sector-revenue-head{
   display:flex;
   align-items:end;
   justify-content:space-between;
-  gap:12px;
-  margin:0 0 12px;
+  gap:10px;
+  margin:0 0 10px;
+}
+
+.sector-revenue-head > div{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
 }
 
 .sector-revenue-head h2{
   margin:0;
-  color:var(--ink);
-  font-size:19px;
-  line-height:1.25;
+  font-size:18px;
 }
 
 .sector-revenue-head > span{
-  flex:0 0 auto;
   color:var(--muted);
   font-size:10px;
-  font-weight:700;
+}
+
+.sector-mom-count{
+  color:#8a5c08;
+  background:#fff4cf;
+  border:1px solid #f0d58e;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:8px;
+  font-weight:900;
 }
 
 .revenue-grid{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+  gap:11px;
 }
 
 .revenue-card{
-  min-width:0;
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:18px;
-  padding:17px;
+  border-radius:17px;
+  padding:15px;
   box-shadow:var(--shadow);
   position:relative;
   overflow:hidden;
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-.revenue-card:hover{
-  transform:translateY(-1px);
+  transition:.18s ease;
 }
 
 .revenue-card .top{
@@ -633,24 +675,21 @@ body{
 
 .revenue-card .stock-name{
   font-weight:900;
-  font-size:15px;
-  line-height:1.25;
+  font-size:14px;
 }
 
 .revenue-card .ticker{
   color:var(--muted);
-  font-size:10px;
-  margin-left:6px;
+  font-size:9px;
+  margin-left:5px;
 }
 
 .revenue-card .rev{
-  font-size:clamp(24px,2.1vw,32px);
-  line-height:1.05;
+  font-size:23px;
   font-weight:950;
-  margin:16px 0 4px;
+  margin:13px 0 2px;
   position:relative;
   z-index:1;
-  letter-spacing:-.02em;
 }
 
 .revenue-card .rev-label{
@@ -661,37 +700,25 @@ body{
 }
 
 .revenue-card .changes{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-  margin-top:14px;
+  display:flex;
+  gap:14px;
+  margin-top:11px;
+  font-size:11px;
   position:relative;
   z-index:1;
-}
-
-.revenue-card .changes span{
-  min-width:0;
 }
 
 .revenue-card .changes span small{
   color:var(--muted);
   display:block;
   font-size:8px;
-  margin-bottom:3px;
+  margin-bottom:2px;
 }
 
-.revenue-card .changes b{
-  display:block;
-  font-size:clamp(15px,1.5vw,19px);
-  line-height:1.15;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-/* MoM > 10%：只以整張卡片金色註記，不顯示 MoM > 10% badge */
+/* MoM > 10%：淺色模式金色 */
 .revenue-card.mom-hot{
-  border:1.5px solid var(--mom-gold-border);
+  border:1.5px solid
+    var(--mom-gold-border);
   background:
     radial-gradient(
       circle at 100% 0,
@@ -703,7 +730,8 @@ body{
       #fff9e8 0%,
       #fffdf7 64%
     );
-  box-shadow:0 14px 30px rgba(152,102,18,.11);
+  box-shadow:
+    0 14px 30px rgba(152,102,18,.11);
 }
 
 .revenue-card.mom-hot .stock-name,
@@ -711,42 +739,46 @@ body{
   color:#77500d;
 }
 
-.revenue-card.mom-hot::before{
-  content:"";
-  position:absolute;
-  inset:0 auto 0 0;
-  width:4px;
-  background:linear-gradient(180deg,#d89b21,#edc768);
-  opacity:.9;
-}
-
 .mom-hot-glow{
   position:absolute;
-  width:150px;
-  height:150px;
+  width:140px;
+  height:140px;
   border-radius:50%;
-  right:-74px;
-  bottom:-82px;
-  background:radial-gradient(circle,rgba(216,155,33,.15),transparent 68%);
+  right:-70px;
+  bottom:-78px;
+  background:
+    radial-gradient(
+      circle,
+      rgba(216,155,33,.16),
+      transparent 68%
+    );
   pointer-events:none;
 }
 
-/* 舊版元素若快取還沒更新，也不讓文字標籤顯示 */
-.mom-hot-badge,
-.sector-mom-count,
-.revenue-sort-note,
-.revenue-sector-picker,
-.revenue-sort-row{
-  display:none !important;
+.mom-hot-badge{
+  display:inline-flex;
+  align-items:center;
+  color:#80550b;
+  background:#ffeab1;
+  border:1px solid #e6c56e;
+  border-radius:999px;
+  padding:5px 8px;
+  font-size:8px;
+  font-weight:950;
+  white-space:nowrap;
 }
 
 /* ---------------------------------------------------------
    固定返回總覽
 --------------------------------------------------------- */
+
 #backHomeBtn{
   position:fixed;
   left:16px;
-  bottom:calc(18px + env(safe-area-inset-bottom));
+  bottom:
+    calc(
+      18px + env(safe-area-inset-bottom)
+    );
   z-index:999;
   display:flex;
   align-items:center;
@@ -756,7 +788,9 @@ body{
   padding:10px 14px;
   background:rgba(15,23,34,.92);
   color:#fff;
-  box-shadow:0 10px 26px rgba(15,23,42,.22);
+  box-shadow:
+    0 10px 26px
+    rgba(15,23,42,.22);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
   font-size:12px;
@@ -779,8 +813,11 @@ body{
 }
 
 /* =========================================================
-   DARK MODE v4
+   DARK MODE v3
+   石墨藍黑 + 霧灰藍
+   主背景不再整片深海軍藍
    ========================================================= */
+
 html[data-theme="dark"]{
   color-scheme:dark;
 }
@@ -788,9 +825,22 @@ html[data-theme="dark"]{
 html[data-theme="dark"] body{
   color:#e8ebef;
   background:
-    radial-gradient(circle at 88% 0%,rgba(88,103,126,.09),transparent 30rem),
-    radial-gradient(circle at 10% 36%,rgba(69,82,101,.055),transparent 24rem),
-    linear-gradient(180deg,#101216 0%,#13161b 48%,#0f1115 100%) !important;
+    radial-gradient(
+      circle at 88% 0%,
+      rgba(88,103,126,.09),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 10% 36%,
+      rgba(69,82,101,.055),
+      transparent 24rem
+    ),
+    linear-gradient(
+      180deg,
+      #101216 0%,
+      #13161b 48%,
+      #0f1115 100%
+    ) !important;
 }
 
 html[data-theme="dark"] main{
@@ -798,16 +848,30 @@ html[data-theme="dark"] main{
 }
 
 html[data-theme="dark"] header{
-  background:linear-gradient(180deg,#15181d 0%,#12151a 100%) !important;
+  background:
+    linear-gradient(
+      180deg,
+      #15181d 0%,
+      #12151a 100%
+    ) !important;
   border-bottom-color:#2a3038 !important;
 }
 
 html[data-theme="dark"] .hero{
   background:
-    radial-gradient(circle at 96% 0%,rgba(92,112,143,.10),transparent 34%),
-    linear-gradient(145deg,#1a1e24,#171a20) !important;
+    radial-gradient(
+      circle at 96% 0%,
+      rgba(92,112,143,.10),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #1a1e24,
+      #171a20
+    ) !important;
   border-color:#2d333c !important;
-  box-shadow:0 16px 38px rgba(0,0,0,.22);
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.22);
 }
 
 html[data-theme="dark"] .hero h1,
@@ -815,8 +879,7 @@ html[data-theme="dark"] .market-pulse h2,
 html[data-theme="dark"] .section h2,
 html[data-theme="dark"] .feature-copy b,
 html[data-theme="dark"] .stock-name,
-html[data-theme="dark"] .titleline b,
-html[data-theme="dark"] .sector-revenue-head h2{
+html[data-theme="dark"] .titleline b{
   color:#f3f5f7 !important;
 }
 
@@ -828,31 +891,50 @@ html[data-theme="dark"] .revenue-card .ticker,
 html[data-theme="dark"] .rev-label,
 html[data-theme="dark"] .status,
 html[data-theme="dark"] .metric-box small,
-html[data-theme="dark"] .revenue-control-block > label,
-html[data-theme="dark"] .revenue-control-label,
-html[data-theme="dark"] .sector-revenue-head > span{
+html[data-theme="dark"] .revenue-sort-note{
   color:#929aa6 !important;
 }
 
+/* Market Pulse */
 html[data-theme="dark"] .market-pulse{
   border-color:#2d343e !important;
   background:
-    radial-gradient(circle at 96% 0%,rgba(86,105,134,.09),transparent 36%),
-    linear-gradient(145deg,#1a1e24,#171b20) !important;
-  box-shadow:0 16px 40px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.02);
+    radial-gradient(
+      circle at 96% 0%,
+      rgba(86,105,134,.09),
+      transparent 36%
+    ),
+    linear-gradient(
+      145deg,
+      #1a1e24,
+      #171b20
+    ) !important;
+  box-shadow:
+    0 16px 40px rgba(0,0,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.02);
 }
 
 html[data-theme="dark"] .pulse-main,
 html[data-theme="dark"] .pulse-stat{
   border-color:#303741 !important;
-  background:linear-gradient(145deg,#20252c,#1b2026) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #20252c,
+      #1b2026
+    ) !important;
   box-shadow:none !important;
 }
 
 html[data-theme="dark"] .pulse-main:hover,
 html[data-theme="dark"] .pulse-stat:hover{
   border-color:#46505d !important;
-  background:linear-gradient(145deg,#252b33,#20252c) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #252b33,
+      #20252c
+    ) !important;
 }
 
 html[data-theme="dark"] .pulse-label,
@@ -874,19 +956,33 @@ html[data-theme="dark"] .pulse-live{
 
 html[data-theme="dark"] .pulse-live i{
   background:#41c991 !important;
-  box-shadow:0 0 0 5px rgba(65,201,145,.09);
+  box-shadow:
+    0 0 0 5px rgba(65,201,145,.09);
 }
 
+/* Feature cards */
 html[data-theme="dark"] .feature-card{
   border-color:#2c333c !important;
-  background:linear-gradient(145deg,#1d2228 0%,#191d23 100%) !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.17), inset 0 1px 0 rgba(255,255,255,.02);
+  background:
+    linear-gradient(
+      145deg,
+      #1d2228 0%,
+      #191d23 100%
+    ) !important;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.17),
+    inset 0 1px 0 rgba(255,255,255,.02);
 }
 
 html[data-theme="dark"] .feature-card:hover{
   transform:translateY(-2px);
   border-color:#48515e !important;
-  background:linear-gradient(145deg,#232930 0%,#1d2229 100%) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #232930 0%,
+      #1d2229 100%
+    ) !important;
 }
 
 html[data-theme="dark"] .feature-index,
@@ -919,15 +1015,24 @@ html[data-theme="dark"] .feature-card[data-tone="green"] .feature-icon{
   background:rgba(16,185,129,.09) !important;
 }
 
+/* 一般卡片 */
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .data-card,
 html[data-theme="dark"] .revenue-card,
 html[data-theme="dark"] .metric-box{
-  background:linear-gradient(145deg,#1b2026,#181c21) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #1b2026,
+      #181c21
+    ) !important;
   border-color:#2d343d !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.018) !important;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.018) !important;
 }
 
+/* tabs */
 html[data-theme="dark"] .tab,
 html[data-theme="dark"] .week-pill,
 html[data-theme="dark"] .badge{
@@ -943,6 +1048,7 @@ html[data-theme="dark"] .week-pill.active{
   border-color:#535e6c !important;
 }
 
+/* 表格 */
 html[data-theme="dark"] table{
   color:#dde1e6;
 }
@@ -957,6 +1063,7 @@ html[data-theme="dark"] tbody td{
   border-bottom-color:#292f37 !important;
 }
 
+/* 漲跌色 */
 html[data-theme="dark"] .up{
   color:#ff7a84 !important;
 }
@@ -965,6 +1072,7 @@ html[data-theme="dark"] .down{
   color:#5ed0a0 !important;
 }
 
+/* controls */
 html[data-theme="dark"] #mobileNav,
 html[data-theme="dark"] .icon-btn{
   color:#eef1f4 !important;
@@ -972,41 +1080,23 @@ html[data-theme="dark"] .icon-btn{
   border-color:#39424d !important;
 }
 
-html[data-theme="dark"] .revenue-controls{
-  border-color:#2d343d !important;
-  background:rgba(27,32,38,.78) !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.14) !important;
-}
-
-html[data-theme="dark"] #revenueSectorSelect,
-html[data-theme="dark"] .revenue-sort-btn{
-  color:#eef1f4 !important;
-  background:#20252c !important;
-  border-color:#39424d !important;
-}
-
-html[data-theme="dark"] #revenueSectorSelect:focus{
-  border-color:#66717f !important;
-  box-shadow:0 0 0 3px rgba(148,163,184,.08) !important;
-}
-
-html[data-theme="dark"] .revenue-sort-btn{
-  color:#aeb6c1 !important;
-}
-
-html[data-theme="dark"] .revenue-sort-btn.active{
-  color:#f4f6f8 !important;
-  background:#35404d !important;
-  border-color:#566372 !important;
-}
-
-/* MoM > 10% 深色：金棕色，不用亮黃 */
+/* MoM > 10%：深色模式金棕色，不用亮黃 */
 html[data-theme="dark"] .revenue-card.mom-hot{
   border-color:#84662f !important;
   background:
-    radial-gradient(circle at 100% 0%,rgba(195,143,43,.13),transparent 42%),
-    linear-gradient(145deg,#2a251c,#211f1b) !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.18), inset 0 0 0 1px rgba(220,175,82,.025) !important;
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(195,143,43,.13),
+      transparent 42%
+    ),
+    linear-gradient(
+      145deg,
+      #2a251c,
+      #211f1b
+    ) !important;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.18),
+    inset 0 0 0 1px rgba(220,175,82,.025) !important;
 }
 
 html[data-theme="dark"] .revenue-card.mom-hot .stock-name,
@@ -1014,53 +1104,35 @@ html[data-theme="dark"] .revenue-card.mom-hot .rev{
   color:#efca78 !important;
 }
 
-html[data-theme="dark"] .revenue-card.mom-hot::before{
-  background:linear-gradient(180deg,#b68938,#705425);
+html[data-theme="dark"] .mom-hot-badge{
+  color:#f0cd80 !important;
+  background:#40351f !important;
+  border-color:#745a29 !important;
 }
 
+html[data-theme="dark"] .sector-mom-count{
+  color:#e8c476 !important;
+  background:#342d20 !important;
+  border-color:#67542c !important;
+}
+
+/* 返回總覽 */
 html[data-theme="dark"] #backHomeBtn{
   color:#eef1f4 !important;
   background:rgba(31,36,43,.95) !important;
   border-color:#434c58 !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.28) !important;
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.28) !important;
 }
 
-/* =========================================================
-   Responsive
-   ========================================================= */
+/* ---------------------------------------------------------
+   Mobile
+--------------------------------------------------------- */
 
-/* 桌機：4 欄，內容不會被拉太寬 */
-@media(min-width:1280px){
+@media(max-width:1000px){
   .revenue-grid{
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:14px;
-  }
-
-  .revenue-controls{
-    grid-template-columns:minmax(320px,1fr) minmax(260px,.65fr);
-  }
-}
-
-/* 平板橫向 / 小桌機：3 欄 */
-@media(min-width:901px) and (max-width:1279px){
-  .revenue-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
-}
-
-/* 平板直向：2 欄 */
-@media(max-width:900px){
-  .revenue-controls{
-    grid-template-columns:1fr;
-    gap:12px;
-  }
-
-  .revenue-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-
-  .revenue-card .rev{
-    font-size:27px;
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
   }
 }
 
@@ -1072,7 +1144,8 @@ html[data-theme="dark"] #backHomeBtn{
 
   .pulse-grid,
   .pulse-grid-compact{
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:
+      1fr 1fr;
   }
 
   .pulse-main{
@@ -1101,130 +1174,33 @@ html[data-theme="dark"] #backHomeBtn{
     font-size:15px;
   }
 
+  .revenue-grid{
+    grid-template-columns:1fr;
+  }
+
   .data-card .metric-grid{
     grid-template-columns:1fr 1fr;
   }
-
-  .revenue-controls{
-    margin:14px 0 18px;
-    padding:13px;
-    border-radius:16px;
-  }
-
-  #revenueSectorSelect,
-  .revenue-sort-btn{
-    min-height:46px;
-  }
-
-  .revenue-grid{
-    grid-template-columns:1fr;
-    gap:11px;
-  }
-
-  .sector-revenue{
-    margin:20px 0 28px;
-  }
-
-  .sector-revenue-head h2{
-    font-size:18px;
-  }
-
-  .revenue-card{
-    padding:17px 18px;
-  }
-
-  .revenue-card .rev{
-    font-size:30px;
-  }
-
-  .revenue-card .changes b{
-    font-size:18px;
-  }
 }
 
-/* 極小手機，避免按鈕與數字擠壓 */
-@media(max-width:380px){
-  .revenue-sort-buttons{
-    grid-template-columns:1fr;
-  }
-
-  .revenue-card .changes{
-    gap:8px;
-  }
-}
 
 /* =========================================================
-   Monthly Revenue v5 FIX
-   2026-09-27
-   - 全裝置顯示族群下拉選單
-   - 上方唯一顯示「金色標示＝MoM > 10%」
-   - 卡片內不重複顯示 MoM > 10%
-   - 手機縮小營收 / MoM / YoY 字級
-   - 平板 / 桌機維持清楚格線
+   Monthly Revenue sector picker
+   手機改用下拉選單，不用橫向滑 19 個族群
    ========================================================= */
 
-#revenueSectorTabs{
-  display:none !important;
-}
-
-/* v4 曾把 picker 強制隱藏，這裡明確覆蓋 */
 .revenue-sector-picker{
-  display:block !important;
-  width:100%;
-  margin:14px 0 20px !important;
+  display:none;
+  margin:14px 0 10px;
 }
 
-.revenue-control-panel,
-.revenue-controls{
-  width:100%;
-  box-sizing:border-box;
-  display:grid !important;
-  grid-template-columns:minmax(0,1.25fr) minmax(220px,.75fr);
-  gap:14px;
-  align-items:end;
-  margin:0;
-  padding:14px;
-  border:1px solid var(--line);
-  border-radius:18px;
-  background:rgba(255,255,255,.56);
-  box-shadow:0 8px 24px rgba(15,23,42,.04);
-}
-
-.revenue-control-group,
-.revenue-control-block{
-  min-width:0;
-}
-
-.revenue-control-label{
+.revenue-sector-picker > label{
   display:block;
   margin:0 0 7px 2px;
   color:var(--muted);
   font-size:10px;
-  line-height:1.3;
   font-weight:800;
   letter-spacing:.04em;
-}
-
-.revenue-gold-note{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  margin:0 0 10px 2px;
-  color:var(--muted);
-  font-size:10px;
-  line-height:1.4;
-  font-weight:700;
-}
-
-.revenue-gold-note::before{
-  content:"";
-  width:9px;
-  height:9px;
-  flex:0 0 9px;
-  border-radius:3px;
-  background:#e5b84d;
-  border:1px solid #c99425;
-  box-shadow:0 0 0 3px rgba(216,155,33,.10);
 }
 
 .revenue-select-wrap{
@@ -1232,20 +1208,17 @@ html[data-theme="dark"] #backHomeBtn{
 }
 
 #revenueSectorSelect{
-  display:block !important;
   width:100%;
-  min-height:44px;
-  box-sizing:border-box;
+  min-height:48px;
   appearance:none;
   -webkit-appearance:none;
   border:1px solid var(--line);
-  border-radius:13px;
-  padding:0 42px 0 13px;
+  border-radius:15px;
+  padding:0 44px 0 14px;
   background:var(--card);
   color:var(--ink);
   font:inherit;
-  font-size:12px;
-  line-height:1;
+  font-size:13px;
   font-weight:800;
   outline:none;
 }
@@ -1257,293 +1230,483 @@ html[data-theme="dark"] #backHomeBtn{
 
 .revenue-select-arrow{
   position:absolute;
-  right:14px;
+  right:15px;
   top:50%;
-  transform:translateY(-52%);
+  transform:translateY(-54%);
   color:var(--muted);
-  font-size:18px;
+  font-size:20px;
   line-height:1;
   pointer-events:none;
 }
 
-.revenue-sort-buttons{
+html[data-theme="dark"] #revenueSectorSelect{
+  color:#f0f2f5 !important;
+  background:#1d2228 !important;
+  border-color:#39414b !important;
+}
+
+html[data-theme="dark"] #revenueSectorSelect:focus{
+  border-color:#66717f !important;
+  box-shadow:0 0 0 3px rgba(148,163,184,.08) !important;
+}
+
+@media(max-width:720px){
+  .revenue-sector-picker{
+    display:block;
+  }
+
+  #revenueSectorTabs{
+    display:none !important;
+  }
+
+  .revenue-sort-row{
+    margin-top:10px;
+  }
+}
+
+
+/* =========================================================
+   Home Market Pulse — Professional overview
+   ========================================================= */
+
+.market-pulse-pro{
+  padding:20px;
+}
+
+.market-overview-grid{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:
+    minmax(0,1.35fr)
+    minmax(0,1fr)
+    minmax(190px,.72fr);
+  gap:12px;
+}
+
+.market-leader-card,
+.market-strong-card,
+.self-monitor-card{
+  border:1px solid var(--line);
+  border-radius:20px;
+  min-height:156px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.94),
+      rgba(248,250,252,.82)
+    );
+  color:var(--ink);
+  text-align:left;
+  padding:17px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:
+    0 8px 24px rgba(15,23,42,.045);
+}
+
+.market-leader-card::after{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  right:-70px;
+  top:-78px;
+  border-radius:50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(37,99,235,.10),
+      transparent 68%
+    );
+}
+
+.market-card-label{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.02em;
+}
+
+.market-mini-icon{
+  width:22px;
+  height:22px;
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:rgba(37,99,235,.08);
+  color:#3975dd;
+  font-size:9px;
+}
+
+.market-leader-main{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:25px;
+}
+
+.market-leader-main strong{
+  font-size:25px;
+  line-height:1.12;
+}
+
+.market-leader-main b{
+  font-size:23px;
+  white-space:nowrap;
+}
+
+.market-leader-foot{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:var(--muted);
+  font-size:9px;
+  margin-top:24px;
+}
+
+.strong-sector-list{
+  display:grid;
+  gap:6px;
+  margin-top:12px;
+}
+
+.strong-sector-row{
+  width:100%;
+  display:grid;
+  grid-template-columns:28px 1fr auto;
+  align-items:center;
+  gap:8px;
+  border:0;
+  border-radius:11px;
+  background:rgba(148,163,184,.07);
+  color:var(--ink);
+  padding:8px 9px;
+  text-align:left;
+}
+
+.strong-sector-row:hover{
+  background:rgba(148,163,184,.12);
+}
+
+.strong-rank{
+  color:var(--muted);
+  font-size:8px;
+  font-weight:900;
+}
+
+.strong-name{
+  font-size:11px;
+  font-weight:800;
+}
+
+.strong-sector-row b{
+  font-size:11px;
+}
+
+.strong-sector-empty{
+  color:var(--muted);
+  font-size:11px;
+  padding:10px 0;
+}
+
+.self-monitor-card{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+
+.self-monitor-card .market-mini-icon{
+  background:rgba(16,185,129,.09);
+  color:#0f9f73;
+}
+
+.self-monitor-main{
+  display:flex;
+  align-items:baseline;
+  gap:7px;
+  margin-top:16px;
+}
+
+.self-monitor-main strong{
+  font-size:36px;
+  line-height:1;
+}
+
+.self-monitor-main span{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.self-monitor-foot{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.6;
+}
+
+.self-monitor-foot span{
+  margin:0 4px;
+  color:#94a3b8;
+}
+
+.update-schedule-card{
+  margin-top:14px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:17px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(248,250,252,.82),
+      rgba(255,255,255,.96)
+    );
+}
+
+.update-schedule-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:13px;
+}
+
+.update-schedule-head h3{
+  margin:3px 0 0;
+  font-size:15px;
+}
+
+.schedule-zone{
+  padding:5px 8px;
+  border-radius:999px;
+  color:var(--muted);
+  background:rgba(148,163,184,.09);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.update-schedule-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(5,minmax(0,1fr));
   gap:8px;
 }
 
-.revenue-sort-btn{
-  min-height:44px;
-  border:1px solid var(--line);
-  border-radius:13px;
-  background:var(--card);
-  color:var(--muted);
-  padding:0 12px;
-  font-size:11px;
-  font-weight:800;
-  white-space:nowrap;
-}
-
-.revenue-sort-btn.active{
-  color:#fff;
-  background:#1f2937;
-  border-color:#1f2937;
-}
-
-.revenue-sort-row,
-.revenue-sort-note,
-.mom-hot-badge,
-.sector-mom-count{
-  display:none !important;
-}
-
-.sector-revenue{
-  margin:20px 0 28px;
-}
-
-.sector-revenue-head{
-  display:flex;
-  align-items:end;
-  justify-content:space-between;
-  gap:10px;
-  margin:0 0 10px;
-}
-
-.sector-revenue-head h2{
-  margin:0;
-  color:var(--ink);
-  font-size:17px;
-  line-height:1.25;
-}
-
-.sector-revenue-head > span{
-  color:var(--muted);
-  font-size:10px;
-  font-weight:700;
-}
-
-.revenue-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:11px;
-}
-
-.revenue-card{
+.update-schedule-item{
   min-width:0;
-  padding:14px 15px;
-  border-radius:16px;
+  min-height:102px;
+  display:grid;
+  grid-template-columns:30px 1fr 12px;
+  align-items:start;
+  gap:8px;
+  padding:11px;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:14px;
+  background:rgba(255,255,255,.72);
+  color:var(--ink);
+  text-align:left;
+  transition:.16s ease;
 }
 
-.revenue-card .stock-name{
-  font-size:14px;
-  line-height:1.25;
+.update-schedule-item:hover{
+  transform:translateY(-1px);
+  border-color:rgba(100,116,139,.30);
 }
 
-.revenue-card .ticker{
-  font-size:9px;
-  margin-left:5px;
+.schedule-icon{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  color:#475569;
+  background:#eef2f7;
+  font-size:12px;
+  font-weight:900;
 }
 
-.revenue-card .rev{
-  font-size:24px !important;
-  line-height:1.05;
-  margin:12px 0 3px;
-  letter-spacing:-.02em;
+.schedule-copy{
+  min-width:0;
 }
 
-.revenue-card .rev-label{
-  font-size:9px;
+.schedule-copy b,
+.schedule-copy strong,
+.schedule-copy small{
+  display:block;
 }
 
-.revenue-card .changes{
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px;
-  margin-top:11px;
+.schedule-copy b{
+  font-size:10px;
+  margin-bottom:5px;
 }
 
-.revenue-card .changes span small{
+.schedule-copy strong{
+  font-size:10px;
+  line-height:1.35;
+  color:#334155;
+}
+
+.schedule-copy small{
+  margin-top:5px;
+  color:var(--muted);
   font-size:8px;
-  margin-bottom:2px;
+  line-height:1.35;
 }
 
-.revenue-card .changes b{
-  font-size:16px !important;
-  line-height:1.15;
-  white-space:nowrap;
-  overflow:visible;
-  text-overflow:clip;
+.schedule-arrow{
+  align-self:center;
+  color:#94a3b8;
+  font-size:12px;
 }
 
-.revenue-card.mom-hot{
-  border:1.5px solid var(--mom-gold-border);
+/* Dark mode */
+html[data-theme="dark"] .market-leader-card,
+html[data-theme="dark"] .market-strong-card,
+html[data-theme="dark"] .self-monitor-card{
+  border-color:#303741 !important;
   background:
-    radial-gradient(circle at 100% 0,rgba(216,155,33,.14),transparent 40%),
-    linear-gradient(145deg,#fff9e8 0%,#fffdf8 68%);
-  box-shadow:0 10px 24px rgba(152,102,18,.09);
+    linear-gradient(
+      145deg,
+      #20252c,
+      #1b2026
+    ) !important;
+  box-shadow:none !important;
 }
 
-.revenue-card.mom-hot .stock-name,
-.revenue-card.mom-hot .rev{
-  color:#77500d;
+html[data-theme="dark"] .market-mini-icon{
+  color:#8fb0df !important;
+  background:rgba(113,145,190,.10) !important;
 }
 
-.revenue-card.mom-hot::before{
-  content:"";
-  position:absolute;
-  inset:0 auto 0 0;
-  width:4px;
-  background:linear-gradient(180deg,#d89b21,#edc768);
-  opacity:.9;
+html[data-theme="dark"] .self-monitor-card .market-mini-icon{
+  color:#74d0ad !important;
+  background:rgba(16,185,129,.09) !important;
 }
 
-.mom-hot-glow{
-  position:absolute;
-  width:130px;
-  height:130px;
-  border-radius:50%;
-  right:-68px;
-  bottom:-72px;
-  background:radial-gradient(circle,rgba(216,155,33,.12),transparent 68%);
-  pointer-events:none;
+html[data-theme="dark"] .market-card-label,
+html[data-theme="dark"] .market-leader-foot,
+html[data-theme="dark"] .self-monitor-main span,
+html[data-theme="dark"] .self-monitor-foot{
+  color:#959eaa !important;
 }
 
-/* Dark */
-html[data-theme="dark"] .revenue-control-panel,
-html[data-theme="dark"] .revenue-controls{
-  border-color:#2d343d !important;
-  background:rgba(27,32,38,.78) !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.14) !important;
+html[data-theme="dark"] .market-leader-main strong,
+html[data-theme="dark"] .strong-name,
+html[data-theme="dark"] .self-monitor-main strong{
+  color:#f3f5f7 !important;
 }
 
-html[data-theme="dark"] #revenueSectorSelect,
-html[data-theme="dark"] .revenue-sort-btn{
-  color:#eef1f4 !important;
+html[data-theme="dark"] .strong-sector-row{
+  background:rgba(148,163,184,.055) !important;
+  color:#f0f2f5 !important;
+}
+
+html[data-theme="dark"] .strong-sector-row:hover{
+  background:rgba(148,163,184,.10) !important;
+}
+
+html[data-theme="dark"] .update-schedule-card{
+  border-color:#303741 !important;
+  background:
+    linear-gradient(
+      145deg,
+      #1c2127,
+      #181c21
+    ) !important;
+}
+
+html[data-theme="dark"] .schedule-zone{
+  color:#9aa3ae !important;
+  background:rgba(148,163,184,.07) !important;
+}
+
+html[data-theme="dark"] .update-schedule-item{
+  border-color:#2e353e !important;
   background:#20252c !important;
-  border-color:#39424d !important;
+  color:#eef1f4 !important;
 }
 
-html[data-theme="dark"] .revenue-gold-note{
-  color:#a8afb9 !important;
+html[data-theme="dark"] .schedule-icon{
+  color:#aeb7c3 !important;
+  background:#292f37 !important;
 }
 
-html[data-theme="dark"] .revenue-gold-note::before{
-  background:#9a7631;
-  border-color:#755820;
-  box-shadow:0 0 0 3px rgba(182,137,56,.08);
+html[data-theme="dark"] .schedule-copy strong{
+  color:#dce1e7 !important;
 }
 
-html[data-theme="dark"] .revenue-sort-btn.active{
-  color:#f4f6f8 !important;
-  background:#35404d !important;
-  border-color:#566372 !important;
+html[data-theme="dark"] .schedule-copy small{
+  color:#8f98a5 !important;
 }
 
-html[data-theme="dark"] .revenue-card.mom-hot{
-  border-color:#84662f !important;
-  background:
-    radial-gradient(circle at 100% 0%,rgba(195,143,43,.11),transparent 42%),
-    linear-gradient(145deg,#2a251c,#211f1b) !important;
-  box-shadow:0 10px 24px rgba(0,0,0,.18) !important;
-}
-
-html[data-theme="dark"] .revenue-card.mom-hot .stock-name,
-html[data-theme="dark"] .revenue-card.mom-hot .rev{
-  color:#efca78 !important;
-}
-
-/* Desktop */
-@media(min-width:1280px){
-  .revenue-grid{
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:13px;
+@media(max-width:1050px){
+  .market-overview-grid{
+    grid-template-columns:
+      minmax(0,1.25fr)
+      minmax(0,1fr);
   }
 
-  .revenue-control-panel,
-  .revenue-controls{
-    grid-template-columns:minmax(320px,1fr) minmax(260px,.68fr);
+  .self-monitor-card{
+    grid-column:1 / -1;
+    min-height:118px;
+  }
+
+  .update-schedule-grid{
+    grid-template-columns:
+      repeat(3,minmax(0,1fr));
   }
 }
 
-/* Tablet landscape / small desktop */
-@media(min-width:901px) and (max-width:1279px){
-  .revenue-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-  }
-}
-
-/* Tablet portrait */
-@media(max-width:900px){
-  .revenue-control-panel,
-  .revenue-controls{
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-  }
-
-  .revenue-grid{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-  }
-
-  .revenue-card .rev{
-    font-size:23px !important;
-  }
-
-  .revenue-card .changes b{
-    font-size:15px !important;
-  }
-}
-
-/* Phone */
 @media(max-width:720px){
-  .revenue-sector-picker{
-    margin:12px 0 18px !important;
+  .market-pulse-pro{
+    padding:14px;
   }
 
-  .revenue-control-panel,
-  .revenue-controls{
+  .market-overview-grid{
     grid-template-columns:1fr;
-    gap:12px;
-    padding:12px;
-    border-radius:15px;
   }
 
-  #revenueSectorSelect,
-  .revenue-sort-btn{
-    min-height:42px;
+  .market-leader-card,
+  .market-strong-card,
+  .self-monitor-card{
+    min-height:auto;
   }
 
-  .revenue-grid{
-    grid-template-columns:1fr;
-    gap:10px;
+  .market-leader-main{
+    margin-top:20px;
   }
 
-  .sector-revenue{
-    margin:18px 0 24px;
+  .market-leader-foot{
+    margin-top:20px;
   }
 
-  .sector-revenue-head h2{
-    font-size:17px;
+  .self-monitor-card{
+    grid-column:auto;
   }
 
-  .revenue-card{
-    padding:14px 15px;
-    border-radius:16px;
+  .update-schedule-card{
+    padding:14px;
   }
 
-  .revenue-card .rev{
-    font-size:22px !important;
+  .update-schedule-grid{
+    grid-template-columns:
+      1fr 1fr;
   }
 
-  .revenue-card .changes b{
-    font-size:15px !important;
+  .update-schedule-item{
+    min-height:96px;
   }
 }
 
-@media(max-width:380px){
-  .revenue-sort-buttons{
-    grid-template-columns:1fr 1fr;
+@media(max-width:430px){
+  .update-schedule-grid{
+    grid-template-columns:1fr;
   }
 
-  .revenue-card .changes{
-    gap:8px;
+  .update-schedule-item{
+    min-height:76px;
+    grid-template-columns:30px 1fr 12px;
   }
 }
