@@ -361,15 +361,19 @@ def main():
             or 0
         )
 
+        yoy = float(
+            x.get("yoy")
+            or 0
+        )
+
         x["name"] = (
             short_names.get(t)
             or x.get("name")
             or t
         )
 
-        # 新邏輯：
         # 月營收 MoM > 10% 才推播
-        # ID 加 mom10 前綴，避免舊「歷史新高」推播紀錄誤擋
+        # 每檔每月只推一次，避免同一家公司重複通知
         push_id = (
             f"mom10|{latest_month}|{t}"
         )
@@ -378,16 +382,22 @@ def main():
             mom > 10
             and push_id not in sent
         ):
+            # 推播標題直接帶公司與 MoM，鎖定螢幕就能先看到重點
+            title = (
+                f"月營收｜{x['name']} {t}｜"
+                f"MoM {mom:+.2f}%"
+            )
+
+            # 使用者要求固定顯示：月營收數字、MoM、YoY
             msg = (
-                f"{x['name']} {t}\n"
-                f"{latest_month} 營收 "
-                f"{rev:.2f} 億\n"
-                f"MoM {mom:+.2f}%｜"
-                f"YoY {x['yoy']:+.2f}%"
+                f"{latest_month} 月營收\n"
+                f"月營收：{rev:.2f} 億元\n"
+                f"MoM：{mom:+.2f}%\n"
+                f"YoY：{yoy:+.2f}%"
             )
 
             if send_pushover(
-                "月營收 MoM > 10%",
+                title,
                 msg,
             ):
                 sent.add(
@@ -431,9 +441,8 @@ def main():
             )
 
         if arr:
-            # 資料檔直接先依 MoM 高到低排
-            # 前端預設仍可依族群顯示，
-            # 點按鈕則做全體去重 MoM 排序
+            # 資料檔先依 MoM 高到低排
+            # 前端預設依族群顯示，使用者可切換 MoM 排序
             arr.sort(
                 key=lambda x:
                     float(
