@@ -1,6 +1,10 @@
-
 /* =========================================================
-   Dashboard UI Pro
+   Dashboard UI v4
+   2026-09-27
+   - 月營收 MoM > 10% 只用金色卡片註記，不顯示文字標籤
+   - 月營收族群只留單一下拉選單，不再橫向滑動
+   - 手機 / 平板 / 桌機完整響應式排版
+   - 深色模式：石墨藍黑 + 霧灰藍 + 低飽和金色
    ========================================================= */
 
 :root{
@@ -14,21 +18,26 @@
   --pro-green-soft:#ecfdf5;
   --pro-violet:#7c3aed;
   --pro-violet-soft:#f5f0ff;
-  --pro-gold:#f4b400;
-  --pro-gold-2:#ff7a00;
+
+  --mom-gold:#d89b21;
+  --mom-gold-deep:#986612;
+  --mom-gold-soft:#fff7dd;
+  --mom-gold-border:#e2bd67;
 }
 
-/* 整體背景更有層次 */
+/* ---------------------------------------------------------
+   整體背景
+--------------------------------------------------------- */
 body{
   background:
     radial-gradient(
       circle at 88% 10%,
-      rgba(37,99,235,.07),
+      rgba(37,99,235,.06),
       transparent 26rem
     ),
     radial-gradient(
       circle at 10% 35%,
-      rgba(124,58,237,.045),
+      rgba(124,58,237,.035),
       transparent 24rem
     ),
     var(--bg);
@@ -50,16 +59,15 @@ body{
   background:
     linear-gradient(
       135deg,
-      rgba(37,99,235,.09),
-      rgba(124,58,237,.03)
+      rgba(37,99,235,.08),
+      rgba(124,58,237,.025)
     );
   pointer-events:none;
 }
 
-/* =========================================================
+/* ---------------------------------------------------------
    Market Pulse
-   ========================================================= */
-
+--------------------------------------------------------- */
 .market-pulse{
   margin:0 0 18px;
   padding:18px;
@@ -68,8 +76,8 @@ body{
   background:
     linear-gradient(
       135deg,
-      rgba(37,99,235,.08),
-      rgba(124,58,237,.035) 48%,
+      rgba(37,99,235,.065),
+      rgba(124,58,237,.025) 48%,
       transparent 100%
     ),
     var(--card);
@@ -114,18 +122,17 @@ body{
   height:7px;
   border-radius:50%;
   background:#22c55e;
-  box-shadow:
-    0 0 0 4px
-    rgba(34,197,94,.12);
+  box-shadow:0 0 0 4px rgba(34,197,94,.12);
 }
 
 .pulse-grid{
   display:grid;
-  grid-template-columns:
-    minmax(0,1.7fr)
-    minmax(130px,.65fr)
-    minmax(130px,.65fr);
+  grid-template-columns:minmax(0,1.7fr) minmax(130px,.65fr);
   gap:10px;
+}
+
+.pulse-grid-compact{
+  grid-template-columns:minmax(0,2fr) minmax(130px,.72fr);
 }
 
 .pulse-main,
@@ -173,7 +180,7 @@ body{
   align-items:end;
   justify-content:flex-end;
   gap:4px;
-  opacity:.22;
+  opacity:.20;
 }
 
 .mini-bars i{
@@ -201,20 +208,9 @@ body{
   line-height:1;
 }
 
-html[data-theme="dark"] .pulse-main,
-html[data-theme="dark"] .pulse-stat{
-  background:rgba(20,29,42,.78);
-}
-
-html[data-theme="dark"] .pulse-live{
-  background:#113328;
-  color:#7ae6bb;
-}
-
-/* =========================================================
+/* ---------------------------------------------------------
    Feature Rail
-   ========================================================= */
-
+--------------------------------------------------------- */
 .feature-rail{
   display:flex;
   gap:12px;
@@ -242,23 +238,18 @@ html[data-theme="dark"] .pulse-live{
       rgba(255,255,255,.94),
       rgba(255,255,255,.78)
     );
-  box-shadow:
-    0 8px 24px rgba(15,23,42,.07);
+  box-shadow:0 8px 24px rgba(15,23,42,.07);
   text-align:left;
   color:var(--ink);
   scroll-snap-align:start;
   position:relative;
   overflow:hidden;
-  transition:
-    transform .18s ease,
-    box-shadow .18s ease,
-    border-color .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
 .feature-card:hover{
   transform:translateY(-2px);
-  box-shadow:
-    0 12px 30px rgba(15,23,42,.10);
+  box-shadow:0 12px 30px rgba(15,23,42,.10);
 }
 
 .feature-card:active{
@@ -274,7 +265,7 @@ html[data-theme="dark"] .pulse-live{
   right:-38px;
   top:-38px;
   background:currentColor;
-  opacity:.045;
+  opacity:.04;
 }
 
 .feature-card-top{
@@ -341,94 +332,29 @@ html[data-theme="dark"] .pulse-live{
   transform:translateX(3px);
 }
 
-.feature-card[data-tone="red"]{
-  color:#d9354e;
-}
-.feature-card[data-tone="red"] .feature-copy{
-  color:var(--ink);
-}
-.feature-card[data-tone="red"] .feature-icon{
-  background:var(--pro-red-soft);
-}
+.feature-card[data-tone="red"]{color:#d9354e;}
+.feature-card[data-tone="red"] .feature-copy{color:var(--ink);}
+.feature-card[data-tone="red"] .feature-icon{background:var(--pro-red-soft);}
 
-.feature-card[data-tone="amber"]{
-  color:#d98900;
-}
-.feature-card[data-tone="amber"] .feature-copy{
-  color:var(--ink);
-}
-.feature-card[data-tone="amber"] .feature-icon{
-  background:var(--pro-amber-soft);
-}
+.feature-card[data-tone="amber"]{color:#d98900;}
+.feature-card[data-tone="amber"] .feature-copy{color:var(--ink);}
+.feature-card[data-tone="amber"] .feature-icon{background:var(--pro-amber-soft);}
 
-.feature-card[data-tone="blue"]{
-  color:#3975dd;
-}
-.feature-card[data-tone="blue"] .feature-copy{
-  color:var(--ink);
-}
-.feature-card[data-tone="blue"] .feature-icon{
-  background:var(--pro-blue-soft);
-}
+.feature-card[data-tone="blue"]{color:#3975dd;}
+.feature-card[data-tone="blue"] .feature-copy{color:var(--ink);}
+.feature-card[data-tone="blue"] .feature-icon{background:var(--pro-blue-soft);}
 
-.feature-card[data-tone="green"]{
-  color:#12815a;
-}
-.feature-card[data-tone="green"] .feature-copy{
-  color:var(--ink);
-}
-.feature-card[data-tone="green"] .feature-icon{
-  background:var(--pro-green-soft);
-}
+.feature-card[data-tone="green"]{color:#12815a;}
+.feature-card[data-tone="green"] .feature-copy{color:var(--ink);}
+.feature-card[data-tone="green"] .feature-icon{background:var(--pro-green-soft);}
 
-.feature-card[data-tone="violet"]{
-  color:#7053cf;
-}
-.feature-card[data-tone="violet"] .feature-copy{
-  color:var(--ink);
-}
-.feature-card[data-tone="violet"] .feature-icon{
-  background:var(--pro-violet-soft);
-}
+.feature-card[data-tone="violet"]{color:#7053cf;}
+.feature-card[data-tone="violet"] .feature-copy{color:var(--ink);}
+.feature-card[data-tone="violet"] .feature-icon{background:var(--pro-violet-soft);}
 
-html[data-theme="dark"] .feature-card{
-  background:
-    linear-gradient(
-      180deg,
-      rgba(28,39,55,.98),
-      rgba(20,29,42,.98)
-    );
-}
-
-/* =========================================================
-   Home metric cards
-   ========================================================= */
-
-#homeCards .metric,
-#topSectors .metric{
-  position:relative;
-  overflow:hidden;
-  border-top:3px solid
-    rgba(37,99,235,.68);
-}
-
-#homeCards .metric::after,
-#topSectors .metric::after{
-  content:"";
-  position:absolute;
-  width:76px;
-  height:76px;
-  border-radius:50%;
-  right:-34px;
-  bottom:-36px;
-  background:
-    rgba(37,99,235,.05);
-}
-
-/* =========================================================
-   Status
-   ========================================================= */
-
+/* ---------------------------------------------------------
+   Status / Self reports
+--------------------------------------------------------- */
 .status{
   display:flex;
   flex-wrap:wrap;
@@ -441,35 +367,21 @@ html[data-theme="dark"] .feature-card{
   height:7px;
   border-radius:50%;
   background:#22c55e;
-  box-shadow:
-    0 0 0 4px
-    rgba(34,197,94,.10);
+  box-shadow:0 0 0 4px rgba(34,197,94,.10);
   margin-right:3px;
 }
 
-.status-divider{
-  color:var(--muted);
-}
-
-/* =========================================================
-   Self Reports
-   ========================================================= */
+.status-divider{color:var(--muted);}
 
 .self-report-card{
-  border-top:3px solid
-    rgba(245,158,11,.82);
+  border-top:3px solid rgba(245,158,11,.78);
 }
 
 .card-accent{
   position:absolute;
   inset:0 auto 0 0;
   width:4px;
-  background:
-    linear-gradient(
-      180deg,
-      #f59e0b,
-      #fb7185
-    );
+  background:linear-gradient(180deg,#f59e0b,#fb7185);
   opacity:.7;
 }
 
@@ -484,14 +396,8 @@ html[data-theme="dark"] .feature-card{
   gap:8px;
 }
 
-.self-empty b{
-  font-size:15px;
-}
-
-.self-empty span{
-  color:var(--muted);
-  font-size:10px;
-}
+.self-empty b{font-size:15px;}
+.self-empty span{color:var(--muted);font-size:10px;}
 
 .empty-icon{
   width:52px;
@@ -512,10 +418,9 @@ html[data-theme="dark"] .feature-card{
   stroke-width:1.8;
 }
 
-/* =========================================================
+/* ---------------------------------------------------------
    Data cards
-   ========================================================= */
-
+--------------------------------------------------------- */
 .data-card{
   padding:17px;
   position:relative;
@@ -535,32 +440,19 @@ html[data-theme="dark"] .feature-card{
   gap:7px;
 }
 
-.data-card .titleline b{
-  font-size:17px;
-}
-
-.data-card .titleline span{
-  color:var(--muted);
-  font-size:10px;
-}
+.data-card .titleline b{font-size:17px;}
+.data-card .titleline span{color:var(--muted);font-size:10px;}
 
 .data-card .metric-grid{
   display:grid;
-  grid-template-columns:
-    repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:8px;
   margin-top:13px;
 }
 
 .data-card .metric-box{
-  background:
-    linear-gradient(
-      135deg,
-      var(--soft),
-      transparent
-    );
-  border:1px solid
-    rgba(127,127,127,.08);
+  background:linear-gradient(135deg,var(--soft),transparent);
+  border:1px solid rgba(127,127,127,.08);
   border-radius:12px;
   padding:10px 11px;
 }
@@ -572,9 +464,7 @@ html[data-theme="dark"] .feature-card{
   margin-bottom:4px;
 }
 
-.data-card .metric-box strong{
-  font-size:14px;
-}
+.data-card .metric-box strong{font-size:14px;}
 
 .data-card .subject{
   margin-top:11px;
@@ -584,92 +474,152 @@ html[data-theme="dark"] .feature-card{
 }
 
 /* =========================================================
-   Monthly Revenue / Record High
+   Monthly Revenue v4
    ========================================================= */
 
-.week-strip{
-  display:flex;
-  gap:7px;
-  overflow-x:auto;
-  padding:2px 0 12px;
-  margin-bottom:2px;
-  scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;
+/* 舊橫向族群 tabs 永遠隱藏，所有裝置都只使用下拉選單 */
+#revenueSectorTabs{
+  display:none !important;
 }
 
-.week-strip::-webkit-scrollbar{
-  display:none;
-}
-
-.week-pill{
-  flex:0 0 auto;
+.revenue-controls{
+  display:grid;
+  grid-template-columns:minmax(260px,1.25fr) minmax(220px,.75fr);
+  gap:16px;
+  align-items:end;
+  margin:18px 0 22px;
+  padding:16px;
   border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(255,255,255,.56);
+  box-shadow:0 8px 24px rgba(15,23,42,.04);
+}
+
+.revenue-control-block{
+  min-width:0;
+}
+
+.revenue-control-block > label,
+.revenue-control-label{
+  display:block;
+  margin:0 0 7px 2px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.04em;
+}
+
+.revenue-select-wrap{
+  position:relative;
+}
+
+#revenueSectorSelect{
+  width:100%;
+  min-height:48px;
+  appearance:none;
+  -webkit-appearance:none;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:0 44px 0 14px;
+  background:var(--card);
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  font-weight:800;
+  outline:none;
+}
+
+#revenueSectorSelect:focus{
+  border-color:#8091a7;
+  box-shadow:0 0 0 3px rgba(100,116,139,.10);
+}
+
+.revenue-select-arrow{
+  position:absolute;
+  right:15px;
+  top:50%;
+  transform:translateY(-54%);
+  color:var(--muted);
+  font-size:20px;
+  line-height:1;
+  pointer-events:none;
+}
+
+.revenue-sort-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.revenue-sort-btn{
+  min-height:48px;
+  border:1px solid var(--line);
+  border-radius:14px;
   background:var(--card);
   color:var(--muted);
-  border-radius:999px;
-  padding:9px 13px;
-  font-size:11px;
+  padding:0 14px;
+  font-size:12px;
+  font-weight:800;
+  white-space:nowrap;
+  transition:.16s ease;
 }
 
-.week-pill.active{
-  background:#111827;
+.revenue-sort-btn:hover{
+  border-color:#aab5c4;
+}
+
+.revenue-sort-btn.active{
   color:#fff;
-  border-color:#111827;
+  background:#1f2937;
+  border-color:#1f2937;
 }
 
 .sector-revenue{
-  margin:20px 0 28px;
+  margin:24px 0 32px;
 }
 
 .sector-revenue-head{
   display:flex;
   align-items:end;
   justify-content:space-between;
-  gap:10px;
-  margin:0 0 10px;
-}
-
-.sector-revenue-head > div{
-  display:flex;
-  align-items:center;
-  gap:8px;
+  gap:12px;
+  margin:0 0 12px;
 }
 
 .sector-revenue-head h2{
   margin:0;
-  font-size:18px;
+  color:var(--ink);
+  font-size:19px;
+  line-height:1.25;
 }
 
 .sector-revenue-head > span{
+  flex:0 0 auto;
   color:var(--muted);
   font-size:10px;
-}
-
-.sector-high-count{
-  color:#b45309;
-  background:#fff7ed;
-  border-radius:999px;
-  padding:4px 7px;
-  font-size:8px;
-  font-weight:800;
+  font-weight:700;
 }
 
 .revenue-grid{
   display:grid;
-  grid-template-columns:
-    repeat(3,minmax(0,1fr));
-  gap:11px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
 }
 
 .revenue-card{
+  min-width:0;
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:17px;
-  padding:15px;
+  border-radius:18px;
+  padding:17px;
   box-shadow:var(--shadow);
   position:relative;
   overflow:hidden;
-  transition:.18s ease;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.revenue-card:hover{
+  transform:translateY(-1px);
 }
 
 .revenue-card .top{
@@ -683,21 +633,24 @@ html[data-theme="dark"] .feature-card{
 
 .revenue-card .stock-name{
   font-weight:900;
-  font-size:14px;
+  font-size:15px;
+  line-height:1.25;
 }
 
 .revenue-card .ticker{
   color:var(--muted);
-  font-size:9px;
-  margin-left:5px;
+  font-size:10px;
+  margin-left:6px;
 }
 
 .revenue-card .rev{
-  font-size:23px;
+  font-size:clamp(24px,2.1vw,32px);
+  line-height:1.05;
   font-weight:950;
-  margin:13px 0 2px;
+  margin:16px 0 4px;
   position:relative;
   z-index:1;
+  letter-spacing:-.02em;
 }
 
 .revenue-card .rev-label{
@@ -708,136 +661,406 @@ html[data-theme="dark"] .feature-card{
 }
 
 .revenue-card .changes{
-  display:flex;
-  gap:14px;
-  margin-top:11px;
-  font-size:11px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:14px;
   position:relative;
   z-index:1;
+}
+
+.revenue-card .changes span{
+  min-width:0;
 }
 
 .revenue-card .changes span small{
   color:var(--muted);
   display:block;
   font-size:8px;
-  margin-bottom:2px;
+  margin-bottom:3px;
 }
 
-/* 新高：顯眼金橘色 */
-.revenue-card.record-high{
-  border:2px solid
-    rgba(244,180,0,.82);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255,247,217,.95),
-      rgba(255,239,219,.76) 48%,
-      var(--card) 100%
-    );
-  box-shadow:
-    0 10px 28px
-    rgba(245,158,11,.18);
+.revenue-card .changes b{
+  display:block;
+  font-size:clamp(15px,1.5vw,19px);
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-.revenue-card.record-high::before{
-  content:"NEW HIGH";
-  position:absolute;
-  right:-24px;
-  top:14px;
-  transform:rotate(38deg);
-  width:100px;
-  text-align:center;
-  padding:4px 0;
-  font-size:7px;
-  font-weight:1000;
-  letter-spacing:.12em;
-  color:#fff;
-  background:
-    linear-gradient(
-      90deg,
-      var(--pro-gold),
-      var(--pro-gold-2)
-    );
-  z-index:2;
-}
-
-.record-high-glow{
-  position:absolute;
-  width:140px;
-  height:140px;
-  border-radius:50%;
-  right:-64px;
-  bottom:-72px;
+/* MoM > 10%：只以整張卡片金色註記，不顯示 MoM > 10% badge */
+.revenue-card.mom-hot{
+  border:1.5px solid var(--mom-gold-border);
   background:
     radial-gradient(
-      circle,
-      rgba(245,158,11,.22),
-      transparent 68%
+      circle at 100% 0,
+      rgba(216,155,33,.17),
+      transparent 40%
+    ),
+    linear-gradient(
+      145deg,
+      #fff9e8 0%,
+      #fffdf7 64%
     );
+  box-shadow:0 14px 30px rgba(152,102,18,.11);
+}
+
+.revenue-card.mom-hot .stock-name,
+.revenue-card.mom-hot .rev{
+  color:#77500d;
+}
+
+.revenue-card.mom-hot::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:4px;
+  background:linear-gradient(180deg,#d89b21,#edc768);
+  opacity:.9;
+}
+
+.mom-hot-glow{
+  position:absolute;
+  width:150px;
+  height:150px;
+  border-radius:50%;
+  right:-74px;
+  bottom:-82px;
+  background:radial-gradient(circle,rgba(216,155,33,.15),transparent 68%);
   pointer-events:none;
 }
 
-.new-high{
-  display:inline-flex;
+/* 舊版元素若快取還沒更新，也不讓文字標籤顯示 */
+.mom-hot-badge,
+.sector-mom-count,
+.revenue-sort-note,
+.revenue-sector-picker,
+.revenue-sort-row{
+  display:none !important;
+}
+
+/* ---------------------------------------------------------
+   固定返回總覽
+--------------------------------------------------------- */
+#backHomeBtn{
+  position:fixed;
+  left:16px;
+  bottom:calc(18px + env(safe-area-inset-bottom));
+  z-index:999;
+  display:flex;
   align-items:center;
-  gap:5px;
-  font-size:9px;
-  font-weight:950;
+  gap:7px;
+  border:1px solid var(--line);
   border-radius:999px;
-  padding:6px 9px;
-  color:#8a4a00;
-  background:
-    linear-gradient(
-      135deg,
-      #fff1a8,
-      #ffd28a
-    );
-  border:1px solid
-    rgba(245,158,11,.42);
-  box-shadow:
-    0 4px 12px
-    rgba(245,158,11,.14);
+  padding:10px 14px;
+  background:rgba(15,23,34,.92);
+  color:#fff;
+  box-shadow:0 10px 26px rgba(15,23,42,.22);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  font-size:12px;
+  font-weight:800;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(10px);
+  transition:.18s ease;
 }
 
-.new-high-icon{
-  font-size:10px;
-  color:#ff8a00;
+#backHomeBtn.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:translateY(0);
 }
 
-html[data-theme="dark"] .revenue-card.record-high{
-  background:
-    linear-gradient(
-      135deg,
-      rgba(80,54,7,.78),
-      rgba(50,36,19,.76) 48%,
-      var(--card) 100%
-    );
-  border-color:#c98c08;
-}
-
-html[data-theme="dark"] .new-high{
-  color:#ffe5a2;
-  background:
-    linear-gradient(
-      135deg,
-      #68460c,
-      #523015
-    );
-}
-
-html[data-theme="dark"] .sector-high-count{
-  color:#f6c56d;
-  background:#34210d;
+#backHomeBtn .back-home-icon{
+  font-size:18px;
+  line-height:1;
 }
 
 /* =========================================================
-   Mobile
+   DARK MODE v4
+   ========================================================= */
+html[data-theme="dark"]{
+  color-scheme:dark;
+}
+
+html[data-theme="dark"] body{
+  color:#e8ebef;
+  background:
+    radial-gradient(circle at 88% 0%,rgba(88,103,126,.09),transparent 30rem),
+    radial-gradient(circle at 10% 36%,rgba(69,82,101,.055),transparent 24rem),
+    linear-gradient(180deg,#101216 0%,#13161b 48%,#0f1115 100%) !important;
+}
+
+html[data-theme="dark"] main{
+  background:transparent;
+}
+
+html[data-theme="dark"] header{
+  background:linear-gradient(180deg,#15181d 0%,#12151a 100%) !important;
+  border-bottom-color:#2a3038 !important;
+}
+
+html[data-theme="dark"] .hero{
+  background:
+    radial-gradient(circle at 96% 0%,rgba(92,112,143,.10),transparent 34%),
+    linear-gradient(145deg,#1a1e24,#171a20) !important;
+  border-color:#2d333c !important;
+  box-shadow:0 16px 38px rgba(0,0,0,.22);
+}
+
+html[data-theme="dark"] .hero h1,
+html[data-theme="dark"] .market-pulse h2,
+html[data-theme="dark"] .section h2,
+html[data-theme="dark"] .feature-copy b,
+html[data-theme="dark"] .stock-name,
+html[data-theme="dark"] .titleline b,
+html[data-theme="dark"] .sector-revenue-head h2{
+  color:#f3f5f7 !important;
+}
+
+html[data-theme="dark"] .hero p,
+html[data-theme="dark"] .kicker,
+html[data-theme="dark"] .pulse-kicker,
+html[data-theme="dark"] .feature-copy small,
+html[data-theme="dark"] .revenue-card .ticker,
+html[data-theme="dark"] .rev-label,
+html[data-theme="dark"] .status,
+html[data-theme="dark"] .metric-box small,
+html[data-theme="dark"] .revenue-control-block > label,
+html[data-theme="dark"] .revenue-control-label,
+html[data-theme="dark"] .sector-revenue-head > span{
+  color:#929aa6 !important;
+}
+
+html[data-theme="dark"] .market-pulse{
+  border-color:#2d343e !important;
+  background:
+    radial-gradient(circle at 96% 0%,rgba(86,105,134,.09),transparent 36%),
+    linear-gradient(145deg,#1a1e24,#171b20) !important;
+  box-shadow:0 16px 40px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+html[data-theme="dark"] .pulse-main,
+html[data-theme="dark"] .pulse-stat{
+  border-color:#303741 !important;
+  background:linear-gradient(145deg,#20252c,#1b2026) !important;
+  box-shadow:none !important;
+}
+
+html[data-theme="dark"] .pulse-main:hover,
+html[data-theme="dark"] .pulse-stat:hover{
+  border-color:#46505d !important;
+  background:linear-gradient(145deg,#252b33,#20252c) !important;
+}
+
+html[data-theme="dark"] .pulse-label,
+html[data-theme="dark"] .pulse-stat > span,
+html[data-theme="dark"] .pulse-stat small{
+  color:#9ba4b0 !important;
+}
+
+html[data-theme="dark"] .pulse-main strong,
+html[data-theme="dark"] .pulse-stat strong{
+  color:#f4f6f8 !important;
+}
+
+html[data-theme="dark"] .pulse-live{
+  color:#78d8ae !important;
+  background:rgba(16,185,129,.09) !important;
+  border:1px solid rgba(52,211,153,.14);
+}
+
+html[data-theme="dark"] .pulse-live i{
+  background:#41c991 !important;
+  box-shadow:0 0 0 5px rgba(65,201,145,.09);
+}
+
+html[data-theme="dark"] .feature-card{
+  border-color:#2c333c !important;
+  background:linear-gradient(145deg,#1d2228 0%,#191d23 100%) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.17), inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+html[data-theme="dark"] .feature-card:hover{
+  transform:translateY(-2px);
+  border-color:#48515e !important;
+  background:linear-gradient(145deg,#232930 0%,#1d2229 100%) !important;
+}
+
+html[data-theme="dark"] .feature-index,
+html[data-theme="dark"] .feature-arrow{
+  color:#7f8997 !important;
+}
+
+html[data-theme="dark"] .feature-card[data-tone="red"] .feature-icon{
+  color:#ff7f89 !important;
+  background:rgba(255,107,122,.09) !important;
+}
+
+html[data-theme="dark"] .feature-card[data-tone="amber"] .feature-icon{
+  color:#e7b35f !important;
+  background:rgba(245,158,11,.09) !important;
+}
+
+html[data-theme="dark"] .feature-card[data-tone="blue"] .feature-icon{
+  color:#7ca4df !important;
+  background:rgba(88,133,196,.10) !important;
+}
+
+html[data-theme="dark"] .feature-card[data-tone="violet"] .feature-icon{
+  color:#ad98df !important;
+  background:rgba(139,92,246,.09) !important;
+}
+
+html[data-theme="dark"] .feature-card[data-tone="green"] .feature-icon{
+  color:#62cba7 !important;
+  background:rgba(16,185,129,.09) !important;
+}
+
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .data-card,
+html[data-theme="dark"] .revenue-card,
+html[data-theme="dark"] .metric-box{
+  background:linear-gradient(145deg,#1b2026,#181c21) !important;
+  border-color:#2d343d !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.018) !important;
+}
+
+html[data-theme="dark"] .tab,
+html[data-theme="dark"] .week-pill,
+html[data-theme="dark"] .badge{
+  color:#a6adb7 !important;
+  background:#1b2026 !important;
+  border-color:#333b45 !important;
+}
+
+html[data-theme="dark"] .tab.active,
+html[data-theme="dark"] .week-pill.active{
+  color:#f3f5f7 !important;
+  background:#303844 !important;
+  border-color:#535e6c !important;
+}
+
+html[data-theme="dark"] table{
+  color:#dde1e6;
+}
+
+html[data-theme="dark"] thead th{
+  color:#959eaa !important;
+  background:#181c21 !important;
+  border-bottom-color:#303741 !important;
+}
+
+html[data-theme="dark"] tbody td{
+  border-bottom-color:#292f37 !important;
+}
+
+html[data-theme="dark"] .up{
+  color:#ff7a84 !important;
+}
+
+html[data-theme="dark"] .down{
+  color:#5ed0a0 !important;
+}
+
+html[data-theme="dark"] #mobileNav,
+html[data-theme="dark"] .icon-btn{
+  color:#eef1f4 !important;
+  background:#20252c !important;
+  border-color:#39424d !important;
+}
+
+html[data-theme="dark"] .revenue-controls{
+  border-color:#2d343d !important;
+  background:rgba(27,32,38,.78) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.14) !important;
+}
+
+html[data-theme="dark"] #revenueSectorSelect,
+html[data-theme="dark"] .revenue-sort-btn{
+  color:#eef1f4 !important;
+  background:#20252c !important;
+  border-color:#39424d !important;
+}
+
+html[data-theme="dark"] #revenueSectorSelect:focus{
+  border-color:#66717f !important;
+  box-shadow:0 0 0 3px rgba(148,163,184,.08) !important;
+}
+
+html[data-theme="dark"] .revenue-sort-btn{
+  color:#aeb6c1 !important;
+}
+
+html[data-theme="dark"] .revenue-sort-btn.active{
+  color:#f4f6f8 !important;
+  background:#35404d !important;
+  border-color:#566372 !important;
+}
+
+/* MoM > 10% 深色：金棕色，不用亮黃 */
+html[data-theme="dark"] .revenue-card.mom-hot{
+  border-color:#84662f !important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(195,143,43,.13),transparent 42%),
+    linear-gradient(145deg,#2a251c,#211f1b) !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.18), inset 0 0 0 1px rgba(220,175,82,.025) !important;
+}
+
+html[data-theme="dark"] .revenue-card.mom-hot .stock-name,
+html[data-theme="dark"] .revenue-card.mom-hot .rev{
+  color:#efca78 !important;
+}
+
+html[data-theme="dark"] .revenue-card.mom-hot::before{
+  background:linear-gradient(180deg,#b68938,#705425);
+}
+
+html[data-theme="dark"] #backHomeBtn{
+  color:#eef1f4 !important;
+  background:rgba(31,36,43,.95) !important;
+  border-color:#434c58 !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.28) !important;
+}
+
+/* =========================================================
+   Responsive
    ========================================================= */
 
-@media(max-width:1000px){
+/* 桌機：4 欄，內容不會被拉太寬 */
+@media(min-width:1280px){
   .revenue-grid{
-    grid-template-columns:
-      repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:14px;
+  }
+
+  .revenue-controls{
+    grid-template-columns:minmax(320px,1fr) minmax(260px,.65fr);
+  }
+}
+
+/* 平板橫向 / 小桌機：3 欄 */
+@media(min-width:901px) and (max-width:1279px){
+  .revenue-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+/* 平板直向：2 欄 */
+@media(max-width:900px){
+  .revenue-controls{
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+
+  .revenue-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .revenue-card .rev{
+    font-size:27px;
   }
 }
 
@@ -847,9 +1070,9 @@ html[data-theme="dark"] .sector-high-count{
     border-radius:21px;
   }
 
-  .pulse-grid{
-    grid-template-columns:
-      1fr 1fr;
+  .pulse-grid,
+  .pulse-grid-compact{
+    grid-template-columns:1fr 1fr;
   }
 
   .pulse-main{
@@ -878,441 +1101,54 @@ html[data-theme="dark"] .sector-high-count{
     font-size:15px;
   }
 
-  .revenue-grid{
-    grid-template-columns:1fr;
-  }
-
   .data-card .metric-grid{
     grid-template-columns:1fr 1fr;
   }
 
-  .revenue-card.record-high{
-    border-width:2px;
+  .revenue-controls{
+    margin:14px 0 18px;
+    padding:13px;
+    border-radius:16px;
+  }
+
+  #revenueSectorSelect,
+  .revenue-sort-btn{
+    min-height:46px;
+  }
+
+  .revenue-grid{
+    grid-template-columns:1fr;
+    gap:11px;
+  }
+
+  .sector-revenue{
+    margin:20px 0 28px;
+  }
+
+  .sector-revenue-head h2{
+    font-size:18px;
+  }
+
+  .revenue-card{
+    padding:17px 18px;
+  }
+
+  .revenue-card .rev{
+    font-size:30px;
+  }
+
+  .revenue-card .changes b{
+    font-size:18px;
   }
 }
 
+/* 極小手機，避免按鈕與數字擠壓 */
+@media(max-width:380px){
+  .revenue-sort-buttons{
+    grid-template-columns:1fr;
+  }
 
-/* =========================================================
-   固定返回總覽按鈕
-   ========================================================= */
-#backHomeBtn{
-  position:fixed;
-  left:16px;
-  bottom:
-    calc(
-      18px + env(safe-area-inset-bottom)
-    );
-  z-index:999;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  padding:10px 14px;
-  background:rgba(15,23,34,.92);
-  color:#fff;
-  box-shadow:
-    0 10px 26px
-    rgba(15,23,42,.22);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  font-size:12px;
-  font-weight:800;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(10px);
-  transition:.18s ease;
+  .revenue-card .changes{
+    gap:8px;
+  }
 }
-
-#backHomeBtn.show{
-  opacity:1;
-  pointer-events:auto;
-  transform:translateY(0);
-}
-
-#backHomeBtn .back-home-icon{
-  font-size:18px;
-  line-height:1;
-}
-
-html[data-theme="dark"] #backHomeBtn{
-  background:rgba(245,247,250,.94);
-  color:#111827;
-}
-
-/* =========================================================
-   2026-09-26 Dark Theme Refinement + Revenue Highlight
-   ========================================================= */
-
-:root{
-  --ui-bg:#f4f7fb;
-  --ui-bg-2:#eef3f9;
-  --ui-panel:#ffffff;
-  --ui-panel-soft:#f8fbff;
-  --ui-border:#d9e2ef;
-  --ui-title:#0f172a;
-  --ui-text:#334155;
-  --ui-muted:#7b8aa0;
-  --ui-blue:#3b82f6;
-  --ui-blue-soft:#eaf2ff;
-  --ui-green:#10b981;
-  --ui-red:#ef4444;
-  --ui-gold:#f59e0b;
-  --ui-gold-deep:#d97706;
-}
-
-/* 首頁營收新高：永遠用金色系識別，數字 > 0 時再加強 */
-.pulse-stat[data-pulse-target="monthlyRevenue"]{
-  position:relative;
-  overflow:hidden;
-  border-color:rgba(245,158,11,.34);
-  background:
-    radial-gradient(circle at 95% 5%,rgba(245,158,11,.16),transparent 42%),
-    rgba(255,255,255,.88);
-}
-
-.pulse-stat[data-pulse-target="monthlyRevenue"]::before{
-  content:"";
-  position:absolute;
-  right:-24px;
-  top:-28px;
-  width:86px;
-  height:86px;
-  border-radius:50%;
-  background:rgba(245,158,11,.10);
-  pointer-events:none;
-}
-
-.pulse-stat[data-pulse-target="monthlyRevenue"] > span{
-  color:#a16207;
-}
-
-.pulse-stat[data-pulse-target="monthlyRevenue"] > strong{
-  color:#d97706;
-}
-
-.pulse-stat[data-pulse-target="monthlyRevenue"].has-high{
-  border-color:rgba(245,158,11,.72);
-  box-shadow:
-    0 10px 30px rgba(217,119,6,.16),
-    inset 0 0 0 1px rgba(245,158,11,.12);
-  background:
-    linear-gradient(135deg,rgba(255,247,220,.98),rgba(255,255,255,.96));
-}
-
-.pulse-stat[data-pulse-target="monthlyRevenue"].has-high::after{
-  content:"NEW HIGH";
-  position:absolute;
-  right:12px;
-  top:10px;
-  padding:4px 7px;
-  border-radius:999px;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.08em;
-  color:#92400e;
-  background:#fef3c7;
-  border:1px solid #f9d77f;
-}
-
-/* 真正 record_high 的月營收卡片更醒目 */
-.revenue-card.record-high{
-  position:relative;
-  overflow:hidden;
-  border:1.5px solid rgba(245,158,11,.72) !important;
-  background:
-    radial-gradient(circle at 100% 0,rgba(251,191,36,.22),transparent 38%),
-    linear-gradient(145deg,#fff9e8 0%,#ffffff 62%) !important;
-  box-shadow:
-    0 16px 36px rgba(217,119,6,.16),
-    inset 0 0 0 1px rgba(255,255,255,.7) !important;
-}
-
-.revenue-card.record-high .rev{
-  color:#d97706 !important;
-}
-
-.revenue-card.record-high .stock-name{
-  color:#7c4a03 !important;
-}
-
-.revenue-card .new-high{
-  color:#92400e !important;
-  background:#fef3c7 !important;
-  border:1px solid #f9d77f !important;
-  box-shadow:0 4px 14px rgba(217,119,6,.12);
-}
-
-/* =========================================================
-   Dark mode：深海軍藍 + 霧藍灰，不使用大片死黑
-   ========================================================= */
-
-html[data-theme="dark"]{
-  color-scheme:dark;
-}
-
-html[data-theme="dark"] body{
-  color:#e7eef8;
-  background:
-    radial-gradient(circle at 88% 0%,rgba(59,130,246,.12),transparent 34%),
-    radial-gradient(circle at 12% 28%,rgba(14,165,233,.06),transparent 28%),
-    linear-gradient(180deg,#091321 0%,#0c1727 48%,#0a1422 100%) !important;
-}
-
-html[data-theme="dark"] main{
-  background:transparent;
-}
-
-html[data-theme="dark"] .hero{
-  background:
-    radial-gradient(circle at 96% 0%,rgba(73,115,195,.14),transparent 34%),
-    linear-gradient(145deg,rgba(14,27,46,.96),rgba(11,23,39,.96)) !important;
-  border-color:#213754 !important;
-  box-shadow:0 16px 40px rgba(0,0,0,.20);
-}
-
-html[data-theme="dark"] .hero h1,
-html[data-theme="dark"] .market-pulse h2,
-html[data-theme="dark"] .section h2,
-html[data-theme="dark"] .feature-copy b,
-html[data-theme="dark"] .stock-name,
-html[data-theme="dark"] .titleline b{
-  color:#f4f8ff !important;
-}
-
-html[data-theme="dark"] .hero p,
-html[data-theme="dark"] .kicker,
-html[data-theme="dark"] .pulse-kicker,
-html[data-theme="dark"] .feature-copy small,
-html[data-theme="dark"] .revenue-card .ticker,
-html[data-theme="dark"] .rev-label,
-html[data-theme="dark"] .status,
-html[data-theme="dark"] .metric-box small{
-  color:#9cafc8 !important;
-}
-
-html[data-theme="dark"] .market-pulse{
-  border:1px solid #223a5a !important;
-  background:
-    radial-gradient(circle at 94% 0%,rgba(61,101,175,.12),transparent 34%),
-    linear-gradient(145deg,#111f34 0%,#0f1c2e 100%) !important;
-  box-shadow:
-    0 18px 46px rgba(0,0,0,.22),
-    inset 0 1px 0 rgba(255,255,255,.02);
-}
-
-html[data-theme="dark"] .pulse-main,
-html[data-theme="dark"] .pulse-stat{
-  border-color:#294361 !important;
-  background:
-    linear-gradient(145deg,#132238,#101d30) !important;
-  box-shadow:none !important;
-}
-
-html[data-theme="dark"] .pulse-main:hover,
-html[data-theme="dark"] .pulse-stat:hover{
-  border-color:#3d5f86 !important;
-  background:
-    linear-gradient(145deg,#162840,#122137) !important;
-}
-
-html[data-theme="dark"] .pulse-label,
-html[data-theme="dark"] .pulse-stat > span,
-html[data-theme="dark"] .pulse-stat small{
-  color:#9db0c9 !important;
-}
-
-html[data-theme="dark"] .pulse-main strong,
-html[data-theme="dark"] .pulse-stat strong{
-  color:#f5f8fd !important;
-}
-
-html[data-theme="dark"] .pulse-live{
-  color:#63e6ad !important;
-  background:rgba(16,185,129,.12) !important;
-  border:1px solid rgba(52,211,153,.15);
-}
-
-html[data-theme="dark"] .pulse-live i{
-  background:#34d399 !important;
-  box-shadow:0 0 0 5px rgba(52,211,153,.10);
-}
-
-/* 深色 feature cards */
-html[data-theme="dark"] .feature-card{
-  border-color:#223957 !important;
-  background:
-    linear-gradient(145deg,#122136 0%,#101c2e 100%) !important;
-  box-shadow:
-    0 14px 32px rgba(0,0,0,.16),
-    inset 0 1px 0 rgba(255,255,255,.025);
-}
-
-html[data-theme="dark"] .feature-card:hover{
-  transform:translateY(-2px);
-  border-color:#385a80 !important;
-  background:
-    linear-gradient(145deg,#16273e 0%,#122036 100%) !important;
-}
-
-html[data-theme="dark"] .feature-index,
-html[data-theme="dark"] .feature-arrow{
-  color:#8397b2 !important;
-}
-
-/* icons 改成較柔和的霧面色 */
-html[data-theme="dark"] .feature-card[data-tone="red"] .feature-icon{
-  color:#ff7b85 !important;
-  background:rgba(255,107,122,.12) !important;
-}
-html[data-theme="dark"] .feature-card[data-tone="amber"] .feature-icon{
-  color:#f7bd62 !important;
-  background:rgba(245,158,11,.12) !important;
-}
-html[data-theme="dark"] .feature-card[data-tone="blue"] .feature-icon{
-  color:#72aaff !important;
-  background:rgba(59,130,246,.13) !important;
-}
-html[data-theme="dark"] .feature-card[data-tone="violet"] .feature-icon{
-  color:#b69cff !important;
-  background:rgba(139,92,246,.13) !important;
-}
-html[data-theme="dark"] .feature-card[data-tone="green"] .feature-icon{
-  color:#5bd3aa !important;
-  background:rgba(16,185,129,.13) !important;
-}
-
-/* 一般卡片與資料區塊 */
-html[data-theme="dark"] .card,
-html[data-theme="dark"] .data-card,
-html[data-theme="dark"] .revenue-card,
-html[data-theme="dark"] .metric-box,
-html[data-theme="dark"] .sector-revenue{
-  background:
-    linear-gradient(145deg,#112035,#0f1c2e) !important;
-  border-color:#243d5b !important;
-  box-shadow:
-    0 14px 32px rgba(0,0,0,.16),
-    inset 0 1px 0 rgba(255,255,255,.02) !important;
-}
-
-/* 深色營收新高：金色，但不要刺眼 */
-html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"]{
-  border-color:rgba(245,185,85,.34) !important;
-  background:
-    radial-gradient(circle at 100% 0%,rgba(245,158,11,.10),transparent 45%),
-    linear-gradient(145deg,#182438,#111d2e) !important;
-}
-
-html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"] > span{
-  color:#eab760 !important;
-}
-
-html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"] > strong{
-  color:#ffd07a !important;
-}
-
-html[data-theme="dark"] .pulse-stat[data-pulse-target="monthlyRevenue"].has-high{
-  border-color:rgba(251,191,36,.58) !important;
-  background:
-    radial-gradient(circle at 100% 0%,rgba(251,191,36,.16),transparent 44%),
-    linear-gradient(145deg,#1d2838,#131f31) !important;
-  box-shadow:
-    0 14px 32px rgba(217,119,6,.10),
-    inset 0 0 0 1px rgba(251,191,36,.05) !important;
-}
-
-html[data-theme="dark"] .revenue-card.record-high{
-  border-color:rgba(251,191,36,.58) !important;
-  background:
-    radial-gradient(circle at 100% 0%,rgba(251,191,36,.15),transparent 40%),
-    linear-gradient(145deg,#1d293a,#121f31) !important;
-  box-shadow:
-    0 16px 36px rgba(217,119,6,.10),
-    inset 0 0 0 1px rgba(251,191,36,.05) !important;
-}
-
-html[data-theme="dark"] .revenue-card.record-high .rev,
-html[data-theme="dark"] .revenue-card.record-high .stock-name{
-  color:#ffd07a !important;
-}
-
-html[data-theme="dark"] .revenue-card .new-high{
-  color:#ffd88b !important;
-  background:rgba(245,158,11,.12) !important;
-  border-color:rgba(251,191,36,.30) !important;
-}
-
-/* tabs / pills */
-html[data-theme="dark"] .tab,
-html[data-theme="dark"] .week-pill,
-html[data-theme="dark"] .badge{
-  color:#aebed2;
-  background:#122137 !important;
-  border-color:#2a4361 !important;
-}
-
-html[data-theme="dark"] .tab.active,
-html[data-theme="dark"] .week-pill.active{
-  color:#f5f8fd !important;
-  background:#1b3353 !important;
-  border-color:#426b98 !important;
-}
-
-/* 表格 */
-html[data-theme="dark"] table{
-  color:#dfe8f5;
-}
-
-html[data-theme="dark"] thead th{
-  color:#92a7c0 !important;
-  background:#101d2f !important;
-  border-bottom-color:#29415e !important;
-}
-
-html[data-theme="dark"] tbody td{
-  border-bottom-color:#1f344e !important;
-}
-
-/* 漲跌色柔化 */
-html[data-theme="dark"] .up{
-  color:#ff737d !important;
-}
-
-html[data-theme="dark"] .down{
-  color:#54d29b !important;
-}
-
-/* header 仍保持深色，但與內容有層次 */
-html[data-theme="dark"] header{
-  background:
-    linear-gradient(180deg,#0c1726 0%,#0d1929 100%) !important;
-  border-bottom-color:#203651 !important;
-}
-
-html[data-theme="dark"] #mobileNav,
-html[data-theme="dark"] .icon-btn{
-  color:#eef4fc !important;
-  background:#15253a !important;
-  border-color:#304964 !important;
-}
-
-/* 返回總覽 */
-html[data-theme="dark"] #backHomeBtn{
-  color:#f3f7fd !important;
-  background:rgba(20,37,58,.94) !important;
-  border-color:#34516e !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.26) !important;
-}
-
-/* Revenue records: amber distinguishes records from red/green price movement */
-#revenueHighFilter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:18px 0}
-.revenue-filter-note,.revenue-pending,.revenue-coverage{font-size:12px;color:var(--muted)}
-.revenue-coverage{display:block;margin-top:8px;line-height:1.5}
-.revenue-high-filter.active{background:#8a5700!important;color:#fff!important;border-color:#8a5700!important}
-.revenue-card.record-high{background:#fff6dc!important;border:2px solid #d5a33c!important;box-shadow:0 4px 18px #a36b0010!important}
-.revenue-card.record-high .stock-name,.revenue-card.record-high .rev{color:#674300!important}
-.revenue-card .new-high{background:#f5d78b!important;color:#593b00!important;white-space:nowrap}
-html[data-theme="dark"] .revenue-card.record-high{background:#342b19!important;border-color:#a88436!important;box-shadow:none!important}
-html[data-theme="dark"] .revenue-card.record-high .stock-name,html[data-theme="dark"] .revenue-card.record-high .rev{color:#ffe1a0!important}
-html[data-theme="dark"] .revenue-card .new-high{background:#594622!important;color:#ffe5ac!important}
