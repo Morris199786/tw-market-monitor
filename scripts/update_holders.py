@@ -249,6 +249,138 @@ def load_display_names():
     return names
 
 
+def normalize_market_date(value):
+    """
+    market history 用 YYYY-MM-DD；
+    TDCC 日期目前多為 YYYYMMDD。
+    統一轉成 YYYY-MM-DD 方便比較。
+    """
+    s = str(value or "").strip()
+
+    if len(s) == 8 and s.isdigit():
+        return (
+            f"{s[:4]}-"
+            f"{s[4:6]}-"
+            f"{s[6:8]}"
+        )
+
+    return s
+
+
+def market_history_snapshots():
+    """
+    載入所有正式收盤 history。
+    本週漲跌幅不使用 market_latest.change_pct，
+    因為那只是單日漲跌幅。
+    """
+    out = []
+
+    files = sorted(
+        (
+            ROOT
+            / "data/history/market"
+        ).glob("*.json")
+    )
+
+    for p in files:
+        d = load_json(p, {})
+
+        stocks = d.get(
+            "stocks",
+            {}
+        )
+
+        date = normalize_market_date(
+            d.get("date")
+            or p.stem
+        )
+
+        if date and stocks:
+            out.append(
+                {
+                    "date": date,
+                    "stocks": stocks
+                }
+            )
+
+    return out
+
+
+def market_snapshot_on_or_before(
+    target_date,
+    snapshots
+):
+    """
+    找 target_date 當天的正式收盤。
+    若 TDCC 日期剛好遇休市日，往前找最近一個交易日。
+    """
+    target = normalize_market_date(
+        target_date
+    )
+
+    valid = [
+        x
+        for x in snapshots
+        if x.get("date")
+        and x["date"] <= target
+    ]
+
+    return (
+        valid[-1]
+        if valid
+        else None
+    )
+
+
+def weekly_price_change_pct(
+    ticker,
+    start_snapshot,
+    end_snapshot
+):
+    """
+    本週漲跌幅 =
+    本期 TDCC 對應交易日收盤 /
+    上期 TDCC 對應交易日收盤 - 1
+
+    回傳百分比，例如 3.16 代表 +3.16%
+    """
+    if (
+        not start_snapshot
+        or not end_snapshot
+    ):
+        return None
+
+    old = (
+        start_snapshot
+        .get("stocks", {})
+        .get(str(ticker), {})
+        .get("price")
+    )
+
+    cur = (
+        end_snapshot
+        .get("stocks", {})
+        .get(str(ticker), {})
+        .get("price")
+    )
+
+    try:
+        old = float(old)
+        cur = float(cur)
+    except Exception:
+        return None
+
+    if old <= 0 or cur <= 0:
+        return None
+
+    return round(
+        (
+            cur / old - 1
+        ) * 100,
+        4
+    )
+
+
 def main():
     rows = normalize_rows(
         fetch_tdcc_distribution()
@@ -312,14 +444,6 @@ def main():
                 prev
             )
 
-    market = load_json(
-        ROOT / "data/market_latest.json",
-        {}
-    ).get(
-        "stocks",
-        {}
-    )
-
     master = load_json(
         ROOT / "data/master.json",
         {}
@@ -339,11 +463,43 @@ def main():
 
     display_names = load_display_names()
 
+    # 正確計算「本週漲跌幅」：
+    # 使用前後兩期 TDCC 日期各自對應的正式收盤價。
+    market_hist = market_history_snapshots()
+
+    price_start = (
+        market_snapshot_on_or_before(
+            prev.get("date"),
+            market_hist
+        )
+        if prev
+        else None
+    )
+
+    price_end = (
+        market_snapshot_on_or_before(
+            date,
+            market_hist
+        )
+        if prev
+        else None
+    )
+
     out = {
         "date": date,
         "previous_date": (
             prev.get("date")
             if prev
+            else None
+        ),
+        "price_change_start_date": (
+            price_start.get("date")
+            if price_start
+            else None
+        ),
+        "price_change_end_date": (
+            price_end.get("date")
+            if price_end
             else None
         ),
         "complete": bool(prev),
@@ -381,9 +537,12 @@ def main():
             ):
                 continue
 
-            q = market.get(
-                t,
-                {}
+            week_change_pct = (
+                weekly_price_change_pct(
+                    t,
+                    price_start,
+                    price_end
+                )
             )
 
             for kind in (
@@ -417,9 +576,7 @@ def main():
                         "ratio": cur,
                         "delta": delta,
                         "week_change_pct": (
-                            q.get(
-                                "change_pct"
-                            )
+                            week_change_pct
                         ),
                         "score": 0
                     }
@@ -466,6 +623,10 @@ def main():
         date,
         "previous",
         out["previous_date"],
+        "weekly-price",
+        out["price_change_start_date"],
+        "->",
+        out["price_change_end_date"],
         "universe",
         len(tech),
         "twse400",
