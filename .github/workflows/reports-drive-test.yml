@@ -17,11 +17,12 @@ jobs:
 
       - name: Authenticate to Google Cloud
         id: auth
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
       - name: List broker report folder
         env:
@@ -33,6 +34,7 @@ jobs:
           import os
           import urllib.parse
           import urllib.request
+          import urllib.error
 
           token = os.environ["ACCESS_TOKEN"]
           folder_id = os.environ["DRIVE_FOLDER_ID"]
@@ -60,8 +62,13 @@ jobs:
               },
           )
 
-          with urllib.request.urlopen(req) as response:
-              data = json.load(response)
+          try:
+              with urllib.request.urlopen(req) as response:
+                  data = json.load(response)
+          except urllib.error.HTTPError as e:
+              print("HTTP", e.code)
+              print(e.read().decode("utf-8", errors="replace"))
+              raise
 
           files = data.get("files", [])
 
