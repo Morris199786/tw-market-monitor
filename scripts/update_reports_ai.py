@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 import requests
 
@@ -19,87 +20,80 @@ REPORTS_PATH = ROOT / "data/reports.json"
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
 
+PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN", "").strip()
+PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY", "").strip()
+
+SITE_URL = os.environ.get(
+    "REPORT_SITE_URL",
+    "https://morris199786.github.io/tw-market-monitor/"
+).rstrip("/") + "/"
+
 API_URL = "https://api.openai.com/v1/responses"
+PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
 
 
-def now_tpe():
+def now_tpe() -> str:
     return datetime.now(TZ).isoformat(timespec="minutes")
 
 
-def load_json(path, default):
-    p = Path(path)
-
-    if not p.exists():
+def load_json(path: Path, default):
+    if not path.exists():
         return default
-
     try:
-        return json.loads(
-            p.read_text(encoding="utf-8")
-        )
+        return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
 
 
-def save_json(path, data):
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-
-    p.write_text(
-        json.dumps(
-            data,
-            ensure_ascii=False,
-            indent=2,
-        ),
+def save_json(path: Path, data) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
 
-def response_text(data):
+def response_text(data: dict) -> str:
     chunks = []
-
     for out in data.get("output", []):
         for c in out.get("content", []):
             if c.get("type") == "output_text":
                 chunks.append(c.get("text", ""))
-
     return "\n".join(chunks).strip()
 
 
-def parse_json_loose(text):
+def parse_json_loose(text: str) -> dict:
     s = (text or "").strip()
 
     if s.startswith("```"):
-        s = re.sub(
-            r"^```(?:json)?\s*",
-            "",
-            s,
-            flags=re.I,
-        )
-        s = re.sub(
-            r"\s*```$",
-            "",
-            s,
-        )
+        s = re.sub(r"^```(?:json)?\s*", "", s, flags=re.I)
+        s = re.sub(r"\s*```$", "", s)
 
     try:
         return json.loads(s)
     except Exception:
         pass
 
-    m = re.search(
-        r"\{.*\}",
-        s,
-        flags=re.S,
-    )
-
+    m = re.search(r"\{.*\}", s, flags=re.S)
     if not m:
-        raise ValueError(
-            "model output did not contain JSON"
-        )
+        raise ValueError("model output did not contain JSON")
 
-    return json.loads(
-        m.group(0)
-    )
+    return json.loads(m.group(0))
+
+
+def clean_list(v, limit=8):
+    if not isinstance(v, list):
+        return []
+
+    out = []
+    for x in v:
+        s = str(x or "").strip()
+        if not s:
+            continue
+        out.append(s)
+        if len(out) >= limit:
+            break
+    return out
 
 
 def normalize_action(v):
@@ -124,126 +118,116 @@ def normalize_action(v):
         "": "none",
     }
 
-    return mapping.get(
-        s,
-        "none",
+    return mapping.get(s, "none")
+
+
+def parse_drive_time(raw: str | None):
+    if not raw:
+        return None
+
+    s = str(raw).strip()
+    try:
+        if s.endswith("Z"):
+            dt = datetime.fromisoformat(s[:-1] + "+00:00")
+        else:
+            dt = datetime.fromisoformat(s)
+
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+
+        return dt.astimezone(TZ)
+    except Exception:
+        return None
+
+
+def received_info(src: dict):
+    dt = parse_drive_time(src.get("modified_time"))
+
+    if dt:
+        return (
+            dt.isoformat(timespec="seconds"),
+            dt.strftime("%Y-%m-%d"),
+        )
+
+    # fallback：第一次匯入時間
+    raw = src.get("ingested_at")
+    try:
+        dt = datetime.fromisoformat(str(raw))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=TZ)
+        dt = dt.astimezone(TZ)
+        return (
+            dt.isoformat(timespec="seconds"),
+            dt.strftime("%Y-%m-%d"),
+        )
+    except Exception:
+        pass
+
+    now = datetime.now(TZ)
+    return (
+        now.isoformat(timespec="seconds"),
+        now.strftime("%Y-%m-%d"),
     )
 
 
-def clean_list(v, limit=8):
-    if not isinstance(v, list):
-        return []
-
-    out = []
-
-    for x in v:
-        s = str(x or "").strip()
-
-        if not s:
-            continue
-
-        out.append(s)
-
-        if len(out) >= limit:
-            break
-
-    return out
-
-
-def normalize_report(obj, src):
-    report_type = str(
-        obj.get("report_type")
-        or "sector"
-    ).strip().lower()
-
-    if report_type not in (
-        "company",
-        "sector",
-        "theme",
-    ):
+def normalize_report(obj: dict, src: dict) -> dict:
+    report_type = str(obj.get("report_type") or "sector").strip().lower()
+    if report_type not in ("company", "sector", "theme"):
         report_type = "sector"
 
-    action = normalize_action(
-        obj.get("action")
-    )
+    action = normalize_action(obj.get("action"))
 
     if report_type != "company" and action == "none":
         action = "sector"
 
     primary = obj.get("primary_stock")
-
     if not isinstance(primary, dict):
         primary = {}
 
-    ticker = str(
-        primary.get("ticker")
-        or ""
-    ).strip()
-
-    name = str(
-        primary.get("name")
-        or ""
-    ).strip()
-
-    rating = str(
-        obj.get("rating")
-        or ""
-    ).strip()
-
-    target_old = obj.get(
-        "target_price_old"
-    )
-
-    target_new = obj.get(
-        "target_price_new"
-    )
+    ticker = str(primary.get("ticker") or "").strip()
+    name = str(primary.get("name") or "").strip()
 
     beneficiaries = []
+    raw_beneficiaries = obj.get("beneficiaries")
+    if isinstance(raw_beneficiaries, list):
+        for x in raw_beneficiaries:
+            if not isinstance(x, dict):
+                continue
 
-    for x in obj.get(
-        "beneficiaries",
-        [],
-    ) if isinstance(
-        obj.get("beneficiaries"),
-        list
-    ) else []:
-        if not isinstance(x, dict):
-            continue
+            beneficiaries.append({
+                "ticker": str(x.get("ticker") or "").strip(),
+                "name": str(x.get("name") or "").strip(),
+                "reason": str(x.get("reason") or "").strip(),
+            })
 
-        beneficiaries.append({
-            "ticker": str(
-                x.get("ticker")
-                or ""
-            ).strip(),
-            "name": str(
-                x.get("name")
-                or ""
-            ).strip(),
-            "reason": str(
-                x.get("reason")
-                or ""
-            ).strip(),
-        })
+            if len(beneficiaries) >= 20:
+                break
 
-        if len(beneficiaries) >= 12:
-            break
+    received_at, group_date = received_info(src)
+
+    push_reason = str(obj.get("push_reason") or "").strip()
+    if not push_reason:
+        summary = clean_list(obj.get("summary"), 1)
+        push_reason = summary[0] if summary else ""
 
     return {
         "id": src.get("drive_file_id"),
         "source_file_id": src.get("drive_file_id"),
         "source_name": src.get("name"),
         "source_url": src.get("drive_url"),
-        "date": (
-            str(
-                obj.get("date")
-                or src.get("report_date")
-                or ""
-            ).strip()
-        ),
-        "broker": str(
-            obj.get("broker")
+
+        # group_date：網站分組用「Drive 收到時間」
+        "group_date": group_date,
+        "received_at": received_at,
+
+        # date：保留報告本身日期
+        "date": str(
+            obj.get("date")
+            or src.get("report_date")
             or ""
         ).strip(),
+
+        "broker": str(obj.get("broker") or "").strip(),
         "report_type": report_type,
         "title": str(
             obj.get("title")
@@ -251,44 +235,31 @@ def normalize_report(obj, src):
             or ""
         ).strip(),
         "action": action,
+
         "ticker": ticker,
         "name": name,
-        "rating": rating,
-        "target_price_old": target_old,
-        "target_price_new": target_new,
-        "summary": clean_list(
-            obj.get("summary"),
-            5,
-        ),
-        "key_points": clean_list(
-            obj.get("key_points"),
-            8,
-        ),
+        "rating": str(obj.get("rating") or "").strip(),
+
+        "target_price_old": obj.get("target_price_old"),
+        "target_price_new": obj.get("target_price_new"),
+
+        "push_reason": push_reason[:80],
+
+        "summary": clean_list(obj.get("summary"), 5),
+        "key_points": clean_list(obj.get("key_points"), 8),
         "beneficiaries": beneficiaries,
-        "risks": clean_list(
-            obj.get("risks"),
-            5,
-        ),
-        "forecast_changes": clean_list(
-            obj.get("forecast_changes"),
-            6,
-        ),
-        "detail": str(
-            obj.get("detail")
-            or ""
-        ).strip(),
+        "risks": clean_list(obj.get("risks"), 5),
+        "forecast_changes": clean_list(obj.get("forecast_changes"), 6),
+
+        "detail": str(obj.get("detail") or "").strip(),
+
         "ai_model": MODEL,
         "ai_processed_at": now_tpe(),
     }
 
 
-def analyze_report(src):
-    text = str(
-        src.get("text")
-        or ""
-    )
-
-    # 足夠涵蓋一般券商報告，同時避免極端超長 PDF
+def analyze_report(src: dict) -> dict:
+    text = str(src.get("text") or "")
     text = text[:160000]
 
     system = """你是台股券商研究報告整理器。
@@ -312,6 +283,7 @@ def analyze_report(src):
 13. detail 用 250~600 字整理全文核心，不要寫成泛泛而談
 14. broker、日期、標題盡量從報告本身辨識；辨識不到可留空
 15. 股票代號若報告明確出現才填
+16. push_reason 是給手機推播看的極短原因，限 15~35 個中文字，直接說明評等/目標價改變的主因；若是產業報告則寫最重要的產業變化，不要寫「報告認為」
 
 固定 JSON 欄位：
 {
@@ -324,6 +296,7 @@ def analyze_report(src):
   "rating": "",
   "target_price_old": null,
   "target_price_new": null,
+  "push_reason": "",
   "summary": [],
   "key_points": [],
   "beneficiaries": [
@@ -375,9 +348,7 @@ Drive 日期：
     r = requests.post(
         API_URL,
         headers={
-            "Authorization": (
-                f"Bearer {OPENAI_API_KEY}"
-            ),
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
             "Content-Type": "application/json",
         },
         json=payload,
@@ -390,29 +361,159 @@ Drive 日期：
             + r.text[:1200]
         )
 
-    data = r.json()
-
-    text_out = response_text(
-        data
-    )
-
     obj = parse_json_loose(
-        text_out
+        response_text(r.json())
     )
 
-    return normalize_report(
-        obj,
-        src,
+    return normalize_report(obj, src)
+
+
+def action_zh(action: str) -> str:
+    return {
+        "upgrade": "上調",
+        "downgrade": "下調",
+        "initiate": "初評",
+        "maintain": "維持",
+        "sector": "產業報告",
+        "none": "研究報告",
+    }.get(action, "研究報告")
+
+
+def target_price_line(report: dict) -> str:
+    old = report.get("target_price_old")
+    new = report.get("target_price_new")
+
+    if old is not None and new is not None:
+        return f"目標價：{old} → {new}"
+
+    if new is not None:
+        return f"目標價：{new}"
+
+    return ""
+
+
+def build_push(report: dict):
+    broker = report.get("broker") or "券商"
+    action = action_zh(report.get("action") or "none")
+    reason = (
+        report.get("push_reason")
+        or (report.get("summary") or [""])[0]
+        or ""
+    ).strip()
+
+    if len(reason) > 72:
+        reason = reason[:72] + "…"
+
+    if report.get("report_type") == "company":
+        name = report.get("name") or ""
+        ticker = report.get("ticker") or ""
+
+        title = "券商報告"
+        first = " ".join(
+            x for x in [
+                broker,
+                action,
+                name,
+                ticker,
+            ] if x
+        )
+
+        lines = [first]
+
+        tp = target_price_line(report)
+        if tp:
+            lines.append(tp)
+
+        if reason:
+            lines.append(f"原因：{reason}")
+
+        message = "\n".join(lines)
+
+    else:
+        title = "券商報告"
+        first = f"{broker}｜{report.get('title') or '產業報告'}"
+
+        lines = [first]
+        if reason:
+            lines.append(f"重點：{reason}")
+
+        message = "\n".join(lines)
+
+    report_id = str(report.get("id") or "")
+    url = (
+        SITE_URL
+        + "?page=reports&report="
+        + quote(report_id, safe="")
     )
+
+    return title, message, url
+
+
+def send_pushover(report: dict) -> bool:
+    if not PUSHOVER_APP_TOKEN or not PUSHOVER_USER_KEY:
+        print("Pushover secrets missing; skip push.")
+        return False
+
+    title, message, url = build_push(report)
+
+    r = requests.post(
+        PUSHOVER_URL,
+        data={
+            "token": PUSHOVER_APP_TOKEN,
+            "user": PUSHOVER_USER_KEY,
+            "title": title,
+            "message": message,
+            "url": url,
+            "url_title": "開啟券商報告",
+        },
+        timeout=30,
+    )
+
+    if r.status_code >= 400:
+        print(
+            "Pushover failed:",
+            r.status_code,
+            r.text[:500],
+        )
+        return False
+
+    data = r.json()
+    ok = data.get("status") == 1
+
+    if not ok:
+        print("Pushover rejected:", data)
+        return False
+
+    print("Pushover sent:", report.get("title"))
+    return True
+
+
+def backfill_dates(items: list[dict], inbox_items: list[dict]) -> None:
+    src_map = {
+        x.get("drive_file_id"): x
+        for x in inbox_items
+        if x.get("drive_file_id")
+    }
+
+    for report in items:
+        if report.get("group_date") and report.get("received_at"):
+            continue
+
+        src = src_map.get(report.get("source_file_id")) or {}
+        received_at, group_date = received_info(src)
+
+        if not report.get("received_at"):
+            report["received_at"] = received_at
+
+        if not report.get("group_date"):
+            report["group_date"] = group_date
 
 
 def main():
     if not OPENAI_API_KEY:
-        print(
-            "OPENAI_API_KEY is missing; "
-            "skip AI report processing."
+        raise RuntimeError(
+            "OPENAI_API_KEY is missing"
         )
-        return
 
     inbox = load_json(
         INBOX_PATH,
@@ -430,10 +531,11 @@ def main():
         },
     )
 
-    items = list(
-        reports.get("items", [])
-        or []
-    )
+    inbox_items = inbox.get("items", []) or []
+    items = list(reports.get("items", []) or [])
+
+    # 舊資料補上「收到日期」，舊報告不會被覆蓋
+    backfill_dates(items, inbox_items)
 
     by_source = {
         x.get("source_file_id"): x
@@ -444,15 +546,11 @@ def main():
     processed = 0
     failed = 0
 
-    for src in inbox.get(
-        "items",
-        [],
-    ):
+    for src in inbox_items:
         if src.get("status") != "pending_ai":
             continue
 
         file_id = src.get("drive_file_id")
-
         if not file_id:
             continue
 
@@ -460,27 +558,17 @@ def main():
             src["status"] = "done"
             continue
 
-        print(
-            "AI processing:",
-            src.get("name"),
-        )
+        print("AI processing:", src.get("name"))
 
         try:
-            report = analyze_report(
-                src
-            )
+            report = analyze_report(src)
 
-            items.append(
-                report
-            )
+            items.append(report)
             by_source[file_id] = report
 
             src["status"] = "done"
             src["ai_processed_at"] = now_tpe()
-            src.pop(
-                "ai_error",
-                None,
-            )
+            src.pop("ai_error", None)
 
             processed += 1
 
@@ -492,17 +580,30 @@ def main():
 
         except Exception as e:
             failed += 1
+
             src["ai_error"] = str(e)[:1000]
             src["ai_last_attempt_at"] = now_tpe()
 
-            print(
-                "  ERROR:",
-                repr(e),
-            )
+            print("  ERROR:", repr(e))
 
+    # Pushover：
+    # 尚未 push_sent_at 的報告會送一次
+    # 失敗不標記，下次 15 分鐘排程自動重試
+    pushed = 0
+
+    for report in items:
+        if report.get("push_sent_at"):
+            continue
+
+        if send_pushover(report):
+            report["push_sent_at"] = now_tpe()
+            pushed += 1
+
+    # 網站用「收到日期」排序，同一天再依收到時間排序
     items.sort(
         key=lambda x: (
-            x.get("date") or "",
+            x.get("group_date") or "",
+            x.get("received_at") or "",
             x.get("ai_processed_at") or "",
         ),
         reverse=True,
@@ -512,25 +613,19 @@ def main():
     reports["updated_at"] = now_tpe()
     reports["_help"] = (
         "由 Google Drive 券商報告自動整理。"
-        "action: upgrade/downgrade/initiate/"
-        "maintain/sector/none"
+        "group_date 使用 Drive 收到日期做網站分組；"
+        "date 保留報告本身日期。"
     )
 
     inbox["updated_at"] = now_tpe()
 
-    save_json(
-        REPORTS_PATH,
-        reports,
-    )
-
-    save_json(
-        INBOX_PATH,
-        inbox,
-    )
+    save_json(REPORTS_PATH, reports)
+    save_json(INBOX_PATH, inbox)
 
     print(
         f"AI processed={processed}, "
         f"failed={failed}, "
+        f"pushed={pushed}, "
         f"reports={len(items)}"
     )
 
