@@ -1,14 +1,16 @@
 from sources import *
+import json
 import os
 import re
 
-VERSION = "2026-09-26-v7-forward-monitor"
+VERSION = "2026-09-28-v8-telegram"
 
 TWSE_NEWS = f"{TWSE}/opendata/t187ap04_L"
 TPEX_NEWS = f"{TPEX}/mopsfin_t187ap04_O"
 
-# 從新版架構啟用日開始，只收未來新公告
 MONITOR_START_DATE = "2026-09-26"
+
+SITE_URL = "https://morris199786.github.io/tw-market-monitor/"
 
 SUBJECT_KEYWORDS = (
     "自結",
@@ -91,7 +93,7 @@ def roc_to_iso(s):
 
     m = re.search(
         r"(20\d{2})[/-](\d{1,2})[/-](\d{1,2})",
-        raw
+        raw,
     )
     if m:
         return (
@@ -102,7 +104,7 @@ def roc_to_iso(s):
 
     m = re.search(
         r"(\d{2,3})[/-](\d{1,2})[/-](\d{1,2})",
-        raw
+        raw,
     )
     if m:
         return (
@@ -131,7 +133,7 @@ def clean_time(s):
 
     m = re.search(
         r"(\d{1,2}):(\d{2})(?::(\d{2}))?",
-        raw
+        raw,
     )
     if m:
         return (
@@ -253,7 +255,7 @@ def identity(x):
             re.sub(
                 r"\s+",
                 "",
-                str(x.get("subject") or "")
+                str(x.get("subject") or ""),
             ),
         ]
     )
@@ -266,7 +268,6 @@ def fetch_source(market, url):
             timeout=45,
             tries=5,
         )
-
     except Exception as e:
         return {
             "market": market,
@@ -338,7 +339,7 @@ def fetch_source(market, url):
 
         if not is_self_report(
             subject,
-            detail
+            detail,
         ):
             continue
 
@@ -354,7 +355,6 @@ def fetch_source(market, url):
             )
         )
 
-        # 新架構只收 9/26 之後的公告
         if (
             not publish_date
             or publish_date < MONITOR_START_DATE
@@ -408,18 +408,16 @@ def fetch_source(market, url):
 def send_pushover(title, message):
     token = os.getenv(
         "PUSHOVER_APP_TOKEN",
-        ""
+        "",
     ).strip()
 
     user = os.getenv(
         "PUSHOVER_USER_KEY",
-        ""
+        "",
     ).strip()
 
     if not token or not user:
-        print(
-            "pushover secrets missing; skip push"
-        )
+        print("pushover secrets missing; skip push")
         return False
 
     try:
@@ -439,10 +437,60 @@ def send_pushover(title, message):
         return True
 
     except Exception as e:
-        print(
-            "pushover failed",
-            repr(e)
+        print("pushover failed", repr(e))
+        return False
+
+
+def send_telegram(title, message, url):
+    token = os.getenv(
+        "TELEGRAM_BOT_TOKEN",
+        "",
+    ).strip()
+
+    chat_id = os.getenv(
+        "TELEGRAM_CHAT_ID",
+        "",
+    ).strip()
+
+    if not token or not chat_id:
+        print("telegram secrets missing; skip telegram")
+        return False
+
+    text = f"{title}\n{message}"
+
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": True,
+        "reply_markup": json.dumps(
+            {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "開啟台股市場監測",
+                            "url": url,
+                        }
+                    ]
+                ]
+            },
+            ensure_ascii=False,
+        ),
+    }
+
+    try:
+        r = S.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            data=payload,
+            timeout=30,
         )
+
+        r.raise_for_status()
+
+        data = r.json()
+        return bool(data.get("ok"))
+
+    except Exception as e:
+        print("telegram failed", repr(e))
         return False
 
 
@@ -482,15 +530,14 @@ def main():
 
     old = load_json(
         history_path,
-        {}
+        {},
     )
 
-    # 只保留新版架構開始後的資料
     saved = {}
 
     for x in old.get(
         "items",
-        []
+        [],
     ):
         d = str(
             x.get("publish_date")
@@ -512,11 +559,11 @@ def main():
     results = [
         fetch_source(
             "twse",
-            TWSE_NEWS
+            TWSE_NEWS,
         ),
         fetch_source(
             "tpex",
-            TPEX_NEWS
+            TPEX_NEWS,
         ),
     ]
 
@@ -526,8 +573,6 @@ def main():
         if x["ok"]
     ]
 
-    # 兩個來源同時掛掉時直接讓 workflow 失敗，
-    # 不會假裝成功，也不會覆蓋舊資料
     if not ok_sources:
         for x in results:
             print(
@@ -557,8 +602,6 @@ def main():
         for x in result["items"]:
             key = identity(x)
             fresh.append(x)
-
-            # 新資料覆蓋舊版本
             saved[key] = x
 
     items = list(
@@ -576,27 +619,58 @@ def main():
 
     sent_data = load_json(
         sent_path,
-        {}
+        {},
     )
 
-    sent = set(
+    pushover_sent = set(
         sent_data.get(
             "ids",
-            []
+            [],
         )
+    )
+
+    # 第一次啟用 Telegram 時，以目前已發過 Pushover 的紀錄當基準
+    # 避免一次補發全部歷史通知
+    if "telegram_ids" in sent_data:
+        telegram_sent = set(
+            sent_data.get(
+                "telegram_ids",
+                [],
+            )
+        )
+    else:
+        telegram_sent = set(
+            pushover_sent
+        )
+
+    page_url = (
+        SITE_URL
+        + "?page=selfReports"
     )
 
     for x in fresh:
         key = identity(x)
+        title = "自結公布"
+        msg = push_text(x)
 
-        if key in sent:
-            continue
+        if key not in pushover_sent:
+            if send_pushover(
+                title,
+                msg,
+            ):
+                pushover_sent.add(
+                    key
+                )
 
-        if send_pushover(
-            "自結公布",
-            push_text(x),
-        ):
-            sent.add(key)
+        if key not in telegram_sent:
+            if send_telegram(
+                title,
+                msg,
+                page_url,
+            ):
+                telegram_sent.add(
+                    key
+                )
 
     updated_at = (
         now_tpe()
@@ -619,7 +693,12 @@ def main():
         sent_path,
         {
             "updated_at": updated_at,
-            "ids": list(sent)[-2000:],
+            "ids": list(
+                pushover_sent
+            )[-2000:],
+            "telegram_ids": list(
+                telegram_sent
+            )[-2000:],
         },
     )
 

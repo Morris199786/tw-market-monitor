@@ -1,10 +1,13 @@
 from sources import *
+import json
 import os
 import re
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
 TPEX_REV = f"{TPEX}/mopsfin_t187ap05_O"
+
+SITE_URL = "https://morris199786.github.io/tw-market-monitor/"
 
 
 def parse_roc_month(s):
@@ -178,7 +181,7 @@ def fetch_market(url, market):
 def load_sector_map():
     d = load_json(
         ROOT / "data/sectors.json",
-        {}
+        {},
     )
 
     ticker_names = {}
@@ -186,7 +189,7 @@ def load_sector_map():
 
     for sec in d.get(
         "sectors",
-        []
+        [],
     ):
         name = str(
             sec.get("name")
@@ -197,7 +200,7 @@ def load_sector_map():
 
         for x in sec.get(
             "stocks",
-            []
+            [],
         ):
             t = str(
                 x.get("ticker")
@@ -235,12 +238,12 @@ def load_sector_map():
 def send_pushover(title, message):
     token = os.getenv(
         "PUSHOVER_APP_TOKEN",
-        ""
+        "",
     ).strip()
 
     user = os.getenv(
         "PUSHOVER_USER_KEY",
-        ""
+        "",
     ).strip()
 
     if not token or not user:
@@ -267,7 +270,62 @@ def send_pushover(title, message):
     except Exception as e:
         print(
             "pushover failed",
-            repr(e)
+            repr(e),
+        )
+        return False
+
+
+def send_telegram(title, message, url):
+    token = os.getenv(
+        "TELEGRAM_BOT_TOKEN",
+        "",
+    ).strip()
+
+    chat_id = os.getenv(
+        "TELEGRAM_CHAT_ID",
+        "",
+    ).strip()
+
+    if not token or not chat_id:
+        print(
+            "telegram secrets missing; "
+            "skip telegram"
+        )
+        return False
+
+    try:
+        r = S.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            data={
+                "chat_id": chat_id,
+                "text": f"{title}\n{message}",
+                "disable_web_page_preview": True,
+                "reply_markup": json.dumps(
+                    {
+                        "inline_keyboard": [
+                            [
+                                {
+                                    "text": "開啟月營收",
+                                    "url": url,
+                                }
+                            ]
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+            timeout=30,
+        )
+
+        r.raise_for_status()
+        return bool(
+            r.json().get("ok")
+        )
+
+    except Exception as e:
+        print(
+            "telegram failed",
+            repr(e),
         )
         return False
 
@@ -339,14 +397,32 @@ def main():
 
     sent_data = load_json(
         sent_path,
-        {}
+        {},
     )
 
-    sent = set(
+    pushover_sent = set(
         sent_data.get(
             "ids",
-            []
+            [],
         )
+    )
+
+    # 第一次加 Telegram 時，不補發以前已經 Pushover 過的月營收
+    if "telegram_ids" in sent_data:
+        telegram_sent = set(
+            sent_data.get(
+                "telegram_ids",
+                [],
+            )
+        )
+    else:
+        telegram_sent = set(
+            pushover_sent
+        )
+
+    page_url = (
+        SITE_URL
+        + "?page=monthlyRevenue"
     )
 
     for x in rows:
@@ -372,35 +448,41 @@ def main():
             or t
         )
 
-        # 月營收 MoM > 10% 才推播
-        # 每檔每月只推一次，避免同一家公司重複通知
         push_id = (
             f"mom10|{latest_month}|{t}"
         )
 
-        if (
-            mom > 10
-            and push_id not in sent
-        ):
-            # 推播標題直接帶公司與 MoM，鎖定螢幕就能先看到重點
-            title = (
-                f"月營收｜{x['name']} {t}｜"
-                f"MoM {mom:+.2f}%"
-            )
+        if mom <= 10:
+            continue
 
-            # 使用者要求固定顯示：月營收數字、MoM、YoY
-            msg = (
-                f"{latest_month} 月營收\n"
-                f"月營收：{rev:.2f} 億元\n"
-                f"MoM：{mom:+.2f}%\n"
-                f"YoY：{yoy:+.2f}%"
-            )
+        title = (
+            f"月營收｜{x['name']} {t}｜"
+            f"MoM {mom:+.2f}%"
+        )
 
+        msg = (
+            f"{latest_month} 月營收\n"
+            f"月營收：{rev:.2f} 億元\n"
+            f"MoM：{mom:+.2f}%\n"
+            f"YoY：{yoy:+.2f}%"
+        )
+
+        if push_id not in pushover_sent:
             if send_pushover(
                 title,
                 msg,
             ):
-                sent.add(
+                pushover_sent.add(
+                    push_id
+                )
+
+        if push_id not in telegram_sent:
+            if send_telegram(
+                title,
+                msg,
+                page_url,
+            ):
+                telegram_sent.add(
                     push_id
                 )
 
@@ -417,7 +499,10 @@ def main():
                 "monthly revenue MoM > 10%"
             ),
             "ids": list(
-                sent
+                pushover_sent
+            )[-500:],
+            "telegram_ids": list(
+                telegram_sent
             )[-500:],
         },
     )
@@ -441,14 +526,12 @@ def main():
             )
 
         if arr:
-            # 資料檔先依 MoM 高到低排
-            # 前端預設依族群顯示，使用者可切換 MoM 排序
             arr.sort(
                 key=lambda x:
                     float(
                         x.get(
                             "mom",
-                            0
+                            0,
                         )
                         or 0
                     ),
