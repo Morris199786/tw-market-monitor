@@ -906,8 +906,187 @@
     );
   }
 
+  function highlightNotificationTarget(
+    el
+  ) {
+    if (!el) return;
+
+    el.classList.add(
+      "report-deep-highlight"
+    );
+
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    setTimeout(
+      () => {
+        el.classList.remove(
+          "report-deep-highlight"
+        );
+      },
+      4500
+    );
+  }
+
+  function findSelfReportCard(
+    ticker,
+    date,
+    time
+  ) {
+    return [
+      ...document.querySelectorAll(
+        "#selfReportCards .self-report-card"
+      )
+    ].find(
+      card => {
+        const cardTicker =
+          card.querySelector(
+            ".titleline span"
+          )?.textContent
+            ?.trim() || "";
+
+        const eyebrow =
+          card.querySelector(
+            ".eyebrow"
+          )?.textContent
+            ?.replace(/\s+/g, " ")
+            .trim() || "";
+
+        const tickerOk =
+          !ticker ||
+          cardTicker === ticker;
+
+        const dateOk =
+          !date ||
+          eyebrow.includes(
+            date
+          );
+
+        const timeOk =
+          !time ||
+          eyebrow.includes(
+            time
+          );
+
+        return (
+          tickerOk &&
+          dateOk &&
+          timeOk
+        );
+      }
+    );
+  }
+
+  function findRevenueCard(
+    ticker
+  ) {
+    return [
+      ...document.querySelectorAll(
+        "#revenueSections .revenue-card"
+      )
+    ].find(
+      card =>
+        (
+          card.querySelector(
+            ".ticker"
+          )?.textContent
+            ?.trim() || ""
+        ) === ticker
+    );
+  }
+
+  function setupNotificationDeepLink() {
+    const params =
+      new URLSearchParams(
+        location.search
+      );
+
+    const requestedPage =
+      params.get("page");
+
+    if (
+      requestedPage !== "selfReports" &&
+      requestedPage !== "monthlyRevenue"
+    ) {
+      return;
+    }
+
+    if (
+      typeof window.page === "function"
+    ) {
+      window.page(
+        requestedPage
+      );
+    }
+
+    const ticker =
+      params.get("ticker") || "";
+
+    const date =
+      params.get("date") || "";
+
+    const time =
+      params.get("time") || "";
+
+    let tries = 0;
+
+    const timer =
+      setInterval(
+        () => {
+          tries += 1;
+
+          let target = null;
+
+          if (
+            requestedPage ===
+            "selfReports"
+          ) {
+            target =
+              findSelfReportCard(
+                ticker,
+                date,
+                time
+              );
+          }
+
+          if (
+            requestedPage ===
+            "monthlyRevenue"
+          ) {
+            target =
+              findRevenueCard(
+                ticker
+              );
+          }
+
+          if (target) {
+            clearInterval(
+              timer
+            );
+
+            highlightNotificationTarget(
+              target
+            );
+
+            return;
+          }
+
+          if (tries >= 20) {
+            clearInterval(
+              timer
+            );
+          }
+        },
+        250
+      );
+  }
+
   async function boot() {
     reorderNavigation();
+
+    setupNotificationDeepLink();
 
     protectReportRenderer();
 
