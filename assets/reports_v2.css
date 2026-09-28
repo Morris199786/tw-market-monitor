@@ -397,3 +397,29 @@ html[data-theme="dark"] .report-deep-highlight{
     padding:0 2px;
   }
 }
+
+/* 目標價調整顏色：台股慣例紅漲綠跌 */
+.report-target-up{
+  color:#dc2626 !important;
+  border-color:rgba(220,38,38,.22) !important;
+  background:rgba(220,38,38,.07) !important;
+}
+
+.report-target-down{
+  color:#059669 !important;
+  border-color:rgba(5,150,105,.22) !important;
+  background:rgba(5,150,105,.07) !important;
+}
+
+html[data-theme="dark"] .report-target-up{
+  color:#ff7b7b !important;
+  border-color:rgba(255,123,123,.24) !important;
+  background:rgba(255,123,123,.09) !important;
+}
+
+html[data-theme="dark"] .report-target-down{
+  color:#65d6a7 !important;
+  border-color:rgba(101,214,167,.24) !important;
+  background:rgba(101,214,167,.09) !important;
+}
+
