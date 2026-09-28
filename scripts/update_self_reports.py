@@ -2,6 +2,7 @@ from sources import *
 import json
 import os
 import re
+from urllib.parse import urlencode
 
 VERSION = "2026-09-28-v8-telegram"
 
@@ -405,7 +406,7 @@ def fetch_source(market, url):
     }
 
 
-def send_pushover(title, message):
+def send_pushover(title, message, url):
     token = os.getenv(
         "PUSHOVER_APP_TOKEN",
         "",
@@ -429,6 +430,8 @@ def send_pushover(title, message):
                 "title": title,
                 "message": message,
                 "priority": 0,
+                "url": url,
+                "url_title": "開啟這筆自結",
             },
             timeout=30,
         )
@@ -643,20 +646,29 @@ def main():
             pushover_sent
         )
 
-    page_url = (
-        SITE_URL
-        + "?page=selfReports"
-    )
-
     for x in fresh:
         key = identity(x)
         title = "自結公布"
         msg = push_text(x)
 
+        page_url = (
+            SITE_URL
+            + "?"
+            + urlencode(
+                {
+                    "page": "selfReports",
+                    "ticker": x.get("ticker") or "",
+                    "date": x.get("publish_date") or "",
+                    "time": x.get("publish_time") or "",
+                }
+            )
+        )
+
         if key not in pushover_sent:
             if send_pushover(
                 title,
                 msg,
+                page_url,
             ):
                 pushover_sent.add(
                     key

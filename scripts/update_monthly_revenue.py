@@ -2,6 +2,7 @@ from sources import *
 import json
 import os
 import re
+from urllib.parse import urlencode
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
@@ -235,7 +236,7 @@ def load_sector_map():
     return sectors, ticker_names
 
 
-def send_pushover(title, message):
+def send_pushover(title, message, url):
     token = os.getenv(
         "PUSHOVER_APP_TOKEN",
         "",
@@ -262,6 +263,8 @@ def send_pushover(title, message):
                 "title": title,
                 "message": message,
                 "priority": 0,
+                "url": url,
+                "url_title": "開啟這筆月營收",
             },
             timeout=30,
         )
@@ -420,11 +423,6 @@ def main():
             pushover_sent
         )
 
-    page_url = (
-        SITE_URL
-        + "?page=monthlyRevenue"
-    )
-
     for x in rows:
         t = x["ticker"]
         rev = float(
@@ -467,10 +465,23 @@ def main():
             f"YoY：{yoy:+.2f}%"
         )
 
+        page_url = (
+            SITE_URL
+            + "?"
+            + urlencode(
+                {
+                    "page": "monthlyRevenue",
+                    "ticker": t,
+                    "month": latest_month,
+                }
+            )
+        )
+
         if push_id not in pushover_sent:
             if send_pushover(
                 title,
                 msg,
+                page_url,
             ):
                 pushover_sent.add(
                     push_id
