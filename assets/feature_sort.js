@@ -1,97 +1,95 @@
 /* =========================================================
-   首頁功能卡片自訂排序 V2
-   - iPhone / iPad Safari 拖曳修正版
-   - Android / Desktop 支援
+   首頁功能卡片自訂排序 V3
+   - 點「自訂排序」後開啟排序面板
+   - 手機 / 平板 / 電腦：上下拖曳排序
+   - 完成後套用首頁卡片順序
    - localStorage 保存
-   - 左右邊緣自動捲動
+   - 可恢復預設排序
    ========================================================= */
 
 (function () {
-  const STORAGE_KEY =
-    "tw-feature-order-v2";
+  const STORAGE_KEY = "tw-feature-order-v3";
 
-  let editing = false;
+  const DEFAULT_ORDER = [
+    "heat",
+    "selfReports",
+    "flows",
+    "volume",
+    "turnover",
+    "marginLending",
+    "ai",
+    "reports",
+    "holders",
+    "monthlyRevenue"
+  ];
 
-  let draggingCard = null;
+  let workingOrder = [];
+  let dragId = null;
+  let dragEl = null;
 
-  let touchDragging = false;
-
-  let mouseDragging = false;
-
-  let lastX = 0;
-  let lastY = 0;
-
-  let autoScrollFrame = null;
-
-  let autoScrollDirection = 0;
-
-  const AUTO_SCROLL_EDGE = 70;
-
-  const AUTO_SCROLL_SPEED = 8;
-
-
-  function $(
-    selector,
-    root = document
-  ) {
-    return root.querySelector(
-      selector
-    );
+  function $(selector, root = document) {
+    return root.querySelector(selector);
   }
 
-
-  function $$(
-    selector,
-    root = document
-  ) {
+  function $$(selector, root = document) {
     return [
-      ...root.querySelectorAll(
-        selector
-      )
+      ...root.querySelectorAll(selector)
     ];
   }
 
-
-  function getRail() {
+  function rail() {
     return document.getElementById(
       "featureRail"
     );
   }
 
+  function cards() {
+    const box = rail();
 
-  function getCards() {
-    const rail =
-      getRail();
-
-    if (!rail) {
+    if (!box) {
       return [];
     }
 
     return $$(
       ".feature-card[data-feature]",
-      rail
+      box
     );
   }
 
+  function featureMeta() {
+    const map = new Map();
 
-  function defaultOrder() {
-    return [
-      "heat",
-      "selfReports",
-      "flows",
-      "volume",
-      "turnover",
-      "marginLending",
-      "ai",
-      "reports",
-      "holders",
-      "monthlyRevenue"
-    ];
+    cards().forEach(card => {
+      const id =
+        card.dataset.feature;
+
+      const name =
+        card.querySelector(
+          ".feature-copy b"
+        )?.textContent?.trim() ||
+        id;
+
+      const subtitle =
+        card.querySelector(
+          ".feature-copy small"
+        )?.textContent?.trim() ||
+        "";
+
+      map.set(
+        id,
+        {
+          id,
+          name,
+          subtitle
+        }
+      );
+    });
+
+    return map;
   }
 
-
   function currentOrder() {
-    return getCards()
+    return cards()
       .map(
         card =>
           card.dataset.feature
@@ -99,8 +97,7 @@
       .filter(Boolean);
   }
 
-
-  function readOrder() {
+  function readSavedOrder() {
     try {
       const raw =
         localStorage.getItem(
@@ -114,25 +111,19 @@
       const parsed =
         JSON.parse(raw);
 
-      return Array.isArray(
-        parsed
-      )
+      return Array.isArray(parsed)
         ? parsed
         : null;
-
     } catch (e) {
       return null;
     }
   }
 
-
-  function saveOrder() {
+  function saveOrder(order) {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(
-          currentOrder()
-        )
+        JSON.stringify(order)
       );
     } catch (e) {
       console.warn(
@@ -142,20 +133,37 @@
     }
   }
 
+  function normalizedOrder(order) {
+    const actual =
+      currentOrder();
+
+    const valid =
+      (order || [])
+        .filter(
+          id =>
+            actual.includes(id)
+        );
+
+    actual.forEach(id => {
+      if (
+        !valid.includes(id)
+      ) {
+        valid.push(id);
+      }
+    });
+
+    return valid;
+  }
 
   function updateIndexes() {
-    getCards()
-      .forEach(
-        (card, index) => {
-          const badge =
-            card.querySelector(
-              ".feature-index"
-            );
+    cards().forEach(
+      (card, index) => {
+        const badge =
+          card.querySelector(
+            ".feature-index"
+          );
 
-          if (!badge) {
-            return;
-          }
-
+        if (badge) {
           badge.textContent =
             String(
               index + 1
@@ -164,87 +172,57 @@
               "0"
             );
         }
-      );
+      }
+    );
   }
 
+  function applyOrder(order) {
+    const box = rail();
 
-  function applyOrder(
-    order
-  ) {
-    const rail =
-      getRail();
-
-    if (
-      !rail ||
-      !Array.isArray(
-        order
-      )
-    ) {
+    if (!box) {
       return;
     }
 
-    const cards =
+    const byId =
       new Map(
-        getCards()
-          .map(
-            card => [
-              card.dataset.feature,
-              card
-            ]
-          )
+        cards().map(
+          card => [
+            card.dataset.feature,
+            card
+          ]
+        )
       );
 
-    order.forEach(
-      id => {
+    normalizedOrder(order)
+      .forEach(id => {
         const card =
-          cards.get(id);
+          byId.get(id);
 
-        if (!card) {
-          return;
+        if (card) {
+          box.appendChild(
+            card
+          );
         }
-
-        rail.appendChild(
-          card
-        );
-
-        cards.delete(id);
-      }
-    );
-
-    /*
-      新功能如果沒有存在舊排序中
-      自動接到最後面
-    */
-    cards.forEach(
-      card => {
-        rail.appendChild(
-          card
-        );
-      }
-    );
+      });
 
     updateIndexes();
   }
 
-
-  function restoreSavedOrder() {
+  function restoreOrder() {
     const saved =
-      readOrder();
+      readSavedOrder();
 
     if (saved) {
-      applyOrder(
-        saved
-      );
+      applyOrder(saved);
     } else {
       updateIndexes();
     }
   }
 
-
   function injectStyles() {
     if (
       document.getElementById(
-        "featureSortStyles"
+        "featureSortV3Styles"
       )
     ) {
       return;
@@ -256,135 +234,314 @@
       );
 
     style.id =
-      "featureSortStyles";
+      "featureSortV3Styles";
 
     style.textContent = `
-
-      .feature-sort-bar{
+      .feature-sort-bar-v3{
         display:flex;
         align-items:center;
         justify-content:space-between;
         gap:12px;
-        margin:
-          0
-          2px
-          10px;
+        margin:0 2px 10px;
       }
 
-      .feature-sort-label{
+      .feature-sort-title-v3{
         display:flex;
         align-items:center;
         gap:8px;
         min-width:0;
       }
 
-      .feature-sort-label strong{
+      .feature-sort-title-v3 strong{
         color:var(--ink);
         font-size:14px;
         font-weight:900;
       }
 
-      .feature-sort-label small{
+      .feature-sort-title-v3 small{
         color:var(--muted);
         font-size:10px;
       }
 
-      .feature-sort-actions{
-        display:flex;
-        align-items:center;
-        gap:7px;
-        flex:0 0 auto;
-      }
-
-      .feature-sort-btn{
+      .feature-sort-open-v3{
         appearance:none;
         -webkit-appearance:none;
+        border:1px solid var(--line);
+        background:var(--card);
+        color:var(--ink);
+        border-radius:999px;
+        padding:8px 12px;
+        font-size:11px;
+        line-height:1;
+        font-weight:800;
+        cursor:pointer;
+        box-shadow:
+          0 4px 12px
+          rgba(15,23,42,.05);
+      }
+
+      .feature-sort-backdrop-v3{
+        position:fixed;
+        inset:0;
+        z-index:9998;
+        background:
+          rgba(15,23,42,.38);
+        backdrop-filter:
+          blur(6px);
+        -webkit-backdrop-filter:
+          blur(6px);
+        opacity:0;
+        pointer-events:none;
+        transition:
+          opacity .18s ease;
+      }
+
+      .feature-sort-backdrop-v3.show{
+        opacity:1;
+        pointer-events:auto;
+      }
+
+      .feature-sort-sheet-v3{
+        position:fixed;
+        left:50%;
+        bottom:0;
+        z-index:9999;
+
+        width:
+          min(
+            560px,
+            100%
+          );
+
+        max-height:
+          min(
+            82vh,
+            760px
+          );
+
+        transform:
+          translate(
+            -50%,
+            105%
+          );
+
+        background:
+          var(--card);
+
+        border:
+          1px solid
+          var(--line);
+
+        border-bottom:0;
+
+        border-radius:
+          24px
+          24px
+          0
+          0;
+
+        box-shadow:
+          0
+          -18px
+          60px
+          rgba(
+            15,
+            23,
+            42,
+            .18
+          );
+
+        overflow:hidden;
+
+        transition:
+          transform
+          .24s
+          cubic-bezier(
+            .2,
+            .8,
+            .2,
+            1
+          );
+      }
+
+      .feature-sort-sheet-v3.show{
+        transform:
+          translate(
+            -50%,
+            0
+          );
+      }
+
+      .feature-sort-handle-v3{
+        width:44px;
+        height:5px;
+
+        border-radius:
+          999px;
+
+        background:
+          rgba(
+            127,
+            127,
+            127,
+            .28
+          );
+
+        margin:
+          10px
+          auto
+          4px;
+      }
+
+      .feature-sort-sheet-head-v3{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+
+        gap:12px;
+
+        padding:
+          12px
+          18px
+          14px;
+
+        border-bottom:
+          1px
+          solid
+          var(--line);
+      }
+
+      .feature-sort-sheet-head-v3 h3{
+        margin:0;
+
+        color:
+          var(--ink);
+
+        font-size:
+          18px;
+
+        line-height:
+          1.2;
+      }
+
+      .feature-sort-sheet-head-v3 p{
+        margin:
+          5px
+          0
+          0;
+
+        color:
+          var(--muted);
+
+        font-size:
+          11px;
+
+        line-height:
+          1.5;
+      }
+
+      .feature-sort-close-v3{
+        flex:
+          0 0 auto;
+
+        width:34px;
+        height:34px;
+
         border:
           1px
           solid
           var(--line);
+
+        border-radius:
+          50%;
+
         background:
-          var(--card);
+          var(--soft);
+
         color:
           var(--ink);
-        border-radius:
-          999px;
-        padding:
-          8px
-          12px;
+
         font-size:
-          11px;
-        line-height:
-          1;
-        font-weight:
-          800;
-        cursor:
-          pointer;
+          18px;
+
+        display:grid;
+        place-items:center;
+
+        cursor:pointer;
+      }
+
+      .feature-sort-list-v3{
+        position:relative;
+
+        overflow-y:auto;
+
+        overscroll-behavior:
+          contain;
+
+        max-height:
+          calc(
+            min(
+              82vh,
+              760px
+            )
+            - 185px
+          );
+
+        padding:
+          12px
+          14px
+          16px;
+
+        -webkit-overflow-scrolling:
+          touch;
+      }
+
+      .feature-sort-row-v3{
+        display:flex;
+        align-items:center;
+
+        gap:12px;
+
+        min-height:
+          58px;
+
+        padding:
+          9px
+          10px;
+
+        margin-bottom:
+          8px;
+
+        border:
+          1px
+          solid
+          var(--line);
+
+        border-radius:
+          15px;
+
+        background:
+          var(--card);
+
+        color:
+          var(--ink);
+
         box-shadow:
           0
-          4px
-          12px
+          5px
+          14px
           rgba(
             15,
             23,
             42,
             .04
           );
-      }
 
-      .feature-sort-btn.is-primary{
-        background:
-          #111827;
-        border-color:
-          #111827;
-        color:
-          #fff;
-      }
-
-      .feature-sort-btn.is-reset{
-        display:none;
-        color:
-          var(--muted);
-      }
-
-      .feature-sort-bar.is-editing
-      .feature-sort-btn.is-reset{
-        display:inline-flex;
-      }
-
-      .feature-sort-tip{
-        display:none;
-        margin:
-          -2px
-          2px
-          10px;
-        color:
-          var(--muted);
-        font-size:
-          10px;
-      }
-
-      .feature-sort-tip.show{
-        display:block;
-      }
-
-      /*
-        編輯模式
-      */
-
-      #featureRail.feature-sort-editing{
-        scroll-snap-type:none;
-        touch-action:none;
-        overscroll-behavior-x:contain;
-      }
-
-      #featureRail.feature-sort-editing
-      .feature-card{
-        cursor:grab;
         user-select:none;
         -webkit-user-select:none;
         -webkit-touch-callout:none;
-        border-style:dashed;
+
+        touch-action:none;
 
         transition:
           transform
@@ -395,152 +552,203 @@
           ease,
           opacity
           .12s
+          ease,
+          border-color
+          .12s
           ease;
       }
 
-      #featureRail.feature-sort-editing
-      .feature-card:hover{
-        transform:none;
+      .feature-sort-row-v3:last-child{
+        margin-bottom:0;
       }
 
-      #featureRail.feature-sort-editing
-      .feature-card:active{
-        transform:none;
+      .feature-sort-row-v3.dragging{
+        opacity:.72;
+
+        transform:
+          scale(.985);
+
+        border-color:
+          rgba(
+            59,
+            130,
+            246,
+            .45
+          );
+
+        box-shadow:
+          0
+          10px
+          28px
+          rgba(
+            15,
+            23,
+            42,
+            .14
+          );
       }
 
-      /*
-        拖曳把手
-      */
+      .feature-sort-grip-v3{
+        flex:
+          0 0 auto;
 
-      #featureRail.feature-sort-editing
-      .feature-card::before{
-        content:"☰";
-
-        position:absolute;
-
-        right:12px;
-
-        bottom:10px;
-
-        z-index:8;
-
-        width:30px;
-
-        height:30px;
-
-        display:grid;
-
-        place-items:center;
+        width:34px;
+        height:34px;
 
         border-radius:
-          9px;
+          10px;
 
         background:
-          rgba(
-            127,
-            127,
-            127,
-            .10
-          );
+          var(--soft);
+
+        color:
+          var(--muted);
+
+        display:grid;
+        place-items:center;
+
+        font-size:
+          18px;
+
+        line-height:
+          1;
+
+        cursor:
+          grab;
+      }
+
+      .feature-sort-row-v3.dragging
+      .feature-sort-grip-v3{
+        cursor:
+          grabbing;
+      }
+
+      .feature-sort-row-copy-v3{
+        flex:1;
+        min-width:0;
+      }
+
+      .feature-sort-row-copy-v3 strong{
+        display:block;
+
+        font-size:
+          14px;
+
+        line-height:
+          1.25;
+      }
+
+      .feature-sort-row-copy-v3 small{
+        display:block;
+
+        margin-top:
+          3px;
 
         color:
           var(--muted);
 
         font-size:
-          14px;
+          10px;
+      }
+
+      .feature-sort-number-v3{
+        flex:
+          0 0 auto;
+
+        width:
+          28px;
+
+        color:
+          var(--muted);
+
+        text-align:
+          right;
+
+        font-size:
+          10px;
 
         font-weight:
           900;
+
+        letter-spacing:
+          .05em;
       }
 
-      #featureRail.feature-sort-editing
-      .feature-arrow{
-        display:none;
-      }
+      .feature-sort-sheet-foot-v3{
+        display:grid;
 
-      /*
-        正在拖
-      */
+        grid-template-columns:
+          1fr
+          1.35fr;
 
-      #featureRail
-      .feature-card.is-dragging{
-        opacity:.66;
+        gap:
+          10px;
 
-        cursor:grabbing;
-
-        border-style:solid;
-
-        transform:
-          scale(.96);
-
-        box-shadow:
-          0
-          18px
-          42px
-          rgba(
-            15,
-            23,
-            42,
-            .18
+        padding:
+          12px
+          14px
+          calc(
+            12px
+            + env(
+                safe-area-inset-bottom
+              )
           );
+
+        border-top:
+          1px
+          solid
+          var(--line);
+
+        background:
+          var(--card);
       }
 
-      /*
-        插入位置
-      */
+      .feature-sort-action-v3{
+        appearance:none;
+        -webkit-appearance:none;
 
-      #featureRail
-      .feature-card.is-drop-before{
-        box-shadow:
-          -5px
-          0
-          0
-          rgba(
-            59,
-            130,
-            246,
-            .72
-          ),
-          0
-          10px
-          26px
-          rgba(
-            15,
-            23,
-            42,
-            .08
-          );
+        border:
+          1px
+          solid
+          var(--line);
+
+        border-radius:
+          14px;
+
+        min-height:
+          44px;
+
+        font-size:
+          12px;
+
+        font-weight:
+          900;
+
+        cursor:
+          pointer;
       }
 
-      #featureRail
-      .feature-card.is-drop-after{
-        box-shadow:
-          5px
-          0
-          0
-          rgba(
-            59,
-            130,
-            246,
-            .72
-          ),
-          0
-          10px
-          26px
-          rgba(
-            15,
-            23,
-            42,
-            .08
-          );
+      .feature-sort-reset-v3{
+        background:
+          var(--soft);
+
+        color:
+          var(--muted);
       }
 
-      /*
-        深色模式
-      */
+      .feature-sort-save-v3{
+        background:
+          #111827;
+
+        border-color:
+          #111827;
+
+        color:
+          #fff;
+      }
 
       [data-theme="dark"]
-      .feature-sort-btn.is-primary{
+      .feature-sort-save-v3{
         background:
           #e5e7eb;
 
@@ -551,27 +759,148 @@
           #111827;
       }
 
-      [data-theme="dark"]
-      #featureRail.feature-sort-editing
-      .feature-card::before{
+      .feature-sort-toast-v3{
+        position:fixed;
+
+        left:50%;
+
+        bottom:
+          calc(
+            28px
+            + env(
+                safe-area-inset-bottom
+              )
+          );
+
+        z-index:
+          10020;
+
+        transform:
+          translate(
+            -50%,
+            20px
+          );
+
         background:
+          #111827;
+
+        color:
+          #fff;
+
+        border-radius:
+          999px;
+
+        padding:
+          10px
+          14px;
+
+        font-size:
+          11px;
+
+        font-weight:
+          800;
+
+        opacity:
+          0;
+
+        pointer-events:
+          none;
+
+        transition:
+          opacity
+          .18s
+          ease,
+          transform
+          .18s
+          ease;
+
+        box-shadow:
+          0
+          12px
+          34px
           rgba(
-            255,
-            255,
-            255,
-            .10
+            15,
+            23,
+            42,
+            .22
           );
       }
 
-      @media(
-        max-width:700px
-      ){
+      .feature-sort-toast-v3.show{
+        opacity:1;
 
-        .feature-sort-label small{
+        transform:
+          translate(
+            -50%,
+            0
+          );
+      }
+
+      body.feature-sort-lock-v3{
+        overflow:
+          hidden
+          !important;
+
+        touch-action:
+          none;
+      }
+
+      @media (
+        min-width:
+          720px
+      ){
+        .feature-sort-sheet-v3{
+          bottom:50%;
+
+          border-bottom:
+            1px
+            solid
+            var(--line);
+
+          border-radius:
+            24px;
+
+          transform:
+            translate(
+              -50%,
+              60%
+            );
+
+          opacity:
+            0;
+
+          pointer-events:
+            none;
+        }
+
+        .feature-sort-sheet-v3.show{
+          transform:
+            translate(
+              -50%,
+              50%
+            );
+
+          opacity:
+            1;
+
+          pointer-events:
+            auto;
+        }
+
+        .feature-sort-handle-v3{
+          display:none;
+        }
+      }
+
+      @media (
+        max-width:
+          700px
+      ){
+        .feature-sort-title-v3 small{
           display:none;
         }
 
-        .feature-sort-btn{
+        .feature-sort-open-v3{
           padding:
             8px
             11px;
@@ -579,34 +908,24 @@
           font-size:
             10px;
         }
-
-        .feature-sort-tip{
-          font-size:
-            9px;
-        }
-
       }
-
     `;
 
-    document.head
-      .appendChild(
-        style
-      );
+    document.head.appendChild(
+      style
+    );
   }
 
-
   function ensureToolbar() {
-    const rail =
-      getRail();
+    const box = rail();
 
-    if (!rail) {
+    if (!box) {
       return;
     }
 
     if (
       document.getElementById(
-        "featureSortBar"
+        "featureSortBarV3"
       )
     ) {
       return;
@@ -618,19 +937,17 @@
       );
 
     bar.id =
-      "featureSortBar";
+      "featureSortBarV3";
 
     bar.className =
-      "feature-sort-bar";
+      "feature-sort-bar-v3";
 
     bar.innerHTML = `
-
       <div
         class="
-          feature-sort-label
+          feature-sort-title-v3
         "
       >
-
         <strong>
           功能列表
         </strong>
@@ -638,21 +955,124 @@
         <small>
           可依個人習慣調整順序
         </small>
-
       </div>
+
+      <button
+        type="button"
+        id="featureSortOpenV3"
+        class="
+          feature-sort-open-v3
+        "
+      >
+        自訂排序
+      </button>
+    `;
+
+    box.parentNode.insertBefore(
+      bar,
+      box
+    );
+
+    $("#featureSortOpenV3")
+      ?.addEventListener(
+        "click",
+        openSheet
+      );
+  }
+
+  function ensureSheet() {
+    if (
+      document.getElementById(
+        "featureSortSheetV3"
+      )
+    ) {
+      return;
+    }
+
+    const backdrop =
+      document.createElement(
+        "div"
+      );
+
+    backdrop.id =
+      "featureSortBackdropV3";
+
+    backdrop.className =
+      "feature-sort-backdrop-v3";
+
+    const sheet =
+      document.createElement(
+        "section"
+      );
+
+    sheet.id =
+      "featureSortSheetV3";
+
+    sheet.className =
+      "feature-sort-sheet-v3";
+
+    sheet.setAttribute(
+      "role",
+      "dialog"
+    );
+
+    sheet.setAttribute(
+      "aria-modal",
+      "true"
+    );
+
+    sheet.innerHTML = `
+      <div
+        class="
+          feature-sort-handle-v3
+        "
+      ></div>
 
       <div
         class="
-          feature-sort-actions
+          feature-sort-sheet-head-v3
         "
       >
+        <div>
+          <h3>
+            自訂功能順序
+          </h3>
+
+          <p>
+            按住左側 ☰ 上下拖曳，完成後首頁會立即套用
+          </p>
+        </div>
 
         <button
           type="button"
-          id="featureSortReset"
+          id="featureSortCloseV3"
           class="
-            feature-sort-btn
-            is-reset
+            feature-sort-close-v3
+          "
+          aria-label="關閉"
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        id="featureSortListV3"
+        class="
+          feature-sort-list-v3
+        "
+      ></div>
+
+      <div
+        class="
+          feature-sort-sheet-foot-v3
+        "
+      >
+        <button
+          type="button"
+          id="featureSortResetV3"
+          class="
+            feature-sort-action-v3
+            feature-sort-reset-v3
           "
         >
           恢復預設
@@ -660,737 +1080,599 @@
 
         <button
           type="button"
-          id="featureSortToggle"
+          id="featureSortSaveV3"
           class="
-            feature-sort-btn
+            feature-sort-action-v3
+            feature-sort-save-v3
           "
         >
-          自訂排序
+          完成並儲存
         </button>
-
       </div>
-
     `;
 
-
-    const tip =
+    const toast =
       document.createElement(
         "div"
       );
 
-    tip.id =
-      "featureSortTip";
+    toast.id =
+      "featureSortToastV3";
 
-    tip.className =
-      "feature-sort-tip";
+    toast.className =
+      "feature-sort-toast-v3";
 
-    tip.textContent =
-      "按住卡片後左右拖曳，放開即可調整順序";
+    toast.textContent =
+      "排序已儲存";
 
+    document.body.appendChild(
+      backdrop
+    );
 
-    rail.parentNode
-      .insertBefore(
-        bar,
-        rail
+    document.body.appendChild(
+      sheet
+    );
+
+    document.body.appendChild(
+      toast
+    );
+
+    backdrop.addEventListener(
+      "click",
+      closeSheet
+    );
+
+    $("#featureSortCloseV3")
+      ?.addEventListener(
+        "click",
+        closeSheet
       );
 
-
-    rail.parentNode
-      .insertBefore(
-        tip,
-        rail
-      );
-
-
-    $("#featureSortToggle")
+    $("#featureSortResetV3")
       ?.addEventListener(
         "click",
         () => {
-          setEditing(
-            !editing
-          );
-        }
-      );
-
-
-    $("#featureSortReset")
-      ?.addEventListener(
-        "click",
-        () => {
-          localStorage
-            .removeItem(
-              STORAGE_KEY
+          workingOrder =
+            normalizedOrder(
+              DEFAULT_ORDER
             );
 
-          applyOrder(
-            defaultOrder()
-          );
+          renderList();
+        }
+      );
 
-          saveOrder();
+    $("#featureSortSaveV3")
+      ?.addEventListener(
+        "click",
+        () => {
+          const next =
+            normalizedOrder(
+              workingOrder
+            );
+
+          applyOrder(next);
+
+          saveOrder(next);
+
+          closeSheet();
+
+          showToast();
         }
       );
   }
 
-
-  function clearDropMarks() {
-    getCards()
-      .forEach(
-        card => {
-          card.classList.remove(
-            "is-drop-before",
-            "is-drop-after"
-          );
-        }
-      );
-  }
-
-
-  function cardAtPoint(
-    x,
-    y
-  ) {
-    const el =
-      document.elementFromPoint(
-        x,
-        y
+  function renderList() {
+    const list =
+      document.getElementById(
+        "featureSortListV3"
       );
 
-    return el
-      ?.closest(
-        ".feature-card[data-feature]"
-      )
-      || null;
-  }
-
-
-  function moveCardAtPoint(
-    x,
-    y
-  ) {
-    if (!draggingCard) {
+    if (!list) {
       return;
     }
 
-    clearDropMarks();
+    const meta =
+      featureMeta();
+
+    list.innerHTML =
+      workingOrder
+        .map(
+          (id, index) => {
+            const item =
+              meta.get(id);
+
+            if (!item) {
+              return "";
+            }
+
+            return `
+              <div
+                class="
+                  feature-sort-row-v3
+                "
+                data-sort-id="${id}"
+              >
+                <div
+                  class="
+                    feature-sort-grip-v3
+                  "
+                  aria-hidden="true"
+                >
+                  ☰
+                </div>
+
+                <div
+                  class="
+                    feature-sort-row-copy-v3
+                  "
+                >
+                  <strong>
+                    ${item.name}
+                  </strong>
+
+                  ${
+                    item.subtitle
+                      ? `
+                        <small>
+                          ${item.subtitle}
+                        </small>
+                      `
+                      : ""
+                  }
+                </div>
+
+                <span
+                  class="
+                    feature-sort-number-v3
+                  "
+                >
+                  ${
+                    String(
+                      index + 1
+                    ).padStart(
+                      2,
+                      "0"
+                    )
+                  }
+                </span>
+              </div>
+            `;
+          }
+        )
+        .join("");
+
+    bindRows();
+  }
+
+  function openSheet() {
+    ensureSheet();
+
+    workingOrder =
+      normalizedOrder(
+        readSavedOrder() ||
+        currentOrder()
+      );
+
+    renderList();
+
+    document.body
+      .classList.add(
+        "feature-sort-lock-v3"
+      );
+
+    requestAnimationFrame(
+      () => {
+        $("#featureSortBackdropV3")
+          ?.classList.add(
+            "show"
+          );
+
+        $("#featureSortSheetV3")
+          ?.classList.add(
+            "show"
+          );
+      }
+    );
+  }
+
+  function closeSheet() {
+    finishDrag();
+
+    $("#featureSortBackdropV3")
+      ?.classList.remove(
+        "show"
+      );
+
+    $("#featureSortSheetV3")
+      ?.classList.remove(
+        "show"
+      );
+
+    document.body
+      .classList.remove(
+        "feature-sort-lock-v3"
+      );
+  }
+
+  function showToast() {
+    const toast =
+      $("#featureSortToastV3");
+
+    if (!toast) {
+      return;
+    }
+
+    toast.classList.add(
+      "show"
+    );
+
+    clearTimeout(
+      toast._timer
+    );
+
+    toast._timer =
+      setTimeout(
+        () => {
+          toast.classList.remove(
+            "show"
+          );
+        },
+        1500
+      );
+  }
+
+  function rowAtY(y) {
+    const list =
+      $("#featureSortListV3");
+
+    if (!list) {
+      return null;
+    }
+
+    const rows =
+      $$(
+        ".feature-sort-row-v3",
+        list
+      );
+
+    for (
+      const row of rows
+    ) {
+      const rect =
+        row.getBoundingClientRect();
+
+      if (
+        y >= rect.top &&
+        y <= rect.bottom
+      ) {
+        return row;
+      }
+    }
+
+    return null;
+  }
+
+  function updateWorkingOrderFromDom() {
+    const list =
+      $("#featureSortListV3");
+
+    if (!list) {
+      return;
+    }
+
+    workingOrder =
+      $$(
+        ".feature-sort-row-v3",
+        list
+      )
+        .map(
+          row =>
+            row.dataset.sortId
+        )
+        .filter(Boolean);
+
+    $$(
+      ".feature-sort-row-v3",
+      list
+    )
+      .forEach(
+        (row, index) => {
+          const num =
+            row.querySelector(
+              ".feature-sort-number-v3"
+            );
+
+          if (num) {
+            num.textContent =
+              String(
+                index + 1
+              ).padStart(
+                2,
+                "0"
+              );
+          }
+        }
+      );
+  }
+
+  function autoScrollList(y) {
+    const list =
+      $("#featureSortListV3");
+
+    if (!list) {
+      return;
+    }
+
+    const rect =
+      list.getBoundingClientRect();
+
+    const edge =
+      54;
+
+    if (
+      y <
+      rect.top +
+      edge
+    ) {
+      list.scrollTop -=
+        12;
+    } else if (
+      y >
+      rect.bottom -
+      edge
+    ) {
+      list.scrollTop +=
+        12;
+    }
+  }
+
+  function moveDrag(y) {
+    if (!dragEl) {
+      return;
+    }
+
+    autoScrollList(y);
 
     const target =
-      cardAtPoint(
-        x,
-        y
-      );
+      rowAtY(y);
 
     if (
       !target ||
-      target ===
-        draggingCard
+      target === dragEl
     ) {
       return;
     }
 
-    const rail =
-      getRail();
+    const list =
+      $("#featureSortListV3");
 
-    if (!rail) {
+    if (!list) {
       return;
     }
 
     const rect =
       target.getBoundingClientRect();
 
-    const midpoint =
-      rect.left +
-      rect.width / 2;
-
     const before =
-      x <
-      midpoint;
-
+      y <
+      rect.top +
+      rect.height / 2;
 
     if (before) {
-
-      target.classList.add(
-        "is-drop-before"
-      );
-
-      rail.insertBefore(
-        draggingCard,
+      list.insertBefore(
+        dragEl,
         target
       );
-
     } else {
-
-      target.classList.add(
-        "is-drop-after"
-      );
-
-      rail.insertBefore(
-        draggingCard,
+      list.insertBefore(
+        dragEl,
         target.nextSibling
       );
-
     }
 
-    updateIndexes();
+    updateWorkingOrderFromDom();
   }
 
+  function startDrag(
+    id,
+    row
+  ) {
+    dragId =
+      id;
 
-  /* ======================================================
-     自動左右捲動
-     ====================================================== */
+    dragEl =
+      row;
 
-  function stopAutoScroll() {
-    autoScrollDirection =
-      0;
-
-    if (
-      autoScrollFrame
-    ) {
-      cancelAnimationFrame(
-        autoScrollFrame
-      );
-
-      autoScrollFrame =
-        null;
-    }
-  }
-
-
-  function autoScrollLoop() {
-    const rail =
-      getRail();
-
-    if (
-      !rail ||
-      !autoScrollDirection
-    ) {
-      stopAutoScroll();
-
-      return;
-    }
-
-    rail.scrollLeft +=
-      autoScrollDirection *
-      AUTO_SCROLL_SPEED;
-
-    moveCardAtPoint(
-      lastX,
-      lastY
+    row.classList.add(
+      "dragging"
     );
 
-    autoScrollFrame =
-      requestAnimationFrame(
-        autoScrollLoop
-      );
-  }
-
-
-  function updateAutoScroll(
-    x
-  ) {
-    const rail =
-      getRail();
-
-    if (!rail) {
-      return;
-    }
-
-    const rect =
-      rail.getBoundingClientRect();
-
-    let nextDirection =
-      0;
-
     if (
-      x <
-      rect.left +
-      AUTO_SCROLL_EDGE
+      navigator.vibrate
     ) {
-      nextDirection = -1;
-    }
-
-    else if (
-      x >
-      rect.right -
-      AUTO_SCROLL_EDGE
-    ) {
-      nextDirection = 1;
-    }
-
-
-    if (
-      nextDirection ===
-      autoScrollDirection
-    ) {
-      return;
-    }
-
-
-    stopAutoScroll();
-
-    autoScrollDirection =
-      nextDirection;
-
-
-    if (
-      autoScrollDirection
-    ) {
-      autoScrollFrame =
-        requestAnimationFrame(
-          autoScrollLoop
+      try {
+        navigator.vibrate(
+          20
         );
+      } catch (e) {}
     }
   }
-
-
-  /* ======================================================
-     Touch
-     ====================================================== */
-
-  function touchStart(
-    event,
-    card
-  ) {
-    if (!editing) {
-      return;
-    }
-
-    if (
-      !event.touches ||
-      event.touches.length !== 1
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    const touch =
-      event.touches[0];
-
-    draggingCard =
-      card;
-
-    touchDragging =
-      true;
-
-    lastX =
-      touch.clientX;
-
-    lastY =
-      touch.clientY;
-
-    card.classList.add(
-      "is-dragging"
-    );
-
-    document.body.style
-      .overscrollBehavior =
-      "none";
-  }
-
-
-  function touchMove(
-    event
-  ) {
-    if (
-      !editing ||
-      !touchDragging ||
-      !draggingCard
-    ) {
-      return;
-    }
-
-    if (
-      !event.touches ||
-      !event.touches.length
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const touch =
-      event.touches[0];
-
-    lastX =
-      touch.clientX;
-
-    lastY =
-      touch.clientY;
-
-    moveCardAtPoint(
-      lastX,
-      lastY
-    );
-
-    updateAutoScroll(
-      lastX
-    );
-  }
-
-
-  function touchEnd(
-    event
-  ) {
-    if (
-      !touchDragging
-    ) {
-      return;
-    }
-
-    event?.preventDefault?.();
-
-    finishDrag();
-  }
-
-
-  /* ======================================================
-     Mouse / Desktop
-     ====================================================== */
-
-  function mouseDown(
-    event,
-    card
-  ) {
-    if (!editing) {
-      return;
-    }
-
-    if (
-      event.button !== 0
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    draggingCard =
-      card;
-
-    mouseDragging =
-      true;
-
-    lastX =
-      event.clientX;
-
-    lastY =
-      event.clientY;
-
-    card.classList.add(
-      "is-dragging"
-    );
-  }
-
-
-  function mouseMove(
-    event
-  ) {
-    if (
-      !editing ||
-      !mouseDragging ||
-      !draggingCard
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-
-    lastX =
-      event.clientX;
-
-    lastY =
-      event.clientY;
-
-    moveCardAtPoint(
-      lastX,
-      lastY
-    );
-
-    updateAutoScroll(
-      lastX
-    );
-  }
-
-
-  function mouseUp() {
-    if (
-      !mouseDragging
-    ) {
-      return;
-    }
-
-    finishDrag();
-  }
-
-
-  /* ======================================================
-     結束拖曳
-     ====================================================== */
 
   function finishDrag() {
-    stopAutoScroll();
-
-    if (
-      draggingCard
-    ) {
-      draggingCard
-        .classList.remove(
-          "is-dragging"
-        );
+    if (dragEl) {
+      dragEl.classList.remove(
+        "dragging"
+      );
     }
 
-    clearDropMarks();
-
-    draggingCard =
+    dragId =
       null;
 
-    touchDragging =
-      false;
+    dragEl =
+      null;
 
-    mouseDragging =
-      false;
-
-    document.body.style
-      .overscrollBehavior =
-      "";
-
-    updateIndexes();
-
-    saveOrder();
+    updateWorkingOrderFromDom();
   }
 
+  function bindRows() {
+    const list =
+      $("#featureSortListV3");
 
-  /* ======================================================
-     卡片綁定
-     ====================================================== */
-
-  function bindCard(
-    card
-  ) {
-    if (
-      card.dataset.sortBound ===
-      "1"
-    ) {
+    if (!list) {
       return;
     }
 
-    card.dataset.sortBound =
-      "1";
+    $$(
+      ".feature-sort-row-v3",
+      list
+    )
+      .forEach(row => {
+        const grip =
+          row.querySelector(
+            ".feature-sort-grip-v3"
+          );
 
+        if (!grip) {
+          return;
+        }
 
-    /*
-      編輯模式時
-      不要進入功能頁
-    */
-    card.addEventListener(
-      "click",
+        grip.addEventListener(
+          "touchstart",
+          event => {
+            if (
+              event.touches.length !==
+              1
+            ) {
+              return;
+            }
+
+            event.preventDefault();
+
+            startDrag(
+              row.dataset.sortId,
+              row
+            );
+          },
+          {
+            passive:false
+          }
+        );
+
+        grip.addEventListener(
+          "mousedown",
+          event => {
+            if (
+              event.button !== 0
+            ) {
+              return;
+            }
+
+            event.preventDefault();
+
+            startDrag(
+              row.dataset.sortId,
+              row
+            );
+          }
+        );
+      });
+
+    list.addEventListener(
+      "touchmove",
       event => {
-
-        if (!editing) {
+        if (
+          !dragEl ||
+          !event.touches.length
+        ) {
           return;
         }
 
         event.preventDefault();
-        event.stopImmediatePropagation();
 
+        moveDrag(
+          event.touches[0]
+            .clientY
+        );
       },
-      true
-    );
-
-
-    /*
-      iPhone / iPad
-    */
-    card.addEventListener(
-      "touchstart",
-      event =>
-        touchStart(
-          event,
-          card
-        ),
       {
         passive:false
       }
     );
 
+    list.addEventListener(
+      "touchend",
+      event => {
+        if (!dragEl) {
+          return;
+        }
 
-    /*
-      Desktop
-    */
-    card.addEventListener(
-      "mousedown",
-      event =>
-        mouseDown(
-          event,
-          card
-        )
+        event.preventDefault();
+
+        finishDrag();
+      },
+      {
+        passive:false
+      }
+    );
+
+    list.addEventListener(
+      "touchcancel",
+      () => {
+        finishDrag();
+      },
+      {
+        passive:false
+      }
+    );
+
+    document.addEventListener(
+      "mousemove",
+      event => {
+        if (!dragEl) {
+          return;
+        }
+
+        event.preventDefault();
+
+        moveDrag(
+          event.clientY
+        );
+      }
+    );
+
+    document.addEventListener(
+      "mouseup",
+      () => {
+        if (!dragEl) {
+          return;
+        }
+
+        finishDrag();
+      }
     );
   }
-
-
-  function bindCards() {
-    getCards()
-      .forEach(
-        bindCard
-      );
-  }
-
-
-  /* ======================================================
-     編輯模式
-     ====================================================== */
-
-  function setEditing(
-    next
-  ) {
-    editing =
-      Boolean(
-        next
-      );
-
-    const rail =
-      getRail();
-
-    const bar =
-      document.getElementById(
-        "featureSortBar"
-      );
-
-    const tip =
-      document.getElementById(
-        "featureSortTip"
-      );
-
-    const toggle =
-      document.getElementById(
-        "featureSortToggle"
-      );
-
-
-    rail?.classList.toggle(
-      "feature-sort-editing",
-      editing
-    );
-
-
-    bar?.classList.toggle(
-      "is-editing",
-      editing
-    );
-
-
-    tip?.classList.toggle(
-      "show",
-      editing
-    );
-
-
-    if (toggle) {
-
-      toggle.classList.toggle(
-        "is-primary",
-        editing
-      );
-
-      toggle.textContent =
-        editing
-          ? "完成"
-          : "自訂排序";
-
-    }
-
-
-    if (!editing) {
-
-      finishDrag();
-
-      saveOrder();
-
-    }
-  }
-
-
-  /* ======================================================
-     啟動
-     ====================================================== */
 
   function boot() {
-    const rail =
-      getRail();
+    const box =
+      rail();
 
-    if (!rail) {
+    if (!box) {
       return;
     }
-
 
     injectStyles();
 
     ensureToolbar();
 
-    restoreSavedOrder();
-
-    bindCards();
-
-
-    /*
-      全域 touchmove
-      iOS Safari 上比綁在單一卡片穩
-    */
-
-    document.addEventListener(
-      "touchmove",
-      touchMove,
-      {
-        passive:false
-      }
-    );
-
-
-    document.addEventListener(
-      "touchend",
-      touchEnd,
-      {
-        passive:false
-      }
-    );
-
-
-    document.addEventListener(
-      "touchcancel",
-      touchEnd,
-      {
-        passive:false
-      }
-    );
-
-
-    document.addEventListener(
-      "mousemove",
-      mouseMove
-    );
-
-
-    document.addEventListener(
-      "mouseup",
-      mouseUp
-    );
-
-
-    /*
-      如果 ui_v2.js 重新產生卡片
-      自動重新綁定
-    */
+    restoreOrder();
 
     const observer =
       new MutationObserver(
         mutations => {
-
           const changed =
             mutations.some(
               mutation =>
-                mutation
-                  .addedNodes
+                mutation.addedNodes
                   .length
             );
 
@@ -1400,41 +1682,25 @@
 
           setTimeout(
             () => {
-
-              restoreSavedOrder();
-
-              bindCards();
-
-              if (editing) {
-
-                rail.classList.add(
-                  "feature-sort-editing"
-                );
-
-              }
-
+              restoreOrder();
             },
             0
           );
-
         }
       );
 
-
     observer.observe(
-      rail,
+      box,
       {
         childList:true
       }
     );
   }
 
-
   if (
     document.readyState ===
     "loading"
   ) {
-
     document.addEventListener(
       "DOMContentLoaded",
       () => {
@@ -1444,14 +1710,10 @@
         );
       }
     );
-
   } else {
-
     setTimeout(
       boot,
       0
     );
-
   }
-
 })();
