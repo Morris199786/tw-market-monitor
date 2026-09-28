@@ -1,10 +1,10 @@
 /* =========================================================
-   首頁功能排序 V4
-   Handle-only vertical drag
-   - 左側 ☰ 拖曳
-   - 排序清單與下方功能卡同步
-   - iPhone / iPad / Desktop
-   - localStorage 儲存
+   首頁功能排序 V4 FIX
+   - 保留 V4 檔名與 index 引用
+   - 修正 iPhone 拖曳卡住
+   - 拿掉會互相打架的 MutationObserver
+   - 全域 pointerup / pointercancel 保證解除拖曳
+   - 拖曳時清單與下方功能卡同步更新
    ========================================================= */
 
 (function () {
@@ -29,11 +29,15 @@
   let dragRow = null;
   let dragGhost = null;
 
-  let pointerOffsetY = 0;
+  let activePointerId = null;
 
+  let pointerOffsetY = 0;
   let currentY = 0;
 
-  let autoScrollTimer = null;
+  let autoScrollFrame = null;
+  let autoScrollSpeed = 0;
+
+  let orderBeforeEdit = [];
 
 
   /* -------------------------------------------------------
@@ -157,6 +161,7 @@
           ) {
             result.push(id);
           }
+
         }
       );
 
@@ -168,6 +173,7 @@
         ) {
           result.push(id);
         }
+
       }
     );
 
@@ -188,7 +194,9 @@
       }
 
       const parsed =
-        JSON.parse(raw);
+        JSON.parse(
+          raw
+        );
 
       return Array.isArray(
         parsed
@@ -234,7 +242,10 @@
   function updateCardNumbers() {
     getCards()
       .forEach(
-        (card, index) => {
+        (
+          card,
+          index
+        ) => {
 
           const num =
             card.querySelector(
@@ -250,6 +261,7 @@
                 "0"
               );
           }
+
         }
       );
   }
@@ -293,6 +305,7 @@
               card
             );
           }
+
         }
       );
 
@@ -331,7 +344,6 @@
       return;
     }
 
-
     const style =
       document.createElement(
         "style"
@@ -340,22 +352,14 @@
     style.id =
       "featureSortV4Styles";
 
-
     style.textContent = `
-
-      /* =========================
-         Toolbar
-      ========================= */
 
       .feature-sort-head-v4{
         display:flex;
         align-items:center;
         justify-content:space-between;
         gap:12px;
-        margin:
-          0
-          2px
-          10px;
+        margin:0 2px 10px;
       }
 
       .feature-sort-head-copy-v4{
@@ -407,7 +411,8 @@
         font-weight:
           850;
 
-        cursor:pointer;
+        cursor:
+          pointer;
 
         box-shadow:
           0
@@ -422,20 +427,11 @@
       }
 
       .feature-sort-toggle-v4.active{
-        background:
-          #111827;
-
-        border-color:
-          #111827;
-
-        color:
-          #fff;
+        background:#111827;
+        border-color:#111827;
+        color:#fff;
       }
 
-
-      /* =========================
-         Sort panel
-      ========================= */
 
       .feature-sort-panel-v4{
         display:none;
@@ -480,22 +476,14 @@
         display:flex;
         align-items:center;
         justify-content:space-between;
-
         gap:10px;
-
-        margin-bottom:
-          10px;
+        margin-bottom:10px;
       }
 
       .feature-sort-tip-v4 span{
-        color:
-          var(--muted);
-
-        font-size:
-          10px;
-
-        line-height:
-          1.4;
+        color:var(--muted);
+        font-size:10px;
+        line-height:1.4;
       }
 
 
@@ -503,23 +491,16 @@
         appearance:none;
         -webkit-appearance:none;
 
-        flex:
-          0 0 auto;
+        flex:0 0 auto;
 
-        border:
-          0;
+        border:0;
 
-        background:
-          transparent;
+        background:transparent;
 
-        color:
-          var(--muted);
+        color:var(--muted);
 
-        font-size:
-          10px;
-
-        font-weight:
-          800;
+        font-size:10px;
+        font-weight:800;
 
         padding:
           6px
@@ -528,10 +509,6 @@
         cursor:pointer;
       }
 
-
-      /* =========================
-         List
-      ========================= */
 
       .feature-sort-list-v4{
         display:flex;
@@ -546,11 +523,9 @@
         display:flex;
         align-items:center;
 
-        min-height:
-          52px;
+        min-height:52px;
 
-        gap:
-          11px;
+        gap:11px;
 
         padding:
           7px
@@ -584,25 +559,23 @@
           );
 
         transition:
-          transform
-          .12s
-          ease,
           box-shadow
-          .12s
+          .10s
           ease,
           border-color
-          .12s
+          .10s
+          ease,
+          opacity
+          .10s
           ease;
       }
 
 
-      /* =========================
-         Handle
-      ========================= */
-
       .feature-sort-handle-v4{
         flex:
-          0 0 auto;
+          0
+          0
+          auto;
 
         width:
           38px;
@@ -652,21 +625,13 @@
 
 
       .feature-sort-handle-v4:active{
-        cursor:
-          grabbing;
+        cursor:grabbing;
       }
 
 
-      /* =========================
-         Row copy
-      ========================= */
-
       .feature-sort-row-copy-v4{
-        flex:
-          1;
-
-        min-width:
-          0;
+        flex:1;
+        min-width:0;
       }
 
       .feature-sort-row-copy-v4 strong{
@@ -725,34 +690,18 @@
       }
 
 
-      /* =========================
-         Drag state
-      ========================= */
-
       .feature-sort-row-v4.drag-source{
-        opacity:
-          .22;
-
-        border-style:
-          dashed;
+        opacity:.30;
+        border-style:dashed;
       }
 
 
       .feature-sort-ghost-v4{
-        position:
-          fixed;
+        position:fixed;
 
-        left:
-          12px;
+        z-index:10000;
 
-        right:
-          12px;
-
-        z-index:
-          10000;
-
-        pointer-events:
-          none;
+        pointer-events:none;
 
         display:flex;
         align-items:center;
@@ -776,7 +725,7 @@
             59,
             130,
             246,
-            .38
+            .45
           );
 
         border-radius:
@@ -799,20 +748,17 @@
             .22
           );
 
+        opacity:
+          .98;
+
         transform:
           scale(
             1.015
           );
-
-        opacity:
-          .97;
       }
 
 
       .feature-sort-row-v4.drop-before{
-        border-top-color:
-          #3b82f6;
-
         box-shadow:
           0
           -3px
@@ -831,9 +777,6 @@
 
 
       .feature-sort-row-v4.drop-after{
-        border-bottom-color:
-          #3b82f6;
-
         box-shadow:
           0
           3px
@@ -851,15 +794,9 @@
       }
 
 
-      /* =========================
-         Footer
-      ========================= */
-
       .feature-sort-footer-v4{
         display:none;
-
-        margin-top:
-          11px;
+        margin-top:11px;
       }
 
       .feature-sort-panel-v4.show
@@ -872,11 +809,9 @@
         appearance:none;
         -webkit-appearance:none;
 
-        width:
-          100%;
+        width:100%;
 
-        min-height:
-          43px;
+        min-height:43px;
 
         border:
           1px
@@ -902,16 +837,10 @@
       }
 
 
-      /* =========================
-         Toast
-      ========================= */
-
       .feature-sort-toast-v4{
-        position:
-          fixed;
+        position:fixed;
 
-        left:
-          50%;
+        left:50%;
 
         bottom:
           calc(
@@ -977,8 +906,7 @@
       }
 
       .feature-sort-toast-v4.show{
-        opacity:
-          1;
+        opacity:1;
 
         transform:
           translate(
@@ -988,28 +916,22 @@
       }
 
 
-      /* =========================
-         Dark
-      ========================= */
+      body.feature-sort-dragging-v4{
+        user-select:none;
+        -webkit-user-select:none;
+        -webkit-touch-callout:none;
+      }
+
 
       [data-theme="dark"]
       .feature-sort-toggle-v4.active,
       [data-theme="dark"]
       .feature-sort-done-v4{
-        background:
-          #e5e7eb;
-
-        border-color:
-          #e5e7eb;
-
-        color:
-          #111827;
+        background:#e5e7eb;
+        border-color:#e5e7eb;
+        color:#111827;
       }
 
-
-      /* =========================
-         Mobile
-      ========================= */
 
       @media(
         max-width:
@@ -1046,7 +968,6 @@
 
     `;
 
-
     document.head.appendChild(
       style
     );
@@ -1054,7 +975,7 @@
 
 
   /* -------------------------------------------------------
-     Toolbar / panel
+     UI
   ------------------------------------------------------- */
 
   function ensureUI() {
@@ -1229,6 +1150,8 @@
         "click",
         () => {
 
+          stopDrag();
+
           const order =
             normalizeOrder(
               DEFAULT_ORDER
@@ -1239,10 +1162,6 @@
           );
 
           renderSortList(
-            order
-          );
-
-          saveOrder(
             order
           );
 
@@ -1425,6 +1344,10 @@
     const order =
       listOrder();
 
+    if (!order.length) {
+      return;
+    }
+
     applyOrder(
       order
     );
@@ -1434,51 +1357,47 @@
 
 
   /* -------------------------------------------------------
-     Edit mode
+     Edit
   ------------------------------------------------------- */
 
   function toggleEditing() {
-    editing =
-      !editing;
+    if (editing) {
+      finishEditing();
+      return;
+    }
 
+    editing = true;
 
-    const panel =
-      $("#featureSortPanelV4");
+    orderBeforeEdit =
+      normalizeOrder(
+        getCurrentOrder()
+      );
+
+    const order =
+      normalizeOrder(
+        readOrder() ||
+        getCurrentOrder()
+      );
+
+    renderSortList(
+      order
+    );
+
+    $("#featureSortPanelV4")
+      ?.classList.add(
+        "show"
+      );
 
     const toggle =
       $("#featureSortToggleV4");
 
+    toggle?.classList.add(
+      "active"
+    );
 
-    if (editing) {
-
-      const order =
-        normalizeOrder(
-          readOrder() ||
-          getCurrentOrder()
-        );
-
-      renderSortList(
-        order
-      );
-
-      panel?.classList.add(
-        "show"
-      );
-
-      toggle?.classList.add(
-        "active"
-      );
-
-      if (toggle) {
-        toggle.textContent =
-          "編輯中";
-      }
-
-
-    } else {
-
-      finishEditing();
-
+    if (toggle) {
+      toggle.textContent =
+        "編輯中";
     }
   }
 
@@ -1488,13 +1407,10 @@
       return;
     }
 
-
     stopDrag();
-
 
     const order =
       listOrder();
-
 
     if (order.length) {
 
@@ -1508,31 +1424,25 @@
 
     }
 
-
     editing =
       false;
-
 
     $("#featureSortPanelV4")
       ?.classList.remove(
         "show"
       );
 
-
     const toggle =
       $("#featureSortToggleV4");
-
 
     toggle?.classList.remove(
       "active"
     );
 
-
     if (toggle) {
       toggle.textContent =
         "自訂排序";
     }
-
 
     showToast();
   }
@@ -1546,16 +1456,13 @@
       return;
     }
 
-
     toast.classList.add(
       "show"
     );
 
-
     clearTimeout(
       toast._hideTimer
     );
-
 
     toast._hideTimer =
       setTimeout(
@@ -1572,12 +1479,20 @@
 
 
   /* -------------------------------------------------------
-     Drag
+     Drag helpers
   ------------------------------------------------------- */
 
   function clearDropMarks() {
+    const list =
+      $("#featureSortListV4");
+
+    if (!list) {
+      return;
+    }
+
     $$(
-      ".feature-sort-row-v4"
+      ".feature-sort-row-v4",
+      list
     )
       .forEach(
         row => {
@@ -1598,12 +1513,10 @@
     const rect =
       row.getBoundingClientRect();
 
-
     const ghost =
       row.cloneNode(
         true
       );
-
 
     ghost.classList.remove(
       "drag-source",
@@ -1611,32 +1524,22 @@
       "drop-after"
     );
 
-
     ghost.classList.add(
       "feature-sort-ghost-v4"
     );
 
-
-    ghost.style.width =
-      `${rect.width}px`;
-
-
     ghost.style.left =
       `${rect.left}px`;
-
-
-    ghost.style.right =
-      "auto";
-
 
     ghost.style.top =
       `${rect.top}px`;
 
+    ghost.style.width =
+      `${rect.width}px`;
 
     document.body.appendChild(
       ghost
     );
-
 
     return ghost;
   }
@@ -1648,7 +1551,6 @@
     if (!dragGhost) {
       return;
     }
-
 
     dragGhost.style.top =
       `${
@@ -1668,7 +1570,6 @@
       return null;
     }
 
-
     const rows =
       $$(
         ".feature-sort-row-v4",
@@ -1680,7 +1581,6 @@
             dragRow
         );
 
-
     for (
       const row
       of rows
@@ -1688,7 +1588,6 @@
 
       const rect =
         row.getBoundingClientRect();
-
 
       if (
         clientY >=
@@ -1701,7 +1600,6 @@
 
     }
 
-
     return null;
   }
 
@@ -1713,7 +1611,6 @@
       return;
     }
 
-
     const list =
       $("#featureSortListV4");
 
@@ -1721,15 +1618,12 @@
       return;
     }
 
-
     clearDropMarks();
-
 
     const target =
       getTargetRow(
         clientY
       );
-
 
     if (!target) {
 
@@ -1744,27 +1638,23 @@
               dragRow
           );
 
-
       if (!rows.length) {
         return;
       }
 
-
-      const firstRect =
+      const first =
         rows[0]
           .getBoundingClientRect();
 
-
-      const lastRect =
+      const last =
         rows[
           rows.length - 1
         ]
           .getBoundingClientRect();
 
-
       if (
         clientY <
-        firstRect.top
+        first.top
       ) {
 
         list.insertBefore(
@@ -1772,38 +1662,34 @@
           rows[0]
         );
 
-
         syncCardsLive();
 
-      } else if (
+      }
+
+      else if (
         clientY >
-        lastRect.bottom
+        last.bottom
       ) {
 
         list.appendChild(
           dragRow
         );
 
-
         syncCardsLive();
 
       }
 
-
       return;
     }
-
 
     const rect =
       target
         .getBoundingClientRect();
 
-
     const before =
       clientY <
       rect.top +
       rect.height / 2;
-
 
     target.classList.add(
       before
@@ -1811,12 +1697,17 @@
         : "drop-after"
     );
 
+    const beforeNode =
+      dragRow.previousElementSibling;
+
+    const afterNode =
+      dragRow.nextElementSibling;
 
     if (before) {
 
       if (
-        dragRow.nextSibling !==
-        target
+        target !==
+        afterNode
       ) {
 
         list.insertBefore(
@@ -1831,8 +1722,8 @@
     } else {
 
       if (
-        target.nextSibling !==
-        dragRow
+        target !==
+        beforeNode
       ) {
 
         list.insertBefore(
@@ -1848,16 +1739,64 @@
   }
 
 
-  function autoScroll(
+  /* -------------------------------------------------------
+     Auto scroll
+  ------------------------------------------------------- */
+
+  function stopAutoScroll() {
+    autoScrollSpeed =
+      0;
+
+    if (
+      autoScrollFrame
+    ) {
+
+      cancelAnimationFrame(
+        autoScrollFrame
+      );
+
+      autoScrollFrame =
+        null;
+
+    }
+  }
+
+
+  function runAutoScroll() {
+    if (
+      !dragRow ||
+      !autoScrollSpeed
+    ) {
+
+      stopAutoScroll();
+
+      return;
+    }
+
+    window.scrollBy(
+      0,
+      autoScrollSpeed
+    );
+
+    reorderAt(
+      currentY
+    );
+
+    autoScrollFrame =
+      requestAnimationFrame(
+        runAutoScroll
+      );
+  }
+
+
+  function updateAutoScroll(
     clientY
   ) {
     const edge =
-      90;
-
+      85;
 
     let speed =
       0;
-
 
     if (
       clientY <
@@ -1865,149 +1804,100 @@
     ) {
 
       speed =
-        -10;
+        -9;
 
-    } else if (
+    }
+
+    else if (
       clientY >
       window.innerHeight -
       edge
     ) {
 
       speed =
-        10;
+        9;
 
     }
-
-
-    if (!speed) {
-
-      if (
-        autoScrollTimer
-      ) {
-
-        cancelAnimationFrame(
-          autoScrollTimer
-        );
-
-        autoScrollTimer =
-          null;
-
-      }
-
-      return;
-    }
-
 
     if (
-      autoScrollTimer
+      speed ===
+      autoScrollSpeed
     ) {
       return;
     }
 
+    stopAutoScroll();
 
-    const loop =
-      () => {
+    autoScrollSpeed =
+      speed;
 
-        if (
-          !dragRow
-        ) {
+    if (
+      speed
+    ) {
 
-          autoScrollTimer =
-            null;
-
-          return;
-        }
-
-
-        window.scrollBy(
-          0,
-          speed
+      autoScrollFrame =
+        requestAnimationFrame(
+          runAutoScroll
         );
 
-
-        reorderAt(
-          currentY
-        );
-
-
-        autoScrollTimer =
-          requestAnimationFrame(
-            loop
-          );
-      };
-
-
-    autoScrollTimer =
-      requestAnimationFrame(
-        loop
-      );
+    }
   }
 
 
+  /* -------------------------------------------------------
+     Drag lifecycle
+  ------------------------------------------------------- */
+
   function startDrag(
     row,
-    clientY
+    clientY,
+    pointerId
   ) {
     if (!editing) {
       return;
     }
 
-
     stopDrag();
-
 
     dragRow =
       row;
 
+    activePointerId =
+      pointerId;
 
     const rect =
       row.getBoundingClientRect();
-
 
     pointerOffsetY =
       clientY -
       rect.top;
 
-
     currentY =
       clientY;
-
 
     dragGhost =
       createGhost(
         row
       );
 
-
     row.classList.add(
       "drag-source"
     );
 
+    document.body
+      .classList.add(
+        "feature-sort-dragging-v4"
+      );
 
     document.documentElement
       .style
       .overscrollBehavior =
       "none";
 
-
-    document.body.style
+    document.body
+      .style
       .overscrollBehavior =
       "none";
-
-
-    if (
-      navigator.vibrate
-    ) {
-
-      try {
-
-        navigator.vibrate(
-          12
-        );
-
-      } catch (e) {}
-
-    }
   }
 
 
@@ -2018,22 +1908,18 @@
       return;
     }
 
-
     currentY =
       clientY;
-
 
     moveGhost(
       clientY
     );
 
-
     reorderAt(
       clientY
     );
 
-
-    autoScroll(
+    updateAutoScroll(
       clientY
     );
   }
@@ -2041,7 +1927,6 @@
 
   function stopDrag() {
     clearDropMarks();
-
 
     if (
       dragRow
@@ -2053,7 +1938,6 @@
 
     }
 
-
     if (
       dragGhost
     ) {
@@ -2062,46 +1946,38 @@
 
     }
 
-
     dragRow =
       null;
-
 
     dragGhost =
       null;
 
+    activePointerId =
+      null;
 
-    if (
-      autoScrollTimer
-    ) {
+    stopAutoScroll();
 
-      cancelAnimationFrame(
-        autoScrollTimer
+    document.body
+      .classList.remove(
+        "feature-sort-dragging-v4"
       );
-
-      autoScrollTimer =
-        null;
-
-    }
-
 
     document.documentElement
       .style
       .overscrollBehavior =
       "";
 
-
-    document.body.style
+    document.body
+      .style
       .overscrollBehavior =
       "";
 
-
-    syncCardsLive();
+    syncNumbers();
   }
 
 
   /* -------------------------------------------------------
-     Handles
+     Handle binding
   ------------------------------------------------------- */
 
   function bindHandles() {
@@ -2112,29 +1988,22 @@
       return;
     }
 
-
     $$(
-      ".feature-sort-row-v4",
+      ".feature-sort-handle-v4",
       list
     )
       .forEach(
-        row => {
+        handle => {
 
-          const handle =
-            row.querySelector(
-              ".feature-sort-handle-v4"
-            );
-
-
-          if (!handle) {
+          if (
+            handle.dataset.dragBound ===
+            "1"
+          ) {
             return;
           }
 
-
-          /*
-            Pointer Events
-            Desktop / newer iOS
-          */
+          handle.dataset.dragBound =
+            "1";
 
           handle.addEventListener(
             "pointerdown",
@@ -2148,10 +2017,17 @@
                 return;
               }
 
-
               event.preventDefault();
               event.stopPropagation();
 
+              const row =
+                handle.closest(
+                  ".feature-sort-row-v4"
+                );
+
+              if (!row) {
+                return;
+              }
 
               try {
 
@@ -2161,74 +2037,139 @@
 
               } catch (e) {}
 
-
               startDrag(
                 row,
-                event.clientY
+                event.clientY,
+                event.pointerId
               );
-
-            }
-          );
-
-
-          handle.addEventListener(
-            "pointermove",
-            event => {
-
-              if (!dragRow) {
-                return;
-              }
-
-
-              event.preventDefault();
-
-
-              dragMove(
-                event.clientY
-              );
-
-            }
-          );
-
-
-          handle.addEventListener(
-            "pointerup",
-            event => {
-
-              if (!dragRow) {
-                return;
-              }
-
-
-              event.preventDefault();
-
-
-              try {
-
-                handle.releasePointerCapture(
-                  event.pointerId
-                );
-
-              } catch (e) {}
-
-
-              stopDrag();
-
-            }
-          );
-
-
-          handle.addEventListener(
-            "pointercancel",
-            () => {
-
-              stopDrag();
 
             }
           );
 
         }
       );
+  }
+
+
+  /* -------------------------------------------------------
+     Global pointer events
+     關鍵修正：
+     不再只監聽 handle 本身
+  ------------------------------------------------------- */
+
+  function bindGlobalPointerEvents() {
+    if (
+      window.__featureSortV4GlobalBound
+    ) {
+      return;
+    }
+
+    window.__featureSortV4GlobalBound =
+      true;
+
+
+    window.addEventListener(
+      "pointermove",
+      event => {
+
+        if (!dragRow) {
+          return;
+        }
+
+        if (
+          activePointerId !==
+            null &&
+          event.pointerId !==
+            activePointerId
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        dragMove(
+          event.clientY
+        );
+
+      },
+      {
+        passive:false
+      }
+    );
+
+
+    window.addEventListener(
+      "pointerup",
+      event => {
+
+        if (!dragRow) {
+          return;
+        }
+
+        if (
+          activePointerId !==
+            null &&
+          event.pointerId !==
+            activePointerId
+        ) {
+          return;
+        }
+
+        stopDrag();
+
+      },
+      {
+        passive:true
+      }
+    );
+
+
+    window.addEventListener(
+      "pointercancel",
+      () => {
+
+        if (!dragRow) {
+          return;
+        }
+
+        stopDrag();
+
+      },
+      {
+        passive:true
+      }
+    );
+
+
+    window.addEventListener(
+      "blur",
+      () => {
+
+        if (!dragRow) {
+          return;
+        }
+
+        stopDrag();
+
+      }
+    );
+
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+
+        if (
+          document.hidden &&
+          dragRow
+        ) {
+
+          stopDrag();
+
+        }
+
+      }
+    );
   }
 
 
@@ -2244,62 +2185,20 @@
       return;
     }
 
-
     injectStyles();
 
     ensureUI();
 
     restoreSavedOrder();
 
+    bindGlobalPointerEvents();
 
     /*
-      如果其他 JS 未來重新建立
-      feature cards，自動重新套用
+      注意：
+      這裡刻意不再監聽 featureRail MutationObserver
+      因為拖曳時 applyOrder() 本身會搬動 DOM
+      舊版 Observer 會一直把舊排序套回去
     */
-
-    const observer =
-      new MutationObserver(
-        mutations => {
-
-          const changed =
-            mutations.some(
-              mutation =>
-                mutation.addedNodes
-                  .length >
-                0
-            );
-
-
-          if (!changed) {
-            return;
-          }
-
-
-          requestAnimationFrame(
-            () => {
-
-              const saved =
-                readOrder();
-
-              if (saved) {
-                applyOrder(
-                  saved
-                );
-              }
-
-            }
-          );
-
-        }
-      );
-
-
-    observer.observe(
-      rail,
-      {
-        childList:true
-      }
-    );
   }
 
 
