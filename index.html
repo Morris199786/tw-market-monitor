@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f1722">
 <title>台股市場監測</title>
+
 <link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
 <link rel="stylesheet" href="./assets/ui_v2.css?v=20260928-holders-week-v8">
 <link rel="stylesheet" href="./assets/reports_v2.css?v=20260928-reports-v3">
@@ -23,13 +24,13 @@
     <nav>
       <button class="nav active" data-p="home">總覽</button>
       <button class="nav" data-p="heat">市場熱力圖</button>
+      <button class="nav" data-p="reports">券商報告</button>
       <button class="nav" data-p="selfReports">自結公布</button>
       <button class="nav" data-p="flows">籌碼日報</button>
       <button class="nav" data-p="volume">突然放量</button>
       <button class="nav" data-p="turnover">成交排行</button>
       <button class="nav" data-p="marginLending">融資／借券</button>
       <button class="nav" data-p="ai">AI選股</button>
-      <button class="nav" data-p="reports">券商報告</button>
       <button class="nav" data-p="holders">大戶籌碼</button>
       <button class="nav" data-p="monthlyRevenue">月營收公布</button>
     </nav>
@@ -40,13 +41,13 @@
     <select id="mobileNav" aria-label="切換分頁">
       <option value="home">總覽</option>
       <option value="heat">市場熱力圖</option>
+      <option value="reports">券商報告</option>
       <option value="selfReports">自結公布</option>
       <option value="flows">籌碼日報</option>
       <option value="volume">突然放量</option>
       <option value="turnover">成交排行</option>
       <option value="marginLending">融資／借券</option>
       <option value="ai">AI選股</option>
-      <option value="reports">券商報告</option>
       <option value="holders">大戶籌碼</option>
       <option value="monthlyRevenue">月營收公布</option>
     </select>
@@ -75,6 +76,7 @@
       <h2>目前強勢族群</h2>
       <span>市值加權</span>
     </div>
+
     <div id="topSectors" class="grid three"></div>
   </section>
 
@@ -92,6 +94,19 @@
       </div>
     </div>
     <div id="heatGrid" class="heatgrid"></div>
+  </section>
+
+
+  <section id="reports" class="page">
+    <div class="hero">
+      <div>
+        <div class="kicker">BROKER RESEARCH</div>
+        <h1>券商報告</h1>
+        <p>依收到日期分組｜歷史永久保留｜公司名稱與股票代號搜尋</p>
+      </div>
+      <span class="badge">每 15 分鐘檢查</span>
+    </div>
+    <div id="reportList" class="card"></div>
   </section>
 
 
@@ -217,6 +232,7 @@
         <span id="mlDate" class="badge"></span>
       </div>
     </div>
+
     <div class="toolbar">
       <div class="tabs">
         <button class="tab active" data-ml-kind="margin">融資增加</button>
@@ -227,6 +243,7 @@
         <button class="tab" data-ml-market="tpex">上櫃</button>
       </div>
     </div>
+
     <div id="mlStatus" class="status"></div>
     <div id="mlLogic"></div>
     <div id="mlCards" class="grid three"></div>
@@ -250,19 +267,6 @@
     </div>
     <div id="aiStatus" class="status"></div>
     <div id="aiCards" class="grid three"></div>
-  </section>
-
-
-  <section id="reports" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">BROKER RESEARCH</div>
-        <h1>券商報告</h1>
-        <p>依收到日期分組｜歷史永久保留｜公司名稱與股票代號搜尋</p>
-      </div>
-      <span class="badge">每 15 分鐘檢查</span>
-    </div>
-    <div id="reportList" class="card"></div>
   </section>
 
 
@@ -318,7 +322,7 @@
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
 <script src="./assets/ui_v2.js?v=20260927-home-v5"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
-<script src="./assets/reports_v2.js?v=20260928-reports-v3"></script>
+<script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
 
 </body>
 </html>
