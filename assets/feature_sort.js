@@ -1,18 +1,34 @@
 /* =========================================================
-   首頁功能卡片自訂排序
-   - 使用者自行排序，不影響其他人
-   - 儲存在 localStorage
-   - 手機 / 平板 / 電腦皆可拖曳
-   - 可恢復預設排序
+   首頁功能卡片自訂排序 V2
+   - iPhone / iPad Safari 拖曳修正版
+   - Android / Desktop 支援
+   - localStorage 保存
+   - 左右邊緣自動捲動
    ========================================================= */
 
 (function () {
   const STORAGE_KEY =
-    "tw-feature-order-v1";
+    "tw-feature-order-v2";
 
   let editing = false;
+
   let draggingCard = null;
-  let dragPointerId = null;
+
+  let touchDragging = false;
+
+  let mouseDragging = false;
+
+  let lastX = 0;
+  let lastY = 0;
+
+  let autoScrollFrame = null;
+
+  let autoScrollDirection = 0;
+
+  const AUTO_SCROLL_EDGE = 70;
+
+  const AUTO_SCROLL_SPEED = 8;
+
 
   function $(
     selector,
@@ -22,6 +38,7 @@
       selector
     );
   }
+
 
   function $$(
     selector,
@@ -34,14 +51,17 @@
     ];
   }
 
+
   function getRail() {
     return document.getElementById(
       "featureRail"
     );
   }
 
+
   function getCards() {
-    const rail = getRail();
+    const rail =
+      getRail();
 
     if (!rail) {
       return [];
@@ -53,14 +73,6 @@
     );
   }
 
-  function currentOrder() {
-    return getCards()
-      .map(
-        card =>
-          card.dataset.feature
-      )
-      .filter(Boolean);
-  }
 
   function defaultOrder() {
     return [
@@ -77,6 +89,17 @@
     ];
   }
 
+
+  function currentOrder() {
+    return getCards()
+      .map(
+        card =>
+          card.dataset.feature
+      )
+      .filter(Boolean);
+  }
+
+
   function readOrder() {
     try {
       const raw =
@@ -91,51 +114,59 @@
       const parsed =
         JSON.parse(raw);
 
-      if (
-        !Array.isArray(parsed)
-      ) {
-        return null;
-      }
+      return Array.isArray(
+        parsed
+      )
+        ? parsed
+        : null;
 
-      return parsed;
     } catch (e) {
       return null;
     }
   }
 
-  function saveOrder() {
-    const order =
-      currentOrder();
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(
-        order
-      )
-    );
+  function saveOrder() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+          currentOrder()
+        )
+      );
+    } catch (e) {
+      console.warn(
+        "feature order save failed",
+        e
+      );
+    }
   }
+
 
   function updateIndexes() {
     getCards()
       .forEach(
-        (card, i) => {
-          const index =
+        (card, index) => {
+          const badge =
             card.querySelector(
               ".feature-index"
             );
 
-          if (index) {
-            index.textContent =
-              String(
-                i + 1
-              ).padStart(
-                2,
-                "0"
-              );
+          if (!badge) {
+            return;
           }
+
+          badge.textContent =
+            String(
+              index + 1
+            ).padStart(
+              2,
+              "0"
+            );
         }
       );
   }
+
 
   function applyOrder(
     order
@@ -168,22 +199,21 @@
         const card =
           cards.get(id);
 
-        if (card) {
-          rail.appendChild(
-            card
-          );
-
-          cards.delete(
-            id
-          );
+        if (!card) {
+          return;
         }
+
+        rail.appendChild(
+          card
+        );
+
+        cards.delete(id);
       }
     );
 
     /*
-      未來若新增功能，
-      舊使用者 localStorage 沒有它，
-      自動接在最後，不會消失
+      新功能如果沒有存在舊排序中
+      自動接到最後面
     */
     cards.forEach(
       card => {
@@ -195,6 +225,7 @@
 
     updateIndexes();
   }
+
 
   function restoreSavedOrder() {
     const saved =
@@ -208,6 +239,7 @@
       updateIndexes();
     }
   }
+
 
   function injectStyles() {
     if (
@@ -227,12 +259,16 @@
       "featureSortStyles";
 
     style.textContent = `
+
       .feature-sort-bar{
         display:flex;
         align-items:center;
         justify-content:space-between;
         gap:12px;
-        margin:0 2px 10px;
+        margin:
+          0
+          2px
+          10px;
       }
 
       .feature-sort-label{
@@ -243,8 +279,9 @@
       }
 
       .feature-sort-label strong{
-        font-size:14px;
         color:var(--ink);
+        font-size:14px;
+        font-weight:900;
       }
 
       .feature-sort-label small{
@@ -261,31 +298,53 @@
 
       .feature-sort-btn{
         appearance:none;
-        border:1px solid var(--line);
-        background:var(--card);
-        color:var(--ink);
-        border-radius:999px;
-        padding:8px 12px;
-        font-size:11px;
-        line-height:1;
-        font-weight:800;
-        cursor:pointer;
-        box-shadow:0 4px 12px rgba(15,23,42,.04);
-      }
-
-      .feature-sort-btn:hover{
-        border-color:rgba(59,130,246,.28);
+        -webkit-appearance:none;
+        border:
+          1px
+          solid
+          var(--line);
+        background:
+          var(--card);
+        color:
+          var(--ink);
+        border-radius:
+          999px;
+        padding:
+          8px
+          12px;
+        font-size:
+          11px;
+        line-height:
+          1;
+        font-weight:
+          800;
+        cursor:
+          pointer;
+        box-shadow:
+          0
+          4px
+          12px
+          rgba(
+            15,
+            23,
+            42,
+            .04
+          );
       }
 
       .feature-sort-btn.is-primary{
-        color:#fff;
-        background:#111827;
-        border-color:#111827;
+        background:
+          #111827;
+        border-color:
+          #111827;
+        color:
+          #fff;
       }
 
       .feature-sort-btn.is-reset{
         display:none;
-        color:var(--muted);
+        color:
+          var(--muted);
       }
 
       .feature-sort-bar.is-editing
@@ -293,8 +352,30 @@
         display:inline-flex;
       }
 
+      .feature-sort-tip{
+        display:none;
+        margin:
+          -2px
+          2px
+          10px;
+        color:
+          var(--muted);
+        font-size:
+          10px;
+      }
+
+      .feature-sort-tip.show{
+        display:block;
+      }
+
+      /*
+        編輯模式
+      */
+
       #featureRail.feature-sort-editing{
-        touch-action:pan-x;
+        scroll-snap-type:none;
+        touch-action:none;
+        overscroll-behavior-x:contain;
       }
 
       #featureRail.feature-sort-editing
@@ -303,11 +384,18 @@
         user-select:none;
         -webkit-user-select:none;
         -webkit-touch-callout:none;
-        overflow:visible;
         border-style:dashed;
-        box-shadow:
-          0 10px 26px
-          rgba(15,23,42,.08);
+
+        transition:
+          transform
+          .12s
+          ease,
+          box-shadow
+          .12s
+          ease,
+          opacity
+          .12s
+          ease;
       }
 
       #featureRail.feature-sort-editing
@@ -320,24 +408,49 @@
         transform:none;
       }
 
+      /*
+        拖曳把手
+      */
+
       #featureRail.feature-sort-editing
       .feature-card::before{
-        content:"⋮⋮";
+        content:"☰";
+
         position:absolute;
+
         right:12px;
-        bottom:11px;
-        z-index:5;
-        min-width:28px;
-        height:28px;
+
+        bottom:10px;
+
+        z-index:8;
+
+        width:30px;
+
+        height:30px;
+
         display:grid;
+
         place-items:center;
-        border-radius:9px;
-        background:rgba(127,127,127,.10);
-        color:var(--muted);
-        font-size:15px;
-        font-weight:900;
-        letter-spacing:-3px;
-        padding-right:3px;
+
+        border-radius:
+          9px;
+
+        background:
+          rgba(
+            127,
+            127,
+            127,
+            .10
+          );
+
+        color:
+          var(--muted);
+
+        font-size:
+          14px;
+
+        font-weight:
+          900;
       }
 
       #featureRail.feature-sort-editing
@@ -345,83 +458,143 @@
         display:none;
       }
 
-      #featureRail.feature-sort-editing
+      /*
+        正在拖
+      */
+
+      #featureRail
       .feature-card.is-dragging{
-        opacity:.70;
+        opacity:.66;
+
         cursor:grabbing;
+
         border-style:solid;
-        transform:scale(.97);
+
+        transform:
+          scale(.96);
+
         box-shadow:
-          0 16px 38px
-          rgba(15,23,42,.16);
+          0
+          18px
+          42px
+          rgba(
+            15,
+            23,
+            42,
+            .18
+          );
       }
 
-      #featureRail.feature-sort-editing
+      /*
+        插入位置
+      */
+
+      #featureRail
       .feature-card.is-drop-before{
         box-shadow:
-          -5px 0 0
-          rgba(59,130,246,.65),
-          0 10px 26px
-          rgba(15,23,42,.08);
+          -5px
+          0
+          0
+          rgba(
+            59,
+            130,
+            246,
+            .72
+          ),
+          0
+          10px
+          26px
+          rgba(
+            15,
+            23,
+            42,
+            .08
+          );
       }
 
-      #featureRail.feature-sort-editing
+      #featureRail
       .feature-card.is-drop-after{
         box-shadow:
-          5px 0 0
-          rgba(59,130,246,.65),
-          0 10px 26px
-          rgba(15,23,42,.08);
+          5px
+          0
+          0
+          rgba(
+            59,
+            130,
+            246,
+            .72
+          ),
+          0
+          10px
+          26px
+          rgba(
+            15,
+            23,
+            42,
+            .08
+          );
       }
 
-      .feature-sort-tip{
-        display:none;
-        color:var(--muted);
-        font-size:10px;
-        margin:-3px 2px 10px;
-      }
-
-      .feature-sort-tip.show{
-        display:block;
-      }
+      /*
+        深色模式
+      */
 
       [data-theme="dark"]
       .feature-sort-btn.is-primary{
-        background:#e5e7eb;
-        border-color:#e5e7eb;
-        color:#111827;
+        background:
+          #e5e7eb;
+
+        border-color:
+          #e5e7eb;
+
+        color:
+          #111827;
       }
 
       [data-theme="dark"]
       #featureRail.feature-sort-editing
       .feature-card::before{
-        background:rgba(255,255,255,.10);
+        background:
+          rgba(
+            255,
+            255,
+            255,
+            .10
+          );
       }
 
-      @media (max-width:700px){
-        .feature-sort-bar{
-          margin-top:0;
-        }
+      @media(
+        max-width:700px
+      ){
 
         .feature-sort-label small{
           display:none;
         }
 
         .feature-sort-btn{
-          padding:8px 11px;
-          font-size:10px;
+          padding:
+            8px
+            11px;
+
+          font-size:
+            10px;
         }
 
         .feature-sort-tip{
-          font-size:9px;
+          font-size:
+            9px;
         }
+
       }
+
     `;
 
-    document.head.appendChild(
-      style
-    );
+    document.head
+      .appendChild(
+        style
+      );
   }
+
 
   function ensureToolbar() {
     const rail =
@@ -451,9 +624,13 @@
       "feature-sort-bar";
 
     bar.innerHTML = `
+
       <div
-        class="feature-sort-label"
+        class="
+          feature-sort-label
+        "
       >
+
         <strong>
           功能列表
         </strong>
@@ -461,11 +638,15 @@
         <small>
           可依個人習慣調整順序
         </small>
+
       </div>
 
       <div
-        class="feature-sort-actions"
+        class="
+          feature-sort-actions
+        "
       >
+
         <button
           type="button"
           id="featureSortReset"
@@ -480,12 +661,17 @@
         <button
           type="button"
           id="featureSortToggle"
-          class="feature-sort-btn"
+          class="
+            feature-sort-btn
+          "
         >
           自訂排序
         </button>
+
       </div>
+
     `;
+
 
     const tip =
       document.createElement(
@@ -499,20 +685,25 @@
       "feature-sort-tip";
 
     tip.textContent =
-      "按住卡片拖曳到想要的位置，完成後會自動記住";
+      "按住卡片後左右拖曳，放開即可調整順序";
 
-    rail.parentNode.insertBefore(
-      bar,
-      rail
-    );
 
-    rail.parentNode.insertBefore(
-      tip,
-      rail
-    );
+    rail.parentNode
+      .insertBefore(
+        bar,
+        rail
+      );
+
+
+    rail.parentNode
+      .insertBefore(
+        tip,
+        rail
+      );
+
 
     $("#featureSortToggle")
-      .addEventListener(
+      ?.addEventListener(
         "click",
         () => {
           setEditing(
@@ -521,13 +712,15 @@
         }
       );
 
+
     $("#featureSortReset")
-      .addEventListener(
+      ?.addEventListener(
         "click",
         () => {
-          localStorage.removeItem(
-            STORAGE_KEY
-          );
+          localStorage
+            .removeItem(
+              STORAGE_KEY
+            );
 
           applyOrder(
             defaultOrder()
@@ -537,6 +730,7 @@
         }
       );
   }
+
 
   function clearDropMarks() {
     getCards()
@@ -549,6 +743,7 @@
         }
       );
   }
+
 
   function cardAtPoint(
     x,
@@ -563,10 +758,12 @@
     return el
       ?.closest(
         ".feature-card[data-feature]"
-      ) || null;
+      )
+      || null;
   }
 
-  function moveDraggingCard(
+
+  function moveCardAtPoint(
     x,
     y
   ) {
@@ -574,13 +771,13 @@
       return;
     }
 
+    clearDropMarks();
+
     const target =
       cardAtPoint(
         x,
         y
       );
-
-    clearDropMarks();
 
     if (
       !target ||
@@ -590,20 +787,6 @@
       return;
     }
 
-    const rect =
-      target.getBoundingClientRect();
-
-    const before =
-      x <
-      rect.left +
-        rect.width / 2;
-
-    target.classList.add(
-      before
-        ? "is-drop-before"
-        : "is-drop-after"
-    );
-
     const rail =
       getRail();
 
@@ -611,61 +794,159 @@
       return;
     }
 
+    const rect =
+      target.getBoundingClientRect();
+
+    const midpoint =
+      rect.left +
+      rect.width / 2;
+
+    const before =
+      x <
+      midpoint;
+
+
     if (before) {
+
+      target.classList.add(
+        "is-drop-before"
+      );
+
       rail.insertBefore(
         draggingCard,
         target
       );
+
     } else {
+
+      target.classList.add(
+        "is-drop-after"
+      );
+
       rail.insertBefore(
         draggingCard,
         target.nextSibling
       );
+
     }
 
     updateIndexes();
   }
 
-  function endDrag(
-    event
-  ) {
-    if (!draggingCard) {
+
+  /* ======================================================
+     自動左右捲動
+     ====================================================== */
+
+  function stopAutoScroll() {
+    autoScrollDirection =
+      0;
+
+    if (
+      autoScrollFrame
+    ) {
+      cancelAnimationFrame(
+        autoScrollFrame
+      );
+
+      autoScrollFrame =
+        null;
+    }
+  }
+
+
+  function autoScrollLoop() {
+    const rail =
+      getRail();
+
+    if (
+      !rail ||
+      !autoScrollDirection
+    ) {
+      stopAutoScroll();
+
       return;
     }
 
+    rail.scrollLeft +=
+      autoScrollDirection *
+      AUTO_SCROLL_SPEED;
+
+    moveCardAtPoint(
+      lastX,
+      lastY
+    );
+
+    autoScrollFrame =
+      requestAnimationFrame(
+        autoScrollLoop
+      );
+  }
+
+
+  function updateAutoScroll(
+    x
+  ) {
+    const rail =
+      getRail();
+
+    if (!rail) {
+      return;
+    }
+
+    const rect =
+      rail.getBoundingClientRect();
+
+    let nextDirection =
+      0;
+
     if (
-      event &&
-      dragPointerId !== null &&
-      event.pointerId !==
-        dragPointerId
+      x <
+      rect.left +
+      AUTO_SCROLL_EDGE
+    ) {
+      nextDirection = -1;
+    }
+
+    else if (
+      x >
+      rect.right -
+      AUTO_SCROLL_EDGE
+    ) {
+      nextDirection = 1;
+    }
+
+
+    if (
+      nextDirection ===
+      autoScrollDirection
     ) {
       return;
     }
 
-    try {
-      draggingCard.releasePointerCapture(
-        dragPointerId
-      );
-    } catch (e) {
-      /* ignore */
+
+    stopAutoScroll();
+
+    autoScrollDirection =
+      nextDirection;
+
+
+    if (
+      autoScrollDirection
+    ) {
+      autoScrollFrame =
+        requestAnimationFrame(
+          autoScrollLoop
+        );
     }
-
-    draggingCard.classList.remove(
-      "is-dragging"
-    );
-
-    clearDropMarks();
-
-    draggingCard =
-      null;
-
-    dragPointerId =
-      null;
-
-    saveOrder();
   }
 
-  function startDrag(
+
+  /* ======================================================
+     Touch
+     ====================================================== */
+
+  function touchStart(
     event,
     card
   ) {
@@ -674,8 +955,108 @@
     }
 
     if (
-      event.pointerType ===
-      "mouse" &&
+      !event.touches ||
+      event.touches.length !== 1
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const touch =
+      event.touches[0];
+
+    draggingCard =
+      card;
+
+    touchDragging =
+      true;
+
+    lastX =
+      touch.clientX;
+
+    lastY =
+      touch.clientY;
+
+    card.classList.add(
+      "is-dragging"
+    );
+
+    document.body.style
+      .overscrollBehavior =
+      "none";
+  }
+
+
+  function touchMove(
+    event
+  ) {
+    if (
+      !editing ||
+      !touchDragging ||
+      !draggingCard
+    ) {
+      return;
+    }
+
+    if (
+      !event.touches ||
+      !event.touches.length
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const touch =
+      event.touches[0];
+
+    lastX =
+      touch.clientX;
+
+    lastY =
+      touch.clientY;
+
+    moveCardAtPoint(
+      lastX,
+      lastY
+    );
+
+    updateAutoScroll(
+      lastX
+    );
+  }
+
+
+  function touchEnd(
+    event
+  ) {
+    if (
+      !touchDragging
+    ) {
+      return;
+    }
+
+    event?.preventDefault?.();
+
+    finishDrag();
+  }
+
+
+  /* ======================================================
+     Mouse / Desktop
+     ====================================================== */
+
+  function mouseDown(
+    event,
+    card
+  ) {
+    if (!editing) {
+      return;
+    }
+
+    if (
       event.button !== 0
     ) {
       return;
@@ -687,21 +1068,102 @@
     draggingCard =
       card;
 
-    dragPointerId =
-      event.pointerId;
+    mouseDragging =
+      true;
+
+    lastX =
+      event.clientX;
+
+    lastY =
+      event.clientY;
 
     card.classList.add(
       "is-dragging"
     );
-
-    try {
-      card.setPointerCapture(
-        event.pointerId
-      );
-    } catch (e) {
-      /* ignore */
-    }
   }
+
+
+  function mouseMove(
+    event
+  ) {
+    if (
+      !editing ||
+      !mouseDragging ||
+      !draggingCard
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    lastX =
+      event.clientX;
+
+    lastY =
+      event.clientY;
+
+    moveCardAtPoint(
+      lastX,
+      lastY
+    );
+
+    updateAutoScroll(
+      lastX
+    );
+  }
+
+
+  function mouseUp() {
+    if (
+      !mouseDragging
+    ) {
+      return;
+    }
+
+    finishDrag();
+  }
+
+
+  /* ======================================================
+     結束拖曳
+     ====================================================== */
+
+  function finishDrag() {
+    stopAutoScroll();
+
+    if (
+      draggingCard
+    ) {
+      draggingCard
+        .classList.remove(
+          "is-dragging"
+        );
+    }
+
+    clearDropMarks();
+
+    draggingCard =
+      null;
+
+    touchDragging =
+      false;
+
+    mouseDragging =
+      false;
+
+    document.body.style
+      .overscrollBehavior =
+      "";
+
+    updateIndexes();
+
+    saveOrder();
+  }
+
+
+  /* ======================================================
+     卡片綁定
+     ====================================================== */
 
   function bindCard(
     card
@@ -716,55 +1178,56 @@
     card.dataset.sortBound =
       "1";
 
+
+    /*
+      編輯模式時
+      不要進入功能頁
+    */
     card.addEventListener(
       "click",
       event => {
-        if (editing) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-      },
-      true
-    );
 
-    card.addEventListener(
-      "pointerdown",
-      event =>
-        startDrag(
-          event,
-          card
-        )
-    );
-
-    card.addEventListener(
-      "pointermove",
-      event => {
-        if (
-          draggingCard !==
-          card
-        ) {
+        if (!editing) {
           return;
         }
 
         event.preventDefault();
+        event.stopImmediatePropagation();
 
-        moveDraggingCard(
-          event.clientX,
-          event.clientY
-        );
+      },
+      true
+    );
+
+
+    /*
+      iPhone / iPad
+    */
+    card.addEventListener(
+      "touchstart",
+      event =>
+        touchStart(
+          event,
+          card
+        ),
+      {
+        passive:false
       }
     );
 
-    card.addEventListener(
-      "pointerup",
-      endDrag
-    );
 
+    /*
+      Desktop
+    */
     card.addEventListener(
-      "pointercancel",
-      endDrag
+      "mousedown",
+      event =>
+        mouseDown(
+          event,
+          card
+        )
     );
   }
+
 
   function bindCards() {
     getCards()
@@ -773,11 +1236,18 @@
       );
   }
 
+
+  /* ======================================================
+     編輯模式
+     ====================================================== */
+
   function setEditing(
     next
   ) {
     editing =
-      Boolean(next);
+      Boolean(
+        next
+      );
 
     const rail =
       getRail();
@@ -797,28 +1267,27 @@
         "featureSortToggle"
       );
 
-    if (rail) {
-      rail.classList.toggle(
-        "feature-sort-editing",
-        editing
-      );
-    }
 
-    if (bar) {
-      bar.classList.toggle(
-        "is-editing",
-        editing
-      );
-    }
+    rail?.classList.toggle(
+      "feature-sort-editing",
+      editing
+    );
 
-    if (tip) {
-      tip.classList.toggle(
-        "show",
-        editing
-      );
-    }
+
+    bar?.classList.toggle(
+      "is-editing",
+      editing
+    );
+
+
+    tip?.classList.toggle(
+      "show",
+      editing
+    );
+
 
     if (toggle) {
+
       toggle.classList.toggle(
         "is-primary",
         editing
@@ -828,13 +1297,23 @@
         editing
           ? "完成"
           : "自訂排序";
+
     }
 
+
     if (!editing) {
-      endDrag();
+
+      finishDrag();
+
       saveOrder();
+
     }
   }
+
+
+  /* ======================================================
+     啟動
+     ====================================================== */
 
   function boot() {
     const rail =
@@ -844,6 +1323,7 @@
       return;
     }
 
+
     injectStyles();
 
     ensureToolbar();
@@ -852,63 +1332,109 @@
 
     bindCards();
 
+
     /*
-      若其他 JS 重新產生功能卡，
-      重新套用使用者排序
+      全域 touchmove
+      iOS Safari 上比綁在單一卡片穩
     */
+
+    document.addEventListener(
+      "touchmove",
+      touchMove,
+      {
+        passive:false
+      }
+    );
+
+
+    document.addEventListener(
+      "touchend",
+      touchEnd,
+      {
+        passive:false
+      }
+    );
+
+
+    document.addEventListener(
+      "touchcancel",
+      touchEnd,
+      {
+        passive:false
+      }
+    );
+
+
+    document.addEventListener(
+      "mousemove",
+      mouseMove
+    );
+
+
+    document.addEventListener(
+      "mouseup",
+      mouseUp
+    );
+
+
+    /*
+      如果 ui_v2.js 重新產生卡片
+      自動重新綁定
+    */
+
     const observer =
       new MutationObserver(
         mutations => {
-          const addedCard =
+
+          const changed =
             mutations.some(
-              m =>
-                [...m.addedNodes]
-                  .some(
-                    node =>
-                      node.nodeType === 1 &&
-                      (
-                        node.matches?.(
-                          ".feature-card"
-                        ) ||
-                        node.querySelector?.(
-                          ".feature-card"
-                        )
-                      )
-                  )
+              mutation =>
+                mutation
+                  .addedNodes
+                  .length
             );
 
-          if (!addedCard) {
+          if (!changed) {
             return;
           }
 
           setTimeout(
             () => {
+
               restoreSavedOrder();
+
               bindCards();
 
               if (editing) {
+
                 rail.classList.add(
                   "feature-sort-editing"
                 );
+
               }
+
             },
             0
           );
+
         }
       );
+
 
     observer.observe(
       rail,
       {
-        childList: true
+        childList:true
       }
     );
   }
+
 
   if (
     document.readyState ===
     "loading"
   ) {
+
     document.addEventListener(
       "DOMContentLoaded",
       () => {
@@ -918,10 +1444,14 @@
         );
       }
     );
+
   } else {
+
     setTimeout(
       boot,
       0
     );
+
   }
+
 })();
