@@ -2282,3 +2282,16 @@ html[data-theme="dark"] .font-scale-menu button{
 html[data-theme="dark"] .ai-backtest-panel{background:#1b2026!important;border-color:#303741!important}html[data-theme="dark"] .ai-bt-stat{background:#20252c!important;border-color:#303741!important}
 html[data-theme="dark"] .ai-bt-rank-card,html[data-theme="dark"] .ai-bt-history{border-color:#303741!important}html[data-theme="dark"] .ai-bt-bucket-row,html[data-theme="dark"] .ai-bt-history-body,html[data-theme="dark"] .ai-bt-record-row{border-color:#303741!important}
 @media(max-width:720px){.ai-backtest-panel{padding:13px;border-radius:16px}.ai-bt-stats{grid-template-columns:1fr 1fr}.ai-bt-stat{padding:12px}.ai-bt-stat>strong{font-size:21px}.ai-bt-stat-sub{display:grid;gap:4px}.ai-bt-rank-head,.ai-bt-bucket-row{grid-template-columns:1fr 64px 64px}.ai-bt-record-row{grid-template-columns:minmax(0,1fr) 58px 58px;gap:7px;padding:9px 10px}}
+
+
+/* =========================================================
+   大戶籌碼：本週漲跌幅
+   app.js 既有 mobile data-label 為「同期股價」，
+   這裡只針對大戶表格覆寫顯示文字，不影響其他表格。
+   ========================================================= */
+
+@media(max-width:720px){
+  #holderRows td:nth-child(2)::before{
+    content:"本週漲跌幅" !important;
+  }
+}
