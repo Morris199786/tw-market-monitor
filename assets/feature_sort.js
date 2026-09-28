@@ -1,95 +1,135 @@
 /* =========================================================
-   首頁功能卡片自訂排序 V3
-   - 點「自訂排序」後開啟排序面板
-   - 手機 / 平板 / 電腦：上下拖曳排序
-   - 完成後套用首頁卡片順序
-   - localStorage 保存
-   - 可恢復預設排序
+   首頁功能排序 V4
+   Handle-only vertical drag
+   - 左側 ☰ 拖曳
+   - 排序清單與下方功能卡同步
+   - iPhone / iPad / Desktop
+   - localStorage 儲存
    ========================================================= */
 
 (function () {
-  const STORAGE_KEY = "tw-feature-order-v3";
+  const STORAGE_KEY =
+    "tw-feature-order-v4";
 
   const DEFAULT_ORDER = [
     "heat",
+    "reports",
     "selfReports",
     "flows",
     "volume",
     "turnover",
     "marginLending",
     "ai",
-    "reports",
     "holders",
     "monthlyRevenue"
   ];
 
-  let workingOrder = [];
-  let dragId = null;
-  let dragEl = null;
+  let editing = false;
 
-  function $(selector, root = document) {
-    return root.querySelector(selector);
+  let dragRow = null;
+  let dragGhost = null;
+
+  let pointerOffsetY = 0;
+
+  let currentY = 0;
+
+  let autoScrollTimer = null;
+
+
+  /* -------------------------------------------------------
+     Helpers
+  ------------------------------------------------------- */
+
+  function $(
+    selector,
+    root = document
+  ) {
+    return root.querySelector(
+      selector
+    );
   }
 
-  function $$(selector, root = document) {
+
+  function $$(
+    selector,
+    root = document
+  ) {
     return [
-      ...root.querySelectorAll(selector)
+      ...root.querySelectorAll(
+        selector
+      )
     ];
   }
 
-  function rail() {
+
+  function getRail() {
     return document.getElementById(
       "featureRail"
     );
   }
 
-  function cards() {
-    const box = rail();
 
-    if (!box) {
+  function getCards() {
+    const rail =
+      getRail();
+
+    if (!rail) {
       return [];
     }
 
     return $$(
       ".feature-card[data-feature]",
-      box
+      rail
     );
   }
 
-  function featureMeta() {
-    const map = new Map();
 
-    cards().forEach(card => {
-      const id =
-        card.dataset.feature;
+  function getFeatureInfo() {
+    const map =
+      new Map();
 
-      const name =
-        card.querySelector(
-          ".feature-copy b"
-        )?.textContent?.trim() ||
-        id;
+    getCards()
+      .forEach(
+        card => {
 
-      const subtitle =
-        card.querySelector(
-          ".feature-copy small"
-        )?.textContent?.trim() ||
-        "";
+          const id =
+            card.dataset.feature;
 
-      map.set(
-        id,
-        {
-          id,
-          name,
-          subtitle
+          const name =
+            card.querySelector(
+              ".feature-copy b"
+            )
+              ?.textContent
+              ?.trim()
+            ||
+            id;
+
+          const sub =
+            card.querySelector(
+              ".feature-copy small"
+            )
+              ?.textContent
+              ?.trim()
+            ||
+            "";
+
+          map.set(
+            id,
+            {
+              id,
+              name,
+              sub
+            }
+          );
         }
       );
-    });
 
     return map;
   }
 
-  function currentOrder() {
-    return cards()
+
+  function getCurrentOrder() {
+    return getCards()
       .map(
         card =>
           card.dataset.feature
@@ -97,8 +137,47 @@
       .filter(Boolean);
   }
 
-  function readSavedOrder() {
+
+  function normalizeOrder(
+    order
+  ) {
+    const actual =
+      getCurrentOrder();
+
+    const result =
+      [];
+
+    (order || [])
+      .forEach(
+        id => {
+
+          if (
+            actual.includes(id) &&
+            !result.includes(id)
+          ) {
+            result.push(id);
+          }
+        }
+      );
+
+    actual.forEach(
+      id => {
+
+        if (
+          !result.includes(id)
+        ) {
+          result.push(id);
+        }
+      }
+    );
+
+    return result;
+  }
+
+
+  function readOrder() {
     try {
+
       const raw =
         localStorage.getItem(
           STORAGE_KEY
@@ -111,1275 +190,55 @@
       const parsed =
         JSON.parse(raw);
 
-      return Array.isArray(parsed)
+      return Array.isArray(
+        parsed
+      )
         ? parsed
         : null;
+
     } catch (e) {
+
       return null;
+
     }
   }
 
-  function saveOrder(order) {
+
+  function saveOrder(
+    order
+  ) {
     try {
+
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(order)
+        JSON.stringify(
+          order
+        )
       );
+
     } catch (e) {
+
       console.warn(
-        "feature order save failed",
+        "Unable to save feature order",
         e
       );
+
     }
   }
 
-  function normalizedOrder(order) {
-    const actual =
-      currentOrder();
 
-    const valid =
-      (order || [])
-        .filter(
-          id =>
-            actual.includes(id)
-        );
+  /* -------------------------------------------------------
+     首頁卡片排序
+  ------------------------------------------------------- */
 
-    actual.forEach(id => {
-      if (
-        !valid.includes(id)
-      ) {
-        valid.push(id);
-      }
-    });
-
-    return valid;
-  }
-
-  function updateIndexes() {
-    cards().forEach(
-      (card, index) => {
-        const badge =
-          card.querySelector(
-            ".feature-index"
-          );
-
-        if (badge) {
-          badge.textContent =
-            String(
-              index + 1
-            ).padStart(
-              2,
-              "0"
-            );
-        }
-      }
-    );
-  }
-
-  function applyOrder(order) {
-    const box = rail();
-
-    if (!box) {
-      return;
-    }
-
-    const byId =
-      new Map(
-        cards().map(
-          card => [
-            card.dataset.feature,
-            card
-          ]
-        )
-      );
-
-    normalizedOrder(order)
-      .forEach(id => {
-        const card =
-          byId.get(id);
-
-        if (card) {
-          box.appendChild(
-            card
-          );
-        }
-      });
-
-    updateIndexes();
-  }
-
-  function restoreOrder() {
-    const saved =
-      readSavedOrder();
-
-    if (saved) {
-      applyOrder(saved);
-    } else {
-      updateIndexes();
-    }
-  }
-
-  function injectStyles() {
-    if (
-      document.getElementById(
-        "featureSortV3Styles"
-      )
-    ) {
-      return;
-    }
-
-    const style =
-      document.createElement(
-        "style"
-      );
-
-    style.id =
-      "featureSortV3Styles";
-
-    style.textContent = `
-      .feature-sort-bar-v3{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        margin:0 2px 10px;
-      }
-
-      .feature-sort-title-v3{
-        display:flex;
-        align-items:center;
-        gap:8px;
-        min-width:0;
-      }
-
-      .feature-sort-title-v3 strong{
-        color:var(--ink);
-        font-size:14px;
-        font-weight:900;
-      }
-
-      .feature-sort-title-v3 small{
-        color:var(--muted);
-        font-size:10px;
-      }
-
-      .feature-sort-open-v3{
-        appearance:none;
-        -webkit-appearance:none;
-        border:1px solid var(--line);
-        background:var(--card);
-        color:var(--ink);
-        border-radius:999px;
-        padding:8px 12px;
-        font-size:11px;
-        line-height:1;
-        font-weight:800;
-        cursor:pointer;
-        box-shadow:
-          0 4px 12px
-          rgba(15,23,42,.05);
-      }
-
-      .feature-sort-backdrop-v3{
-        position:fixed;
-        inset:0;
-        z-index:9998;
-        background:
-          rgba(15,23,42,.38);
-        backdrop-filter:
-          blur(6px);
-        -webkit-backdrop-filter:
-          blur(6px);
-        opacity:0;
-        pointer-events:none;
-        transition:
-          opacity .18s ease;
-      }
-
-      .feature-sort-backdrop-v3.show{
-        opacity:1;
-        pointer-events:auto;
-      }
-
-      .feature-sort-sheet-v3{
-        position:fixed;
-        left:50%;
-        bottom:0;
-        z-index:9999;
-
-        width:
-          min(
-            560px,
-            100%
-          );
-
-        max-height:
-          min(
-            82vh,
-            760px
-          );
-
-        transform:
-          translate(
-            -50%,
-            105%
-          );
-
-        background:
-          var(--card);
-
-        border:
-          1px solid
-          var(--line);
-
-        border-bottom:0;
-
-        border-radius:
-          24px
-          24px
-          0
-          0;
-
-        box-shadow:
-          0
-          -18px
-          60px
-          rgba(
-            15,
-            23,
-            42,
-            .18
-          );
-
-        overflow:hidden;
-
-        transition:
-          transform
-          .24s
-          cubic-bezier(
-            .2,
-            .8,
-            .2,
-            1
-          );
-      }
-
-      .feature-sort-sheet-v3.show{
-        transform:
-          translate(
-            -50%,
-            0
-          );
-      }
-
-      .feature-sort-handle-v3{
-        width:44px;
-        height:5px;
-
-        border-radius:
-          999px;
-
-        background:
-          rgba(
-            127,
-            127,
-            127,
-            .28
-          );
-
-        margin:
-          10px
-          auto
-          4px;
-      }
-
-      .feature-sort-sheet-head-v3{
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-
-        gap:12px;
-
-        padding:
-          12px
-          18px
-          14px;
-
-        border-bottom:
-          1px
-          solid
-          var(--line);
-      }
-
-      .feature-sort-sheet-head-v3 h3{
-        margin:0;
-
-        color:
-          var(--ink);
-
-        font-size:
-          18px;
-
-        line-height:
-          1.2;
-      }
-
-      .feature-sort-sheet-head-v3 p{
-        margin:
-          5px
-          0
-          0;
-
-        color:
-          var(--muted);
-
-        font-size:
-          11px;
-
-        line-height:
-          1.5;
-      }
-
-      .feature-sort-close-v3{
-        flex:
-          0 0 auto;
-
-        width:34px;
-        height:34px;
-
-        border:
-          1px
-          solid
-          var(--line);
-
-        border-radius:
-          50%;
-
-        background:
-          var(--soft);
-
-        color:
-          var(--ink);
-
-        font-size:
-          18px;
-
-        display:grid;
-        place-items:center;
-
-        cursor:pointer;
-      }
-
-      .feature-sort-list-v3{
-        position:relative;
-
-        overflow-y:auto;
-
-        overscroll-behavior:
-          contain;
-
-        max-height:
-          calc(
-            min(
-              82vh,
-              760px
-            )
-            - 185px
-          );
-
-        padding:
-          12px
-          14px
-          16px;
-
-        -webkit-overflow-scrolling:
-          touch;
-      }
-
-      .feature-sort-row-v3{
-        display:flex;
-        align-items:center;
-
-        gap:12px;
-
-        min-height:
-          58px;
-
-        padding:
-          9px
-          10px;
-
-        margin-bottom:
-          8px;
-
-        border:
-          1px
-          solid
-          var(--line);
-
-        border-radius:
-          15px;
-
-        background:
-          var(--card);
-
-        color:
-          var(--ink);
-
-        box-shadow:
-          0
-          5px
-          14px
-          rgba(
-            15,
-            23,
-            42,
-            .04
-          );
-
-        user-select:none;
-        -webkit-user-select:none;
-        -webkit-touch-callout:none;
-
-        touch-action:none;
-
-        transition:
-          transform
-          .12s
-          ease,
-          box-shadow
-          .12s
-          ease,
-          opacity
-          .12s
-          ease,
-          border-color
-          .12s
-          ease;
-      }
-
-      .feature-sort-row-v3:last-child{
-        margin-bottom:0;
-      }
-
-      .feature-sort-row-v3.dragging{
-        opacity:.72;
-
-        transform:
-          scale(.985);
-
-        border-color:
-          rgba(
-            59,
-            130,
-            246,
-            .45
-          );
-
-        box-shadow:
-          0
-          10px
-          28px
-          rgba(
-            15,
-            23,
-            42,
-            .14
-          );
-      }
-
-      .feature-sort-grip-v3{
-        flex:
-          0 0 auto;
-
-        width:34px;
-        height:34px;
-
-        border-radius:
-          10px;
-
-        background:
-          var(--soft);
-
-        color:
-          var(--muted);
-
-        display:grid;
-        place-items:center;
-
-        font-size:
-          18px;
-
-        line-height:
-          1;
-
-        cursor:
-          grab;
-      }
-
-      .feature-sort-row-v3.dragging
-      .feature-sort-grip-v3{
-        cursor:
-          grabbing;
-      }
-
-      .feature-sort-row-copy-v3{
-        flex:1;
-        min-width:0;
-      }
-
-      .feature-sort-row-copy-v3 strong{
-        display:block;
-
-        font-size:
-          14px;
-
-        line-height:
-          1.25;
-      }
-
-      .feature-sort-row-copy-v3 small{
-        display:block;
-
-        margin-top:
-          3px;
-
-        color:
-          var(--muted);
-
-        font-size:
-          10px;
-      }
-
-      .feature-sort-number-v3{
-        flex:
-          0 0 auto;
-
-        width:
-          28px;
-
-        color:
-          var(--muted);
-
-        text-align:
-          right;
-
-        font-size:
-          10px;
-
-        font-weight:
-          900;
-
-        letter-spacing:
-          .05em;
-      }
-
-      .feature-sort-sheet-foot-v3{
-        display:grid;
-
-        grid-template-columns:
-          1fr
-          1.35fr;
-
-        gap:
-          10px;
-
-        padding:
-          12px
-          14px
-          calc(
-            12px
-            + env(
-                safe-area-inset-bottom
-              )
-          );
-
-        border-top:
-          1px
-          solid
-          var(--line);
-
-        background:
-          var(--card);
-      }
-
-      .feature-sort-action-v3{
-        appearance:none;
-        -webkit-appearance:none;
-
-        border:
-          1px
-          solid
-          var(--line);
-
-        border-radius:
-          14px;
-
-        min-height:
-          44px;
-
-        font-size:
-          12px;
-
-        font-weight:
-          900;
-
-        cursor:
-          pointer;
-      }
-
-      .feature-sort-reset-v3{
-        background:
-          var(--soft);
-
-        color:
-          var(--muted);
-      }
-
-      .feature-sort-save-v3{
-        background:
-          #111827;
-
-        border-color:
-          #111827;
-
-        color:
-          #fff;
-      }
-
-      [data-theme="dark"]
-      .feature-sort-save-v3{
-        background:
-          #e5e7eb;
-
-        border-color:
-          #e5e7eb;
-
-        color:
-          #111827;
-      }
-
-      .feature-sort-toast-v3{
-        position:fixed;
-
-        left:50%;
-
-        bottom:
-          calc(
-            28px
-            + env(
-                safe-area-inset-bottom
-              )
-          );
-
-        z-index:
-          10020;
-
-        transform:
-          translate(
-            -50%,
-            20px
-          );
-
-        background:
-          #111827;
-
-        color:
-          #fff;
-
-        border-radius:
-          999px;
-
-        padding:
-          10px
-          14px;
-
-        font-size:
-          11px;
-
-        font-weight:
-          800;
-
-        opacity:
-          0;
-
-        pointer-events:
-          none;
-
-        transition:
-          opacity
-          .18s
-          ease,
-          transform
-          .18s
-          ease;
-
-        box-shadow:
-          0
-          12px
-          34px
-          rgba(
-            15,
-            23,
-            42,
-            .22
-          );
-      }
-
-      .feature-sort-toast-v3.show{
-        opacity:1;
-
-        transform:
-          translate(
-            -50%,
-            0
-          );
-      }
-
-      body.feature-sort-lock-v3{
-        overflow:
-          hidden
-          !important;
-
-        touch-action:
-          none;
-      }
-
-      @media (
-        min-width:
-          720px
-      ){
-        .feature-sort-sheet-v3{
-          bottom:50%;
-
-          border-bottom:
-            1px
-            solid
-            var(--line);
-
-          border-radius:
-            24px;
-
-          transform:
-            translate(
-              -50%,
-              60%
-            );
-
-          opacity:
-            0;
-
-          pointer-events:
-            none;
-        }
-
-        .feature-sort-sheet-v3.show{
-          transform:
-            translate(
-              -50%,
-              50%
-            );
-
-          opacity:
-            1;
-
-          pointer-events:
-            auto;
-        }
-
-        .feature-sort-handle-v3{
-          display:none;
-        }
-      }
-
-      @media (
-        max-width:
-          700px
-      ){
-        .feature-sort-title-v3 small{
-          display:none;
-        }
-
-        .feature-sort-open-v3{
-          padding:
-            8px
-            11px;
-
-          font-size:
-            10px;
-        }
-      }
-    `;
-
-    document.head.appendChild(
-      style
-    );
-  }
-
-  function ensureToolbar() {
-    const box = rail();
-
-    if (!box) {
-      return;
-    }
-
-    if (
-      document.getElementById(
-        "featureSortBarV3"
-      )
-    ) {
-      return;
-    }
-
-    const bar =
-      document.createElement(
-        "div"
-      );
-
-    bar.id =
-      "featureSortBarV3";
-
-    bar.className =
-      "feature-sort-bar-v3";
-
-    bar.innerHTML = `
-      <div
-        class="
-          feature-sort-title-v3
-        "
-      >
-        <strong>
-          功能列表
-        </strong>
-
-        <small>
-          可依個人習慣調整順序
-        </small>
-      </div>
-
-      <button
-        type="button"
-        id="featureSortOpenV3"
-        class="
-          feature-sort-open-v3
-        "
-      >
-        自訂排序
-      </button>
-    `;
-
-    box.parentNode.insertBefore(
-      bar,
-      box
-    );
-
-    $("#featureSortOpenV3")
-      ?.addEventListener(
-        "click",
-        openSheet
-      );
-  }
-
-  function ensureSheet() {
-    if (
-      document.getElementById(
-        "featureSortSheetV3"
-      )
-    ) {
-      return;
-    }
-
-    const backdrop =
-      document.createElement(
-        "div"
-      );
-
-    backdrop.id =
-      "featureSortBackdropV3";
-
-    backdrop.className =
-      "feature-sort-backdrop-v3";
-
-    const sheet =
-      document.createElement(
-        "section"
-      );
-
-    sheet.id =
-      "featureSortSheetV3";
-
-    sheet.className =
-      "feature-sort-sheet-v3";
-
-    sheet.setAttribute(
-      "role",
-      "dialog"
-    );
-
-    sheet.setAttribute(
-      "aria-modal",
-      "true"
-    );
-
-    sheet.innerHTML = `
-      <div
-        class="
-          feature-sort-handle-v3
-        "
-      ></div>
-
-      <div
-        class="
-          feature-sort-sheet-head-v3
-        "
-      >
-        <div>
-          <h3>
-            自訂功能順序
-          </h3>
-
-          <p>
-            按住左側 ☰ 上下拖曳，完成後首頁會立即套用
-          </p>
-        </div>
-
-        <button
-          type="button"
-          id="featureSortCloseV3"
-          class="
-            feature-sort-close-v3
-          "
-          aria-label="關閉"
-        >
-          ×
-        </button>
-      </div>
-
-      <div
-        id="featureSortListV3"
-        class="
-          feature-sort-list-v3
-        "
-      ></div>
-
-      <div
-        class="
-          feature-sort-sheet-foot-v3
-        "
-      >
-        <button
-          type="button"
-          id="featureSortResetV3"
-          class="
-            feature-sort-action-v3
-            feature-sort-reset-v3
-          "
-        >
-          恢復預設
-        </button>
-
-        <button
-          type="button"
-          id="featureSortSaveV3"
-          class="
-            feature-sort-action-v3
-            feature-sort-save-v3
-          "
-        >
-          完成並儲存
-        </button>
-      </div>
-    `;
-
-    const toast =
-      document.createElement(
-        "div"
-      );
-
-    toast.id =
-      "featureSortToastV3";
-
-    toast.className =
-      "feature-sort-toast-v3";
-
-    toast.textContent =
-      "排序已儲存";
-
-    document.body.appendChild(
-      backdrop
-    );
-
-    document.body.appendChild(
-      sheet
-    );
-
-    document.body.appendChild(
-      toast
-    );
-
-    backdrop.addEventListener(
-      "click",
-      closeSheet
-    );
-
-    $("#featureSortCloseV3")
-      ?.addEventListener(
-        "click",
-        closeSheet
-      );
-
-    $("#featureSortResetV3")
-      ?.addEventListener(
-        "click",
-        () => {
-          workingOrder =
-            normalizedOrder(
-              DEFAULT_ORDER
-            );
-
-          renderList();
-        }
-      );
-
-    $("#featureSortSaveV3")
-      ?.addEventListener(
-        "click",
-        () => {
-          const next =
-            normalizedOrder(
-              workingOrder
-            );
-
-          applyOrder(next);
-
-          saveOrder(next);
-
-          closeSheet();
-
-          showToast();
-        }
-      );
-  }
-
-  function renderList() {
-    const list =
-      document.getElementById(
-        "featureSortListV3"
-      );
-
-    if (!list) {
-      return;
-    }
-
-    const meta =
-      featureMeta();
-
-    list.innerHTML =
-      workingOrder
-        .map(
-          (id, index) => {
-            const item =
-              meta.get(id);
-
-            if (!item) {
-              return "";
-            }
-
-            return `
-              <div
-                class="
-                  feature-sort-row-v3
-                "
-                data-sort-id="${id}"
-              >
-                <div
-                  class="
-                    feature-sort-grip-v3
-                  "
-                  aria-hidden="true"
-                >
-                  ☰
-                </div>
-
-                <div
-                  class="
-                    feature-sort-row-copy-v3
-                  "
-                >
-                  <strong>
-                    ${item.name}
-                  </strong>
-
-                  ${
-                    item.subtitle
-                      ? `
-                        <small>
-                          ${item.subtitle}
-                        </small>
-                      `
-                      : ""
-                  }
-                </div>
-
-                <span
-                  class="
-                    feature-sort-number-v3
-                  "
-                >
-                  ${
-                    String(
-                      index + 1
-                    ).padStart(
-                      2,
-                      "0"
-                    )
-                  }
-                </span>
-              </div>
-            `;
-          }
-        )
-        .join("");
-
-    bindRows();
-  }
-
-  function openSheet() {
-    ensureSheet();
-
-    workingOrder =
-      normalizedOrder(
-        readSavedOrder() ||
-        currentOrder()
-      );
-
-    renderList();
-
-    document.body
-      .classList.add(
-        "feature-sort-lock-v3"
-      );
-
-    requestAnimationFrame(
-      () => {
-        $("#featureSortBackdropV3")
-          ?.classList.add(
-            "show"
-          );
-
-        $("#featureSortSheetV3")
-          ?.classList.add(
-            "show"
-          );
-      }
-    );
-  }
-
-  function closeSheet() {
-    finishDrag();
-
-    $("#featureSortBackdropV3")
-      ?.classList.remove(
-        "show"
-      );
-
-    $("#featureSortSheetV3")
-      ?.classList.remove(
-        "show"
-      );
-
-    document.body
-      .classList.remove(
-        "feature-sort-lock-v3"
-      );
-  }
-
-  function showToast() {
-    const toast =
-      $("#featureSortToastV3");
-
-    if (!toast) {
-      return;
-    }
-
-    toast.classList.add(
-      "show"
-    );
-
-    clearTimeout(
-      toast._timer
-    );
-
-    toast._timer =
-      setTimeout(
-        () => {
-          toast.classList.remove(
-            "show"
-          );
-        },
-        1500
-      );
-  }
-
-  function rowAtY(y) {
-    const list =
-      $("#featureSortListV3");
-
-    if (!list) {
-      return null;
-    }
-
-    const rows =
-      $$(
-        ".feature-sort-row-v3",
-        list
-      );
-
-    for (
-      const row of rows
-    ) {
-      const rect =
-        row.getBoundingClientRect();
-
-      if (
-        y >= rect.top &&
-        y <= rect.bottom
-      ) {
-        return row;
-      }
-    }
-
-    return null;
-  }
-
-  function updateWorkingOrderFromDom() {
-    const list =
-      $("#featureSortListV3");
-
-    if (!list) {
-      return;
-    }
-
-    workingOrder =
-      $$(
-        ".feature-sort-row-v3",
-        list
-      )
-        .map(
-          row =>
-            row.dataset.sortId
-        )
-        .filter(Boolean);
-
-    $$(
-      ".feature-sort-row-v3",
-      list
-    )
+  function updateCardNumbers() {
+    getCards()
       .forEach(
-        (row, index) => {
+        (card, index) => {
+
           const num =
-            row.querySelector(
-              ".feature-sort-number-v3"
+            card.querySelector(
+              ".feature-index"
             );
 
           if (num) {
@@ -1395,325 +254,2079 @@
       );
   }
 
-  function autoScrollList(y) {
-    const list =
-      $("#featureSortListV3");
 
-    if (!list) {
+  function applyOrder(
+    order
+  ) {
+    const rail =
+      getRail();
+
+    if (!rail) {
       return;
     }
 
-    const rect =
-      list.getBoundingClientRect();
+    const normalized =
+      normalizeOrder(
+        order
+      );
 
-    const edge =
-      54;
+    const map =
+      new Map(
+        getCards()
+          .map(
+            card => [
+              card.dataset.feature,
+              card
+            ]
+          )
+      );
 
-    if (
-      y <
-      rect.top +
-      edge
-    ) {
-      list.scrollTop -=
-        12;
-    } else if (
-      y >
-      rect.bottom -
-      edge
-    ) {
-      list.scrollTop +=
-        12;
+    normalized
+      .forEach(
+        id => {
+
+          const card =
+            map.get(id);
+
+          if (card) {
+            rail.appendChild(
+              card
+            );
+          }
+        }
+      );
+
+    updateCardNumbers();
+  }
+
+
+  function restoreSavedOrder() {
+    const saved =
+      readOrder();
+
+    if (saved) {
+
+      applyOrder(
+        saved
+      );
+
+    } else {
+
+      updateCardNumbers();
+
     }
   }
 
-  function moveDrag(y) {
-    if (!dragEl) {
-      return;
-    }
 
-    autoScrollList(y);
+  /* -------------------------------------------------------
+     Styles
+  ------------------------------------------------------- */
 
-    const target =
-      rowAtY(y);
-
+  function injectStyles() {
     if (
-      !target ||
-      target === dragEl
+      document.getElementById(
+        "featureSortV4Styles"
+      )
     ) {
       return;
     }
 
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "featureSortV4Styles";
+
+
+    style.textContent = `
+
+      /* =========================
+         Toolbar
+      ========================= */
+
+      .feature-sort-head-v4{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin:
+          0
+          2px
+          10px;
+      }
+
+      .feature-sort-head-copy-v4{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        min-width:0;
+      }
+
+      .feature-sort-head-copy-v4 strong{
+        color:var(--ink);
+        font-size:14px;
+        font-weight:900;
+      }
+
+      .feature-sort-head-copy-v4 small{
+        color:var(--muted);
+        font-size:10px;
+      }
+
+      .feature-sort-toggle-v4{
+        appearance:none;
+        -webkit-appearance:none;
+
+        border:
+          1px
+          solid
+          var(--line);
+
+        background:
+          var(--card);
+
+        color:
+          var(--ink);
+
+        border-radius:
+          999px;
+
+        padding:
+          8px
+          12px;
+
+        font-size:
+          11px;
+
+        line-height:
+          1;
+
+        font-weight:
+          850;
+
+        cursor:pointer;
+
+        box-shadow:
+          0
+          4px
+          12px
+          rgba(
+            15,
+            23,
+            42,
+            .05
+          );
+      }
+
+      .feature-sort-toggle-v4.active{
+        background:
+          #111827;
+
+        border-color:
+          #111827;
+
+        color:
+          #fff;
+      }
+
+
+      /* =========================
+         Sort panel
+      ========================= */
+
+      .feature-sort-panel-v4{
+        display:none;
+
+        margin:
+          0
+          0
+          16px;
+
+        padding:
+          12px;
+
+        border:
+          1px
+          solid
+          var(--line);
+
+        border-radius:
+          18px;
+
+        background:
+          var(--card);
+
+        box-shadow:
+          0
+          8px
+          24px
+          rgba(
+            15,
+            23,
+            42,
+            .06
+          );
+      }
+
+      .feature-sort-panel-v4.show{
+        display:block;
+      }
+
+
+      .feature-sort-tip-v4{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+
+        gap:10px;
+
+        margin-bottom:
+          10px;
+      }
+
+      .feature-sort-tip-v4 span{
+        color:
+          var(--muted);
+
+        font-size:
+          10px;
+
+        line-height:
+          1.4;
+      }
+
+
+      .feature-sort-reset-v4{
+        appearance:none;
+        -webkit-appearance:none;
+
+        flex:
+          0 0 auto;
+
+        border:
+          0;
+
+        background:
+          transparent;
+
+        color:
+          var(--muted);
+
+        font-size:
+          10px;
+
+        font-weight:
+          800;
+
+        padding:
+          6px
+          4px;
+
+        cursor:pointer;
+      }
+
+
+      /* =========================
+         List
+      ========================= */
+
+      .feature-sort-list-v4{
+        display:flex;
+        flex-direction:column;
+        gap:7px;
+      }
+
+
+      .feature-sort-row-v4{
+        position:relative;
+
+        display:flex;
+        align-items:center;
+
+        min-height:
+          52px;
+
+        gap:
+          11px;
+
+        padding:
+          7px
+          10px
+          7px
+          7px;
+
+        border:
+          1px
+          solid
+          var(--line);
+
+        border-radius:
+          14px;
+
+        background:
+          var(--card);
+
+        color:
+          var(--ink);
+
+        box-shadow:
+          0
+          3px
+          10px
+          rgba(
+            15,
+            23,
+            42,
+            .035
+          );
+
+        transition:
+          transform
+          .12s
+          ease,
+          box-shadow
+          .12s
+          ease,
+          border-color
+          .12s
+          ease;
+      }
+
+
+      /* =========================
+         Handle
+      ========================= */
+
+      .feature-sort-handle-v4{
+        flex:
+          0 0 auto;
+
+        width:
+          38px;
+
+        height:
+          38px;
+
+        border:
+          0;
+
+        border-radius:
+          11px;
+
+        background:
+          var(--soft);
+
+        color:
+          var(--muted);
+
+        display:grid;
+        place-items:center;
+
+        font-size:
+          19px;
+
+        font-weight:
+          900;
+
+        line-height:
+          1;
+
+        cursor:
+          grab;
+
+        touch-action:
+          none;
+
+        user-select:
+          none;
+
+        -webkit-user-select:
+          none;
+
+        -webkit-touch-callout:
+          none;
+      }
+
+
+      .feature-sort-handle-v4:active{
+        cursor:
+          grabbing;
+      }
+
+
+      /* =========================
+         Row copy
+      ========================= */
+
+      .feature-sort-row-copy-v4{
+        flex:
+          1;
+
+        min-width:
+          0;
+      }
+
+      .feature-sort-row-copy-v4 strong{
+        display:block;
+
+        color:
+          var(--ink);
+
+        font-size:
+          13px;
+
+        font-weight:
+          900;
+
+        line-height:
+          1.25;
+      }
+
+      .feature-sort-row-copy-v4 small{
+        display:block;
+
+        margin-top:
+          3px;
+
+        color:
+          var(--muted);
+
+        font-size:
+          9px;
+      }
+
+
+      .feature-sort-number-v4{
+        flex:
+          0
+          0
+          auto;
+
+        min-width:
+          25px;
+
+        color:
+          var(--muted);
+
+        font-size:
+          9px;
+
+        font-weight:
+          900;
+
+        letter-spacing:
+          .05em;
+
+        text-align:
+          right;
+      }
+
+
+      /* =========================
+         Drag state
+      ========================= */
+
+      .feature-sort-row-v4.drag-source{
+        opacity:
+          .22;
+
+        border-style:
+          dashed;
+      }
+
+
+      .feature-sort-ghost-v4{
+        position:
+          fixed;
+
+        left:
+          12px;
+
+        right:
+          12px;
+
+        z-index:
+          10000;
+
+        pointer-events:
+          none;
+
+        display:flex;
+        align-items:center;
+
+        min-height:
+          52px;
+
+        gap:
+          11px;
+
+        padding:
+          7px
+          10px
+          7px
+          7px;
+
+        border:
+          1px
+          solid
+          rgba(
+            59,
+            130,
+            246,
+            .38
+          );
+
+        border-radius:
+          14px;
+
+        background:
+          var(--card);
+
+        color:
+          var(--ink);
+
+        box-shadow:
+          0
+          16px
+          38px
+          rgba(
+            15,
+            23,
+            42,
+            .22
+          );
+
+        transform:
+          scale(
+            1.015
+          );
+
+        opacity:
+          .97;
+      }
+
+
+      .feature-sort-row-v4.drop-before{
+        border-top-color:
+          #3b82f6;
+
+        box-shadow:
+          0
+          -3px
+          0
+          #3b82f6,
+          0
+          3px
+          10px
+          rgba(
+            15,
+            23,
+            42,
+            .035
+          );
+      }
+
+
+      .feature-sort-row-v4.drop-after{
+        border-bottom-color:
+          #3b82f6;
+
+        box-shadow:
+          0
+          3px
+          0
+          #3b82f6,
+          0
+          3px
+          10px
+          rgba(
+            15,
+            23,
+            42,
+            .035
+          );
+      }
+
+
+      /* =========================
+         Footer
+      ========================= */
+
+      .feature-sort-footer-v4{
+        display:none;
+
+        margin-top:
+          11px;
+      }
+
+      .feature-sort-panel-v4.show
+      .feature-sort-footer-v4{
+        display:block;
+      }
+
+
+      .feature-sort-done-v4{
+        appearance:none;
+        -webkit-appearance:none;
+
+        width:
+          100%;
+
+        min-height:
+          43px;
+
+        border:
+          1px
+          solid
+          #111827;
+
+        border-radius:
+          13px;
+
+        background:
+          #111827;
+
+        color:
+          #fff;
+
+        font-size:
+          12px;
+
+        font-weight:
+          900;
+
+        cursor:pointer;
+      }
+
+
+      /* =========================
+         Toast
+      ========================= */
+
+      .feature-sort-toast-v4{
+        position:
+          fixed;
+
+        left:
+          50%;
+
+        bottom:
+          calc(
+            26px
+            +
+            env(
+              safe-area-inset-bottom
+            )
+          );
+
+        z-index:
+          12000;
+
+        transform:
+          translate(
+            -50%,
+            18px
+          );
+
+        padding:
+          9px
+          14px;
+
+        border-radius:
+          999px;
+
+        background:
+          #111827;
+
+        color:
+          #fff;
+
+        font-size:
+          10px;
+
+        font-weight:
+          850;
+
+        opacity:
+          0;
+
+        pointer-events:
+          none;
+
+        transition:
+          opacity
+          .16s
+          ease,
+          transform
+          .16s
+          ease;
+
+        box-shadow:
+          0
+          12px
+          30px
+          rgba(
+            15,
+            23,
+            42,
+            .20
+          );
+      }
+
+      .feature-sort-toast-v4.show{
+        opacity:
+          1;
+
+        transform:
+          translate(
+            -50%,
+            0
+          );
+      }
+
+
+      /* =========================
+         Dark
+      ========================= */
+
+      [data-theme="dark"]
+      .feature-sort-toggle-v4.active,
+      [data-theme="dark"]
+      .feature-sort-done-v4{
+        background:
+          #e5e7eb;
+
+        border-color:
+          #e5e7eb;
+
+        color:
+          #111827;
+      }
+
+
+      /* =========================
+         Mobile
+      ========================= */
+
+      @media(
+        max-width:
+          700px
+      ){
+
+        .feature-sort-head-copy-v4 small{
+          display:none;
+        }
+
+        .feature-sort-toggle-v4{
+          padding:
+            8px
+            11px;
+
+          font-size:
+            10px;
+        }
+
+        .feature-sort-panel-v4{
+          padding:
+            10px;
+
+          border-radius:
+            16px;
+        }
+
+        .feature-sort-row-v4{
+          min-height:
+            50px;
+        }
+
+      }
+
+    `;
+
+
+    document.head.appendChild(
+      style
+    );
+  }
+
+
+  /* -------------------------------------------------------
+     Toolbar / panel
+  ------------------------------------------------------- */
+
+  function ensureUI() {
+    const rail =
+      getRail();
+
+    if (!rail) {
+      return;
+    }
+
+
+    if (
+      document.getElementById(
+        "featureSortHeadV4"
+      )
+    ) {
+      return;
+    }
+
+
+    const head =
+      document.createElement(
+        "div"
+      );
+
+    head.id =
+      "featureSortHeadV4";
+
+    head.className =
+      "feature-sort-head-v4";
+
+
+    head.innerHTML = `
+      <div
+        class="
+          feature-sort-head-copy-v4
+        "
+      >
+
+        <strong>
+          功能列表
+        </strong>
+
+        <small>
+          可自訂常用功能順序
+        </small>
+
+      </div>
+
+      <button
+        type="button"
+        id="featureSortToggleV4"
+        class="
+          feature-sort-toggle-v4
+        "
+      >
+        自訂排序
+      </button>
+    `;
+
+
+    const panel =
+      document.createElement(
+        "div"
+      );
+
+    panel.id =
+      "featureSortPanelV4";
+
+    panel.className =
+      "feature-sort-panel-v4";
+
+
+    panel.innerHTML = `
+      <div
+        class="
+          feature-sort-tip-v4
+        "
+      >
+
+        <span>
+          抓住左側 ☰ 上下拖曳
+        </span>
+
+        <button
+          type="button"
+          id="featureSortResetV4"
+          class="
+            feature-sort-reset-v4
+          "
+        >
+          恢復預設
+        </button>
+
+      </div>
+
+      <div
+        id="featureSortListV4"
+        class="
+          feature-sort-list-v4
+        "
+      ></div>
+
+      <div
+        class="
+          feature-sort-footer-v4
+        "
+      >
+
+        <button
+          type="button"
+          id="featureSortDoneV4"
+          class="
+            feature-sort-done-v4
+          "
+        >
+          完成
+        </button>
+
+      </div>
+    `;
+
+
+    const toast =
+      document.createElement(
+        "div"
+      );
+
+    toast.id =
+      "featureSortToastV4";
+
+    toast.className =
+      "feature-sort-toast-v4";
+
+    toast.textContent =
+      "功能順序已儲存";
+
+
+    rail.parentNode.insertBefore(
+      head,
+      rail
+    );
+
+
+    rail.parentNode.insertBefore(
+      panel,
+      rail
+    );
+
+
+    document.body.appendChild(
+      toast
+    );
+
+
+    $("#featureSortToggleV4")
+      ?.addEventListener(
+        "click",
+        toggleEditing
+      );
+
+
+    $("#featureSortDoneV4")
+      ?.addEventListener(
+        "click",
+        finishEditing
+      );
+
+
+    $("#featureSortResetV4")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          const order =
+            normalizeOrder(
+              DEFAULT_ORDER
+            );
+
+          applyOrder(
+            order
+          );
+
+          renderSortList(
+            order
+          );
+
+          saveOrder(
+            order
+          );
+
+        }
+      );
+  }
+
+
+  /* -------------------------------------------------------
+     Render list
+  ------------------------------------------------------- */
+
+  function renderSortList(
+    order
+  ) {
     const list =
-      $("#featureSortListV3");
+      $("#featureSortListV4");
 
     if (!list) {
       return;
     }
 
+
+    const meta =
+      getFeatureInfo();
+
+
+    const normalized =
+      normalizeOrder(
+        order
+      );
+
+
+    list.innerHTML =
+      normalized
+        .map(
+          (
+            id,
+            index
+          ) => {
+
+            const info =
+              meta.get(id);
+
+            if (!info) {
+              return "";
+            }
+
+
+            return `
+              <div
+                class="
+                  feature-sort-row-v4
+                "
+                data-sort-id="${id}"
+              >
+
+                <button
+                  type="button"
+                  class="
+                    feature-sort-handle-v4
+                  "
+                  aria-label="
+                    拖曳
+                    ${info.name}
+                  "
+                >
+                  ☰
+                </button>
+
+                <div
+                  class="
+                    feature-sort-row-copy-v4
+                  "
+                >
+
+                  <strong>
+                    ${info.name}
+                  </strong>
+
+                  ${
+                    info.sub
+                      ? `
+                        <small>
+                          ${info.sub}
+                        </small>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+                <span
+                  class="
+                    feature-sort-number-v4
+                  "
+                >
+                  ${
+                    String(
+                      index + 1
+                    ).padStart(
+                      2,
+                      "0"
+                    )
+                  }
+                </span>
+
+              </div>
+            `;
+          }
+        )
+        .join("");
+
+
+    bindHandles();
+  }
+
+
+  function listOrder() {
+    const list =
+      $("#featureSortListV4");
+
+    if (!list) {
+      return [];
+    }
+
+
+    return $$(
+      ".feature-sort-row-v4",
+      list
+    )
+      .map(
+        row =>
+          row.dataset.sortId
+      )
+      .filter(Boolean);
+  }
+
+
+  function syncNumbers() {
+    const list =
+      $("#featureSortListV4");
+
+    if (!list) {
+      return;
+    }
+
+
+    $$(
+      ".feature-sort-row-v4",
+      list
+    )
+      .forEach(
+        (
+          row,
+          index
+        ) => {
+
+          const n =
+            row.querySelector(
+              ".feature-sort-number-v4"
+            );
+
+          if (n) {
+            n.textContent =
+              String(
+                index + 1
+              ).padStart(
+                2,
+                "0"
+              );
+          }
+
+        }
+      );
+  }
+
+
+  function syncCardsLive() {
+    const order =
+      listOrder();
+
+    applyOrder(
+      order
+    );
+
+    syncNumbers();
+  }
+
+
+  /* -------------------------------------------------------
+     Edit mode
+  ------------------------------------------------------- */
+
+  function toggleEditing() {
+    editing =
+      !editing;
+
+
+    const panel =
+      $("#featureSortPanelV4");
+
+    const toggle =
+      $("#featureSortToggleV4");
+
+
+    if (editing) {
+
+      const order =
+        normalizeOrder(
+          readOrder() ||
+          getCurrentOrder()
+        );
+
+      renderSortList(
+        order
+      );
+
+      panel?.classList.add(
+        "show"
+      );
+
+      toggle?.classList.add(
+        "active"
+      );
+
+      if (toggle) {
+        toggle.textContent =
+          "編輯中";
+      }
+
+
+    } else {
+
+      finishEditing();
+
+    }
+  }
+
+
+  function finishEditing() {
+    if (!editing) {
+      return;
+    }
+
+
+    stopDrag();
+
+
+    const order =
+      listOrder();
+
+
+    if (order.length) {
+
+      applyOrder(
+        order
+      );
+
+      saveOrder(
+        order
+      );
+
+    }
+
+
+    editing =
+      false;
+
+
+    $("#featureSortPanelV4")
+      ?.classList.remove(
+        "show"
+      );
+
+
+    const toggle =
+      $("#featureSortToggleV4");
+
+
+    toggle?.classList.remove(
+      "active"
+    );
+
+
+    if (toggle) {
+      toggle.textContent =
+        "自訂排序";
+    }
+
+
+    showToast();
+  }
+
+
+  function showToast() {
+    const toast =
+      $("#featureSortToastV4");
+
+    if (!toast) {
+      return;
+    }
+
+
+    toast.classList.add(
+      "show"
+    );
+
+
+    clearTimeout(
+      toast._hideTimer
+    );
+
+
+    toast._hideTimer =
+      setTimeout(
+        () => {
+
+          toast.classList.remove(
+            "show"
+          );
+
+        },
+        1400
+      );
+  }
+
+
+  /* -------------------------------------------------------
+     Drag
+  ------------------------------------------------------- */
+
+  function clearDropMarks() {
+    $$(
+      ".feature-sort-row-v4"
+    )
+      .forEach(
+        row => {
+
+          row.classList.remove(
+            "drop-before",
+            "drop-after"
+          );
+
+        }
+      );
+  }
+
+
+  function createGhost(
+    row
+  ) {
     const rect =
-      target.getBoundingClientRect();
+      row.getBoundingClientRect();
+
+
+    const ghost =
+      row.cloneNode(
+        true
+      );
+
+
+    ghost.classList.remove(
+      "drag-source",
+      "drop-before",
+      "drop-after"
+    );
+
+
+    ghost.classList.add(
+      "feature-sort-ghost-v4"
+    );
+
+
+    ghost.style.width =
+      `${rect.width}px`;
+
+
+    ghost.style.left =
+      `${rect.left}px`;
+
+
+    ghost.style.right =
+      "auto";
+
+
+    ghost.style.top =
+      `${rect.top}px`;
+
+
+    document.body.appendChild(
+      ghost
+    );
+
+
+    return ghost;
+  }
+
+
+  function moveGhost(
+    clientY
+  ) {
+    if (!dragGhost) {
+      return;
+    }
+
+
+    dragGhost.style.top =
+      `${
+        clientY -
+        pointerOffsetY
+      }px`;
+  }
+
+
+  function getTargetRow(
+    clientY
+  ) {
+    const list =
+      $("#featureSortListV4");
+
+    if (!list) {
+      return null;
+    }
+
+
+    const rows =
+      $$(
+        ".feature-sort-row-v4",
+        list
+      )
+        .filter(
+          row =>
+            row !==
+            dragRow
+        );
+
+
+    for (
+      const row
+      of rows
+    ) {
+
+      const rect =
+        row.getBoundingClientRect();
+
+
+      if (
+        clientY >=
+          rect.top &&
+        clientY <=
+          rect.bottom
+      ) {
+        return row;
+      }
+
+    }
+
+
+    return null;
+  }
+
+
+  function reorderAt(
+    clientY
+  ) {
+    if (!dragRow) {
+      return;
+    }
+
+
+    const list =
+      $("#featureSortListV4");
+
+    if (!list) {
+      return;
+    }
+
+
+    clearDropMarks();
+
+
+    const target =
+      getTargetRow(
+        clientY
+      );
+
+
+    if (!target) {
+
+      const rows =
+        $$(
+          ".feature-sort-row-v4",
+          list
+        )
+          .filter(
+            row =>
+              row !==
+              dragRow
+          );
+
+
+      if (!rows.length) {
+        return;
+      }
+
+
+      const firstRect =
+        rows[0]
+          .getBoundingClientRect();
+
+
+      const lastRect =
+        rows[
+          rows.length - 1
+        ]
+          .getBoundingClientRect();
+
+
+      if (
+        clientY <
+        firstRect.top
+      ) {
+
+        list.insertBefore(
+          dragRow,
+          rows[0]
+        );
+
+
+        syncCardsLive();
+
+      } else if (
+        clientY >
+        lastRect.bottom
+      ) {
+
+        list.appendChild(
+          dragRow
+        );
+
+
+        syncCardsLive();
+
+      }
+
+
+      return;
+    }
+
+
+    const rect =
+      target
+        .getBoundingClientRect();
+
 
     const before =
-      y <
+      clientY <
       rect.top +
       rect.height / 2;
 
-    if (before) {
-      list.insertBefore(
-        dragEl,
-        target
-      );
-    } else {
-      list.insertBefore(
-        dragEl,
-        target.nextSibling
-      );
-    }
 
-    updateWorkingOrderFromDom();
+    target.classList.add(
+      before
+        ? "drop-before"
+        : "drop-after"
+    );
+
+
+    if (before) {
+
+      if (
+        dragRow.nextSibling !==
+        target
+      ) {
+
+        list.insertBefore(
+          dragRow,
+          target
+        );
+
+        syncCardsLive();
+
+      }
+
+    } else {
+
+      if (
+        target.nextSibling !==
+        dragRow
+      ) {
+
+        list.insertBefore(
+          dragRow,
+          target.nextSibling
+        );
+
+        syncCardsLive();
+
+      }
+
+    }
   }
 
-  function startDrag(
-    id,
-    row
-  ) {
-    dragId =
-      id;
 
-    dragEl =
+  function autoScroll(
+    clientY
+  ) {
+    const edge =
+      90;
+
+
+    let speed =
+      0;
+
+
+    if (
+      clientY <
+      edge
+    ) {
+
+      speed =
+        -10;
+
+    } else if (
+      clientY >
+      window.innerHeight -
+      edge
+    ) {
+
+      speed =
+        10;
+
+    }
+
+
+    if (!speed) {
+
+      if (
+        autoScrollTimer
+      ) {
+
+        cancelAnimationFrame(
+          autoScrollTimer
+        );
+
+        autoScrollTimer =
+          null;
+
+      }
+
+      return;
+    }
+
+
+    if (
+      autoScrollTimer
+    ) {
+      return;
+    }
+
+
+    const loop =
+      () => {
+
+        if (
+          !dragRow
+        ) {
+
+          autoScrollTimer =
+            null;
+
+          return;
+        }
+
+
+        window.scrollBy(
+          0,
+          speed
+        );
+
+
+        reorderAt(
+          currentY
+        );
+
+
+        autoScrollTimer =
+          requestAnimationFrame(
+            loop
+          );
+      };
+
+
+    autoScrollTimer =
+      requestAnimationFrame(
+        loop
+      );
+  }
+
+
+  function startDrag(
+    row,
+    clientY
+  ) {
+    if (!editing) {
+      return;
+    }
+
+
+    stopDrag();
+
+
+    dragRow =
       row;
 
+
+    const rect =
+      row.getBoundingClientRect();
+
+
+    pointerOffsetY =
+      clientY -
+      rect.top;
+
+
+    currentY =
+      clientY;
+
+
+    dragGhost =
+      createGhost(
+        row
+      );
+
+
     row.classList.add(
-      "dragging"
+      "drag-source"
     );
+
+
+    document.documentElement
+      .style
+      .overscrollBehavior =
+      "none";
+
+
+    document.body.style
+      .overscrollBehavior =
+      "none";
+
 
     if (
       navigator.vibrate
     ) {
+
       try {
+
         navigator.vibrate(
-          20
+          12
         );
+
       } catch (e) {}
+
     }
   }
 
-  function finishDrag() {
-    if (dragEl) {
-      dragEl.classList.remove(
-        "dragging"
+
+  function dragMove(
+    clientY
+  ) {
+    if (!dragRow) {
+      return;
+    }
+
+
+    currentY =
+      clientY;
+
+
+    moveGhost(
+      clientY
+    );
+
+
+    reorderAt(
+      clientY
+    );
+
+
+    autoScroll(
+      clientY
+    );
+  }
+
+
+  function stopDrag() {
+    clearDropMarks();
+
+
+    if (
+      dragRow
+    ) {
+
+      dragRow.classList.remove(
+        "drag-source"
       );
+
     }
 
-    dragId =
+
+    if (
+      dragGhost
+    ) {
+
+      dragGhost.remove();
+
+    }
+
+
+    dragRow =
       null;
 
-    dragEl =
+
+    dragGhost =
       null;
 
-    updateWorkingOrderFromDom();
+
+    if (
+      autoScrollTimer
+    ) {
+
+      cancelAnimationFrame(
+        autoScrollTimer
+      );
+
+      autoScrollTimer =
+        null;
+
+    }
+
+
+    document.documentElement
+      .style
+      .overscrollBehavior =
+      "";
+
+
+    document.body.style
+      .overscrollBehavior =
+      "";
+
+
+    syncCardsLive();
   }
 
-  function bindRows() {
+
+  /* -------------------------------------------------------
+     Handles
+  ------------------------------------------------------- */
+
+  function bindHandles() {
     const list =
-      $("#featureSortListV3");
+      $("#featureSortListV4");
 
     if (!list) {
       return;
     }
 
+
     $$(
-      ".feature-sort-row-v3",
+      ".feature-sort-row-v4",
       list
     )
-      .forEach(row => {
-        const grip =
-          row.querySelector(
-            ".feature-sort-grip-v3"
+      .forEach(
+        row => {
+
+          const handle =
+            row.querySelector(
+              ".feature-sort-handle-v4"
+            );
+
+
+          if (!handle) {
+            return;
+          }
+
+
+          /*
+            Pointer Events
+            Desktop / newer iOS
+          */
+
+          handle.addEventListener(
+            "pointerdown",
+            event => {
+
+              if (
+                event.pointerType ===
+                  "mouse" &&
+                event.button !== 0
+              ) {
+                return;
+              }
+
+
+              event.preventDefault();
+              event.stopPropagation();
+
+
+              try {
+
+                handle.setPointerCapture(
+                  event.pointerId
+                );
+
+              } catch (e) {}
+
+
+              startDrag(
+                row,
+                event.clientY
+              );
+
+            }
           );
 
-        if (!grip) {
-          return;
-        }
 
-        grip.addEventListener(
-          "touchstart",
-          event => {
-            if (
-              event.touches.length !==
-              1
-            ) {
-              return;
+          handle.addEventListener(
+            "pointermove",
+            event => {
+
+              if (!dragRow) {
+                return;
+              }
+
+
+              event.preventDefault();
+
+
+              dragMove(
+                event.clientY
+              );
+
             }
+          );
 
-            event.preventDefault();
 
-            startDrag(
-              row.dataset.sortId,
-              row
-            );
-          },
-          {
-            passive:false
-          }
-        );
+          handle.addEventListener(
+            "pointerup",
+            event => {
 
-        grip.addEventListener(
-          "mousedown",
-          event => {
-            if (
-              event.button !== 0
-            ) {
-              return;
+              if (!dragRow) {
+                return;
+              }
+
+
+              event.preventDefault();
+
+
+              try {
+
+                handle.releasePointerCapture(
+                  event.pointerId
+                );
+
+              } catch (e) {}
+
+
+              stopDrag();
+
             }
+          );
 
-            event.preventDefault();
 
-            startDrag(
-              row.dataset.sortId,
-              row
-            );
-          }
-        );
-      });
+          handle.addEventListener(
+            "pointercancel",
+            () => {
 
-    list.addEventListener(
-      "touchmove",
-      event => {
-        if (
-          !dragEl ||
-          !event.touches.length
-        ) {
-          return;
+              stopDrag();
+
+            }
+          );
+
         }
-
-        event.preventDefault();
-
-        moveDrag(
-          event.touches[0]
-            .clientY
-        );
-      },
-      {
-        passive:false
-      }
-    );
-
-    list.addEventListener(
-      "touchend",
-      event => {
-        if (!dragEl) {
-          return;
-        }
-
-        event.preventDefault();
-
-        finishDrag();
-      },
-      {
-        passive:false
-      }
-    );
-
-    list.addEventListener(
-      "touchcancel",
-      () => {
-        finishDrag();
-      },
-      {
-        passive:false
-      }
-    );
-
-    document.addEventListener(
-      "mousemove",
-      event => {
-        if (!dragEl) {
-          return;
-        }
-
-        event.preventDefault();
-
-        moveDrag(
-          event.clientY
-        );
-      }
-    );
-
-    document.addEventListener(
-      "mouseup",
-      () => {
-        if (!dragEl) {
-          return;
-        }
-
-        finishDrag();
-      }
-    );
+      );
   }
 
-  function boot() {
-    const box =
-      rail();
 
-    if (!box) {
+  /* -------------------------------------------------------
+     Boot
+  ------------------------------------------------------- */
+
+  function boot() {
+    const rail =
+      getRail();
+
+    if (!rail) {
       return;
     }
 
+
     injectStyles();
 
-    ensureToolbar();
+    ensureUI();
 
-    restoreOrder();
+    restoreSavedOrder();
+
+
+    /*
+      如果其他 JS 未來重新建立
+      feature cards，自動重新套用
+    */
 
     const observer =
       new MutationObserver(
         mutations => {
+
           const changed =
             mutations.some(
               mutation =>
                 mutation.addedNodes
-                  .length
+                  .length >
+                0
             );
+
 
           if (!changed) {
             return;
           }
 
-          setTimeout(
+
+          requestAnimationFrame(
             () => {
-              restoreOrder();
-            },
-            0
+
+              const saved =
+                readOrder();
+
+              if (saved) {
+                applyOrder(
+                  saved
+                );
+              }
+
+            }
           );
+
         }
       );
 
+
     observer.observe(
-      box,
+      rail,
       {
         childList:true
       }
     );
   }
 
+
   if (
     document.readyState ===
     "loading"
   ) {
+
     document.addEventListener(
       "DOMContentLoaded",
       () => {
+
         setTimeout(
           boot,
           0
         );
+
       }
     );
+
   } else {
+
     setTimeout(
       boot,
       0
     );
+
   }
+
 })();
