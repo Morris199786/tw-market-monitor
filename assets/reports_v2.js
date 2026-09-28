@@ -1,5 +1,5 @@
 /* =========================================================
-   券商報告 V3
+   券商報告 V3.1
    - 依收到日期分組
    - 歷史報告永久保留
    - 公司名稱 / 股票代號搜尋
@@ -138,8 +138,15 @@
     const tp = targetText(r);
 
     if (tp) {
+      const targetClass =
+        r.action === "upgrade"
+          ? "report-target-up"
+          : r.action === "downgrade"
+          ? "report-target-down"
+          : "";
+
       arr.push(
-        `<span class="report-chip">目標價 ${esc(tp)}</span>`
+        `<span class="report-chip report-target ${targetClass}">目標價 ${esc(tp)}</span>`
       );
     }
 
@@ -847,14 +854,72 @@
     }
   }
 
+  function protectReportRenderer() {
+    const box =
+      $("#reportList");
+
+    if (!box) return;
+
+    let repairing =
+      false;
+
+    const observer =
+      new MutationObserver(
+        async () => {
+          if (repairing) {
+            return;
+          }
+
+          const legacy =
+            box.querySelector(
+              ".report"
+            );
+
+          const v3 =
+            box.querySelector(
+              "#reportCardsV3"
+            );
+
+          if (
+            legacy &&
+            !v3
+          ) {
+            repairing =
+              true;
+
+            try {
+              await renderReportsV3();
+            } finally {
+              repairing =
+                false;
+            }
+          }
+        }
+      );
+
+    observer.observe(
+      box,
+      {
+        childList: true,
+        subtree: true
+      }
+    );
+  }
+
   async function boot() {
     reorderNavigation();
 
-    await renderReportsV3();
+    protectReportRenderer();
 
     setTimeout(
-      addHomeReportCount,
-      1400
+      async () => {
+        await renderReportsV3();
+
+        reorderNavigation();
+
+        await addHomeReportCount();
+      },
+      900
     );
 
     setTimeout(
@@ -862,7 +927,7 @@
         reorderNavigation();
         addHomeReportCount();
       },
-      2600
+      2400
     );
   }
 
