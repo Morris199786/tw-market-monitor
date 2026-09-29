@@ -10,6 +10,31 @@
 <link rel="stylesheet" href="./assets/ui_v2.css?v=20260928-holders-week-v8">
 <link rel="stylesheet" href="./assets/reports_v2.css?v=20260928-reports-v3">
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
+
+<style>
+  html[data-theme="dark"] #selfReportSearchInput,
+  body.dark #selfReportSearchInput,
+  .dark #selfReportSearchInput {
+    background:#111827 !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+  }
+
+  html[data-theme="dark"] #selfReportSearchInput::placeholder,
+  body.dark #selfReportSearchInput::placeholder,
+  .dark #selfReportSearchInput::placeholder {
+    color:#94a3b8 !important;
+  }
+
+  html[data-theme="dark"] #selfReportSearchClear,
+  body.dark #selfReportSearchClear,
+  .dark #selfReportSearchClear {
+    background:#1f2937 !important;
+    color:#cbd5e1 !important;
+    border-color:#334155 !important;
+  }
+</style>
+
 </head>
 
 <body>
@@ -150,9 +175,9 @@
           style="
             width:100%;
             box-sizing:border-box;
-            border:1px solid var(--line,rgba(148,163,184,.25));
-            background:var(--panel,#111827);
-            color:inherit;
+            border:1px solid rgba(148,163,184,.35);
+            background:#ffffff;
+            color:#111827;
             border-radius:12px;
             padding:11px 88px 11px 14px;
             font:inherit;
@@ -171,11 +196,11 @@
             display:none;
             align-items:center;
             justify-content:center;
-            border:0;
+            border:1px solid rgba(148,163,184,.28);
             border-radius:9px;
             padding:6px 9px;
-            background:rgba(148,163,184,.12);
-            color:inherit;
+            background:#f3f4f6;
+            color:#475569;
             font:inherit;
             cursor:pointer;
           "
