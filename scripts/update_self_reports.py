@@ -6,7 +6,7 @@ import html
 from html.parser import HTMLParser
 from urllib.parse import urlencode, urljoin, urlparse, parse_qs
 
-VERSION = "2026-09-29-v11-mops-ajax"
+VERSION = "2026-09-29-v13-period-eps-yoy"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -221,43 +221,139 @@ def first_number(patterns, text):
     return None
 
 
-def extract_metrics(text):
-    text = str(
-        text or ""
-    ).replace(
-        "，",
-        ",",
-    )
+def extract_split_eps(text, out):
+    """OTC layout: separate single-month and single-quarter sections.
 
-    return {
-        "eps": first_number(
-            [
-                r"每股(?:稅後)?盈餘.{0,180}?(-?[\d,]+(?:\.\d+)?)",
-                r"\bEPS.{0,150}?(-?[\d,]+(?:\.\d+)?)",
-            ],
-            text,
-        ),
-        "pretax_million": first_number(
-            [
-                r"稅前(?:淨利|純益|損益).{0,180}?(-?[\d,]+(?:\.\d+)?)",
-            ],
-            text,
-        ),
-        "net_income_million": first_number(
-            [
-                r"(?:歸屬(?:於)?母公司(?:業主)?(?:淨利|損益)|"
-                r"稅後(?:淨利|純益|損益)|本期淨利)"
-                r".{0,180}?(-?[\d,]+(?:\.\d+)?)",
-            ],
-            text,
-        ),
-        "revenue_million": first_number(
-            [
-                r"(?:營業收入|營收).{0,180}?(-?[\d,]+(?:\.\d+)?)",
-            ],
-            text,
-        ),
-    }
+    Each section has current EPS / prior-year EPS / published YoY.
+    Verify both dated columns before accepting any numeric values.
+    """
+    month_start = re.search(r"單月|最近一月", text)
+    if not month_start:
+        return None
+    quarter_start = re.search(r"單季|最近一季", text[month_start.end():])
+    if not quarter_start:
+        return None
+    qpos = month_start.end() + quarter_start.start()
+    tail_end = re.search(r"最近四季累計", text[qpos:])
+    sections = {"monthly": text[month_start.start():qpos],
+                "quarter": text[qpos:qpos + tail_end.start()] if tail_end else text[qpos:]}
+    cell = r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?|\(\s*\d+(?:\.\d+)?\s*\)\s*%?|不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
+    for kind, section in sections.items():
+        eps = re.search(r"每股(?:稅後)?(?:盈餘|損益)|\bEPS\b", section, re.I)
+        if not eps:
+            return None
+        header = section[:eps.start()]
+        if "去年" not in header or not re.search(r"增\s*減|成\s*長", header):
+            return None
+        pattern = (r"(?<!\d)(\d{3,4})(?:年\s*|/)(\d{1,2})(?:月|\b)" if kind == "monthly"
+                   else r"(?<!\d)(\d{3,4})年?\s*第?([1-4一二三四])季")
+        dates = re.findall(pattern, header)
+        if len(dates) != 2:
+            return None
+        y, period = dates[0]; py, prior_period = dates[1]
+        if int(y) - int(py) != 1 or period.lstrip('0') != prior_period.lstrip('0'):
+            return None
+        y = int(y) + 1911 if int(y) < 1911 else int(y)
+        if kind == "monthly":
+            if not 1 <= int(period) <= 12:
+                return None
+            out[kind + "_period"] = f"{y}-{int(period):02d}"
+        else:
+            period = {"一":"1", "二":"2", "三":"3", "四":"4"}.get(period, period)
+            out[kind + "_period"] = f"{y}-Q{period}"
+        tail = re.sub(r"^\s*\(?\s*元\s*\)?", "", section[eps.end():])
+        match = re.match(r"\s*("+cell+r")\s*(?:/\s*|\s+)("+cell+r")\s*(?:/\s*|\s+)("+cell+r")(?=\s|$)", tail, re.I)
+        if not match:
+            return None
+        raw, previous, growth = match.groups()
+        # Current/prior EPS cannot be percentages; growth is the THIRD cell.
+        if "%" in raw or "%" in previous:
+            return None
+        def number(raw):
+            raw = re.sub(r"\s+", "", raw).replace(",", "").rstrip("%")
+            if re.fullmatch(r"\(\d+(?:\.\d+)?\)", raw):
+                raw = "-" + raw[1:-1]
+            try:
+                value = float(raw)
+                return value if math.isfinite(value) else None
+            except ValueError:
+                return None
+        out[kind + "_eps"] = number(raw)
+        out[kind + "_eps_yoy"] = number(growth)
+        out[kind + "_eps_yoy_text"] = growth.strip()
+    out["eps"] = out["monthly_eps"]
+    out["eps_parse_status"] = "parsed" if out["monthly_eps"] is not None and out["quarter_eps"] is not None else "partial"
+    return out
+
+
+def extract_metrics(text):
+    """Read the EPS row only after verifying month/quarter and YoY headers.
+
+    Do not substitute revenue/net-income growth, or trailing-four-quarter EPS.
+    Unrecognized layouts stay null for review rather than guessing columns.
+    """
+    import unicodedata
+    text = unicodedata.normalize("NFKC", html.unescape(str(text or "")))
+    text = re.sub(r"<[^>]+>", " ", text).replace("−", "-").replace("，", ",")
+    out = dict.fromkeys(("eps", "monthly_eps", "monthly_eps_yoy",
+                         "monthly_period", "quarter_eps", "quarter_eps_yoy",
+                         "quarter_period", "monthly_eps_yoy_text", "quarter_eps_yoy_text"))
+    out["eps_parse_status"] = "unrecognized_layout"
+    split = extract_split_eps(text, dict(out))
+    if split is not None:
+        return split
+    # Restrict parsing to the financial table and its first EPS row.
+    anchor = re.search(r"最近一[月季]|當月|單月", text)
+    if not anchor:
+        return out
+    section = text[anchor.start():]
+    eps = re.search(r"每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|\bEPS\b", section, re.I)
+    if not eps:
+        return out
+    header = section[:eps.start()]
+    month = re.search(r"(?<!\d)(\d{3,4})年\s*(\d{1,2})\s*月", header)
+    quarter = re.search(r"(?<!\d)(\d{3,4})年\s*第?\s*([1-4一二三四])\s*季", header[month.end():]) if month else None
+    if not month or not quarter:
+        return out
+    # Standard attention-announcement columns: month, YoY, quarter, YoY, TTM.
+    # Tables containing explicit prior-year numeric columns need separate mapping.
+    if header.count("去年") != 2 or header.count("同期") != 2 or not re.search(r"增\s*減|成\s*長", header):
+        return out
+    months = re.findall(r"\d{3,4}年\s*\d{1,2}\s*月", header)
+    if len(months) != 1:
+        return out
+    def year(y):
+        y = int(y)
+        return y + 1911 if y < 1911 else y
+    q = {"一": "1", "二": "2", "三": "3", "四": "4"}.get(quarter[2], quarter[2])
+    out["monthly_period"] = f"{year(month[1])}-{int(month[2]):02d}"
+    out["quarter_period"] = f"{year(quarter[1])}-Q{q}"
+    tail = section[eps.end():]
+    tail = re.sub(r"^\s*[（(]?\s*元\s*[）)]?", "", tail)
+    # Keep nonnumeric growth cells so missing values never shift the quarter column.
+    cell = r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?|\(\s*\d+(?:\.\d+)?\s*\)\s*%?|不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
+    match = re.match(r"\s*("+cell+r")\s+("+cell+r")\s+("+cell+r")\s+("+cell+r")(?=\s|$)", tail, re.I)
+    if not match:
+        return out
+    def numeric(raw, growth=False):
+        raw = raw.strip().replace(",", "").replace(" ", "")
+        if not growth and "%" in raw:
+            return None
+        raw = raw.rstrip("%")
+        if re.fullmatch(r"\(\d+(?:\.\d+)?\)", raw):
+            raw = "-" + raw[1:-1]
+        try:
+            value = float(raw)
+            return value if math.isfinite(value) else None
+        except ValueError:
+            return None
+    cells = match.groups()
+    out.update(monthly_eps=numeric(cells[0]), monthly_eps_yoy=numeric(cells[1], True),
+               quarter_eps=numeric(cells[2]), quarter_eps_yoy=numeric(cells[3], True),
+               monthly_eps_yoy_text=cells[1].strip(), quarter_eps_yoy_text=cells[3].strip())
+    out["eps"] = out["monthly_eps"]  # compatibility only; UI uses explicit period fields
+    out["eps_parse_status"] = "parsed" if out["monthly_eps"] is not None and out["quarter_eps"] is not None else "partial"
+    return out
 
 
 class RowParser(HTMLParser):
@@ -537,7 +633,7 @@ def extract_detail_params(
             continue
 
         m = re.search(
-            rf"{key}\s*=\s*['\"]?([^&'\"\s,)]+)",
+            rf"{key}(?:\.value)?\s*=\s*['\"]?([^&'\"\s,)]+)",
             blob,
             re.I,
         )
@@ -552,12 +648,7 @@ def extract_detail_params(
         "spoke_date"
         not in params
     ):
-        params[
-            "spoke_date"
-        ] = publish_date.replace(
-            "-",
-            "",
-        )
+        params["spoke_date"] = f"{int(publish_date[:4]) - 1911}{publish_date[5:7]}{publish_date[8:10]}"
 
     if (
         "spoke_time"
@@ -574,58 +665,37 @@ def extract_detail_params(
     return params
 
 
-def fetch_detail(
-    params,
-):
-    for base in MOPS_BASES:
+def fetch_detail(params):
+    errors = []
+    if not params.get("seq_no"):
+        return "", "", "公告缺少 seq_no，未猜測公告序號"
+    date = str(params.get("spoke_date", ""))
+    if len(date) == 7:
+        date = str(int(date[:3]) + 1911) + date[3:]
+    payload = {"firstin": "true", "TYPEK": params.get("TYPEK", "all"), "step": "1",
+               "COMPANY_ID": params["co_id"], "SPOKE_DATE": date,
+               "SPOKE_TIME": params.get("spoke_time", ""), "SEQ_NO": params["seq_no"],
+               "skey": params.get("skey") or params["co_id"] + date + params["seq_no"]}
+    # Match the actual official detail form (uppercase fields and step=1).
+    for base in reversed(MOPS_BASES):
+        url = base + "/mops/web/ajax_t05sr01_1"
         try:
-            text = fetch_mops(
-                base,
-                params,
-            )
-
-            clean = norm_text(
-                re.sub(
-                    r"<[^>]+>",
-                    " ",
-                    text,
-                )
-            )
-
-            if (
-                any(
-                    anchor
-                    in clean
-                    for anchor
-                    in FINANCIAL_ANCHORS
-                )
-                or "注意交易資訊標準"
-                in clean
-            ):
-                return (
-                    clean,
-                    base
-                    + MOPS_AJAX_PATH
-                    + "?"
-                    + urlencode(
-                        params
-                    ),
-                    "",
-                )
-
+            r = S.post(url, data=payload, headers=mops_headers(), timeout=(15, 45))
+            r.raise_for_status()
+            if not r.encoding or r.encoding.lower() == "iso-8859-1":
+                r.encoding = r.apparent_encoding or "utf-8"
+            clean = norm_text(re.sub(r"<[^>]+>", " ", r.text))
+            roc_date = f"{int(date[:4])-1911}/{date[4:6]}/{date[6:8]}"
+            spoke_time = payload["SPOKE_TIME"]
+            time_text = ":".join(spoke_time[i:i+2] for i in (0, 2, 4))
+            if (re.search(r"每股(?:稅後)?(?:盈餘|損益)|\bEPS\b", clean, re.I)
+                    and params["co_id"] in clean and roc_date in clean
+                    and (not spoke_time or time_text in clean)):
+                return clean, url + "?" + urlencode(payload), ""
+            errors.append(base + ": 未取得含 EPS 的公告明細")
         except Exception as e:
-            last_error = repr(
-                e
-            )
-
-    return (
-        "",
-        "",
-        locals().get(
-            "last_error",
-            "",
-        ),
-    )
+            errors.append(base + ": " + type(e).__name__)
+    return "", "", "; ".join(errors)
 
 
 def parse_candidate_row(
@@ -661,6 +731,9 @@ def parse_candidate_row(
     if not ordinary_ticker(
         ticker
     ):
+        return None
+
+    if any(k in text for k in ("流動比率", "速動比率", "負債比率")) and "注意交易" not in text:
         return None
 
     # 日期
@@ -1225,6 +1298,9 @@ def merge_item(
                 )
 
     for k in (
+        "monthly_eps", "monthly_eps_yoy", "monthly_period",
+        "quarter_eps", "quarter_eps_yoy", "quarter_period",
+        "monthly_eps_yoy_text", "quarter_eps_yoy_text", "eps_parse_status",
         "eps",
         "pretax_million",
         "net_income_million",
@@ -1360,53 +1436,19 @@ def send_telegram(
         return False
 
 
-def push_text(
-    x,
-):
-    lines = [
-        (
-            f"{x.get('name') or x['ticker']} "
-            f"{x['ticker']}"
-        ),
-        (
-            x.get("subject")
-            or "公布自結財務資訊"
-        ),
-    ]
+def eps_line(x, kind):
+    period = x.get(kind + "_period")
+    label = (period + (" 單月 EPS" if kind == "monthly" else " 上一季 EPS")) if period else ("單月 EPS" if kind == "monthly" else "上一季 EPS")
+    value = x.get(kind + "_eps")
+    growth = x.get(kind + "_eps_yoy")
+    value_text = f"{value:.2f} 元" if value is not None else "未取得"
+    growth_text = f"{growth:+.2f}%" if growth is not None else (x.get(kind + "_eps_yoy_text") or "未取得")
+    return f"{label}：{value_text}｜與去年同期增減：{growth_text}"
 
-    if (
-        x.get("eps")
-        is not None
-    ):
-        lines.append(
-            f"EPS {x['eps']:.2f} 元"
-        )
 
-    if (
-        x.get(
-            "pretax_million"
-        )
-        is not None
-    ):
-        lines.append(
-            "稅前淨利 "
-            f"{x['pretax_million']:.0f} 百萬"
-        )
-
-    if (
-        x.get(
-            "net_income_million"
-        )
-        is not None
-    ):
-        lines.append(
-            "稅後／歸母淨利 "
-            f"{x['net_income_million']:.0f} 百萬"
-        )
-
-    return "\n".join(
-        lines
-    )
+def push_text(x):
+    return "\n".join([f"{x.get('name') or x['ticker']} {x['ticker']}",
+                      eps_line(x, "monthly"), eps_line(x, "quarter")])
 
 
 def main():
@@ -1548,6 +1590,11 @@ def main():
         saved.values()
     )
 
+    # Reparse saved details when upgrading; never reuse the old ambiguous EPS.
+    for item in items:
+        item.update(extract_metrics(item.get("detail") or ""))
+    items = [x for x in items if not (any(k in (x.get("subject") or "") for k in ("流動比率", "速動比率", "負債比率")) and "注意交易" not in (x.get("subject") or ""))]
+
     items.sort(
         key=lambda x: (
             x.get(
@@ -1586,9 +1633,9 @@ def main():
     )
 
     for x in fresh:
-        key = identity(
-            x
-        )
+        if x.get("monthly_eps") is None:
+            continue
+        key = identity(x) + "|period-eps-yoy-v1"
 
         page_url = (
             SITE_URL
@@ -1820,3 +1867,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
