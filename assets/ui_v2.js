@@ -1,6 +1,6 @@
 const featureItems = [
   ["heat", "市場熱力圖", "heat", "red", "19族群・5分鐘"],
-  ["selfReports", "自結公布", "earnings", "amber", "22:00＋08:00"],
+  ["selfReports", "自結公布", "earnings", "amber", "每30分鐘"],
   ["flows", "籌碼日報", "flow", "blue", "法人"],
   ["volume", "突然放量", "bolt", "amber", "科技股"],
   ["turnover", "成交排行", "chart", "blue", "TOP30"],
@@ -712,13 +712,91 @@ async function buildMarketPulse() {
 ------------------------------------------------- */
 
 function selfEpsMetric(x, kind, label) {
-  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const value = x[kind + "_eps"];
-  const growth = x[kind + "_eps_yoy"];
-  const numeric = v => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
-  const period = x[kind + "_period"];
-  const yoy = numeric(growth) ? `${Number(growth) > 0 ? "+" : ""}${Number(growth).toFixed(2)}%` : (x[kind + "_eps_yoy_text"] || "未取得");
-  return `<div class="metric-box" style="min-width:0"><small>${esc(label)}${period ? `（${esc(period)}）` : ""}</small><strong style="font-size:clamp(20px,3vw,30px);overflow-wrap:anywhere">${numeric(value) ? Number(value).toFixed(2) + ' 元' : '未取得'}</strong><small style="display:block;margin-top:8px;line-height:1.5">與去年同期增減<br><b>${esc(yoy)}</b></small></div>`;
+  const esc = value =>
+    String(value ?? "")
+      .replace(
+        /[&<>"']/g,
+        c => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[c])
+      );
+
+  const value =
+    x[kind + "_eps"];
+
+  const growth =
+    x[kind + "_eps_yoy"];
+
+  const numeric =
+    v =>
+      v !== null &&
+      v !== undefined &&
+      v !== "" &&
+      Number.isFinite(
+        Number(v)
+      );
+
+  const period =
+    x[kind + "_period"];
+
+  const yoy =
+    numeric(growth)
+      ? `${
+          Number(growth) > 0
+            ? "+"
+            : ""
+        }${Number(growth).toFixed(2)}%`
+      : (
+          x[kind + "_eps_yoy_text"] ||
+          "未取得"
+        );
+
+  return `
+    <div
+      class="metric-box"
+      style="min-width:0"
+    >
+      <small>
+        ${esc(label)}
+        ${
+          period
+            ? `（${esc(period)}）`
+            : ""
+        }
+      </small>
+
+      <strong
+        style="
+          font-size:clamp(20px,3vw,30px);
+          overflow-wrap:anywhere
+        "
+      >
+        ${
+          numeric(value)
+            ? Number(value).toFixed(2) + " 元"
+            : "未取得"
+        }
+      </strong>
+
+      <small
+        style="
+          display:block;
+          margin-top:8px;
+          line-height:1.5
+        "
+      >
+        與去年同期增減
+        <br>
+        <b>
+          ${esc(yoy)}
+        </b>
+      </small>
+    </div>
+  `;
 }
 
 async function selfReports() {
@@ -734,7 +812,7 @@ async function selfReports() {
 
   if (heroP) {
     heroP.textContent =
-      "全台股即時監控｜22:00 收盤後檢查｜次日 08:00 盤前複查｜新公告自動推播";
+      "全台股即時監控｜每 30 分鐘自動檢查｜僅新公告自動推播";
   }
 
   if (
@@ -742,7 +820,7 @@ async function selfReports() {
   ) {
     $("#selfWeekBadge")
       .textContent =
-        "22:00＋08:00";
+        "每30分鐘";
   }
 
   const tabs =
@@ -845,7 +923,7 @@ async function selfReports() {
         </b>
 
         <span>
-          系統會在 22:00 與次日 08:00 自動檢查
+          系統每 30 分鐘自動檢查
         </span>
 
       </div>
@@ -904,17 +982,49 @@ async function selfReports() {
 
             </div>
 
-            <div class="metric-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
-              ${selfEpsMetric(x, "monthly", "當月 EPS")}
-              ${selfEpsMetric(x, "quarter", "上一季 EPS")}
+            <div
+              class="metric-grid"
+              style="
+                grid-template-columns:
+                repeat(2,minmax(0,1fr));
+                gap:12px
+              "
+            >
+              ${
+                selfEpsMetric(
+                  x,
+                  "monthly",
+                  "當月 EPS"
+                )
+              }
+
+              ${
+                selfEpsMetric(
+                  x,
+                  "quarter",
+                  "上一季 EPS"
+                )
+              }
             </div>
-            ${x.monthly_eps == null ? '<div class="subject">公告明細尚未取得或格式待核對，未以其他數字替代 EPS</div>' : ''}
+
+            ${
+              x.monthly_eps == null
+                ? `
+                  <div
+                    class="subject"
+                  >
+                    公告明細尚未取得或格式待核對，未以其他數字替代 EPS
+                  </div>
+                `
+                : ""
+            }
 
           </div>
         `
       )
       .join("");
 }
+
 /* -------------------------------------------------
    月營收卡片
    MoM > 10%：金色高亮
@@ -1134,8 +1244,6 @@ async function monthlyRevenue() {
   const tabs =
     $("#revenueSectorTabs");
 
-  /* 手機族群下拉選單 */
-
   let selector =
     document.querySelector(
       "#revenueSectorPicker"
@@ -1240,8 +1348,6 @@ async function monthlyRevenue() {
     }
   }
 
-  /* MoM 排序按鈕 */
-
   let sortBox =
     document.querySelector(
       "#revenueMomSort"
@@ -1309,8 +1415,6 @@ async function monthlyRevenue() {
           monthlyRevenue();
         };
   }
-
-  /* 桌機族群按鈕 */
 
   if (tabs) {
     tabs.innerHTML = `
@@ -1704,6 +1808,7 @@ function setupBackHomeButton() {
 
   refresh();
 }
+
 /* -------------------------------------------------
    各分頁更新資訊
 ------------------------------------------------- */
@@ -1719,7 +1824,7 @@ const pageUpdateConfig = {
 
   selfReports: {
     label:
-      "22:00＋次日 08:00",
+      "每 30 分鐘",
 
     file:
       "./data/self_reports.json"
@@ -2170,7 +2275,6 @@ function setupFontScaleControl() {
 
 /* -------------------------------------------------
    首頁版面順序
-   快速入口 → 市場快照 → 今日異動
 ------------------------------------------------- */
 
 function setupHomeOrder() {
@@ -2197,20 +2301,10 @@ function setupHomeOrder() {
     return;
   }
 
-  /*
-    快速入口移到最上面
-    會排在首頁 hero 前方
-  */
-
   home.insertBefore(
     rail,
     hero
   );
-
-  /*
-    舊版首頁資訊
-    由新版 Market Pulse 取代
-  */
 
   const homeCards =
     document.getElementById(
@@ -2270,4 +2364,3 @@ setupPageUpdateMeta();
 setupFontScaleControl();
 
 setupBackHomeButton();
-
