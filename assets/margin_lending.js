@@ -59,9 +59,7 @@ function renderMlLogic(d) {
   }
 
   const logic = d.logic || {};
-
-  const details =
-    logic.details || [];
+  const details = logic.details || [];
 
   box.innerHTML = `
     <details class="criteria" style="margin-bottom:14px">
@@ -174,7 +172,11 @@ function mlRawDetail(x) {
       color:var(--muted)
     ">
       <div>
-        目前餘額：
+        ${
+          mlState.kind === "borrow"
+            ? "借券賣出餘額"
+            : "融資餘額"
+        }：
         ${mlNum(
           r.balance_lots,
           0
@@ -265,40 +267,6 @@ function mlRawDetail(x) {
           0
         ).toFixed(1)}%
       </div>
-
-      ${
-        mlState.kind === "borrow" &&
-        r.short_sell_change_1d_lots !==
-        null &&
-        r.short_sell_change_1d_lots !==
-        undefined
-          ? `
-            <div>
-              借券賣出1日增減：
-              ${mlSigned(
-                r.short_sell_change_1d_lots
-              )}
-            </div>
-          `
-          : ""
-      }
-
-      ${
-        mlState.kind === "borrow" &&
-        r.short_sell_change_5d_lots !==
-        null &&
-        r.short_sell_change_5d_lots !==
-        undefined
-          ? `
-            <div>
-              借券賣出5日增減：
-              ${mlSigned(
-                r.short_sell_change_5d_lots
-              )}
-            </div>
-          `
-          : ""
-      }
     </div>
   `;
 }
@@ -329,7 +297,7 @@ async function marginLending() {
 
     if (!d.date) {
       status.textContent =
-        "尚未產生融資／借券資料，先手動執行 Margin lending update";
+        "尚未產生融資／借券賣出資料，先手動執行 Margin lending update";
     } else {
       status.textContent =
         `${
@@ -448,6 +416,7 @@ async function marginLending() {
               <span style="color:var(--muted)">
                 今日
               </span>
+
               <b style="display:block;margin-top:2px">
                 ${mlSigned(
                   x.raw
@@ -460,6 +429,7 @@ async function marginLending() {
               <span style="color:var(--muted)">
                 近5日
               </span>
+
               <b style="display:block;margin-top:2px">
                 ${mlSigned(
                   x.raw
