@@ -4,11 +4,16 @@ import os
 import re
 import html
 from html.parser import HTMLParser
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse, parse_qs
 
-VERSION = "2026-09-29-v10-mops-primary"
+VERSION = "2026-09-29-v11-mops-ajax"
 
-MOPS_HOME = "https://mops.twse.com.tw/mops/"
+MOPS_BASES = (
+    "https://mops.twse.com.tw",
+    "https://mopsov.twse.com.tw",
+)
+
+MOPS_AJAX_PATH = "/mops/web/ajax_t05st01"
 TWSE_NEWS = f"{TWSE}/opendata/t187ap04_L"
 TPEX_NEWS = f"{TPEX}/mopsfin_t187ap04_O"
 
@@ -35,21 +40,6 @@ ATTENTION_KEYWORDS = (
 FINANCIAL_ANCHORS = (
     "營業收入",
     "營收",
-    "稅前淨利",
-    "稅前純益",
-    "稅前損益",
-    "稅後淨利",
-    "稅後純益",
-    "稅後損益",
-    "本期淨利",
-    "歸屬母公司",
-    "歸屬於母公司",
-    "每股盈餘",
-    "每股稅後盈餘",
-    "EPS",
-)
-
-PROFIT_ANCHORS = (
     "稅前淨利",
     "稅前純益",
     "稅前損益",
@@ -166,16 +156,26 @@ def clean_time(s):
         )
 
     digits = re.sub(r"\D", "", raw)
+
     if not digits:
         return ""
 
     digits = digits.zfill(6)[-6:]
-    return f"{digits[:2]}:{digits[2:4]}:{digits[4:6]}"
+
+    return (
+        f"{digits[:2]}:"
+        f"{digits[2:4]}:"
+        f"{digits[4:6]}"
+    )
 
 
 def subject_excluded(subject):
     s = norm_text(subject)
-    return any(k in s for k in EXCLUDE_SUBJECT_KEYWORDS)
+
+    return any(
+        k in s
+        for k in EXCLUDE_SUBJECT_KEYWORDS
+    )
 
 
 def subject_is_candidate(subject):
@@ -185,79 +185,61 @@ def subject_is_candidate(subject):
         return False
 
     return (
-        any(k in s for k in ATTENTION_KEYWORDS)
-        or any(k in s for k in SELF_REPORT_KEYWORDS)
-    )
-
-
-def has_number_near_anchor(text, anchor):
-    return bool(
-        re.search(
-            re.escape(anchor)
-            + r".{0,180}?"
-            + r"-?\d[\d,]*(?:\.\d+)?",
-            text,
-            re.I | re.S,
+        any(
+            k in s
+            for k in ATTENTION_KEYWORDS
+        )
+        or any(
+            k in s
+            for k in SELF_REPORT_KEYWORDS
         )
     )
-
-
-def classify(subject, full_text):
-    subject = norm_text(subject)
-    text = norm_text(full_text)
-
-    if subject_excluded(subject):
-        return False, "excluded"
-
-    if any(k in subject for k in ATTENTION_KEYWORDS):
-        return True, "attention_trading"
-
-    if any(k in subject for k in SELF_REPORT_KEYWORDS):
-        if any(
-            has_number_near_anchor(text, x)
-            for x in PROFIT_ANCHORS
-        ):
-            return True, "direct_self_report_profit"
-
-        signals = sum(
-            1
-            for x in FINANCIAL_ANCHORS
-            if has_number_near_anchor(text, x)
-        )
-
-        if signals >= 2:
-            return True, "direct_self_report_financials"
-
-    return False, "not_self_report"
 
 
 def first_number(patterns, text):
     for pat in patterns:
-        m = re.search(pat, text, re.I | re.S)
+        m = re.search(
+            pat,
+            text,
+            re.I | re.S,
+        )
 
         if not m:
             continue
 
-        raw = str(m.group(1)).replace(",", "").strip()
-        return n(raw, None)
+        raw = (
+            str(m.group(1))
+            .replace(",", "")
+            .strip()
+        )
+
+        return n(
+            raw,
+            None,
+        )
 
     return None
 
 
 def extract_metrics(text):
-    text = str(text or "").replace("，", ",")
+    text = str(
+        text or ""
+    ).replace(
+        "，",
+        ",",
+    )
 
     return {
         "eps": first_number(
             [
-                r"每股(?:稅後)?盈餘.{0,150}?(-?[\d,]+(?:\.\d+)?)",
-                r"\bEPS.{0,120}?(-?[\d,]+(?:\.\d+)?)",
+                r"每股(?:稅後)?盈餘.{0,180}?(-?[\d,]+(?:\.\d+)?)",
+                r"\bEPS.{0,150}?(-?[\d,]+(?:\.\d+)?)",
             ],
             text,
         ),
         "pretax_million": first_number(
             [
-                r"稅前(?:淨利|純益|損益).{0,150}?(-?[\d,]+(?:\.\d+)?)",
+                r"稅前(?:淨利|純益|損益).{0,180}?(-?[\d,]+(?:\.\d+)?)",
             ],
             text,
         ),
@@ -265,292 +247,768 @@ def extract_metrics(text):
             [
                 r"(?:歸屬(?:於)?母公司(?:業主)?(?:淨利|損益)|"
                 r"稅後(?:淨利|純益|損益)|本期淨利)"
-                r".{0,150}?(-?[\d,]+(?:\.\d+)?)",
+                r".{0,180}?(-?[\d,]+(?:\.\d+)?)",
             ],
             text,
         ),
         "revenue_million": first_number(
             [
-                r"(?:營業收入|營收).{0,150}?(-?[\d,]+(?:\.\d+)?)",
+                r"(?:營業收入|營收).{0,180}?(-?[\d,]+(?:\.\d+)?)",
             ],
             text,
         ),
     }
 
 
-class TableParser(HTMLParser):
+class RowParser(HTMLParser):
+    """
+    把 MOPS 查詢結果中的每一列文字 + href/onclick/action
+    全部保留下來，避免 detail button 不是 href 時抓不到。
+    """
+
     def __init__(self):
         super().__init__()
+
         self.rows = []
         self.in_tr = False
-        self.in_cell = False
-        self.current_row = []
-        self.current_cell = []
-        self.current_links = []
+        self.current_text = []
+        self.current_attrs = []
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(
+        self,
+        tag,
+        attrs,
+    ):
         if tag == "tr":
             self.in_tr = True
-            self.current_row = []
+            self.current_text = []
+            self.current_attrs = []
 
-        elif tag in ("td", "th") and self.in_tr:
-            self.in_cell = True
-            self.current_cell = []
-            self.current_links = []
+        if not self.in_tr:
+            return
 
-        elif tag == "a" and self.in_cell:
-            href = dict(attrs).get("href")
-            if href:
-                self.current_links.append(href)
+        attrs = dict(
+            attrs
+        )
 
-    def handle_data(self, data):
-        if self.in_cell:
-            self.current_cell.append(data)
+        for key in (
+            "href",
+            "onclick",
+            "action",
+            "value",
+        ):
+            if attrs.get(key):
+                self.current_attrs.append(
+                    str(
+                        attrs[key]
+                    )
+                )
 
-    def handle_endtag(self, tag):
-        if tag in ("td", "th") and self.in_cell:
-            self.current_row.append(
-                {
-                    "text": norm_text(" ".join(self.current_cell)),
-                    "links": list(self.current_links),
-                }
+    def handle_data(
+        self,
+        data,
+    ):
+        if self.in_tr:
+            self.current_text.append(
+                data
             )
-            self.in_cell = False
 
-        elif tag == "tr" and self.in_tr:
-            if self.current_row:
-                self.rows.append(self.current_row)
+    def handle_endtag(
+        self,
+        tag,
+    ):
+        if (
+            tag == "tr"
+            and self.in_tr
+        ):
+            text = norm_text(
+                " ".join(
+                    self.current_text
+                )
+            )
+
+            if text:
+                self.rows.append(
+                    {
+                        "text": text,
+                        "attrs": list(
+                            self.current_attrs
+                        ),
+                    }
+                )
 
             self.in_tr = False
-            self.current_row = []
+            self.current_text = []
+            self.current_attrs = []
 
 
-def fetch_html(url, timeout=45):
-    r = S.get(
+def mops_headers():
+    return {
+        "User-Agent": (
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/129.0 Safari/537.36"
+        ),
+        "Accept": (
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,*/*;q=0.8"
+        ),
+        "Accept-Language": (
+            "zh-TW,zh;q=0.9,en;q=0.6"
+        ),
+        "Referer": (
+            "https://mops.twse.com.tw/"
+            "mops/web/t05st01"
+        ),
+    }
+
+
+def fetch_mops(
+    base,
+    payload,
+):
+    url = (
+        base
+        + MOPS_AJAX_PATH
+    )
+
+    # MOPS 常以 POST 查詢
+    r = S.post(
         url,
-        timeout=timeout,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) "
-                "AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"
-            ),
-            "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.5",
-        },
+        data=payload,
+        headers=mops_headers(),
+        timeout=45,
     )
 
     r.raise_for_status()
 
-    if not r.encoding or r.encoding.lower() == "iso-8859-1":
-        r.encoding = r.apparent_encoding or "utf-8"
+    if (
+        not r.encoding
+        or r.encoding.lower()
+        == "iso-8859-1"
+    ):
+        r.encoding = (
+            r.apparent_encoding
+            or "utf-8"
+        )
 
     return r.text
 
 
-def parse_mops_latest():
-    html_text = fetch_html(MOPS_HOME)
+def parse_rows(
+    html_text,
+):
+    parser = RowParser()
+    parser.feed(
+        html_text
+    )
 
-    parser = TableParser()
-    parser.feed(html_text)
+    return parser.rows
 
-    items = []
-    seen = set()
 
-    for row in parser.rows:
-        texts = [
-            c["text"]
-            for c in row
-            if c["text"]
-        ]
+def query_payloads(
+    iso_date,
+    keyword,
+):
+    dt = datetime.strptime(
+        iso_date,
+        "%Y-%m-%d",
+    )
 
-        if len(texts) < 3:
-            continue
+    roc_year = (
+        dt.year
+        - 1911
+    )
 
-        ticker = ""
-        ticker_idx = None
+    month = str(
+        dt.month
+    )
 
-        for i, txt in enumerate(texts):
-            if re.fullmatch(r"\d{4}", txt):
-                ticker = txt
-                ticker_idx = i
-                break
+    day = str(
+        dt.day
+    )
 
-        if not ticker or not ordinary_ticker(ticker):
-            continue
+    # MOPS 歷年有多個表單欄位名稱
+    # 同時嘗試新舊兩種搜尋格式
+    return [
+        {
+            "firstin": "1",
+            "step": "1",
+            "off": "1",
+            "TYPEK": "all",
+            "year": str(
+                roc_year
+            ),
+            "month": month,
+            "b_date": day,
+            "e_date": day,
+            "keyword4": keyword,
+            "queryName": "co_id",
+            "co_id": "",
+        },
+        {
+            "firstin": "1",
+            "step": "1",
+            "TYPEK": "all",
+            "year": str(
+                roc_year
+            ),
+            "month": month,
+            "b_date": day,
+            "e_date": day,
+            "keyWord": keyword,
+            "Condition2": "",
+            "keyWord2": "",
+        },
+        {
+            "firstin": "1",
+            "step": "1",
+            "TYPEK": "all",
+            "year": str(
+                roc_year
+            ),
+            "month1": month,
+            "b_date": day,
+            "e_date": day,
+            "keyWord": keyword,
+            "KIND": "all",
+        },
+    ]
 
-        publish_date = ""
-        publish_time = ""
 
-        for txt in texts:
-            if re.search(
-                r"(?:20\d{2}|\d{2,3})[/-]\d{1,2}[/-]\d{1,2}",
-                txt,
-            ):
-                publish_date = roc_to_iso(txt)
-                publish_time = clean_time(txt)
-                break
+def extract_detail_params(
+    attrs,
+    ticker,
+    publish_date,
+    publish_time,
+):
+    blob = " ".join(
+        attrs or []
+    )
 
-        if not publish_date or publish_date < MONITOR_START_DATE:
-            continue
+    params = {
+        "firstin": "1",
+        "TYPEK": "all",
+        "step": "2",
+        "co_id": ticker,
+    }
 
-        subject = ""
-
-        for txt in texts:
-            if subject_is_candidate(txt):
-                subject = txt
-                break
-
-        if not subject:
-            continue
-
-        name = ""
-
-        if ticker_idx is not None and ticker_idx + 1 < len(texts):
-            possible = texts[ticker_idx + 1]
-            if not re.search(r"\d{1,2}:\d{2}", possible):
-                name = possible
-
-        detail_url = ""
-
-        for cell in row:
-            for href in cell.get("links", []):
-                if (
-                    "t05st02" in href
-                    or "t05st01" in href
-                    or "ajax" in href.lower()
-                    or "mops" in href.lower()
-                ):
-                    detail_url = urljoin(
-                        MOPS_HOME,
-                        href,
+    # URL query string
+    for m in re.finditer(
+        r"https?://[^'\"\s]+",
+        blob,
+    ):
+        try:
+            qs = parse_qs(
+                urlparse(
+                    html.unescape(
+                        m.group(0)
                     )
-                    break
+                ).query
+            )
 
-            if detail_url:
-                break
+            for key in (
+                "seq_no",
+                "spoke_time",
+                "spoke_date",
+                "skey",
+                "TYPEK",
+                "off",
+            ):
+                if qs.get(key):
+                    params[key] = (
+                        qs[key][0]
+                    )
+        except Exception:
+            pass
 
-        key = (
+    # onclick / javascript 內的 key=value
+    for key in (
+        "seq_no",
+        "spoke_time",
+        "spoke_date",
+        "skey",
+        "TYPEK",
+        "off",
+    ):
+        if key in params:
+            continue
+
+        m = re.search(
+            rf"{key}\s*=\s*['\"]?([^&'\"\s,)]+)",
+            blob,
+            re.I,
+        )
+
+        if m:
+            params[key] = (
+                m.group(1)
+            )
+
+    # 日期/時間 fallback
+    if (
+        "spoke_date"
+        not in params
+    ):
+        params[
+            "spoke_date"
+        ] = publish_date.replace(
+            "-",
+            "",
+        )
+
+    if (
+        "spoke_time"
+        not in params
+        and publish_time
+    ):
+        params[
+            "spoke_time"
+        ] = publish_time.replace(
+            ":",
+            "",
+        )
+
+    return params
+
+
+def fetch_detail(
+    params,
+):
+    for base in MOPS_BASES:
+        try:
+            text = fetch_mops(
+                base,
+                params,
+            )
+
+            clean = norm_text(
+                re.sub(
+                    r"<[^>]+>",
+                    " ",
+                    text,
+                )
+            )
+
+            if (
+                any(
+                    anchor
+                    in clean
+                    for anchor
+                    in FINANCIAL_ANCHORS
+                )
+                or "注意交易資訊標準"
+                in clean
+            ):
+                return (
+                    clean,
+                    base
+                    + MOPS_AJAX_PATH
+                    + "?"
+                    + urlencode(
+                        params
+                    ),
+                    "",
+                )
+
+        except Exception as e:
+            last_error = repr(
+                e
+            )
+
+    return (
+        "",
+        "",
+        locals().get(
+            "last_error",
+            "",
+        ),
+    )
+
+
+def parse_candidate_row(
+    row,
+    source_keyword,
+):
+    text = row.get(
+        "text",
+        "",
+    )
+
+    if not (
+        source_keyword
+        in text
+        or subject_is_candidate(
+            text
+        )
+    ):
+        return None
+
+    ticker_m = re.search(
+        r"(?<!\d)(\d{4})(?!\d)",
+        text,
+    )
+
+    if not ticker_m:
+        return None
+
+    ticker = (
+        ticker_m.group(1)
+    )
+
+    if not ordinary_ticker(
+        ticker
+    ):
+        return None
+
+    # 日期
+    date_m = re.search(
+        r"(?:(20\d{2})|(\d{2,3}))[/-](\d{1,2})[/-](\d{1,2})",
+        text,
+    )
+
+    if date_m:
+        publish_date = (
+            roc_to_iso(
+                date_m.group(0)
+            )
+        )
+    else:
+        publish_date = (
+            now_tpe()
+            .date()
+            .isoformat()
+        )
+
+    if (
+        publish_date
+        < MONITOR_START_DATE
+    ):
+        return None
+
+    # 時間
+    time_m = re.search(
+        r"(\d{1,2}):(\d{2})(?::(\d{2}))?",
+        text,
+    )
+
+    publish_time = (
+        clean_time(
+            time_m.group(0)
+        )
+        if time_m
+        else ""
+    )
+
+    # 公司名稱：通常代號後面第一段
+    after = text[
+        ticker_m.end():
+    ].strip()
+
+    name = ""
+
+    if after:
+        name = re.split(
+            r"\s+|"
+            r"(?:20\d{2}|\d{2,3})[/-]\d{1,2}[/-]\d{1,2}",
+            after,
+            maxsplit=1,
+        )[0].strip(
+            "｜| "
+        )
+
+    # 主旨：從第一個關鍵字附近往前取完整列
+    subject = text
+
+    detail_params = (
+        extract_detail_params(
+            row.get(
+                "attrs",
+                [],
+            ),
             ticker,
             publish_date,
             publish_time,
-            re.sub(r"\s+", "", subject),
         )
+    )
 
-        if key in seen:
-            continue
-
-        seen.add(key)
-
-        detail = ""
-        detail_error = ""
-
-        if detail_url:
-            try:
-                detail_html = fetch_html(
-                    detail_url,
-                    timeout=30,
-                )
-
-                detail = norm_text(
-                    re.sub(
-                        r"<[^>]+>",
-                        " ",
-                        detail_html,
-                    )
-                )
-
-            except Exception as e:
-                detail_error = repr(e)
-
-        full_text = "\n".join(
-            x
-            for x in (
-                subject,
-                detail,
-                " | ".join(texts),
-            )
-            if x
+    detail, source_url, detail_error = (
+        fetch_detail(
+            detail_params
         )
+    )
 
-        accepted, reason = classify(
+    full_text = "\n".join(
+        x
+        for x in (
             subject,
-            full_text,
+            detail,
+        )
+        if x
+    )
+
+    return {
+        "market": "",
+        "ticker": ticker,
+        "name": clean_name(
+            name
+        ),
+        "publish_date": (
+            publish_date
+        ),
+        "publish_time": (
+            publish_time
+        ),
+        "subject": subject,
+        "detail": detail,
+        "source": (
+            "mops_ajax"
+        ),
+        "source_url": (
+            source_url
+        ),
+        "source_error": (
+            detail_error
+        ),
+        "match_reason": (
+            "attention_trading"
+            if "注意交易資訊標準"
+            in full_text
+            else "direct_self_report"
+        ),
+        **extract_metrics(
+            full_text
+        ),
+    }
+
+
+def fetch_mops_search():
+    """
+    直接查 MOPS ajax_t05st01
+    不再抓首頁 HTML
+    """
+
+    today = (
+        now_tpe()
+        .date()
+        .isoformat()
+    )
+
+    keywords = (
+        "注意交易資訊標準",
+        "自結",
+        "財務業務資訊",
+    )
+
+    raw_rows = []
+    debug = []
+
+    for keyword in keywords:
+        got_keyword = False
+
+        for base in MOPS_BASES:
+            for payload in query_payloads(
+                today,
+                keyword,
+            ):
+                try:
+                    html_text = (
+                        fetch_mops(
+                            base,
+                            payload,
+                        )
+                    )
+
+                    rows = parse_rows(
+                        html_text
+                    )
+
+                    hits = [
+                        r
+                        for r in rows
+                        if keyword
+                        in r.get(
+                            "text",
+                            "",
+                        )
+                    ]
+
+                    debug.append(
+                        {
+                            "base": base,
+                            "keyword": keyword,
+                            "rows": len(
+                                rows
+                            ),
+                            "hits": len(
+                                hits
+                            ),
+                        }
+                    )
+
+                    if hits:
+                        raw_rows.extend(
+                            (
+                                keyword,
+                                r,
+                            )
+                            for r in hits
+                        )
+
+                        got_keyword = True
+                        break
+
+                except Exception as e:
+                    debug.append(
+                        {
+                            "base": base,
+                            "keyword": keyword,
+                            "error": repr(
+                                e
+                            ),
+                        }
+                    )
+
+            if got_keyword:
+                break
+
+    items = {}
+    rejected = []
+
+    for keyword, row in raw_rows:
+        x = parse_candidate_row(
+            row,
+            keyword,
         )
 
-        if not accepted:
+        if not x:
+            rejected.append(
+                {
+                    "keyword": keyword,
+                    "text": (
+                        row.get(
+                            "text",
+                            "",
+                        )[:300]
+                    ),
+                }
+            )
             continue
 
-        items.append(
-            {
-                "market": "",
-                "ticker": ticker,
-                "name": clean_name(name),
-                "publish_date": publish_date,
-                "publish_time": publish_time,
-                "subject": subject,
-                "detail": detail,
-                "source": "mops",
-                "source_url": detail_url,
-                "source_error": detail_error,
-                "match_reason": reason,
-                **extract_metrics(full_text),
-            }
+        key = (
+            x["ticker"],
+            x[
+                "publish_date"
+            ],
+            x[
+                "publish_time"
+            ],
         )
+
+        # 同檔同時間只留一筆
+        items[key] = x
 
     return {
         "ok": True,
-        "rows": len(parser.rows),
-        "items": items,
+        "rows": len(
+            raw_rows
+        ),
+        "items": list(
+            items.values()
+        ),
+        "debug": debug,
+        "rejected": rejected[
+            :20
+        ],
         "error": "",
     }
 
 
-def row_all_text(row):
+def row_all_text(
+    row,
+):
     parts = []
 
-    if isinstance(row, dict):
-        for key, value in row.items():
-            if isinstance(value, (str, int, float)):
-                v = norm_text(value)
+    if isinstance(
+        row,
+        dict,
+    ):
+        for key, value in (
+            row.items()
+        ):
+            if isinstance(
+                value,
+                (
+                    str,
+                    int,
+                    float,
+                ),
+            ):
+                v = norm_text(
+                    value
+                )
 
                 if v:
                     parts.append(
                         f"{norm_text(key)} {v}"
                     )
 
-    return "\n".join(parts)
+    return "\n".join(
+        parts
+    )
 
 
-def fetch_openapi(market, url):
+def fetch_openapi(
+    market,
+    url,
+):
     try:
         arr = get_json(
             url,
             timeout=45,
             tries=5,
         )
+
     except Exception as e:
         return {
             "market": market,
             "ok": False,
             "rows": [],
             "items": [],
-            "error": repr(e),
+            "error": repr(
+                e
+            ),
         }
 
-    if isinstance(arr, dict):
+    if isinstance(
+        arr,
+        dict,
+    ):
         arr = (
             arr.get("data")
-            or arr.get("records")
-            or arr.get("result")
+            or arr.get(
+                "records"
+            )
+            or arr.get(
+                "result"
+            )
             or []
         )
 
-    if not isinstance(arr, list):
+    if not isinstance(
+        arr,
+        list,
+    ):
         return {
             "market": market,
             "ok": False,
             "rows": [],
             "items": [],
-            "error": "response is not list",
+            "error": (
+                "response is not list"
+            ),
         }
 
     items = []
@@ -559,65 +1017,80 @@ def fetch_openapi(market, url):
         ticker = str(
             p(
                 r,
-                ["公司代號", "證券代號", "股票代號", "代號"],
+                [
+                    "公司代號",
+                    "證券代號",
+                    "股票代號",
+                    "代號",
+                ],
                 "",
             )
         ).strip()
 
-        if not ordinary_ticker(ticker):
+        if not ordinary_ticker(
+            ticker
+        ):
             continue
 
         subject = norm_text(
             p(
                 r,
-                ["主旨", "主旨 ", "Subject"],
+                [
+                    "主旨",
+                    "主旨 ",
+                    "Subject",
+                ],
                 "",
             )
         )
 
-        if not subject_is_candidate(subject):
+        if not subject_is_candidate(
+            subject
+        ):
             continue
 
-        publish_date = roc_to_iso(
-            p(
-                r,
-                ["發言日期", "公告日期", "出表日期"],
-                "",
+        publish_date = (
+            roc_to_iso(
+                p(
+                    r,
+                    [
+                        "發言日期",
+                        "公告日期",
+                        "出表日期",
+                    ],
+                    "",
+                )
             )
         )
 
-        if not publish_date or publish_date < MONITOR_START_DATE:
+        if (
+            not publish_date
+            or publish_date
+            < MONITOR_START_DATE
+        ):
             continue
 
-        publish_time = clean_time(
-            p(
-                r,
-                ["發言時間", "公告時間"],
-                "",
+        publish_time = (
+            clean_time(
+                p(
+                    r,
+                    [
+                        "發言時間",
+                        "公告時間",
+                    ],
+                    "",
+                )
             )
         )
 
         full_text = "\n".join(
             [
                 subject,
-                norm_text(
-                    p(
-                        r,
-                        ["說明", "Description", "內容"],
-                        "",
-                    )
+                row_all_text(
+                    r
                 ),
-                row_all_text(r),
             ]
         )
-
-        accepted, reason = classify(
-            subject,
-            full_text,
-        )
-
-        if not accepted:
-            continue
 
         items.append(
             {
@@ -626,19 +1099,36 @@ def fetch_openapi(market, url):
                 "name": clean_name(
                     p(
                         r,
-                        ["公司名稱", "證券名稱", "名稱"],
+                        [
+                            "公司名稱",
+                            "證券名稱",
+                            "名稱",
+                        ],
                         "",
                     )
                 ),
-                "publish_date": publish_date,
-                "publish_time": publish_time,
+                "publish_date": (
+                    publish_date
+                ),
+                "publish_time": (
+                    publish_time
+                ),
                 "subject": subject,
                 "detail": full_text,
-                "source": f"{market}_openapi",
+                "source": (
+                    f"{market}_openapi"
+                ),
                 "source_url": "",
                 "source_error": "",
-                "match_reason": reason,
-                **extract_metrics(full_text),
+                "match_reason": (
+                    "attention_trading"
+                    if "注意交易資訊標準"
+                    in subject
+                    else "direct_self_report"
+                ),
+                **extract_metrics(
+                    full_text
+                ),
             }
         )
 
@@ -651,30 +1141,76 @@ def fetch_openapi(market, url):
     }
 
 
-def identity(x):
+def identity(
+    x,
+):
     return "|".join(
         [
-            str(x.get("ticker") or ""),
-            str(x.get("publish_date") or ""),
-            str(x.get("publish_time") or ""),
+            str(
+                x.get(
+                    "ticker"
+                )
+                or ""
+            ),
+            str(
+                x.get(
+                    "publish_date"
+                )
+                or ""
+            ),
+            str(
+                x.get(
+                    "publish_time"
+                )
+                or ""
+            ),
             re.sub(
                 r"\s+",
                 "",
-                str(x.get("subject") or ""),
+                str(
+                    x.get(
+                        "subject"
+                    )
+                    or ""
+                ),
             ),
         ]
     )
 
 
-def merge_item(old, new):
-    out = dict(old)
+def merge_item(
+    old,
+    new,
+):
+    out = dict(
+        old
+    )
 
-    for k, v in new.items():
-        if v not in (None, "", [], {}):
-            if out.get(k) in (None, "", [], {}):
-                out[k] = v
+    for k, v in (
+        new.items()
+    ):
+        if (
+            v
+            not in (
+                None,
+                "",
+                [],
+                {},
+            )
+            and out.get(k)
+            in (
+                None,
+                "",
+                [],
+                {},
+            )
+        ):
+            out[k] = v
 
-    if new.get("source") == "mops":
+    if (
+        new.get("source")
+        == "mops_ajax"
+    ):
         for k in (
             "name",
             "subject",
@@ -683,8 +1219,10 @@ def merge_item(old, new):
             "source_url",
             "match_reason",
         ):
-            if new.get(k) not in (None, ""):
-                out[k] = new[k]
+            if new.get(k):
+                out[k] = (
+                    new[k]
+                )
 
     for k in (
         "eps",
@@ -692,18 +1230,36 @@ def merge_item(old, new):
         "net_income_million",
         "revenue_million",
     ):
-        if new.get(k) is not None:
-            out[k] = new[k]
+        if (
+            new.get(k)
+            is not None
+        ):
+            out[k] = (
+                new[k]
+            )
 
     return out
 
 
-def send_pushover(title, message, url):
-    token = os.getenv("PUSHOVER_APP_TOKEN", "").strip()
-    user = os.getenv("PUSHOVER_USER_KEY", "").strip()
+def send_pushover(
+    title,
+    message,
+    url,
+):
+    token = os.getenv(
+        "PUSHOVER_APP_TOKEN",
+        "",
+    ).strip()
+
+    user = os.getenv(
+        "PUSHOVER_USER_KEY",
+        "",
+    ).strip()
 
     if not token or not user:
-        print("pushover secrets missing; skip")
+        print(
+            "pushover secrets missing; skip"
+        )
         return False
 
     try:
@@ -716,7 +1272,9 @@ def send_pushover(title, message, url):
                 "message": message,
                 "priority": 0,
                 "url": url,
-                "url_title": "開啟這筆自結",
+                "url_title": (
+                    "開啟這筆自結"
+                ),
             },
             timeout=30,
         )
@@ -725,72 +1283,130 @@ def send_pushover(title, message, url):
         return True
 
     except Exception as e:
-        print("pushover failed", repr(e))
+        print(
+            "pushover failed",
+            repr(e),
+        )
         return False
 
 
-def send_telegram(title, message, url):
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
-    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+def send_telegram(
+    title,
+    message,
+    url,
+):
+    token = os.getenv(
+        "TELEGRAM_BOT_TOKEN",
+        "",
+    ).strip()
+
+    chat_id = os.getenv(
+        "TELEGRAM_CHAT_ID",
+        "",
+    ).strip()
 
     if not token or not chat_id:
-        print("telegram secrets missing; skip")
+        print(
+            "telegram secrets missing; skip"
+        )
         return False
 
     try:
         r = S.post(
-            f"https://api.telegram.org/bot{token}/sendMessage",
+            (
+                "https://api.telegram.org/"
+                f"bot{token}/sendMessage"
+            ),
             data={
                 "chat_id": chat_id,
-                "text": f"{title}\n{message}",
+                "text": (
+                    f"{title}\n"
+                    f"{message}"
+                ),
                 "disable_web_page_preview": True,
-                "reply_markup": json.dumps(
-                    {
-                        "inline_keyboard": [
-                            [
-                                {
-                                    "text": "開啟台股市場監測",
-                                    "url": url,
-                                }
+                "reply_markup": (
+                    json.dumps(
+                        {
+                            "inline_keyboard": [
+                                [
+                                    {
+                                        "text": "開啟台股市場監測",
+                                        "url": url,
+                                    }
+                                ]
                             ]
-                        ]
-                    },
-                    ensure_ascii=False,
+                        },
+                        ensure_ascii=False,
+                    )
                 ),
             },
             timeout=30,
         )
 
         r.raise_for_status()
-        return bool(r.json().get("ok"))
+
+        return bool(
+            r.json()
+            .get(
+                "ok"
+            )
+        )
 
     except Exception as e:
-        print("telegram failed", repr(e))
+        print(
+            "telegram failed",
+            repr(e),
+        )
         return False
 
 
-def push_text(x):
+def push_text(
+    x,
+):
     lines = [
-        f"{x.get('name') or x['ticker']} {x['ticker']}",
-        x.get("subject") or "公布自結財務資訊",
+        (
+            f"{x.get('name') or x['ticker']} "
+            f"{x['ticker']}"
+        ),
+        (
+            x.get("subject")
+            or "公布自結財務資訊"
+        ),
     ]
 
-    if x.get("eps") is not None:
+    if (
+        x.get("eps")
+        is not None
+    ):
         lines.append(
             f"EPS {x['eps']:.2f} 元"
         )
 
-    if x.get("pretax_million") is not None:
+    if (
+        x.get(
+            "pretax_million"
+        )
+        is not None
+    ):
         lines.append(
-            f"稅前淨利 {x['pretax_million']:.0f} 百萬"
+            "稅前淨利 "
+            f"{x['pretax_million']:.0f} 百萬"
         )
 
-    if x.get("net_income_million") is not None:
+    if (
+        x.get(
+            "net_income_million"
+        )
+        is not None
+    ):
         lines.append(
-            f"稅後／歸母淨利 {x['net_income_million']:.0f} 百萬"
+            "稅後／歸母淨利 "
+            f"{x['net_income_million']:.0f} 百萬"
         )
 
-    return "\n".join(lines)
+    return "\n".join(
+        lines
+    )
 
 
 def main():
@@ -811,9 +1427,14 @@ def main():
 
     saved = {}
 
-    for x in old.get("items", []):
+    for x in old.get(
+        "items",
+        [],
+    ):
         if str(
-            x.get("publish_date")
+            x.get(
+                "publish_date"
+            )
             or ""
         ) < MONITOR_START_DATE:
             continue
@@ -823,15 +1444,22 @@ def main():
         ] = x
 
     try:
-        mops = parse_mops_latest()
+        mops = (
+            fetch_mops_search()
+        )
 
         print(
-            "MOPS",
+            "MOPS AJAX",
             "rows",
-            mops.get("rows"),
+            mops.get(
+                "rows"
+            ),
             "self_reports",
             len(
-                mops.get("items", [])
+                mops.get(
+                    "items",
+                    [],
+                )
             ),
         )
 
@@ -840,22 +1468,30 @@ def main():
             "ok": False,
             "rows": 0,
             "items": [],
-            "error": repr(e),
+            "debug": [],
+            "rejected": [],
+            "error": repr(
+                e
+            ),
         }
 
         print(
-            "MOPS failed",
+            "MOPS AJAX failed",
             repr(e),
         )
 
-    twse_result = fetch_openapi(
-        "twse",
-        TWSE_NEWS,
+    twse_result = (
+        fetch_openapi(
+            "twse",
+            TWSE_NEWS,
+        )
     )
 
-    tpex_result = fetch_openapi(
-        "tpex",
-        TPEX_NEWS,
+    tpex_result = (
+        fetch_openapi(
+            "tpex",
+            TPEX_NEWS,
+        )
     )
 
     fresh_map = {}
@@ -869,32 +1505,44 @@ def main():
             "items",
             [],
         ):
-            key = identity(x)
+            key = identity(
+                x
+            )
 
             if key in fresh_map:
-                fresh_map[key] = (
-                    merge_item(
-                        fresh_map[key],
-                        x,
-                    )
+                fresh_map[
+                    key
+                ] = merge_item(
+                    fresh_map[
+                        key
+                    ],
+                    x,
                 )
             else:
-                fresh_map[key] = x
+                fresh_map[
+                    key
+                ] = x
 
     fresh = list(
         fresh_map.values()
     )
 
     for x in fresh:
-        key = identity(x)
+        key = identity(
+            x
+        )
 
         if key in saved:
-            saved[key] = merge_item(
+            saved[
+                key
+            ] = merge_item(
                 saved[key],
                 x,
             )
         else:
-            saved[key] = x
+            saved[
+                key
+            ] = x
 
     items = list(
         saved.values()
@@ -930,20 +1578,17 @@ def main():
         )
     )
 
-    if "telegram_ids" in sent_data:
-        telegram_sent = set(
-            sent_data.get(
-                "telegram_ids",
-                [],
-            )
+    telegram_sent = set(
+        sent_data.get(
+            "telegram_ids",
+            [],
         )
-    else:
-        telegram_sent = set(
-            pushover_sent
-        )
+    )
 
     for x in fresh:
-        key = identity(x)
+        key = identity(
+            x
+        )
 
         page_url = (
             SITE_URL
@@ -952,7 +1597,9 @@ def main():
                 {
                     "page": "selfReports",
                     "ticker": (
-                        x.get("ticker")
+                        x.get(
+                            "ticker"
+                        )
                         or ""
                     ),
                     "date": (
@@ -971,10 +1618,18 @@ def main():
             )
         )
 
-        title = "自結公布"
-        msg = push_text(x)
+        title = (
+            "自結公布"
+        )
 
-        if key not in pushover_sent:
+        msg = push_text(
+            x
+        )
+
+        if (
+            key
+            not in pushover_sent
+        ):
             if send_pushover(
                 title,
                 msg,
@@ -984,7 +1639,10 @@ def main():
                     key
                 )
 
-        if key not in telegram_sent:
+        if (
+            key
+            not in telegram_sent
+        ):
             if send_telegram(
                 title,
                 msg,
@@ -1004,8 +1662,12 @@ def main():
     save_json(
         history_path,
         {
-            "updated_at": updated_at,
-            "version": VERSION,
+            "updated_at": (
+                updated_at
+            ),
+            "version": (
+                VERSION
+            ),
             "monitor_start_date": (
                 MONITOR_START_DATE
             ),
@@ -1016,7 +1678,9 @@ def main():
     save_json(
         sent_path,
         {
-            "updated_at": updated_at,
+            "updated_at": (
+                updated_at
+            ),
             "ids": list(
                 pushover_sent
             )[-2000:],
@@ -1030,15 +1694,18 @@ def main():
         ROOT
         / "data/self_reports.json",
         {
-            "updated_at": updated_at,
+            "updated_at": (
+                updated_at
+            ),
             "monitor_start_date": (
                 MONITOR_START_DATE
             ),
-            "filter_version": VERSION,
+            "filter_version": (
+                VERSION
+            ),
             "source_mode": (
-                "MOPS 即時重大訊息主來源 + "
-                "TWSE/TPEx OpenAPI 備援 + "
-                "注意交易資訊標準優先"
+                "MOPS ajax_t05st01 關鍵字查詢主來源 + "
+                "TWSE/TPEx OpenAPI 備援"
             ),
             "source_status": {
                 "mops": {
@@ -1057,6 +1724,18 @@ def main():
                     "self_reports": len(
                         mops.get(
                             "items",
+                            [],
+                        )
+                    ),
+                    "debug": (
+                        mops.get(
+                            "debug",
+                            [],
+                        )
+                    ),
+                    "rejected": (
+                        mops.get(
+                            "rejected",
                             [],
                         )
                     ),
@@ -1127,9 +1806,13 @@ def main():
     print(
         "self reports",
         "stored",
-        len(items),
+        len(
+            items
+        ),
         "fresh",
-        len(fresh),
+        len(
+            fresh
+        ),
         "version",
         VERSION,
     )
