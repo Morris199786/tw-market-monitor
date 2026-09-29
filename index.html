@@ -121,6 +121,79 @@
     </div>
 
     <div id="selfWeekTabs" class="week-strip"></div>
+
+    <div
+      class="card"
+      style="
+        display:flex;
+        gap:10px;
+        align-items:center;
+        flex-wrap:wrap;
+        margin-bottom:14px;
+        padding:12px 14px;
+      "
+    >
+      <div
+        style="
+          position:relative;
+          flex:1 1 260px;
+          min-width:0;
+        "
+      >
+        <input
+          id="selfReportSearchInput"
+          type="search"
+          inputmode="search"
+          autocomplete="off"
+          placeholder="搜尋股票名稱或代號，例如：南茂、8150"
+          aria-label="搜尋自結股票名稱或股票代號"
+          style="
+            width:100%;
+            box-sizing:border-box;
+            border:1px solid var(--line,rgba(148,163,184,.25));
+            background:var(--panel,#111827);
+            color:inherit;
+            border-radius:12px;
+            padding:11px 88px 11px 14px;
+            font:inherit;
+            outline:none;
+          "
+        >
+
+        <button
+          id="selfReportSearchClear"
+          type="button"
+          style="
+            position:absolute;
+            right:8px;
+            top:50%;
+            transform:translateY(-50%);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            border:0;
+            border-radius:9px;
+            padding:6px 9px;
+            background:rgba(148,163,184,.12);
+            color:inherit;
+            font:inherit;
+            cursor:pointer;
+          "
+        >
+          清除
+        </button>
+      </div>
+
+      <span
+        id="selfReportSearchMeta"
+        style="
+          font-size:13px;
+          opacity:.72;
+          white-space:nowrap;
+        "
+      ></span>
+    </div>
+
     <div id="selfStatus" class="status"></div>
     <div id="selfReportCards" class="grid three"></div>
   </section>
@@ -311,7 +384,7 @@
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
-<script src="./assets/ui_v2.js?v=20260929-selfreport-v14"></script>
+<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v15"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
