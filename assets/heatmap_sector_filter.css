@@ -1,0 +1,207 @@
+/* =========================================================
+   市場熱力圖：族群下拉 + 細分產業 UI
+   ========================================================= */
+
+.heat-sector-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:0 0 14px;
+  padding:14px 16px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--card);
+  box-shadow:var(--shadow)
+}
+
+.heat-sector-copy{
+  min-width:0
+}
+
+.heat-sector-kicker,
+.heat-subgroup-kicker{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase
+}
+
+.heat-sector-copy strong{
+  display:block;
+  margin-top:3px;
+  font-size:15px;
+  color:var(--ink)
+}
+
+.heat-sector-copy small{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:9px
+}
+
+.heat-sector-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto
+}
+
+.heat-sector-select-wrap,
+.heat-subgroup-select-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:260px;
+  padding:6px 8px 6px 10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--soft)
+}
+
+.heat-sector-select-wrap > span,
+.heat-subgroup-select-wrap > span{
+  color:var(--muted);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap
+}
+
+#heatSectorSelect,
+#heatSubgroupSelect{
+  width:100%;
+  min-width:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:800;
+  padding:7px 26px 7px 4px
+}
+
+.heat-sector-reset{
+  min-height:42px;
+  padding:0 13px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--soft);
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850
+}
+
+.heat-sector-reset.active{
+  color:var(--ink);
+  border-color:#7b8798
+}
+
+.heat[hidden],
+.heat-stock[hidden]{
+  display:none !important
+}
+
+.heat-subgroup-control{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:4px 0 12px;
+  padding:10px 11px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--soft)
+}
+
+.heat-subgroup-control b{
+  display:block;
+  margin-top:2px;
+  font-size:11px;
+  color:var(--ink)
+}
+
+.heat-subgroup-select-wrap{
+  min-width:230px;
+  background:var(--card)
+}
+
+html[data-theme="dark"] .heat-sector-control{
+  border-color:#303741;
+  background:#1b2026;
+  box-shadow:none
+}
+
+html[data-theme="dark"] .heat-sector-select-wrap,
+html[data-theme="dark"] .heat-subgroup-control{
+  border-color:#303741;
+  background:#20252c
+}
+
+html[data-theme="dark"] .heat-subgroup-select-wrap,
+html[data-theme="dark"] .heat-sector-reset{
+  border-color:#39424d;
+  background:#252b33;
+  color:#dfe4ea
+}
+
+html[data-theme="dark"] #heatSectorSelect,
+html[data-theme="dark"] #heatSubgroupSelect{
+  color:#f0f2f5
+}
+
+@media(max-width:820px){
+  .heat-sector-control{
+    align-items:stretch
+  }
+
+  .heat-sector-actions{
+    min-width:min(52vw,360px)
+  }
+
+  .heat-sector-select-wrap{
+    min-width:0;
+    flex:1
+  }
+}
+
+@media(max-width:720px){
+  .heat-sector-control{
+    display:block;
+    padding:12px;
+    border-radius:14px
+  }
+
+  .heat-sector-actions{
+    width:100%;
+    min-width:0;
+    margin-top:10px
+  }
+
+  .heat-sector-select-wrap{
+    min-width:0;
+    flex:1
+  }
+
+  .heat-sector-reset{
+    min-height:44px
+  }
+
+  .heat-subgroup-control{
+    display:block
+  }
+
+  .heat-subgroup-select-wrap{
+    width:100%;
+    min-width:0;
+    margin-top:8px
+  }
+
+  #heatSectorSelect,
+  #heatSubgroupSelect{
+    min-height:34px;
+    font-size:12px
+  }
+}
