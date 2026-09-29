@@ -1,23 +1,25 @@
 {
-  "updated_at": "2026-09-29T19:00+08:00",
+  "updated_at": "2026-09-29T19:11+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-09-29-v9-attention-trading",
-  "source_mode": "TWSE/TPEx OpenAPI 注意交易自結優先 + 全欄位財務數字掃描 + 本站永久保存",
+  "filter_version": "2026-09-29-v10-mops-primary",
+  "source_mode": "MOPS 即時重大訊息主來源 + TWSE/TPEx OpenAPI 備援 + 注意交易資訊標準優先",
   "source_status": {
+    "mops": {
+      "ok": true,
+      "rows": 0,
+      "self_reports": 0,
+      "error": ""
+    },
     "twse": {
       "ok": true,
       "rows": 13,
-      "candidates": 0,
       "self_reports": 0,
-      "rejected_candidates": [],
       "error": ""
     },
     "tpex": {
       "ok": true,
       "rows": 7,
-      "candidates": 0,
       "self_reports": 0,
-      "rejected_candidates": [],
       "error": ""
     }
   },
