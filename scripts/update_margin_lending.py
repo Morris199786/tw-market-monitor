@@ -1,8 +1,10 @@
 from sources import *
-from tech_universe import tech_tickers
+
 from datetime import datetime
 from statistics import median
 import math
+
+from tech_universe import tech_tickers
 
 
 HISTORY_TARGET = 22
@@ -10,13 +12,13 @@ TOP_N = 30
 
 MIN_TWSE_MARGIN_ROWS = 200
 MIN_TPEX_MARGIN_ROWS = 150
-MIN_BORROW_ROWS = 250
+MIN_SHORT_SELL_ROWS = 250
 
 
 def roc_date(iso_date):
     dt = datetime.strptime(
         iso_date,
-        "%Y-%m-%d"
+        "%Y-%m-%d",
     )
     return (
         f"{dt.year - 1911}/"
@@ -34,45 +36,41 @@ def clean_field(x):
             "",
             html.unescape(
                 str(x or "")
-            )
-        )
+            ),
+        ),
     )
 
 
 def idx_contains(fields, *needles):
     for i, f in enumerate(fields):
         s = clean_field(f)
+
         if all(
             any(
                 str(opt) in s
                 for opt in (
-                    n
+                    needle
                     if isinstance(
-                        n,
-                        (list, tuple)
+                        needle,
+                        (list, tuple),
                     )
-                    else [n]
+                    else [needle]
                 )
             )
-            for n in needles
+            for needle in needles
         ):
             return i
+
     return None
 
 
 def tables_of(data):
-    """
-    TWSE / TPEx 回傳格式不完全一致：
-    有些是 {"tables":[...]},
-    有些直接把 fields / data 放在最外層。
-    這裡統一轉成 table list。
-    """
     if not isinstance(data, dict):
         return []
 
     tables = data.get(
         "tables",
-        []
+        [],
     )
 
     if (
@@ -84,22 +82,22 @@ def tables_of(data):
     if (
         isinstance(
             data.get("fields"),
-            list
+            list,
         )
         and isinstance(
             data.get("data"),
-            list
+            list,
         )
     ):
         return [
             {
                 "fields": data.get(
                     "fields",
-                    []
+                    [],
                 ),
                 "data": data.get(
                     "data",
-                    []
+                    [],
                 ),
             }
         ]
@@ -134,11 +132,11 @@ def get_twse_margin(date):
     for tb in tables_of(data):
         fields = tb.get(
             "fields",
-            []
+            [],
         )
         rows = tb.get(
             "data",
-            []
+            [],
         )
 
         if not rows:
@@ -146,15 +144,22 @@ def get_twse_margin(date):
 
         ic = idx_contains(
             fields,
-            ["代號", "證券代號", "股票代號"]
-        )
-        inn = idx_contains(
-            fields,
-            ["名稱", "證券名稱", "股票名稱"]
+            [
+                "代號",
+                "證券代號",
+                "股票代號",
+            ],
         )
 
-        # TWSE 融資融券明細標準欄位順序：
-        # 代號 名稱 融資買進 融資賣出 現金償還 前日餘額 今日餘額 限額 ...
+        inn = idx_contains(
+            fields,
+            [
+                "名稱",
+                "證券名稱",
+                "股票名稱",
+            ],
+        )
+
         if ic is None and len(rows[0]) >= 15:
             ic = 0
 
@@ -166,7 +171,7 @@ def get_twse_margin(date):
                 row_value(
                     row,
                     ic,
-                    ""
+                    "",
                 )
             ).strip()
 
@@ -180,21 +185,23 @@ def get_twse_margin(date):
                 row_value(
                     row,
                     5,
-                    0
+                    0,
                 )
             )
+
             bal = n(
                 row_value(
                     row,
                     6,
-                    0
+                    0,
                 )
             )
+
             limit_lots = n(
                 row_value(
                     row,
                     7,
-                    0
+                    0,
                 )
             )
 
@@ -203,8 +210,12 @@ def get_twse_margin(date):
                 "name": clean_name(
                     row_value(
                         row,
-                        inn if inn is not None else 1,
-                        ""
+                        (
+                            inn
+                            if inn is not None
+                            else 1
+                        ),
+                        "",
                     )
                 ),
                 "market": "twse",
@@ -223,7 +234,11 @@ def get_twse_margin(date):
 
 def get_tpex_margin(date):
     data = get_json(
-        "https://www.tpex.org.tw/web/stock/margin_trading/margin_balance/margin_bal_result.php",
+        (
+            "https://www.tpex.org.tw/web/stock/"
+            "margin_trading/margin_balance/"
+            "margin_bal_result.php"
+        ),
         params={
             "l": "zh-tw",
             "o": "json",
@@ -237,7 +252,7 @@ def get_tpex_margin(date):
     for tb in tables_of(data):
         rows = tb.get(
             "data",
-            []
+            [],
         )
 
         for row in rows:
@@ -251,16 +266,20 @@ def get_tpex_margin(date):
             if not ordinary_ticker(t):
                 continue
 
-            # TPEx：
-            # 0代號 1名稱 2前資餘額 3資買 4資賣 5現償
-            # 6資餘額 7資屬證金 8資使用率 9資限額 ...
-            prev_bal = n(row[2])
-            bal = n(row[6])
+            prev_bal = n(
+                row[2]
+            )
+
+            bal = n(
+                row[6]
+            )
+
             usage = (
                 n(row[8])
                 if len(row) > 8
                 else None
             )
+
             limit_lots = (
                 n(row[9])
                 if len(row) > 9
@@ -280,9 +299,7 @@ def get_tpex_margin(date):
                     usage
                     if usage is not None
                     else (
-                        bal
-                        / limit_lots
-                        * 100
+                        bal / limit_lots * 100
                         if limit_lots > 0
                         else None
                     )
@@ -292,186 +309,15 @@ def get_tpex_margin(date):
     return out
 
 
-def get_borrow_balance(date, master):
-    """
-    借券餘額：
-    以欄名辨識，不再假設固定欄位位置。
-    同一股票可能分不同借券系統列示，因此依股票代號加總。
-    原始單位若為股，統一換算成張。
-    """
-    data = get_json(
-        f"{TWSE_WEB}/exchangeReport/TWT72U",
-        params={
-            "date": date.replace("-", ""),
-            "response": "json",
-            "selectType": "SLBNLB",
-        },
-        timeout=45,
-    )
-
-    out = {}
-
-    for tb in tables_of(data):
-        fields = tb.get(
-            "fields",
-            []
-        )
-        rows = tb.get(
-            "data",
-            []
-        )
-
-        ic = idx_contains(
-            fields,
-            [
-                "證券代號",
-                "標的證券代號",
-                "股票代號",
-                "代號",
-            ]
-        )
-        inn = idx_contains(
-            fields,
-            [
-                "證券名稱",
-                "中文名稱",
-                "名稱",
-            ]
-        )
-        iprev = idx_contains(
-            fields,
-            [
-                "昨日借券餘額",
-                "前日借券餘額",
-            ]
-        )
-        inew = idx_contains(
-            fields,
-            [
-                "今日新增借券",
-                "本日新增借券",
-                "新增借券",
-            ]
-        )
-        ireturn = idx_contains(
-            fields,
-            [
-                "今日還券",
-                "本日還券",
-                "還券了結",
-                "還券",
-            ]
-        )
-        ibal = idx_contains(
-            fields,
-            [
-                "今日借券餘額",
-                "本日借券餘額",
-                "借券餘額",
-            ]
-        )
-
-        if ic is None:
-            # TWT72U 另一種格式：
-            # 系統別、代號、昨餘額、新增、還券、今餘額、...
-            if rows and len(rows[0]) >= 6:
-                ic = 1
-                iprev = 2
-                inew = 3
-                ireturn = 4
-                ibal = 5
-                inn = 9 if len(rows[0]) > 9 else None
-            else:
-                continue
-
-        for row in rows:
-            t = str(
-                row_value(
-                    row,
-                    ic,
-                    ""
-                )
-            ).strip()
-
-            if (
-                not ordinary_ticker(t)
-                or t not in master
-            ):
-                continue
-
-            prev_shares = n(
-                row_value(
-                    row,
-                    iprev,
-                    0
-                )
-            )
-            new_shares = n(
-                row_value(
-                    row,
-                    inew,
-                    0
-                )
-            )
-            return_shares = n(
-                row_value(
-                    row,
-                    ireturn,
-                    0
-                )
-            )
-            balance_shares = n(
-                row_value(
-                    row,
-                    ibal,
-                    0
-                )
-            )
-
-            x = out.setdefault(
-                t,
-                {
-                    "ticker": t,
-                    "name": clean_name(
-                        row_value(
-                            row,
-                            inn,
-                            master[t].get(
-                                "name",
-                                ""
-                            )
-                        )
-                    ),
-                    "market": master[t].get(
-                        "market"
-                    ),
-                    "borrow_prev_lots": 0.0,
-                    "borrow_new_lots": 0.0,
-                    "borrow_return_lots": 0.0,
-                    "borrow_balance_lots": 0.0,
-                }
-            )
-
-            x["borrow_prev_lots"] += (
-                prev_shares / 1000
-            )
-            x["borrow_new_lots"] += (
-                new_shares / 1000
-            )
-            x["borrow_return_lots"] += (
-                return_shares / 1000
-            )
-            x["borrow_balance_lots"] += (
-                balance_shares / 1000
-            )
-
-    return out
-
 def get_short_sale_balance(date, master):
     """
-    融券／借券賣出餘額：
-    只作借券異常的確認訊號，不等同借券餘額本身。
-    使用欄名辨識；若欄名不可用，再使用官方固定欄位位置。
+    借券賣出餘額（TWT93U）
+
+    網站「借券賣出增加」全部以本資料為主：
+    - 目前餘額 = short_sell_balance_lots
+    - 1 日增減 = 今日餘額 - 前一交易日餘額
+    - 5 日增減 = 今日餘額 - 5 個交易日前餘額
+    - 20 日異常也以借券賣出餘額的每日變化計算
     """
     data = get_json(
         f"{TWSE_WEB}/exchangeReport/TWT93U",
@@ -487,11 +333,11 @@ def get_short_sale_balance(date, master):
     for tb in tables_of(data):
         fields = tb.get(
             "fields",
-            []
+            [],
         )
         rows = tb.get(
             "data",
-            []
+            [],
         )
 
         ic = idx_contains(
@@ -500,7 +346,16 @@ def get_short_sale_balance(date, master):
                 "證券代號",
                 "股票代號",
                 "代號",
-            ]
+            ],
+        )
+
+        inn = idx_contains(
+            fields,
+            [
+                "證券名稱",
+                "股票名稱",
+                "名稱",
+            ],
         )
 
         iprev = idx_contains(
@@ -509,8 +364,9 @@ def get_short_sale_balance(date, master):
             [
                 "前日餘額",
                 "昨日餘額",
-            ]
+            ],
         )
+
         isold = idx_contains(
             fields,
             "借券賣出",
@@ -518,35 +374,42 @@ def get_short_sale_balance(date, master):
                 "賣出股數",
                 "市場借券賣出",
                 "本日市場借券賣出",
-            ]
+            ],
         )
+
         ireturn = idx_contains(
             fields,
             "借券賣出",
             [
                 "還券股數",
                 "還券",
-            ]
+            ],
         )
+
         iadj = idx_contains(
             fields,
             "借券賣出",
             [
                 "調整股數",
                 "調整",
-            ]
+            ],
         )
+
         ibal = idx_contains(
             fields,
             "借券賣出",
             [
                 "餘額股數",
                 "餘額",
-            ]
+            ],
         )
 
         if ic is None and rows:
-            ic = 1 if len(rows[0]) >= 14 else 0
+            ic = (
+                1
+                if len(rows[0]) >= 14
+                else 0
+            )
 
         for row in rows:
             if ic is None:
@@ -556,7 +419,7 @@ def get_short_sale_balance(date, master):
                 row_value(
                     row,
                     ic,
-                    ""
+                    "",
                 )
             ).strip()
 
@@ -566,38 +429,19 @@ def get_short_sale_balance(date, master):
             ):
                 continue
 
-            # 官方 TWT93U 固定格式 fallback：
-            # 日期、證券代號、前融券...、前借券賣出餘額、
-            # 本日市場借券賣出、還券、調整、本日借券賣出餘額...
             if (
                 iprev is None
                 or isold is None
                 or ibal is None
             ):
-                if len(row) >= 14:
-                    # 若第一欄為日期，代號在 index 1
-                    offset = (
-                        1
-                        if ordinary_ticker(
-                            str(row[1]).strip()
-                        )
-                        else 0
-                    )
-
-                    if offset == 1:
-                        iprev2 = 8
-                        isold2 = 9
-                        ireturn2 = 10
-                        iadj2 = 11
-                        ibal2 = 12
-                    else:
-                        iprev2 = 8
-                        isold2 = 9
-                        ireturn2 = 10
-                        iadj2 = 11
-                        ibal2 = 12
-                else:
+                if len(row) < 14:
                     continue
+
+                iprev2 = 8
+                isold2 = 9
+                ireturn2 = 10
+                iadj2 = 11
+                ibal2 = 12
             else:
                 iprev2 = iprev
                 isold2 = isold
@@ -605,13 +449,32 @@ def get_short_sale_balance(date, master):
                 iadj2 = iadj
                 ibal2 = ibal
 
+            meta = master.get(
+                t,
+                {},
+            )
+
             out[t] = {
+                "ticker": t,
+                "name": clean_name(
+                    row_value(
+                        row,
+                        inn,
+                        meta.get(
+                            "name",
+                            "",
+                        ),
+                    )
+                ),
+                "market": meta.get(
+                    "market",
+                ),
                 "short_sell_prev_lots": (
                     n(
                         row_value(
                             row,
                             iprev2,
-                            0
+                            0,
                         )
                     )
                     / 1000
@@ -621,7 +484,7 @@ def get_short_sale_balance(date, master):
                         row_value(
                             row,
                             isold2,
-                            0
+                            0,
                         )
                     )
                     / 1000
@@ -631,7 +494,7 @@ def get_short_sale_balance(date, master):
                         row_value(
                             row,
                             ireturn2,
-                            0
+                            0,
                         )
                     )
                     / 1000
@@ -641,7 +504,7 @@ def get_short_sale_balance(date, master):
                         row_value(
                             row,
                             iadj2,
-                            0
+                            0,
                         )
                     )
                     / 1000
@@ -651,7 +514,7 @@ def get_short_sale_balance(date, master):
                         row_value(
                             row,
                             ibal2,
-                            0
+                            0,
                         )
                     )
                     / 1000
@@ -659,6 +522,7 @@ def get_short_sale_balance(date, master):
             }
 
     return out
+
 
 def history_market_dates():
     out = []
@@ -671,7 +535,7 @@ def history_market_dates():
     ):
         d = load_json(
             p,
-            {}
+            {},
         )
 
         if (
@@ -692,17 +556,39 @@ def load_market_snapshot(date):
             "data/history/market/"
             f"{date}.json"
         ),
-        {}
+        {},
     ).get(
         "stocks",
-        {}
+        {},
     )
+
+
+def split_short_by_market(
+    short_all,
+    master,
+):
+    twse = {}
+    tpex = {}
+
+    for ticker, row in short_all.items():
+        market = master.get(
+            ticker,
+            {},
+        ).get(
+            "market",
+        )
+
+        if market == "twse":
+            twse[ticker] = row
+        elif market == "tpex":
+            tpex[ticker] = row
+
+    return twse, tpex
 
 
 def fetch_daily_snapshot(
     date,
     master,
-    need_short=False
 ):
     old_path = (
         ROOT
@@ -715,167 +601,138 @@ def fetch_daily_snapshot(
 
     old = load_json(
         old_path,
-        {}
+        {},
     )
 
     old_margin = old.get(
         "margin",
-        {}
+        {},
     )
-    old_borrow = old.get(
-        "borrow",
-        {}
+
+    old_short = old.get(
+        "short_sell",
+        {},
+    )
+
+    old_short_count = (
+        len(
+            old_short.get(
+                "twse",
+                {},
+            )
+        )
+        + len(
+            old_short.get(
+                "tpex",
+                {},
+            )
+        )
     )
 
     if (
-        len(old_margin.get("twse", {}))
-        >= MIN_TWSE_MARGIN_ROWS
-        and len(old_margin.get("tpex", {}))
-        >= MIN_TPEX_MARGIN_ROWS
-        and (
-            len(old_borrow.get("twse", {}))
-            + len(old_borrow.get("tpex", {}))
-        ) >= MIN_BORROW_ROWS
-        and (
-            not need_short
-            or old.get(
-                "short_sell_checked"
+        len(
+            old_margin.get(
+                "twse",
+                {},
             )
+        )
+        >= MIN_TWSE_MARGIN_ROWS
+        and len(
+            old_margin.get(
+                "tpex",
+                {},
+            )
+        )
+        >= MIN_TPEX_MARGIN_ROWS
+        and old_short_count
+        >= MIN_SHORT_SELL_ROWS
+        and old.get(
+            "short_sell_checked"
         )
     ):
         return old
 
     twse_margin = {}
     tpex_margin = {}
-    borrow_all = {}
     short_all = {}
 
     try:
         twse_margin = get_twse_margin(
             date
         )
-    except Exception as e:
+    except Exception as exc:
         print(
             "TWSE margin fail",
             date,
-            repr(e)
+            repr(exc),
         )
 
     try:
         tpex_margin = get_tpex_margin(
             date
         )
-    except Exception as e:
+    except Exception as exc:
         print(
             "TPEx margin fail",
             date,
-            repr(e)
+            repr(exc),
         )
 
     try:
-        borrow_all = get_borrow_balance(
-            date,
-            master
-        )
-    except Exception as e:
-        print(
-            "borrow balance fail",
-            date,
-            repr(e)
-        )
-
-    if need_short:
-        try:
-            short_all = (
-                get_short_sale_balance(
-                    date,
-                    master
-                )
-            )
-        except Exception as e:
-            print(
-                "short sale balance fail",
+        short_all = (
+            get_short_sale_balance(
                 date,
-                repr(e)
+                master,
             )
+        )
+    except Exception as exc:
+        print(
+            "short sale balance fail",
+            date,
+            repr(exc),
+        )
 
-    borrow_twse = {
-        t: r
-        for t, r in borrow_all.items()
-        if r.get("market") == "twse"
-    }
+    short_twse, short_tpex = (
+        split_short_by_market(
+            short_all,
+            master,
+        )
+    )
 
-    borrow_tpex = {
-        t: r
-        for t, r in borrow_all.items()
-        if r.get("market") == "tpex"
-    }
-
-    short_twse = {
-        t: r
-        for t, r in short_all.items()
-        if master.get(
-            t,
-            {}
-        ).get("market") == "twse"
-    }
-
-    short_tpex = {
-        t: r
-        for t, r in short_all.items()
-        if master.get(
-            t,
-            {}
-        ).get("market") == "tpex"
-    }
-
-    # 若本次抓不到，舊的健康資料可保留。
     if (
         len(twse_margin)
         < MIN_TWSE_MARGIN_ROWS
     ):
-        twse_margin = old_margin.get(
-            "twse",
-            {}
+        twse_margin = (
+            old_margin.get(
+                "twse",
+                {},
+            )
         )
 
     if (
         len(tpex_margin)
         < MIN_TPEX_MARGIN_ROWS
     ):
-        tpex_margin = old_margin.get(
-            "tpex",
-            {}
+        tpex_margin = (
+            old_margin.get(
+                "tpex",
+                {},
+            )
         )
 
     if (
-        len(borrow_twse)
-        + len(borrow_tpex)
-        < MIN_BORROW_ROWS
+        len(short_twse)
+        + len(short_tpex)
+        < MIN_SHORT_SELL_ROWS
     ):
-        borrow_twse = old_borrow.get(
+        short_twse = old_short.get(
             "twse",
-            {}
+            {},
         )
-        borrow_tpex = old_borrow.get(
+        short_tpex = old_short.get(
             "tpex",
-            {}
-        )
-
-    if need_short and not short_all:
-        short_twse = old.get(
-            "short_sell",
-            {}
-        ).get(
-            "twse",
-            {}
-        )
-        short_tpex = old.get(
-            "short_sell",
-            {}
-        ).get(
-            "tpex",
-            {}
+            {},
         )
 
     snap = {
@@ -883,77 +740,78 @@ def fetch_daily_snapshot(
         "updated_at": (
             now_tpe()
             .isoformat(
-                timespec="minutes"
+                timespec="minutes",
             )
         ),
         "margin": {
             "twse": twse_margin,
             "tpex": tpex_margin,
         },
-        "borrow": {
-            "twse": borrow_twse,
-            "tpex": borrow_tpex,
-        },
         "short_sell": {
             "twse": short_twse,
             "tpex": short_tpex,
         },
-        "short_sell_checked": (
-            bool(need_short)
-        ),
+        "short_sell_checked": True,
     }
 
     save_json(
         old_path,
-        snap
+        snap,
     )
 
     return snap
 
 
 def healthy_snapshot(snap):
+    short_count = (
+        len(
+            snap.get(
+                "short_sell",
+                {},
+            ).get(
+                "twse",
+                {},
+            )
+        )
+        + len(
+            snap.get(
+                "short_sell",
+                {},
+            ).get(
+                "tpex",
+                {},
+            )
+        )
+    )
+
     return (
         len(
             snap.get(
                 "margin",
-                {}
+                {},
             ).get(
                 "twse",
-                {}
+                {},
             )
         )
         >= MIN_TWSE_MARGIN_ROWS
         and len(
             snap.get(
                 "margin",
-                {}
+                {},
             ).get(
                 "tpex",
-                {}
+                {},
             )
         )
         >= MIN_TPEX_MARGIN_ROWS
-        and (
-            len(
-                snap.get(
-                    "borrow",
-                    {}
-                ).get(
-                    "twse",
-                    {}
-                )
-            )
-            + len(
-                snap.get(
-                    "borrow",
-                    {}
-                ).get(
-                    "tpex",
-                    {}
-                )
+        and short_count
+        >= MIN_SHORT_SELL_ROWS
+        and bool(
+            snap.get(
+                "short_sell_checked"
             )
         )
-        >= MIN_BORROW_ROWS
     )
 
 
@@ -976,18 +834,18 @@ def cap(v, lo, hi):
         lo,
         min(
             hi,
-            v
-        )
+            v,
+        ),
     )
 
 
 def latest_price_change(
     ticker,
-    latest_market
+    latest_market,
 ):
     q = latest_market.get(
         ticker,
-        {}
+        {},
     )
 
     return float(
@@ -1000,28 +858,28 @@ def latest_price_change(
 
 def avg5_volume_lots(
     ticker,
-    dates
+    dates,
 ):
     vals = []
 
-    for d in dates[-5:]:
+    for date in dates[-5:]:
         q = load_market_snapshot(
-            d
+            date
         ).get(
             ticker,
-            {}
+            {},
         )
 
-        v = float(
+        volume = float(
             q.get(
                 "volume"
             )
             or 0
         )
 
-        if v > 0:
+        if volume > 0:
             vals.append(
-                v / 1000
+                volume / 1000
             )
 
     if not vals:
@@ -1037,19 +895,31 @@ def metric_series(
     history,
     market,
     ticker,
-    key,
+    kind,
 ):
     vals = []
 
-    for h in history:
+    source_key = (
+        "margin"
+        if kind == "margin"
+        else "short_sell"
+    )
+
+    field = (
+        "margin_balance_lots"
+        if kind == "margin"
+        else "short_sell_balance_lots"
+    )
+
+    for snap in history:
         row = (
-            h.get(
-                key,
-                {}
+            snap.get(
+                source_key,
+                {},
             )
             .get(
                 market,
-                {}
+                {},
             )
             .get(
                 ticker
@@ -1059,65 +929,21 @@ def metric_series(
         if not row:
             continue
 
-        field = (
-            "margin_balance_lots"
-            if key == "margin"
-            else "borrow_balance_lots"
-        )
-
-        val = row.get(
+        value = row.get(
             field
         )
 
-        if val is None:
+        if value is None:
             continue
 
         vals.append(
             (
-                h.get("date"),
-                float(val)
-            )
-        )
-
-    return vals
-
-
-def short_series(
-    history,
-    market,
-    ticker
-):
-    vals = []
-
-    for h in history:
-        row = (
-            h.get(
-                "short_sell",
-                {}
-            )
-            .get(
-                market,
-                {}
-            )
-            .get(
-                ticker
-            )
-        )
-
-        if not row:
-            continue
-
-        v = row.get(
-            "short_sell_balance_lots"
-        )
-
-        if v is None:
-            continue
-
-        vals.append(
-            (
-                h.get("date"),
-                float(v)
+                snap.get(
+                    "date"
+                ),
+                float(
+                    value
+                ),
             )
         )
 
@@ -1143,10 +969,6 @@ def build_item(
     if len(series) < 2:
         return None
 
-    dates = [
-        x[0]
-        for x in series
-    ]
     vals = [
         x[1]
         for x in series
@@ -1157,7 +979,7 @@ def build_item(
         - vals[i - 1]
         for i in range(
             1,
-            len(vals)
+            len(vals),
         )
     ]
 
@@ -1171,36 +993,31 @@ def build_item(
             - vals[-6]
         )
         base5 = vals[-6]
+
         up5 = sum(
             1
-            for x
-            in deltas[-5:]
+            for x in deltas[-5:]
             if x > 0
         )
     else:
         d5 = d1
         base5 = prev
+
         up5 = sum(
             1
-            for x
-            in deltas
+            for x in deltas
             if x > 0
         )
 
-    if len(deltas) >= 10:
-        up10 = sum(
-            1
-            for x
-            in deltas[-10:]
-            if x > 0
+    up10 = sum(
+        1
+        for x in (
+            deltas[-10:]
+            if len(deltas) >= 10
+            else deltas
         )
-    else:
-        up10 = sum(
-            1
-            for x
-            in deltas
-            if x > 0
-        )
+        if x > 0
+    )
 
     historical = (
         deltas[-21:-1]
@@ -1220,10 +1037,9 @@ def build_item(
         else 0
     )
 
-    # 避免平常完全零變化時除以零。
     denom = max(
         normal_daily,
-        1.0
+        1.0,
     )
 
     anomaly20 = (
@@ -1234,7 +1050,7 @@ def build_item(
 
     avg5 = avg5_volume_lots(
         ticker,
-        market_dates
+        market_dates,
     )
 
     d1_vs_vol = (
@@ -1257,11 +1073,12 @@ def build_item(
 
     d1_pct = pct_change(
         d1,
-        prev
+        prev,
     )
+
     d5_pct = pct_change(
         d5,
-        base5
+        base5,
     )
 
     substantive = (
@@ -1295,32 +1112,32 @@ def build_item(
         cap(
             anomaly20 / 5 * 100,
             0,
-            100
+            100,
         )
         * 0.45
         + cap(
             d1_vs_vol / 20 * 100,
             0,
-            100
+            100,
         )
         * 0.30
         + cap(
             d1_pct / 50 * 100,
             0,
-            100
+            100,
         )
         * 0.15
         + cap(
             math.log10(
                 max(
                     d1,
-                    1
+                    1,
                 )
             )
             / 4
             * 100,
             0,
-            100
+            100,
         )
         * 0.10
     )
@@ -1329,25 +1146,25 @@ def build_item(
         cap(
             up5 / 5 * 100,
             0,
-            100
+            100,
         )
         * 0.35
         + cap(
             up10 / 10 * 100,
             0,
-            100
+            100,
         )
         * 0.20
         + cap(
             d5_pct / 50 * 100,
             0,
-            100
+            100,
         )
         * 0.20
         + cap(
             d5_vs_vol / 40 * 100,
             0,
-            100
+            100,
         )
         * 0.25
     )
@@ -1377,7 +1194,7 @@ def build_item(
     price_change = (
         latest_price_change(
             ticker,
-            latest_market
+            latest_market,
         )
     )
 
@@ -1401,7 +1218,7 @@ def build_item(
             (
                 "融資暴增"
                 if kind == "margin"
-                else "借券暴增"
+                else "借券賣出暴增"
             )
         )
 
@@ -1438,40 +1255,6 @@ def build_item(
                 "融資持續進場"
             )
 
-    short_d1 = None
-    short_d5 = None
-
-    if kind == "borrow":
-        ss = short_series(
-            history,
-            market,
-            ticker
-        )
-
-        if len(ss) >= 2:
-            sv = [
-                x[1]
-                for x in ss
-            ]
-            short_d1 = (
-                sv[-1]
-                - sv[-2]
-            )
-
-            if len(sv) >= 6:
-                short_d5 = (
-                    sv[-1]
-                    - sv[-6]
-                )
-
-            if (
-                short_d1 is not None
-                and short_d1 > 0
-            ):
-                tags.append(
-                    "借券賣出同步增加"
-                )
-
     reason_bits = []
 
     if d1 > 0:
@@ -1500,22 +1283,12 @@ def build_item(
         f"近5日{up5}日增加"
     )
 
-    if (
-        kind == "borrow"
-        and short_d1 is not None
-        and short_d1 > 0
-    ):
-        reason_bits.append(
-            "借券賣出同步+"
-            f"{short_d1:,.0f}張"
-        )
-
     return {
         "ticker": ticker,
         "name": clean_name(
             meta.get(
                 "name",
-                ""
+                "",
             )
         ),
         "market": market,
@@ -1523,7 +1296,7 @@ def build_item(
         "priority_rank": priority_rank,
         "score": round(
             score,
-            1
+            1,
         ),
         "change_pct": price_change,
         "tags": tags,
@@ -1533,61 +1306,45 @@ def build_item(
         "raw": {
             "balance_lots": round(
                 balance,
-                1
+                1,
             ),
             "change_1d_lots": round(
                 d1,
-                1
+                1,
             ),
             "change_1d_pct": round(
                 d1_pct,
-                2
+                2,
             ),
             "change_5d_lots": round(
                 d5,
-                1
+                1,
             ),
             "change_5d_pct": round(
                 d5_pct,
-                2
+                2,
             ),
             "up_days_5d": up5,
             "up_days_10d": up10,
             "normal_daily_change_20d_lots": round(
                 normal_daily,
-                1
+                1,
             ),
             "anomaly_20d": round(
                 anomaly20,
-                2
+                2,
             ),
             "avg5_volume_lots": round(
                 avg5,
-                1
+                1,
             ),
             "change_1d_vs_avg5_volume_pct": round(
                 d1_vs_vol,
-                2
+                2,
             ),
             "change_5d_vs_avg5_volume_pct": round(
                 d5_vs_vol,
-                2
-            ),
-            "short_sell_change_1d_lots": (
-                round(
-                    short_d1,
-                    1
-                )
-                if short_d1 is not None
-                else None
-            ),
-            "short_sell_change_5d_lots": (
-                round(
-                    short_d5,
-                    1
-                )
-                if short_d5 is not None
-                else None
+                2,
             ),
         },
     }
@@ -1605,7 +1362,9 @@ def rank_kind(
     items = []
 
     for ticker, meta in master.items():
-        ticker = str(ticker)
+        ticker = str(
+            ticker
+        )
 
         if (
             ticker not in tech
@@ -1634,8 +1393,12 @@ def rank_kind(
         raw = item["raw"]
 
         if (
-            raw["change_1d_lots"] <= 0
-            and raw["change_5d_lots"] <= 0
+            raw[
+                "change_1d_lots"
+            ] <= 0
+            and raw[
+                "change_5d_lots"
+            ] <= 0
         ):
             continue
 
@@ -1645,23 +1408,36 @@ def rank_kind(
 
     items.sort(
         key=lambda x: (
-            x["priority_rank"],
-            -x["score"],
-            -x["raw"][
+            x[
+                "priority_rank"
+            ],
+            -x[
+                "score"
+            ],
+            -x[
+                "raw"
+            ][
                 "change_1d_lots"
             ],
-            -x["raw"][
+            -x[
+                "raw"
+            ][
                 "change_5d_lots"
             ],
         )
     )
 
-    return items[:TOP_N]
+    return items[
+        :TOP_N
+    ]
 
 
 def logic_payload():
     return {
-        "version": "2026-09-25-v4-tech-universe",
+        "version": (
+            "2026-09-29-"
+            "v5-short-sale-balance"
+        ),
         "universe": (
             "全台股科技普通股："
             "官方科技產業＋19個自訂科技族群成分股"
@@ -1675,15 +1451,49 @@ def logic_payload():
             "第三順位：一般增加",
         ],
         "details": [
-            "單日異常：比較今日餘額增加量、今日增幅、今日增加量占近5日均量，以及今日增加量相對過去20日正常每日變化的倍數",
-            "20日正常每日變化使用每日餘額變化絕對值的中位數，降低單一極端日扭曲基準的問題",
-            "突發異常需今日增加，20日異常倍數至少1.5倍，且今日至少符合：增加100張、占5日均量5%、或餘額增幅10%其中之一",
-            "異常標籤：1.5～2倍＝單日異動，2～3倍＝明顯異常，3倍以上＝極端異常",
-            "趨勢：觀察5日淨增加、5日增幅、近5日增加天數、近10日增加天數，以及5日增加量占近5日均量比例",
-            "近5日5天增加標示「近5日5增」；4天增加標示「近5日4增」；這類持續累積排在單日突發異常之後",
-            "融資另外結合股價：上漲且融資增加標示追價融資；下跌且融資增加標示逆勢加融資",
-            "借券主排名使用借券餘額；借券賣出餘額只作確認訊號。兩者同步增加會另外標示，不把所有借券增加直接視為放空",
-            "上市與上櫃分開排名，各取前30名",
+            (
+                "融資使用融資餘額；"
+                "借券頁改用借券賣出餘額"
+            ),
+            (
+                "借券賣出增加＝借券賣出餘額增加，"
+                "不是一般借券餘額增加"
+            ),
+            (
+                "單日異常：比較今日餘額增加量、"
+                "今日增幅、今日增加量占近5日均量，"
+                "以及今日增加量相對過去20日正常"
+                "每日變化的倍數"
+            ),
+            (
+                "20日正常每日變化使用每日餘額"
+                "變化絕對值的中位數，降低單一"
+                "極端日扭曲基準的問題"
+            ),
+            (
+                "突發異常需今日增加，20日異常倍數"
+                "至少1.5倍，且今日至少符合："
+                "增加100張、占5日均量5%、"
+                "或餘額增幅10%其中之一"
+            ),
+            (
+                "異常標籤：1.5～2倍＝單日異動，"
+                "2～3倍＝明顯異常，"
+                "3倍以上＝極端異常"
+            ),
+            (
+                "趨勢：觀察5日淨增加、5日增幅、"
+                "近5日增加天數、近10日增加天數，"
+                "以及5日增加量占近5日均量比例"
+            ),
+            (
+                "融資另外結合股價：上漲且融資增加"
+                "標示追價融資；下跌且融資增加"
+                "標示逆勢加融資"
+            ),
+            (
+                "上市與上櫃分開排名，各取前30名"
+            ),
         ],
         "score_is_probability": False,
     }
@@ -1691,21 +1501,23 @@ def logic_payload():
 
 def main():
     master = load_json(
-        ROOT / "data/master.json",
-        {}
+        ROOT
+        / "data/master.json",
+        {},
     ).get(
         "stocks",
-        {}
+        {},
     )
 
     market_latest = load_json(
-        ROOT / "data/market_latest.json",
-        {}
+        ROOT
+        / "data/market_latest.json",
+        {},
     )
 
     latest_market = market_latest.get(
         "stocks",
-        {}
+        {},
     )
 
     tech = tech_tickers(
@@ -1714,7 +1526,8 @@ def main():
 
     if len(tech) < 100:
         raise RuntimeError(
-            f"tech stock universe looks incomplete: {len(tech)}"
+            "tech stock universe "
+            f"looks incomplete: {len(tech)}"
         )
 
     dates = history_market_dates()
@@ -1725,24 +1538,17 @@ def main():
         )
 
     candidate_dates = (
-        dates[-HISTORY_TARGET:]
+        dates[
+            -HISTORY_TARGET:
+        ]
     )
 
     history = []
-
-    # 最近6日才需要借券賣出確認訊號，
-    # 20日異常基準主要依融資／借券餘額本身。
-    short_dates = set(
-        candidate_dates[-6:]
-    )
 
     for date in candidate_dates:
         snap = fetch_daily_snapshot(
             date,
             master,
-            need_short=(
-                date in short_dates
-            ),
         )
 
         if healthy_snapshot(
@@ -1754,16 +1560,14 @@ def main():
 
     if len(history) < 6:
         raise RuntimeError(
-            "margin/lending history "
+            "margin/short-sale history "
             f"only {len(history)} healthy days"
         )
 
-    # 只採最後一個健康交易日作為最新日期。
     latest_date = history[-1][
         "date"
     ]
 
-    # 對應行情日期也以實際健康歷史為準。
     usable_dates = [
         x["date"]
         for x in history
@@ -1774,7 +1578,7 @@ def main():
         "updated_at": (
             now_tpe()
             .isoformat(
-                timespec="minutes"
+                timespec="minutes",
             )
         ),
         "complete": (
@@ -1783,30 +1587,42 @@ def main():
         "history_days": len(
             history
         ),
-        "universe": "全台股科技普通股",
+        "universe": (
+            "全台股科技普通股"
+        ),
         "universe_count": {
             "twse": sum(
                 1
-                for t in tech
+                for ticker in tech
                 if master.get(
-                    t,
-                    {}
-                ).get("market") == "twse"
+                    ticker,
+                    {},
+                ).get(
+                    "market"
+                )
+                == "twse"
             ),
             "tpex": sum(
                 1
-                for t in tech
+                for ticker in tech
                 if master.get(
-                    t,
-                    {}
-                ).get("market") == "tpex"
+                    ticker,
+                    {},
+                ).get(
+                    "market"
+                )
+                == "tpex"
             ),
         },
-        "logic": logic_payload(),
+        "logic": (
+            logic_payload()
+        ),
         "margin": {
             "twse": [],
             "tpex": [],
         },
+        # 為維持前端相容，key 仍叫 borrow；
+        # 但內容已全部是「借券賣出增加」排行
         "borrow": {
             "twse": [],
             "tpex": [],
@@ -1815,28 +1631,30 @@ def main():
 
     for kind in (
         "margin",
-        "borrow"
+        "borrow",
     ):
         for market in (
             "twse",
-            "tpex"
+            "tpex",
         ):
-            out[kind][market] = (
-                rank_kind(
-                    kind,
-                    market,
-                    history,
-                    master,
-                    usable_dates,
-                    latest_market,
-                    tech,
-                )
+            out[
+                kind
+            ][
+                market
+            ] = rank_kind(
+                kind,
+                market,
+                history,
+                master,
+                usable_dates,
+                latest_market,
+                tech,
             )
 
     save_json(
         ROOT
         / "data/margin_lending.json",
-        out
+        out,
     )
 
     print(
@@ -1845,11 +1663,35 @@ def main():
         "history",
         len(history),
         "margin",
-        len(out["margin"]["twse"]),
-        len(out["margin"]["tpex"]),
-        "borrow",
-        len(out["borrow"]["twse"]),
-        len(out["borrow"]["tpex"]),
+        len(
+            out[
+                "margin"
+            ][
+                "twse"
+            ]
+        ),
+        len(
+            out[
+                "margin"
+            ][
+                "tpex"
+            ]
+        ),
+        "short_sell",
+        len(
+            out[
+                "borrow"
+            ][
+                "twse"
+            ]
+        ),
+        len(
+            out[
+                "borrow"
+            ][
+                "tpex"
+            ]
+        ),
     )
 
 
