@@ -461,7 +461,7 @@
 
 </main>
 
-<script src="./assets/app.js?v=20260924-ui3"></script>
+<script src="./assets/app.js?v=20260929-deeplink-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20260929-selfreport-search-v19"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
@@ -469,6 +469,24 @@
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/heatmap_sector_filter.js?v=20260929-sector-v1"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const target = params.get("page");
+
+  if (!target) return;
+
+  const section = document.getElementById(target);
+
+  if (
+    section &&
+    section.classList.contains("page") &&
+    typeof page === "function"
+  ) {
+    page(target);
+  }
+})();
+</script>
 
 </body>
 </html>
