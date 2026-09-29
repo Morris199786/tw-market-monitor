@@ -1,12 +1,15 @@
 from sources import *
+
+import html
 import json
+import math
 import os
 import re
-import html
+import unicodedata
 from html.parser import HTMLParser
-from urllib.parse import urlencode, urljoin, urlparse, parse_qs
+from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-09-29-v13-period-eps-yoy"
+VERSION = "2026-09-29-v14-30min-dedup-filter"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -19,6 +22,12 @@ TPEX_NEWS = f"{TPEX}/mopsfin_t187ap04_O"
 
 MONITOR_START_DATE = "2026-09-26"
 SITE_URL = "https://morris199786.github.io/tw-market-monitor/"
+
+SEARCH_KEYWORDS = (
+    "注意交易資訊標準",
+    "自結",
+    "財務業務資訊",
+)
 
 SELF_REPORT_KEYWORDS = (
     "自結",
@@ -35,23 +44,6 @@ ATTENTION_KEYWORDS = (
     "多次達公布注意交易資訊標準",
     "有價證券達公布注意交易資訊標準",
     "注意交易資訊標準",
-)
-
-FINANCIAL_ANCHORS = (
-    "營業收入",
-    "營收",
-    "稅前淨利",
-    "稅前純益",
-    "稅前損益",
-    "稅後淨利",
-    "稅後純益",
-    "稅後損益",
-    "本期淨利",
-    "歸屬母公司",
-    "歸屬於母公司",
-    "每股盈餘",
-    "每股稅後盈餘",
-    "EPS",
 )
 
 EXCLUDE_SUBJECT_KEYWORDS = (
@@ -91,12 +83,12 @@ def p(row, names, default=""):
     return pick(row, names, default)
 
 
-def norm_text(s):
+def norm_text(value):
     return re.sub(
         r"\s+",
         " ",
         html.unescape(
-            str(s or "")
+            str(value or "")
             .replace("\r", " ")
             .replace("\n", " ")
             .replace("　", " ")
@@ -104,30 +96,20 @@ def norm_text(s):
     ).strip()
 
 
-def roc_to_iso(s):
-    raw = str(s or "").strip()
+def compact_text(value):
+    return re.sub(r"\s+", "", norm_text(value))
 
-    m = re.search(
-        r"(20\d{2})[/-](\d{1,2})[/-](\d{1,2})",
-        raw,
-    )
-    if m:
-        return (
-            f"{int(m.group(1)):04d}-"
-            f"{int(m.group(2)):02d}-"
-            f"{int(m.group(3)):02d}"
-        )
 
-    m = re.search(
-        r"(\d{2,3})[/-](\d{1,2})[/-](\d{1,2})",
-        raw,
-    )
+def roc_to_iso(value):
+    raw = str(value or "").strip()
+
+    m = re.search(r"(20\d{2})[/-](\d{1,2})[/-](\d{1,2})", raw)
     if m:
-        return (
-            f"{int(m.group(1)) + 1911:04d}-"
-            f"{int(m.group(2)):02d}-"
-            f"{int(m.group(3)):02d}"
-        )
+        return f"{int(m.group(1)):04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+
+    m = re.search(r"(\d{2,3})[/-](\d{1,2})[/-](\d{1,2})", raw)
+    if m:
+        return f"{int(m.group(1)) + 1911:04d}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
 
     digits = re.sub(r"\D", "", raw)
 
@@ -135,19 +117,16 @@ def roc_to_iso(s):
         return f"{digits[:4]}-{digits[4:6]}-{digits[6:8]}"
 
     if len(digits) == 7:
-        y = int(digits[:3]) + 1911
-        return f"{y:04d}-{digits[3:5]}-{digits[5:7]}"
+        year = int(digits[:3]) + 1911
+        return f"{year:04d}-{digits[3:5]}-{digits[5:7]}"
 
     return ""
 
 
-def clean_time(s):
-    raw = str(s or "").strip()
+def clean_time(value):
+    raw = str(value or "").strip()
 
-    m = re.search(
-        r"(\d{1,2}):(\d{2})(?::(\d{2}))?",
-        raw,
-    )
+    m = re.search(r"(\d{1,2}):(\d{2})(?::(\d{2}))?", raw)
     if m:
         return (
             f"{int(m.group(1)):02d}:"
@@ -156,225 +135,300 @@ def clean_time(s):
         )
 
     digits = re.sub(r"\D", "", raw)
-
     if not digits:
         return ""
 
     digits = digits.zfill(6)[-6:]
-
-    return (
-        f"{digits[:2]}:"
-        f"{digits[2:4]}:"
-        f"{digits[4:6]}"
-    )
+    return f"{digits[:2]}:{digits[2:4]}:{digits[4:6]}"
 
 
 def subject_excluded(subject):
-    s = norm_text(subject)
-
-    return any(
-        k in s
-        for k in EXCLUDE_SUBJECT_KEYWORDS
-    )
+    text = compact_text(subject)
+    return any(compact_text(k) in text for k in EXCLUDE_SUBJECT_KEYWORDS)
 
 
 def subject_is_candidate(subject):
-    s = norm_text(subject)
+    text = compact_text(subject)
 
-    if not s or subject_excluded(s):
+    if not text or subject_excluded(subject):
         return False
 
     return (
-        any(
-            k in s
-            for k in ATTENTION_KEYWORDS
-        )
-        or any(
-            k in s
-            for k in SELF_REPORT_KEYWORDS
-        )
+        any(compact_text(k) in text for k in ATTENTION_KEYWORDS)
+        or any(compact_text(k) in text for k in SELF_REPORT_KEYWORDS)
     )
 
 
-def first_number(patterns, text):
-    for pat in patterns:
-        m = re.search(
-            pat,
-            text,
-            re.I | re.S,
-        )
+def _number(raw, growth=False):
+    raw = str(raw or "").strip().replace(",", "").replace(" ", "")
+    if not growth and "%" in raw:
+        return None
 
-        if not m:
-            continue
+    raw = raw.rstrip("%")
 
-        raw = (
-            str(m.group(1))
-            .replace(",", "")
-            .strip()
-        )
+    if re.fullmatch(r"\(\d+(?:\.\d+)?\)", raw):
+        raw = "-" + raw[1:-1]
 
-        return n(
-            raw,
-            None,
-        )
-
-    return None
+    try:
+        value = float(raw)
+        return value if math.isfinite(value) else None
+    except (TypeError, ValueError):
+        return None
 
 
 def extract_split_eps(text, out):
-    """OTC layout: separate single-month and single-quarter sections.
-
-    Each section has current EPS / prior-year EPS / published YoY.
-    Verify both dated columns before accepting any numeric values.
+    """
+    上櫃常見格式：
+    (一)單月 ... 本期 / 去年同期 / YoY
+    (二)單季 ... 本期 / 去年同期 / YoY
     """
     month_start = re.search(r"單月|最近一月", text)
     if not month_start:
         return None
-    quarter_start = re.search(r"單季|最近一季", text[month_start.end():])
-    if not quarter_start:
+
+    quarter_match = re.search(r"單季|最近一季", text[month_start.end():])
+    if not quarter_match:
         return None
-    qpos = month_start.end() + quarter_start.start()
+
+    qpos = month_start.end() + quarter_match.start()
     tail_end = re.search(r"最近四季累計", text[qpos:])
-    sections = {"monthly": text[month_start.start():qpos],
-                "quarter": text[qpos:qpos + tail_end.start()] if tail_end else text[qpos:]}
-    cell = r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?|\(\s*\d+(?:\.\d+)?\s*\)\s*%?|不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
+
+    sections = {
+        "monthly": text[month_start.start():qpos],
+        "quarter": (
+            text[qpos:qpos + tail_end.start()]
+            if tail_end
+            else text[qpos:]
+        ),
+    }
+
+    cell = (
+        r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?"
+        r"|\(\s*\d+(?:\.\d+)?\s*\)\s*%?"
+        r"|不適用|不適合|無法計算|由虧轉盈|由盈轉虧"
+        r"|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
+    )
+
     for kind, section in sections.items():
-        eps = re.search(r"每股(?:稅後)?(?:盈餘|損益)|\bEPS\b", section, re.I)
+        eps = re.search(
+            r"每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|\bEPS\b",
+            section,
+            re.I,
+        )
         if not eps:
             return None
+
         header = section[:eps.start()]
         if "去年" not in header or not re.search(r"增\s*減|成\s*長", header):
             return None
-        pattern = (r"(?<!\d)(\d{3,4})(?:年\s*|/)(\d{1,2})(?:月|\b)" if kind == "monthly"
-                   else r"(?<!\d)(\d{3,4})年?\s*第?([1-4一二三四])季")
+
+        if kind == "monthly":
+            pattern = r"(?<!\d)(\d{3,4})(?:年\s*|/)(\d{1,2})(?:月|\b)"
+        else:
+            pattern = r"(?<!\d)(\d{3,4})年?\s*第?([1-4一二三四])季"
+
         dates = re.findall(pattern, header)
         if len(dates) != 2:
             return None
-        y, period = dates[0]; py, prior_period = dates[1]
-        if int(y) - int(py) != 1 or period.lstrip('0') != prior_period.lstrip('0'):
+
+        year, period = dates[0]
+        prior_year, prior_period = dates[1]
+
+        period_cmp = {"一": "1", "二": "2", "三": "3", "四": "4"}.get(period, period)
+        prior_cmp = {"一": "1", "二": "2", "三": "3", "四": "4"}.get(
+            prior_period, prior_period
+        )
+
+        if int(year) - int(prior_year) != 1:
             return None
-        y = int(y) + 1911 if int(y) < 1911 else int(y)
+        if str(period_cmp).lstrip("0") != str(prior_cmp).lstrip("0"):
+            return None
+
+        year = int(year)
+        if year < 1911:
+            year += 1911
+
         if kind == "monthly":
-            if not 1 <= int(period) <= 12:
+            if not 1 <= int(period_cmp) <= 12:
                 return None
-            out[kind + "_period"] = f"{y}-{int(period):02d}"
+            out["monthly_period"] = f"{year}-{int(period_cmp):02d}"
         else:
-            period = {"一":"1", "二":"2", "三":"3", "四":"4"}.get(period, period)
-            out[kind + "_period"] = f"{y}-Q{period}"
-        tail = re.sub(r"^\s*\(?\s*元\s*\)?", "", section[eps.end():])
-        match = re.match(r"\s*("+cell+r")\s*(?:/\s*|\s+)("+cell+r")\s*(?:/\s*|\s+)("+cell+r")(?=\s|$)", tail, re.I)
+            out["quarter_period"] = f"{year}-Q{period_cmp}"
+
+        tail = re.sub(
+            r"^\s*[（(]?\s*元\s*[）)]?",
+            "",
+            section[eps.end():],
+        )
+
+        match = re.match(
+            r"\s*(" + cell + r")"
+            r"\s*(?:/\s*|\s+)(" + cell + r")"
+            r"\s*(?:/\s*|\s+)(" + cell + r")(?=\s|$)",
+            tail,
+            re.I,
+        )
+
         if not match:
             return None
-        raw, previous, growth = match.groups()
-        # Current/prior EPS cannot be percentages; growth is the THIRD cell.
-        if "%" in raw or "%" in previous:
+
+        current, previous, yoy = match.groups()
+
+        if "%" in current or "%" in previous:
             return None
-        def number(raw):
-            raw = re.sub(r"\s+", "", raw).replace(",", "").rstrip("%")
-            if re.fullmatch(r"\(\d+(?:\.\d+)?\)", raw):
-                raw = "-" + raw[1:-1]
-            try:
-                value = float(raw)
-                return value if math.isfinite(value) else None
-            except ValueError:
-                return None
-        out[kind + "_eps"] = number(raw)
-        out[kind + "_eps_yoy"] = number(growth)
-        out[kind + "_eps_yoy_text"] = growth.strip()
+
+        out[kind + "_eps"] = _number(current)
+        out[kind + "_eps_yoy"] = _number(yoy, growth=True)
+        out[kind + "_eps_yoy_text"] = yoy.strip()
+
     out["eps"] = out["monthly_eps"]
-    out["eps_parse_status"] = "parsed" if out["monthly_eps"] is not None and out["quarter_eps"] is not None else "partial"
+    out["eps_parse_status"] = (
+        "parsed"
+        if out["monthly_eps"] is not None and out["quarter_eps"] is not None
+        else "partial"
+    )
     return out
 
 
 def extract_metrics(text):
-    """Read the EPS row only after verifying month/quarter and YoY headers.
-
-    Do not substitute revenue/net-income growth, or trailing-four-quarter EPS.
-    Unrecognized layouts stay null for review rather than guessing columns.
     """
-    import unicodedata
+    只從官方公告中的 EPS 欄位取值
+    不用營收、稅前淨利或四季累計數字替代 EPS
+    """
     text = unicodedata.normalize("NFKC", html.unescape(str(text or "")))
-    text = re.sub(r"<[^>]+>", " ", text).replace("−", "-").replace("，", ",")
-    out = dict.fromkeys(("eps", "monthly_eps", "monthly_eps_yoy",
-                         "monthly_period", "quarter_eps", "quarter_eps_yoy",
-                         "quarter_period", "monthly_eps_yoy_text", "quarter_eps_yoy_text"))
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = text.replace("−", "-").replace("，", ",")
+
+    out = dict.fromkeys(
+        (
+            "eps",
+            "monthly_eps",
+            "monthly_eps_yoy",
+            "monthly_period",
+            "quarter_eps",
+            "quarter_eps_yoy",
+            "quarter_period",
+            "monthly_eps_yoy_text",
+            "quarter_eps_yoy_text",
+        )
+    )
     out["eps_parse_status"] = "unrecognized_layout"
+
     split = extract_split_eps(text, dict(out))
     if split is not None:
         return split
-    # Restrict parsing to the financial table and its first EPS row.
+
     anchor = re.search(r"最近一[月季]|當月|單月", text)
     if not anchor:
         return out
+
     section = text[anchor.start():]
-    eps = re.search(r"每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|\bEPS\b", section, re.I)
+
+    eps = re.search(
+        r"每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|\bEPS\b",
+        section,
+        re.I,
+    )
     if not eps:
         return out
+
     header = section[:eps.start()]
-    month = re.search(r"(?<!\d)(\d{3,4})年\s*(\d{1,2})\s*月", header)
-    quarter = re.search(r"(?<!\d)(\d{3,4})年\s*第?\s*([1-4一二三四])\s*季", header[month.end():]) if month else None
+
+    month = re.search(
+        r"(?<!\d)(\d{3,4})年\s*(\d{1,2})\s*月",
+        header,
+    )
+
+    quarter = (
+        re.search(
+            r"(?<!\d)(\d{3,4})年\s*第?\s*([1-4一二三四])\s*季",
+            header[month.end():],
+        )
+        if month
+        else None
+    )
+
     if not month or not quarter:
         return out
-    # Standard attention-announcement columns: month, YoY, quarter, YoY, TTM.
-    # Tables containing explicit prior-year numeric columns need separate mapping.
-    if header.count("去年") != 2 or header.count("同期") != 2 or not re.search(r"增\s*減|成\s*長", header):
+
+    if (
+        header.count("去年") != 2
+        or header.count("同期") != 2
+        or not re.search(r"增\s*減|成\s*長", header)
+    ):
         return out
+
     months = re.findall(r"\d{3,4}年\s*\d{1,2}\s*月", header)
     if len(months) != 1:
         return out
-    def year(y):
-        y = int(y)
-        return y + 1911 if y < 1911 else y
-    q = {"一": "1", "二": "2", "三": "3", "四": "4"}.get(quarter[2], quarter[2])
-    out["monthly_period"] = f"{year(month[1])}-{int(month[2]):02d}"
-    out["quarter_period"] = f"{year(quarter[1])}-Q{q}"
-    tail = section[eps.end():]
-    tail = re.sub(r"^\s*[（(]?\s*元\s*[）)]?", "", tail)
-    # Keep nonnumeric growth cells so missing values never shift the quarter column.
-    cell = r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?|\(\s*\d+(?:\.\d+)?\s*\)\s*%?|不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
-    match = re.match(r"\s*("+cell+r")\s+("+cell+r")\s+("+cell+r")\s+("+cell+r")(?=\s|$)", tail, re.I)
+
+    def ad_year(value):
+        value = int(value)
+        return value + 1911 if value < 1911 else value
+
+    q = {"一": "1", "二": "2", "三": "3", "四": "4"}.get(
+        quarter[2],
+        quarter[2],
+    )
+
+    out["monthly_period"] = f"{ad_year(month[1])}-{int(month[2]):02d}"
+    out["quarter_period"] = f"{ad_year(quarter[1])}-Q{q}"
+
+    tail = re.sub(
+        r"^\s*[（(]?\s*元\s*[）)]?",
+        "",
+        section[eps.end():],
+    )
+
+    cell = (
+        r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?"
+        r"|\(\s*\d+(?:\.\d+)?\s*\)\s*%?"
+        r"|不適用|不適合|無法計算|由虧轉盈|由盈轉虧"
+        r"|轉虧為盈|轉盈為虧|N/A|NA|--+|—|-)"
+    )
+
+    match = re.match(
+        r"\s*(" + cell + r")"
+        r"\s+(" + cell + r")"
+        r"\s+(" + cell + r")"
+        r"\s+(" + cell + r")(?=\s|$)",
+        tail,
+        re.I,
+    )
+
     if not match:
         return out
-    def numeric(raw, growth=False):
-        raw = raw.strip().replace(",", "").replace(" ", "")
-        if not growth and "%" in raw:
-            return None
-        raw = raw.rstrip("%")
-        if re.fullmatch(r"\(\d+(?:\.\d+)?\)", raw):
-            raw = "-" + raw[1:-1]
-        try:
-            value = float(raw)
-            return value if math.isfinite(value) else None
-        except ValueError:
-            return None
-    cells = match.groups()
-    out.update(monthly_eps=numeric(cells[0]), monthly_eps_yoy=numeric(cells[1], True),
-               quarter_eps=numeric(cells[2]), quarter_eps_yoy=numeric(cells[3], True),
-               monthly_eps_yoy_text=cells[1].strip(), quarter_eps_yoy_text=cells[3].strip())
-    out["eps"] = out["monthly_eps"]  # compatibility only; UI uses explicit period fields
-    out["eps_parse_status"] = "parsed" if out["monthly_eps"] is not None and out["quarter_eps"] is not None else "partial"
+
+    monthly_eps, monthly_yoy, quarter_eps, quarter_yoy = match.groups()
+
+    out.update(
+        monthly_eps=_number(monthly_eps),
+        monthly_eps_yoy=_number(monthly_yoy, growth=True),
+        quarter_eps=_number(quarter_eps),
+        quarter_eps_yoy=_number(quarter_yoy, growth=True),
+        monthly_eps_yoy_text=monthly_yoy.strip(),
+        quarter_eps_yoy_text=quarter_yoy.strip(),
+    )
+
+    out["eps"] = out["monthly_eps"]
+    out["eps_parse_status"] = (
+        "parsed"
+        if out["monthly_eps"] is not None and out["quarter_eps"] is not None
+        else "partial"
+    )
+
     return out
 
 
 class RowParser(HTMLParser):
-    """
-    把 MOPS 查詢結果中的每一列文字 + href/onclick/action
-    全部保留下來，避免 detail button 不是 href 時抓不到。
-    """
-
     def __init__(self):
         super().__init__()
-
         self.rows = []
         self.in_tr = False
         self.current_text = []
         self.current_attrs = []
 
-    def handle_starttag(
-        self,
-        tag,
-        attrs,
-    ):
+    def handle_starttag(self, tag, attrs):
         if tag == "tr":
             self.in_tr = True
             self.current_text = []
@@ -383,160 +437,85 @@ class RowParser(HTMLParser):
         if not self.in_tr:
             return
 
-        attrs = dict(
-            attrs
-        )
+        attrs = dict(attrs)
 
-        for key in (
-            "href",
-            "onclick",
-            "action",
-            "value",
-        ):
+        for key in ("href", "onclick", "action", "value"):
             if attrs.get(key):
-                self.current_attrs.append(
-                    str(
-                        attrs[key]
-                    )
-                )
+                self.current_attrs.append(str(attrs[key]))
 
-    def handle_data(
-        self,
-        data,
-    ):
+    def handle_data(self, data):
         if self.in_tr:
-            self.current_text.append(
-                data
+            self.current_text.append(data)
+
+    def handle_endtag(self, tag):
+        if tag != "tr" or not self.in_tr:
+            return
+
+        text = norm_text(" ".join(self.current_text))
+
+        if text:
+            self.rows.append(
+                {
+                    "text": text,
+                    "attrs": list(self.current_attrs),
+                }
             )
 
-    def handle_endtag(
-        self,
-        tag,
-    ):
-        if (
-            tag == "tr"
-            and self.in_tr
-        ):
-            text = norm_text(
-                " ".join(
-                    self.current_text
-                )
-            )
-
-            if text:
-                self.rows.append(
-                    {
-                        "text": text,
-                        "attrs": list(
-                            self.current_attrs
-                        ),
-                    }
-                )
-
-            self.in_tr = False
-            self.current_text = []
-            self.current_attrs = []
+        self.in_tr = False
+        self.current_text = []
+        self.current_attrs = []
 
 
 def mops_headers():
     return {
         "User-Agent": (
-            "Mozilla/5.0 "
-            "(Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 "
-            "(KHTML, like Gecko) "
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/129.0 Safari/537.36"
         ),
         "Accept": (
             "text/html,application/xhtml+xml,"
             "application/xml;q=0.9,*/*;q=0.8"
         ),
-        "Accept-Language": (
-            "zh-TW,zh;q=0.9,en;q=0.6"
-        ),
-        "Referer": (
-            "https://mops.twse.com.tw/"
-            "mops/web/t05st01"
-        ),
+        "Accept-Language": "zh-TW,zh;q=0.9,en;q=0.6",
+        "Referer": "https://mops.twse.com.tw/mops/web/t05st01",
     }
 
 
-def fetch_mops(
-    base,
-    payload,
-):
-    url = (
-        base
-        + MOPS_AJAX_PATH
-    )
-
-    # MOPS 常以 POST 查詢
-    r = S.post(
-        url,
+def fetch_mops(base, payload):
+    response = S.post(
+        base + MOPS_AJAX_PATH,
         data=payload,
         headers=mops_headers(),
         timeout=45,
     )
+    response.raise_for_status()
 
-    r.raise_for_status()
+    if not response.encoding or response.encoding.lower() == "iso-8859-1":
+        response.encoding = response.apparent_encoding or "utf-8"
 
-    if (
-        not r.encoding
-        or r.encoding.lower()
-        == "iso-8859-1"
-    ):
-        r.encoding = (
-            r.apparent_encoding
-            or "utf-8"
-        )
-
-    return r.text
+    return response.text
 
 
-def parse_rows(
-    html_text,
-):
+def parse_rows(html_text):
     parser = RowParser()
-    parser.feed(
-        html_text
-    )
-
+    parser.feed(html_text)
     return parser.rows
 
 
-def query_payloads(
-    iso_date,
-    keyword,
-):
-    dt = datetime.strptime(
-        iso_date,
-        "%Y-%m-%d",
-    )
+def query_payloads(iso_date, keyword):
+    dt = datetime.strptime(iso_date, "%Y-%m-%d")
+    roc_year = dt.year - 1911
+    month = str(dt.month)
+    day = str(dt.day)
 
-    roc_year = (
-        dt.year
-        - 1911
-    )
-
-    month = str(
-        dt.month
-    )
-
-    day = str(
-        dt.day
-    )
-
-    # MOPS 歷年有多個表單欄位名稱
-    # 同時嘗試新舊兩種搜尋格式
     return [
         {
             "firstin": "1",
             "step": "1",
             "off": "1",
             "TYPEK": "all",
-            "year": str(
-                roc_year
-            ),
+            "year": str(roc_year),
             "month": month,
             "b_date": day,
             "e_date": day,
@@ -548,9 +527,7 @@ def query_payloads(
             "firstin": "1",
             "step": "1",
             "TYPEK": "all",
-            "year": str(
-                roc_year
-            ),
+            "year": str(roc_year),
             "month": month,
             "b_date": day,
             "e_date": day,
@@ -562,9 +539,7 @@ def query_payloads(
             "firstin": "1",
             "step": "1",
             "TYPEK": "all",
-            "year": str(
-                roc_year
-            ),
+            "year": str(roc_year),
             "month1": month,
             "b_date": day,
             "e_date": day,
@@ -574,15 +549,8 @@ def query_payloads(
     ]
 
 
-def extract_detail_params(
-    attrs,
-    ticker,
-    publish_date,
-    publish_time,
-):
-    blob = " ".join(
-        attrs or []
-    )
+def extract_detail_params(attrs, ticker, publish_date, publish_time):
+    blob = " ".join(attrs or [])
 
     params = {
         "firstin": "1",
@@ -591,20 +559,9 @@ def extract_detail_params(
         "co_id": ticker,
     }
 
-    # URL query string
-    for m in re.finditer(
-        r"https?://[^'\"\s]+",
-        blob,
-    ):
+    for match in re.finditer(r"https?://[^'\"\s]+", blob):
         try:
-            qs = parse_qs(
-                urlparse(
-                    html.unescape(
-                        m.group(0)
-                    )
-                ).query
-            )
-
+            qs = parse_qs(urlparse(html.unescape(match.group(0))).query)
             for key in (
                 "seq_no",
                 "spoke_time",
@@ -614,13 +571,10 @@ def extract_detail_params(
                 "off",
             ):
                 if qs.get(key):
-                    params[key] = (
-                        qs[key][0]
-                    )
+                    params[key] = qs[key][0]
         except Exception:
             pass
 
-    # onclick / javascript 內的 key=value
     for key in (
         "seq_no",
         "spoke_time",
@@ -632,315 +586,248 @@ def extract_detail_params(
         if key in params:
             continue
 
-        m = re.search(
+        match = re.search(
             rf"{key}(?:\.value)?\s*=\s*['\"]?([^&'\"\s,)]+)",
             blob,
             re.I,
         )
+        if match:
+            params[key] = match.group(1)
 
-        if m:
-            params[key] = (
-                m.group(1)
-            )
-
-    # 日期/時間 fallback
-    if (
-        "spoke_date"
-        not in params
-    ):
-        params["spoke_date"] = f"{int(publish_date[:4]) - 1911}{publish_date[5:7]}{publish_date[8:10]}"
-
-    if (
-        "spoke_time"
-        not in params
-        and publish_time
-    ):
-        params[
-            "spoke_time"
-        ] = publish_time.replace(
-            ":",
-            "",
+    if "spoke_date" not in params:
+        params["spoke_date"] = (
+            f"{int(publish_date[:4]) - 1911}"
+            f"{publish_date[5:7]}"
+            f"{publish_date[8:10]}"
         )
+
+    if "spoke_time" not in params and publish_time:
+        params["spoke_time"] = publish_time.replace(":", "")
 
     return params
 
 
 def fetch_detail(params):
     errors = []
+
     if not params.get("seq_no"):
         return "", "", "公告缺少 seq_no，未猜測公告序號"
+
     date = str(params.get("spoke_date", ""))
+
     if len(date) == 7:
         date = str(int(date[:3]) + 1911) + date[3:]
-    payload = {"firstin": "true", "TYPEK": params.get("TYPEK", "all"), "step": "1",
-               "COMPANY_ID": params["co_id"], "SPOKE_DATE": date,
-               "SPOKE_TIME": params.get("spoke_time", ""), "SEQ_NO": params["seq_no"],
-               "skey": params.get("skey") or params["co_id"] + date + params["seq_no"]}
-    # Match the actual official detail form (uppercase fields and step=1).
+
+    payload = {
+        "firstin": "true",
+        "TYPEK": params.get("TYPEK", "all"),
+        "step": "1",
+        "COMPANY_ID": params["co_id"],
+        "SPOKE_DATE": date,
+        "SPOKE_TIME": params.get("spoke_time", ""),
+        "SEQ_NO": params["seq_no"],
+        "skey": (
+            params.get("skey")
+            or params["co_id"] + date + params["seq_no"]
+        ),
+    }
+
     for base in reversed(MOPS_BASES):
         url = base + "/mops/web/ajax_t05sr01_1"
+
         try:
-            r = S.post(url, data=payload, headers=mops_headers(), timeout=(15, 45))
-            r.raise_for_status()
-            if not r.encoding or r.encoding.lower() == "iso-8859-1":
-                r.encoding = r.apparent_encoding or "utf-8"
-            clean = norm_text(re.sub(r"<[^>]+>", " ", r.text))
-            roc_date = f"{int(date[:4])-1911}/{date[4:6]}/{date[6:8]}"
+            response = S.post(
+                url,
+                data=payload,
+                headers=mops_headers(),
+                timeout=(15, 45),
+            )
+            response.raise_for_status()
+
+            if (
+                not response.encoding
+                or response.encoding.lower() == "iso-8859-1"
+            ):
+                response.encoding = response.apparent_encoding or "utf-8"
+
+            clean = norm_text(re.sub(r"<[^>]+>", " ", response.text))
+
+            roc_date = (
+                f"{int(date[:4]) - 1911}/"
+                f"{date[4:6]}/"
+                f"{date[6:8]}"
+            )
+
             spoke_time = payload["SPOKE_TIME"]
-            time_text = ":".join(spoke_time[i:i+2] for i in (0, 2, 4))
-            if (re.search(r"每股(?:稅後)?(?:盈餘|損益)|\bEPS\b", clean, re.I)
-                    and params["co_id"] in clean and roc_date in clean
-                    and (not spoke_time or time_text in clean)):
+            time_text = ":".join(
+                spoke_time[i:i + 2]
+                for i in (0, 2, 4)
+            )
+
+            if (
+                re.search(
+                    r"每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|\bEPS\b",
+                    clean,
+                    re.I,
+                )
+                and params["co_id"] in clean
+                and roc_date in clean
+                and (not spoke_time or time_text in clean)
+            ):
                 return clean, url + "?" + urlencode(payload), ""
+
             errors.append(base + ": 未取得含 EPS 的公告明細")
-        except Exception as e:
-            errors.append(base + ": " + type(e).__name__)
+
+        except Exception as exc:
+            errors.append(base + ": " + type(exc).__name__)
+
     return "", "", "; ".join(errors)
 
 
-def parse_candidate_row(
-    row,
-    source_keyword,
-):
-    text = row.get(
-        "text",
-        "",
-    )
+def parse_candidate_row(row, source_keyword):
+    text = row.get("text", "")
+    compact = compact_text(text)
 
-    if not (
-        source_keyword
-        in text
-        or subject_is_candidate(
-            text
-        )
+    # 關鍵修正：MOPS 可能把「注意交易資訊標準」拆成多段
+    # 所以所有關鍵字比對都先移除空白/換行
+    if (
+        compact_text(source_keyword) not in compact
+        and not subject_is_candidate(text)
     ):
         return None
 
-    ticker_m = re.search(
-        r"(?<!\d)(\d{4})(?!\d)",
-        text,
-    )
-
-    if not ticker_m:
+    ticker_match = re.search(r"(?<!\d)(\d{4})(?!\d)", text)
+    if not ticker_match:
         return None
 
-    ticker = (
-        ticker_m.group(1)
-    )
+    ticker = ticker_match.group(1)
 
-    if not ordinary_ticker(
-        ticker
+    if not ordinary_ticker(ticker):
+        return None
+
+    # 純財務比率公告不是使用者要的 EPS 自結
+    if (
+        any(k in text for k in ("流動比率", "速動比率", "負債比率"))
+        and "注意交易" not in compact
     ):
         return None
 
-    if any(k in text for k in ("流動比率", "速動比率", "負債比率")) and "注意交易" not in text:
-        return None
-
-    # 日期
-    date_m = re.search(
+    date_match = re.search(
         r"(?:(20\d{2})|(\d{2,3}))[/-](\d{1,2})[/-](\d{1,2})",
         text,
     )
 
-    if date_m:
-        publish_date = (
-            roc_to_iso(
-                date_m.group(0)
-            )
-        )
-    else:
-        publish_date = (
-            now_tpe()
-            .date()
-            .isoformat()
-        )
+    publish_date = (
+        roc_to_iso(date_match.group(0))
+        if date_match
+        else now_tpe().date().isoformat()
+    )
 
-    if (
-        publish_date
-        < MONITOR_START_DATE
-    ):
+    if publish_date < MONITOR_START_DATE:
         return None
 
-    # 時間
-    time_m = re.search(
+    time_match = re.search(
         r"(\d{1,2}):(\d{2})(?::(\d{2}))?",
         text,
     )
-
     publish_time = (
-        clean_time(
-            time_m.group(0)
-        )
-        if time_m
+        clean_time(time_match.group(0))
+        if time_match
         else ""
     )
 
-    # 公司名稱：通常代號後面第一段
-    after = text[
-        ticker_m.end():
-    ].strip()
-
+    after = text[ticker_match.end():].strip()
     name = ""
 
     if after:
         name = re.split(
-            r"\s+|"
-            r"(?:20\d{2}|\d{2,3})[/-]\d{1,2}[/-]\d{1,2}",
+            r"\s+|(?:20\d{2}|\d{2,3})[/-]\d{1,2}[/-]\d{1,2}",
             after,
             maxsplit=1,
-        )[0].strip(
-            "｜| "
-        )
+        )[0].strip("｜| ")
 
-    # 主旨：從第一個關鍵字附近往前取完整列
     subject = text
 
-    detail_params = (
-        extract_detail_params(
-            row.get(
-                "attrs",
-                [],
-            ),
-            ticker,
-            publish_date,
-            publish_time,
-        )
+    detail_params = extract_detail_params(
+        row.get("attrs", []),
+        ticker,
+        publish_date,
+        publish_time,
     )
 
-    detail, source_url, detail_error = (
-        fetch_detail(
-            detail_params
-        )
-    )
+    detail, source_url, detail_error = fetch_detail(detail_params)
 
     full_text = "\n".join(
-        x
-        for x in (
-            subject,
-            detail,
-        )
-        if x
+        value
+        for value in (subject, detail)
+        if value
     )
+
+    full_compact = compact_text(full_text)
 
     return {
         "market": "",
         "ticker": ticker,
-        "name": clean_name(
-            name
-        ),
-        "publish_date": (
-            publish_date
-        ),
-        "publish_time": (
-            publish_time
-        ),
+        "name": clean_name(name),
+        "publish_date": publish_date,
+        "publish_time": publish_time,
         "subject": subject,
         "detail": detail,
-        "source": (
-            "mops_ajax"
-        ),
-        "source_url": (
-            source_url
-        ),
-        "source_error": (
-            detail_error
-        ),
+        "source": "mops_ajax",
+        "source_url": source_url,
+        "source_error": detail_error,
         "match_reason": (
             "attention_trading"
-            if "注意交易資訊標準"
-            in full_text
+            if compact_text("注意交易資訊標準") in full_compact
             else "direct_self_report"
         ),
-        **extract_metrics(
-            full_text
-        ),
+        **extract_metrics(full_text),
     }
 
 
 def fetch_mops_search():
-    """
-    直接查 MOPS ajax_t05st01
-    不再抓首頁 HTML
-    """
-
-    today = (
-        now_tpe()
-        .date()
-        .isoformat()
-    )
-
-    keywords = (
-        "注意交易資訊標準",
-        "自結",
-        "財務業務資訊",
-    )
+    today = now_tpe().date().isoformat()
 
     raw_rows = []
     debug = []
 
-    for keyword in keywords:
+    for keyword in SEARCH_KEYWORDS:
         got_keyword = False
 
         for base in MOPS_BASES:
-            for payload in query_payloads(
-                today,
-                keyword,
-            ):
+            for payload in query_payloads(today, keyword):
                 try:
-                    html_text = (
-                        fetch_mops(
-                            base,
-                            payload,
-                        )
-                    )
+                    html_text = fetch_mops(base, payload)
+                    rows = parse_rows(html_text)
 
-                    rows = parse_rows(
-                        html_text
-                    )
-
+                    # 關鍵修正：比對前去掉空白與換行
+                    wanted = compact_text(keyword)
                     hits = [
-                        r
-                        for r in rows
-                        if keyword
-                        in r.get(
-                            "text",
-                            "",
-                        )
+                        row
+                        for row in rows
+                        if wanted in compact_text(row.get("text", ""))
                     ]
 
                     debug.append(
                         {
                             "base": base,
                             "keyword": keyword,
-                            "rows": len(
-                                rows
-                            ),
-                            "hits": len(
-                                hits
-                            ),
+                            "rows": len(rows),
+                            "hits": len(hits),
                         }
                     )
 
                     if hits:
-                        raw_rows.extend(
-                            (
-                                keyword,
-                                r,
-                            )
-                            for r in hits
-                        )
-
+                        raw_rows.extend((keyword, row) for row in hits)
                         got_keyword = True
                         break
 
-                except Exception as e:
+                except Exception as exc:
                     debug.append(
                         {
                             "base": base,
                             "keyword": keyword,
-                            "error": repr(
-                                e
-                            ),
+                            "error": repr(exc),
                         }
                     )
 
@@ -951,217 +838,128 @@ def fetch_mops_search():
     rejected = []
 
     for keyword, row in raw_rows:
-        x = parse_candidate_row(
-            row,
-            keyword,
-        )
+        item = parse_candidate_row(row, keyword)
 
-        if not x:
+        if not item:
             rejected.append(
                 {
                     "keyword": keyword,
-                    "text": (
-                        row.get(
-                            "text",
-                            "",
-                        )[:300]
-                    ),
+                    "text": row.get("text", "")[:300],
                 }
             )
             continue
 
         key = (
-            x["ticker"],
-            x[
-                "publish_date"
-            ],
-            x[
-                "publish_time"
-            ],
+            item["ticker"],
+            item["publish_date"],
+            item["publish_time"],
         )
-
-        # 同檔同時間只留一筆
-        items[key] = x
+        items[key] = item
 
     return {
         "ok": True,
-        "rows": len(
-            raw_rows
-        ),
-        "items": list(
-            items.values()
-        ),
+        "rows": len(raw_rows),
+        "items": list(items.values()),
         "debug": debug,
-        "rejected": rejected[
-            :20
-        ],
+        "rejected": rejected[:20],
         "error": "",
     }
 
 
-def row_all_text(
-    row,
-):
+def row_all_text(row):
     parts = []
 
-    if isinstance(
-        row,
-        dict,
-    ):
-        for key, value in (
-            row.items()
-        ):
-            if isinstance(
-                value,
-                (
-                    str,
-                    int,
-                    float,
-                ),
-            ):
-                v = norm_text(
-                    value
-                )
+    if isinstance(row, dict):
+        for key, value in row.items():
+            if isinstance(value, (str, int, float)):
+                value = norm_text(value)
+                if value:
+                    parts.append(f"{norm_text(key)} {value}")
 
-                if v:
-                    parts.append(
-                        f"{norm_text(key)} {v}"
-                    )
-
-    return "\n".join(
-        parts
-    )
+    return "\n".join(parts)
 
 
-def fetch_openapi(
-    market,
-    url,
-):
+def fetch_openapi(market, url):
     try:
-        arr = get_json(
+        rows = get_json(
             url,
             timeout=45,
             tries=5,
         )
-
-    except Exception as e:
+    except Exception as exc:
         return {
             "market": market,
             "ok": False,
             "rows": [],
             "items": [],
-            "error": repr(
-                e
-            ),
+            "error": repr(exc),
         }
 
-    if isinstance(
-        arr,
-        dict,
-    ):
-        arr = (
-            arr.get("data")
-            or arr.get(
-                "records"
-            )
-            or arr.get(
-                "result"
-            )
+    if isinstance(rows, dict):
+        rows = (
+            rows.get("data")
+            or rows.get("records")
+            or rows.get("result")
             or []
         )
 
-    if not isinstance(
-        arr,
-        list,
-    ):
+    if not isinstance(rows, list):
         return {
             "market": market,
             "ok": False,
             "rows": [],
             "items": [],
-            "error": (
-                "response is not list"
-            ),
+            "error": "response is not list",
         }
 
     items = []
 
-    for r in arr:
+    for row in rows:
         ticker = str(
             p(
-                r,
-                [
-                    "公司代號",
-                    "證券代號",
-                    "股票代號",
-                    "代號",
-                ],
+                row,
+                ["公司代號", "證券代號", "股票代號", "代號"],
                 "",
             )
         ).strip()
 
-        if not ordinary_ticker(
-            ticker
-        ):
+        if not ordinary_ticker(ticker):
             continue
 
         subject = norm_text(
             p(
-                r,
-                [
-                    "主旨",
-                    "主旨 ",
-                    "Subject",
-                ],
+                row,
+                ["主旨", "主旨 ", "Subject"],
                 "",
             )
         )
 
-        if not subject_is_candidate(
-            subject
-        ):
+        if not subject_is_candidate(subject):
             continue
 
-        publish_date = (
-            roc_to_iso(
-                p(
-                    r,
-                    [
-                        "發言日期",
-                        "公告日期",
-                        "出表日期",
-                    ],
-                    "",
-                )
+        publish_date = roc_to_iso(
+            p(
+                row,
+                ["發言日期", "公告日期", "出表日期"],
+                "",
             )
         )
 
-        if (
-            not publish_date
-            or publish_date
-            < MONITOR_START_DATE
-        ):
+        if not publish_date or publish_date < MONITOR_START_DATE:
             continue
 
-        publish_time = (
-            clean_time(
-                p(
-                    r,
-                    [
-                        "發言時間",
-                        "公告時間",
-                    ],
-                    "",
-                )
+        publish_time = clean_time(
+            p(
+                row,
+                ["發言時間", "公告時間"],
+                "",
             )
         )
 
         full_text = "\n".join(
             [
                 subject,
-                row_all_text(
-                    r
-                ),
+                row_all_text(row),
             ]
         )
 
@@ -1171,120 +969,60 @@ def fetch_openapi(
                 "ticker": ticker,
                 "name": clean_name(
                     p(
-                        r,
-                        [
-                            "公司名稱",
-                            "證券名稱",
-                            "名稱",
-                        ],
+                        row,
+                        ["公司名稱", "證券名稱", "名稱"],
                         "",
                     )
                 ),
-                "publish_date": (
-                    publish_date
-                ),
-                "publish_time": (
-                    publish_time
-                ),
+                "publish_date": publish_date,
+                "publish_time": publish_time,
                 "subject": subject,
                 "detail": full_text,
-                "source": (
-                    f"{market}_openapi"
-                ),
+                "source": f"{market}_openapi",
                 "source_url": "",
                 "source_error": "",
                 "match_reason": (
                     "attention_trading"
-                    if "注意交易資訊標準"
-                    in subject
+                    if compact_text("注意交易資訊標準")
+                    in compact_text(subject)
                     else "direct_self_report"
                 ),
-                **extract_metrics(
-                    full_text
-                ),
+                **extract_metrics(full_text),
             }
         )
 
     return {
         "market": market,
         "ok": True,
-        "rows": arr,
+        "rows": rows,
         "items": items,
         "error": "",
     }
 
 
-def identity(
-    x,
-):
+def identity(item):
     return "|".join(
         [
-            str(
-                x.get(
-                    "ticker"
-                )
-                or ""
-            ),
-            str(
-                x.get(
-                    "publish_date"
-                )
-                or ""
-            ),
-            str(
-                x.get(
-                    "publish_time"
-                )
-                or ""
-            ),
-            re.sub(
-                r"\s+",
-                "",
-                str(
-                    x.get(
-                        "subject"
-                    )
-                    or ""
-                ),
-            ),
+            str(item.get("ticker") or ""),
+            str(item.get("publish_date") or ""),
+            str(item.get("publish_time") or ""),
+            compact_text(item.get("subject") or ""),
         ]
     )
 
 
-def merge_item(
-    old,
-    new,
-):
-    out = dict(
-        old
-    )
+def merge_item(old, new):
+    out = dict(old)
 
-    for k, v in (
-        new.items()
-    ):
+    for key, value in new.items():
         if (
-            v
-            not in (
-                None,
-                "",
-                [],
-                {},
-            )
-            and out.get(k)
-            in (
-                None,
-                "",
-                [],
-                {},
-            )
+            value not in (None, "", [], {})
+            and out.get(key) in (None, "", [], {})
         ):
-            out[k] = v
+            out[key] = value
 
-    if (
-        new.get("source")
-        == "mops_ajax"
-    ):
-        for k in (
+    if new.get("source") == "mops_ajax":
+        for key in (
             "name",
             "subject",
             "detail",
@@ -1292,54 +1030,40 @@ def merge_item(
             "source_url",
             "match_reason",
         ):
-            if new.get(k):
-                out[k] = (
-                    new[k]
-                )
+            if new.get(key):
+                out[key] = new[key]
 
-    for k in (
-        "monthly_eps", "monthly_eps_yoy", "monthly_period",
-        "quarter_eps", "quarter_eps_yoy", "quarter_period",
-        "monthly_eps_yoy_text", "quarter_eps_yoy_text", "eps_parse_status",
+    for key in (
+        "monthly_eps",
+        "monthly_eps_yoy",
+        "monthly_period",
+        "quarter_eps",
+        "quarter_eps_yoy",
+        "quarter_period",
+        "monthly_eps_yoy_text",
+        "quarter_eps_yoy_text",
+        "eps_parse_status",
         "eps",
         "pretax_million",
         "net_income_million",
         "revenue_million",
     ):
-        if (
-            new.get(k)
-            is not None
-        ):
-            out[k] = (
-                new[k]
-            )
+        if new.get(key) is not None:
+            out[key] = new[key]
 
     return out
 
 
-def send_pushover(
-    title,
-    message,
-    url,
-):
-    token = os.getenv(
-        "PUSHOVER_APP_TOKEN",
-        "",
-    ).strip()
-
-    user = os.getenv(
-        "PUSHOVER_USER_KEY",
-        "",
-    ).strip()
+def send_pushover(title, message, url):
+    token = os.getenv("PUSHOVER_APP_TOKEN", "").strip()
+    user = os.getenv("PUSHOVER_USER_KEY", "").strip()
 
     if not token or not user:
-        print(
-            "pushover secrets missing; skip"
-        )
+        print("pushover secrets missing; skip")
         return False
 
     try:
-        r = S.post(
+        response = S.post(
             "https://api.pushover.net/1/messages.json",
             data={
                 "token": token,
@@ -1348,294 +1072,185 @@ def send_pushover(
                 "message": message,
                 "priority": 0,
                 "url": url,
-                "url_title": (
-                    "開啟這筆自結"
-                ),
+                "url_title": "開啟這筆自結",
             },
             timeout=30,
         )
-
-        r.raise_for_status()
+        response.raise_for_status()
         return True
-
-    except Exception as e:
-        print(
-            "pushover failed",
-            repr(e),
-        )
+    except Exception as exc:
+        print("pushover failed", repr(exc))
         return False
 
 
-def send_telegram(
-    title,
-    message,
-    url,
-):
-    token = os.getenv(
-        "TELEGRAM_BOT_TOKEN",
-        "",
-    ).strip()
-
-    chat_id = os.getenv(
-        "TELEGRAM_CHAT_ID",
-        "",
-    ).strip()
+def send_telegram(title, message, url):
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
     if not token or not chat_id:
-        print(
-            "telegram secrets missing; skip"
-        )
+        print("telegram secrets missing; skip")
         return False
 
     try:
-        r = S.post(
-            (
-                "https://api.telegram.org/"
-                f"bot{token}/sendMessage"
-            ),
+        response = S.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
             data={
                 "chat_id": chat_id,
-                "text": (
-                    f"{title}\n"
-                    f"{message}"
-                ),
+                "text": f"{title}\n{message}",
                 "disable_web_page_preview": True,
-                "reply_markup": (
-                    json.dumps(
-                        {
-                            "inline_keyboard": [
-                                [
-                                    {
-                                        "text": "開啟台股市場監測",
-                                        "url": url,
-                                    }
-                                ]
+                "reply_markup": json.dumps(
+                    {
+                        "inline_keyboard": [
+                            [
+                                {
+                                    "text": "開啟台股市場監測",
+                                    "url": url,
+                                }
                             ]
-                        },
-                        ensure_ascii=False,
-                    )
+                        ]
+                    },
+                    ensure_ascii=False,
                 ),
             },
             timeout=30,
         )
-
-        r.raise_for_status()
-
-        return bool(
-            r.json()
-            .get(
-                "ok"
-            )
-        )
-
-    except Exception as e:
-        print(
-            "telegram failed",
-            repr(e),
-        )
+        response.raise_for_status()
+        return bool(response.json().get("ok"))
+    except Exception as exc:
+        print("telegram failed", repr(exc))
         return False
 
 
-def eps_line(x, kind):
-    period = x.get(kind + "_period")
-    label = (period + (" 單月 EPS" if kind == "monthly" else " 上一季 EPS")) if period else ("單月 EPS" if kind == "monthly" else "上一季 EPS")
-    value = x.get(kind + "_eps")
-    growth = x.get(kind + "_eps_yoy")
+def eps_line(item, kind):
+    period = item.get(kind + "_period")
+    label = (
+        period + (" 單月 EPS" if kind == "monthly" else " 上一季 EPS")
+        if period
+        else ("單月 EPS" if kind == "monthly" else "上一季 EPS")
+    )
+
+    value = item.get(kind + "_eps")
+    growth = item.get(kind + "_eps_yoy")
+
     value_text = f"{value:.2f} 元" if value is not None else "未取得"
-    growth_text = f"{growth:+.2f}%" if growth is not None else (x.get(kind + "_eps_yoy_text") or "未取得")
+
+    growth_text = (
+        f"{growth:+.2f}%"
+        if growth is not None
+        else item.get(kind + "_eps_yoy_text") or "未取得"
+    )
+
     return f"{label}：{value_text}｜與去年同期增減：{growth_text}"
 
 
-def push_text(x):
-    return "\n".join([f"{x.get('name') or x['ticker']} {x['ticker']}",
-                      eps_line(x, "monthly"), eps_line(x, "quarter")])
+def push_text(item):
+    return "\n".join(
+        [
+            f"{item.get('name') or item['ticker']} {item['ticker']}",
+            eps_line(item, "monthly"),
+            eps_line(item, "quarter"),
+        ]
+    )
+
+
+def valid_eps_item(item):
+    return (
+        item.get("monthly_eps") is not None
+        and item.get("quarter_eps") is not None
+    )
 
 
 def main():
-    history_path = (
-        ROOT
-        / "data/self_reports_history.json"
-    )
+    history_path = ROOT / "data/self_reports_history.json"
+    sent_path = ROOT / "data/self_reports_sent.json"
 
-    sent_path = (
-        ROOT
-        / "data/self_reports_sent.json"
-    )
-
-    old = load_json(
-        history_path,
-        {},
-    )
-
+    old = load_json(history_path, {})
     saved = {}
 
-    for x in old.get(
-        "items",
-        [],
-    ):
-        if str(
-            x.get(
-                "publish_date"
-            )
-            or ""
-        ) < MONITOR_START_DATE:
+    for item in old.get("items", []):
+        if str(item.get("publish_date") or "") < MONITOR_START_DATE:
             continue
-
-        saved[
-            identity(x)
-        ] = x
+        saved[identity(item)] = item
 
     try:
-        mops = (
-            fetch_mops_search()
-        )
-
+        mops = fetch_mops_search()
         print(
             "MOPS AJAX",
             "rows",
-            mops.get(
-                "rows"
-            ),
+            mops.get("rows"),
             "self_reports",
-            len(
-                mops.get(
-                    "items",
-                    [],
-                )
-            ),
+            len(mops.get("items", [])),
         )
-
-    except Exception as e:
+    except Exception as exc:
         mops = {
             "ok": False,
             "rows": 0,
             "items": [],
             "debug": [],
             "rejected": [],
-            "error": repr(
-                e
-            ),
+            "error": repr(exc),
         }
+        print("MOPS AJAX failed", repr(exc))
 
-        print(
-            "MOPS AJAX failed",
-            repr(e),
-        )
-
-    twse_result = (
-        fetch_openapi(
-            "twse",
-            TWSE_NEWS,
-        )
-    )
-
-    tpex_result = (
-        fetch_openapi(
-            "tpex",
-            TPEX_NEWS,
-        )
-    )
+    twse_result = fetch_openapi("twse", TWSE_NEWS)
+    tpex_result = fetch_openapi("tpex", TPEX_NEWS)
 
     fresh_map = {}
 
-    for source in (
-        mops,
-        twse_result,
-        tpex_result,
-    ):
-        for x in source.get(
-            "items",
-            [],
-        ):
-            key = identity(
-                x
-            )
+    for source in (mops, twse_result, tpex_result):
+        for item in source.get("items", []):
+            key = identity(item)
 
             if key in fresh_map:
-                fresh_map[
-                    key
-                ] = merge_item(
-                    fresh_map[
-                        key
-                    ],
-                    x,
-                )
+                fresh_map[key] = merge_item(fresh_map[key], item)
             else:
-                fresh_map[
-                    key
-                ] = x
+                fresh_map[key] = item
 
-    fresh = list(
-        fresh_map.values()
-    )
+    fresh = list(fresh_map.values())
 
-    for x in fresh:
-        key = identity(
-            x
-        )
+    for item in fresh:
+        key = identity(item)
 
         if key in saved:
-            saved[
-                key
-            ] = merge_item(
-                saved[key],
-                x,
-            )
+            saved[key] = merge_item(saved[key], item)
         else:
-            saved[
-                key
-            ] = x
+            saved[key] = item
 
-    items = list(
-        saved.values()
-    )
+    items = list(saved.values())
 
-    # Reparse saved details when upgrading; never reuse the old ambiguous EPS.
+    # 每次都用 detail 重新解析，避免沿用舊版錯位的 EPS
     for item in items:
-        item.update(extract_metrics(item.get("detail") or ""))
-    items = [x for x in items if not (any(k in (x.get("subject") or "") for k in ("流動比率", "速動比率", "負債比率")) and "注意交易" not in (x.get("subject") or ""))]
+        parsed = extract_metrics(item.get("detail") or "")
+        item.update(parsed)
+
+    # 網站只呈現真正有「單月 EPS + 上一季 EPS」的公告
+    # 因此寶得利這類純流動比率／負債比率公告會被排除
+    items = [item for item in items if valid_eps_item(item)]
 
     items.sort(
-        key=lambda x: (
-            x.get(
-                "publish_date",
-                "",
-            ),
-            x.get(
-                "publish_time",
-                "",
-            ),
-            x.get(
-                "ticker",
-                "",
-            ),
+        key=lambda item: (
+            item.get("publish_date", ""),
+            item.get("publish_time", ""),
+            item.get("ticker", ""),
         ),
         reverse=True,
     )
 
-    sent_data = load_json(
-        sent_path,
-        {},
-    )
+    sent_data = load_json(sent_path, {})
 
-    pushover_sent = set(
-        sent_data.get(
-            "ids",
-            [],
-        )
-    )
+    pushover_sent = set(sent_data.get("ids", []))
+    telegram_sent = set(sent_data.get("telegram_ids", []))
 
-    telegram_sent = set(
-        sent_data.get(
-            "telegram_ids",
-            [],
-        )
-    )
-
-    for x in fresh:
-        if x.get("monthly_eps") is None:
+    for item in fresh:
+        # 推播也只送有完整兩個 EPS 欄位的新公告
+        if not valid_eps_item(item):
             continue
-        key = identity(x) + "|period-eps-yoy-v1"
+
+        base_key = identity(item)
+
+        # 舊版曾把格式版本放進 key
+        # 為避免升級後把已推過的舊公告重送，保留 legacy key 相容判斷
+        legacy_key = base_key + "|period-eps-yoy-v1"
 
         page_url = (
             SITE_URL
@@ -1643,81 +1258,38 @@ def main():
             + urlencode(
                 {
                     "page": "selfReports",
-                    "ticker": (
-                        x.get(
-                            "ticker"
-                        )
-                        or ""
-                    ),
-                    "date": (
-                        x.get(
-                            "publish_date"
-                        )
-                        or ""
-                    ),
-                    "time": (
-                        x.get(
-                            "publish_time"
-                        )
-                        or ""
-                    ),
+                    "ticker": item.get("ticker") or "",
+                    "date": item.get("publish_date") or "",
+                    "time": item.get("publish_time") or "",
                 }
             )
         )
 
-        title = (
-            "自結公布"
-        )
-
-        msg = push_text(
-            x
-        )
+        title = "自結公布"
+        message = push_text(item)
 
         if (
-            key
-            not in pushover_sent
+            base_key not in pushover_sent
+            and legacy_key not in pushover_sent
         ):
-            if send_pushover(
-                title,
-                msg,
-                page_url,
-            ):
-                pushover_sent.add(
-                    key
-                )
+            if send_pushover(title, message, page_url):
+                pushover_sent.add(base_key)
 
         if (
-            key
-            not in telegram_sent
+            base_key not in telegram_sent
+            and legacy_key not in telegram_sent
         ):
-            if send_telegram(
-                title,
-                msg,
-                page_url,
-            ):
-                telegram_sent.add(
-                    key
-                )
+            if send_telegram(title, message, page_url):
+                telegram_sent.add(base_key)
 
-    updated_at = (
-        now_tpe()
-        .isoformat(
-            timespec="minutes"
-        )
-    )
+    updated_at = now_tpe().isoformat(timespec="minutes")
 
     save_json(
         history_path,
         {
-            "updated_at": (
-                updated_at
-            ),
-            "version": (
-                VERSION
-            ),
-            "monitor_start_date": (
-                MONITOR_START_DATE
-            ),
+            "updated_at": updated_at,
+            "version": VERSION,
+            "monitor_start_date": MONITOR_START_DATE,
             "items": items,
         },
     )
@@ -1725,125 +1297,42 @@ def main():
     save_json(
         sent_path,
         {
-            "updated_at": (
-                updated_at
-            ),
-            "ids": list(
-                pushover_sent
-            )[-2000:],
-            "telegram_ids": list(
-                telegram_sent
-            )[-2000:],
+            "updated_at": updated_at,
+            "ids": list(pushover_sent)[-2000:],
+            "telegram_ids": list(telegram_sent)[-2000:],
         },
     )
 
     save_json(
-        ROOT
-        / "data/self_reports.json",
+        ROOT / "data/self_reports.json",
         {
-            "updated_at": (
-                updated_at
-            ),
-            "monitor_start_date": (
-                MONITOR_START_DATE
-            ),
-            "filter_version": (
-                VERSION
-            ),
+            "updated_at": updated_at,
+            "monitor_start_date": MONITOR_START_DATE,
+            "filter_version": VERSION,
             "source_mode": (
                 "MOPS ajax_t05st01 關鍵字查詢主來源 + "
                 "TWSE/TPEx OpenAPI 備援"
             ),
             "source_status": {
                 "mops": {
-                    "ok": (
-                        mops.get(
-                            "ok",
-                            False,
-                        )
-                    ),
-                    "rows": (
-                        mops.get(
-                            "rows",
-                            0,
-                        )
-                    ),
-                    "self_reports": len(
-                        mops.get(
-                            "items",
-                            [],
-                        )
-                    ),
-                    "debug": (
-                        mops.get(
-                            "debug",
-                            [],
-                        )
-                    ),
-                    "rejected": (
-                        mops.get(
-                            "rejected",
-                            [],
-                        )
-                    ),
-                    "error": (
-                        mops.get(
-                            "error",
-                            "",
-                        )
-                    ),
+                    "ok": mops.get("ok", False),
+                    "rows": mops.get("rows", 0),
+                    "self_reports": len(mops.get("items", [])),
+                    "debug": mops.get("debug", []),
+                    "rejected": mops.get("rejected", []),
+                    "error": mops.get("error", ""),
                 },
                 "twse": {
-                    "ok": (
-                        twse_result.get(
-                            "ok",
-                            False,
-                        )
-                    ),
-                    "rows": len(
-                        twse_result.get(
-                            "rows",
-                            [],
-                        )
-                    ),
-                    "self_reports": len(
-                        twse_result.get(
-                            "items",
-                            [],
-                        )
-                    ),
-                    "error": (
-                        twse_result.get(
-                            "error",
-                            "",
-                        )
-                    ),
+                    "ok": twse_result.get("ok", False),
+                    "rows": len(twse_result.get("rows", [])),
+                    "self_reports": len(twse_result.get("items", [])),
+                    "error": twse_result.get("error", ""),
                 },
                 "tpex": {
-                    "ok": (
-                        tpex_result.get(
-                            "ok",
-                            False,
-                        )
-                    ),
-                    "rows": len(
-                        tpex_result.get(
-                            "rows",
-                            [],
-                        )
-                    ),
-                    "self_reports": len(
-                        tpex_result.get(
-                            "items",
-                            [],
-                        )
-                    ),
-                    "error": (
-                        tpex_result.get(
-                            "error",
-                            "",
-                        )
-                    ),
+                    "ok": tpex_result.get("ok", False),
+                    "rows": len(tpex_result.get("rows", [])),
+                    "self_reports": len(tpex_result.get("items", [])),
+                    "error": tpex_result.get("error", ""),
                 },
             },
             "items": items,
@@ -1853,13 +1342,9 @@ def main():
     print(
         "self reports",
         "stored",
-        len(
-            items
-        ),
+        len(items),
         "fresh",
-        len(
-            fresh
-        ),
+        len(fresh),
         "version",
         VERSION,
     )
@@ -1867,4 +1352,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
