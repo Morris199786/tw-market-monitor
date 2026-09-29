@@ -1,13 +1,13 @@
 {
-  "updated_at": "2026-09-29T19:33+08:00",
+  "updated_at": "2026-09-29T19:59+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-09-29-v11-mops-ajax",
+  "filter_version": "2026-09-29-v13-period-eps-yoy",
   "source_mode": "MOPS ajax_t05st01 關鍵字查詢主來源 + TWSE/TPEx OpenAPI 備援",
   "source_status": {
     "mops": {
       "ok": true,
       "rows": 11,
-      "self_reports": 11,
+      "self_reports": 8,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
@@ -30,7 +30,7 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易資訊標準",
-          "rows": 197,
+          "rows": 201,
           "hits": 7
         },
         {
@@ -54,7 +54,7 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 197,
+          "rows": 201,
           "hits": 4
         },
         {
@@ -78,13 +78,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務資訊",
-          "rows": 197,
+          "rows": 201,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務資訊",
-          "rows": 197,
+          "rows": 201,
           "hits": 0
         },
         {
@@ -94,7 +94,20 @@
           "hits": 0
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "自結",
+          "text": "7590 怡和國際 115/09/29 16:05:50 公告本公司115年8月份自結財務報告之流動比率、速動比率 及負債比率"
+        },
+        {
+          "keyword": "自結",
+          "text": "3523 迎輝 115/09/29 16:17:44 公告本公司115年8月份自結合併財務報告之公告流動比率、 速動比率及負債比率"
+        },
+        {
+          "keyword": "自結",
+          "text": "3117 年程 115/09/29 16:22:44 公告本公司115年8月份自結合併財務報告之負債比率、 流動比率、速動比率、未來三個月現金收支情形及銀行可使 用融資額度情形"
+        }
+      ],
       "error": ""
     },
     "twse": {
@@ -121,63 +134,21 @@
       "detail": "",
       "source": "mops_ajax",
       "source_url": "",
-      "source_error": "",
+      "source_error": "https://mopsov.twse.com.tw: 未取得含 EPS 的公告明細; https://mops.twse.com.tw: 未取得含 EPS 的公告明細",
       "match_reason": "direct_self_report",
       "eps": null,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
-    },
-    {
-      "market": "",
-      "ticker": "3117",
-      "name": "年程",
-      "publish_date": "2026-09-29",
-      "publish_time": "16:22:44",
-      "subject": "3117 年程 115/09/29 16:22:44 公告本公司115年8月份自結合併財務報告之負債比率、 流動比率、速動比率、未來三個月現金收支情形及銀行可使 用融資額度情形",
-      "detail": "",
-      "source": "mops_ajax",
-      "source_url": "",
-      "source_error": "",
-      "match_reason": "direct_self_report",
-      "eps": null,
-      "pretax_million": null,
-      "net_income_million": null,
-      "revenue_million": null
-    },
-    {
-      "market": "",
-      "ticker": "3523",
-      "name": "迎輝",
-      "publish_date": "2026-09-29",
-      "publish_time": "16:17:44",
-      "subject": "3523 迎輝 115/09/29 16:17:44 公告本公司115年8月份自結合併財務報告之公告流動比率、 速動比率及負債比率",
-      "detail": "",
-      "source": "mops_ajax",
-      "source_url": "",
-      "source_error": "",
-      "match_reason": "direct_self_report",
-      "eps": null,
-      "pretax_million": null,
-      "net_income_million": null,
-      "revenue_million": null
-    },
-    {
-      "market": "",
-      "ticker": "7590",
-      "name": "怡和國際",
-      "publish_date": "2026-09-29",
-      "publish_time": "16:05:50",
-      "subject": "7590 怡和國際 115/09/29 16:05:50 公告本公司115年8月份自結財務報告之流動比率、速動比率 及負債比率",
-      "detail": "",
-      "source": "mops_ajax",
-      "source_url": "",
-      "source_error": "",
-      "match_reason": "direct_self_report",
-      "eps": null,
-      "pretax_million": null,
-      "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "eps_parse_status": "unrecognized_layout",
+      "monthly_eps": null,
+      "monthly_eps_yoy": null,
+      "monthly_period": null,
+      "quarter_eps": null,
+      "quarter_eps_yoy": null,
+      "quarter_period": null,
+      "monthly_eps_yoy_text": null,
+      "quarter_eps_yoy_text": null
     },
     {
       "market": "",
@@ -186,15 +157,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "15:57:43",
       "subject": "3653 健策 115/09/29 15:57:43 因本公司有價證券於集中交易市場達公布 注意交易資訊標準，故公布相關財務業務等 重大訊息，以利投資人區別瞭解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 3653 健策 公司提供 序號 1 發言日期 115/09/29 發言時間 15:57:43 發言人 林錦隆 發言人職稱 總經理 發言人電話 03-2115678#6206 主旨 因本公司有價證券於集中交易市場達公布 注意交易資訊標準，故公布相關財務業務等 重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依臺灣證券交易所通知辦理 3.財務業務資訊: 期間 (月) (季) (最近四季累計) 最近一月 與去年同期 最近一季 與去年同期 114第3季至 科目 115年08月 增 減% 115年第2季 增 減% 115年第2季 (IFRS-合併自結數) (IFRS-合併核閱數) (IFRS-合併查核數) ======= ========= ========= ========= ========= ================ 營業收入 3,225.89 91% 7,274.52 40% 22,921.60 (百萬) 稅前淨利 1,355.84 100% 2,840.89 114% 8,155.86 (百萬) 歸屬母公司 業主淨利 1,078.99 101% 2,318.49 107% 6,501.63 (百萬) 每股盈餘 7.35 95% 15.80 101% 44.64 (元) 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 7.其他應敘明事項:無。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3653&SPOKE_DATE=20260929&SPOKE_TIME=155743&SEQ_NO=1&skey=3653202609291",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 7.35,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 7.35,
+      "monthly_eps_yoy": 95.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 15.8,
+      "quarter_eps_yoy": 101.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "95%",
+      "quarter_eps_yoy_text": "101%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -203,15 +183,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "15:55:14",
       "subject": "4770 上品 115/09/29 15:55:14 係因本公司有價證券於集中交易市場達公佈注意交易資訊標準 ，故公佈相關財務業務等重大訊息，以利投資人區別瞭解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 4770 上品 公司提供 序號 1 發言日期 115/09/29 發言時間 15:55:14 發言人 李遠忠 發言人職稱 營運執行長 發言人電話 04-7582827 主旨 係因本公司有價證券於集中交易市場達公佈注意交易資訊標準 ，故公佈相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依臺灣證券交易所股份有限公司指示辦理 3.財務業務資訊: 一、本公司之合併財務資料如下： 期間 (月) (季) (最近四季累計) ======= ==================== ======================= =============== 最近一月 與去年 最近一季 與去年 114年第3季至 科目 115年08月 同期增減 115年第2季 同期增減 115年第2季 IFRS合併 (％) IFRS合併 (％) IFRS合併 自結數 會計師核閱數 會計師查核及核閱數 ======= ========== ========= ============= ========= =============== 營業收入 492 -29.5% 1,305 -0.5% 4,811 (百萬) 稅前純益 138 -23.8% 318 8.9% 1,030 (百萬) 歸屬母公司 113 -25.2% 249 13.2% 838 業主淨利 (百萬) 每股盈餘 1.41 -25.4% 3.11 13.1% 10.48 (元) 二、本公司營運一切正常，公司於集中市場股票價格變動係由市場自由交易機制 所決定。 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 7.其他應敘明事項:無。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4770&SPOKE_DATE=20260929&SPOKE_TIME=155514&SEQ_NO=1&skey=4770202609291",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 1.41,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 1.41,
+      "monthly_eps_yoy": -25.4,
+      "monthly_period": "2026-08",
+      "quarter_eps": 3.11,
+      "quarter_eps_yoy": 13.1,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "-25.4%",
+      "quarter_eps_yoy_text": "13.1%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -220,15 +209,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "15:22:42",
       "subject": "2030 彰源 115/09/29 15:22:42 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 2030 彰源 公司提供 序號 1 發言日期 115/09/29 發言時間 15:22:42 發言人 張鑫達 發言人職稱 副董事長 發言人電話 05-5571668 主旨 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 3.財務業務資訊: 最近一月 與去年同期 最近一季 與去年同期 最近四季累積 科目 (115年08月) 增減% (115年第二季) 增減% (114年第三季 至115年第二季) 自結數 核閱數 核閱數 ----------------------------------------------------------------------------- 營業收入 1175 58% 3187 26% 10774 (百萬元) 稅前淨利 96 660% 374 706% 680 (百萬元) 歸屬本公司 73 508% 289 527% 540 本期淨利 (百萬元) 基本每股盈餘 0.26 508% 1.05 527% 1.96 (元) 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無 7.其他應敘明事項: (1)主要係鎳價上漲帶動產品價格也隨之上漲,致提高營收及獲利。 (2)115年08月係自結財務資訊，尚未經會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2030&SPOKE_DATE=20260929&SPOKE_TIME=152242&SEQ_NO=1&skey=2030202609291",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 0.26,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 0.26,
+      "monthly_eps_yoy": 508.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 1.05,
+      "quarter_eps_yoy": 527.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "508%",
+      "quarter_eps_yoy_text": "527%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -237,15 +235,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "15:17:46",
       "subject": "6488 環球晶 115/09/29 15:17:46 本公司有價證券達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別瞭解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 6488 環球晶 公司提供 序號 1 發言日期 115/09/29 發言時間 15:17:46 發言人 彭欣瑜 發言人職稱 董事長特別助理 發言人電話 03-5772255 主旨 本公司有價證券達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別瞭解。 符合條款 第 53 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依財團法人中華民國證券櫃檯買賣中心通知辦理。 3.財務業務資訊: 一、基本資料 (一)單月 115年8月 114年8月 與去年同期增減 營業收入(百萬元) 4,764 4,427 7.63% 稅前淨利(百萬元) 785 424 85.06% 歸屬母公司業主淨利(百萬元) 704 288 144.98% 每股盈餘(元) 1.47 0.60 145.00% (二)單季 115年第2季 114年第2季 與去年同期增減 營業收入(百萬元) 15,214 16,007 -4.95% 稅前淨利(百萬元) 4,585 2,288 100.39% 歸屬母公司業主淨利(百萬元) 3,779 1,681 124.81% 每股盈餘(元) 7.90 3.52 124.43% (三)最近四季累計 114年第3季至115年第2季 營業收入(百萬元) 58,195 稅前淨利(百萬元) 12,026 歸屬母公司業主淨利(百萬元) 9,849 每股盈餘(元) 20.60 每股面額：10元 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）:有 115/09/23公告本公司現金增資發行普通股參與發行海外存託憑證之發行條件 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事:無 6.其他應敘明事項: 註1：以上115年8月及去年同期比較數之財務資料係本公司採IFRS會計準則 編製之合併數，未經會計師查核(閱)，僅供投資人參考。 註2：最近一季115年第2季係指單季數字，非為最近財務報告中之累計數字， 且係本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 註3：最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數， 業經會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6488&SPOKE_DATE=20260929&SPOKE_TIME=151746&SEQ_NO=1&skey=6488202609291",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 1.47,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 1.47,
+      "monthly_eps_yoy": 145.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 7.9,
+      "quarter_eps_yoy": 124.43,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "145.00%",
+      "quarter_eps_yoy_text": "124.43%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -254,15 +261,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "15:17:12",
       "subject": "4542 科嶠 115/09/29 15:17:12 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 4542 科嶠 公司提供 序號 1 發言日期 115/09/29 發言時間 15:17:12 發言人 吳明致 發言人職稱 董事長 發言人電話 (03)359-1777 主旨 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解。 符合條款 第 53 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依據證券櫃檯買賣中心通知辦理。 3.財務業務資訊: (一)最近一月單月(自結數) 115年08月 / 114年08月 / 與去年同期之增減% --------- ---------- ------------------ 營業收入(百萬元) 124 / 42 / 195% 稅前淨利(百萬元) 28 / 17 / 64% 歸屬母公司業主淨利(百萬元) 21 / 16 / 32% 每股盈餘(元) 0.61 / 0.50 / 22% (二)單季(核閱數) 115年第2季 / 114年第2季 / 與去年同期之增減% ----------- ------------ ------------------ 營業收入(百萬元) 338 / 223 / 51% 稅前淨利(百萬元) 48 / 7 / 554% 歸屬母公司業主淨利(百萬元) 37 / 2 / 2261% 每股盈餘(元) 1.07 / 0.05 / 2040% (三)最近四季累計(核閱數) 114年第3季至115年第2季 ----------------------- 營業收入(百萬元) 873 稅前淨利(百萬元) 115 歸屬母公司業主淨利(百萬元) 77 每股盈餘(元) 2.29 (四)公司每股面額：10元 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）: 無。 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事: 無。 6.其他應敘明事項: (1)以上115年08月及去年同期比較數之財務資料係本公司採IFRS會計準則編製之 合併數，未經會計師查核(閱)，僅供投資人參考。 (2)最近一季115年第2季係指單季數字，非為最近財務報告中之累計數字，且係 本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 (3)最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數，業經 會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4542&SPOKE_DATE=20260929&SPOKE_TIME=151712&SEQ_NO=1&skey=4542202609291",
       "source_error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fe63b429a00>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 0.61,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 0.61,
+      "monthly_eps_yoy": 22.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 1.07,
+      "quarter_eps_yoy": 2040.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "22%",
+      "quarter_eps_yoy_text": "2040%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -271,15 +287,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "14:45:12",
       "subject": "3026 禾伸堂 115/09/29 14:45:12 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 3026 禾伸堂 公司提供 序號 1 發言日期 115/09/29 發言時間 14:45:12 發言人 黃建融 發言人職稱 處長 發言人電話 (02)2627-0383 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依臺灣證券交易所股份有限公司通知辦理公告 3.財務業務資訊: 期間 (月) (季) (最近四季累計) ＝＝＝＝ ＝＝＝＝＝＝＝＝＝＝＝ ＝＝＝＝＝＝＝＝＝＝＝ ＝＝＝＝＝＝＝ 最近一月 與去年同期 最近一季 與去年同期 (114年第3季至 科目 (115年8月) 增減% (115年第2季) 增減% 115年第2季) (合併自結數) (合併核閱數) (合併查核/核閱數) ＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝＝＝ 營業收入 1,439.76 33.22% 4,097.29 25.22% 14,468.49 （百萬） 稅前淨利 273.09 317.95% 762.46 158.31% 1,934.61 （百萬） 歸屬母公司 220.69 285.04% 641.83 179.09% 1,699.64 業主淨利 （百萬） 每股盈餘 1.33 285.04% 3.87 179.09% 10.25 （元） 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無。 7.其他應敘明事項:無。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3026&SPOKE_DATE=20260929&SPOKE_TIME=144512&SEQ_NO=1&skey=3026202609291",
       "source_error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fe63b428440>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 1.33,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 1.33,
+      "monthly_eps_yoy": 285.04,
+      "monthly_period": "2026-08",
+      "quarter_eps": 3.87,
+      "quarter_eps_yoy": 179.09,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "285.04%",
+      "quarter_eps_yoy_text": "179.09%",
+      "eps_parse_status": "parsed"
     },
     {
       "market": "",
@@ -288,15 +313,24 @@
       "publish_date": "2026-09-29",
       "publish_time": "14:37:27",
       "subject": "5465 富驊 115/09/29 14:37:27 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解",
-      "detail": "",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 5465 富驊 公司提供 序號 1 發言日期 115/09/29 發言時間 14:37:27 發言人 陳兆逸 發言人職稱 副總經理 發言人電話 (03)3269123 主旨 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解 符合條款 第 53 款 事實發生日 115/09/29 說明 1.事實發生日:115/09/29 2.發生緣由:依財團法人中華民國證券櫃檯買賣中心通知辦理。 3.財務業務資訊: (1)單月 最近一月單月 去年同月 與去年同期增減% (115/08) (114/08) ---------------------------------------------------------------------- 營業收入(百萬元) 140 84 67% 稅前淨利(百萬元) 25 25 0% 歸屬母公司業主淨利(百萬元) 22 23 -4% 每股盈餘(元) 0.15 0.16 -6% (2)單季 最近一季單季 去年同期 與去年同期增減% (115第2季) (114第2季) ------------------------------------------------------------------------ 營業收入(百萬元) 937 1552 -40% 稅前淨利(百萬元) 100 18 455% 歸屬母公司業主淨利(百萬元) 86 6 1333% 每股盈餘(元) 0.59 0.04 1375% (3)最近四季累計 (114年第3季至115年第2季) ----------------------------------------------------------- 營業收入(百萬元) 4344 稅前淨利(百萬元) 310 歸屬母公司業主淨利(百萬元) 236 每股盈餘(元) 1.6 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）:無 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事:無 6.其他應敘明事項: (1)以上115年8月及去年同期比較數之財務資料係本公司採IFRS會計準則編 準則編製之合併自結數，未經會計師查核(閱)，僅供投資人參考。 (2)最近一季115年第2季係指單季數字，係經會計師查核(閱)。 (3)最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數， 業經會計師查核。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
-      "source_url": "",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5465&SPOKE_DATE=20260929&SPOKE_TIME=143727&SEQ_NO=1&skey=5465202609291",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
+      "eps": 0.15,
       "pretax_million": null,
       "net_income_million": null,
-      "revenue_million": null
+      "revenue_million": null,
+      "monthly_eps": 0.15,
+      "monthly_eps_yoy": -6.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 0.59,
+      "quarter_eps_yoy": 1375.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "-6%",
+      "quarter_eps_yoy_text": "1375%",
+      "eps_parse_status": "parsed"
     }
   ]
 }
