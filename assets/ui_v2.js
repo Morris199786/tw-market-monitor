@@ -13,6 +13,7 @@ const featureItems = [
 
 let revenueSectorSelected = "all";
 let revenueMomSort = false;
+let selfReportSearch = "";
 
 function featureIcon(name) {
   const icons = {
@@ -887,9 +888,91 @@ async function selfReports() {
         : "尚未開始自結監控";
   }
 
-  const arr =
+  const allItems =
     d.items ||
     [];
+
+  const normalizeSearch =
+    value =>
+      String(
+        value ||
+        ""
+      )
+        .trim()
+        .toLowerCase()
+        .replace(
+          /\s+/g,
+          ""
+        );
+
+  const keyword =
+    normalizeSearch(
+      selfReportSearch
+    );
+
+  const arr =
+    !keyword
+      ? allItems
+      : allItems.filter(
+          x => {
+            const ticker =
+              normalizeSearch(
+                x.ticker
+              );
+
+            const name =
+              normalizeSearch(
+                x.name
+              );
+
+            return (
+              ticker.includes(
+                keyword
+              ) ||
+              name.includes(
+                keyword
+              )
+            );
+          }
+        );
+
+  const input =
+    $(
+      "#selfReportSearchInput"
+    );
+
+  if (
+    input &&
+    input.value !==
+      selfReportSearch
+  ) {
+    input.value =
+      selfReportSearch;
+  }
+
+  const clearBtn =
+    $(
+      "#selfReportSearchClear"
+    );
+
+  if (clearBtn) {
+    clearBtn.style.display =
+      selfReportSearch
+        ? "inline-flex"
+        : "none";
+  }
+
+  const resultMeta =
+    $(
+      "#selfReportSearchMeta"
+    );
+
+  if (resultMeta) {
+    resultMeta.textContent =
+      selfReportSearch
+        ? `找到 ${arr.length} 筆｜共 ${allItems.length} 筆自結`
+        : `共 ${allItems.length} 筆自結`;
+  }
 
   const box =
     $("#selfReportCards");
@@ -919,11 +1002,25 @@ async function selfReports() {
         </div>
 
         <b>
-          目前尚未偵測到新的自結公告
+          ${
+            selfReportSearch
+              ? `找不到「${String(selfReportSearch).replace(/[&<>"']/g, c => ({
+                  "&": "&amp;",
+                  "<": "&lt;",
+                  ">": "&gt;",
+                  '"': "&quot;",
+                  "'": "&#39;"
+                }[c]))}」的自結資料`
+              : "目前尚未偵測到新的自結公告"
+          }
         </b>
 
         <span>
-          系統每 30 分鐘自動檢查
+          ${
+            selfReportSearch
+              ? "可輸入股票名稱或股票代號搜尋"
+              : "系統每 30 分鐘自動檢查"
+          }
         </span>
 
       </div>
@@ -1007,27 +1104,65 @@ async function selfReports() {
               }
             </div>
 
-            ${
-              x.monthly_eps == null
-                ? `
-                  <div
-                    class="subject"
-                  >
-                    公告明細尚未取得或格式待核對，未以其他數字替代 EPS
-                  </div>
-                `
-                : ""
-            }
-
           </div>
         `
       )
       .join("");
 }
 
+function setupSelfReportSearch() {
+  const input =
+    $(
+      "#selfReportSearchInput"
+    );
+
+  const clearBtn =
+    $(
+      "#selfReportSearchClear"
+    );
+
+  if (!input) {
+    return;
+  }
+
+  input.addEventListener(
+    "input",
+    () => {
+      selfReportSearch =
+        input.value;
+
+      selfReports();
+    }
+  );
+
+  input.addEventListener(
+    "keydown",
+    e => {
+      if (
+        e.key ===
+        "Escape"
+      ) {
+        selfReportSearch = "";
+        input.value = "";
+        selfReports();
+        input.blur();
+      }
+    }
+  );
+
+  if (clearBtn) {
+    clearBtn.onclick =
+      () => {
+        selfReportSearch = "";
+        input.value = "";
+        selfReports();
+        input.focus();
+      };
+  }
+}
+
 /* -------------------------------------------------
    月營收卡片
-   MoM > 10%：金色高亮
 ------------------------------------------------- */
 
 function revenueCard(x) {
@@ -1064,24 +1199,18 @@ function revenueCard(x) {
           : ""
       }
 
-      <div
-        class="top"
-      >
+      <div class="top">
 
         <div>
 
-          <span
-            class="stock-name"
-          >
+          <span class="stock-name">
             ${
               x.name ||
               x.ticker
             }
           </span>
 
-          <span
-            class="ticker"
-          >
+          <span class="ticker">
             ${
               x.ticker ||
               ""
@@ -1093,9 +1222,7 @@ function revenueCard(x) {
         ${
           isMomHot
             ? `
-              <span
-                class="mom-hot-badge"
-              >
+              <span class="mom-hot-badge">
                 MoM &gt; 10%
               </span>
             `
@@ -1104,9 +1231,7 @@ function revenueCard(x) {
 
       </div>
 
-      <div
-        class="rev"
-      >
+      <div class="rev">
         ${
           fmtNum(
             x.revenue_100m,
@@ -1116,15 +1241,11 @@ function revenueCard(x) {
         億
       </div>
 
-      <div
-        class="rev-label"
-      >
+      <div class="rev-label">
         單月營收
       </div>
 
-      <div
-        class="changes"
-      >
+      <div class="changes">
 
         <span>
           <small>
@@ -2354,6 +2475,8 @@ buildFeatureRail();
 setupHomeOrder();
 
 buildMarketPulse();
+
+setupSelfReportSearch();
 
 selfReports();
 
