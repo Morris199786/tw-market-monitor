@@ -12,26 +12,58 @@
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
 
 <style>
-  html[data-theme="dark"] #selfReportSearchInput,
-  body.dark #selfReportSearchInput,
-  .dark #selfReportSearchInput {
-    background:#111827 !important;
-    color:#f8fafc !important;
-    border-color:#334155 !important;
+  #selfReportSearchInput{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    color-scheme:light !important;
+    background:#ffffff !important;
+    color:#111827 !important;
+    border:1px solid #d8dee8 !important;
+    -webkit-text-fill-color:#111827 !important;
+    caret-color:#111827 !important;
+    box-shadow:none !important;
   }
 
-  html[data-theme="dark"] #selfReportSearchInput::placeholder,
-  body.dark #selfReportSearchInput::placeholder,
-  .dark #selfReportSearchInput::placeholder {
+  #selfReportSearchInput::placeholder{
+    color:#8a94a3 !important;
+    opacity:1 !important;
+    -webkit-text-fill-color:#8a94a3 !important;
+  }
+
+  #selfReportSearchInput::-webkit-search-decoration,
+  #selfReportSearchInput::-webkit-search-cancel-button,
+  #selfReportSearchInput::-webkit-search-results-button,
+  #selfReportSearchInput::-webkit-search-results-decoration{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+  }
+
+  #selfReportSearchClear{
+    -webkit-appearance:none !important;
+    appearance:none !important;
+    background:#f3f4f6 !important;
+    color:#475569 !important;
+    border:1px solid #d8dee8 !important;
+  }
+
+  html[data-theme="dark"] #selfReportSearchInput{
+    color-scheme:dark !important;
+    background:#171b22 !important;
+    color:#f1f5f9 !important;
+    border-color:#343c49 !important;
+    -webkit-text-fill-color:#f1f5f9 !important;
+    caret-color:#f1f5f9 !important;
+  }
+
+  html[data-theme="dark"] #selfReportSearchInput::placeholder{
     color:#94a3b8 !important;
+    -webkit-text-fill-color:#94a3b8 !important;
   }
 
-  html[data-theme="dark"] #selfReportSearchClear,
-  body.dark #selfReportSearchClear,
-  .dark #selfReportSearchClear {
-    background:#1f2937 !important;
+  html[data-theme="dark"] #selfReportSearchClear{
+    background:#242a33 !important;
     color:#cbd5e1 !important;
-    border-color:#334155 !important;
+    border-color:#343c49 !important;
   }
 </style>
 
@@ -409,7 +441,7 @@
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
-<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v15"></script>
+<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v16"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
