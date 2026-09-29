@@ -1,6 +1,6 @@
 {
   "date": "2026-09-29",
-  "updated_at": "2026-09-29T21:45+08:00",
+  "updated_at": "2026-09-29T22:21+08:00",
   "complete": true,
   "history_days": 22,
   "universe": "全台股科技普通股",
@@ -9,7 +9,7 @@
     "tpex": 484
   },
   "logic": {
-    "version": "2026-09-25-v4-tech-universe",
+    "version": "2026-09-29-v5-short-sale-balance",
     "universe": "全台股科技普通股：官方科技產業＋19個自訂科技族群成分股＋跨產業科技供應鏈白名單",
     "lookback_days": 20,
     "top_n_each_market": 30,
@@ -19,14 +19,14 @@
       "第三順位：一般增加"
     ],
     "details": [
+      "融資使用融資餘額；借券頁改用借券賣出餘額",
+      "借券賣出增加＝借券賣出餘額增加，不是一般借券餘額增加",
       "單日異常：比較今日餘額增加量、今日增幅、今日增加量占近5日均量，以及今日增加量相對過去20日正常每日變化的倍數",
       "20日正常每日變化使用每日餘額變化絕對值的中位數，降低單一極端日扭曲基準的問題",
       "突發異常需今日增加，20日異常倍數至少1.5倍，且今日至少符合：增加100張、占5日均量5%、或餘額增幅10%其中之一",
       "異常標籤：1.5～2倍＝單日異動，2～3倍＝明顯異常，3倍以上＝極端異常",
       "趨勢：觀察5日淨增加、5日增幅、近5日增加天數、近10日增加天數，以及5日增加量占近5日均量比例",
-      "近5日5天增加標示「近5日5增」；4天增加標示「近5日4增」；這類持續累積排在單日突發異常之後",
       "融資另外結合股價：上漲且融資增加標示追價融資；下跌且融資增加標示逆勢加融資",
-      "借券主排名使用借券餘額；借券賣出餘額只作確認訊號。兩者同步增加會另外標示，不把所有借券增加直接視為放空",
       "上市與上櫃分開排名，各取前30名"
     ],
     "score_is_probability": false
@@ -60,9 +60,7 @@
           "anomaly_20d": 21.24,
           "avg5_volume_lots": 3155.1,
           "change_1d_vs_avg5_volume_pct": 31.98,
-          "change_5d_vs_avg5_volume_pct": 42.88,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 42.88
         }
       },
       {
@@ -92,9 +90,7 @@
           "anomaly_20d": 17.07,
           "avg5_volume_lots": 1386.7,
           "change_1d_vs_avg5_volume_pct": 27.69,
-          "change_5d_vs_avg5_volume_pct": 83.58,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 83.58
         }
       },
       {
@@ -124,9 +120,7 @@
           "anomaly_20d": 33.15,
           "avg5_volume_lots": 6635.0,
           "change_1d_vs_avg5_volume_pct": 31.23,
-          "change_5d_vs_avg5_volume_pct": 34.41,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 34.41
         }
       },
       {
@@ -156,9 +150,7 @@
           "anomaly_20d": 10.8,
           "avg5_volume_lots": 19184.0,
           "change_1d_vs_avg5_volume_pct": 7.01,
-          "change_5d_vs_avg5_volume_pct": 43.26,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 43.26
         }
       },
       {
@@ -188,9 +180,7 @@
           "anomaly_20d": 7.67,
           "avg5_volume_lots": 5204.3,
           "change_1d_vs_avg5_volume_pct": 7.59,
-          "change_5d_vs_avg5_volume_pct": 20.75,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 20.75
         }
       },
       {
@@ -220,9 +210,7 @@
           "anomaly_20d": 10.0,
           "avg5_volume_lots": 22688.8,
           "change_1d_vs_avg5_volume_pct": 7.45,
-          "change_5d_vs_avg5_volume_pct": 13.01,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 13.01
         }
       },
       {
@@ -252,9 +240,7 @@
           "anomaly_20d": 5.6,
           "avg5_volume_lots": 85.1,
           "change_1d_vs_avg5_volume_pct": 32.92,
-          "change_5d_vs_avg5_volume_pct": 36.44,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 36.44
         }
       },
       {
@@ -284,9 +270,7 @@
           "anomaly_20d": 4.89,
           "avg5_volume_lots": 10824.3,
           "change_1d_vs_avg5_volume_pct": 10.17,
-          "change_5d_vs_avg5_volume_pct": 23.58,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 23.58
         }
       },
       {
@@ -315,9 +299,7 @@
           "anomaly_20d": 5.53,
           "avg5_volume_lots": 670.1,
           "change_1d_vs_avg5_volume_pct": 19.4,
-          "change_5d_vs_avg5_volume_pct": 25.52,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 25.52
         }
       },
       {
@@ -347,9 +329,7 @@
           "anomaly_20d": 3.76,
           "avg5_volume_lots": 9110.9,
           "change_1d_vs_avg5_volume_pct": 11.89,
-          "change_5d_vs_avg5_volume_pct": 33.22,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 33.22
         }
       },
       {
@@ -379,9 +359,7 @@
           "anomaly_20d": 9.27,
           "avg5_volume_lots": 12090.9,
           "change_1d_vs_avg5_volume_pct": 7.01,
-          "change_5d_vs_avg5_volume_pct": 11.57,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 11.57
         }
       },
       {
@@ -411,9 +389,7 @@
           "anomaly_20d": 4.57,
           "avg5_volume_lots": 483.4,
           "change_1d_vs_avg5_volume_pct": 19.86,
-          "change_5d_vs_avg5_volume_pct": 19.03,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 19.03
         }
       },
       {
@@ -443,9 +419,7 @@
           "anomaly_20d": 11.88,
           "avg5_volume_lots": 17826.7,
           "change_1d_vs_avg5_volume_pct": 4.47,
-          "change_5d_vs_avg5_volume_pct": 14.65,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 14.65
         }
       },
       {
@@ -474,9 +448,7 @@
           "anomaly_20d": 13.3,
           "avg5_volume_lots": 2638.1,
           "change_1d_vs_avg5_volume_pct": 15.88,
-          "change_5d_vs_avg5_volume_pct": 17.74,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 17.74
         }
       },
       {
@@ -506,9 +478,7 @@
           "anomaly_20d": 8.0,
           "avg5_volume_lots": 152.1,
           "change_1d_vs_avg5_volume_pct": 10.52,
-          "change_5d_vs_avg5_volume_pct": 29.58,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 29.58
         }
       },
       {
@@ -538,9 +508,7 @@
           "anomaly_20d": 5.64,
           "avg5_volume_lots": 1908.6,
           "change_1d_vs_avg5_volume_pct": 12.99,
-          "change_5d_vs_avg5_volume_pct": 15.14,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 15.14
         }
       },
       {
@@ -570,9 +538,7 @@
           "anomaly_20d": 4.0,
           "avg5_volume_lots": 125.4,
           "change_1d_vs_avg5_volume_pct": 11.16,
-          "change_5d_vs_avg5_volume_pct": 35.88,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 35.88
         }
       },
       {
@@ -602,9 +568,7 @@
           "anomaly_20d": 5.75,
           "avg5_volume_lots": 239.5,
           "change_1d_vs_avg5_volume_pct": 9.6,
-          "change_5d_vs_avg5_volume_pct": 27.97,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 27.97
         }
       },
       {
@@ -634,9 +598,7 @@
           "anomaly_20d": 10.56,
           "avg5_volume_lots": 9891.8,
           "change_1d_vs_avg5_volume_pct": 13.45,
-          "change_5d_vs_avg5_volume_pct": 9.29,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 9.29
         }
       },
       {
@@ -666,9 +628,7 @@
           "anomaly_20d": 3.76,
           "avg5_volume_lots": 1001.5,
           "change_1d_vs_avg5_volume_pct": 15.58,
-          "change_5d_vs_avg5_volume_pct": 20.87,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 20.87
         }
       },
       {
@@ -698,9 +658,7 @@
           "anomaly_20d": 6.68,
           "avg5_volume_lots": 3486.0,
           "change_1d_vs_avg5_volume_pct": 4.22,
-          "change_5d_vs_avg5_volume_pct": 4.07,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 4.07
         }
       },
       {
@@ -729,9 +687,7 @@
           "anomaly_20d": 6.33,
           "avg5_volume_lots": 552.0,
           "change_1d_vs_avg5_volume_pct": 13.77,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 0
         }
       },
       {
@@ -761,9 +717,7 @@
           "anomaly_20d": 4.03,
           "avg5_volume_lots": 4286.5,
           "change_1d_vs_avg5_volume_pct": 10.71,
-          "change_5d_vs_avg5_volume_pct": 22.54,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 22.54
         }
       },
       {
@@ -793,9 +747,7 @@
           "anomaly_20d": 4.67,
           "avg5_volume_lots": 1267.9,
           "change_1d_vs_avg5_volume_pct": 6.63,
-          "change_5d_vs_avg5_volume_pct": 10.73,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 10.73
         }
       },
       {
@@ -825,9 +777,7 @@
           "anomaly_20d": 3.16,
           "avg5_volume_lots": 2803.0,
           "change_1d_vs_avg5_volume_pct": 10.13,
-          "change_5d_vs_avg5_volume_pct": 25.83,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 25.83
         }
       },
       {
@@ -856,9 +806,7 @@
           "anomaly_20d": 5.75,
           "avg5_volume_lots": 1909.9,
           "change_1d_vs_avg5_volume_pct": 21.36,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 0
         }
       },
       {
@@ -886,9 +834,7 @@
           "anomaly_20d": 5.25,
           "avg5_volume_lots": 99.2,
           "change_1d_vs_avg5_volume_pct": 21.18,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 0
         }
       },
       {
@@ -918,9 +864,7 @@
           "anomaly_20d": 3.29,
           "avg5_volume_lots": 3987.7,
           "change_1d_vs_avg5_volume_pct": 4.21,
-          "change_5d_vs_avg5_volume_pct": 44.51,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 44.51
         }
       },
       {
@@ -950,9 +894,7 @@
           "anomaly_20d": 7.14,
           "avg5_volume_lots": 4262.9,
           "change_1d_vs_avg5_volume_pct": 3.52,
-          "change_5d_vs_avg5_volume_pct": 11.31,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 11.31
         }
       },
       {
@@ -982,9 +924,7 @@
           "anomaly_20d": 2.98,
           "avg5_volume_lots": 24054.2,
           "change_1d_vs_avg5_volume_pct": 6.16,
-          "change_5d_vs_avg5_volume_pct": 29.27,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 29.27
         }
       }
     ],
@@ -1016,9 +956,7 @@
           "anomaly_20d": 61.43,
           "avg5_volume_lots": 3392.0,
           "change_1d_vs_avg5_volume_pct": 48.0,
-          "change_5d_vs_avg5_volume_pct": 52.18,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 52.18
         }
       },
       {
@@ -1048,9 +986,7 @@
           "anomaly_20d": 17.69,
           "avg5_volume_lots": 3204.6,
           "change_1d_vs_avg5_volume_pct": 40.85,
-          "change_5d_vs_avg5_volume_pct": 50.9,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 50.9
         }
       },
       {
@@ -1080,9 +1016,7 @@
           "anomaly_20d": 9.04,
           "avg5_volume_lots": 202.2,
           "change_1d_vs_avg5_volume_pct": 51.43,
-          "change_5d_vs_avg5_volume_pct": 122.16,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 122.16
         }
       },
       {
@@ -1112,9 +1046,7 @@
           "anomaly_20d": 16.35,
           "avg5_volume_lots": 334.2,
           "change_1d_vs_avg5_volume_pct": 56.25,
-          "change_5d_vs_avg5_volume_pct": 58.05,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 58.05
         }
       },
       {
@@ -1144,9 +1076,7 @@
           "anomaly_20d": 8.54,
           "avg5_volume_lots": 1587.0,
           "change_1d_vs_avg5_volume_pct": 21.8,
-          "change_5d_vs_avg5_volume_pct": 29.87,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 29.87
         }
       },
       {
@@ -1176,9 +1106,7 @@
           "anomaly_20d": 14.0,
           "avg5_volume_lots": 151.2,
           "change_1d_vs_avg5_volume_pct": 9.26,
-          "change_5d_vs_avg5_volume_pct": 118.39,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 118.39
         }
       },
       {
@@ -1208,9 +1136,7 @@
           "anomaly_20d": 17.29,
           "avg5_volume_lots": 1634.6,
           "change_1d_vs_avg5_volume_pct": 17.99,
-          "change_5d_vs_avg5_volume_pct": 16.88,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 16.88
         }
       },
       {
@@ -1240,9 +1166,7 @@
           "anomaly_20d": 4.84,
           "avg5_volume_lots": 2014.8,
           "change_1d_vs_avg5_volume_pct": 6.85,
-          "change_5d_vs_avg5_volume_pct": 36.33,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 36.33
         }
       },
       {
@@ -1272,9 +1196,7 @@
           "anomaly_20d": 3.4,
           "avg5_volume_lots": 79.2,
           "change_1d_vs_avg5_volume_pct": 21.46,
-          "change_5d_vs_avg5_volume_pct": 40.4,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 40.4
         }
       },
       {
@@ -1304,9 +1226,7 @@
           "anomaly_20d": 12.45,
           "avg5_volume_lots": 815.2,
           "change_1d_vs_avg5_volume_pct": 16.81,
-          "change_5d_vs_avg5_volume_pct": 23.55,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 23.55
         }
       },
       {
@@ -1334,9 +1254,7 @@
           "anomaly_20d": 7.0,
           "avg5_volume_lots": 16.8,
           "change_1d_vs_avg5_volume_pct": 41.67,
-          "change_5d_vs_avg5_volume_pct": 77.38,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 77.38
         }
       },
       {
@@ -1366,9 +1284,7 @@
           "anomaly_20d": 10.5,
           "avg5_volume_lots": 145.2,
           "change_1d_vs_avg5_volume_pct": 14.46,
-          "change_5d_vs_avg5_volume_pct": 19.97,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 19.97
         }
       },
       {
@@ -1398,9 +1314,7 @@
           "anomaly_20d": 7.27,
           "avg5_volume_lots": 1695.6,
           "change_1d_vs_avg5_volume_pct": 15.86,
-          "change_5d_vs_avg5_volume_pct": 10.85,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 10.85
         }
       },
       {
@@ -1428,9 +1342,7 @@
           "anomaly_20d": 40.0,
           "avg5_volume_lots": 20.2,
           "change_1d_vs_avg5_volume_pct": 198.02,
-          "change_5d_vs_avg5_volume_pct": 198.02,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 198.02
         }
       },
       {
@@ -1459,9 +1371,7 @@
           "anomaly_20d": 19.15,
           "avg5_volume_lots": 772.0,
           "change_1d_vs_avg5_volume_pct": 32.25,
-          "change_5d_vs_avg5_volume_pct": 23.7,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 23.7
         }
       },
       {
@@ -1491,9 +1401,7 @@
           "anomaly_20d": 21.4,
           "avg5_volume_lots": 6211.6,
           "change_1d_vs_avg5_volume_pct": 5.17,
-          "change_5d_vs_avg5_volume_pct": 14.75,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 14.75
         }
       },
       {
@@ -1523,9 +1431,7 @@
           "anomaly_20d": 5.74,
           "avg5_volume_lots": 3108.4,
           "change_1d_vs_avg5_volume_pct": 9.78,
-          "change_5d_vs_avg5_volume_pct": 27.18,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 27.18
         }
       },
       {
@@ -1554,9 +1460,7 @@
           "anomaly_20d": 7.29,
           "avg5_volume_lots": 84161.6,
           "change_1d_vs_avg5_volume_pct": 9.22,
-          "change_5d_vs_avg5_volume_pct": 11.37,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 11.37
         }
       },
       {
@@ -1586,9 +1490,7 @@
           "anomaly_20d": 3.78,
           "avg5_volume_lots": 108.4,
           "change_1d_vs_avg5_volume_pct": 15.68,
-          "change_5d_vs_avg5_volume_pct": 49.82,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 49.82
         }
       },
       {
@@ -1618,9 +1520,7 @@
           "anomaly_20d": 7.83,
           "avg5_volume_lots": 2476.0,
           "change_1d_vs_avg5_volume_pct": 11.23,
-          "change_5d_vs_avg5_volume_pct": 13.41,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 13.41
         }
       },
       {
@@ -1650,9 +1550,7 @@
           "anomaly_20d": 4.43,
           "avg5_volume_lots": 165.2,
           "change_1d_vs_avg5_volume_pct": 18.77,
-          "change_5d_vs_avg5_volume_pct": 1.82,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 1.82
         }
       },
       {
@@ -1681,9 +1579,7 @@
           "anomaly_20d": 8.31,
           "avg5_volume_lots": 1378.4,
           "change_1d_vs_avg5_volume_pct": 44.62,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 0
         }
       },
       {
@@ -1713,9 +1609,7 @@
           "anomaly_20d": 12.91,
           "avg5_volume_lots": 1639.2,
           "change_1d_vs_avg5_volume_pct": 8.66,
-          "change_5d_vs_avg5_volume_pct": 16.17,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 16.17
         }
       },
       {
@@ -1745,9 +1639,7 @@
           "anomaly_20d": 4.36,
           "avg5_volume_lots": 3025.8,
           "change_1d_vs_avg5_volume_pct": 6.41,
-          "change_5d_vs_avg5_volume_pct": 19.6,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 19.6
         }
       },
       {
@@ -1777,9 +1669,7 @@
           "anomaly_20d": 2.06,
           "avg5_volume_lots": 106.4,
           "change_1d_vs_avg5_volume_pct": 31.95,
-          "change_5d_vs_avg5_volume_pct": 78.95,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 78.95
         }
       },
       {
@@ -1809,9 +1699,7 @@
           "anomaly_20d": 4.5,
           "avg5_volume_lots": 74.4,
           "change_1d_vs_avg5_volume_pct": 12.1,
-          "change_5d_vs_avg5_volume_pct": 18.82,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 18.82
         }
       },
       {
@@ -1841,9 +1729,7 @@
           "anomaly_20d": 3.84,
           "avg5_volume_lots": 300.0,
           "change_1d_vs_avg5_volume_pct": 16.0,
-          "change_5d_vs_avg5_volume_pct": 24.33,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 24.33
         }
       },
       {
@@ -1872,9 +1758,7 @@
           "anomaly_20d": 8.0,
           "avg5_volume_lots": 35.8,
           "change_1d_vs_avg5_volume_pct": 22.35,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 0
         }
       },
       {
@@ -1904,9 +1788,7 @@
           "anomaly_20d": 11.0,
           "avg5_volume_lots": 122.8,
           "change_1d_vs_avg5_volume_pct": 8.96,
-          "change_5d_vs_avg5_volume_pct": 13.84,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 13.84
         }
       },
       {
@@ -1936,9 +1818,7 @@
           "anomaly_20d": 10.12,
           "avg5_volume_lots": 6946.0,
           "change_1d_vs_avg5_volume_pct": 5.97,
-          "change_5d_vs_avg5_volume_pct": 8.39,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
+          "change_5d_vs_avg5_volume_pct": 8.39
         }
       }
     ]
@@ -1946,600 +1826,32 @@
   "borrow": {
     "twse": [
       {
-        "ticker": "3019",
-        "name": "亞光",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 77.3,
-        "change_pct": 0.3703703703703704,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+1,509張｜20日異常5.9倍｜占5日均量55.2%｜5日+1,304張｜近5日3日增加｜借券賣出同步+32張",
-        "raw": {
-          "balance_lots": 21735.0,
-          "change_1d_lots": 1509.0,
-          "change_1d_pct": 7.46,
-          "change_5d_lots": 1304.0,
-          "change_5d_pct": 6.38,
-          "up_days_5d": 3,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 255.0,
-          "anomaly_20d": 5.92,
-          "avg5_volume_lots": 2734.6,
-          "change_1d_vs_avg5_volume_pct": 55.18,
-          "change_5d_vs_avg5_volume_pct": 47.69,
-          "short_sell_change_1d_lots": 32.0,
-          "short_sell_change_5d_lots": 814.0
-        }
-      },
-      {
-        "ticker": "2359",
-        "name": "所羅門",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 75.4,
-        "change_pct": 0.7843137254901961,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日5增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+534張｜20日異常3.7倍｜占5日均量38.4%｜5日+961張｜近5日5日增加｜借券賣出同步+110張",
-        "raw": {
-          "balance_lots": 11327.0,
-          "change_1d_lots": 534.0,
-          "change_1d_pct": 4.95,
-          "change_5d_lots": 961.0,
-          "change_5d_pct": 9.27,
-          "up_days_5d": 5,
-          "up_days_10d": 9,
-          "normal_daily_change_20d_lots": 142.5,
-          "anomaly_20d": 3.75,
-          "avg5_volume_lots": 1391.3,
-          "change_1d_vs_avg5_volume_pct": 38.38,
-          "change_5d_vs_avg5_volume_pct": 69.07,
-          "short_sell_change_1d_lots": 110.0,
-          "short_sell_change_5d_lots": 492.0
-        }
-      },
-      {
-        "ticker": "2382",
-        "name": "廣達",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 74.4,
-        "change_pct": -0.5908419497784343,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+12,205張｜20日異常5.6倍｜占5日均量120.1%｜5日+7,511張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 139034.0,
-          "change_1d_lots": 12205.0,
-          "change_1d_pct": 9.62,
-          "change_5d_lots": 7511.0,
-          "change_5d_pct": 5.71,
-          "up_days_5d": 2,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 2189.5,
-          "anomaly_20d": 5.57,
-          "avg5_volume_lots": 10158.6,
-          "change_1d_vs_avg5_volume_pct": 120.14,
-          "change_5d_vs_avg5_volume_pct": 73.94,
-          "short_sell_change_1d_lots": -1100.5,
-          "short_sell_change_5d_lots": -5569.5
-        }
-      },
-      {
-        "ticker": "8112",
-        "name": "至上",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 73.7,
-        "change_pct": -0.9580838323353259,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+2,321張｜20日異常3.9倍｜占5日均量58.5%｜5日+6,190張｜近5日4日增加｜借券賣出同步+803張",
-        "raw": {
-          "balance_lots": 48447.0,
-          "change_1d_lots": 2321.0,
-          "change_1d_pct": 5.03,
-          "change_5d_lots": 6190.0,
-          "change_5d_pct": 14.65,
-          "up_days_5d": 4,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 591.5,
-          "anomaly_20d": 3.92,
-          "avg5_volume_lots": 3966.6,
-          "change_1d_vs_avg5_volume_pct": 58.51,
-          "change_5d_vs_avg5_volume_pct": 156.05,
-          "short_sell_change_1d_lots": 803.0,
-          "short_sell_change_5d_lots": 3217.0
-        }
-      },
-      {
         "ticker": "6830",
         "name": "汎銓",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 73.4,
+        "score": 83.6,
         "change_pct": -1.2962962962962963,
         "tags": [
           "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+219張｜20日異常4.7倍｜占5日均量16.0%｜5日+411張｜近5日4日增加｜借券賣出同步+245張",
-        "raw": {
-          "balance_lots": 2587.0,
-          "change_1d_lots": 219.0,
-          "change_1d_pct": 9.25,
-          "change_5d_lots": 411.0,
-          "change_5d_pct": 18.89,
-          "up_days_5d": 4,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 46.5,
-          "anomaly_20d": 4.71,
-          "avg5_volume_lots": 1370.0,
-          "change_1d_vs_avg5_volume_pct": 15.98,
-          "change_5d_vs_avg5_volume_pct": 30.0,
-          "short_sell_change_1d_lots": 245.0,
-          "short_sell_change_5d_lots": 668.0
-        }
-      },
-      {
-        "ticker": "8011",
-        "name": "台通",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 72.1,
-        "change_pct": -0.6289308176100606,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+109張｜20日異常5.2倍｜占5日均量19.8%｜5日+215張｜近5日3日增加｜借券賣出同步+16張",
-        "raw": {
-          "balance_lots": 6831.0,
-          "change_1d_lots": 109.0,
-          "change_1d_pct": 1.62,
-          "change_5d_lots": 215.0,
-          "change_5d_pct": 3.25,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 21.0,
-          "anomaly_20d": 5.19,
-          "avg5_volume_lots": 549.6,
-          "change_1d_vs_avg5_volume_pct": 19.83,
-          "change_5d_vs_avg5_volume_pct": 39.12,
-          "short_sell_change_1d_lots": 16.0,
-          "short_sell_change_5d_lots": 154.0
-        }
-      },
-      {
-        "ticker": "2408",
-        "name": "南亞科",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 71.3,
-        "change_pct": 0.5964214711729622,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+11,047張｜20日異常5.2倍｜占5日均量24.5%｜5日+6,956張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 72497.0,
-          "change_1d_lots": 11047.0,
-          "change_1d_pct": 17.98,
-          "change_5d_lots": 6956.0,
-          "change_5d_pct": 10.61,
-          "up_days_5d": 2,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 2114.0,
-          "anomaly_20d": 5.23,
-          "avg5_volume_lots": 45100.0,
-          "change_1d_vs_avg5_volume_pct": 24.49,
-          "change_5d_vs_avg5_volume_pct": 15.42,
-          "short_sell_change_1d_lots": -1399.3,
-          "short_sell_change_5d_lots": -3000.6
-        }
-      },
-      {
-        "ticker": "2330",
-        "name": "台積電",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 70.4,
-        "change_pct": 0.0,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
+          "借券賣出暴增",
           "近5日5增"
         ],
-        "reason": "今日+9,526張｜20日異常2.0倍｜占5日均量46.5%｜5日+122,167張｜近5日5日增加",
+        "reason": "今日+245張｜20日異常9.6倍｜占5日均量17.9%｜5日+668張｜近5日5日增加",
         "raw": {
-          "balance_lots": 176579.0,
-          "change_1d_lots": 9526.0,
-          "change_1d_pct": 5.7,
-          "change_5d_lots": 122167.0,
-          "change_5d_pct": 224.52,
-          "up_days_5d": 5,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 4711.5,
-          "anomaly_20d": 2.02,
-          "avg5_volume_lots": 20473.1,
-          "change_1d_vs_avg5_volume_pct": 46.53,
-          "change_5d_vs_avg5_volume_pct": 596.72,
-          "short_sell_change_1d_lots": -130.0,
-          "short_sell_change_5d_lots": -756.0
-        }
-      },
-      {
-        "ticker": "3501",
-        "name": "維熹",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 67.8,
-        "change_pct": -1.0554089709762495,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+23張｜20日異常7.7倍｜占5日均量18.0%｜5日+31張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 790.0,
-          "change_1d_lots": 23.0,
-          "change_1d_pct": 3.0,
-          "change_5d_lots": 31.0,
-          "change_5d_pct": 4.08,
-          "up_days_5d": 3,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 3.0,
-          "anomaly_20d": 7.67,
-          "avg5_volume_lots": 127.6,
-          "change_1d_vs_avg5_volume_pct": 18.02,
-          "change_5d_vs_avg5_volume_pct": 24.29,
-          "short_sell_change_1d_lots": -34.0,
-          "short_sell_change_5d_lots": -8.0
-        }
-      },
-      {
-        "ticker": "2388",
-        "name": "威盛",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 66.0,
-        "change_pct": 1.569186875891596,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日5增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+650張｜20日異常2.5倍｜占5日均量17.9%｜5日+2,224張｜近5日5日增加｜借券賣出同步+102張",
-        "raw": {
-          "balance_lots": 18436.0,
-          "change_1d_lots": 650.0,
-          "change_1d_pct": 3.65,
-          "change_5d_lots": 2224.0,
-          "change_5d_pct": 13.72,
+          "balance_lots": 2737.0,
+          "change_1d_lots": 245.0,
+          "change_1d_pct": 9.83,
+          "change_5d_lots": 668.0,
+          "change_5d_pct": 32.29,
           "up_days_5d": 5,
           "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 257.0,
-          "anomaly_20d": 2.53,
-          "avg5_volume_lots": 3633.9,
-          "change_1d_vs_avg5_volume_pct": 17.89,
-          "change_5d_vs_avg5_volume_pct": 61.2,
-          "short_sell_change_1d_lots": 102.0,
-          "short_sell_change_5d_lots": 1638.0
-        }
-      },
-      {
-        "ticker": "8028",
-        "name": "昇陽半導體",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 63.4,
-        "change_pct": 7.434944237918216,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+815張｜20日異常5.2倍｜占5日均量6.7%｜5日+2,047張｜近5日4日增加｜借券賣出同步+985張",
-        "raw": {
-          "balance_lots": 11572.0,
-          "change_1d_lots": 815.0,
-          "change_1d_pct": 7.58,
-          "change_5d_lots": 2047.0,
-          "change_5d_pct": 21.49,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 156.5,
-          "anomaly_20d": 5.21,
-          "avg5_volume_lots": 12090.9,
-          "change_1d_vs_avg5_volume_pct": 6.74,
-          "change_5d_vs_avg5_volume_pct": 16.93,
-          "short_sell_change_1d_lots": 985.0,
-          "short_sell_change_5d_lots": 4899.0
-        }
-      },
-      {
-        "ticker": "4588",
-        "name": "玖鼎電力",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 62.0,
-        "change_pct": 0.9124087591240877,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+11張｜20日異常11.0倍｜占5日均量15.1%｜5日+14張｜近5日3日增加｜借券賣出同步+1張",
-        "raw": {
-          "balance_lots": 339.0,
-          "change_1d_lots": 11.0,
-          "change_1d_pct": 3.35,
-          "change_5d_lots": 14.0,
-          "change_5d_pct": 4.31,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 11.0,
-          "avg5_volume_lots": 72.7,
-          "change_1d_vs_avg5_volume_pct": 15.13,
-          "change_5d_vs_avg5_volume_pct": 19.26,
-          "short_sell_change_1d_lots": 1.0,
-          "short_sell_change_5d_lots": 8.0
-        }
-      },
-      {
-        "ticker": "2383",
-        "name": "台光電",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 59.9,
-        "change_pct": -2.5742574257425743,
-        "tags": [
-          "單日異動",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+774張｜20日異常1.8倍｜占5日均量33.8%｜5日+834張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 11281.0,
-          "change_1d_lots": 774.0,
-          "change_1d_pct": 7.37,
-          "change_5d_lots": 834.0,
-          "change_5d_pct": 7.98,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 434.0,
-          "anomaly_20d": 1.78,
-          "avg5_volume_lots": 2288.0,
-          "change_1d_vs_avg5_volume_pct": 33.83,
-          "change_5d_vs_avg5_volume_pct": 36.45,
-          "short_sell_change_1d_lots": -190.0,
-          "short_sell_change_5d_lots": -31.0
-        }
-      },
-      {
-        "ticker": "2364",
-        "name": "倫飛",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 59.9,
-        "change_pct": -1.2176560121765556,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+29張｜20日異常4.1倍｜占5日均量13.3%｜5日+40張｜近5日4日增加｜借券賣出同步+1張",
-        "raw": {
-          "balance_lots": 744.0,
-          "change_1d_lots": 29.0,
-          "change_1d_pct": 4.06,
-          "change_5d_lots": 40.0,
-          "change_5d_pct": 5.68,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 7.0,
-          "anomaly_20d": 4.14,
-          "avg5_volume_lots": 218.1,
-          "change_1d_vs_avg5_volume_pct": 13.3,
-          "change_5d_vs_avg5_volume_pct": 18.34,
-          "short_sell_change_1d_lots": 1.0,
-          "short_sell_change_5d_lots": 11.0
-        }
-      },
-      {
-        "ticker": "6526",
-        "name": "達發",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 59.7,
-        "change_pct": -3.0952380952380953,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+417張｜20日異常17.4倍｜占5日均量11.0%｜5日+99張｜近5日1日增加",
-        "raw": {
-          "balance_lots": 1372.0,
-          "change_1d_lots": 417.0,
-          "change_1d_pct": 43.66,
-          "change_5d_lots": 99.0,
-          "change_5d_pct": 7.78,
-          "up_days_5d": 1,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 24.0,
-          "anomaly_20d": 17.38,
-          "avg5_volume_lots": 3783.6,
-          "change_1d_vs_avg5_volume_pct": 11.02,
-          "change_5d_vs_avg5_volume_pct": 2.62,
-          "short_sell_change_1d_lots": -14.0,
-          "short_sell_change_5d_lots": -423.0
-        }
-      },
-      {
-        "ticker": "3034",
-        "name": "聯詠",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 58.6,
-        "change_pct": -0.5524861878453038,
-        "tags": [
-          "單日異動",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+751張｜20日異常1.6倍｜占5日均量23.5%｜5日+1,286張｜近5日4日增加｜借券賣出同步+378張",
-        "raw": {
-          "balance_lots": 39916.0,
-          "change_1d_lots": 751.0,
-          "change_1d_pct": 1.92,
-          "change_5d_lots": 1286.0,
-          "change_5d_pct": 3.33,
-          "up_days_5d": 4,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 468.0,
-          "anomaly_20d": 1.6,
-          "avg5_volume_lots": 3196.3,
-          "change_1d_vs_avg5_volume_pct": 23.5,
-          "change_5d_vs_avg5_volume_pct": 40.23,
-          "short_sell_change_1d_lots": 378.0,
-          "short_sell_change_5d_lots": 2361.0
-        }
-      },
-      {
-        "ticker": "6805",
-        "name": "富世達",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 56.8,
-        "change_pct": -0.592885375494071,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+256張｜20日異常3.0倍｜占5日均量14.2%｜5日+348張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 2286.0,
-          "change_1d_lots": 256.0,
-          "change_1d_pct": 12.61,
-          "change_5d_lots": 348.0,
-          "change_5d_pct": 17.96,
-          "up_days_5d": 4,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 86.5,
-          "anomaly_20d": 2.96,
-          "avg5_volume_lots": 1808.2,
-          "change_1d_vs_avg5_volume_pct": 14.16,
-          "change_5d_vs_avg5_volume_pct": 19.25,
-          "short_sell_change_1d_lots": -2.0,
-          "short_sell_change_5d_lots": 315.0
-        }
-      },
-      {
-        "ticker": "2233",
-        "name": "宇隆",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 56.6,
-        "change_pct": 2.4390243902439024,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+59張｜20日異常4.1倍｜占5日均量15.0%｜5日+62張｜近5日3日增加｜借券賣出同步+3張",
-        "raw": {
-          "balance_lots": 2161.0,
-          "change_1d_lots": 59.0,
-          "change_1d_pct": 2.81,
-          "change_5d_lots": 62.0,
-          "change_5d_pct": 2.95,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 14.5,
-          "anomaly_20d": 4.07,
-          "avg5_volume_lots": 392.5,
-          "change_1d_vs_avg5_volume_pct": 15.03,
-          "change_5d_vs_avg5_volume_pct": 15.8,
-          "short_sell_change_1d_lots": 3.0,
-          "short_sell_change_5d_lots": 107.0
-        }
-      },
-      {
-        "ticker": "2329",
-        "name": "華泰",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 55.5,
-        "change_pct": -1.3513513513513546,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+426張｜20日異常2.3倍｜占5日均量16.5%｜5日+1,042張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 40091.0,
-          "change_1d_lots": 426.0,
-          "change_1d_pct": 1.07,
-          "change_5d_lots": 1042.0,
-          "change_5d_pct": 2.67,
-          "up_days_5d": 3,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 183.5,
-          "anomaly_20d": 2.32,
-          "avg5_volume_lots": 2581.1,
-          "change_1d_vs_avg5_volume_pct": 16.5,
-          "change_5d_vs_avg5_volume_pct": 40.37,
-          "short_sell_change_1d_lots": -40.0,
-          "short_sell_change_5d_lots": 1215.0
+          "normal_daily_change_20d_lots": 25.5,
+          "anomaly_20d": 9.61,
+          "avg5_volume_lots": 1370.0,
+          "change_1d_vs_avg5_volume_pct": 17.88,
+          "change_5d_vs_avg5_volume_pct": 48.76
         }
       },
       {
@@ -2548,219 +1860,259 @@
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 55.0,
+        "score": 78.5,
         "change_pct": -1.3078470824949813,
         "tags": [
           "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
+          "借券賣出暴增",
+          "近5日5增"
         ],
-        "reason": "今日+73張｜20日異常9.7倍｜占5日均量9.3%｜5日+43張｜近5日3日增加｜借券賣出同步+114張",
+        "reason": "今日+114張｜20日異常16.3倍｜占5日均量14.5%｜5日+454張｜近5日5日增加",
         "raw": {
-          "balance_lots": 2241.0,
-          "change_1d_lots": 73.0,
-          "change_1d_pct": 3.37,
-          "change_5d_lots": 43.0,
-          "change_5d_pct": 1.96,
-          "up_days_5d": 3,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 7.5,
-          "anomaly_20d": 9.73,
+          "balance_lots": 2019.8,
+          "change_1d_lots": 114.0,
+          "change_1d_pct": 5.98,
+          "change_5d_lots": 454.0,
+          "change_5d_pct": 28.99,
+          "up_days_5d": 5,
+          "up_days_10d": 8,
+          "normal_daily_change_20d_lots": 7.0,
+          "anomaly_20d": 16.29,
           "avg5_volume_lots": 787.6,
-          "change_1d_vs_avg5_volume_pct": 9.27,
-          "change_5d_vs_avg5_volume_pct": 5.46,
-          "short_sell_change_1d_lots": 114.0,
-          "short_sell_change_5d_lots": 454.0
+          "change_1d_vs_avg5_volume_pct": 14.47,
+          "change_5d_vs_avg5_volume_pct": 57.65
         }
       },
       {
-        "ticker": "1773",
-        "name": "勝一",
+        "ticker": "8028",
+        "name": "昇陽半導體",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 53.2,
-        "change_pct": 1.82370820668693,
+        "score": 78.4,
+        "change_pct": 7.434944237918216,
         "tags": [
           "極端異常",
-          "借券暴增",
-          "近5日4增"
+          "借券賣出暴增",
+          "近5日5增"
         ],
-        "reason": "今日+84張｜20日異常3.1倍｜占5日均量13.1%｜5日+122張｜近5日4日增加",
+        "reason": "今日+985張｜20日異常5.7倍｜占5日均量8.1%｜5日+4,899張｜近5日5日增加",
         "raw": {
-          "balance_lots": 3742.0,
-          "change_1d_lots": 84.0,
-          "change_1d_pct": 2.3,
-          "change_5d_lots": 122.0,
-          "change_5d_pct": 3.37,
-          "up_days_5d": 4,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 27.0,
-          "anomaly_20d": 3.11,
-          "avg5_volume_lots": 639.2,
-          "change_1d_vs_avg5_volume_pct": 13.14,
-          "change_5d_vs_avg5_volume_pct": 19.09,
-          "short_sell_change_1d_lots": -141.0,
-          "short_sell_change_5d_lots": -66.0
+          "balance_lots": 10343.0,
+          "change_1d_lots": 985.0,
+          "change_1d_pct": 10.53,
+          "change_5d_lots": 4899.0,
+          "change_5d_pct": 89.99,
+          "up_days_5d": 5,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 173.5,
+          "anomaly_20d": 5.68,
+          "avg5_volume_lots": 12090.9,
+          "change_1d_vs_avg5_volume_pct": 8.15,
+          "change_5d_vs_avg5_volume_pct": 40.52
         }
       },
       {
-        "ticker": "3591",
-        "name": "艾笛森",
+        "ticker": "2376",
+        "name": "技嘉",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 52.8,
-        "change_pct": 7.099391480730223,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+177張｜20日異常8.2倍｜占5日均量4.0%｜近5日2日增加",
-        "raw": {
-          "balance_lots": 192.0,
-          "change_1d_lots": 177.0,
-          "change_1d_pct": 1180.0,
-          "change_5d_lots": -815.0,
-          "change_5d_pct": -80.93,
-          "up_days_5d": 2,
-          "up_days_10d": 2,
-          "normal_daily_change_20d_lots": 21.5,
-          "anomaly_20d": 8.23,
-          "avg5_volume_lots": 4465.5,
-          "change_1d_vs_avg5_volume_pct": 3.96,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": -45.0,
-          "short_sell_change_5d_lots": 105.0
-        }
-      },
-      {
-        "ticker": "6205",
-        "name": "詮欣",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 52.6,
-        "change_pct": -3.396739130434783,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+198張｜20日異常11.0倍｜占5日均量4.6%｜5日+296張｜近5日3日增加｜借券賣出同步+75張",
-        "raw": {
-          "balance_lots": 3206.0,
-          "change_1d_lots": 198.0,
-          "change_1d_pct": 6.58,
-          "change_5d_lots": 296.0,
-          "change_5d_pct": 10.17,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 18.0,
-          "anomaly_20d": 11.0,
-          "avg5_volume_lots": 4262.9,
-          "change_1d_vs_avg5_volume_pct": 4.64,
-          "change_5d_vs_avg5_volume_pct": 6.94,
-          "short_sell_change_1d_lots": 75.0,
-          "short_sell_change_5d_lots": 308.0
-        }
-      },
-      {
-        "ticker": "3135",
-        "name": "凌航",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 51.5,
-        "change_pct": 0.0,
+        "score": 72.1,
+        "change_pct": 0.13831258644536654,
         "tags": [
           "明顯異常",
-          "借券暴增",
-          "近5日5增",
-          "借券賣出同步增加"
+          "借券賣出暴增",
+          "近5日5增"
         ],
-        "reason": "今日+48張｜20日異常2.2倍｜占5日均量9.5%｜5日+168張｜近5日5日增加｜借券賣出同步+3張",
+        "reason": "今日+1,906張｜20日異常2.9倍｜占5日均量27.7%｜5日+6,154張｜近5日5日增加",
         "raw": {
-          "balance_lots": 2617.0,
-          "change_1d_lots": 48.0,
-          "change_1d_pct": 1.87,
-          "change_5d_lots": 168.0,
-          "change_5d_pct": 6.86,
+          "balance_lots": 65016.1,
+          "change_1d_lots": 1906.0,
+          "change_1d_pct": 3.02,
+          "change_5d_lots": 6154.0,
+          "change_5d_pct": 10.45,
+          "up_days_5d": 5,
+          "up_days_10d": 10,
+          "normal_daily_change_20d_lots": 649.5,
+          "anomaly_20d": 2.93,
+          "avg5_volume_lots": 6876.7,
+          "change_1d_vs_avg5_volume_pct": 27.72,
+          "change_5d_vs_avg5_volume_pct": 89.49
+        }
+      },
+      {
+        "ticker": "4919",
+        "name": "新唐",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 71.0,
+        "change_pct": -0.3676470588235294,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+1,136張｜20日異常5.7倍｜占5日均量4.7%｜5日+5,661張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 15780.4,
+          "change_1d_lots": 1136.0,
+          "change_1d_pct": 7.76,
+          "change_5d_lots": 5661.0,
+          "change_5d_pct": 55.94,
+          "up_days_5d": 5,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 199.0,
+          "anomaly_20d": 5.71,
+          "avg5_volume_lots": 24136.6,
+          "change_1d_vs_avg5_volume_pct": 4.71,
+          "change_5d_vs_avg5_volume_pct": 23.45
+        }
+      },
+      {
+        "ticker": "4958",
+        "name": "臻鼎-KY",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 63.8,
+        "change_pct": 4.837013669821241,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+3,600張｜20日異常2.2倍｜占5日均量10.3%｜5日+20,250張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 55398.1,
+          "change_1d_lots": 3600.0,
+          "change_1d_pct": 6.95,
+          "change_5d_lots": 20249.8,
+          "change_5d_pct": 57.61,
           "up_days_5d": 5,
           "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 21.5,
+          "normal_daily_change_20d_lots": 1617.5,
           "anomaly_20d": 2.23,
-          "avg5_volume_lots": 504.6,
-          "change_1d_vs_avg5_volume_pct": 9.51,
-          "change_5d_vs_avg5_volume_pct": 33.3,
-          "short_sell_change_1d_lots": 3.0,
-          "short_sell_change_5d_lots": 86.0
+          "avg5_volume_lots": 34809.0,
+          "change_1d_vs_avg5_volume_pct": 10.34,
+          "change_5d_vs_avg5_volume_pct": 58.17
         }
       },
       {
-        "ticker": "2342",
-        "name": "茂矽",
+        "ticker": "3406",
+        "name": "玉晶光",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 51.4,
-        "change_pct": 3.941908713692943,
+        "score": 60.4,
+        "change_pct": -2.108768035516093,
         "tags": [
           "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
+          "借券賣出暴增",
+          "近5日4增"
         ],
-        "reason": "今日+313張｜20日異常11.0倍｜占5日均量1.8%｜5日+407張｜近5日4日增加｜借券賣出同步+88張",
+        "reason": "今日+442張｜20日異常3.1倍｜占5日均量10.1%｜5日+1,129張｜近5日4日增加",
         "raw": {
-          "balance_lots": 4933.0,
-          "change_1d_lots": 313.0,
-          "change_1d_pct": 6.77,
-          "change_5d_lots": 407.0,
-          "change_5d_pct": 8.99,
+          "balance_lots": 4391.0,
+          "change_1d_lots": 442.0,
+          "change_1d_pct": 11.19,
+          "change_5d_lots": 1129.0,
+          "change_5d_pct": 34.61,
           "up_days_5d": 4,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 28.5,
-          "anomaly_20d": 10.98,
-          "avg5_volume_lots": 17826.7,
-          "change_1d_vs_avg5_volume_pct": 1.76,
-          "change_5d_vs_avg5_volume_pct": 2.28,
-          "short_sell_change_1d_lots": 88.0,
-          "short_sell_change_5d_lots": 417.0
+          "up_days_10d": 8,
+          "normal_daily_change_20d_lots": 142.0,
+          "anomaly_20d": 3.11,
+          "avg5_volume_lots": 4372.4,
+          "change_1d_vs_avg5_volume_pct": 10.11,
+          "change_5d_vs_avg5_volume_pct": 25.82
         }
       },
       {
-        "ticker": "3031",
-        "name": "佰鴻",
+        "ticker": "1503",
+        "name": "士電",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 50.6,
-        "change_pct": 2.627257799671595,
+        "score": 60.0,
+        "change_pct": -1.0204081632653061,
         "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日5增",
-          "借券賣出同步增加"
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日4增"
         ],
-        "reason": "今日+109張｜20日異常4.0倍｜占5日均量1.8%｜5日+603張｜近5日5日增加｜借券賣出同步+83張",
+        "reason": "今日+156張｜20日異常2.5倍｜占5日均量22.8%｜5日+211張｜近5日4日增加",
         "raw": {
-          "balance_lots": 5156.0,
-          "change_1d_lots": 109.0,
-          "change_1d_pct": 2.16,
-          "change_5d_lots": 603.0,
-          "change_5d_pct": 13.24,
-          "up_days_5d": 5,
+          "balance_lots": 21385.8,
+          "change_1d_lots": 156.0,
+          "change_1d_pct": 0.73,
+          "change_5d_lots": 210.8,
+          "change_5d_pct": 1.0,
+          "up_days_5d": 4,
           "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 27.5,
-          "anomaly_20d": 3.96,
-          "avg5_volume_lots": 6034.0,
-          "change_1d_vs_avg5_volume_pct": 1.81,
-          "change_5d_vs_avg5_volume_pct": 9.99,
-          "short_sell_change_1d_lots": 83.0,
-          "short_sell_change_5d_lots": 620.0
+          "normal_daily_change_20d_lots": 63.0,
+          "anomaly_20d": 2.48,
+          "avg5_volume_lots": 685.4,
+          "change_1d_vs_avg5_volume_pct": 22.76,
+          "change_5d_vs_avg5_volume_pct": 30.76
+        }
+      },
+      {
+        "ticker": "3034",
+        "name": "聯詠",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 58.9,
+        "change_pct": -0.5524861878453038,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+378張｜20日異常2.4倍｜占5日均量11.8%｜5日+2,361張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 26243.4,
+          "change_1d_lots": 378.0,
+          "change_1d_pct": 1.46,
+          "change_5d_lots": 2361.0,
+          "change_5d_pct": 9.89,
+          "up_days_5d": 5,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 156.0,
+          "anomaly_20d": 2.42,
+          "avg5_volume_lots": 3196.3,
+          "change_1d_vs_avg5_volume_pct": 11.83,
+          "change_5d_vs_avg5_volume_pct": 73.87
+        }
+      },
+      {
+        "ticker": "5388",
+        "name": "中磊",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 58.0,
+        "change_pct": -2.316076294277933,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增",
+          "近5日4增"
+        ],
+        "reason": "今日+397張｜20日異常1.6倍｜占5日均量26.9%｜5日+995張｜近5日4日增加",
+        "raw": {
+          "balance_lots": 28924.0,
+          "change_1d_lots": 397.0,
+          "change_1d_pct": 1.39,
+          "change_5d_lots": 995.0,
+          "change_5d_pct": 3.56,
+          "up_days_5d": 4,
+          "up_days_10d": 8,
+          "normal_daily_change_20d_lots": 249.0,
+          "anomaly_20d": 1.59,
+          "avg5_volume_lots": 1478.4,
+          "change_1d_vs_avg5_volume_pct": 26.85,
+          "change_5d_vs_avg5_volume_pct": 67.3
         }
       },
       {
@@ -2769,1052 +2121,576 @@
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 49.4,
+        "score": 55.5,
         "change_pct": -6.445115810674723,
         "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
+          "極端異常",
+          "借券賣出暴增",
+          "近5日偏增"
         ],
-        "reason": "今日+561張｜20日異常2.6倍｜占5日均量18.0%｜近5日3日增加｜借券賣出同步+160張",
+        "reason": "今日+160張｜20日異常5.2倍｜占5日均量5.1%｜5日+385張｜近5日3日增加",
         "raw": {
-          "balance_lots": 9801.0,
-          "change_1d_lots": 561.0,
-          "change_1d_pct": 6.07,
-          "change_5d_lots": -489.0,
-          "change_5d_pct": -4.75,
+          "balance_lots": 2784.0,
+          "change_1d_lots": 160.0,
+          "change_1d_pct": 6.1,
+          "change_5d_lots": 385.0,
+          "change_5d_pct": 16.05,
+          "up_days_5d": 3,
+          "up_days_10d": 6,
+          "normal_daily_change_20d_lots": 30.5,
+          "anomaly_20d": 5.25,
+          "avg5_volume_lots": 3114.3,
+          "change_1d_vs_avg5_volume_pct": 5.14,
+          "change_5d_vs_avg5_volume_pct": 12.36
+        }
+      },
+      {
+        "ticker": "2406",
+        "name": "國碩",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 54.6,
+        "change_pct": -0.6557377049180304,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增",
+          "近5日4增"
+        ],
+        "reason": "今日+454張｜20日異常5.7倍｜占5日均量3.3%｜5日+1,539張｜近5日4日增加",
+        "raw": {
+          "balance_lots": 23898.5,
+          "change_1d_lots": 454.0,
+          "change_1d_pct": 1.94,
+          "change_5d_lots": 1539.0,
+          "change_5d_pct": 6.88,
+          "up_days_5d": 4,
+          "up_days_10d": 6,
+          "normal_daily_change_20d_lots": 80.0,
+          "anomaly_20d": 5.67,
+          "avg5_volume_lots": 13725.8,
+          "change_1d_vs_avg5_volume_pct": 3.31,
+          "change_5d_vs_avg5_volume_pct": 11.21
+        }
+      },
+      {
+        "ticker": "1802",
+        "name": "台玻",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 53.1,
+        "change_pct": -1.3698630136986254,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日4增"
+        ],
+        "reason": "今日+1,607張｜20日異常2.8倍｜占5日均量10.3%｜5日+3,121張｜近5日4日增加",
+        "raw": {
+          "balance_lots": 96359.0,
+          "change_1d_lots": 1607.0,
+          "change_1d_pct": 1.7,
+          "change_5d_lots": 3121.0,
+          "change_5d_pct": 3.35,
+          "up_days_5d": 4,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 565.5,
+          "anomaly_20d": 2.84,
+          "avg5_volume_lots": 15607.8,
+          "change_1d_vs_avg5_volume_pct": 10.3,
+          "change_5d_vs_avg5_volume_pct": 20.0
+        }
+      },
+      {
+        "ticker": "3653",
+        "name": "健策",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 51.8,
+        "change_pct": -0.36127167630057805,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+126張｜20日異常4.3倍｜占5日均量8.0%｜5日+116張｜近5日3日增加",
+        "raw": {
+          "balance_lots": 1561.7,
+          "change_1d_lots": 125.6,
+          "change_1d_pct": 8.74,
+          "change_5d_lots": 115.6,
+          "change_5d_pct": 7.99,
           "up_days_5d": 3,
           "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 213.5,
-          "anomaly_20d": 2.63,
-          "avg5_volume_lots": 3114.3,
-          "change_1d_vs_avg5_volume_pct": 18.01,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": 160.0,
-          "short_sell_change_5d_lots": 385.0
+          "normal_daily_change_20d_lots": 29.0,
+          "anomaly_20d": 4.33,
+          "avg5_volume_lots": 1566.2,
+          "change_1d_vs_avg5_volume_pct": 8.02,
+          "change_5d_vs_avg5_volume_pct": 7.38
         }
       },
       {
-        "ticker": "3062",
-        "name": "建漢",
+        "ticker": "2368",
+        "name": "金像電",
         "market": "twse",
         "priority": "sudden",
         "priority_rank": 0,
-        "score": 47.3,
-        "change_pct": 0.22779043280182557,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+359張｜20日異常3.0倍｜占5日均量9.0%｜5日+256張｜近5日4日增加｜借券賣出同步+96張",
-        "raw": {
-          "balance_lots": 21223.0,
-          "change_1d_lots": 359.0,
-          "change_1d_pct": 1.72,
-          "change_5d_lots": 256.0,
-          "change_5d_pct": 1.22,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 118.0,
-          "anomaly_20d": 3.04,
-          "avg5_volume_lots": 3987.7,
-          "change_1d_vs_avg5_volume_pct": 9.0,
-          "change_5d_vs_avg5_volume_pct": 6.42,
-          "short_sell_change_1d_lots": 96.0,
-          "short_sell_change_5d_lots": 986.0
-        }
-      },
-      {
-        "ticker": "6706",
-        "name": "惠特",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 47.2,
-        "change_pct": 5.594405594405594,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增",
-          "借券賣出同步增加"
-        ],
-        "reason": "今日+235張｜20日異常9.0倍｜占5日均量2.9%｜5日+38張｜近5日3日增加｜借券賣出同步+91張",
-        "raw": {
-          "balance_lots": 5419.0,
-          "change_1d_lots": 235.0,
-          "change_1d_pct": 4.53,
-          "change_5d_lots": 38.0,
-          "change_5d_pct": 0.71,
-          "up_days_5d": 3,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 26.0,
-          "anomaly_20d": 9.04,
-          "avg5_volume_lots": 8006.0,
-          "change_1d_vs_avg5_volume_pct": 2.94,
-          "change_5d_vs_avg5_volume_pct": 0.47,
-          "short_sell_change_1d_lots": 91.0,
-          "short_sell_change_5d_lots": 154.0
-        }
-      },
-      {
-        "ticker": "3711",
-        "name": "日月光投控",
-        "market": "twse",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 42.7,
-        "change_pct": -1.7167381974248928,
+        "score": 49.7,
+        "change_pct": 1.3574660633484164,
         "tags": [
           "單日異動",
-          "借券暴增",
-          "借券賣出同步增加"
+          "借券賣出暴增",
+          "近5日5增"
         ],
-        "reason": "今日+3,766張｜20日異常1.8倍｜占5日均量22.8%｜近5日1日增加｜借券賣出同步+232張",
+        "reason": "今日+467張｜20日異常1.9倍｜占5日均量4.3%｜5日+2,307張｜近5日5日增加",
         "raw": {
-          "balance_lots": 78593.0,
-          "change_1d_lots": 3766.0,
-          "change_1d_pct": 5.03,
-          "change_5d_lots": -12663.0,
-          "change_5d_pct": -13.88,
+          "balance_lots": 7388.5,
+          "change_1d_lots": 467.0,
+          "change_1d_pct": 6.75,
+          "change_5d_lots": 2307.0,
+          "change_5d_pct": 45.4,
+          "up_days_5d": 5,
+          "up_days_10d": 8,
+          "normal_daily_change_20d_lots": 248.0,
+          "anomaly_20d": 1.88,
+          "avg5_volume_lots": 10876.3,
+          "change_1d_vs_avg5_volume_pct": 4.29,
+          "change_5d_vs_avg5_volume_pct": 21.21
+        }
+      },
+      {
+        "ticker": "3150",
+        "name": "鈺寶-創",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 49.6,
+        "change_pct": -1.3029315960912007,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增"
+        ],
+        "reason": "今日+4張｜20日異常4.0倍｜占5日均量13.4%｜5日+5張｜近5日2日增加",
+        "raw": {
+          "balance_lots": 99.0,
+          "change_1d_lots": 4.0,
+          "change_1d_pct": 4.21,
+          "change_5d_lots": 5.0,
+          "change_5d_pct": 5.32,
+          "up_days_5d": 2,
+          "up_days_10d": 3,
+          "normal_daily_change_20d_lots": 0.0,
+          "anomaly_20d": 4.0,
+          "avg5_volume_lots": 30.0,
+          "change_1d_vs_avg5_volume_pct": 13.36,
+          "change_5d_vs_avg5_volume_pct": 16.69
+        }
+      },
+      {
+        "ticker": "2327",
+        "name": "國巨*",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 48.5,
+        "change_pct": -5.517241379310345,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增"
+        ],
+        "reason": "今日+2,401張｜20日異常6.8倍｜占5日均量6.3%｜5日+736張｜近5日1日增加",
+        "raw": {
+          "balance_lots": 31744.6,
+          "change_1d_lots": 2400.6,
+          "change_1d_pct": 8.18,
+          "change_5d_lots": 735.8,
+          "change_5d_pct": 2.37,
+          "up_days_5d": 1,
+          "up_days_10d": 4,
+          "normal_daily_change_20d_lots": 351.5,
+          "anomaly_20d": 6.83,
+          "avg5_volume_lots": 37960.8,
+          "change_1d_vs_avg5_volume_pct": 6.32,
+          "change_5d_vs_avg5_volume_pct": 1.94
+        }
+      },
+      {
+        "ticker": "2492",
+        "name": "華新科",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 48.4,
+        "change_pct": -3.0497592295345104,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增"
+        ],
+        "reason": "今日+2,133張｜20日異常4.3倍｜占5日均量9.6%｜5日+552張｜近5日1日增加",
+        "raw": {
+          "balance_lots": 20105.0,
+          "change_1d_lots": 2133.0,
+          "change_1d_pct": 11.87,
+          "change_5d_lots": 552.0,
+          "change_5d_pct": 2.82,
+          "up_days_5d": 1,
+          "up_days_10d": 4,
+          "normal_daily_change_20d_lots": 497.5,
+          "anomaly_20d": 4.29,
+          "avg5_volume_lots": 22139.3,
+          "change_1d_vs_avg5_volume_pct": 9.63,
+          "change_5d_vs_avg5_volume_pct": 2.49
+        }
+      },
+      {
+        "ticker": "3149",
+        "name": "正達",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 48.4,
+        "change_pct": 6.319115323854661,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+354張｜20日異常1.9倍｜占5日均量6.1%｜5日+1,336張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 9181.3,
+          "change_1d_lots": 354.0,
+          "change_1d_pct": 4.01,
+          "change_5d_lots": 1336.1,
+          "change_5d_pct": 17.03,
+          "up_days_5d": 5,
+          "up_days_10d": 10,
+          "normal_daily_change_20d_lots": 190.0,
+          "anomaly_20d": 1.86,
+          "avg5_volume_lots": 5822.7,
+          "change_1d_vs_avg5_volume_pct": 6.08,
+          "change_5d_vs_avg5_volume_pct": 22.95
+        }
+      },
+      {
+        "ticker": "3167",
+        "name": "大量",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 46.9,
+        "change_pct": -4.847207586933614,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+259張｜20日異常1.9倍｜占5日均量4.6%｜5日+956張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 4286.0,
+          "change_1d_lots": 259.0,
+          "change_1d_pct": 6.43,
+          "change_5d_lots": 956.0,
+          "change_5d_pct": 28.71,
+          "up_days_5d": 5,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 138.0,
+          "anomaly_20d": 1.88,
+          "avg5_volume_lots": 5667.5,
+          "change_1d_vs_avg5_volume_pct": 4.57,
+          "change_5d_vs_avg5_volume_pct": 16.87
+        }
+      },
+      {
+        "ticker": "6591",
+        "name": "動力-KY",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 46.3,
+        "change_pct": -2.262443438914027,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+25張｜20日異常3.1倍｜占5日均量16.4%｜近5日3日增加",
+        "raw": {
+          "balance_lots": 1682.7,
+          "change_1d_lots": 25.0,
+          "change_1d_pct": 1.51,
+          "change_5d_lots": -48.0,
+          "change_5d_pct": -2.77,
+          "up_days_5d": 3,
+          "up_days_10d": 3,
+          "normal_daily_change_20d_lots": 8.0,
+          "anomaly_20d": 3.12,
+          "avg5_volume_lots": 152.1,
+          "change_1d_vs_avg5_volume_pct": 16.43,
+          "change_5d_vs_avg5_volume_pct": 0
+        }
+      },
+      {
+        "ticker": "2331",
+        "name": "精英",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 42.4,
+        "change_pct": -0.7957559681697726,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增"
+        ],
+        "reason": "今日+170張｜20日異常2.3倍｜占5日均量22.7%｜近5日1日增加",
+        "raw": {
+          "balance_lots": 21230.0,
+          "change_1d_lots": 170.0,
+          "change_1d_pct": 0.81,
+          "change_5d_lots": -386.0,
+          "change_5d_pct": -1.79,
           "up_days_5d": 1,
           "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 2101.0,
-          "anomaly_20d": 1.79,
-          "avg5_volume_lots": 16537.9,
-          "change_1d_vs_avg5_volume_pct": 22.77,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": 232.0,
-          "short_sell_change_5d_lots": -9243.7
+          "normal_daily_change_20d_lots": 75.5,
+          "anomaly_20d": 2.25,
+          "avg5_volume_lots": 748.1,
+          "change_1d_vs_avg5_volume_pct": 22.72,
+          "change_5d_vs_avg5_volume_pct": 0
+        }
+      },
+      {
+        "ticker": "3229",
+        "name": "晟鈦",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 38.5,
+        "change_pct": 1.2411347517730547,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日4增"
+        ],
+        "reason": "今日+13張｜20日異常2.0倍｜占5日均量0.4%｜5日+35張｜近5日4日增加",
+        "raw": {
+          "balance_lots": 89.0,
+          "change_1d_lots": 13.0,
+          "change_1d_pct": 17.11,
+          "change_5d_lots": 35.0,
+          "change_5d_pct": 64.81,
+          "up_days_5d": 4,
+          "up_days_10d": 6,
+          "normal_daily_change_20d_lots": 6.5,
+          "anomaly_20d": 2.0,
+          "avg5_volume_lots": 2945.4,
+          "change_1d_vs_avg5_volume_pct": 0.44,
+          "change_5d_vs_avg5_volume_pct": 1.19
+        }
+      },
+      {
+        "ticker": "3042",
+        "name": "晶技",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 37.5,
+        "change_pct": 2.70935960591133,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+1,087張｜20日異常2.7倍｜占5日均量4.5%｜近5日3日增加",
+        "raw": {
+          "balance_lots": 10012.0,
+          "change_1d_lots": 1087.0,
+          "change_1d_pct": 12.18,
+          "change_5d_lots": -1131.0,
+          "change_5d_pct": -10.15,
+          "up_days_5d": 3,
+          "up_days_10d": 4,
+          "normal_daily_change_20d_lots": 406.0,
+          "anomaly_20d": 2.68,
+          "avg5_volume_lots": 24054.2,
+          "change_1d_vs_avg5_volume_pct": 4.52,
+          "change_5d_vs_avg5_volume_pct": 0
+        }
+      },
+      {
+        "ticker": "5203",
+        "name": "訊連",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 37.2,
+        "change_pct": 0.514579759862786,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增"
+        ],
+        "reason": "今日+15張｜20日異常1.8倍｜占5日均量20.7%｜近5日1日增加",
+        "raw": {
+          "balance_lots": 1654.0,
+          "change_1d_lots": 15.0,
+          "change_1d_pct": 0.92,
+          "change_5d_lots": -149.0,
+          "change_5d_pct": -8.26,
+          "up_days_5d": 1,
+          "up_days_10d": 4,
+          "normal_daily_change_20d_lots": 8.5,
+          "anomaly_20d": 1.76,
+          "avg5_volume_lots": 72.3,
+          "change_1d_vs_avg5_volume_pct": 20.74,
+          "change_5d_vs_avg5_volume_pct": 0
+        }
+      },
+      {
+        "ticker": "3035",
+        "name": "智原",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 36.1,
+        "change_pct": 1.694915254237288,
+        "tags": [
+          "極端異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+236張｜20日異常3.1倍｜占5日均量3.0%｜近5日3日增加",
+        "raw": {
+          "balance_lots": 10899.2,
+          "change_1d_lots": 236.0,
+          "change_1d_pct": 2.21,
+          "change_5d_lots": -114.0,
+          "change_5d_pct": -1.04,
+          "up_days_5d": 3,
+          "up_days_10d": 5,
+          "normal_daily_change_20d_lots": 76.5,
+          "anomaly_20d": 3.08,
+          "avg5_volume_lots": 7827.0,
+          "change_1d_vs_avg5_volume_pct": 3.02,
+          "change_5d_vs_avg5_volume_pct": 0
+        }
+      },
+      {
+        "ticker": "3605",
+        "name": "宏致",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 36.0,
+        "change_pct": -0.544959128065395,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增",
+          "近5日4增"
+        ],
+        "reason": "今日+421張｜20日異常1.9倍｜占5日均量1.4%｜5日+702張｜近5日4日增加",
+        "raw": {
+          "balance_lots": 7350.0,
+          "change_1d_lots": 421.0,
+          "change_1d_pct": 6.08,
+          "change_5d_lots": 702.0,
+          "change_5d_pct": 10.56,
+          "up_days_5d": 4,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 222.0,
+          "anomaly_20d": 1.9,
+          "avg5_volume_lots": 29905.9,
+          "change_1d_vs_avg5_volume_pct": 1.41,
+          "change_5d_vs_avg5_volume_pct": 2.35
+        }
+      },
+      {
+        "ticker": "6116",
+        "name": "彩晶",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 35.9,
+        "change_pct": 0.0,
+        "tags": [
+          "單日異動",
+          "借券賣出暴增",
+          "近5日5增"
+        ],
+        "reason": "今日+1,038張｜20日異常1.7倍｜占5日均量1.2%｜5日+4,495張｜近5日5日增加",
+        "raw": {
+          "balance_lots": 178036.6,
+          "change_1d_lots": 1038.0,
+          "change_1d_pct": 0.59,
+          "change_5d_lots": 4495.0,
+          "change_5d_pct": 2.59,
+          "up_days_5d": 5,
+          "up_days_10d": 9,
+          "normal_daily_change_20d_lots": 623.5,
+          "anomaly_20d": 1.66,
+          "avg5_volume_lots": 89882.9,
+          "change_1d_vs_avg5_volume_pct": 1.15,
+          "change_5d_vs_avg5_volume_pct": 5.0
+        }
+      },
+      {
+        "ticker": "4989",
+        "name": "榮科",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 31.9,
+        "change_pct": 0.16835016835017075,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+96張｜20日異常2.0倍｜占5日均量5.5%｜5日+33張｜近5日3日增加",
+        "raw": {
+          "balance_lots": 8751.9,
+          "change_1d_lots": 96.0,
+          "change_1d_pct": 1.11,
+          "change_5d_lots": 33.0,
+          "change_5d_pct": 0.38,
+          "up_days_5d": 3,
+          "up_days_10d": 5,
+          "normal_daily_change_20d_lots": 47.5,
+          "anomaly_20d": 2.02,
+          "avg5_volume_lots": 1761.0,
+          "change_1d_vs_avg5_volume_pct": 5.45,
+          "change_5d_vs_avg5_volume_pct": 1.87
+        }
+      },
+      {
+        "ticker": "6230",
+        "name": "尼得科超眾",
+        "market": "twse",
+        "priority": "sudden",
+        "priority_rank": 0,
+        "score": 31.8,
+        "change_pct": -1.3274336283185841,
+        "tags": [
+          "明顯異常",
+          "借券賣出暴增",
+          "近5日偏增"
+        ],
+        "reason": "今日+2張｜20日異常2.0倍｜占5日均量6.1%｜5日+3張｜近5日3日增加",
+        "raw": {
+          "balance_lots": 468.0,
+          "change_1d_lots": 2.0,
+          "change_1d_pct": 0.43,
+          "change_5d_lots": 3.0,
+          "change_5d_pct": 0.65,
+          "up_days_5d": 3,
+          "up_days_10d": 6,
+          "normal_daily_change_20d_lots": 1.0,
+          "anomaly_20d": 2.0,
+          "avg5_volume_lots": 33.1,
+          "change_1d_vs_avg5_volume_pct": 6.05,
+          "change_5d_vs_avg5_volume_pct": 9.08
         }
       }
     ],
-    "tpex": [
-      {
-        "ticker": "6584",
-        "name": "南俊國際",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 83.4,
-        "change_pct": -0.1838235294117647,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+85張｜20日異常6.5倍｜占5日均量32.2%｜5日+294張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 1115.0,
-          "change_1d_lots": 85.0,
-          "change_1d_pct": 8.25,
-          "change_5d_lots": 294.0,
-          "change_5d_pct": 35.81,
-          "up_days_5d": 4,
-          "up_days_10d": 9,
-          "normal_daily_change_20d_lots": 13.0,
-          "anomaly_20d": 6.54,
-          "avg5_volume_lots": 264.0,
-          "change_1d_vs_avg5_volume_pct": 32.2,
-          "change_5d_vs_avg5_volume_pct": 111.36,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "4966",
-        "name": "譜瑞-KY",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 80.3,
-        "change_pct": -0.5244755244755245,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+388張｜20日異常5.2倍｜占5日均量61.6%｜5日+485張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 4956.0,
-          "change_1d_lots": 388.0,
-          "change_1d_pct": 8.49,
-          "change_5d_lots": 485.0,
-          "change_5d_pct": 10.85,
-          "up_days_5d": 4,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 75.0,
-          "anomaly_20d": 5.17,
-          "avg5_volume_lots": 629.4,
-          "change_1d_vs_avg5_volume_pct": 61.65,
-          "change_5d_vs_avg5_volume_pct": 77.06,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6154",
-        "name": "順發",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 79.5,
-        "change_pct": -0.35211267605633806,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+20張｜20日異常20.0倍｜占5日均量55.9%｜5日+50張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 133.0,
-          "change_1d_lots": 20.0,
-          "change_1d_pct": 17.7,
-          "change_5d_lots": 50.0,
-          "change_5d_pct": 60.24,
-          "up_days_5d": 3,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 20.0,
-          "avg5_volume_lots": 35.8,
-          "change_1d_vs_avg5_volume_pct": 55.87,
-          "change_5d_vs_avg5_volume_pct": 139.66,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "4972",
-        "name": "湯石照明",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 76.7,
-        "change_pct": 0.0,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+10張｜20日異常10.0倍｜占5日均量49.5%｜5日+30張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 100.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 11.11,
-          "change_5d_lots": 30.0,
-          "change_5d_pct": 42.86,
-          "up_days_5d": 3,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 10.0,
-          "avg5_volume_lots": 20.2,
-          "change_1d_vs_avg5_volume_pct": 49.5,
-          "change_5d_vs_avg5_volume_pct": 148.51,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3322",
-        "name": "建舜電",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 75.4,
-        "change_pct": 0.0,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+43張｜20日異常5.7倍｜占5日均量26.0%｜5日+174張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 2681.0,
-          "change_1d_lots": 43.0,
-          "change_1d_pct": 1.63,
-          "change_5d_lots": 174.0,
-          "change_5d_pct": 6.94,
-          "up_days_5d": 4,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 7.5,
-          "anomaly_20d": 5.73,
-          "avg5_volume_lots": 165.2,
-          "change_1d_vs_avg5_volume_pct": 26.03,
-          "change_5d_vs_avg5_volume_pct": 105.33,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5460",
-        "name": "同協",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 74.4,
-        "change_pct": 0.2967359050445104,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+10張｜20日異常6.7倍｜占5日均量23.5%｜5日+23張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 281.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 3.69,
-          "change_5d_lots": 23.0,
-          "change_5d_pct": 8.91,
-          "up_days_5d": 4,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 1.5,
-          "anomaly_20d": 6.67,
-          "avg5_volume_lots": 42.6,
-          "change_1d_vs_avg5_volume_pct": 23.47,
-          "change_5d_vs_avg5_volume_pct": 53.99,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6561",
-        "name": "是方",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 73.9,
-        "change_pct": 0.16233766233766234,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+89張｜20日異常22.2倍｜占5日均量134.4%｜5日+86張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 1328.0,
-          "change_1d_lots": 89.0,
-          "change_1d_pct": 7.18,
-          "change_5d_lots": 86.0,
-          "change_5d_pct": 6.92,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 4.0,
-          "anomaly_20d": 22.25,
-          "avg5_volume_lots": 66.2,
-          "change_1d_vs_avg5_volume_pct": 134.44,
-          "change_5d_vs_avg5_volume_pct": 129.91,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3646",
-        "name": "艾恩特",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 73.0,
-        "change_pct": 0.20202020202020202,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+10張｜20日異常10.0倍｜占5日均量63.3%｜5日+20張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 85.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 13.33,
-          "change_5d_lots": 20.0,
-          "change_5d_pct": 30.77,
-          "up_days_5d": 2,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 10.0,
-          "avg5_volume_lots": 15.8,
-          "change_1d_vs_avg5_volume_pct": 63.29,
-          "change_5d_vs_avg5_volume_pct": 126.58,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5315",
-        "name": "光聯",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 72.9,
-        "change_pct": -0.7957559681697612,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日5增"
-        ],
-        "reason": "今日+38張｜20日異常4.5倍｜占5日均量16.4%｜5日+116張｜近5日5日增加",
-        "raw": {
-          "balance_lots": 1611.0,
-          "change_1d_lots": 38.0,
-          "change_1d_pct": 2.42,
-          "change_5d_lots": 116.0,
-          "change_5d_pct": 7.76,
-          "up_days_5d": 5,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 8.5,
-          "anomaly_20d": 4.47,
-          "avg5_volume_lots": 231.8,
-          "change_1d_vs_avg5_volume_pct": 16.39,
-          "change_5d_vs_avg5_volume_pct": 50.04,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3527",
-        "name": "聚積",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 72.7,
-        "change_pct": 1.1764705882352942,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+20張｜20日異常20.0倍｜占5日均量25.6%｜5日+50張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 524.0,
-          "change_1d_lots": 20.0,
-          "change_1d_pct": 3.97,
-          "change_5d_lots": 50.0,
-          "change_5d_pct": 10.55,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 20.0,
-          "avg5_volume_lots": 78.2,
-          "change_1d_vs_avg5_volume_pct": 25.58,
-          "change_5d_vs_avg5_volume_pct": 63.94,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6233",
-        "name": "旺玖",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 72.2,
-        "change_pct": 2.107728337236534,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+23張｜20日異常23.0倍｜占5日均量21.0%｜5日+181張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 1938.0,
-          "change_1d_lots": 23.0,
-          "change_1d_pct": 1.2,
-          "change_5d_lots": 181.0,
-          "change_5d_pct": 10.3,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 1.0,
-          "anomaly_20d": 23.0,
-          "avg5_volume_lots": 109.4,
-          "change_1d_vs_avg5_volume_pct": 21.02,
-          "change_5d_vs_avg5_volume_pct": 165.45,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "8048",
-        "name": "德勝",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 71.9,
-        "change_pct": 0.5988023952095808,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+18張｜20日異常9.0倍｜占5日均量17.4%｜5日+300張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 1405.0,
-          "change_1d_lots": 18.0,
-          "change_1d_pct": 1.3,
-          "change_5d_lots": 300.0,
-          "change_5d_pct": 27.15,
-          "up_days_5d": 3,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 2.0,
-          "anomaly_20d": 9.0,
-          "avg5_volume_lots": 103.2,
-          "change_1d_vs_avg5_volume_pct": 17.44,
-          "change_5d_vs_avg5_volume_pct": 290.7,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5392",
-        "name": "能率",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 70.1,
-        "change_pct": 0.12706480304955528,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+502張｜20日異常4.9倍｜占5日均量96.5%｜近5日4日增加",
-        "raw": {
-          "balance_lots": 5801.0,
-          "change_1d_lots": 502.0,
-          "change_1d_pct": 9.47,
-          "change_5d_lots": -539.0,
-          "change_5d_pct": -8.5,
-          "up_days_5d": 4,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 101.5,
-          "anomaly_20d": 4.95,
-          "avg5_volume_lots": 520.0,
-          "change_1d_vs_avg5_volume_pct": 96.54,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3310",
-        "name": "佳穎",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 68.0,
-        "change_pct": 0.8784773060029281,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+10張｜20日異常10.0倍｜占5日均量67.6%｜5日+16張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 179.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 5.92,
-          "change_5d_lots": 16.0,
-          "change_5d_pct": 9.82,
-          "up_days_5d": 2,
-          "up_days_10d": 2,
-          "normal_daily_change_20d_lots": 1.0,
-          "anomaly_20d": 10.0,
-          "avg5_volume_lots": 14.8,
-          "change_1d_vs_avg5_volume_pct": 67.57,
-          "change_5d_vs_avg5_volume_pct": 108.11,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3675",
-        "name": "德微",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 64.3,
-        "change_pct": -0.2985074626865672,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日5增"
-        ],
-        "reason": "今日+126張｜20日異常7.0倍｜占5日均量5.1%｜5日+285張｜近5日5日增加",
-        "raw": {
-          "balance_lots": 1168.0,
-          "change_1d_lots": 126.0,
-          "change_1d_pct": 12.09,
-          "change_5d_lots": 285.0,
-          "change_5d_pct": 32.28,
-          "up_days_5d": 5,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 18.0,
-          "anomaly_20d": 7.0,
-          "avg5_volume_lots": 2446.8,
-          "change_1d_vs_avg5_volume_pct": 5.15,
-          "change_5d_vs_avg5_volume_pct": 11.65,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6185",
-        "name": "幃翔",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 64.2,
-        "change_pct": -0.8032128514056226,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+20張｜20日異常20.0倍｜占5日均量12.1%｜5日+69張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 691.0,
-          "change_1d_lots": 20.0,
-          "change_1d_pct": 2.98,
-          "change_5d_lots": 69.0,
-          "change_5d_pct": 11.09,
-          "up_days_5d": 3,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 20.0,
-          "avg5_volume_lots": 165.2,
-          "change_1d_vs_avg5_volume_pct": 12.11,
-          "change_5d_vs_avg5_volume_pct": 41.77,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5220",
-        "name": "萬達光電",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 62.8,
-        "change_pct": 10.0,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+10張｜20日異常10.0倍｜占5日均量8.1%｜5日+40張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 146.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 7.35,
-          "change_5d_lots": 40.0,
-          "change_5d_pct": 37.74,
-          "up_days_5d": 3,
-          "up_days_10d": 4,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 10.0,
-          "avg5_volume_lots": 122.8,
-          "change_1d_vs_avg5_volume_pct": 8.14,
-          "change_5d_vs_avg5_volume_pct": 32.57,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6693",
-        "name": "廣閎科",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 60.9,
-        "change_pct": 4.05727923627685,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+200張｜20日異常9.5倍｜占5日均量6.4%｜5日+286張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 1860.0,
-          "change_1d_lots": 200.0,
-          "change_1d_pct": 12.05,
-          "change_5d_lots": 286.0,
-          "change_5d_pct": 18.17,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 21.0,
-          "anomaly_20d": 9.52,
-          "avg5_volume_lots": 3108.4,
-          "change_1d_vs_avg5_volume_pct": 6.43,
-          "change_5d_vs_avg5_volume_pct": 9.2,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3707",
-        "name": "漢磊",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 60.8,
-        "change_pct": 0.13736263736263735,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+2,549張｜20日異常11.9倍｜占5日均量9.7%｜5日+2,847張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 18301.0,
-          "change_1d_lots": 2549.0,
-          "change_1d_pct": 16.18,
-          "change_5d_lots": 2847.0,
-          "change_5d_pct": 18.42,
-          "up_days_5d": 2,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 213.5,
-          "anomaly_20d": 11.94,
-          "avg5_volume_lots": 26230.6,
-          "change_1d_vs_avg5_volume_pct": 9.72,
-          "change_5d_vs_avg5_volume_pct": 10.85,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6104",
-        "name": "創惟",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 59.9,
-        "change_pct": 1.1111111111111112,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+77張｜20日異常2.1倍｜占5日均量25.4%｜5日+370張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 3954.0,
-          "change_1d_lots": 77.0,
-          "change_1d_pct": 1.99,
-          "change_5d_lots": 370.0,
-          "change_5d_pct": 10.32,
-          "up_days_5d": 4,
-          "up_days_10d": 7,
-          "normal_daily_change_20d_lots": 37.5,
-          "anomaly_20d": 2.05,
-          "avg5_volume_lots": 303.6,
-          "change_1d_vs_avg5_volume_pct": 25.36,
-          "change_5d_vs_avg5_volume_pct": 121.87,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3567",
-        "name": "逸昌",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 57.6,
-        "change_pct": 0.78125,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+10張｜20日異常10.0倍｜占5日均量6.9%｜5日+40張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 201.0,
-          "change_1d_lots": 10.0,
-          "change_1d_pct": 5.24,
-          "change_5d_lots": 40.0,
-          "change_5d_pct": 24.84,
-          "up_days_5d": 3,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 10.0,
-          "avg5_volume_lots": 145.2,
-          "change_1d_vs_avg5_volume_pct": 6.89,
-          "change_5d_vs_avg5_volume_pct": 27.55,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "3388",
-        "name": "崇越電",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 55.1,
-        "change_pct": -0.4878048780487805,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日4增"
-        ],
-        "reason": "今日+73張｜20日異常2.2倍｜占5日均量18.1%｜5日+118張｜近5日4日增加",
-        "raw": {
-          "balance_lots": 2882.0,
-          "change_1d_lots": 73.0,
-          "change_1d_pct": 2.6,
-          "change_5d_lots": 118.0,
-          "change_5d_pct": 4.27,
-          "up_days_5d": 4,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 33.0,
-          "anomaly_20d": 2.21,
-          "avg5_volume_lots": 404.2,
-          "change_1d_vs_avg5_volume_pct": 18.06,
-          "change_5d_vs_avg5_volume_pct": 29.19,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "8068",
-        "name": "全達",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 51.1,
-        "change_pct": -1.4005602240896358,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+40張｜20日異常26.7倍｜占5日均量7.1%｜5日+61張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 1039.0,
-          "change_1d_lots": 40.0,
-          "change_1d_pct": 4.0,
-          "change_5d_lots": 61.0,
-          "change_5d_pct": 6.24,
-          "up_days_5d": 2,
-          "up_days_10d": 5,
-          "normal_daily_change_20d_lots": 1.5,
-          "anomaly_20d": 26.67,
-          "avg5_volume_lots": 567.0,
-          "change_1d_vs_avg5_volume_pct": 7.05,
-          "change_5d_vs_avg5_volume_pct": 10.76,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6510",
-        "name": "精測",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 50.7,
-        "change_pct": -5.13595166163142,
-        "tags": [
-          "明顯異常",
-          "借券暴增",
-          "近5日5增"
-        ],
-        "reason": "今日+76張｜20日異常2.5倍｜占5日均量6.3%｜5日+244張｜近5日5日增加",
-        "raw": {
-          "balance_lots": 1333.0,
-          "change_1d_lots": 76.0,
-          "change_1d_pct": 6.05,
-          "change_5d_lots": 244.0,
-          "change_5d_pct": 22.41,
-          "up_days_5d": 5,
-          "up_days_10d": 8,
-          "normal_daily_change_20d_lots": 30.0,
-          "anomaly_20d": 2.53,
-          "avg5_volume_lots": 1198.4,
-          "change_1d_vs_avg5_volume_pct": 6.34,
-          "change_5d_vs_avg5_volume_pct": 20.36,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6147",
-        "name": "頎邦",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 47.1,
-        "change_pct": -2.3419203747072603,
-        "tags": [
-          "單日異動",
-          "借券暴增",
-          "近5日5增"
-        ],
-        "reason": "今日+1,679張｜20日異常1.8倍｜占5日均量5.0%｜5日+6,030張｜近5日5日增加",
-        "raw": {
-          "balance_lots": 32707.0,
-          "change_1d_lots": 1679.0,
-          "change_1d_pct": 5.41,
-          "change_5d_lots": 6030.0,
-          "change_5d_pct": 22.6,
-          "up_days_5d": 5,
-          "up_days_10d": 9,
-          "normal_daily_change_20d_lots": 959.0,
-          "anomaly_20d": 1.75,
-          "avg5_volume_lots": 33596.0,
-          "change_1d_vs_avg5_volume_pct": 5.0,
-          "change_5d_vs_avg5_volume_pct": 17.95,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5457",
-        "name": "宣德",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 46.1,
-        "change_pct": -1.4675052410901466,
-        "tags": [
-          "明顯異常",
-          "借券暴增"
-        ],
-        "reason": "今日+169張｜20日異常2.5倍｜占5日均量18.3%｜近5日2日增加",
-        "raw": {
-          "balance_lots": 5303.0,
-          "change_1d_lots": 169.0,
-          "change_1d_pct": 3.29,
-          "change_5d_lots": -801.0,
-          "change_5d_pct": -13.12,
-          "up_days_5d": 2,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 66.5,
-          "anomaly_20d": 2.54,
-          "avg5_volume_lots": 922.0,
-          "change_1d_vs_avg5_volume_pct": 18.33,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6903",
-        "name": "巨漢",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 38.7,
-        "change_pct": -1.4563106796116505,
-        "tags": [
-          "明顯異常",
-          "借券暴增"
-        ],
-        "reason": "今日+20張｜20日異常2.7倍｜占5日均量11.4%｜5日+18張｜近5日2日增加",
-        "raw": {
-          "balance_lots": 961.0,
-          "change_1d_lots": 20.0,
-          "change_1d_pct": 2.13,
-          "change_5d_lots": 18.0,
-          "change_5d_pct": 1.91,
-          "up_days_5d": 2,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 7.5,
-          "anomaly_20d": 2.67,
-          "avg5_volume_lots": 175.8,
-          "change_1d_vs_avg5_volume_pct": 11.38,
-          "change_5d_vs_avg5_volume_pct": 10.24,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "5289",
-        "name": "宜鼎",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 36.2,
-        "change_pct": -1.9157088122605364,
-        "tags": [
-          "單日異動",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+132張｜20日異常1.6倍｜占5日均量11.7%｜近5日3日增加",
-        "raw": {
-          "balance_lots": 5104.0,
-          "change_1d_lots": 132.0,
-          "change_1d_pct": 2.65,
-          "change_5d_lots": -14.0,
-          "change_5d_pct": -0.27,
-          "up_days_5d": 3,
-          "up_days_10d": 6,
-          "normal_daily_change_20d_lots": 83.5,
-          "anomaly_20d": 1.58,
-          "avg5_volume_lots": 1123.8,
-          "change_1d_vs_avg5_volume_pct": 11.75,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6417",
-        "name": "韋僑",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 35.8,
-        "change_pct": 0.0,
-        "tags": [
-          "極端異常",
-          "借券暴增",
-          "近5日偏增"
-        ],
-        "reason": "今日+3張｜20日異常3.0倍｜占5日均量5.1%｜5日+6張｜近5日3日增加",
-        "raw": {
-          "balance_lots": 172.0,
-          "change_1d_lots": 3.0,
-          "change_1d_pct": 1.78,
-          "change_5d_lots": 6.0,
-          "change_5d_pct": 3.61,
-          "up_days_5d": 3,
-          "up_days_10d": 3,
-          "normal_daily_change_20d_lots": 0.0,
-          "anomaly_20d": 3.0,
-          "avg5_volume_lots": 58.8,
-          "change_1d_vs_avg5_volume_pct": 5.1,
-          "change_5d_vs_avg5_volume_pct": 10.2,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      },
-      {
-        "ticker": "6237",
-        "name": "驊訊",
-        "market": "tpex",
-        "priority": "sudden",
-        "priority_rank": 0,
-        "score": 34.0,
-        "change_pct": -2.1621621621621623,
-        "tags": [
-          "極端異常",
-          "借券暴增"
-        ],
-        "reason": "今日+58張｜20日異常3.5倍｜占5日均量7.0%｜近5日1日增加",
-        "raw": {
-          "balance_lots": 1978.0,
-          "change_1d_lots": 58.0,
-          "change_1d_pct": 3.02,
-          "change_5d_lots": -76.0,
-          "change_5d_pct": -3.7,
-          "up_days_5d": 1,
-          "up_days_10d": 1,
-          "normal_daily_change_20d_lots": 16.5,
-          "anomaly_20d": 3.52,
-          "avg5_volume_lots": 824.2,
-          "change_1d_vs_avg5_volume_pct": 7.04,
-          "change_5d_vs_avg5_volume_pct": 0,
-          "short_sell_change_1d_lots": null,
-          "short_sell_change_5d_lots": null
-        }
-      }
-    ]
+    "tpex": []
   }
 }
