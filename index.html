@@ -13,29 +13,29 @@
 
 <style>
   #selfReportSearchInput{
-    -webkit-appearance:none !important;
-    appearance:none !important;
-    color-scheme:light !important;
-    background:#ffffff !important;
-    color:#111827 !important;
+    display:block;
+    width:100%;
+    box-sizing:border-box;
+    font:inherit;
+    outline:none;
+    border-radius:12px;
+    padding:11px 88px 11px 14px;
     border:1px solid #d8dee8 !important;
+    background-color:#ffffff !important;
+    background-image:none !important;
+    color:#111827 !important;
     -webkit-text-fill-color:#111827 !important;
     caret-color:#111827 !important;
     box-shadow:none !important;
+    -webkit-box-shadow:none !important;
+    -webkit-appearance:none !important;
+    appearance:none !important;
   }
 
   #selfReportSearchInput::placeholder{
     color:#8a94a3 !important;
     opacity:1 !important;
     -webkit-text-fill-color:#8a94a3 !important;
-  }
-
-  #selfReportSearchInput::-webkit-search-decoration,
-  #selfReportSearchInput::-webkit-search-cancel-button,
-  #selfReportSearchInput::-webkit-search-results-button,
-  #selfReportSearchInput::-webkit-search-results-decoration{
-    -webkit-appearance:none !important;
-    appearance:none !important;
   }
 
   #selfReportSearchClear{
@@ -47,10 +47,9 @@
   }
 
   html[data-theme="dark"] #selfReportSearchInput{
-    color-scheme:dark !important;
-    background:#171b22 !important;
-    color:#f1f5f9 !important;
     border-color:#343c49 !important;
+    background-color:#171b22 !important;
+    color:#f1f5f9 !important;
     -webkit-text-fill-color:#f1f5f9 !important;
     caret-color:#f1f5f9 !important;
   }
@@ -199,22 +198,12 @@
       >
         <input
           id="selfReportSearchInput"
-          type="search"
+          type="text"
           inputmode="search"
           autocomplete="off"
           placeholder="搜尋股票名稱或代號，例如：南茂、8150"
           aria-label="搜尋自結股票名稱或股票代號"
-          style="
-            width:100%;
-            box-sizing:border-box;
-            border:1px solid rgba(148,163,184,.35);
-            background:#ffffff;
-            color:#111827;
-            border-radius:12px;
-            padding:11px 88px 11px 14px;
-            font:inherit;
-            outline:none;
-          "
+          
         >
 
         <button
@@ -441,7 +430,7 @@
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
-<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v16"></script>
+<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v17"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
