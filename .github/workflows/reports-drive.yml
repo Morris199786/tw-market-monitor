@@ -30,15 +30,20 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
-      - name: Install PDF text extractor
+      - name: Install document and image tools
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
+          python -m pip install --upgrade pip
+          python -m pip install pillow pillow-heif
 
       - name: Ingest new broker reports
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
+
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REPORT_MODEL: gpt-5.6-luna
         run: |
           python scripts/update_reports_drive.py
 
