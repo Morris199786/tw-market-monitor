@@ -28,20 +28,74 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Read previous data date
+        id: previous
+        shell: bash
+        run: |
+          OLD_DATE="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path("data/margin_lending.json")
+
+          try:
+              data = json.loads(
+                  p.read_text(encoding="utf-8")
+              )
+              print(
+                  str(
+                      data.get("date") or ""
+                  ).strip()
+              )
+          except Exception:
+              print("")
+          PY
+          )"
+
+          echo "date=$OLD_DATE" >> "$GITHUB_OUTPUT"
+          echo "Previous data date: $OLD_DATE"
+
       - name: Update margin and lending
         run: python scripts/update_margin_lending.py
 
-      - name: Detect page changes
+      - name: Check new data date
         id: changed
         shell: bash
+        env:
+          OLD_DATE: ${{ steps.previous.outputs.date }}
         run: |
-          if git diff --quiet -- data/margin_lending.json; then
-            echo "margin=false" >> "$GITHUB_OUTPUT"
+          NEW_DATE="$(python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path("data/margin_lending.json")
+
+          try:
+              data = json.loads(
+                  p.read_text(encoding="utf-8")
+              )
+              print(
+                  str(
+                      data.get("date") or ""
+                  ).strip()
+              )
+          except Exception:
+              print("")
+          PY
+          )"
+
+          echo "new_date=$NEW_DATE" >> "$GITHUB_OUTPUT"
+
+          if [ -n "$NEW_DATE" ] && [ "$NEW_DATE" != "$OLD_DATE" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
+            echo "New trading date detected: $OLD_DATE -> $NEW_DATE"
           else
-            echo "margin=true" >> "$GITHUB_OUTPUT"
+            echo "notify=false" >> "$GITHUB_OUTPUT"
+            echo "Same trading date, Telegram notification skipped: $NEW_DATE"
           fi
 
       - name: Commit updated data
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -57,8 +111,8 @@ jobs:
           git pull --rebase
           git push
 
-      - name: Telegram - 融資／借券
-        if: steps.changed.outputs.margin == 'true'
+      - name: Telegram - 融資／借券賣出
+        if: steps.changed.outputs.notify == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
