@@ -64,6 +64,29 @@
     color:#cbd5e1 !important;
     border-color:#343c49 !important;
   }
+
+  @media (max-width:700px){
+    #selfReports .card:has(#selfReportSearchInput){
+      align-items:stretch !important;
+    }
+
+    #selfReports .card:has(#selfReportSearchInput) > div{
+      flex:1 1 100% !important;
+      width:100% !important;
+    }
+
+    #selfReportSearchInput{
+      width:100% !important;
+      min-width:0 !important;
+    }
+
+    #selfReportSearchMeta{
+      width:100% !important;
+      display:block !important;
+      margin-top:2px !important;
+      white-space:normal !important;
+    }
+  }
 </style>
 
 </head>
@@ -430,7 +453,7 @@
 
 <script src="./assets/app.js?v=20260924-ui3"></script>
 <script src="./assets/margin_lending.js?v=20260925-ml1"></script>
-<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v17"></script>
+<script src="./assets/ui_v2.js?v=20260929-selfreport-search-v18"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
