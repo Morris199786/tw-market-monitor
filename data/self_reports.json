@@ -1,19 +1,23 @@
 {
-  "updated_at": "2026-09-29T18:31+08:00",
+  "updated_at": "2026-09-29T18:54+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-09-28-v8-telegram",
-  "source_mode": "TWSE/TPEx OpenAPI 即時監控 + 本站永久保存",
+  "filter_version": "2026-09-29-v9-attention-trading",
+  "source_mode": "TWSE/TPEx OpenAPI 注意交易自結優先 + 全欄位財務數字掃描 + 本站永久保存",
   "source_status": {
     "twse": {
-      "ok": false,
-      "rows": 0,
+      "ok": true,
+      "rows": 13,
+      "candidates": 0,
       "self_reports": 0,
-      "error": "RuntimeError('GET failed: https://openapi.twse.com.tw/v1/opendata/t187ap04_L: Expecting value: line 1 column 1 (char 0)')"
+      "rejected_candidates": [],
+      "error": ""
     },
     "tpex": {
       "ok": true,
       "rows": 7,
+      "candidates": 0,
       "self_reports": 0,
+      "rejected_candidates": [],
       "error": ""
     }
   },
