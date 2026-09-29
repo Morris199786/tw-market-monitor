@@ -1,0 +1,71 @@
+name: Broker reports daily summary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: broker-reports-daily-summary
+  cancel-in-progress: false
+
+jobs:
+  send-summary:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Send broker summary
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: |
+          python scripts/send_reports_daily_summary.py
+
+      - name: Commit summary state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ ! -f data/reports_daily_summary_sent.json ]; then
+            echo "No summary state file"
+            exit 0
+          fi
+
+          git add data/reports_daily_summary_sent.json
+
+          if git diff --cached --quiet; then
+            echo "No summary state changes"
+            exit 0
+          fi
+
+          git commit -m "data: broker summary sent"
+
+          for i in 1 2 3; do
+            git pull --rebase origin main && \
+            git push origin HEAD:main && \
+            break
+
+            if [ "$i" = "3" ]; then
+              echo "Push failed after 3 attempts"
+              exit 1
+            fi
+
+            sleep 5
+          done
