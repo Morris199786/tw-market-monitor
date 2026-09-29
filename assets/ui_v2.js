@@ -711,6 +711,16 @@ async function buildMarketPulse() {
    自結頁
 ------------------------------------------------- */
 
+function selfEpsMetric(x, kind, label) {
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const value = x[kind + "_eps"];
+  const growth = x[kind + "_eps_yoy"];
+  const numeric = v => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
+  const period = x[kind + "_period"];
+  const yoy = numeric(growth) ? `${Number(growth) > 0 ? "+" : ""}${Number(growth).toFixed(2)}%` : (x[kind + "_eps_yoy_text"] || "未取得");
+  return `<div class="metric-box" style="min-width:0"><small>${esc(label)}${period ? `（${esc(period)}）` : ""}</small><strong style="font-size:clamp(20px,3vw,30px);overflow-wrap:anywhere">${numeric(value) ? Number(value).toFixed(2) + ' 元' : '未取得'}</strong><small style="display:block;margin-top:8px;line-height:1.5">與去年同期增減<br><b>${esc(yoy)}</b></small></div>`;
+}
+
 async function selfReports() {
   const d =
     await J(
@@ -894,83 +904,11 @@ async function selfReports() {
 
             </div>
 
-            <div
-              class="metric-grid"
-            >
-
-              ${
-                selfMetric(
-                  "EPS",
-
-                  x.eps === null
-                    ? null
-                    : fmtNum(
-                        x.eps,
-                        2
-                      ),
-
-                  " 元"
-                )
-              }
-
-              ${
-                selfMetric(
-                  "稅前淨利",
-
-                  x.pretax_million
-                    === null
-                    ? null
-                    : fmtNum(
-                        x.pretax_million,
-                        0
-                      ),
-
-                  " 百萬"
-                )
-              }
-
-              ${
-                selfMetric(
-                  "稅後／歸母淨利",
-
-                  x.net_income_million
-                    === null
-                    ? null
-                    : fmtNum(
-                        x.net_income_million,
-                        0
-                      ),
-
-                  " 百萬"
-                )
-              }
-
-              ${
-                selfMetric(
-                  "營業收入",
-
-                  x.revenue_million
-                    === null
-                    ? null
-                    : fmtNum(
-                        x.revenue_million,
-                        0
-                      ),
-
-                  " 百萬"
-                )
-              }
-
+            <div class="metric-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+              ${selfEpsMetric(x, "monthly", "當月 EPS")}
+              ${selfEpsMetric(x, "quarter", "上一季 EPS")}
             </div>
-
-            <div
-              class="subject"
-            >
-              ${
-                x.subject ||
-                "自結財務資訊"
-              }
-            </div>
+            ${x.monthly_eps == null ? '<div class="subject">公告明細尚未取得或格式待核對，未以其他數字替代 EPS</div>' : ''}
 
           </div>
         `
@@ -2332,3 +2270,4 @@ setupPageUpdateMeta();
 setupFontScaleControl();
 
 setupBackHomeButton();
+
