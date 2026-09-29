@@ -31,6 +31,28 @@ jobs:
       - name: Run daily update
         run: python scripts/update_all.py
 
+      - name: Detect page changes
+        id: changed
+        shell: bash
+        run: |
+          if git diff --quiet -- data/institutional.json; then
+            echo "flows=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "flows=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if git diff --quiet -- data/volume.json; then
+            echo "volume=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "volume=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          if git diff --quiet -- data/turnover.json; then
+            echo "turnover=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "turnover=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
@@ -46,3 +68,27 @@ jobs:
           git commit -m "data: daily close update"
           git pull --rebase
           git push
+
+      - name: Telegram - 籌碼日報
+        if: steps.changed.outputs.flows == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/send_update_telegram.py flows
+
+      - name: Telegram - 突然放量
+        if: steps.changed.outputs.volume == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/send_update_telegram.py volume
+
+      - name: Telegram - 成交排行
+        if: steps.changed.outputs.turnover == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/send_update_telegram.py turnover
