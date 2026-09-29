@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import json
+import mimetypes
 import os
 import re
 import subprocess
 import tempfile
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -19,8 +22,22 @@ DRIVE_API = "https://www.googleapis.com/drive/v3"
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 ROOT_FOLDER_ID = os.environ["DRIVE_FOLDER_ID"]
 
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+OPENAI_MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
+OPENAI_API_URL = "https://api.openai.com/v1/responses"
+
 INBOX_PATH = ROOT / "data/report_inbox.json"
 STATE_PATH = ROOT / "data/processed_reports.json"
+
+IMAGE_MIME_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+}
+HEIC_MIME_TYPES = {"image/heic", "image/heif"}
 
 S = requests.Session()
 S.headers.update({
@@ -55,12 +72,9 @@ def save_json(path, data):
 def drive_list(folder_id):
     fields = (
         "nextPageToken,"
-        "files("
-        "id,name,mimeType,modifiedTime,size,"
-        "webViewLink,md5Checksum"
-        ")"
+        "files(id,name,mimeType,modifiedTime,size,"
+        "webViewLink,md5Checksum)"
     )
-
     page_token = None
     out = []
 
@@ -117,7 +131,7 @@ def walk_folder(folder_id, path_parts=None):
     return rows
 
 
-def download_pdf(file_id, out_path):
+def download_file(file_id, out_path):
     r = S.get(
         f"{DRIVE_API}/files/{file_id}",
         params={
@@ -174,10 +188,134 @@ def extract_pdf_text(pdf_path):
     return text.strip()
 
 
+def response_text(data):
+    chunks = []
+
+    for out in data.get("output", []):
+        for c in out.get("content", []):
+            if c.get("type") == "output_text":
+                chunks.append(c.get("text", ""))
+
+    return "\n".join(chunks).strip()
+
+
+def convert_heic_to_jpeg(image_path):
+    try:
+        import pillow_heif
+        from PIL import Image
+    except Exception as e:
+        raise RuntimeError(
+            "HEIC support package missing: " + repr(e)
+        )
+
+    pillow_heif.register_heif_opener()
+
+    with Image.open(image_path) as img:
+        img = img.convert("RGB")
+        out = BytesIO()
+        img.save(out, format="JPEG", quality=95)
+        return out.getvalue(), "image/jpeg"
+
+
+def image_bytes_and_mime(image_path, mime_type):
+    if mime_type in HEIC_MIME_TYPES:
+        return convert_heic_to_jpeg(image_path)
+
+    raw = Path(image_path).read_bytes()
+
+    safe_mime = (
+        mime_type
+        if mime_type in IMAGE_MIME_TYPES
+        else None
+    )
+
+    if not safe_mime:
+        guessed, _ = mimetypes.guess_type(str(image_path))
+        safe_mime = guessed or "image/jpeg"
+
+    return raw, safe_mime
+
+
+def extract_image_text(image_path, mime_type, filename):
+    if not OPENAI_API_KEY:
+        raise RuntimeError(
+            "OPENAI_API_KEY is missing for image report extraction"
+        )
+
+    raw, safe_mime = image_bytes_and_mime(
+        image_path,
+        mime_type,
+    )
+
+    encoded = base64.b64encode(raw).decode("ascii")
+    data_url = f"data:{safe_mime};base64,{encoded}"
+
+    prompt = f"""你是台股券商報告圖片文字擷取器。
+
+檔名：{filename}
+
+任務：
+1. 完整讀取這張圖片中的可見文字
+2. 保留券商名稱、公司名稱、股票代號、評等、目標價、日期
+3. 表格中的營收、EPS、YoY、MoM、毛利率、目標價等數字要盡量保留
+4. 不要自行分析、不補充外部資訊、不改寫內容
+5. 如果是券商研究報告截圖，請依畫面閱讀順序輸出
+6. 只輸出擷取到的文字，不要 markdown code fence
+"""
+
+    payload = {
+        "model": OPENAI_MODEL,
+        "reasoning": {
+            "effort": "low"
+        },
+        "input": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": prompt,
+                    },
+                    {
+                        "type": "input_image",
+                        "image_url": data_url,
+                        "detail": "high",
+                    },
+                ],
+            }
+        ],
+    }
+
+    r = requests.post(
+        OPENAI_API_URL,
+        headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=180,
+    )
+
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"OpenAI image extraction {r.status_code}: "
+            + r.text[:1200]
+        )
+
+    text = response_text(r.json())
+    text = text.replace("\x00", "")
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    text = re.sub(r"\n{4,}", "\n\n\n", text)
+
+    return text.strip()
+
+
 def infer_report_date(item):
     parts = [
         p
-        for p in str(item.get("_folder_path") or "").split("/")
+        for p in str(
+            item.get("_folder_path") or ""
+        ).split("/")
         if p
     ]
 
@@ -187,6 +325,18 @@ def infer_report_date(item):
 
     mt = str(item.get("modifiedTime") or "")
     return mt[:10] if len(mt) >= 10 else None
+
+
+def classify_source(item):
+    mime = str(item.get("mimeType") or "").lower()
+
+    if mime == "application/pdf":
+        return "pdf"
+
+    if mime in IMAGE_MIME_TYPES or mime.startswith("image/"):
+        return "image"
+
+    return None
 
 
 def main():
@@ -222,53 +372,82 @@ def main():
         [],
     )
 
-    pdfs = [
+    supported_files = [
         x
         for x in all_files
-        if x.get("mimeType") == "application/pdf"
+        if classify_source(x)
     ]
+
+    pdf_count = sum(
+        1
+        for x in supported_files
+        if classify_source(x) == "pdf"
+    )
+
+    image_count = sum(
+        1
+        for x in supported_files
+        if classify_source(x) == "image"
+    )
 
     print(
         f"Drive files={len(all_files)} "
-        f"PDFs={len(pdfs)} "
+        f"PDFs={pdf_count} "
+        f"Images={image_count} "
         f"already_processed={len(processed)}"
     )
 
     added = 0
 
-    for item in pdfs:
+    for item in supported_files:
         file_id = item["id"]
 
         if file_id in processed:
             continue
 
-        name = item.get("name") or f"{file_id}.pdf"
-        print("Processing:", name)
+        source_kind = classify_source(item)
+        name = item.get("name") or file_id
+
+        print(
+            "Processing:",
+            source_kind,
+            name,
+        )
 
         try:
             with tempfile.TemporaryDirectory() as td:
-                safe_name = re.sub(
-                    r"[^A-Za-z0-9._-]+",
-                    "_",
-                    name,
-                )
+                suffix = Path(name).suffix
 
-                pdf_path = Path(td) / safe_name
+                if not suffix:
+                    suffix = (
+                        ".pdf"
+                        if source_kind == "pdf"
+                        else ".img"
+                    )
 
-                download_pdf(
+                local_path = Path(td) / ("source" + suffix)
+
+                download_file(
                     file_id,
-                    pdf_path,
+                    local_path,
                 )
 
-                text = extract_pdf_text(
-                    pdf_path
-                )
+                if source_kind == "pdf":
+                    text = extract_pdf_text(
+                        local_path
+                    )
+                else:
+                    text = extract_image_text(
+                        local_path,
+                        item.get("mimeType", ""),
+                        name,
+                    )
 
             text_chars = len(text)
 
             status = (
                 "pending_ai"
-                if text_chars >= 100
+                if text_chars >= 40
                 else "needs_ocr"
             )
 
@@ -276,6 +455,7 @@ def main():
                 "drive_file_id": file_id,
                 "name": name,
                 "mime_type": item.get("mimeType"),
+                "source_kind": source_kind,
                 "modified_time": item.get("modifiedTime"),
                 "size": (
                     int(item["size"])
@@ -310,6 +490,7 @@ def main():
 
             print(
                 "  OK",
+                source_kind,
                 status,
                 f"{text_chars} chars",
             )
@@ -320,7 +501,8 @@ def main():
                 name,
                 repr(e),
             )
-            # 失敗不加入 processed，下次排程自動重試
+
+            # 失敗不加入 processed，下次 cronjob 自動重試
 
     inbox["items"] = sorted(
         inbox.get("items", []),
@@ -349,7 +531,7 @@ def main():
     )
 
     print(
-        f"Added {added} new PDF(s). "
+        f"Added {added} new report file(s). "
         f"Inbox total={len(inbox.get('items', []))}"
     )
 
