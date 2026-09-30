@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-09-30T20:12+08:00",
-  "version": "2026-09-30-v16-hardened-self-report-parser-telegram-only",
+  "updated_at": "2026-09-30T20:21+08:00",
+  "version": "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only",
   "monitor_start_date": "2026-09-26",
   "candidate_count": 17,
-  "parsed_count": 10,
-  "parse_failed_count": 4,
+  "parsed_count": 11,
+  "parse_failed_count": 3,
   "parse_failed": [
     {
       "ticker": "8171",
@@ -16,19 +16,6 @@
       "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
       "eps_parse_status": "unrecognized_layout",
       "eps_parse_reason": "eps_label_not_found",
-      "monthly_eps": null,
-      "quarter_eps": null
-    },
-    {
-      "ticker": "6861",
-      "name": "睿生光電",
-      "publish_date": "2026-09-30",
-      "publish_time": "15:36:51",
-      "subject": "6861 睿生光電 115/09/30 15:36:51 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
-      "source": "mops_ajax",
-      "source_error": "",
-      "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed",
       "monthly_eps": null,
       "quarter_eps": null
     },
@@ -144,17 +131,17 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6861&SPOKE_DATE=20260930&SPOKE_TIME=153651&SEQ_NO=2&skey=6861202609302",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
-      "monthly_eps": null,
-      "monthly_eps_yoy": null,
-      "monthly_period": null,
-      "quarter_eps": null,
-      "quarter_eps_yoy": null,
+      "eps": 0.76,
+      "monthly_eps": 0.76,
+      "monthly_eps_yoy": 153.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": 2.33,
+      "quarter_eps_yoy": 203.0,
       "quarter_period": "2025-Q3",
-      "monthly_eps_yoy_text": null,
-      "quarter_eps_yoy_text": null,
-      "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "monthly_eps_yoy_text": "153%",
+      "quarter_eps_yoy_text": "203%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
     },
     {
       "market": "",
@@ -294,11 +281,11 @@
       "monthly_period": "2026-08",
       "quarter_eps": 1.28,
       "quarter_eps_yoy": 270.7,
-      "quarter_period": "2026-Q2",
+      "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "121.4%",
       "quarter_eps_yoy_text": "270.7%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "twse",
@@ -322,7 +309,7 @@
       "monthly_eps_yoy_text": "95%",
       "quarter_eps_yoy_text": "101%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "twse",
@@ -342,11 +329,11 @@
       "monthly_period": "2026-08",
       "quarter_eps": 3.11,
       "quarter_eps_yoy": 13.1,
-      "quarter_period": "2026-Q2",
+      "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "-25.4%",
       "quarter_eps_yoy_text": "13.1%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "twse",
@@ -370,7 +357,7 @@
       "monthly_eps_yoy_text": "508%",
       "quarter_eps_yoy_text": "527%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "",
@@ -443,11 +430,11 @@
       "monthly_period": "2026-08",
       "quarter_eps": 3.87,
       "quarter_eps_yoy": 179.09,
-      "quarter_period": "2026-Q2",
+      "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "285.04%",
       "quarter_eps_yoy_text": "179.09%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "",
