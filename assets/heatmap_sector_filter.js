@@ -654,74 +654,82 @@
       }
 
       .stock-detail-sheet{
-        width:min(760px,100%);
-        max-height:min(84vh,820px);
+        width:min(820px,100%);
+        max-height:min(88vh,900px);
         overflow:auto;
         border:1px solid var(--line);
-        border-radius:22px;
+        border-radius:24px;
         background:var(--card);
         color:var(--ink);
-        box-shadow:0 26px 70px rgba(0,0,0,.28)
+        box-shadow:0 28px 80px rgba(2,6,23,.30);
+        overscroll-behavior:contain
       }
 
       .stock-detail-head{
         position:sticky;
         top:0;
-        z-index:3;
+        z-index:5;
         display:flex;
         align-items:flex-start;
         justify-content:space-between;
         gap:14px;
-        padding:18px 18px 14px;
+        padding:20px 20px 15px;
         border-bottom:1px solid var(--line);
-        background:var(--card)
+        background:color-mix(in srgb,var(--card) 94%,transparent);
+        backdrop-filter:blur(14px)
       }
 
       .stock-detail-name{
-        font-size:20px;
-        font-weight:900;
-        line-height:1.15
+        font-size:22px;
+        font-weight:950;
+        line-height:1.15;
+        letter-spacing:-.02em
       }
 
       .stock-detail-meta{
-        margin-top:5px;
+        margin-top:6px;
         color:var(--muted);
-        font-size:11px
+        font-size:11px;
+        font-weight:650
       }
 
       .stock-detail-close{
-        flex:0 0 38px;
-        width:38px;
-        height:38px;
+        flex:0 0 42px;
+        width:42px;
+        height:42px;
         border:1px solid var(--line);
-        border-radius:11px;
+        border-radius:13px;
         background:var(--soft);
         color:var(--ink);
-        font-size:22px;
-        line-height:1
+        font-size:24px;
+        line-height:1;
+        cursor:pointer
       }
 
       .stock-detail-tabs{
         display:grid;
         grid-template-columns:1fr 1fr;
-        gap:6px;
-        padding:12px 18px 0
+        gap:8px;
+        padding:14px 20px 0
       }
 
       .stock-detail-tab{
-        min-height:42px;
+        min-height:46px;
         border:1px solid var(--line);
-        border-radius:11px;
+        border-radius:14px;
         background:var(--soft);
         color:var(--muted);
-        font-size:12px;
-        font-weight:850
+        font-size:13px;
+        font-weight:900;
+        cursor:pointer;
+        transition:all .16s ease
       }
 
       .stock-detail-tab.active{
         background:#111827;
         color:#fff;
-        border-color:#111827
+        border-color:#111827;
+        box-shadow:0 8px 18px rgba(15,23,42,.16)
       }
 
       html[data-theme="dark"] .stock-detail-tab.active{
@@ -731,11 +739,30 @@
       }
 
       .stock-detail-body{
-        padding:16px 18px 20px
+        padding:18px 20px 24px
+      }
+
+      .stock-detail-section-title{
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:12px;
+        margin:2px 2px 12px
+      }
+
+      .stock-detail-section-title strong{
+        font-size:14px;
+        font-weight:950
+      }
+
+      .stock-detail-section-title small{
+        color:var(--muted);
+        font-size:10px;
+        font-weight:650
       }
 
       .stock-detail-note{
-        margin:0 0 12px;
+        margin:0 2px 12px;
         color:var(--muted);
         font-size:10px;
         line-height:1.55
@@ -744,16 +771,40 @@
       .stock-detail-metrics{
         display:grid;
         grid-template-columns:repeat(3,1fr);
-        gap:8px;
-        margin-bottom:14px
+        gap:10px;
+        margin-bottom:16px
       }
 
       .stock-detail-metric{
+        position:relative;
         min-width:0;
-        padding:10px 11px;
+        overflow:hidden;
+        padding:13px 13px 12px;
         border:1px solid var(--line);
-        border-radius:12px;
-        background:var(--soft)
+        border-radius:15px;
+        background:linear-gradient(180deg,var(--card),var(--soft))
+      }
+
+      .stock-detail-metric::before{
+        content:"";
+        position:absolute;
+        left:0;
+        top:0;
+        bottom:0;
+        width:3px;
+        background:#94a3b8
+      }
+
+      .stock-detail-metric.stock::before{
+        background:#dc2626
+      }
+
+      .stock-detail-metric.sector::before{
+        background:#2563eb
+      }
+
+      .stock-detail-metric.index::before{
+        background:#64748b
       }
 
       .stock-detail-metric small{
@@ -762,20 +813,32 @@
         text-overflow:ellipsis;
         white-space:nowrap;
         color:var(--muted);
-        font-size:9px
+        font-size:10px;
+        font-weight:750
       }
 
       .stock-detail-metric strong{
         display:block;
-        margin-top:5px;
-        font-size:17px
+        margin-top:6px;
+        font-size:20px;
+        font-variant-numeric:tabular-nums;
+        letter-spacing:-.02em
       }
 
       .stock-detail-chart{
-        padding:10px 8px 6px;
+        padding:12px 10px 8px;
         border:1px solid var(--line);
-        border-radius:14px;
-        background:var(--soft)
+        border-radius:17px;
+        background:linear-gradient(
+          180deg,
+          var(--soft),
+          color-mix(
+            in srgb,
+            var(--soft) 72%,
+            var(--card)
+          )
+        );
+        overflow:hidden
       }
 
       .stock-detail-chart svg{
@@ -787,17 +850,18 @@
 
       .stock-detail-legend{
         display:flex;
-        gap:12px;
+        gap:14px;
         flex-wrap:wrap;
-        margin:10px 4px 2px;
+        margin:11px 6px 3px;
         color:var(--muted);
-        font-size:10px
+        font-size:10px;
+        font-weight:700
       }
 
       .stock-detail-legend span{
         display:inline-flex;
         align-items:center;
-        gap:5px
+        gap:6px
       }
 
       .stock-detail-dot{
@@ -806,53 +870,106 @@
         border-radius:999px
       }
 
-      .stock-detail-dot.stock{background:#dc2626}
-      .stock-detail-dot.sector{background:#2563eb}
-      .stock-detail-dot.index{background:#64748b}
+      .stock-detail-dot.stock{
+        background:#dc2626
+      }
+
+      .stock-detail-dot.sector{
+        background:#2563eb
+      }
+
+      .stock-detail-dot.index{
+        background:#64748b
+      }
 
       .stock-flow-summary{
         display:flex;
         justify-content:space-between;
-        align-items:baseline;
+        align-items:center;
         gap:12px;
-        margin:0 2px 12px
+        margin:2px 2px 14px;
+        padding:13px 14px;
+        border:1px solid var(--line);
+        border-radius:15px;
+        background:linear-gradient(
+          180deg,
+          var(--card),
+          var(--soft)
+        )
       }
 
       .stock-flow-summary span{
         color:var(--muted);
-        font-size:11px
+        font-size:11px;
+        font-weight:750
       }
 
       .stock-flow-summary strong{
-        font-size:20px
+        font-size:22px;
+        font-variant-numeric:tabular-nums
+      }
+
+      .stock-flow-table-wrap{
+        margin-top:14px;
+        overflow:auto;
+        border:1px solid var(--line);
+        border-radius:16px;
+        background:var(--card);
+        -webkit-overflow-scrolling:touch
       }
 
       .stock-flow-table{
         width:100%;
-        margin-top:12px;
-        border-collapse:collapse
+        min-width:570px;
+        border-collapse:separate;
+        border-spacing:0
       }
 
       .stock-flow-table th,
       .stock-flow-table td{
-        padding:10px 8px;
+        padding:12px 10px;
         border-bottom:1px solid var(--line);
-        font-size:11px
+        text-align:right;
+        white-space:nowrap;
+        font-size:11px;
+        font-variant-numeric:tabular-nums
+      }
+
+      .stock-flow-table th{
+        background:var(--soft);
+        color:var(--muted);
+        font-size:10px;
+        font-weight:900;
+        letter-spacing:.02em
       }
 
       .stock-flow-table th:first-child,
       .stock-flow-table td:first-child{
-        text-align:left
+        text-align:left;
+        padding-left:14px
       }
 
       .stock-flow-table th:last-child,
       .stock-flow-table td:last-child{
-        text-align:right
+        padding-right:14px;
+        font-weight:900
+      }
+
+      .stock-flow-table tbody tr:last-child td{
+        border-bottom:0
+      }
+
+      .stock-flow-table tbody tr:nth-child(even){
+        background:color-mix(
+          in srgb,
+          var(--soft) 55%,
+          transparent
+        )
       }
 
       .stock-detail-loading,
       .stock-detail-empty{
-        padding:28px 10px;
+        padding:30px 12px;
         color:var(--muted);
         text-align:center;
         font-size:12px
@@ -866,39 +983,67 @@
 
         .stock-detail-sheet{
           width:100%;
-          max-height:88vh;
-          border-radius:20px 20px 0 0;
+          max-height:91vh;
+          border-radius:22px 22px 0 0;
           border-left:0;
           border-right:0;
           border-bottom:0
         }
 
         .stock-detail-head{
-          padding:15px 14px 12px
+          padding:16px 15px 12px
         }
 
         .stock-detail-name{
-          font-size:18px
+          font-size:20px
         }
 
         .stock-detail-tabs{
-          padding:10px 14px 0
+          padding:11px 14px 0;
+          gap:7px
+        }
+
+        .stock-detail-tab{
+          min-height:44px;
+          font-size:12px
         }
 
         .stock-detail-body{
-          padding:14px
+          padding:14px 14px 20px
+        }
+
+        .stock-detail-section-title{
+          align-items:flex-start;
+          flex-direction:column;
+          gap:3px
         }
 
         .stock-detail-metrics{
-          gap:6px
+          gap:7px
         }
 
         .stock-detail-metric{
-          padding:9px 8px
+          padding:10px 8px
+        }
+
+        .stock-detail-metric small{
+          font-size:9px
         }
 
         .stock-detail-metric strong{
-          font-size:15px
+          font-size:16px
+        }
+
+        .stock-detail-chart{
+          padding:8px 5px 6px
+        }
+
+        .stock-flow-summary{
+          padding:11px 12px
+        }
+
+        .stock-flow-summary strong{
+          font-size:19px
         }
       }
     `;
@@ -1182,8 +1327,7 @@
       || ""
     );
   }
-
-  async function openStockDetail(
+     async function openStockDetail(
     ticker,
     sector
   ) {
@@ -1479,12 +1623,36 @@
     const indexLast =
       latestValue(ir);
 
+    const vsSector =
+      stockLast !== null
+      && sectorLast !== null
+        ? stockLast - sectorLast
+        : null;
+
+    const vsIndex =
+      stockLast !== null
+      && indexLast !== null
+        ? stockLast - indexLast
+        : null;
+
     return `
+      <div
+        class="stock-detail-section-title"
+      >
+        <strong>
+          近5日相對走勢
+        </strong>
+
+        <small>
+          個股 vs 同族群 vs 上市加權指數
+        </small>
+      </div>
+
       <div
         class="stock-detail-metrics"
       >
         <div
-          class="stock-detail-metric"
+          class="stock-detail-metric stock"
         >
           <small>
             ${stock.name || activeTicker}
@@ -1502,7 +1670,7 @@
         </div>
 
         <div
-          class="stock-detail-metric"
+          class="stock-detail-metric sector"
         >
           <small>
             ${activeSector || "同族群"}
@@ -1520,7 +1688,7 @@
         </div>
 
         <div
-          class="stock-detail-metric"
+          class="stock-detail-metric index"
         >
           <small>
             ${bench.name || "上市加權指數"}
@@ -1538,11 +1706,28 @@
         </div>
       </div>
 
-      <p
+      <div
         class="stock-detail-note"
       >
-        ${stockDetailData.note || "近5個已完成交易日"}
-      </p>
+        ${
+          stockDetailData.note
+          || "近5個已完成交易日"
+        }
+        ${
+          vsSector !== null
+            ? `｜相對族群 ${fmtPct(
+                vsSector
+              )}`
+            : ""
+        }
+        ${
+          vsIndex !== null
+            ? `｜相對大盤 ${fmtPct(
+                vsIndex
+              )}`
+            : ""
+        }
+      </div>
 
       <div
         class="stock-detail-chart"
@@ -1551,16 +1736,28 @@
           dates,
           [
             {
+              label:
+                stock.name
+                || activeTicker,
               values: sr,
-              color: "#dc2626"
+              color:
+                "#dc2626"
             },
             {
+              label:
+                activeSector
+                || "同族群",
               values: gr,
-              color: "#2563eb"
+              color:
+                "#2563eb"
             },
             {
+              label:
+                bench.name
+                || "上市加權指數",
               values: ir,
-              color: "#64748b"
+              color:
+                "#64748b"
             }
           ]
         )}
@@ -1586,7 +1783,10 @@
             <i
               class="stock-detail-dot index"
             ></i>
-            ${bench.name || "上市加權指數"}
+            ${
+              bench.name
+              || "上市加權指數"
+            }
           </span>
         </div>
       </div>
@@ -1598,13 +1798,13 @@
     series
   ) {
     const width = 680;
-    const height = 300;
+    const height = 310;
 
     const pad = {
-      left: 48,
-      right: 18,
-      top: 20,
-      bottom: 42
+      left: 52,
+      right: 22,
+      top: 22,
+      bottom: 44
     };
 
     const values =
@@ -1621,7 +1821,9 @@
               Number(v)
             )
         )
-        .map(Number);
+        .map(
+          Number
+        );
 
     if (!values.length) {
       return `
@@ -1658,7 +1860,7 @@
       max - min;
 
     const extra =
-      span * 0.12;
+      span * 0.14;
 
     max += extra;
     min -= extra;
@@ -1702,7 +1904,8 @@
         )
         * plotH;
 
-    const ticks = [];
+    const ticks =
+      [];
 
     for (
       let i = 0;
@@ -1712,10 +1915,10 @@
       ticks.push(
         max
         - (
-          (max - min)
-          * i
-          / 4
+          max - min
         )
+        * i
+        / 4
       );
     }
 
@@ -1729,16 +1932,17 @@
               x2="${width - pad.right}"
               y2="${yAt(v)}"
               stroke="currentColor"
-              opacity=".12"
+              opacity=".09"
+              stroke-dasharray="4 5"
             />
 
             <text
-              x="${pad.left - 8}"
+              x="${pad.left - 9}"
               y="${yAt(v) + 4}"
               text-anchor="end"
               font-size="10"
               fill="currentColor"
-              opacity=".58"
+              opacity=".52"
             >
               ${v.toFixed(1)}%
             </text>
@@ -1757,19 +1961,29 @@
             y2="${yAt(0)}"
             stroke="currentColor"
             opacity=".28"
+            stroke-width="1.2"
           />
         `
         : "";
 
     const paths =
       series
-        .map(s => {
-          const pts =
-            [];
+        .map(
+          (
+            s,
+            seriesIndex
+          ) => {
+            const valid =
+              [];
 
-          (s.values || [])
-            .forEach(
-              (v, i) => {
+            (
+              s.values
+              || []
+            ).forEach(
+              (
+                v,
+                i
+              ) => {
                 if (
                   v === null
                   || v === undefined
@@ -1780,42 +1994,92 @@
                   return;
                 }
 
-                pts.push(
-                  `${xAt(i)},${yAt(v)}`
-                );
+                valid.push({
+                  x:
+                    xAt(i),
+                  y:
+                    yAt(v),
+                  v:
+                    Number(v)
+                });
               }
             );
 
-          if (
-            pts.length < 2
-          ) {
-            return "";
-          }
+            if (
+              valid.length < 2
+            ) {
+              return "";
+            }
 
-          return `
-            <polyline
-              fill="none"
-              stroke="${s.color}"
-              stroke-width="3"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              points="${pts.join(" ")}"
-            />
-          `;
-        })
+            const points =
+              valid
+                .map(
+                  p =>
+                    `${p.x},${p.y}`
+                )
+                .join(" ");
+
+            const circles =
+              valid
+                .map(
+                  (
+                    p,
+                    i
+                  ) => `
+                    <circle
+                      cx="${p.x}"
+                      cy="${p.y}"
+                      r="${
+                        i
+                        ===
+                        valid.length
+                        - 1
+                          ? 4.2
+                          : 3
+                      }"
+                      fill="${s.color}"
+                      stroke="var(--card)"
+                      stroke-width="2"
+                    />
+                  `
+                )
+                .join("");
+
+            return `
+              <polyline
+                fill="none"
+                stroke="${s.color}"
+                stroke-width="${
+                  seriesIndex === 0
+                    ? 3.6
+                    : 2.8
+                }"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                points="${points}"
+              />
+
+              ${circles}
+            `;
+          }
+        )
         .join("");
 
     const xlabels =
       labels
         .map(
-          (label, i) => `
+          (
+            label,
+            i
+          ) => `
             <text
               x="${xAt(i)}"
               y="${height - 15}"
               text-anchor="middle"
               font-size="10"
+              font-weight="650"
               fill="currentColor"
-              opacity=".65"
+              opacity=".62"
             >
               ${label}
             </text>
@@ -1840,7 +2104,8 @@
     stock
   ) {
     const rows =
-      stock.institutional || [];
+      stock.institutional
+      || [];
 
     const total =
       Number(
@@ -1850,6 +2115,18 @@
       );
 
     return `
+      <div
+        class="stock-detail-section-title"
+      >
+        <strong>
+          近5日法人籌碼
+        </strong>
+
+        <small>
+          長條圖看合計｜下表看法人拆分
+        </small>
+      </div>
+
       <div
         class="stock-flow-summary"
       >
@@ -1871,7 +2148,7 @@
       <p
         class="stock-detail-note"
       >
-        長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜單位：張
+        長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜下表拆開顯示外資、投信、自營商｜單位：張
       </p>
 
       <div
@@ -1882,53 +2159,104 @@
         )}
       </div>
 
-      <table
-        class="stock-flow-table"
+      <div
+        class="stock-flow-table-wrap"
       >
-        <thead>
-          <tr>
-            <th>
-              日期
-            </th>
+        <table
+          class="stock-flow-table"
+        >
+          <thead>
+            <tr>
+              <th>
+                日期
+              </th>
 
-            <th>
-              三大法人合計
-            </th>
-          </tr>
-        </thead>
+              <th>
+                外資
+              </th>
 
-        <tbody>
-          ${rows
-            .slice()
-            .reverse()
-            .map(
-              row => `
-                <tr>
-                  <td>
-                    ${row.date_label || "—"}
-                  </td>
+              <th>
+                投信
+              </th>
 
-                  <td
-                    class="${valueClass(
-                      row.total_lots
-                    )}"
-                  >
-                    ${fmtLots(
-                      row.total_lots
-                    )}
-                  </td>
-                </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
+              <th>
+                自營商
+              </th>
+
+              <th>
+                合計
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${rows
+              .slice()
+              .reverse()
+              .map(
+                row => `
+                  <tr>
+                    <td>
+                      ${row.date_label || "—"}
+                    </td>
+
+                    <td
+                      class="${valueClass(
+                        row.foreign_lots
+                      )}"
+                    >
+                      ${fmtLots(
+                        row.foreign_lots
+                      )}
+                    </td>
+
+                    <td
+                      class="${valueClass(
+                        row.trust_lots
+                      )}"
+                    >
+                      ${fmtLots(
+                        row.trust_lots
+                      )}
+                    </td>
+
+                    <td
+                      class="${valueClass(
+                        row.dealer_lots
+                      )}"
+                    >
+                      ${fmtLots(
+                        row.dealer_lots
+                      )}
+                    </td>
+
+                    <td
+                      class="${valueClass(
+                        row.total_lots
+                      )}"
+                    >
+                      ${fmtLots(
+                        row.total_lots
+                      )}
+                    </td>
+                  </tr>
+                `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
     `;
   }
 
-  function barChartSvg(rows) {
-    const width = 680;
-    const height = 280;
+  function barChartSvg(
+    rows
+  ) {
+    const width =
+      680;
+
+    const height =
+      280;
 
     const pad = {
       left: 48,
@@ -1941,7 +2269,8 @@
       rows.map(
         x =>
           Number(
-            x.total_lots || 0
+            x.total_lots
+            || 0
           )
       );
 
@@ -1954,7 +2283,8 @@
       );
 
     const max =
-      maxAbs * 1.15;
+      maxAbs
+      * 1.15;
 
     const min =
       -max;
@@ -1974,10 +2304,12 @@
         pad.top
         + (
           (
-            max - v
+            max
+            - v
           )
           / (
-            max - min
+            max
+            - min
           )
         )
         * plotH;
@@ -2000,7 +2332,10 @@
     const bars =
       rows
         .map(
-          (row, i) => {
+          (
+            row,
+            i
+          ) => {
             const v =
               Number(
                 row.total_lots
@@ -2011,8 +2346,10 @@
               pad.left
               + slot * i
               + (
-                slot - barW
-              ) / 2;
+                slot
+                - barW
+              )
+              / 2;
 
             const y =
               v >= 0
@@ -2039,19 +2376,57 @@
                 y="${y}"
                 width="${barW}"
                 height="${h}"
-                rx="4"
+                rx="5"
                 fill="${color}"
+                opacity=".92"
               />
+
+              <text
+                x="${x + barW / 2}"
+                y="${
+                  v >= 0
+                    ? y - 7
+                    : y + h + 13
+                }"
+                text-anchor="middle"
+                font-size="9"
+                font-weight="700"
+                fill="${color}"
+              >
+                ${
+                  Math.abs(v) >= 1000
+                    ? (
+                        v / 1000
+                      ).toFixed(1)
+                      + "k"
+                    : (
+                        v > 0
+                          ? "+"
+                          : ""
+                      )
+                      + v.toLocaleString(
+                        "zh-TW",
+                        {
+                          maximumFractionDigits:
+                            1
+                        }
+                      )
+                }
+              </text>
 
               <text
                 x="${x + barW / 2}"
                 y="${height - 15}"
                 text-anchor="middle"
                 font-size="10"
+                font-weight="650"
                 fill="currentColor"
                 opacity=".65"
               >
-                ${row.date_label || ""}
+                ${
+                  row.date_label
+                  || ""
+                }
               </text>
             `;
           }
@@ -2070,6 +2445,27 @@
           y2="${zeroY}"
           stroke="currentColor"
           opacity=".3"
+          stroke-width="1.2"
+        />
+
+        <line
+          x1="${pad.left}"
+          y1="${yAt(max / 2)}"
+          x2="${width - pad.right}"
+          y2="${yAt(max / 2)}"
+          stroke="currentColor"
+          opacity=".07"
+          stroke-dasharray="4 5"
+        />
+
+        <line
+          x1="${pad.left}"
+          y1="${yAt(min / 2)}"
+          x2="${width - pad.right}"
+          y2="${yAt(min / 2)}"
+          stroke="currentColor"
+          opacity=".07"
+          stroke-dasharray="4 5"
         />
 
         <text
@@ -2080,7 +2476,16 @@
           fill="currentColor"
           opacity=".58"
         >
-          +${maxAbs.toLocaleString("zh-TW")}
+          +${
+            maxAbs
+              .toLocaleString(
+                "zh-TW",
+                {
+                  maximumFractionDigits:
+                    1
+                }
+              )
+          }
         </text>
 
         <text
@@ -2091,7 +2496,16 @@
           fill="currentColor"
           opacity=".58"
         >
-          -${maxAbs.toLocaleString("zh-TW")}
+          -${
+            maxAbs
+              .toLocaleString(
+                "zh-TW",
+                {
+                  maximumFractionDigits:
+                    1
+                }
+              )
+          }
         </text>
 
         ${bars}
@@ -2167,7 +2581,8 @@
     updateStaticLabels();
     observeHeatmap();
 
-    let tries = 0;
+    let tries =
+      0;
 
     const wait =
       setInterval(
@@ -2202,8 +2617,8 @@
   }
 
   if (
-    document.readyState ===
-    "loading"
+    document.readyState
+    === "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
