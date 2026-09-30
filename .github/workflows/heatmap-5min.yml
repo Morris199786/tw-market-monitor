@@ -34,12 +34,119 @@ jobs:
       - name: Update heatmap
         run: python scripts/update_heatmap.py
 
+      - name: Check new sector stocks and update stock detail
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          sectors_path = Path("data/sectors.json")
+          detail_path = Path("data/stock_detail.json")
+
+          with sectors_path.open(
+              "r",
+              encoding="utf-8",
+          ) as f:
+              sector_data = json.load(f)
+
+          tracked = {
+              str(stock.get("ticker") or "").strip()
+              for sector in sector_data.get(
+                  "sectors",
+                  [],
+              )
+              for stock in sector.get(
+                  "stocks",
+                  [],
+              )
+              if str(
+                  stock.get("ticker") or ""
+              ).strip()
+          }
+
+          if detail_path.exists():
+              with detail_path.open(
+                  "r",
+                  encoding="utf-8",
+              ) as f:
+                  detail_data = json.load(f)
+
+              existing = set(
+                  (
+                      detail_data.get(
+                          "stocks",
+                          {},
+                      )
+                      or {}
+                  ).keys()
+              )
+          else:
+              existing = set()
+
+          missing = sorted(
+              tracked - existing
+          )
+
+          if missing:
+              print(
+                  "Missing stock detail:",
+                  ", ".join(missing),
+              )
+
+              subprocess.check_call(
+                  [
+                      sys.executable,
+                      "scripts/update_stock_detail.py",
+                  ]
+              )
+
+              with detail_path.open(
+                  "r",
+                  encoding="utf-8",
+              ) as f:
+                  rebuilt = json.load(f)
+
+              rebuilt_stocks = set(
+                  (
+                      rebuilt.get(
+                          "stocks",
+                          {},
+                      )
+                      or {}
+                  ).keys()
+              )
+
+              still_missing = sorted(
+                  tracked - rebuilt_stocks
+              )
+
+              if still_missing:
+                  raise RuntimeError(
+                      "stock_detail rebuild still missing: "
+                      + ", ".join(still_missing)
+                  )
+
+              print(
+                  "stock_detail rebuilt successfully"
+              )
+
+          else:
+              print(
+                  "stock_detail already contains all sector stocks"
+              )
+          PY
+
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data/master.json data/heatmap.json
+          git add \
+            data/master.json \
+            data/heatmap.json \
+            data/stock_detail.json
 
           if git diff --cached --quiet; then
             echo "No heatmap changes"
@@ -47,5 +154,28 @@ jobs:
           fi
 
           git commit -m "data: heatmap update"
-          git pull --rebase
-          git push
+
+          success=false
+
+          for i in 1 2 3 4 5; do
+            echo "Push attempt $i/5"
+
+            if ! git pull --rebase origin main; then
+              echo "Rebase failed"
+              git rebase --abort || true
+              exit 1
+            fi
+
+            if git push origin HEAD:main; then
+              success=true
+              break
+            fi
+
+            echo "Remote changed before push, retrying..."
+            sleep 5
+          done
+
+          if [ "$success" != "true" ]; then
+            echo "Push failed after 5 attempts"
+            exit 1
+          fi
