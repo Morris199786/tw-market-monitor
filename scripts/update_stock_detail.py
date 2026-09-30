@@ -8,6 +8,93 @@ DISPLAY_DAYS = 5
 NEEDED_MARKET_DAYS = DISPLAY_DAYS + 1
 
 
+def _pick_number(obj, keys):
+    for key in keys:
+        if key in obj and obj.get(key) is not None:
+            try:
+                return float(obj.get(key))
+            except Exception:
+                pass
+
+    for key in keys:
+        value = obj.get(key)
+        if isinstance(value, dict):
+            for subkey in (
+                "total",
+                "net",
+                "net_buy_sell",
+                "net_shares",
+                "buy_sell",
+                "shares",
+                "lots",
+                "value",
+            ):
+                if value.get(subkey) is not None:
+                    try:
+                        return float(value.get(subkey))
+                    except Exception:
+                        pass
+
+    return 0.0
+
+
+def _extract_inst_lots(row, kind):
+    share_keys = {
+        "foreign": [
+            "foreign",
+            "foreign_total",
+            "foreign_net",
+            "foreign_shares",
+            "foreign_buy_sell",
+            "qfii",
+            "foreign_investor",
+        ],
+        "trust": [
+            "trust",
+            "investment_trust",
+            "investmentTrust",
+            "trust_total",
+            "trust_net",
+            "trust_shares",
+            "trust_buy_sell",
+        ],
+        "dealer": [
+            "dealer",
+            "dealer_total",
+            "dealer_net",
+            "dealer_shares",
+            "dealer_buy_sell",
+            "proprietary",
+            "proprietary_dealer",
+        ],
+    }
+
+    lot_keys = {
+        "foreign": [
+            "foreign_lots",
+            "foreign_net_lots",
+        ],
+        "trust": [
+            "trust_lots",
+            "trust_net_lots",
+            "investment_trust_lots",
+        ],
+        "dealer": [
+            "dealer_lots",
+            "dealer_net_lots",
+            "proprietary_lots",
+        ],
+    }
+
+    lot_value = _pick_number(row, lot_keys.get(kind, []))
+    if lot_value:
+        return round(lot_value, 1)
+
+    share_value = _pick_number(row, share_keys.get(kind, []))
+    return round(share_value / 1000, 1)
+
+
+
 def market_history():
     rows = []
 
@@ -471,6 +558,27 @@ def build_stock_series(
                 or 0
             )
 
+            foreign_lots = _extract_inst_lots(
+                row,
+                "foreign",
+            )
+
+            trust_lots = _extract_inst_lots(
+                row,
+                "trust",
+            )
+
+            dealer_lots = _extract_inst_lots(
+                row,
+                "dealer",
+            )
+
+            total_lots = round(
+                total_shares
+                / 1000,
+                1,
+            )
+
             institutional.append({
                 "date": (
                     snap.get("date")
@@ -484,10 +592,17 @@ def build_stock_series(
                         "/",
                     )
                 ),
-                "total_lots": round(
-                    total_shares
-                    / 1000,
-                    1,
+                "foreign_lots": (
+                    foreign_lots
+                ),
+                "trust_lots": (
+                    trust_lots
+                ),
+                "dealer_lots": (
+                    dealer_lots
+                ),
+                "total_lots": (
+                    total_lots
                 ),
             })
 
