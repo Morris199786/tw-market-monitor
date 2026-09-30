@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/09/30 18:33",
+  "updated_at": "2026/09/30 19:22",
   "method": "market_cap_weighted",
   "source": "TWSE MIS correct-market live quote + previous valid quote fallback + TWSE/TPEx master + TDCC share fallback",
   "sectors": [
@@ -440,38 +440,58 @@
       ]
     },
     {
-      "name": "AI IC 設計／IP",
-      "change_pct": 0.13,
+      "name": "IP",
+      "change_pct": 0.44,
       "complete": true,
       "missing": [],
       "stocks": [
         {
-          "ticker": "2379",
-          "name": "瑞昱",
-          "price": 760.0,
-          "change_pct": 0.0,
-          "market_cap": 391789607160.0,
-          "weight": 0.03520265297401152,
+          "ticker": "8227",
+          "name": "巨有科技",
+          "price": 370.5,
+          "change_pct": 9.94,
+          "market_cap": 14650681500.0,
+          "weight": 0.0015146799564414413,
+          "shares_source": "tdcc",
+          "quote_source": "mis_trade"
+        },
+        {
+          "ticker": "6643",
+          "name": "M31",
+          "price": 555.0,
+          "change_pct": 9.9,
+          "market_cap": 23654188800.0,
+          "weight": 0.0024455193883807813,
+          "shares_source": "tdcc",
+          "quote_source": "mis_trade"
+        },
+        {
+          "ticker": "6533",
+          "name": "晶心科",
+          "price": 333.5,
+          "change_pct": 9.88,
+          "market_cap": 16892078818.5,
+          "weight": 0.0017464097631916286,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
         {
-          "ticker": "2454",
-          "name": "聯發科",
-          "price": 4920.0,
-          "change_pct": 0.2,
-          "market_cap": 7896366855960.0,
-          "weight": 0.7094957525821427,
+          "ticker": "6695",
+          "name": "芯鼎",
+          "price": 55.0,
+          "change_pct": 1.66,
+          "market_cap": 5882120750.0,
+          "weight": 0.0006081307822706608,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
         {
-          "ticker": "3035",
-          "name": "智原",
-          "price": 210.5,
-          "change_pct": 0.24,
-          "market_cap": 54845840886.5,
-          "weight": 0.004927948747264345,
+          "ticker": "3661",
+          "name": "世芯-KY",
+          "price": 3740.0,
+          "change_pct": 1.49,
+          "market_cap": 322781126360.0,
+          "weight": 0.033371150851588996,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -481,7 +501,27 @@
           "price": 8040.0,
           "change_pct": 1.45,
           "market_cap": 1077455764440.0,
-          "weight": 0.09681038158559412,
+          "weight": 0.11139417987822335,
+          "shares_source": "master",
+          "quote_source": "mis_trade"
+        },
+        {
+          "ticker": "3228",
+          "name": "金麗科",
+          "price": 182.0,
+          "change_pct": 1.11,
+          "market_cap": 13092624090.0,
+          "weight": 0.0013535981439733958,
+          "shares_source": "tdcc",
+          "quote_source": "mis_trade"
+        },
+        {
+          "ticker": "3035",
+          "name": "智原",
+          "price": 210.5,
+          "change_pct": 0.24,
+          "market_cap": 54845840886.5,
+          "weight": 0.005670309322126622,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -491,17 +531,35 @@
           "price": 3305.0,
           "change_pct": 0.0,
           "market_cap": 246838856060.0,
-          "weight": 0.022178695992907154,
+          "weight": 0.025519759455900806,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
         {
-          "ticker": "3661",
-          "name": "世芯-KY",
-          "price": 3740.0,
-          "change_pct": 1.49,
-          "market_cap": 322781126360.0,
-          "weight": 0.02900217813376375,
+          "ticker": "2454",
+          "name": "聯發科",
+          "price": 4920.0,
+          "change_pct": 0.2,
+          "market_cap": 7896366855960.0,
+          "weight": 0.8163762624579023,
+          "shares_source": "master",
+          "quote_source": "mis_trade"
+        }
+      ]
+    },
+    {
+      "name": "IC 設計",
+      "change_pct": -1.84,
+      "complete": true,
+      "missing": [],
+      "stocks": [
+        {
+          "ticker": "2379",
+          "name": "瑞昱",
+          "price": 760.0,
+          "change_pct": 0.0,
+          "market_cap": 391789607160.0,
+          "weight": 0.2654288997780083,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -511,38 +569,8 @@
           "price": 927.0,
           "change_pct": -0.22,
           "market_cap": 151239199014.0,
-          "weight": 0.013588979752551399,
+          "weight": 0.10246125334610895,
           "shares_source": "master",
-          "quote_source": "mis_trade"
-        },
-        {
-          "ticker": "6533",
-          "name": "晶心科",
-          "price": 333.5,
-          "change_pct": 9.88,
-          "market_cap": 16892078818.5,
-          "weight": 0.0015177686640739886,
-          "shares_source": "master",
-          "quote_source": "mis_trade"
-        },
-        {
-          "ticker": "6643",
-          "name": "M31",
-          "price": 555.0,
-          "change_pct": 9.9,
-          "market_cap": 23654188800.0,
-          "weight": 0.0021253504036111244,
-          "shares_source": "tdcc",
-          "quote_source": "mis_trade"
-        },
-        {
-          "ticker": "8227",
-          "name": "巨有科技",
-          "price": 370.5,
-          "change_pct": 9.94,
-          "market_cap": 14650681500.0,
-          "weight": 0.0013163770739499227,
-          "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
         {
@@ -551,7 +579,7 @@
           "price": 1460.0,
           "change_pct": -1.02,
           "market_cap": 108268284140.0,
-          "weight": 0.00972800392103207,
+          "weight": 0.07334939726565305,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -561,7 +589,7 @@
           "price": 571.0,
           "change_pct": 0.35,
           "market_cap": 45084896948.0,
-          "weight": 0.004050919045898448,
+          "weight": 0.030544032753338148,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
@@ -571,7 +599,7 @@
           "price": 18750.0,
           "change_pct": -3.33,
           "market_cap": 779680368750.0,
-          "weight": 0.0700549911231994,
+          "weight": 0.5282164168568915,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         }
