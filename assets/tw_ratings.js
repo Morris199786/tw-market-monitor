@@ -1,62 +1,56 @@
-/* =========================================================
-   台股評等 / 目標價調整
-   ========================================================= */
-
 (function () {
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
-  function esc(v) {
-    return String(v ?? "")
+  const esc = v =>
+    String(v ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
-  }
 
   function num(v) {
-    if (v === null || v === undefined || v === "") {
+    if (
+      v === null ||
+      v === undefined ||
+      v === ""
+    ) {
       return "—";
     }
 
     const n = Number(v);
 
-    if (!Number.isFinite(n)) {
-      return esc(v);
-    }
-
-    return n.toLocaleString(
-      "zh-TW",
-      {
-        maximumFractionDigits: 2
-      }
-    );
+    return Number.isFinite(n)
+      ? n.toLocaleString(
+          "zh-TW",
+          {
+            maximumFractionDigits: 2
+          }
+        )
+      : esc(v);
   }
 
-  function actionText(action) {
-    return action === "downgrade"
+  const actionText = a =>
+    a === "downgrade"
       ? "下調"
       : "上調";
-  }
 
-  function actionClass(action) {
-    return action === "downgrade"
+  const actionClass = a =>
+    a === "downgrade"
       ? "is-down"
       : "is-up";
-  }
 
-  function kindText(kind) {
-    return kind === "rating"
+  const kindText = k =>
+    k === "rating"
       ? "評等調整"
       : "目標價調整";
-  }
 
   function rowHtml(x) {
-    const oldTp = num(x.target_price_old);
-    const newTp = num(x.target_price_new);
-
     return `
-      <div class="tw-rating-card ${actionClass(x.action)}">
+      <div
+        class="tw-rating-card ${actionClass(x.action)}"
+        data-rating-key="${esc(x.notification_key || "")}"
+      >
         <div class="tw-rating-top">
           <div>
             <div class="tw-rating-broker">
@@ -85,17 +79,20 @@
 
         <div class="tw-rating-target">
           <span>目標價</span>
-          <b>${oldTp}</b>
+          <b>${num(x.target_price_old)}</b>
           <i>→</i>
-          <strong>${newTp}</strong>
+          <strong>${num(x.target_price_new)}</strong>
         </div>
       </div>
     `;
   }
 
   async function loadRatings() {
-    const status = $("#twRatingsStatus");
-    const box = $("#twRatingsList");
+    const status =
+      $("#twRatingsStatus");
+
+    const box =
+      $("#twRatingsList");
 
     if (!box) {
       return;
@@ -104,12 +101,14 @@
     let data = {};
 
     try {
-      const r = await fetch(
-        "./data/tw_ratings.json?v=" + Date.now(),
-        {
-          cache: "no-store"
-        }
-      );
+      const r =
+        await fetch(
+          "./data/tw_ratings.json?v="
+            + Date.now(),
+          {
+            cache: "no-store"
+          }
+        );
 
       if (!r.ok) {
         throw new Error(
@@ -117,7 +116,9 @@
         );
       }
 
-      data = await r.json();
+      data =
+        await r.json();
+
     } catch (e) {
       console.error(
         "tw ratings load failed",
@@ -139,7 +140,9 @@
     }
 
     const items =
-      Array.isArray(data.items)
+      Array.isArray(
+        data.items
+      )
         ? data.items
         : [];
 
@@ -156,16 +159,21 @@
           當日沒有目標價／評等上下調
         </div>
       `;
+
       return;
     }
 
-    const up = items.filter(
-      x => x.action === "upgrade"
-    );
+    const up =
+      items.filter(
+        x =>
+          x.action === "upgrade"
+      );
 
-    const down = items.filter(
-      x => x.action === "downgrade"
-    );
+    const down =
+      items.filter(
+        x =>
+          x.action === "downgrade"
+      );
 
     box.innerHTML = `
       ${
@@ -205,18 +213,22 @@
   }
 
   function setMode(mode) {
-    const reportList = $("#reportList");
-    const ratingsPanel = $("#twRatingsPanel");
+    const reportList =
+      $("#reportList");
 
-    $$("[data-report-mode]")
-      .forEach(
-        btn => {
-          btn.classList.toggle(
-            "active",
-            btn.dataset.reportMode === mode
-          );
-        }
-      );
+    const ratingsPanel =
+      $("#twRatingsPanel");
+
+    $$(
+      '[data-report-mode]'
+    ).forEach(
+      btn =>
+        btn.classList.toggle(
+          "active",
+          btn.dataset.reportMode
+            === mode
+        )
+    );
 
     if (reportList) {
       reportList.hidden =
@@ -228,31 +240,35 @@
         mode !== "ratings";
     }
 
-    if (mode === "ratings") {
+    if (
+      mode === "ratings"
+    ) {
       loadRatings();
     }
   }
 
   function boot() {
-    $$("[data-report-mode]")
-      .forEach(
-        btn => {
-          btn.addEventListener(
-            "click",
-            () => {
-              setMode(
-                btn.dataset.reportMode
-              );
-            }
-          );
-        }
-      );
+    $$(
+      '[data-report-mode]'
+    ).forEach(
+      btn =>
+        btn.addEventListener(
+          "click",
+          () =>
+            setMode(
+              btn.dataset.reportMode
+            )
+        )
+    );
 
-    setMode("reports");
+    setMode(
+      "reports"
+    );
   }
 
   if (
-    document.readyState === "loading"
+    document.readyState
+      === "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
