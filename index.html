@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
 <link rel="stylesheet" href="./assets/ui_v2.css?v=20260928-holders-week-v8">
 <link rel="stylesheet" href="./assets/reports_v2.css?v=20260928-reports-v3">
+<link rel="stylesheet" href="./assets/tw_ratings.css?v=20260930-v1">
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
 
 <style>
@@ -189,11 +190,21 @@
       <div>
         <div class="kicker">BROKER RESEARCH</div>
         <h1>券商報告</h1>
-        <p>依收到日期分組｜歷史永久保留｜公司名稱與股票代號搜尋</p>
+        <p>券商研究報告與台股評等／目標價調整</p>
       </div>
       <span class="badge">每 15 分鐘檢查</span>
     </div>
+
+    <div class="report-mode-tabs" role="tablist" aria-label="券商報告分類">
+      <button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">券商報告</button>
+      <button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button>
+    </div>
+
     <div id="reportList" class="card"></div>
+    <div id="twRatingsPanel" class="tw-ratings-panel" hidden>
+      <div id="twRatingsStatus" class="status"></div>
+      <div id="twRatingsList"></div>
+    </div>
   </section>
 
   <section id="selfReports" class="page">
@@ -467,6 +478,7 @@
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
+<script src="./assets/tw_ratings.js?v=20260930-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/heatmap_sector_filter.js?v=20260929-sector-v1"></script>
 <script>
