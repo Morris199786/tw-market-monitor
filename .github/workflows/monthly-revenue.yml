@@ -40,9 +40,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Update monthly revenue
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update_monthly_revenue.py
 
       - name: Commit updated data
@@ -54,7 +51,6 @@ jobs:
           git add \
             data/monthly_revenue.json \
             data/monthly_revenue_tracker.json \
-            data/monthly_revenue_sent.json \
             data/monthly_revenue_history.json
 
           if git diff --cached --quiet; then
