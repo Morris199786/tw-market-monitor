@@ -1,12 +1,12 @@
 {
-  "updated_at": "2026-09-30T17:02+08:00",
+  "updated_at": "2026-09-30T17:31+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-09-30-v15-canonical-dedup-no-morning-pushover",
   "source_mode": "MOPS ajax_t05st01 關鍵字查詢主來源 + TWSE/TPEx OpenAPI 備援",
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 15,
+      "rows": 16,
       "self_reports": 5,
       "debug": [
         {
@@ -30,12 +30,7 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易資訊標準",
-          "error": "HTTPError('502 Server Error: Bad Gateway for url: https://mopsov.twse.com.tw/mops/web/ajax_t05st01')"
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "注意交易資訊標準",
-          "rows": 184,
+          "rows": 220,
           "hits": 3
         },
         {
@@ -59,8 +54,8 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 184,
-          "hits": 12
+          "rows": 220,
+          "hits": 13
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -83,13 +78,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務資訊",
-          "rows": 184,
+          "rows": 220,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務資訊",
-          "rows": 184,
+          "rows": 220,
           "hits": 0
         },
         {
@@ -139,6 +134,10 @@
         {
           "keyword": "自結",
           "text": "3625 西勝 115/09/30 16:23:41 公告本公司115年08月份自結合併財務報表之流動比率、 速動比率及負債比率。"
+        },
+        {
+          "keyword": "自結",
+          "text": "3522 御嵿 115/09/30 17:23:36 公告本公司115年08月自結合併財務報告之負債比率、 流動比率及速動比率。"
         }
       ],
       "error": ""
