@@ -44,6 +44,7 @@ jobs:
 
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
+
         run: |
           python scripts/update_reports_drive.py
 
@@ -54,6 +55,12 @@ jobs:
 
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
+
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+
         run: |
           python scripts/update_tw_ratings.py
 
@@ -66,6 +73,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
           REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+
         run: |
           python scripts/update_reports_ai.py
 
