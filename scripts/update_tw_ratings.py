@@ -5,6 +5,7 @@ import json
 import os
 import re
 from datetime import datetime
+from urllib.parse import urlencode
 from io import BytesIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -21,6 +22,21 @@ ROOT_FOLDER_ID = os.environ["DRIVE_FOLDER_ID"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPENAI_MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
 OPENAI_API_URL = "https://api.openai.com/v1/responses"
+
+TELEGRAM_BOT_TOKEN = os.environ.get(
+    "TELEGRAM_BOT_TOKEN",
+    "",
+).strip()
+
+TELEGRAM_CHAT_ID = os.environ.get(
+    "TELEGRAM_CHAT_ID",
+    "",
+).strip()
+
+SITE_URL = os.environ.get(
+    "REPORT_SITE_URL",
+    "https://morris199786.github.io/tw-market-monitor/",
+).rstrip("/") + "/"
 
 DATA_PATH = ROOT / "data/tw_ratings.json"
 STATE_PATH = ROOT / "data/tw_ratings_state.json"
@@ -233,6 +249,121 @@ def analyze_image(raw, mime_type, filename):
     return parse_json_loose(response_text(r.json()))
 
 
+
+def notification_key(item):
+    return "|".join(
+        [
+            str(item.get("date") or ""),
+            str(item.get("ticker") or ""),
+            str(item.get("broker") or "").strip(),
+            str(item.get("kind") or ""),
+            str(item.get("action") or ""),
+            str(item.get("target_price_old")),
+            str(item.get("target_price_new")),
+        ]
+    )
+
+
+def send_telegram(item):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram secrets missing; skip rating push.")
+        return False
+
+    action = (
+        "上調"
+        if item.get("action") == "upgrade"
+        else "下調"
+    )
+
+    kind = (
+        "評等"
+        if item.get("kind") == "rating"
+        else "目標價"
+    )
+
+    broker = item.get("broker") or "券商"
+    name = item.get("name") or ""
+    ticker = item.get("ticker") or ""
+    old_tp = item.get("target_price_old")
+    new_tp = item.get("target_price_new")
+
+    lines = [
+        f"{broker} {action} {name} {ticker}",
+        f"{kind}｜目標價：{old_tp:g} → {new_tp:g}",
+    ]
+
+    if item.get("rating"):
+        lines.append(
+            f"評等：{item['rating']}"
+        )
+
+    key = (
+        item.get("notification_key")
+        or notification_key(item)
+    )
+
+    url = (
+        SITE_URL
+        + "?"
+        + urlencode(
+            {
+                "page": "reports",
+                "mode": "ratings",
+                "rating": key,
+            }
+        )
+    )
+
+    try:
+        r = requests.post(
+            (
+                "https://api.telegram.org/"
+                f"bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            ),
+            data={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": (
+                    "台股評等\n"
+                    + "\n".join(lines)
+                ),
+                "disable_web_page_preview": True,
+                "reply_markup": json.dumps(
+                    {
+                        "inline_keyboard": [
+                            [
+                                {
+                                    "text": "開啟台股評等",
+                                    "url": url,
+                                }
+                            ]
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+            timeout=30,
+        )
+
+        r.raise_for_status()
+        ok = bool(r.json().get("ok"))
+
+        if ok:
+            print(
+                "Telegram rating sent:",
+                broker,
+                ticker,
+                action,
+            )
+
+        return ok
+
+    except Exception as exc:
+        print(
+            "Telegram rating failed:",
+            repr(exc),
+        )
+        return False
+
 def normalize_item(x, sheet_date, source):
     action = str(x.get("action") or "").strip().lower()
     if action not in ("upgrade", "downgrade"):
@@ -260,7 +391,7 @@ def normalize_item(x, sheet_date, source):
     if old_tp is None or new_tp is None or old_tp == new_tp:
         return None
 
-    return {
+    item = {
         "date": sheet_date,
         "ticker": ticker,
         "name": str(x.get("name") or "").strip(),
@@ -273,6 +404,10 @@ def normalize_item(x, sheet_date, source):
         "source_file_id": source.get("id"),
         "source_name": source.get("name"),
     }
+
+    item["notification_key"] = notification_key(item)
+
+    return item
 
 
 def mark_inbox_rating(file_id):
@@ -291,8 +426,9 @@ def mark_inbox_rating(file_id):
 
 
 def main():
-    state = load_json(STATE_PATH, {"processed_file_ids": []})
+    state = load_json(STATE_PATH, {"processed_file_ids": [], "telegram_ids": []})
     processed = set(state.get("processed_file_ids", []))
+    telegram_sent = set(state.get("telegram_ids", []))
     existing = load_json(DATA_PATH, {"date": "", "items": []})
 
     files = [
@@ -303,6 +439,7 @@ def main():
     files.sort(key=lambda x: x.get("modifiedTime") or "", reverse=True)
 
     newest_result = None
+    newly_found_items = []
 
     for item in files:
         file_id = item["id"]
@@ -345,6 +482,8 @@ def main():
             if newest_result is None or sheet_date > newest_result.get("date", ""):
                 newest_result = candidate
 
+            newly_found_items.extend(items)
+
             # 避免同一張評等表又被當成一般券商報告處理/推播
             mark_inbox_rating(file_id)
 
@@ -359,8 +498,22 @@ def main():
     elif not DATA_PATH.exists():
         save_json(DATA_PATH, {"updated_at": now_tpe(), "date": "", "items": []})
 
+    # 只推本次新辨識出來的上下調，同一筆不重複
+    for item in newly_found_items:
+        key = (
+            item.get("notification_key")
+            or notification_key(item)
+        )
+
+        if key in telegram_sent:
+            continue
+
+        if send_telegram(item):
+            telegram_sent.add(key)
+
     state["updated_at"] = now_tpe()
     state["processed_file_ids"] = list(processed)[-3000:]
+    state["telegram_ids"] = list(telegram_sent)[-5000:]
     save_json(STATE_PATH, state)
 
 
