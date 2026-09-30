@@ -66,8 +66,31 @@ jobs:
           fi
 
           git commit -m "data: daily close update"
-          git pull --rebase
-          git push
+
+          success=false
+
+          for i in 1 2 3 4 5; do
+            echo "Push attempt $i/5"
+
+            if ! git pull --rebase origin main; then
+              echo "Rebase failed"
+              git rebase --abort || true
+              exit 1
+            fi
+
+            if git push origin HEAD:main; then
+              success=true
+              break
+            fi
+
+            echo "Remote changed before push, retrying..."
+            sleep 5
+          done
+
+          if [ "$success" != "true" ]; then
+            echo "Push failed after 5 attempts"
+            exit 1
+          fi
 
       - name: Telegram - 籌碼日報
         if: steps.changed.outputs.flows == 'true'
