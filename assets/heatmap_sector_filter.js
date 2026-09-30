@@ -1364,7 +1364,7 @@
       || ""
     );
   }
-    async function openStockDetail(
+  async function openStockDetail(
     ticker,
     sector
   ) {
