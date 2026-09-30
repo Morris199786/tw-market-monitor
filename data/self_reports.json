@@ -1,36 +1,143 @@
 {
-  "updated_at": "2026-09-30T20:01+08:00",
+  "updated_at": "2026-09-30T20:12+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-09-30-v15-canonical-dedup-no-morning-pushover",
-  "source_mode": "MOPS ajax_t05st01 關鍵字查詢主來源 + TWSE/TPEx OpenAPI 備援",
+  "filter_version": "2026-09-30-v16-hardened-self-report-parser-telegram-only",
+  "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
+  "diagnostics": {
+    "candidate_count": 17,
+    "parsed_count": 10,
+    "parse_failed_count": 4,
+    "parse_failed": [
+      {
+        "ticker": "8171",
+        "name": "天宇",
+        "publish_date": "2026-09-30",
+        "publish_time": "20:05:48",
+        "subject": "8171 天宇 115/09/30 20:05:48 公告本公司115年8月份自結應收帳款餘額(含已逾期及未逾期) 、占資產及股本比例",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "6861",
+        "name": "睿生光電",
+        "publish_date": "2026-09-30",
+        "publish_time": "15:36:51",
+        "subject": "6861 睿生光電 115/09/30 15:36:51 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "8044",
+        "name": "網家",
+        "publish_date": "2026-09-30",
+        "publish_time": "15:10:28",
+        "subject": "8044 網家 115/09/30 15:10:28 公告本公司115年8月自結財務比率",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "1529",
+        "name": "樂事綠能",
+        "publish_date": "2026-09-30",
+        "publish_time": "14:02:56",
+        "subject": "1529 樂事綠能 115/09/30 14:02:56 公告本公司115年08月自結合併損益",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      }
+    ]
+  },
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 19,
-      "self_reports": 5,
+      "rows": 25,
+      "self_reports": 9,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易資訊標準",
+          "keyword": "注意交易",
           "rows": 0,
           "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易資訊標準",
+          "keyword": "注意交易",
           "rows": 0,
           "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易資訊標準",
+          "keyword": "注意交易",
           "rows": 0,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "注意交易資訊標準",
-          "rows": 297,
+          "keyword": "注意交易",
+          "rows": 302,
+          "hits": 3
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 302,
+          "hits": 2
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 302,
           "hits": 3
         },
         {
@@ -54,101 +161,79 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 297,
-          "hits": 16
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 297,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 297,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務資訊",
-          "rows": 0,
-          "hits": 0
+          "rows": 302,
+          "hits": 17
         }
       ],
       "rejected": [
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "6264 富裔 115/09/30 13:46:03 公告本公司115年8月自結合併財務報告之負債比率 、流動比率及速動比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "8472 納維康 115/09/30 14:32:04 公告115年08月自結合併財務報告負債比率.流動比率.速動比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "4804 大略-KY 115/09/30 14:32:19 公告本公司115年08月份自結財務報表之自結負債比率、 自結流動比率及自結速動比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "6462 神盾 115/09/30 14:55:31 公告本公司115年8月份自結個體財務報告之流動比率、 速動比率及銀行可使用融資額度情形"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "3710 連展投控 115/09/30 15:13:38 公告115年8月份自結合併財務報告之 負債比率、流動比率及速動比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "9957 燁聯 115/09/30 15:16:45 公告本公司含列入合併財務報告之子公司115年08月31日自結報表 之負債比率、流動比率、速動比率、銀行融資額度使用情形及預估 未來三個月現金收支情形。"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "8444 綠河-KY 115/09/30 15:19:16 公告本公司115年8月自結合併財務報告之負債比率、流動比率及 速動比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "3521 台鋼建設 115/09/30 15:53:50 公告本公司115年08月份自結合併財務報表 之流動比率、速動比率及負債比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "3064 泰偉 115/09/30 15:55:35 公告本公司115年8月份自結合併財務報表之流動比率、速動 比率及負債比率"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "3625 西勝 115/09/30 16:23:41 公告本公司115年08月份自結合併財務報表之流動比率、 速動比率及負債比率。"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "3522 御嵿 115/09/30 17:23:36 公告本公司115年08月自結合併財務報告之負債比率、 流動比率及速動比率。"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "2760 巨宇翔 115/09/30 18:19:14 公告115年08月份自結財務報告之負債比率、流動比率及速動比率 、預估未來三個月現金收支情形及銀行可使用融資額度情形"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "6734 安盛生 115/09/30 19:08:19 公告本公司115年8月份自結財務報告之負債比率、 流動比率、速動比率、預估未來三個月現金收支情形及銀行 可使用融資額度情形"
         },
         {
           "keyword": "自結",
+          "reason": "candidate_row_rejected",
           "text": "5321 美而快 115/09/30 19:10:53 公告本公司115年08月份自結合併財務報表之負債比率、 流動比率及速動比率"
         }
       ],
@@ -189,7 +274,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "44.27",
       "quarter_eps_yoy_text": "61.19",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "only_one_eps_section_parsed"
     },
     {
       "market": "",
@@ -212,7 +298,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "184.18%",
       "quarter_eps_yoy_text": "145.19%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "twse",
@@ -235,7 +322,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "121.4%",
       "quarter_eps_yoy_text": "270.7%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "twse",
@@ -258,7 +346,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "95%",
       "quarter_eps_yoy_text": "101%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "twse",
@@ -281,7 +370,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-25.4%",
       "quarter_eps_yoy_text": "13.1%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "twse",
@@ -304,7 +394,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "508%",
       "quarter_eps_yoy_text": "527%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "",
@@ -330,7 +421,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "145.00%",
       "quarter_eps_yoy_text": "124.43%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
     },
     {
       "market": "",
@@ -379,7 +471,8 @@
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "285.04%",
       "quarter_eps_yoy_text": "179.09%",
-      "eps_parse_status": "parsed"
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "eps_values_not_parsed"
     },
     {
       "market": "",
