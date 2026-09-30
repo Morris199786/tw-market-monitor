@@ -37,16 +37,6 @@ jobs:
       - name: Update AI picks
         run: python scripts/update_ai.py
 
-      - name: Detect holders changes
-        id: changed
-        shell: bash
-        run: |
-          if git diff --quiet -- data/holders.json; then
-            echo "holders=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "holders=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
@@ -60,13 +50,28 @@ jobs:
           fi
 
           git commit -m "data: weekly holders update"
-          git pull --rebase
-          git push
 
-      - name: Telegram - 大戶籌碼
-        if: steps.changed.outputs.holders == 'true'
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
-        run: python scripts/send_update_telegram.py holders
+          success=false
+
+          for i in 1 2 3 4 5; do
+            echo "Push attempt $i/5"
+
+            if ! git pull --rebase origin main; then
+              echo "Rebase failed"
+              git rebase --abort || true
+              exit 1
+            fi
+
+            if git push origin HEAD:main; then
+              success=true
+              break
+            fi
+
+            echo "Remote changed before push, retrying..."
+            sleep 5
+          done
+
+          if [ "$success" != "true" ]; then
+            echo "Push failed after 5 attempts"
+            exit 1
+          fi
