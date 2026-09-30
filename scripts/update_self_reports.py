@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-09-29-v14-30min-dedup-filter"
+VERSION = "2026-09-30-v15-canonical-dedup-no-morning-pushover"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -1001,14 +1001,29 @@ def fetch_openapi(market, url):
 
 
 def identity(item):
+    """
+    同一筆公告可能由 MOPS / OpenAPI 回傳不同格式的主旨文字。
+    去重只使用穩定欄位：股票代號 + 公告日期 + 公告時間。
+    """
     return "|".join(
         [
             str(item.get("ticker") or ""),
             str(item.get("publish_date") or ""),
             str(item.get("publish_time") or ""),
-            compact_text(item.get("subject") or ""),
         ]
     )
+
+
+def canonical_sent_id(value):
+    """
+    相容舊版 sent id：
+    舊格式為 ticker|date|time|subject 或再加版本尾碼。
+    統一轉回 ticker|date|time，避免升級後重送舊公告。
+    """
+    parts = str(value or "").split("|")
+    if len(parts) >= 3:
+        return "|".join(parts[:3])
+    return str(value or "")
 
 
 def merge_item(old, new):
@@ -1238,8 +1253,20 @@ def main():
 
     sent_data = load_json(sent_path, {})
 
-    pushover_sent = set(sent_data.get("ids", []))
-    telegram_sent = set(sent_data.get("telegram_ids", []))
+    pushover_sent = {
+        canonical_sent_id(x)
+        for x in sent_data.get("ids", [])
+        if canonical_sent_id(x)
+    }
+    telegram_sent = {
+        canonical_sent_id(x)
+        for x in sent_data.get("telegram_ids", [])
+        if canonical_sent_id(x)
+    }
+
+    now = now_tpe()
+    today = now.date().isoformat()
+    allow_pushover = now.hour >= 9
 
     for item in fresh:
         # 推播也只送有完整兩個 EPS 欄位的新公告
@@ -1248,9 +1275,10 @@ def main():
 
         base_key = identity(item)
 
-        # 舊版曾把格式版本放進 key
-        # 為避免升級後把已推過的舊公告重送，保留 legacy key 相容判斷
-        legacy_key = base_key + "|period-eps-yoy-v1"
+        # 只推播今天新公告
+        # 早上重新掃到昨天公告只補資料，不再 Telegram / Pushover 重送
+        if str(item.get("publish_date") or "") != today:
+            continue
 
         page_url = (
             SITE_URL
@@ -1268,17 +1296,15 @@ def main():
         title = "自結公布"
         message = push_text(item)
 
+        # 09:00 前不送 Pushover
         if (
-            base_key not in pushover_sent
-            and legacy_key not in pushover_sent
+            allow_pushover
+            and base_key not in pushover_sent
         ):
             if send_pushover(title, message, page_url):
                 pushover_sent.add(base_key)
 
-        if (
-            base_key not in telegram_sent
-            and legacy_key not in telegram_sent
-        ):
+        if base_key not in telegram_sent:
             if send_telegram(title, message, page_url):
                 telegram_sent.add(base_key)
 
