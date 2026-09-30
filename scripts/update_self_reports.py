@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-09-30-v16-hardened-self-report-parser-telegram-only"
+VERSION = "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -265,6 +265,56 @@ def _extract_eps_triplet(section):
 
     return current_num, previous_num, yoy_num, yoy.strip()
 
+def _extract_horizontal_eps(text):
+    """
+    橫向表格：
+      最近一個月 | 與去年同期增減 | 最近一季 | 與去年同期增減
+      每股盈餘     0.76   153%       2.33   203%
+
+    也支援高力/禾伸堂這種沒有「去年同期 EPS 值」、只有 YoY 的橫向格式。
+    """
+    eps = re.search(EPS_WORD, text, re.I)
+    if not eps:
+        return None
+
+    # 限制在 EPS 標籤後、下一個公告段落前，避免吃到其他數字
+    tail = text[eps.end():]
+    stop = re.search(r"(?:\s4\.|\s有無[「\"]|最近四季累計)", tail)
+    if stop:
+        tail = tail[:stop.start()]
+
+    vals = re.findall(CELL, tail, re.I)
+    if not vals:
+        return None
+
+    nums = []
+    for raw in vals[:10]:
+        nums.append((raw, _number(raw, growth=("%" in raw))))
+
+    # 最常見：月EPS、月YoY、季EPS、季YoY
+    if len(vals) >= 4 and "%" in vals[1] and "%" in vals[3]:
+        return {
+            "monthly_eps": _number(vals[0]),
+            "monthly_eps_yoy": _number(vals[1], growth=True),
+            "monthly_eps_yoy_text": vals[1].strip(),
+            "quarter_eps": _number(vals[2]),
+            "quarter_eps_yoy": _number(vals[3], growth=True),
+            "quarter_eps_yoy_text": vals[3].strip(),
+        }
+
+    # 另一常見格式：月EPS、去年月EPS、月YoY、季EPS、去年季EPS、季YoY
+    if len(vals) >= 6 and "%" in vals[2] and "%" in vals[5]:
+        return {
+            "monthly_eps": _number(vals[0]),
+            "monthly_eps_yoy": _number(vals[2], growth=True),
+            "monthly_eps_yoy_text": vals[2].strip(),
+            "quarter_eps": _number(vals[3]),
+            "quarter_eps_yoy": _number(vals[5], growth=True),
+            "quarter_eps_yoy_text": vals[5].strip(),
+        }
+
+    return None
+
 
 def _slice_semantic_sections(text):
     markers = []
@@ -339,19 +389,11 @@ def extract_metrics(text):
     month_section = sections.get("monthly") or ""
     quarter_section = sections.get("quarter") or ""
 
-    if not month_section:
-        out["eps_parse_reason"] = "monthly_section_not_found"
-        return out
+    out["monthly_period"] = _find_month_period(month_section or text)
+    out["quarter_period"] = _find_quarter_period(quarter_section or text)
 
-    if not quarter_section:
-        out["eps_parse_reason"] = "quarter_section_not_found"
-        return out
-
-    out["monthly_period"] = _find_month_period(month_section)
-    out["quarter_period"] = _find_quarter_period(quarter_section)
-
-    month_values = _extract_eps_triplet(month_section)
-    quarter_values = _extract_eps_triplet(quarter_section)
+    month_values = _extract_eps_triplet(month_section) if month_section else None
+    quarter_values = _extract_eps_triplet(quarter_section) if quarter_section else None
 
     if month_values:
         out["monthly_eps"] = month_values[0]
@@ -362,6 +404,20 @@ def extract_metrics(text):
         out["quarter_eps"] = quarter_values[0]
         out["quarter_eps_yoy"] = quarter_values[2]
         out["quarter_eps_yoy_text"] = quarter_values[3]
+
+    # 若月/季被排在同一列，語意切區塊會切不到 EPS；改用橫向 parser 補抓
+    if out["monthly_eps"] is None or out["quarter_eps"] is None:
+        horizontal = _extract_horizontal_eps(text)
+        if horizontal:
+            for key, value in horizontal.items():
+                if out.get(key) is None:
+                    out[key] = value
+
+    # 期間從全文補抓，避免橫向表格期間在 EPS 列之前
+    if not out.get("monthly_period"):
+        out["monthly_period"] = _find_month_period(text)
+    if not out.get("quarter_period"):
+        out["quarter_period"] = _find_quarter_period(text)
 
     out["eps"] = out["monthly_eps"]
 
