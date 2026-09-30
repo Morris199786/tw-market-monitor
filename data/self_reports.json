@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-30T21:01+08:00",
+  "updated_at": "2026-09-30T21:31+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
@@ -52,8 +52,8 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 25,
-      "self_reports": 9,
+      "rows": 0,
+      "self_reports": 0,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
@@ -76,8 +76,20 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 304,
-          "hits": 3
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "注意交易",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "注意交易",
+          "rows": 0,
+          "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -100,8 +112,20 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務",
-          "rows": 304,
-          "hits": 2
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -124,8 +148,20 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 304,
-          "hits": 3
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "近期財務",
+          "rows": 0,
+          "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -148,89 +184,30 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 304,
-          "hits": 17
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自結",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自結",
+          "rows": 0,
+          "hits": 0
         }
       ],
-      "rejected": [
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "6264 富裔 115/09/30 13:46:03 公告本公司115年8月自結合併財務報告之負債比率 、流動比率及速動比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "8472 納維康 115/09/30 14:32:04 公告115年08月自結合併財務報告負債比率.流動比率.速動比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "4804 大略-KY 115/09/30 14:32:19 公告本公司115年08月份自結財務報表之自結負債比率、 自結流動比率及自結速動比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "6462 神盾 115/09/30 14:55:31 公告本公司115年8月份自結個體財務報告之流動比率、 速動比率及銀行可使用融資額度情形"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "3710 連展投控 115/09/30 15:13:38 公告115年8月份自結合併財務報告之 負債比率、流動比率及速動比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "9957 燁聯 115/09/30 15:16:45 公告本公司含列入合併財務報告之子公司115年08月31日自結報表 之負債比率、流動比率、速動比率、銀行融資額度使用情形及預估 未來三個月現金收支情形。"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "8444 綠河-KY 115/09/30 15:19:16 公告本公司115年8月自結合併財務報告之負債比率、流動比率及 速動比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "3521 台鋼建設 115/09/30 15:53:50 公告本公司115年08月份自結合併財務報表 之流動比率、速動比率及負債比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "3064 泰偉 115/09/30 15:55:35 公告本公司115年8月份自結合併財務報表之流動比率、速動 比率及負債比率"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "3625 西勝 115/09/30 16:23:41 公告本公司115年08月份自結合併財務報表之流動比率、 速動比率及負債比率。"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "3522 御嵿 115/09/30 17:23:36 公告本公司115年08月自結合併財務報告之負債比率、 流動比率及速動比率。"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "2760 巨宇翔 115/09/30 18:19:14 公告115年08月份自結財務報告之負債比率、流動比率及速動比率 、預估未來三個月現金收支情形及銀行可使用融資額度情形"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "6734 安盛生 115/09/30 19:08:19 公告本公司115年8月份自結財務報告之負債比率、 流動比率、速動比率、預估未來三個月現金收支情形及銀行 可使用融資額度情形"
-        },
-        {
-          "keyword": "自結",
-          "reason": "candidate_row_rejected",
-          "text": "5321 美而快 115/09/30 19:10:53 公告本公司115年08月份自結合併財務報表之負債比率、 流動比率及速動比率"
-        }
-      ],
+      "rejected": [],
       "error": ""
     },
     "twse": {
-      "ok": true,
-      "rows": 115,
-      "self_reports": 5,
-      "error": ""
+      "ok": false,
+      "rows": 0,
+      "self_reports": 0,
+      "error": "RuntimeError('GET failed: https://openapi.twse.com.tw/v1/opendata/t187ap04_L: Expecting value: line 1 column 1 (char 0)')"
     },
     "tpex": {
       "ok": true,
