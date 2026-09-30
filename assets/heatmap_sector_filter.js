@@ -1,6 +1,6 @@
 /* =========================================================
-   市場熱力圖：族群下拉 + PCB 細分
-   2026-09-29 final
+   市場熱力圖：族群下拉 + PCB 細分 + 個股近5日資訊
+   2026-09-30
    ========================================================= */
 
 (function () {
@@ -42,8 +42,7 @@
 
   function findSector(name) {
     return sectorConfig.find(
-      x =>
-        x.name === name
+      x => x.name === name
     );
   }
 
@@ -248,14 +247,6 @@
   }
 
   function rerenderSelected() {
-    /*
-      app.js 的 st / heat()
-      是原本既有熱力圖邏輯
-
-      這裡只控制 openSector
-      不改熱力圖計算方式
-    */
-
     try {
       if (
         typeof st !==
@@ -282,6 +273,7 @@
                 () => {
                   applySectorFilter();
                   injectSubgroupControl();
+                  decorateHeatStocks();
                 },
                 20
               );
@@ -299,6 +291,7 @@
 
     applySectorFilter();
     injectSubgroupControl();
+    decorateHeatStocks();
   }
 
   function applySectorFilter() {
@@ -583,7 +576,10 @@
           applySectorFilter();
 
           setTimeout(
-            injectSubgroupControl,
+            () => {
+              injectSubgroupControl();
+              decorateHeatStocks();
+            },
             0
           );
         }
@@ -598,7 +594,1573 @@
     );
   }
 
+  /* =========================================================
+     個股近5日資訊
+     ========================================================= */
+
+  let stockDetailData = null;
+  let stockDetailPromise = null;
+  let activeTicker = null;
+  let activeSector = null;
+  let activeTab = "trend";
+
+  function injectStockDetailStyles() {
+    if (
+      document.getElementById(
+        "stockDetailStyle"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "stockDetailStyle";
+
+    style.textContent = `
+      .heat-stock{
+        cursor:pointer;
+        transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease
+      }
+
+      .heat-stock:hover{
+        transform:translateY(-1px);
+        box-shadow:0 6px 16px rgba(15,23,42,.08)
+      }
+
+      .heat-stock:focus-visible{
+        outline:2px solid #64748b;
+        outline-offset:2px
+      }
+
+      .stock-detail-overlay{
+        position:fixed;
+        inset:0;
+        z-index:1000;
+        display:none;
+        align-items:flex-end;
+        justify-content:center;
+        padding:24px;
+        background:rgba(7,12,20,.58);
+        backdrop-filter:blur(4px)
+      }
+
+      .stock-detail-overlay.open{
+        display:flex
+      }
+
+      .stock-detail-sheet{
+        width:min(760px,100%);
+        max-height:min(84vh,820px);
+        overflow:auto;
+        border:1px solid var(--line);
+        border-radius:22px;
+        background:var(--card);
+        color:var(--ink);
+        box-shadow:0 26px 70px rgba(0,0,0,.28)
+      }
+
+      .stock-detail-head{
+        position:sticky;
+        top:0;
+        z-index:3;
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:14px;
+        padding:18px 18px 14px;
+        border-bottom:1px solid var(--line);
+        background:var(--card)
+      }
+
+      .stock-detail-name{
+        font-size:20px;
+        font-weight:900;
+        line-height:1.15
+      }
+
+      .stock-detail-meta{
+        margin-top:5px;
+        color:var(--muted);
+        font-size:11px
+      }
+
+      .stock-detail-close{
+        flex:0 0 38px;
+        width:38px;
+        height:38px;
+        border:1px solid var(--line);
+        border-radius:11px;
+        background:var(--soft);
+        color:var(--ink);
+        font-size:22px;
+        line-height:1
+      }
+
+      .stock-detail-tabs{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+        padding:12px 18px 0
+      }
+
+      .stock-detail-tab{
+        min-height:42px;
+        border:1px solid var(--line);
+        border-radius:11px;
+        background:var(--soft);
+        color:var(--muted);
+        font-size:12px;
+        font-weight:850
+      }
+
+      .stock-detail-tab.active{
+        background:#111827;
+        color:#fff;
+        border-color:#111827
+      }
+
+      html[data-theme="dark"] .stock-detail-tab.active{
+        background:#e7edf5;
+        color:#111827;
+        border-color:#e7edf5
+      }
+
+      .stock-detail-body{
+        padding:16px 18px 20px
+      }
+
+      .stock-detail-note{
+        margin:0 0 12px;
+        color:var(--muted);
+        font-size:10px;
+        line-height:1.55
+      }
+
+      .stock-detail-metrics{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:8px;
+        margin-bottom:14px
+      }
+
+      .stock-detail-metric{
+        min-width:0;
+        padding:10px 11px;
+        border:1px solid var(--line);
+        border-radius:12px;
+        background:var(--soft)
+      }
+
+      .stock-detail-metric small{
+        display:block;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        color:var(--muted);
+        font-size:9px
+      }
+
+      .stock-detail-metric strong{
+        display:block;
+        margin-top:5px;
+        font-size:17px
+      }
+
+      .stock-detail-chart{
+        padding:10px 8px 6px;
+        border:1px solid var(--line);
+        border-radius:14px;
+        background:var(--soft)
+      }
+
+      .stock-detail-chart svg{
+        display:block;
+        width:100%;
+        height:auto;
+        overflow:visible
+      }
+
+      .stock-detail-legend{
+        display:flex;
+        gap:12px;
+        flex-wrap:wrap;
+        margin:10px 4px 2px;
+        color:var(--muted);
+        font-size:10px
+      }
+
+      .stock-detail-legend span{
+        display:inline-flex;
+        align-items:center;
+        gap:5px
+      }
+
+      .stock-detail-dot{
+        width:9px;
+        height:9px;
+        border-radius:999px
+      }
+
+      .stock-detail-dot.stock{background:#dc2626}
+      .stock-detail-dot.sector{background:#2563eb}
+      .stock-detail-dot.index{background:#64748b}
+
+      .stock-flow-summary{
+        display:flex;
+        justify-content:space-between;
+        align-items:baseline;
+        gap:12px;
+        margin:0 2px 12px
+      }
+
+      .stock-flow-summary span{
+        color:var(--muted);
+        font-size:11px
+      }
+
+      .stock-flow-summary strong{
+        font-size:20px
+      }
+
+      .stock-flow-table{
+        width:100%;
+        margin-top:12px;
+        border-collapse:collapse
+      }
+
+      .stock-flow-table th,
+      .stock-flow-table td{
+        padding:10px 8px;
+        border-bottom:1px solid var(--line);
+        font-size:11px
+      }
+
+      .stock-flow-table th:first-child,
+      .stock-flow-table td:first-child{
+        text-align:left
+      }
+
+      .stock-flow-table th:last-child,
+      .stock-flow-table td:last-child{
+        text-align:right
+      }
+
+      .stock-detail-loading,
+      .stock-detail-empty{
+        padding:28px 10px;
+        color:var(--muted);
+        text-align:center;
+        font-size:12px
+      }
+
+      @media(max-width:720px){
+        .stock-detail-overlay{
+          padding:0;
+          align-items:flex-end
+        }
+
+        .stock-detail-sheet{
+          width:100%;
+          max-height:88vh;
+          border-radius:20px 20px 0 0;
+          border-left:0;
+          border-right:0;
+          border-bottom:0
+        }
+
+        .stock-detail-head{
+          padding:15px 14px 12px
+        }
+
+        .stock-detail-name{
+          font-size:18px
+        }
+
+        .stock-detail-tabs{
+          padding:10px 14px 0
+        }
+
+        .stock-detail-body{
+          padding:14px
+        }
+
+        .stock-detail-metrics{
+          gap:6px
+        }
+
+        .stock-detail-metric{
+          padding:9px 8px
+        }
+
+        .stock-detail-metric strong{
+          font-size:15px
+        }
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
+  function ensureStockDetailModal() {
+    let overlay =
+      document.getElementById(
+        "stockDetailOverlay"
+      );
+
+    if (overlay) {
+      return overlay;
+    }
+
+    overlay =
+      document.createElement(
+        "div"
+      );
+
+    overlay.id =
+      "stockDetailOverlay";
+
+    overlay.className =
+      "stock-detail-overlay";
+
+    overlay.innerHTML = `
+      <div
+        class="stock-detail-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label="個股近五日資訊"
+      >
+        <div class="stock-detail-head">
+          <div>
+            <div
+              id="stockDetailName"
+              class="stock-detail-name"
+            >
+              個股資訊
+            </div>
+
+            <div
+              id="stockDetailMeta"
+              class="stock-detail-meta"
+            ></div>
+          </div>
+
+          <button
+            id="stockDetailClose"
+            class="stock-detail-close"
+            type="button"
+            aria-label="關閉"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="stock-detail-tabs">
+          <button
+            class="stock-detail-tab active"
+            type="button"
+            data-stock-detail-tab="trend"
+          >
+            近5日走勢
+          </button>
+
+          <button
+            class="stock-detail-tab"
+            type="button"
+            data-stock-detail-tab="flow"
+          >
+            近5日籌碼
+          </button>
+        </div>
+
+        <div
+          id="stockDetailBody"
+          class="stock-detail-body"
+        ></div>
+      </div>
+    `;
+
+    document.body.appendChild(
+      overlay
+    );
+
+    overlay
+      .querySelector(
+        "#stockDetailClose"
+      )
+      ?.addEventListener(
+        "click",
+        closeStockDetail
+      );
+
+    overlay.addEventListener(
+      "click",
+      e => {
+        if (
+          e.target === overlay
+        ) {
+          closeStockDetail();
+        }
+      }
+    );
+
+    overlay
+      .querySelectorAll(
+        "[data-stock-detail-tab]"
+      )
+      .forEach(btn => {
+        btn.addEventListener(
+          "click",
+          () => {
+            activeTab =
+              btn.dataset
+                .stockDetailTab;
+
+            overlay
+              .querySelectorAll(
+                "[data-stock-detail-tab]"
+              )
+              .forEach(x => {
+                x.classList.toggle(
+                  "active",
+                  x === btn
+                );
+              });
+
+            renderActiveStockDetail();
+          }
+        );
+      });
+
+    document.addEventListener(
+      "keydown",
+      e => {
+        if (
+          e.key === "Escape"
+          && overlay.classList
+            .contains("open")
+        ) {
+          closeStockDetail();
+        }
+      }
+    );
+
+    return overlay;
+  }
+
+  async function loadStockDetailData() {
+    if (stockDetailData) {
+      return stockDetailData;
+    }
+
+    if (stockDetailPromise) {
+      return stockDetailPromise;
+    }
+
+    stockDetailPromise =
+      fetch(
+        "./data/stock_detail.json?v="
+        + Date.now(),
+        {
+          cache: "no-store"
+        }
+      )
+        .then(r => {
+          if (!r.ok) {
+            throw new Error(
+              "HTTP " + r.status
+            );
+          }
+
+          return r.json();
+        })
+        .then(d => {
+          stockDetailData = d;
+
+          return d;
+        })
+        .catch(e => {
+          console.error(
+            "stock detail load failed",
+            e
+          );
+
+          throw e;
+        })
+        .finally(() => {
+          stockDetailPromise =
+            null;
+        });
+
+    return stockDetailPromise;
+  }
+
+  function decorateHeatStocks() {
+    document
+      .querySelectorAll(
+        "#heatGrid .heat-stock"
+      )
+      .forEach(row => {
+        row.setAttribute(
+          "role",
+          "button"
+        );
+
+        row.setAttribute(
+          "tabindex",
+          "0"
+        );
+
+        row.setAttribute(
+          "aria-label",
+          "開啟個股近五日資訊"
+        );
+      });
+  }
+
+  function sectorFromRow(row) {
+    const detail =
+      row.closest(
+        ".heat-detail"
+      );
+
+    if (!detail) {
+      return "";
+    }
+
+    const prev =
+      detail.previousElementSibling;
+
+    if (
+      prev?.matches?.(
+        "button.heat[data-sec]"
+      )
+    ) {
+      return (
+        prev.dataset.sec
+        || ""
+      );
+    }
+
+    const head =
+      detail.querySelector(
+        ".heat-detail-head b"
+      );
+
+    if (!head) {
+      return "";
+    }
+
+    return (
+      [...head.childNodes]
+        .filter(
+          n =>
+            n.nodeType ===
+            Node.TEXT_NODE
+        )
+        .map(
+          n =>
+            n.textContent
+        )
+        .join(" ")
+        .trim()
+    );
+  }
+
+  function tickerFromRow(row) {
+    return (
+      row.querySelector(
+        ".t"
+      )?.textContent
+        ?.trim()
+      || ""
+    );
+  }
+
+  async function openStockDetail(
+    ticker,
+    sector
+  ) {
+    if (!ticker) {
+      return;
+    }
+
+    activeTicker =
+      String(ticker);
+
+    activeSector =
+      String(sector || "");
+
+    activeTab =
+      "trend";
+
+    const overlay =
+      ensureStockDetailModal();
+
+    overlay
+      .querySelectorAll(
+        "[data-stock-detail-tab]"
+      )
+      .forEach(btn => {
+        btn.classList.toggle(
+          "active",
+          btn.dataset
+            .stockDetailTab
+          === "trend"
+        );
+      });
+
+    overlay.classList.add(
+      "open"
+    );
+
+    document.body.style
+      .overflow = "hidden";
+
+    const body =
+      overlay.querySelector(
+        "#stockDetailBody"
+      );
+
+    body.innerHTML = `
+      <div
+        class="stock-detail-loading"
+      >
+        載入近5日資料…
+      </div>
+    `;
+
+    try {
+      await loadStockDetailData();
+
+      renderActiveStockDetail();
+    } catch (e) {
+      body.innerHTML = `
+        <div
+          class="stock-detail-empty"
+        >
+          尚未產生個股近5日資料<br>
+          請先執行一次 Daily close update
+        </div>
+      `;
+    }
+  }
+
+  function closeStockDetail() {
+    const overlay =
+      document.getElementById(
+        "stockDetailOverlay"
+      );
+
+    overlay?.classList
+      .remove("open");
+
+    document.body.style
+      .overflow = "";
+
+    activeTicker = null;
+  }
+
+  function fmtPct(v) {
+    if (
+      v === null
+      || v === undefined
+      || Number.isNaN(
+        Number(v)
+      )
+    ) {
+      return "—";
+    }
+
+    const n =
+      Number(v);
+
+    return (
+      (n > 0 ? "+" : "")
+      + n.toFixed(2)
+      + "%"
+    );
+  }
+
+  function fmtLots(v) {
+    if (
+      v === null
+      || v === undefined
+      || Number.isNaN(
+        Number(v)
+      )
+    ) {
+      return "—";
+    }
+
+    const n =
+      Number(v);
+
+    const abs =
+      Math.abs(n);
+
+    const digits =
+      Math.abs(
+        abs - Math.round(abs)
+      ) < 0.05
+        ? 0
+        : 1;
+
+    return (
+      (n > 0 ? "+" : "")
+      + n.toLocaleString(
+          "zh-TW",
+          {
+            minimumFractionDigits:
+              digits,
+            maximumFractionDigits:
+              digits
+          }
+        )
+      + " 張"
+    );
+  }
+
+  function valueClass(v) {
+    const n =
+      Number(v);
+
+    if (n > 0) {
+      return "up";
+    }
+
+    if (n < 0) {
+      return "down";
+    }
+
+    return "";
+  }
+
+  function latestValue(arr) {
+    const xs =
+      (arr || [])
+        .filter(
+          x =>
+            x !== null
+            && x !== undefined
+            && !Number.isNaN(
+              Number(x)
+            )
+        );
+
+    if (!xs.length) {
+      return null;
+    }
+
+    return Number(
+      xs[xs.length - 1]
+    );
+  }
+
+  function renderActiveStockDetail() {
+    if (
+      !stockDetailData
+      || !activeTicker
+    ) {
+      return;
+    }
+
+    const overlay =
+      ensureStockDetailModal();
+
+    const stock =
+      stockDetailData
+        .stocks?.[
+          activeTicker
+        ];
+
+    const sector =
+      stockDetailData
+        .sectors?.[
+          activeSector
+        ];
+
+    const bench =
+      stockDetailData
+        .benchmark || {};
+
+    const nameBox =
+      overlay.querySelector(
+        "#stockDetailName"
+      );
+
+    const metaBox =
+      overlay.querySelector(
+        "#stockDetailMeta"
+      );
+
+    const body =
+      overlay.querySelector(
+        "#stockDetailBody"
+      );
+
+    if (!stock) {
+      nameBox.textContent =
+        activeTicker;
+
+      metaBox.textContent =
+        activeSector;
+
+      body.innerHTML = `
+        <div
+          class="stock-detail-empty"
+        >
+          這檔目前沒有近5日資料
+        </div>
+      `;
+
+      return;
+    }
+
+    nameBox.textContent =
+      `${stock.name || activeTicker} ${activeTicker}`;
+
+    metaBox.textContent =
+      `${activeSector || "—"}｜截至 ${
+        stockDetailData
+          .as_of_date || "—"
+      }`;
+
+    if (
+      activeTab ===
+      "flow"
+    ) {
+      body.innerHTML =
+        renderFlowPanel(
+          stock
+        );
+
+      return;
+    }
+
+    body.innerHTML =
+      renderTrendPanel(
+        stock,
+        sector,
+        bench
+      );
+  }
+
+  function renderTrendPanel(
+    stock,
+    sector,
+    bench
+  ) {
+    const dates =
+      stockDetailData
+        .date_labels || [];
+
+    const sr =
+      stock.returns || [];
+
+    const gr =
+      sector?.returns || [];
+
+    const ir =
+      bench?.returns || [];
+
+    const stockLast =
+      latestValue(sr);
+
+    const sectorLast =
+      latestValue(gr);
+
+    const indexLast =
+      latestValue(ir);
+
+    return `
+      <div
+        class="stock-detail-metrics"
+      >
+        <div
+          class="stock-detail-metric"
+        >
+          <small>
+            ${stock.name || activeTicker}
+          </small>
+
+          <strong
+            class="${valueClass(
+              stockLast
+            )}"
+          >
+            ${fmtPct(
+              stockLast
+            )}
+          </strong>
+        </div>
+
+        <div
+          class="stock-detail-metric"
+        >
+          <small>
+            ${activeSector || "同族群"}
+          </small>
+
+          <strong
+            class="${valueClass(
+              sectorLast
+            )}"
+          >
+            ${fmtPct(
+              sectorLast
+            )}
+          </strong>
+        </div>
+
+        <div
+          class="stock-detail-metric"
+        >
+          <small>
+            ${bench.name || "上市加權指數"}
+          </small>
+
+          <strong
+            class="${valueClass(
+              indexLast
+            )}"
+          >
+            ${fmtPct(
+              indexLast
+            )}
+          </strong>
+        </div>
+      </div>
+
+      <p
+        class="stock-detail-note"
+      >
+        ${stockDetailData.note || "近5個已完成交易日"}
+      </p>
+
+      <div
+        class="stock-detail-chart"
+      >
+        ${lineChartSvg(
+          dates,
+          [
+            {
+              values: sr,
+              color: "#dc2626"
+            },
+            {
+              values: gr,
+              color: "#2563eb"
+            },
+            {
+              values: ir,
+              color: "#64748b"
+            }
+          ]
+        )}
+
+        <div
+          class="stock-detail-legend"
+        >
+          <span>
+            <i
+              class="stock-detail-dot stock"
+            ></i>
+            個股
+          </span>
+
+          <span>
+            <i
+              class="stock-detail-dot sector"
+            ></i>
+            ${activeSector || "同族群"}
+          </span>
+
+          <span>
+            <i
+              class="stock-detail-dot index"
+            ></i>
+            ${bench.name || "上市加權指數"}
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  function lineChartSvg(
+    labels,
+    series
+  ) {
+    const width = 680;
+    const height = 300;
+
+    const pad = {
+      left: 48,
+      right: 18,
+      top: 20,
+      bottom: 42
+    };
+
+    const values =
+      series
+        .flatMap(
+          s =>
+            s.values || []
+        )
+        .filter(
+          v =>
+            v !== null
+            && v !== undefined
+            && !Number.isNaN(
+              Number(v)
+            )
+        )
+        .map(Number);
+
+    if (!values.length) {
+      return `
+        <div
+          class="stock-detail-empty"
+        >
+          暫無完整走勢資料
+        </div>
+      `;
+    }
+
+    let min =
+      Math.min(
+        0,
+        ...values
+      );
+
+    let max =
+      Math.max(
+        0,
+        ...values
+      );
+
+    if (
+      Math.abs(
+        max - min
+      ) < 0.5
+    ) {
+      max += 1;
+      min -= 1;
+    }
+
+    const span =
+      max - min;
+
+    const extra =
+      span * 0.12;
+
+    max += extra;
+    min -= extra;
+
+    const plotW =
+      width
+      - pad.left
+      - pad.right;
+
+    const plotH =
+      height
+      - pad.top
+      - pad.bottom;
+
+    const xAt =
+      i =>
+        pad.left
+        + (
+          labels.length <= 1
+            ? plotW / 2
+            : (
+                i
+                / (
+                  labels.length - 1
+                )
+              )
+              * plotW
+        );
+
+    const yAt =
+      v =>
+        pad.top
+        + (
+          (
+            max
+            - Number(v)
+          )
+          / (
+            max - min
+          )
+        )
+        * plotH;
+
+    const ticks = [];
+
+    for (
+      let i = 0;
+      i < 5;
+      i += 1
+    ) {
+      ticks.push(
+        max
+        - (
+          (max - min)
+          * i
+          / 4
+        )
+      );
+    }
+
+    const grids =
+      ticks
+        .map(
+          v => `
+            <line
+              x1="${pad.left}"
+              y1="${yAt(v)}"
+              x2="${width - pad.right}"
+              y2="${yAt(v)}"
+              stroke="currentColor"
+              opacity=".12"
+            />
+
+            <text
+              x="${pad.left - 8}"
+              y="${yAt(v) + 4}"
+              text-anchor="end"
+              font-size="10"
+              fill="currentColor"
+              opacity=".58"
+            >
+              ${v.toFixed(1)}%
+            </text>
+          `
+        )
+        .join("");
+
+    const zero =
+      min <= 0
+      && max >= 0
+        ? `
+          <line
+            x1="${pad.left}"
+            y1="${yAt(0)}"
+            x2="${width - pad.right}"
+            y2="${yAt(0)}"
+            stroke="currentColor"
+            opacity=".28"
+          />
+        `
+        : "";
+
+    const paths =
+      series
+        .map(s => {
+          const pts =
+            [];
+
+          (s.values || [])
+            .forEach(
+              (v, i) => {
+                if (
+                  v === null
+                  || v === undefined
+                  || Number.isNaN(
+                    Number(v)
+                  )
+                ) {
+                  return;
+                }
+
+                pts.push(
+                  `${xAt(i)},${yAt(v)}`
+                );
+              }
+            );
+
+          if (
+            pts.length < 2
+          ) {
+            return "";
+          }
+
+          return `
+            <polyline
+              fill="none"
+              stroke="${s.color}"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              points="${pts.join(" ")}"
+            />
+          `;
+        })
+        .join("");
+
+    const xlabels =
+      labels
+        .map(
+          (label, i) => `
+            <text
+              x="${xAt(i)}"
+              y="${height - 15}"
+              text-anchor="middle"
+              font-size="10"
+              fill="currentColor"
+              opacity=".65"
+            >
+              ${label}
+            </text>
+          `
+        )
+        .join("");
+
+    return `
+      <svg
+        viewBox="0 0 ${width} ${height}"
+        aria-label="近5日個股、族群與上市加權指數走勢"
+      >
+        ${grids}
+        ${zero}
+        ${paths}
+        ${xlabels}
+      </svg>
+    `;
+  }
+
+  function renderFlowPanel(
+    stock
+  ) {
+    const rows =
+      stock.institutional || [];
+
+    const total =
+      Number(
+        stock
+          .institutional_5d_total_lots
+        || 0
+      );
+
+    return `
+      <div
+        class="stock-flow-summary"
+      >
+        <span>
+          近5日三大法人合計
+        </span>
+
+        <strong
+          class="${valueClass(
+            total
+          )}"
+        >
+          ${fmtLots(
+            total
+          )}
+        </strong>
+      </div>
+
+      <p
+        class="stock-detail-note"
+      >
+        長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜單位：張
+      </p>
+
+      <div
+        class="stock-detail-chart"
+      >
+        ${barChartSvg(
+          rows
+        )}
+      </div>
+
+      <table
+        class="stock-flow-table"
+      >
+        <thead>
+          <tr>
+            <th>
+              日期
+            </th>
+
+            <th>
+              三大法人合計
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${rows
+            .slice()
+            .reverse()
+            .map(
+              row => `
+                <tr>
+                  <td>
+                    ${row.date_label || "—"}
+                  </td>
+
+                  <td
+                    class="${valueClass(
+                      row.total_lots
+                    )}"
+                  >
+                    ${fmtLots(
+                      row.total_lots
+                    )}
+                  </td>
+                </tr>
+              `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function barChartSvg(rows) {
+    const width = 680;
+    const height = 280;
+
+    const pad = {
+      left: 48,
+      right: 18,
+      top: 18,
+      bottom: 42
+    };
+
+    const values =
+      rows.map(
+        x =>
+          Number(
+            x.total_lots || 0
+          )
+      );
+
+    const maxAbs =
+      Math.max(
+        1,
+        ...values.map(
+          Math.abs
+        )
+      );
+
+    const max =
+      maxAbs * 1.15;
+
+    const min =
+      -max;
+
+    const plotW =
+      width
+      - pad.left
+      - pad.right;
+
+    const plotH =
+      height
+      - pad.top
+      - pad.bottom;
+
+    const yAt =
+      v =>
+        pad.top
+        + (
+          (
+            max - v
+          )
+          / (
+            max - min
+          )
+        )
+        * plotH;
+
+    const zeroY =
+      yAt(0);
+
+    const slot =
+      rows.length
+        ? plotW
+          / rows.length
+        : plotW;
+
+    const barW =
+      Math.min(
+        52,
+        slot * 0.52
+      );
+
+    const bars =
+      rows
+        .map(
+          (row, i) => {
+            const v =
+              Number(
+                row.total_lots
+                || 0
+              );
+
+            const x =
+              pad.left
+              + slot * i
+              + (
+                slot - barW
+              ) / 2;
+
+            const y =
+              v >= 0
+                ? yAt(v)
+                : zeroY;
+
+            const h =
+              Math.max(
+                1.5,
+                Math.abs(
+                  yAt(v)
+                  - zeroY
+                )
+              );
+
+            const color =
+              v >= 0
+                ? "#dc2626"
+                : "#168357";
+
+            return `
+              <rect
+                x="${x}"
+                y="${y}"
+                width="${barW}"
+                height="${h}"
+                rx="4"
+                fill="${color}"
+              />
+
+              <text
+                x="${x + barW / 2}"
+                y="${height - 15}"
+                text-anchor="middle"
+                font-size="10"
+                fill="currentColor"
+                opacity=".65"
+              >
+                ${row.date_label || ""}
+              </text>
+            `;
+          }
+        )
+        .join("");
+
+    return `
+      <svg
+        viewBox="0 0 ${width} ${height}"
+        aria-label="近5日三大法人合計買賣超"
+      >
+        <line
+          x1="${pad.left}"
+          y1="${zeroY}"
+          x2="${width - pad.right}"
+          y2="${zeroY}"
+          stroke="currentColor"
+          opacity=".3"
+        />
+
+        <text
+          x="${pad.left - 8}"
+          y="${pad.top + 4}"
+          text-anchor="end"
+          font-size="10"
+          fill="currentColor"
+          opacity=".58"
+        >
+          +${maxAbs.toLocaleString("zh-TW")}
+        </text>
+
+        <text
+          x="${pad.left - 8}"
+          y="${height - pad.bottom}"
+          text-anchor="end"
+          font-size="10"
+          fill="currentColor"
+          opacity=".58"
+        >
+          -${maxAbs.toLocaleString("zh-TW")}
+        </text>
+
+        ${bars}
+      </svg>
+    `;
+  }
+
+  function bindStockDetailEvents() {
+    document.addEventListener(
+      "click",
+      e => {
+        const row =
+          e.target.closest?.(
+            "#heatGrid .heat-stock"
+          );
+
+        if (!row) {
+          return;
+        }
+
+        openStockDetail(
+          tickerFromRow(
+            row
+          ),
+          sectorFromRow(
+            row
+          )
+        );
+      }
+    );
+
+    document.addEventListener(
+      "keydown",
+      e => {
+        if (
+          e.key !== "Enter"
+          && e.key !== " "
+        ) {
+          return;
+        }
+
+        const row =
+          e.target.closest?.(
+            "#heatGrid .heat-stock"
+          );
+
+        if (!row) {
+          return;
+        }
+
+        e.preventDefault();
+
+        openStockDetail(
+          tickerFromRow(
+            row
+          ),
+          sectorFromRow(
+            row
+          )
+        );
+      }
+    );
+  }
+
   async function init() {
+    injectStockDetailStyles();
+    ensureStockDetailModal();
+    bindStockDetailEvents();
+
     await loadSectorConfig();
 
     ensureControls();
@@ -614,6 +2176,7 @@
 
           ensureControls();
           updateStaticLabels();
+          decorateHeatStocks();
 
           if (
             directHeatButtons()
