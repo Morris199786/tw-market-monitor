@@ -70,6 +70,90 @@ def first_book_price(raw):
     return 0.0
 
 
+def get_mis_batch_with_retry(
+    channels,
+):
+    """
+    TWSE MIS 偶爾會主動 reset GitHub Actions 連線。
+
+    每一批最多嘗試 3 次：
+    第 1 次失敗 -> 等 2 秒
+    第 2 次失敗 -> 等 5 秒
+    第 3 次失敗 -> 放棄這一批
+
+    放棄的股票之後會由 previous_heatmap fallback 補上，
+    不讓單次 MIS 網路錯誤造成整個 Action 失敗。
+    """
+    waits = [
+        0,
+        2,
+        5,
+    ]
+
+    last_error = None
+
+    for attempt in range(
+        1,
+        4,
+    ):
+        if waits[
+            attempt - 1
+        ] > 0:
+            time.sleep(
+                waits[
+                    attempt - 1
+                ]
+            )
+
+        try:
+            data = get_json(
+                MIS,
+                params={
+                    "ex_ch": "|".join(
+                        channels
+                    ),
+                    "json": "1",
+                    "delay": "0",
+                },
+                timeout=25,
+            )
+
+            if not isinstance(
+                data,
+                dict,
+            ):
+                raise RuntimeError(
+                    "MIS response is not dict"
+                )
+
+            print(
+                "MIS batch success",
+                f"attempt={attempt}",
+                f"channels={len(channels)}",
+            )
+
+            return data
+
+        except Exception as e:
+            last_error = e
+
+            print(
+                "MIS batch failed",
+                f"attempt={attempt}/3",
+                f"channels={len(channels)}",
+                repr(e),
+            )
+
+    print(
+        "WARNING: MIS batch skipped after 3 attempts:",
+        repr(last_error),
+    )
+
+    return {
+        "msgArray": [],
+    }
+
+
 def fetch_heatmap_quotes(
     tickers,
     master,
@@ -89,6 +173,9 @@ def fetch_heatmap_quotes(
 
     4. z / bid / ask 全都沒有時，不准拿昨收 y 冒充現價
        否則會把漲停股誤顯示成 0%
+
+    5. MIS ConnectionReset / timeout 時自動重試
+       單一 batch 最終失敗也不讓整個 Action 掛掉
     """
     channels = []
 
@@ -134,16 +221,9 @@ def fetch_heatmap_quotes(
             i:i + 120
         ]
 
-        data = get_json(
-            MIS,
-            params={
-                "ex_ch": "|".join(
-                    ch
-                ),
-                "json": "1",
-                "delay": "0",
-            },
-            timeout=25,
+        # MIS 加入 retry / fallback
+        data = get_mis_batch_with_retry(
+            ch
         )
 
         for r in data.get(
@@ -382,6 +462,7 @@ def main():
     )
 
     # 改用熱力圖專用正確市場 channel 抓法
+    # MIS 失敗會自動 retry
     quotes = fetch_heatmap_quotes(
         tickers,
         master,
@@ -653,6 +734,7 @@ def main():
             ),
             "source": (
                 "TWSE MIS correct-market live quote "
+                "+ MIS retry "
                 "+ previous valid quote fallback "
                 "+ TWSE/TPEx master "
                 "+ TDCC share fallback"
