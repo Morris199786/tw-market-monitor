@@ -1,7 +1,9 @@
 from sources import *
 
 import re
+import time
 from collections import Counter
+from urllib.parse import urljoin
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
@@ -399,10 +401,186 @@ def newest_row_per_ticker(rows):
         if (
             old is None
             or x["month"] > old["month"]
+            or (
+                x["month"] == old["month"]
+                and x.get("source") == "moneylink"
+                and old.get("source") != "moneylink"
+            )
         ):
             newest[ticker] = x
 
     return list(newest.values())
+
+
+# ------------------------------------------------------------
+# Money-Link 即時營收快訊（快速來源）
+# ------------------------------------------------------------
+
+MONEYLINK_BASE = "https://ww2.money-link.com.tw"
+MONEYLINK_LIST = f"{MONEYLINK_BASE}/RealtimeNews/"
+
+
+def expected_revenue_month():
+    z = now_tpe()
+    if z.month == 1:
+        return f"{z.year - 1}-12"
+    return f"{z.year:04d}-{z.month - 1:02d}"
+
+
+def _prev_month(k):
+    y, m = map(int, k.split("-"))
+    if m == 1:
+        return f"{y - 1}-12"
+    return f"{y:04d}-{m - 1:02d}"
+
+
+def _prev_year(k):
+    y, m = map(int, k.split("-"))
+    return f"{y - 1:04d}-{m:02d}"
+
+
+def _ml_get(url, params=None):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,*/*",
+        "Accept-Language": "zh-TW,zh;q=0.9",
+        "Referer": MONEYLINK_BASE + "/",
+    }
+    last = None
+    for i in range(3):
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=20)
+            r.raise_for_status()
+            if not r.encoding or r.encoding.lower() == "iso-8859-1":
+                r.encoding = r.apparent_encoding or "utf-8"
+            return r.text
+        except Exception as exc:
+            last = exc
+            if i < 2:
+                time.sleep(1.5 * (i + 1))
+    raise RuntimeError(f"Money-Link GET failed: {last}")
+
+
+def _ml_text(body):
+    s = html.unescape(str(body or ""))
+    s = re.sub(r"(?is)<script.*?</script>|<style.*?</style>", " ", s)
+    s = re.sub(r"(?i)<br\\s*/?>|</(?:p|div|li|tr|h\\d)>", "\\n", s)
+    s = re.sub(r"<[^>]+>", " ", s).replace("\\u3000", " ")
+    return re.sub(r"\\s+", " ", s).strip()
+
+
+def _ml_links():
+    seen, out = set(), []
+    pattern = r"(?i)href\\s*=\\s*[\\\"']([^\\\"']*NewsContent\\.aspx\\?[^\\\"']+)[\\\"']"
+    for page in range(1, 9):
+        try:
+            body = _ml_get(MONEYLINK_LIST, {"NType": "1002", "PGNum": str(page)})
+        except Exception as exc:
+            print("Money-Link list fail", page, repr(exc))
+            continue
+        for href in re.findall(pattern, body):
+            u = urljoin(MONEYLINK_BASE, html.unescape(href))
+            if u not in seen:
+                seen.add(u)
+                out.append(u)
+    return out
+
+
+def _ml_ticker(text):
+    for pattern in (
+        r"[（(]\\s*(\\d{4})\\s*[）)]",
+        r"(?:股票|公司|代號)[：:\\s]*(\\d{4})",
+        r"\\b(\\d{4})\\b",
+    ):
+        m = re.search(pattern, text)
+        if m and ordinary_ticker(m.group(1)):
+            return m.group(1)
+    return ""
+
+
+def _ml_revenue(text):
+    patterns = (
+        (r"(?:單月|本月|當月|月)?營收[^0-9]{0,25}([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*億(?:元)?", 1.0),
+        (r"(?:單月|本月|當月|月)?營收[^0-9]{0,25}([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*(?:千|仟)元", 1 / 100000),
+        (r"(?:單月|本月|當月|月)?營收[^0-9]{0,25}([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*元", 1 / 100000000),
+    )
+    for pattern, mul in patterns:
+        m = re.search(pattern, text)
+        if m:
+            v = n(m.group(1), None)
+            if v is not None and v > 0:
+                return v * mul
+    return None
+
+
+def _ml_pct(text, kind):
+    labels = ["月增", "月減", "MoM", "較上月", "上月比較"] if kind == "mom" else ["年增", "年減", "YoY", "較去年同期", "去年同月"]
+    for label in labels:
+        m = re.search(re.escape(label) + r"[^0-9+\\-－−]{0,15}([+\\-－−]?\\s*[0-9]+(?:\\.[0-9]+)?)\\s*%", text, re.I)
+        if m:
+            return n(m.group(1).replace(" ", "").replace("－", "-").replace("−", "-"), None)
+    return None
+
+
+def _history_revenue(history, ticker, month):
+    try:
+        return float(history["stocks"][ticker]["months"][month])
+    except Exception:
+        return None
+
+
+def fetch_moneylink_fast_rows(wanted):
+    target = expected_revenue_month()
+    month_num = int(target[5:7])
+    links = _ml_links()
+    out = {}
+    print("Money-Link links", len(links), "target", target)
+
+    history = load_json(ROOT / "data/monthly_revenue_history.json", {"stocks": {}})
+
+    for url in links:
+        try:
+            text = _ml_text(_ml_get(url))
+            if "營收" not in text:
+                continue
+            ticker = _ml_ticker(text)
+            if ticker not in wanted:
+                continue
+            if not re.search(rf"(?<!\\d){month_num}\\s*月(?:份)?(?:合併)?營收", text):
+                continue
+            revenue = _ml_revenue(text)
+            if revenue is None:
+                continue
+
+            mom = _ml_pct(text, "mom")
+            yoy = _ml_pct(text, "yoy")
+
+            if mom is None:
+                prev = _history_revenue(history, ticker, _prev_month(target))
+                mom = (revenue / prev - 1) * 100 if prev else 0.0
+            if yoy is None:
+                prev_y = _history_revenue(history, ticker, _prev_year(target))
+                yoy = (revenue / prev_y - 1) * 100 if prev_y else 0.0
+
+            if ticker not in out:
+                out[ticker] = {
+                    "ticker": ticker,
+                    "name": "",
+                    "market": "",
+                    "raw_month": "",
+                    "month": target,
+                    "month_label": f"{target[:4]}年{int(target[5:7])}月營收",
+                    "revenue_100m": revenue,
+                    "mom": mom,
+                    "yoy": yoy,
+                    "source": "moneylink",
+                    "source_url": url,
+                }
+        except Exception as exc:
+            print("Money-Link article fail", url, repr(exc))
+
+    print("Money-Link fast rows", len(out))
+    return list(out.values())
 
 
 def main():
@@ -494,6 +672,22 @@ def main():
         raise RuntimeError(
             "no monthly revenue rows"
         )
+
+    # Money-Link 快速來源：若已出現本月最新公告，先補進來。
+    # 失敗時不影響 OpenData 正常更新。
+    try:
+        fast_rows = fetch_moneylink_fast_rows(wanted)
+    except Exception as exc:
+        print("Money-Link fast source fail", repr(exc))
+        fast_rows = []
+
+    for x in fast_rows:
+        ticker = x["ticker"]
+        x["name"] = short_names.get(ticker) or x.get("name") or ticker
+
+    # 同一股票同月份時，Money-Link 放在後面，讓 newest_row_per_ticker
+    # 的新版邏輯可取得較新的月份；不同月份則一定取月份較新的資料。
+    all_rows.extend(fast_rows)
 
     source_latest_month = max(
         x["month"]
