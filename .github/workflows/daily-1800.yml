@@ -1,56 +1,79 @@
-name: Daily close update
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
-# 所有會寫入市場資料的 workflow 共用同一把鎖
-# 避免 Daily close 與 Heatmap 同時修改 heatmap.json
-concurrency:
-  group: tw-market-data-writer
-  cancel-in-progress: false
-
-jobs:
-  update:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Sync latest main
-        run: |
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run daily update
-        run: python scripts/update_all.py
-
       - name: Commit updated data
         run: |
+          set -e
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data
+          echo "Saving generated data..."
 
-          if git diff --cached --quiet; then
-            echo "No data changes"
-            exit 0
+          rm -rf /tmp/generated-data
+          mkdir -p /tmp/generated-data
+
+          cp -a data/. /tmp/generated-data/
+
+          success=false
+
+          for i in 1 2 3 4 5; do
+            echo "======================================"
+            echo "Push attempt $i/5"
+            echo "======================================"
+
+            #
+            # 重新取得目前 GitHub 最新 main
+            #
+            git fetch origin main
+
+            #
+            # 直接回到最新 main
+            #
+            # 不做 merge
+            # 不做 rebase
+            # 所以不會產生 heatmap.json conflict
+            #
+            git reset --hard origin/main
+
+            #
+            # 把這次 Daily 剛產生的資料
+            # 蓋回最新 main
+            #
+            rm -rf data
+            mkdir -p data
+
+            cp -a /tmp/generated-data/. data/
+
+            #
+            # 重新建立 commit
+            #
+            git add data
+
+            if git diff --cached --quiet; then
+              echo "No data changes"
+              success=true
+              break
+            fi
+
+            git commit -m "data: daily close update"
+
+            #
+            # 嘗試 push
+            #
+            if git push origin HEAD:main; then
+              echo "Push successful"
+              success=true
+              break
+            fi
+
+            echo "Remote changed during push."
+            echo "Retrying with latest main..."
+
+            #
+            # 下一輪重新抓最新 main
+            #
+            sleep 3
+          done
+
+          if [ "$success" != "true" ]; then
+            echo "Push failed after 5 attempts"
+            exit 1
           fi
-
-          git commit -m "data: daily close update"
-
-          git push origin HEAD:main
