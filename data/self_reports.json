@@ -1,13 +1,52 @@
 {
-  "updated_at": "2026-10-01T15:32+08:00",
+  "updated_at": "2026-10-01T16:03+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
-    "candidate_count": 21,
+    "candidate_count": 24,
     "parsed_count": 11,
-    "parse_failed_count": 4,
+    "parse_failed_count": 7,
     "parse_failed": [
+      {
+        "ticker": "6957",
+        "name": "裕慶-KY",
+        "publish_date": "2026-10-01",
+        "publish_time": "16:00:59",
+        "subject": "6957 裕慶-KY 115/10/01 16:00:59 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "3016",
+        "name": "嘉晶",
+        "publish_date": "2026-10-01",
+        "publish_time": "15:47:07",
+        "subject": "3016 嘉晶 115/10/01 15:47:07 係因本公司有價證券於集中市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "1617",
+        "name": "榮星",
+        "publish_date": "2026-10-01",
+        "publish_time": "15:31:52",
+        "subject": "1617 榮星 115/10/01 15:31:52 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "3518",
         "name": "柏騰",
@@ -15,7 +54,7 @@
         "publish_time": "14:56:11",
         "subject": "3518 柏騰 115/10/01 14:56:11 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "partial",
         "eps_parse_reason": "only_one_eps_section_parsed",
         "monthly_eps": null,
@@ -65,8 +104,8 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 5,
-      "self_reports": 4,
+      "rows": 11,
+      "self_reports": 7,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
@@ -89,35 +128,35 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 51,
+          "rows": 68,
+          "hits": 7
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 68,
           "hits": 4
         },
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 51,
-          "hits": 1
-        },
-        {
-          "base": "https://mops.twse.com.tw",
           "keyword": "近期財務",
           "rows": 0,
           "hits": 0
@@ -137,13 +176,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 51,
+          "rows": 68,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 51,
+          "rows": 68,
           "hits": 0
         },
         {
@@ -173,20 +212,17 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 52,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fb68b153230>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 52,
-          "hits": 0
+          "error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer')))"
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fb68b16c0b0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         }
       ],
       "rejected": [],
