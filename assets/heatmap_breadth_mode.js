@@ -1,24 +1,44 @@
 /* =========================================================
-   市場熱力圖：市值加權 / 族群廣度
-   單一個股權重上限 25%
+   市場熱力圖：市值加權 / 均衡加權
 
-   功能：
+   均衡加權：
+   保留市值權重概念，但依有效成分股數量
+   動態限制單一個股最高權重
+
+   動態 Cap：
+   2 檔      → 65%
+   3 檔      → 50%
+   4 檔      → 40%
+   5–6 檔    → 35%
+   7–9 檔    → 30%
+   10 檔以上 → 25%
+
+   族群廣度：
+   ↑ 上漲家數 / 有效成分股數 · 上漲比例
+
+   其他：
    1. 保留原本市值加權
-   2. 新增族群廣度
-   3. 單一個股最高權重 25%
-   4. 超額權重重新分配
-   5. 顯示上漲家數
-   6. 依目前模式重新排序
-   7. 展開族群時停止重新排序，避免 detail 跑位
+   2. 展開族群時停止重新排序
+   3. 支援 heatmap_auto_refresh.js
    ========================================================= */
 
 (function () {
-  const WEIGHT_CAP = 0.25;
   const STORAGE_KEY = "tw_heat_weight_mode";
 
   let mode =
     localStorage.getItem(STORAGE_KEY) ||
     "market";
+
+  /*
+    相容舊版 localStorage
+  */
+  if (mode === "breadth") {
+    mode = "balanced";
+    localStorage.setItem(
+      STORAGE_KEY,
+      mode
+    );
+  }
 
   let heatData = null;
   let busy = false;
@@ -32,7 +52,7 @@
 
 
   /* =========================================================
-     基本格式
+     格式
      ========================================================= */
 
   function pct(value) {
@@ -51,13 +71,43 @@
 
 
   /* =========================================================
-     25% 權重上限
+     依成分股數量決定單股權重上限
      ========================================================= */
 
-  function cappedWeights(
-    values,
-    cap = WEIGHT_CAP
-  ) {
+  function getWeightCap(count) {
+    if (count <= 1) {
+      return 1;
+    }
+
+    if (count === 2) {
+      return 0.65;
+    }
+
+    if (count === 3) {
+      return 0.50;
+    }
+
+    if (count === 4) {
+      return 0.40;
+    }
+
+    if (count <= 6) {
+      return 0.35;
+    }
+
+    if (count <= 9) {
+      return 0.30;
+    }
+
+    return 0.25;
+  }
+
+
+  /* =========================================================
+     權重上限 + 超額權重重新分配
+     ========================================================= */
+
+  function cappedWeights(values) {
     const raw = values.map(
       value =>
         Math.max(
@@ -75,6 +125,11 @@
     if (!total) {
       return raw.map(() => 0);
     }
+
+    const count = raw.length;
+
+    const cap =
+      getWeightCap(count);
 
     const base = raw.map(
       value =>
@@ -179,10 +234,10 @@
 
 
   /* =========================================================
-     計算族群廣度
+     計算均衡加權 + 族群廣度
      ========================================================= */
 
-  function calcBreadth(sec) {
+  function calcBalanced(sec) {
     const valid =
       (sec?.stocks || [])
         .filter(
@@ -207,9 +262,15 @@
         down: 0,
         flat: 0,
         valid: 0,
+        cap: null,
         weights: []
       };
     }
+
+    const cap =
+      getWeightCap(
+        valid.length
+      );
 
     const weights =
       cappedWeights(
@@ -265,6 +326,7 @@
       down,
       flat,
       valid: valid.length,
+      cap,
 
       weights:
         valid.map(
@@ -325,7 +387,7 @@
 
     } catch (error) {
       console.error(
-        "breadth heatmap load failed",
+        "balanced heatmap load failed",
         error
       );
 
@@ -455,15 +517,11 @@
       .heat-detail-breadth-note {
         margin: 8px 0 10px;
         padding: 9px 11px;
-        border:
-          1px solid
-          var(--line);
+        border: 1px solid var(--line);
         border-radius: 12px;
-        background:
-          var(--soft);
+        background: var(--soft);
         font-size: 10px;
-        color:
-          var(--muted);
+        color: var(--muted);
         font-weight: 700;
       }
 
@@ -528,9 +586,9 @@
 
       <button
         type="button"
-        data-heat-weight="breadth"
+        data-heat-weight="balanced"
       >
-        族群廣度
+        均衡加權
       </button>
     `;
 
@@ -556,9 +614,6 @@
                 mode
               );
 
-              /*
-                切換模式時重新抓最新資料
-              */
               await loadHeatData();
 
               updateToggle();
@@ -581,7 +636,7 @@
       "heatBreadthHelp";
 
     copy.textContent =
-      "族群廣度：單一個股最高權重 25%，超額權重重新分配，並顯示上漲家數";
+      "均衡加權：依族群成分股數動態限制單一個股最高權重；卡片下方 ↑ x/y 為族群廣度";
 
     const control =
       $("#heatSectorControl");
@@ -595,7 +650,7 @@
 
 
   /* =========================================================
-     更新切換按鈕
+     更新切換按鈕 / 說明
      ========================================================= */
 
   function updateToggle() {
@@ -623,13 +678,29 @@
 
       if (
         mode ===
-        "breadth"
+        "balanced"
       ) {
         hero.textContent =
-          `${count} 個自訂族群｜族群廣度（單股上限25%）｜紅漲綠跌`;
+          `${count} 個自訂族群｜均衡加權｜動態單股權重上限｜紅漲綠跌`;
       } else {
         hero.textContent =
           `${count} 個自訂族群｜市值加權｜紅漲綠跌｜可直接下拉選族群`;
+      }
+    }
+
+    const help =
+      $("#heatBreadthHelp");
+
+    if (help) {
+      if (
+        mode ===
+        "balanced"
+      ) {
+        help.textContent =
+          "均衡加權：2檔65%｜3檔50%｜4檔40%｜5–6檔35%｜7–9檔30%｜10檔以上25%；↑ x/y 為實際上漲家數";
+      } else {
+        help.textContent =
+          "市值加權：依個股市值決定族群漲跌幅";
       }
     }
   }
@@ -655,7 +726,7 @@
 
 
   /* =========================================================
-     是否有展開 detail
+     是否有 detail 展開
      ========================================================= */
 
   function hasOpenDetail() {
@@ -694,12 +765,12 @@
           return;
         }
 
-        const breadth =
-          calcBreadth(sec);
+        const balanced =
+          calcBalanced(sec);
 
         const value =
-          mode === "breadth"
-            ? breadth.change_pct
+          mode === "balanced"
+            ? balanced.change_pct
             : sec.change_pct;
 
         button.classList.remove(
@@ -748,11 +819,12 @@
         }
 
         /*
-          市值加權模式不顯示廣度資訊
+          市值加權模式：
+          不顯示族群廣度
         */
 
         if (
-          mode !== "breadth"
+          mode !== "balanced"
         ) {
           line.style.display =
             "none";
@@ -763,16 +835,16 @@
         line.style.display =
           "";
 
-        if (breadth.valid) {
+        if (balanced.valid) {
           const ratio =
             (
-              breadth.up /
-              breadth.valid *
+              balanced.up /
+              balanced.valid *
               100
             ).toFixed(0);
 
           line.textContent =
-            `↑ ${breadth.up}/${breadth.valid} · ${ratio}%上漲`;
+            `↑ ${balanced.up}/${balanced.valid} · ${ratio}%上漲`;
         } else {
           line.textContent =
             "上漲家數 —";
@@ -781,8 +853,8 @@
     );
 
     /*
-      關鍵：
-      detail 展開時禁止重新排序
+      detail 展開期間
+      不允許重新排序
     */
 
     if (!hasOpenDetail()) {
@@ -792,11 +864,9 @@
 
 
   /* =========================================================
-     重新排序
+     排序族群卡片
 
-     重要：
-     有任何 detail 展開時，
-     絕對不能搬動族群卡片
+     有 detail 展開時禁止搬動 DOM
      ========================================================= */
 
   function reorderButtons() {
@@ -806,17 +876,6 @@
     if (!grid) {
       return;
     }
-
-    /*
-      app.js 會把 detail 插在
-      被點擊卡片後方。
-
-      detail 存在時如果 appendChild(button)，
-      卡片會被搬走，
-      detail 卻留在原位置。
-
-      所以這裡直接停止。
-    */
 
     if (hasOpenDetail()) {
       return;
@@ -847,16 +906,16 @@
           );
 
         const valueA =
-          mode === "breadth"
-            ? calcBreadth(
+          mode === "balanced"
+            ? calcBalanced(
                 sectorA
               ).change_pct
             : sectorA
                 ?.change_pct;
 
         const valueB =
-          mode === "breadth"
-            ? calcBreadth(
+          mode === "balanced"
+            ? calcBalanced(
                 sectorB
               ).change_pct
             : sectorB
@@ -915,14 +974,6 @@
       return;
     }
 
-    /*
-      app.js 正常情況下：
-      button
-      detail
-
-      所以優先找 detail.previousElementSibling
-    */
-
     let openButton =
       detail.previousElementSibling;
 
@@ -932,11 +983,6 @@
         "button.heat[data-sec]"
       )
     ) {
-      /*
-        fallback：
-        找 nextElementSibling 是 detail 的卡片
-      */
-
       openButton =
         $$(
           "#heatGrid > button.heat[data-sec]"
@@ -972,23 +1018,16 @@
       return;
     }
 
-    const breadth =
-      calcBreadth(sec);
-
-    /*
-      找 detail 標題區。
-
-      app.js 原本顯示的是市值加權值，
-      breadth 模式時改成 25% 權重值。
-    */
+    const balanced =
+      calcBalanced(sec);
 
     const detailValue =
-      mode === "breadth"
-        ? breadth.change_pct
+      mode === "balanced"
+        ? balanced.change_pct
         : sec.change_pct;
 
     /*
-      嘗試尋找 detail 裡原本的百分比元素
+      修改 detail 原本的族群百分比
     */
 
     const candidates =
@@ -1020,10 +1059,6 @@
       }
     }
 
-    /*
-      廣度說明
-    */
-
     let note =
       detail.querySelector(
         ".heat-detail-breadth-note"
@@ -1031,11 +1066,11 @@
 
     /*
       市值加權模式：
-      不需要顯示 25% 說明
+      移除均衡加權說明
     */
 
     if (
-      mode !== "breadth"
+      mode !== "balanced"
     ) {
       if (note) {
         note.remove();
@@ -1070,25 +1105,43 @@
       }
     }
 
-    if (breadth.valid) {
+    if (balanced.valid) {
+      const capPercent =
+        (
+          balanced.cap *
+          100
+        ).toFixed(0);
+
+      const upRatio =
+        (
+          balanced.up /
+          balanced.valid *
+          100
+        ).toFixed(0);
+
       note.innerHTML = `
-        族群廣度
+        均衡加權
         <b style="color:var(--ink)">
           ${pct(
-            breadth.change_pct
+            balanced.change_pct
           )}
         </b>
 
         ｜ 上漲
         <b style="color:var(--ink)">
-          ${breadth.up}/${breadth.valid}
+          ${balanced.up}/${balanced.valid}
         </b>
 
-        ｜ 單一個股權重最高 25%
+        （${upRatio}%）
+
+        ｜ 單股權重上限
+        <b style="color:var(--ink)">
+          ${capPercent}%
+        </b>
       `;
     } else {
       note.textContent =
-        "族群廣度資料不足";
+        "均衡加權資料不足";
     }
   }
 
@@ -1126,12 +1179,10 @@
 
 
   /* =========================================================
-     監聽 app.js 熱力圖 DOM 變化
+     監聽 heatGrid DOM
 
-     只監聽 heatGrid 第一層 childList。
-
-     不監聽 subtree，
-     避免我們自己修改文字時又觸發 observer。
+     只監聽第一層，
+     避免修改卡片文字後自己觸發自己
      ========================================================= */
 
   function observe() {
@@ -1148,14 +1199,6 @@
           if (observerBusy) {
             return;
           }
-
-          /*
-            只處理第一層新增／移除：
-            - heat card
-            - heat-detail
-
-            卡片內文字改動不處理。
-          */
 
           const structuralChange =
             mutations.some(
@@ -1197,15 +1240,6 @@
           requestAnimationFrame(
             async () => {
               try {
-                /*
-                  如果 detail 剛被加入：
-                  decorateButtons 會看到 detail 已存在，
-                  因此不會排序。
-
-                  如果 detail 剛被移除：
-                  才允許重新排序。
-                */
-
                 await decorate();
 
               } finally {
@@ -1227,10 +1261,11 @@
 
 
   /* =========================================================
-     自動刷新事件
+     自動刷新
 
-     heatmap_auto_refresh.js 更新資料後
-     重新載入 breadth 使用的 heatData。
+     heatmap_auto_refresh.js
+     發出 heatmap:data-updated 後
+     重新載入最新資料
      ========================================================= */
 
   function bindAutoRefresh() {
