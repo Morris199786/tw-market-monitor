@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-台股底部型態掃描器 v1
+台股底部型態掃描器 v2｜紅點時機版
 - W / 多重底
 - U / 碗型底
 - 破底洗盤後收回
@@ -229,40 +229,58 @@ def score_stock(code, name, rows):
     turn += .25*improve
     score_turn=10*turn
 
-    # ---- 位置：右側剛起漲最好，離 60 日低點約 5~22%，太遠扣分 ----
+    # ---- 時機 / 紅點位置 ----
     low60=min(c[-60:])
     dist=c[-1]/low60-1
-    if .05 <= dist <= .22:
-        pos=1.0
-    elif dist < .05:
-        pos=clamp(dist/.05)
-    else:
-        pos=clamp(1-(dist-.22)/.25)
-    score_pos=5*pos
+    resistance=max(c[-40:-5]) if len(c)>=45 else max(c[:-5])
+    breakout_pct=c[-1]/resistance-1 if resistance else 0
+    ma20_ext=c[-1]/ma20-1 if ma20 else 0
+    ret5=c[-1]/c[-6]-1 if len(c)>=6 else 0
+    ret10=c[-1]/c[-11]-1 if len(c)>=11 else 0
+    below_neck=(resistance-c[-1])/resistance if resistance else 1
 
-    total=score_structure+score_wash+score_lows+score_contract+score_volume+score_turn+score_pos
+    if 0 <= below_neck <= .08: neck_score=1.0
+    elif .08 < below_neck <= .15: neck_score=clamp(1-(below_neck-.08)/.07)
+    elif -.03 <= below_neck < 0: neck_score=.80
+    elif -.06 <= below_neck < -.03: neck_score=.35
+    else: neck_score=0.0
 
-    # 沒有任何底型訊號者限制分數，避免純強勢股混進來
-    if not labels:
-        total=min(total,49)
+    if .05 <= dist <= .22: base_pos=1.0
+    elif .22 < dist <= .30: base_pos=clamp(1-(dist-.22)/.08)*.75
+    elif dist < .05: base_pos=clamp(dist/.05)
+    else: base_pos=0.0
 
-    # 階段
-    high60=max(c[-60:])
-    near_high=c[-1]/high60
-    if turn>=.62 and contraction>=.45 and dist<=.22:
-        stage="🟠 右側轉折/準備區"
-    elif contraction>=.60 and dist<=.18:
-        stage="🟡 築底末端"
-    elif near_high>=.985 and c[-1]>ma20:
-        stage="🔴 接近/嘗試突破"
-    elif dist>.32:
-        stage="⚪ 已離底較遠"
-    else:
-        stage="⚪ 築底中"
+    heat_penalty=0.0
+    if ma20_ext > .10: heat_penalty += clamp((ma20_ext-.10)/.10)*.35
+    if ret5 > .12: heat_penalty += clamp((ret5-.12)/.12)*.30
+    if ret10 > .20: heat_penalty += clamp((ret10-.20)/.15)*.35
+
+    timing_raw=.38*turn+.27*neck_score+.20*base_pos+.15*contraction
+    timing_score=clamp(timing_raw-heat_penalty)
+    score_pos=15*timing_score
+
+    extension_penalty=0.0
+    if breakout_pct > .03: extension_penalty += 8*clamp((breakout_pct-.03)/.09)
+    if dist > .30: extension_penalty += 10*clamp((dist-.30)/.20)
+    if ma20_ext > .10: extension_penalty += 6*clamp((ma20_ext-.10)/.10)
+    if ret5 > .12: extension_penalty += 4*clamp((ret5-.12)/.10)
+    if ret10 > .20: extension_penalty += 4*clamp((ret10-.20)/.15)
+
+    is_missed=(breakout_pct>.08 or dist>.35 or ma20_ext>.15 or ret10>.28)
+
+    base_total=score_structure+score_wash+score_lows+score_contract+score_volume+score_turn
+    total=base_total*0.90+score_pos-extension_penalty
+    if not labels: total=min(total,49)
+    if is_missed: total=min(total,64.9)
+
+    if is_missed: stage="⚪ 已錯過/已漲一段"
+    elif -.03 <= breakout_pct <= .03 and turn>=.55: stage="🔴 突破初期"
+    elif 0 <= below_neck <= .10 and turn>=.58 and contraction>=.40: stage="🟠 紅點準備區"
+    elif contraction>=.58 and turn>=.42 and breakout_pct < 0: stage="🟡 築底末端"
+    else: stage="⚪ 築底中"
 
     # 參考支撐 / 突破
     support=min(c[-20:])
-    resistance=max(c[-40:-5]) if len(c)>=45 else max(c[:-5])
     vol_ratio=v[-1]/(mean(v[-20:-1]) or 1)
 
     reasons=[]
@@ -284,6 +302,12 @@ def score_stock(code, name, rows):
         "breakout":round(resistance,2),
         "vol_ratio":round(vol_ratio,2),
         "dist_from_60d_low_pct":round(dist*100,1),
+        "breakout_pct":round(breakout_pct*100,1),
+        "ma20_ext_pct":round(ma20_ext*100,1),
+        "ret5_pct":round(ret5*100,1),
+        "ret10_pct":round(ret10*100,1),
+        "timing":round(score_pos,1),
+        "extension_penalty":round(extension_penalty,1),
         "structure":round(score_structure,1),
         "washout":round(score_wash,1),
         "low_improve":round(score_lows,1),
@@ -340,7 +364,8 @@ def main():
     top=results[:args.top]
 
     fields=["rank","code","name","score","pattern","stage","close","support","breakout",
-            "vol_ratio","dist_from_60d_low_pct","structure","washout","low_improve",
+            "vol_ratio","dist_from_60d_low_pct","breakout_pct","ma20_ext_pct","ret5_pct","ret10_pct",
+            "timing","extension_penalty","structure","washout","low_improve",
             "contraction","volume","right_turn","position","reason"]
     with open(OUT_CSV,"w",newline="",encoding="utf-8-sig") as f:
         w=csv.DictWriter(f,fieldnames=fields)
