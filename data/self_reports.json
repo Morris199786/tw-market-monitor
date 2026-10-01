@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-01T14:32+08:00",
+  "updated_at": "2026-10-01T15:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
-    "candidate_count": 18,
+    "candidate_count": 19,
     "parsed_count": 11,
-    "parse_failed_count": 3,
+    "parse_failed_count": 4,
     "parse_failed": [
+      {
+        "ticker": "3518",
+        "name": "柏騰",
+        "publish_date": "2026-10-01",
+        "publish_time": "14:56:11",
+        "subject": "3518 柏騰 115/10/01 14:56:11 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "partial",
+        "eps_parse_reason": "only_one_eps_section_parsed",
+        "monthly_eps": null,
+        "quarter_eps": 0.35
+      },
       {
         "ticker": "8171",
         "name": "天宇",
@@ -52,14 +65,13 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 1,
-      "self_reports": 1,
+      "rows": 3,
+      "self_reports": 2,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectionError(ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -76,49 +88,38 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 31,
+          "rows": 35,
+          "hits": 2
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 35,
           "hits": 1
         },
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 31,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 31,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
           "keyword": "近期財務",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7f8808253020>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -135,13 +136,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 31,
+          "rows": 36,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 31,
+          "rows": 36,
           "hits": 0
         },
         {
@@ -171,13 +172,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 31,
+          "rows": 36,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 31,
+          "rows": 36,
           "hits": 0
         },
         {
