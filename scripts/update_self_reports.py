@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only"
+VERSION = "2026-10-01-v18-mops-section-eps-parser-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -231,6 +231,39 @@ def _find_quarter_period(text):
     return None
 
 
+def _extract_mops_section_eps(section):
+    """MOPS 注意交易公告直式表格 fallback：只在月/季 section 內抓 EPS 列。"""
+    if not section:
+        return None
+    m = re.search(EPS_WORD, section, re.I)
+    if not m:
+        return None
+    tail = section[m.end():]
+    tail = re.sub(r"^\s*[（(]?\s*(?:元|新台幣元)\s*[）)]?\s*", "", tail, flags=re.I)
+    vals = re.findall(CELL, tail, re.I)
+    if not vals:
+        return None
+    current = _number(vals[0])
+    if current is None:
+        return None
+    previous = None
+    yoy = None
+    yoy_text = None
+    if len(vals) >= 2 and "%" not in vals[1]:
+        previous = _number(vals[1])
+    for raw in vals[1:4]:
+        if "%" in raw:
+            yoy = _number(raw, growth=True)
+            yoy_text = raw.strip()
+            break
+    if yoy_text is None:
+        for raw in vals[1:4]:
+            if re.search(r"不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/?A|--+|—", raw, re.I):
+                yoy_text = raw.strip()
+                break
+    return current, previous, yoy, yoy_text
+
+
 def _extract_eps_triplet(section):
     """
     從單一月/季區塊中找 EPS 行。
@@ -394,6 +427,12 @@ def extract_metrics(text):
 
     month_values = _extract_eps_triplet(month_section) if month_section else None
     quarter_values = _extract_eps_triplet(quarter_section) if quarter_section else None
+
+    # MOPS 注意交易公告可能是直式表格，HTML 壓成文字後不一定符合一般 triplet 版型
+    if month_values is None and month_section:
+        month_values = _extract_mops_section_eps(month_section)
+    if quarter_values is None and quarter_section:
+        quarter_values = _extract_mops_section_eps(quarter_section)
 
     if month_values:
         out["monthly_eps"] = month_values[0]
