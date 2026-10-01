@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-10-01T13:32+08:00",
+  "updated_at": "2026-10-01T14:01+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-09-30-v17-hardened-horizontal-eps-parser-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
-    "candidate_count": 17,
+    "candidate_count": 18,
     "parsed_count": 11,
     "parse_failed_count": 3,
     "parse_failed": [
@@ -52,8 +52,8 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 1,
+      "self_reports": 1,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
@@ -76,20 +76,8 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 15,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 15,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 0,
-          "hits": 0
+          "rows": 25,
+          "hits": 1
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -112,13 +100,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務",
-          "rows": 15,
+          "rows": 25,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "財務業務",
-          "rows": 15,
+          "rows": 25,
           "hits": 0
         },
         {
@@ -148,13 +136,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 15,
+          "rows": 25,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 15,
+          "rows": 25,
           "hits": 0
         },
         {
@@ -184,13 +172,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 16,
+          "rows": 25,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 16,
+          "rows": 25,
           "hits": 0
         },
         {
@@ -211,7 +199,7 @@
     },
     "tpex": {
       "ok": true,
-      "rows": 60,
+      "rows": 83,
       "self_reports": 0,
       "error": ""
     }
