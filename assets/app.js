@@ -1128,6 +1128,7 @@ $$("[data-hk]").forEach(b => {
     holders();
   };
 });
+
 /* -----------------------------
    AI 選股
 ----------------------------- */
@@ -2091,313 +2092,26 @@ async function reports() {
     .join("");
 }
 
-/* =========================================================
-   熱力圖自動更新
-   ========================================================= */
-
-/*
-  GitHub Action 約每 5 分鐘更新一次 heatmap.json
-
-  已開啟的網頁：
-  每 60 秒檢查一次 heatmap.json
-
-  只有 updated_at 發生改變，
-  才重新 render 熱力圖與首頁強勢族群
-*/
-
-const HEATMAP_REFRESH_INTERVAL =
-  60 * 1000;
-
-let heatRefreshing = false;
-
-let lastHeatUpdatedAt = null;
-
-
-/*
-  檢查 heatmap 是否有新版
-*/
-async function autoRefreshHeatmap() {
-
-  /*
-    避免上一個檢查尚未完成
-    又啟動下一個
-  */
-  if (heatRefreshing) {
-    return;
-  }
-
-
-  /*
-    iPhone / iPad 切到背景時
-    不需要持續抓資料
-
-    回到前景會由
-    visibilitychange
-    立即檢查
-  */
-  if (document.hidden) {
-    return;
-  }
-
-
-  heatRefreshing = true;
-
-
-  try {
-
-    /*
-      J() 本身已經使用：
-
-      cache: "no-store"
-      ?v=Date.now()
-
-      所以不會拿到瀏覽器舊 cache
-    */
-    const latest =
-      await J(
-        "./data/heatmap.json"
-      );
-
-
-    if (
-      !latest ||
-      !Array.isArray(
-        latest.sectors
-      )
-    ) {
-      return;
-    }
-
-
-    const latestTime =
-      latest.updated_at ||
-      null;
-
-
-    /*
-      如果網站還沒有記住版本
-      就先建立基準
-    */
-    if (
-      lastHeatUpdatedAt === null
-    ) {
-
-      const currentTime =
-        cache.heat
-          ?.updated_at ||
-        null;
-
-
-      /*
-        如果目前畫面資料
-        已經比 GitHub 落後
-        就直接更新
-      */
-      if (
-        currentTime &&
-        latestTime &&
-        currentTime !==
-          latestTime
-      ) {
-
-        await heat();
-
-        await home();
-
-        lastHeatUpdatedAt =
-          latestTime;
-
-        console.log(
-          "[Heatmap] updated:",
-          latestTime
-        );
-
-        return;
-      }
-
-
-      lastHeatUpdatedAt =
-        latestTime ||
-        currentTime;
-
-      return;
-    }
-
-
-    /*
-      GitHub 上已出現新版 heatmap
-    */
-    if (
-      latestTime &&
-      latestTime !==
-        lastHeatUpdatedAt
-    ) {
-
-      /*
-        更新熱力圖
-      */
-      await heat();
-
-
-      /*
-        同步更新首頁：
-        - 最強族群
-        - Top 3 族群
-      */
-      await home();
-
-
-      /*
-        記住新版時間
-      */
-      lastHeatUpdatedAt =
-        latestTime;
-
-
-      console.log(
-        "[Heatmap] updated:",
-        latestTime
-      );
-    }
-
-
-  } catch (error) {
-
-    /*
-      更新失敗不破壞目前畫面
-      下一分鐘會再次嘗試
-    */
-    console.error(
-      "[Heatmap] auto refresh failed:",
-      error
-    );
-
-
-  } finally {
-
-    heatRefreshing = false;
-
-  }
-}
-
-
-/* -----------------------------
-   iPhone / iPad 回到前景
------------------------------ */
-
-document.addEventListener(
-  "visibilitychange",
-  () => {
-
-    if (!document.hidden) {
-      autoRefreshHeatmap();
-    }
-
-  }
-);
-
-
-/* -----------------------------
-   Safari BFCache
------------------------------ */
-
-/*
-  Safari 使用上一頁返回網站時，
-  有時會直接恢復舊畫面
-
-  pageshow 可以強制檢查
-  heatmap 是否已有新版
-*/
-window.addEventListener(
-  "pageshow",
-  () => {
-
-    autoRefreshHeatmap();
-
-  }
-);
-
-
-/* -----------------------------
-   網頁重新取得焦點
------------------------------ */
-
-window.addEventListener(
-  "focus",
-  () => {
-
-    autoRefreshHeatmap();
-
-  }
-);
-
-
 /* -----------------------------
    啟動
 ----------------------------- */
 
 async function init() {
-
   setupTheme();
-
   setupToTop();
 
-
-  /*
-    先取得股票簡稱
-  */
   await loadShortNames();
 
-
-  /*
-    初次載入網站資料
-  */
   await Promise.all([
-
     home(),
-
     flows(),
-
     volume(),
-
     turnover(),
-
     holders(),
-
     ai(),
-
     heat(),
-
     reports()
-
   ]);
-
-
-  /*
-    heat() 已經把目前 heatmap
-    放進 cache.heat
-
-    記住目前版本
-  */
-  lastHeatUpdatedAt =
-    cache.heat
-      ?.updated_at ||
-    null;
-
-
-  /*
-    每 60 秒檢查一次
-    GitHub 上是否有新版 heatmap
-  */
-  setInterval(
-    autoRefreshHeatmap,
-    HEATMAP_REFRESH_INTERVAL
-  );
-
 }
 
-
-/*
-  啟動網站
-*/
 init();
