@@ -273,7 +273,7 @@ h1{
 
 .tabs{
   display:flex;
-  gap:5px;
+  gap:8px;
   flex-wrap:wrap
 }
 
@@ -694,36 +694,6 @@ tr:last-child td{
   text-align:center;
   color:var(--muted);
   font-size:12px
-}
-
-/* =========================
-   籌碼日報篩選列
-   原版左對齊，只放寬間距
-   ========================= */
-
-#flows .toolbar{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:8px;
-  margin:0 0 14px
-}
-
-#flows .toolbar > .tabs{
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-  flex-wrap:wrap;
-  gap:8px
-}
-
-#flows .toolbar .tab{
-  /* 完全沿用原本 .tab 大小 */
-  min-width:0;
-  min-height:0;
-  width:auto;
-  flex:none;
-  white-space:nowrap
 }
 
 /* =========================
