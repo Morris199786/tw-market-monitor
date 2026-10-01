@@ -698,31 +698,27 @@ tr:last-child td{
 
 /* =========================
    籌碼日報篩選列
-   保留原本按鈕大小，只調整置中與間距
+   原版左對齊，只放寬間距
    ========================= */
 
 #flows .toolbar{
   display:flex;
   flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:7px;
-  width:100%;
-  margin:0 auto 14px
+  align-items:flex-start;
+  gap:8px;
+  margin:0 0 14px
 }
 
 #flows .toolbar > .tabs{
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   flex-wrap:wrap;
-  gap:7px;
-  width:auto;
-  max-width:100%
+  gap:8px
 }
 
 #flows .toolbar .tab{
-  /* 沿用原本 .tab 的 padding / font-size / border-radius */
+  /* 完全沿用原本 .tab 大小 */
   min-width:0;
   min-height:0;
   width:auto;
