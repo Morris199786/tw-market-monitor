@@ -220,6 +220,7 @@
       #heatGrid
       .heat-stock.heat-stock-top2{
         position:relative;
+
         border-color:
           rgba(202,138,4,.42)
           !important;
@@ -239,32 +240,14 @@
             rgba(161,98,7,.08)
       }
 
-      #heatGrid
-      .heat-stock.heat-stock-top2::after{
-        content:"5日強勢";
-        position:absolute;
-        top:6px;
-        right:7px;
-        padding:2px 5px;
-        border:1px solid
-          rgba(180,83,9,.22);
-        border-radius:999px;
-        background:
-          rgba(255,251,235,.90);
-        color:#92400e;
-        font-size:8px;
-        font-weight:900;
-        line-height:1.2;
-        letter-spacing:.02em;
-        pointer-events:none
-      }
-
       html[data-theme="dark"]
       .heat-strength-note{
         border-color:
           rgba(234,179,8,.30);
+
         background:
           rgba(113,63,18,.26);
+
         color:#fde68a
       }
 
@@ -303,28 +286,11 @@
             rgba(0,0,0,.12)
       }
 
-      html[data-theme="dark"]
-      #heatGrid
-      .heat-stock.heat-stock-top2::after{
-        border-color:
-          rgba(250,204,21,.26);
-        background:
-          rgba(66,32,6,.90);
-        color:#fde68a
-      }
-
       @media(max-width:720px){
         .heat-strength-note{
           margin-bottom:10px;
           padding:7px 9px;
           font-size:9px
-        }
-
-        #heatGrid
-        .heat-stock.heat-stock-top2::after{
-          top:5px;
-          right:6px;
-          font-size:7px
         }
       }
     `;
@@ -335,7 +301,7 @@
   }
 
   /* =========================================================
-     網頁上的金色說明
+     金色說明
      ========================================================= */
 
   function ensureStrengthNote() {
@@ -406,8 +372,7 @@
   }
 
   /* =========================================================
-     單一族群：
-     依近5日累積報酬排名
+     單一族群近5日排名
      ========================================================= */
 
   function markTopStocks(
@@ -476,9 +441,7 @@
 
           item.row.setAttribute(
             "data-5d-rank",
-            String(
-              index + 1
-            )
+            String(index + 1)
           );
 
           item.row.setAttribute(
@@ -492,7 +455,7 @@
   }
 
   /* =========================================================
-     全部目前已展開族群重新計算
+     全部已展開族群重新計算
      ========================================================= */
 
   async function applyStrengthMarks() {
@@ -522,10 +485,9 @@
       clearStrengthMarks();
 
       const details = [
-        ...heatGrid
-          .querySelectorAll(
-            ".heat-detail"
-          )
+        ...heatGrid.querySelectorAll(
+          ".heat-detail"
+        )
       ];
 
       details.forEach(
@@ -567,8 +529,7 @@
   }
 
   /* =========================================================
-     熱力圖展開／重畫時
-     自動重新標記
+     熱力圖展開／重畫時重新標記
      ========================================================= */
 
   function observeStrengthRows() {
@@ -613,7 +574,7 @@
   }
 
   /* =========================================================
-     原本 Heatmap Auto Refresh
+     Heatmap Auto Refresh
      ========================================================= */
 
   async function refreshHeatmap() {
@@ -657,11 +618,6 @@
       return;
     }
 
-    /*
-      一般 60 秒輪詢
-      只在 Heatmap 畫面執行
-    */
-
     if (
       !force &&
       !heatmapVisible()
@@ -686,10 +642,6 @@
         return;
       }
 
-      /*
-        第一次只記錄版本
-      */
-
       if (
         lastUpdatedAt === null
       ) {
@@ -707,10 +659,8 @@
       }
 
       /*
-        heatmap 本身沒有更新
-        仍重新讀 stock_detail
-        確保近5日資料如果稍晚更新
-        金色排名也能跟著變
+        heatmap 沒變時仍重新抓 stock_detail
+        確保近5日排名資料較晚更新也能跟上
       */
 
       if (
@@ -772,11 +722,6 @@
     timer =
       setInterval(
         function () {
-          /*
-            Safari 在背景時
-            不浪費 request
-          */
-
           if (
             document.hidden
           ) {
@@ -838,7 +783,7 @@
   }
 
   /* =========================================================
-     切換到市場熱力圖時立即更新
+     切換到熱力圖時立即更新
      ========================================================= */
 
   function bindHeatmapNavigation() {
@@ -894,10 +839,6 @@
 
     observeStrengthRows();
 
-    /*
-      先讀目前 heatmap 版本
-    */
-
     try {
       const data =
         await fetchHeatmap();
@@ -922,11 +863,6 @@
     bindHeatmapNavigation();
 
     startTimer();
-
-    /*
-      app.js 與 sector filter
-      可能稍晚才完成第一次渲染
-    */
 
     scheduleStrengthMarks(
       250
