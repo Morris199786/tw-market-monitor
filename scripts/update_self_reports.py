@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-01-v18-mops-section-eps-parser-telegram-only"
+VERSION = "2026-10-01-v19-eps-unit-label-fix-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -66,7 +66,7 @@ EXCLUDE_SUBJECT_KEYWORDS = (
 
 MONTH_WORD = r"(?:最近一(?:個)?月|單月|當月|本月)"
 QUARTER_WORD = r"(?:最近一(?:個)?季|單季|本季)"
-EPS_WORD = r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
+EPS_WORD = r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)(?:\s*[（(]\s*(?:元|新台幣元)\s*[）)])?"
 
 CELL = (
     r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?"
@@ -350,6 +350,13 @@ def _extract_horizontal_eps(text):
 
 
 def _slice_semantic_sections(text):
+    """
+    切出單月 / 單季區塊。
+
+    MOPS 常同時出現「(1)單月 最近一月單月」；舊版把第二個
+    同類 marker 誤當成區塊終點，結果 monthly section 只剩「單月」。
+    現在只用「另一種類型」的 marker 當區塊終點。
+    """
     markers = []
 
     for kind, pattern in (
@@ -360,16 +367,21 @@ def _slice_semantic_sections(text):
             markers.append((m.start(), kind))
 
     markers.sort()
-
     sections = {}
-    for i, (start, kind) in enumerate(markers):
+
+    for start, kind in markers:
         if kind in sections:
             continue
-        end = markers[i + 1][0] if i + 1 < len(markers) else len(text)
+
+        end = len(text)
+        for next_start, next_kind in markers:
+            if next_start > start and next_kind != kind:
+                end = next_start
+                break
+
         sections[kind] = text[start:end]
 
     return sections
-
 
 def _fallback_period_sections(text):
     """
