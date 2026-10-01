@@ -149,19 +149,71 @@ jobs:
 
       - name: Commit updated data
         run: |
+          set -e
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add \
+          # 先把這次 Action 產生的資料暫存起來
+          rm -rf /tmp/heatmap-generated
+          mkdir -p /tmp/heatmap-generated
+
+          for file in \
             data/master.json \
             data/heatmap.json \
             data/stock_detail.json
+          do
+            if [ -f "$file" ]; then
+              cp "$file" "/tmp/heatmap-generated/$(basename "$file")"
+            fi
+          done
 
-          if git diff --cached --quiet; then
-            echo "No heatmap changes"
-            exit 0
-          fi
+          # 最多嘗試 5 次
+          # 如果中途 main 被其他 Action 或手動 commit 更新，
+          # 就重新同步 main，再把本次產生的資料放回去重新 commit
+          for attempt in 1 2 3 4 5
+          do
+            echo "======================================"
+            echo "Push attempt ${attempt}/5"
+            echo "======================================"
 
-          git commit -m "data: heatmap update"
+            git fetch origin main
+            git reset --hard origin/main
 
-          git push origin HEAD:main
+            if [ -f /tmp/heatmap-generated/master.json ]; then
+              cp /tmp/heatmap-generated/master.json data/master.json
+            fi
+
+            if [ -f /tmp/heatmap-generated/heatmap.json ]; then
+              cp /tmp/heatmap-generated/heatmap.json data/heatmap.json
+            fi
+
+            if [ -f /tmp/heatmap-generated/stock_detail.json ]; then
+              cp /tmp/heatmap-generated/stock_detail.json data/stock_detail.json
+            fi
+
+            git add \
+              data/master.json \
+              data/heatmap.json \
+              data/stock_detail.json
+
+            if git diff --cached --quiet; then
+              echo "No heatmap changes"
+              exit 0
+            fi
+
+            git commit -m "data: heatmap update"
+
+            if git push origin HEAD:main; then
+              echo "Heatmap data pushed successfully"
+              exit 0
+            fi
+
+            echo "Remote main changed before push."
+            echo "Retrying with latest main..."
+
+            sleep 3
+          done
+
+          echo "Failed to push heatmap data after 5 attempts"
+          exit 1
