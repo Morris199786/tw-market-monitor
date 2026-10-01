@@ -1,39 +1,39 @@
 /* =========================================================
    市場熱力圖：市值加權 / 均衡加權
 
-   均衡加權：
-   保留市值權重概念，但依有效成分股數量
-   動態限制單一個股最高權重
+   重要原則：
+   1. 不改 app.js
+   2. 不搬動 heatGrid 裡任何族群卡片
+   3. 不自行排序 DOM
+   4. 點開族群完全沿用 app.js 原本 heat() / heatDetail()
+   5. 均衡加權只修改「顯示數值、顏色、廣度資訊」
+   6. app.js 每次重建 heatGrid 後，再重新套用均衡加權顯示
 
-   動態 Cap：
+   動態單股權重上限：
+   1 檔      → 100%
    2 檔      → 65%
    3 檔      → 50%
    4 檔      → 40%
    5–6 檔    → 35%
    7–9 檔    → 30%
    10 檔以上 → 25%
-
-   族群廣度：
-   ↑ 上漲家數 / 有效成分股數 · 上漲比例
-
-   其他：
-   1. 保留原本市值加權
-   2. 展開族群時停止重新排序
-   3. 支援 heatmap_auto_refresh.js
    ========================================================= */
 
 (function () {
-  const STORAGE_KEY = "tw_heat_weight_mode";
+  const STORAGE_KEY =
+    "tw_heat_weight_mode";
 
   let mode =
-    localStorage.getItem(STORAGE_KEY) ||
-    "market";
+    localStorage.getItem(
+      STORAGE_KEY
+    ) || "market";
 
   /*
-    相容舊版 localStorage
+    相容之前的 breadth 模式名稱
   */
   if (mode === "breadth") {
     mode = "balanced";
+
     localStorage.setItem(
       STORAGE_KEY,
       mode
@@ -41,37 +41,51 @@
   }
 
   let heatData = null;
-  let busy = false;
-  let observerBusy = false;
+  let loadingPromise = null;
+  let observer = null;
+  let applyQueued = false;
 
   const $ = selector =>
-    document.querySelector(selector);
+    document.querySelector(
+      selector
+    );
 
   const $$ = selector =>
-    [...document.querySelectorAll(selector)];
+    [
+      ...document.querySelectorAll(
+        selector
+      )
+    ];
 
 
   /* =========================================================
-     格式
+     百分比格式
      ========================================================= */
 
   function pct(value) {
     if (
       value === null ||
       value === undefined ||
-      Number.isNaN(Number(value))
+      Number.isNaN(
+        Number(value)
+      )
     ) {
       return "—";
     }
 
-    const n = Number(value);
+    const n =
+      Number(value);
 
-    return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+    return (
+      (n > 0 ? "+" : "") +
+      n.toFixed(2) +
+      "%"
+    );
   }
 
 
   /* =========================================================
-     依成分股數量決定單股權重上限
+     動態單股權重上限
      ========================================================= */
 
   function getWeightCap(count) {
@@ -104,52 +118,61 @@
 
 
   /* =========================================================
-     權重上限 + 超額權重重新分配
+     市值權重套用 Cap
+
+     超過 Cap 的權重會重新分配給其他股票
      ========================================================= */
 
   function cappedWeights(values) {
-    const raw = values.map(
-      value =>
-        Math.max(
-          0,
-          Number(value) || 0
-        )
-    );
+    const raw =
+      values.map(
+        value =>
+          Math.max(
+            0,
+            Number(value) || 0
+          )
+      );
 
-    const total = raw.reduce(
-      (sum, value) =>
-        sum + value,
-      0
-    );
+    const total =
+      raw.reduce(
+        (sum, value) =>
+          sum + value,
+        0
+      );
 
     if (!total) {
-      return raw.map(() => 0);
+      return raw.map(
+        () => 0
+      );
     }
 
-    const count = raw.length;
-
     const cap =
-      getWeightCap(count);
+      getWeightCap(
+        raw.length
+      );
 
-    const base = raw.map(
-      value =>
-        value / total
-    );
+    const base =
+      raw.map(
+        value =>
+          value / total
+      );
 
-    const fixed =
-      new Array(base.length)
-        .fill(null);
+    const result =
+      new Array(
+        base.length
+      ).fill(null);
 
     const active =
       new Set(
         base.map(
-          (_, index) => index
+          (_, index) =>
+            index
         )
       );
 
     while (active.size) {
       const fixedSum =
-        fixed.reduce(
+        result.reduce(
           (sum, value) =>
             sum +
             (
@@ -160,73 +183,89 @@
           0
         );
 
-      const remain =
+      const remaining =
         Math.max(
           0,
           1 - fixedSum
         );
 
-      const rawSum =
-        [...active].reduce(
-          (sum, index) =>
-            sum + base[index],
-          0
-        );
+      const activeBaseSum =
+        [...active]
+          .reduce(
+            (sum, index) =>
+              sum +
+              base[index],
+            0
+          );
 
-      if (!rawSum) {
+      if (!activeBaseSum) {
         const each =
-          remain / active.size;
+          remaining /
+          active.size;
 
-        [...active].forEach(
-          index => {
-            fixed[index] = each;
-          }
-        );
+        [...active]
+          .forEach(
+            index => {
+              result[index] =
+                each;
+            }
+          );
 
         break;
       }
 
       const trial =
-        new Map(
-          [...active].map(
-            index => [
+        new Map();
+
+      [...active]
+        .forEach(
+          index => {
+            trial.set(
               index,
-              (
-                remain *
-                base[index] /
-                rawSum
-              )
-            ]
-          )
+              remaining *
+              base[index] /
+              activeBaseSum
+            );
+          }
         );
 
       const over =
-        [...active].filter(
-          index =>
-            trial.get(index) >
-            cap + 1e-12
-        );
+        [...active]
+          .filter(
+            index =>
+              trial.get(
+                index
+              ) >
+              cap + 1e-12
+          );
 
       if (!over.length) {
-        [...active].forEach(
-          index => {
-            fixed[index] =
-              trial.get(index);
-          }
-        );
+        [...active]
+          .forEach(
+            index => {
+              result[index] =
+                trial.get(
+                  index
+                );
+            }
+          );
 
         break;
       }
 
       over.forEach(
         index => {
-          fixed[index] = cap;
-          active.delete(index);
+          result[index] =
+            cap;
+
+          active.delete(
+            index
+          );
         }
       );
     }
 
-    return fixed.map(
+    return result.map(
       value =>
         Number(value || 0)
     );
@@ -234,7 +273,7 @@
 
 
   /* =========================================================
-     計算均衡加權 + 族群廣度
+     計算均衡加權
      ========================================================= */
 
   function calcBalanced(sec) {
@@ -243,15 +282,18 @@
         .filter(
           stock =>
             stock &&
-            stock.change_pct !== null &&
-            stock.change_pct !== undefined &&
+            stock.change_pct !==
+              null &&
+            stock.change_pct !==
+              undefined &&
             Number.isFinite(
               Number(
                 stock.change_pct
               )
             ) &&
             Number(
-              stock.market_cap || 0
+              stock.market_cap ||
+              0
             ) > 0
         );
 
@@ -277,12 +319,13 @@
         valid.map(
           stock =>
             Number(
-              stock.market_cap || 0
+              stock.market_cap ||
+              0
             )
         )
       );
 
-    const change =
+    const changePct =
       valid.reduce(
         (
           sum,
@@ -321,11 +364,16 @@
       down;
 
     return {
-      change_pct: change,
+      change_pct:
+        changePct,
+
       up,
       down,
       flat,
-      valid: valid.length,
+
+      valid:
+        valid.length,
+
       cap,
 
       weights:
@@ -336,18 +384,15 @@
           ) => ({
             ticker:
               String(
-                stock.ticker || ""
+                stock.ticker ||
+                ""
               ),
 
             name:
               stock.name ||
               String(
-                stock.ticker || ""
-              ),
-
-            raw_weight:
-              Number(
-                stock.weight || 0
+                stock.ticker ||
+                ""
               ),
 
             capped_weight:
@@ -359,48 +404,118 @@
 
 
   /* =========================================================
-     讀取 heatmap.json
+     讀取最新 heatmap.json
      ========================================================= */
 
-  async function loadHeatData() {
-    try {
-      const response =
-        await fetch(
-          "./data/heatmap.json?v=" +
-          Date.now(),
-          {
-            cache: "no-store"
+  async function loadHeatData(
+    force = false
+  ) {
+    if (
+      heatData &&
+      !force
+    ) {
+      return heatData;
+    }
+
+    if (
+      loadingPromise &&
+      !force
+    ) {
+      return loadingPromise;
+    }
+
+    loadingPromise =
+      fetch(
+        "./data/heatmap.json?v=" +
+        Date.now(),
+        {
+          cache: "no-store"
+        }
+      )
+        .then(
+          response => {
+            if (
+              !response.ok
+            ) {
+              throw new Error(
+                "HTTP " +
+                response.status
+              );
+            }
+
+            return response
+              .json();
+          }
+        )
+        .then(
+          data => {
+            heatData =
+              data;
+
+            return data;
+          }
+        )
+        .catch(
+          error => {
+            console.error(
+              "balanced heatmap load failed",
+              error
+            );
+
+            return null;
+          }
+        )
+        .finally(
+          () => {
+            loadingPromise =
+              null;
           }
         );
 
-      if (!response.ok) {
-        throw new Error(
-          "HTTP " +
-          response.status
-        );
-      }
-
-      heatData =
-        await response.json();
-
-      return heatData;
-
-    } catch (error) {
-      console.error(
-        "balanced heatmap load failed",
-        error
-      );
-
-      return null;
-    }
+    return loadingPromise;
   }
 
 
   /* =========================================================
-     熱力圖顏色
+     族群 Map
      ========================================================= */
 
-  function heatClass(value) {
+  function sectorMap() {
+    return new Map(
+      (
+        heatData?.sectors ||
+        []
+      ).map(
+        sec => [
+          String(
+            sec.name
+          ),
+          sec
+        ]
+      )
+    );
+  }
+
+
+  /* =========================================================
+     顏色
+
+     沿用 app.js 原本 heatClass()
+     如果找不到才使用 fallback
+     ========================================================= */
+
+  function getHeatClass(value) {
+    try {
+      if (
+        typeof heatClass ===
+        "function"
+      ) {
+        return heatClass(
+          value
+        );
+      }
+    } catch (_) {}
+
     if (
       value === null ||
       value === undefined ||
@@ -455,7 +570,7 @@
 
   function ensureStyles() {
     if (
-      $("#heatBreadthStyle")
+      $("#heatBalancedStyle")
     ) {
       return;
     }
@@ -466,95 +581,100 @@
       );
 
     style.id =
-      "heatBreadthStyle";
+      "heatBalancedStyle";
 
     style.textContent = `
       .heat-weight-mode {
-        display: flex;
-        gap: 6px;
-        padding: 4px;
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        background: var(--soft);
+        display:flex;
+        gap:6px;
+        padding:4px;
+        border:1px solid var(--line);
+        border-radius:14px;
+        background:var(--soft);
       }
 
       .heat-weight-mode button {
-        min-height: 36px;
-        padding: 0 12px;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
-        color: var(--muted);
-        font-size: 11px;
-        font-weight: 850;
-        cursor: pointer;
-        white-space: nowrap;
+        flex:1;
+        min-height:36px;
+        padding:0 12px;
+        border:0;
+        border-radius:10px;
+        background:transparent;
+        color:var(--muted);
+        font-size:11px;
+        font-weight:850;
+        cursor:pointer;
+        white-space:nowrap;
       }
 
       .heat-weight-mode button.active {
-        background: var(--card);
-        color: var(--ink);
+        background:var(--card);
+        color:var(--ink);
         box-shadow:
           0 2px 8px
-          rgba(15, 23, 42, .10);
+          rgba(15,23,42,.10);
+      }
+
+      .heat-balanced-help {
+        margin-top:8px;
+        color:var(--muted);
+        font-size:9px;
+        line-height:1.55;
       }
 
       .heat-breadth-line {
-        display: block;
-        margin-top: 3px;
-        font-size: 9px;
-        font-weight: 750;
-        opacity: .82;
+        display:block;
+        margin-top:3px;
+        font-size:9px;
+        font-weight:800;
+        opacity:.86;
       }
 
-      .heat-breadth-help {
-        margin-top: 7px;
-        color: var(--muted);
-        font-size: 9px;
-        line-height: 1.45;
+      .heat-detail-balanced-note {
+        margin:8px 0 10px;
+        padding:9px 11px;
+        border:1px solid var(--line);
+        border-radius:12px;
+        background:var(--soft);
+        color:var(--muted);
+        font-size:10px;
+        font-weight:700;
+        line-height:1.5;
       }
 
-      .heat-detail-breadth-note {
-        margin: 8px 0 10px;
-        padding: 9px 11px;
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: var(--soft);
-        font-size: 10px;
-        color: var(--muted);
-        font-weight: 700;
-      }
-
-      @media(max-width: 720px) {
+      @media(max-width:720px) {
         .heat-sector-actions {
-          flex-wrap: wrap;
+          flex-wrap:wrap;
         }
 
         .heat-weight-mode {
-          width: 100%;
-        }
-
-        .heat-weight-mode button {
-          flex: 1;
+          width:100%;
         }
       }
     `;
 
     document.head
-      .appendChild(style);
+      .appendChild(
+        style
+      );
   }
 
 
   /* =========================================================
-     建立切換按鈕
+     建立模式切換
+
+     不碰 heatGrid
      ========================================================= */
 
   function ensureToggle() {
     const actions =
       $(".heat-sector-actions");
 
+    if (!actions) {
+      return;
+    }
+
     if (
-      !actions ||
       $("#heatWeightMode")
     ) {
       return;
@@ -570,11 +690,6 @@
 
     wrap.className =
       "heat-weight-mode";
-
-    wrap.setAttribute(
-      "aria-label",
-      "熱力圖權重模式"
-    );
 
     wrap.innerHTML = `
       <button
@@ -614,46 +729,53 @@
                 mode
               );
 
-              await loadHeatData();
+              /*
+                只重新套顯示
+                不執行 heat()
+                不搬動 DOM
+              */
 
-              updateToggle();
+              await loadHeatData(
+                true
+              );
 
-              await decorate();
+              updateControls();
+
+              applyMode();
             }
           );
         }
       );
 
-    const copy =
+    const help =
       document.createElement(
         "div"
       );
 
-    copy.className =
-      "heat-breadth-help";
+    help.id =
+      "heatBalancedHelp";
 
-    copy.id =
-      "heatBreadthHelp";
-
-    copy.textContent =
-      "均衡加權：依族群成分股數動態限制單一個股最高權重；卡片下方 ↑ x/y 為族群廣度";
+    help.className =
+      "heat-balanced-help";
 
     const control =
       $("#heatSectorControl");
 
-    control?.appendChild(
-      copy
-    );
+    if (control) {
+      control.appendChild(
+        help
+      );
+    }
 
-    updateToggle();
+    updateControls();
   }
 
 
   /* =========================================================
-     更新切換按鈕 / 說明
+     更新按鈕與說明文字
      ========================================================= */
 
-  function updateToggle() {
+  function updateControls() {
     $$(
       "[data-heat-weight]"
     ).forEach(
@@ -661,10 +783,35 @@
         button.classList.toggle(
           "active",
           button.dataset
-            .heatWeight === mode
+            .heatWeight ===
+            mode
         );
       }
     );
+
+    const help =
+      $("#heatBalancedHelp");
+
+    if (help) {
+      if (
+        mode ===
+        "balanced"
+      ) {
+        help.textContent =
+          "均衡加權：依成分股數動態限制單股權重｜2檔65%・3檔50%・4檔40%・5–6檔35%・7–9檔30%・10檔以上25%｜↑ x/y 為族群上漲家數";
+      } else {
+        help.textContent =
+          "市值加權：依各成分股市值權重計算族群漲跌幅";
+      }
+    }
+
+    /*
+      heatmap_sector_filter.js
+      也會改 hero 文字。
+
+      這裡只在均衡模式覆蓋，
+      市值模式使用簡潔正確敘述。
+    */
 
     const hero =
       $("#heat .hero p");
@@ -687,62 +834,35 @@
           `${count} 個自訂族群｜市值加權｜紅漲綠跌｜可直接下拉選族群`;
       }
     }
+  }
 
-    const help =
-      $("#heatBreadthHelp");
 
-    if (help) {
-      if (
-        mode ===
-        "balanced"
-      ) {
-        help.textContent =
-          "均衡加權：2檔65%｜3檔50%｜4檔40%｜5–6檔35%｜7–9檔30%｜10檔以上25%；↑ x/y 為實際上漲家數";
-      } else {
-        help.textContent =
-          "市值加權：依個股市值決定族群漲跌幅";
+  /* =========================================================
+     移除我們自己加的卡片資訊
+     ========================================================= */
+
+  function removeBreadthLines() {
+    $$(
+      "#heatGrid .heat-breadth-line"
+    ).forEach(
+      element => {
+        element.remove();
       }
-    }
-  }
-
-
-  /* =========================================================
-     族群 Map
-     ========================================================= */
-
-  function sectorMap() {
-    return new Map(
-      (
-        heatData?.sectors ||
-        []
-      ).map(
-        sec => [
-          String(sec.name),
-          sec
-        ]
-      )
     );
   }
 
 
   /* =========================================================
-     是否有 detail 展開
+     還原 / 修改卡片
+
+     重要：
+     只修改卡片本身
+     不 appendChild 卡片
+     不 insertBefore 卡片
+     不排序
      ========================================================= */
 
-  function hasOpenDetail() {
-    return Boolean(
-      document.querySelector(
-        "#heatGrid .heat-detail"
-      )
-    );
-  }
-
-
-  /* =========================================================
-     修改族群卡片
-     ========================================================= */
-
-  function decorateButtons() {
+  function applyCards() {
     if (!heatData) {
       return;
     }
@@ -766,12 +886,18 @@
         }
 
         const balanced =
-          calcBalanced(sec);
+          calcBalanced(
+            sec
+          );
 
         const value =
           mode === "balanced"
             ? balanced.change_pct
             : sec.change_pct;
+
+        /*
+          顏色
+        */
 
         button.classList.remove(
           "gray",
@@ -786,8 +912,14 @@
         );
 
         button.classList.add(
-          heatClass(value)
+          getHeatClass(
+            value
+          )
         );
+
+        /*
+          漲跌幅
+        */
 
         const strong =
           button.querySelector(
@@ -799,49 +931,51 @@
             pct(value);
         }
 
-        let line =
-          button.querySelector(
+        /*
+          先移除舊廣度文字
+        */
+
+        button
+          .querySelectorAll(
             ".heat-breadth-line"
+          )
+          .forEach(
+            element =>
+              element.remove()
           );
-
-        if (!line) {
-          line =
-            document.createElement(
-              "span"
-            );
-
-          line.className =
-            "heat-breadth-line";
-
-          button.appendChild(
-            line
-          );
-        }
 
         /*
-          市值加權模式：
-          不顯示族群廣度
+          市值加權不加廣度資訊
         */
 
         if (
-          mode !== "balanced"
+          mode !==
+          "balanced"
         ) {
-          line.style.display =
-            "none";
-
           return;
         }
 
-        line.style.display =
-          "";
+        /*
+          均衡加權顯示真正 Breadth
+        */
 
-        if (balanced.valid) {
+        const line =
+          document.createElement(
+            "span"
+          );
+
+        line.className =
+          "heat-breadth-line";
+
+        if (
+          balanced.valid
+        ) {
           const ratio =
-            (
+            Math.round(
               balanced.up /
               balanced.valid *
               100
-            ).toFixed(0);
+            );
 
           line.textContent =
             `↑ ${balanced.up}/${balanced.valid} · ${ratio}%上漲`;
@@ -849,107 +983,9 @@
           line.textContent =
             "上漲家數 —";
         }
-      }
-    );
 
-    /*
-      detail 展開期間
-      不允許重新排序
-    */
-
-    if (!hasOpenDetail()) {
-      reorderButtons();
-    }
-  }
-
-
-  /* =========================================================
-     排序族群卡片
-
-     有 detail 展開時禁止搬動 DOM
-     ========================================================= */
-
-  function reorderButtons() {
-    const grid =
-      $("#heatGrid");
-
-    if (!grid) {
-      return;
-    }
-
-    if (hasOpenDetail()) {
-      return;
-    }
-
-    const map =
-      sectorMap();
-
-    const buttons =
-      $$(
-        "#heatGrid > button.heat[data-sec]"
-      );
-
-    buttons.sort(
-      (a, b) => {
-        const sectorA =
-          map.get(
-            String(
-              a.dataset.sec
-            )
-          );
-
-        const sectorB =
-          map.get(
-            String(
-              b.dataset.sec
-            )
-          );
-
-        const valueA =
-          mode === "balanced"
-            ? calcBalanced(
-                sectorA
-              ).change_pct
-            : sectorA
-                ?.change_pct;
-
-        const valueB =
-          mode === "balanced"
-            ? calcBalanced(
-                sectorB
-              ).change_pct
-            : sectorB
-                ?.change_pct;
-
-        const aNumber =
-          valueA === null ||
-          valueA === undefined ||
-          Number.isNaN(
-            Number(valueA)
-          )
-            ? -999
-            : Number(valueA);
-
-        const bNumber =
-          valueB === null ||
-          valueB === undefined ||
-          Number.isNaN(
-            Number(valueB)
-          )
-            ? -999
-            : Number(valueB);
-
-        return (
-          bNumber -
-          aNumber
-        );
-      }
-    );
-
-    buttons.forEach(
-      button => {
-        grid.appendChild(
-          button
+        button.appendChild(
+          line
         );
       }
     );
@@ -957,51 +993,59 @@
 
 
   /* =========================================================
-     展開族群詳細資料
+     修改目前展開的 Detail
+
+     不移動 Detail
+     不改 Detail 所在位置
      ========================================================= */
 
-  function decorateOpenDetail() {
-    if (!heatData) {
-      return;
-    }
-
+  function applyOpenDetail() {
     const detail =
       $(
         "#heatGrid .heat-detail"
       );
 
-    if (!detail) {
+    if (
+      !detail ||
+      !heatData
+    ) {
       return;
     }
 
-    let openButton =
-      detail.previousElementSibling;
+    /*
+      最可靠方式：
+      直接從 detail 標題取得族群名稱
 
-    if (
-      !openButton ||
-      !openButton.matches?.(
-        "button.heat[data-sec]"
-      )
-    ) {
-      openButton =
-        $$(
-          "#heatGrid > button.heat[data-sec]"
-        ).find(
-          button =>
-            button.nextElementSibling ===
-            detail
-        );
-    }
+      不再依賴 previousElementSibling，
+      因為 Grid / 外掛可能影響 DOM 判斷。
+    */
 
-    if (!openButton) {
+    const head =
+      detail.querySelector(
+        ".heat-detail-head b"
+      );
+
+    if (!head) {
       return;
     }
 
     const name =
-      String(
-        openButton.dataset.sec ||
-        ""
-      );
+      [...head.childNodes]
+        .filter(
+          node =>
+            node.nodeType ===
+            Node.TEXT_NODE
+        )
+        .map(
+          node =>
+            node.textContent
+        )
+        .join(" ")
+        .trim();
+
+    if (!name) {
+      return;
+    }
 
     const sec =
       (
@@ -1011,7 +1055,8 @@
         item =>
           String(
             item.name
-          ) === name
+          ) ===
+          String(name)
       );
 
     if (!sec) {
@@ -1019,105 +1064,89 @@
     }
 
     const balanced =
-      calcBalanced(sec);
+      calcBalanced(
+        sec
+      );
 
-    const detailValue =
+    /*
+      app.js 原本：
+      .heat-detail-head b span
+      就是族群漲跌幅
+    */
+
+    const valueSpan =
+      detail.querySelector(
+        ".heat-detail-head b > span"
+      );
+
+    const value =
       mode === "balanced"
         ? balanced.change_pct
         : sec.change_pct;
 
-    /*
-      修改 detail 原本的族群百分比
-    */
+    if (valueSpan) {
+      valueSpan.textContent =
+        pct(value);
 
-    const candidates =
-      [
-        ...detail.querySelectorAll(
-          "b, strong, span"
-        )
-      ];
+      /*
+        保留 app.js 原本 cl()
+        如果可用就同步更新 class
+      */
 
-    for (
-      const element
-      of candidates
-    ) {
-      const text =
-        (
-          element.textContent ||
-          ""
-        ).trim();
-
-      if (
-        /^[+-]?\d+(?:\.\d+)?%$/.test(
-          text
-        )
-      ) {
-        element.textContent =
-          pct(detailValue);
-
-        break;
-      }
+      try {
+        if (
+          typeof cl ===
+          "function"
+        ) {
+          valueSpan.className =
+            cl(value);
+        }
+      } catch (_) {}
     }
 
-    let note =
-      detail.querySelector(
-        ".heat-detail-breadth-note"
-      );
-
     /*
-      市值加權模式：
-      移除均衡加權說明
+      移除舊均衡說明
     */
 
-    if (
-      mode !== "balanced"
-    ) {
-      if (note) {
-        note.remove();
-      }
+    detail
+      .querySelectorAll(
+        ".heat-detail-balanced-note, .heat-detail-breadth-note"
+      )
+      .forEach(
+        element =>
+          element.remove()
+      );
 
+    if (
+      mode !==
+      "balanced"
+    ) {
       return;
     }
 
-    if (!note) {
-      note =
-        document.createElement(
-          "div"
-        );
+    const note =
+      document.createElement(
+        "div"
+      );
 
-      note.className =
-        "heat-detail-breadth-note";
+    note.className =
+      "heat-detail-balanced-note";
 
-      const list =
-        detail.querySelector(
-          ".heat-stock-list"
-        );
-
-      if (list) {
-        detail.insertBefore(
-          note,
-          list
-        );
-      } else {
-        detail.appendChild(
-          note
-        );
-      }
-    }
-
-    if (balanced.valid) {
-      const capPercent =
-        (
+    if (
+      balanced.valid
+    ) {
+      const cap =
+        Math.round(
           balanced.cap *
           100
-        ).toFixed(0);
+        );
 
-      const upRatio =
-        (
+      const ratio =
+        Math.round(
           balanced.up /
           balanced.valid *
           100
-        ).toFixed(0);
+        );
 
       note.innerHTML = `
         均衡加權
@@ -1132,60 +1161,100 @@
           ${balanced.up}/${balanced.valid}
         </b>
 
-        （${upRatio}%）
+        （${ratio}%）
 
         ｜ 單股權重上限
         <b style="color:var(--ink)">
-          ${capPercent}%
+          ${cap}%
         </b>
       `;
+
     } else {
       note.textContent =
         "均衡加權資料不足";
     }
+
+    const list =
+      detail.querySelector(
+        ".heat-stock-list"
+      );
+
+    if (list) {
+      detail.insertBefore(
+        note,
+        list
+      );
+    } else {
+      detail.appendChild(
+        note
+      );
+    }
   }
 
 
   /* =========================================================
-     全部更新
+     套用目前模式
+
+     完全不排序 DOM
      ========================================================= */
 
-  async function decorate() {
-    if (busy) {
+  function applyMode() {
+    if (!heatData) {
       return;
     }
 
-    busy = true;
+    updateControls();
 
-    try {
-      ensureStyles();
+    applyCards();
 
-      ensureToggle();
-
-      if (!heatData) {
-        await loadHeatData();
-      }
-
-      updateToggle();
-
-      decorateButtons();
-
-      decorateOpenDetail();
-
-    } finally {
-      busy = false;
-    }
+    applyOpenDetail();
   }
 
 
   /* =========================================================
-     監聽 heatGrid DOM
+     排程重新套用
 
-     只監聽第一層，
-     避免修改卡片文字後自己觸發自己
+     app.js 點族群時：
+     heat() → box.innerHTML = html
+
+     我們等它重建完成後，
+     再修改數字。
+
+     不再自己重新 render heat()
      ========================================================= */
 
-  function observe() {
+  function queueApply() {
+    if (applyQueued) {
+      return;
+    }
+
+    applyQueued = true;
+
+    requestAnimationFrame(
+      () => {
+        applyQueued = false;
+
+        applyMode();
+      }
+    );
+  }
+
+
+  /* =========================================================
+     監聽 app.js 重建 heatGrid
+
+     只監聽第一層 childList。
+
+     app.js 每次點卡片會直接：
+     box.innerHTML = html
+
+     所以這裡會收到變化，
+     然後重新套用均衡顯示。
+
+     不修改卡片位置。
+     ========================================================= */
+
+  function observeHeatGrid() {
     const grid =
       $("#heatGrid");
 
@@ -1193,60 +1262,27 @@
       return;
     }
 
-    const observer =
+    if (observer) {
+      observer.disconnect();
+    }
+
+    observer =
       new MutationObserver(
         mutations => {
-          if (observerBusy) {
-            return;
-          }
-
-          const structuralChange =
+          const relevant =
             mutations.some(
-              mutation => {
-                if (
-                  mutation.type !==
-                  "childList"
-                ) {
-                  return false;
-                }
-
-                const nodes = [
-                  ...mutation.addedNodes,
-                  ...mutation.removedNodes
-                ];
-
-                return nodes.some(
-                  node =>
-                    node.nodeType === 1 &&
-                    (
-                      node.matches?.(
-                        "button.heat[data-sec]"
-                      ) ||
-                      node.classList
-                        ?.contains(
-                          "heat-detail"
-                        )
-                    )
-                );
-              }
+              mutation =>
+                mutation.type ===
+                "childList" &&
+                mutation.target ===
+                grid
             );
 
-          if (!structuralChange) {
+          if (!relevant) {
             return;
           }
 
-          observerBusy = true;
-
-          requestAnimationFrame(
-            async () => {
-              try {
-                await decorate();
-
-              } finally {
-                observerBusy = false;
-              }
-            }
-          );
+          queueApply();
         }
       );
 
@@ -1261,20 +1297,47 @@
 
 
   /* =========================================================
-     自動刷新
-
      heatmap_auto_refresh.js
-     發出 heatmap:data-updated 後
-     重新載入最新資料
+
+     有新資料時重新讀 heatmap.json
      ========================================================= */
 
   function bindAutoRefresh() {
     window.addEventListener(
       "heatmap:data-updated",
       async () => {
-        await loadHeatData();
+        await loadHeatData(
+          true
+        );
 
-        await decorate();
+        queueApply();
+      }
+    );
+  }
+
+
+  /* =========================================================
+     Page / visibility
+
+     回到頁面時補一次
+     ========================================================= */
+
+  function bindPageEvents() {
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (
+          !document.hidden
+        ) {
+          queueApply();
+        }
+      }
+    );
+
+    window.addEventListener(
+      "pageshow",
+      () => {
+        queueApply();
       }
     );
   }
@@ -1287,20 +1350,26 @@
   async function init() {
     ensureStyles();
 
-    await loadHeatData();
-
-    bindAutoRefresh();
+    await loadHeatData(
+      true
+    );
 
     let tries = 0;
 
     const timer =
       setInterval(
-        async () => {
+        () => {
           tries += 1;
 
+          const grid =
+            $("#heatGrid");
+
+          const actions =
+            $(".heat-sector-actions");
+
           if (
-            $("#heatSectorControl") &&
-            $("#heatGrid")
+            grid &&
+            actions
           ) {
             clearInterval(
               timer
@@ -1308,12 +1377,21 @@
 
             ensureToggle();
 
-            await decorate();
+            updateControls();
 
-            observe();
+            applyMode();
 
-          } else if (
-            tries > 60
+            observeHeatGrid();
+
+            bindAutoRefresh();
+
+            bindPageEvents();
+
+            return;
+          }
+
+          if (
+            tries >= 80
           ) {
             clearInterval(
               timer
