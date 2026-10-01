@@ -8,11 +8,12 @@
    3. iPhone / Safari 從背景切回時立即檢查
    4. 回到 Heatmap 分頁時立即檢查
    5. 不重新整理整個網頁
-   6. 每個族群依 stock_detail.json 的最新近5日累積報酬重新排名
-   7. 每個族群前 2 強個股自動標示淡金色
-   8. 金色名單隨近5日滾動資料自動更新，不寫死股票
-   9. 網頁自動顯示「金色＝族群近5日漲幅前2強」
-   10. 不碰 app.js
+   6. 每族群依 stock_detail.json 最新近5日累積報酬排名
+   7. 第1、2名標示淡金色
+   8. 股票名稱旁顯示「近五日漲幅第1／第2」
+   9. 標籤不佔用右側當日漲幅區域
+   10. 排名隨近5日資料自動更新
+   11. 不碰 app.js
    ========================================================= */
 
 (function () {
@@ -166,7 +167,7 @@
   }
 
   /* =========================================================
-     金色強勢股樣式
+     樣式
      ========================================================= */
 
   function injectStrengthStyles() {
@@ -187,18 +188,30 @@
       "heatStrengthStyle";
 
     style.textContent = `
+
+      /* 上方說明 */
+
       .heat-strength-note{
         display:flex;
         align-items:center;
         gap:8px;
+
         width:max-content;
         max-width:100%;
+
         margin:0 0 12px;
         padding:7px 10px;
-        border:1px solid rgba(202,138,4,.26);
+
+        border:1px solid
+          rgba(202,138,4,.26);
+
         border-radius:10px;
-        background:rgba(254,243,199,.56);
+
+        background:
+          rgba(254,243,199,.56);
+
         color:#765314;
+
         font-size:10px;
         font-weight:800;
         line-height:1.35
@@ -207,15 +220,26 @@
       .heat-strength-swatch{
         width:11px;
         height:11px;
+
         flex:0 0 11px;
-        border:1px solid rgba(202,138,4,.42);
+
+        border:1px solid
+          rgba(202,138,4,.42);
+
         border-radius:4px;
-        background:linear-gradient(
-          180deg,
-          rgba(253,230,138,.92),
-          rgba(254,243,199,.92)
-        )
+
+        background:
+          linear-gradient(
+            180deg,
+            rgba(253,230,138,.92),
+            rgba(254,243,199,.92)
+          )
       }
+
+
+      /* =========================
+         Top 2 金色背景
+         ========================= */
 
       #heatGrid
       .heat-stock.heat-stock-top2{
@@ -239,6 +263,59 @@
           0 4px 12px
             rgba(161,98,7,.08)
       }
+
+
+      /* =========================
+         股票名稱左側內容區
+         ========================= */
+
+      #heatGrid
+      .heat-stock
+      .heat-strength-left{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+
+        min-width:0;
+        max-width:calc(100% - 90px)
+      }
+
+
+      /* =========================
+         第1 / 第2 標籤
+         ========================= */
+
+      #heatGrid
+      .heat-strength-rank{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+
+        flex:0 0 auto;
+
+        padding:3px 6px;
+
+        border:1px solid
+          rgba(180,83,9,.24);
+
+        border-radius:999px;
+
+        background:
+          rgba(255,251,235,.92);
+
+        color:#92400e;
+
+        font-size:9px;
+        font-weight:900;
+        line-height:1;
+
+        white-space:nowrap
+      }
+
+
+      /* =========================
+         深色模式
+         ========================= */
 
       html[data-theme="dark"]
       .heat-strength-note{
@@ -286,11 +363,56 @@
             rgba(0,0,0,.12)
       }
 
+      html[data-theme="dark"]
+      #heatGrid
+      .heat-strength-rank{
+        border-color:
+          rgba(250,204,21,.28);
+
+        background:
+          rgba(66,32,6,.88);
+
+        color:#fde68a
+      }
+
+
+      /* =========================
+         手機
+         ========================= */
+
       @media(max-width:720px){
+
         .heat-strength-note{
           margin-bottom:10px;
           padding:7px 9px;
           font-size:9px
+        }
+
+        #heatGrid
+        .heat-stock
+        .heat-strength-left{
+          gap:5px;
+          max-width:calc(100% - 82px)
+        }
+
+        #heatGrid
+        .heat-strength-rank{
+          padding:3px 5px;
+          font-size:8px
+        }
+      }
+
+
+      /* =========================
+         特別窄的手機
+         ========================= */
+
+      @media(max-width:390px){
+
+        #heatGrid
+        .heat-strength-rank{
+          padding:2px 4px;
+          font-size:7px
         }
       }
     `;
@@ -301,7 +423,7 @@
   }
 
   /* =========================================================
-     金色說明
+     上方金色說明
      ========================================================= */
 
   function ensureStrengthNote() {
@@ -348,15 +470,17 @@
   }
 
   /* =========================================================
-     清除舊排名
+     清除舊標記
      ========================================================= */
 
   function clearStrengthMarks() {
+
     document
       .querySelectorAll(
         "#heatGrid .heat-stock-top2"
       )
       .forEach(row => {
+
         row.classList.remove(
           "heat-stock-top2"
         );
@@ -369,16 +493,152 @@
           "data-5d-return"
         );
       });
+
+
+    document
+      .querySelectorAll(
+        "#heatGrid .heat-strength-rank"
+      )
+      .forEach(label => {
+        label.remove();
+      });
+
+
+    document
+      .querySelectorAll(
+        "#heatGrid .heat-strength-left"
+      )
+      .forEach(wrapper => {
+
+        const parent =
+          wrapper.parentNode;
+
+        if (!parent) {
+          return;
+        }
+
+        while (
+          wrapper.firstChild
+        ) {
+          parent.insertBefore(
+            wrapper.firstChild,
+            wrapper
+          );
+        }
+
+        wrapper.remove();
+      });
   }
 
   /* =========================================================
-     單一族群近5日排名
+     加入「近五日漲幅第1 / 第2」標籤
+     ========================================================= */
+
+  function addRankLabel(
+    row,
+    rank
+  ) {
+
+    /*
+      找股票名稱
+      原本 heatmap 個股列的名稱元素
+    */
+
+    const ticker =
+      row.querySelector(".t");
+
+    if (!ticker) {
+      return;
+    }
+
+    /*
+      名稱通常就在 ticker 前面
+      找最適合的名稱節點
+    */
+
+    let nameElement = null;
+
+    const candidates = [
+      ...row.children
+    ];
+
+    for (
+      const child of candidates
+    ) {
+
+      if (
+        child === ticker
+      ) {
+        continue;
+      }
+
+      /*
+        右邊漲幅通常含 %
+        不把它當成名稱
+      */
+
+      if (
+        child.textContent
+          ?.includes("%")
+      ) {
+        continue;
+      }
+
+      if (
+        child.querySelector?.(
+          ".t"
+        )
+      ) {
+        continue;
+      }
+
+      nameElement = child;
+      break;
+    }
+
+
+    /*
+      如果目前 DOM 結構不是獨立元素，
+      就直接把標籤插在 ticker 後面
+      仍然不會碰右側漲幅
+    */
+
+    const label =
+      document.createElement(
+        "span"
+      );
+
+    label.className =
+      "heat-strength-rank";
+
+    label.textContent =
+      rank === 1
+        ? "近五日漲幅第1"
+        : "近五日漲幅第2";
+
+
+    /*
+      優先放在股票代號後
+      這樣版面會是：
+
+      新唐 4919 [近五日漲幅第1]     +9.75%
+    */
+
+    ticker.insertAdjacentElement(
+      "afterend",
+      label
+    );
+  }
+
+  /* =========================================================
+     單一族群排名
      ========================================================= */
 
   function markTopStocks(
     detail,
     stockDetailData
   ) {
+
     const sectorName =
       sectorFromDetail(detail);
 
@@ -399,6 +659,7 @@
     const ranked =
       rows
         .map(row => {
+
           const ticker =
             tickerFromRow(row);
 
@@ -417,16 +678,19 @@
             return5d
           };
         })
+
         .filter(
           item =>
             item.ticker &&
             item.return5d !== null
         )
+
         .sort(
           (a, b) =>
             b.return5d -
             a.return5d
         );
+
 
     ranked
       .slice(
@@ -435,13 +699,17 @@
       )
       .forEach(
         (item, index) => {
+
+          const rank =
+            index + 1;
+
           item.row.classList.add(
             "heat-stock-top2"
           );
 
           item.row.setAttribute(
             "data-5d-rank",
-            String(index + 1)
+            String(rank)
           );
 
           item.row.setAttribute(
@@ -450,15 +718,21 @@
               item.return5d
             )
           );
+
+          addRankLabel(
+            item.row,
+            rank
+          );
         }
       );
   }
 
   /* =========================================================
-     全部已展開族群重新計算
+     全部已展開族群重新排名
      ========================================================= */
 
   async function applyStrengthMarks() {
+
     if (strengthApplying) {
       return;
     }
@@ -475,6 +749,7 @@
     strengthApplying = true;
 
     try {
+
       injectStrengthStyles();
 
       ensureStrengthNote();
@@ -492,6 +767,7 @@
 
       details.forEach(
         detail => {
+
           markTopStocks(
             detail,
             data
@@ -500,12 +776,14 @@
       );
 
     } catch (error) {
+
       console.error(
         "heatmap 5d strength mark failed:",
         error
       );
 
     } finally {
+
       strengthApplying = false;
     }
   }
@@ -513,6 +791,7 @@
   function scheduleStrengthMarks(
     delay = 80
   ) {
+
     if (strengthTimer) {
       clearTimeout(
         strengthTimer
@@ -522,17 +801,20 @@
     strengthTimer =
       setTimeout(
         function () {
+
           applyStrengthMarks();
+
         },
         delay
       );
   }
 
   /* =========================================================
-     熱力圖展開／重畫時重新標記
+     Heatmap DOM 變化
      ========================================================= */
 
   function observeStrengthRows() {
+
     const heatGrid =
       document.getElementById(
         "heatGrid"
@@ -549,6 +831,7 @@
     strengthObserver =
       new MutationObserver(
         function (mutations) {
+
           const changed =
             mutations.some(
               mutation =>
@@ -557,6 +840,7 @@
             );
 
           if (changed) {
+
             scheduleStrengthMarks(
               100
             );
@@ -578,10 +862,12 @@
      ========================================================= */
 
   async function refreshHeatmap() {
+
     if (
       typeof window.heat ===
       "function"
     ) {
+
       await window.heat();
 
       scheduleStrengthMarks(
@@ -595,6 +881,7 @@
       typeof heat ===
       "function"
     ) {
+
       await heat();
 
       scheduleStrengthMarks(
@@ -614,6 +901,7 @@
   async function checkForUpdate(
     force = false
   ) {
+
     if (checking) {
       return;
     }
@@ -628,6 +916,7 @@
     checking = true;
 
     try {
+
       const data =
         await fetchHeatmap();
 
@@ -635,6 +924,7 @@
         getUpdatedAt(data);
 
       if (!updatedAt) {
+
         console.warn(
           "heatmap auto refresh: updated_at missing"
         );
@@ -643,8 +933,10 @@
       }
 
       if (
-        lastUpdatedAt === null
+        lastUpdatedAt ===
+        null
       ) {
+
         lastUpdatedAt =
           updatedAt;
 
@@ -659,14 +951,16 @@
       }
 
       /*
-        heatmap 沒變時仍重新抓 stock_detail
-        確保近5日排名資料較晚更新也能跟上
+        heatmap 沒更新，
+        仍重新讀 stock_detail
+        讓近5日排名跟著最新資料變動
       */
 
       if (
         String(updatedAt) ===
         String(lastUpdatedAt)
       ) {
+
         scheduleStrengthMarks();
 
         return;
@@ -686,6 +980,7 @@
         await refreshHeatmap();
 
       if (refreshed) {
+
         window.dispatchEvent(
           new CustomEvent(
             "heatmap:data-updated",
@@ -700,12 +995,14 @@
       }
 
     } catch (error) {
+
       console.error(
         "heatmap auto refresh failed:",
         error
       );
 
     } finally {
+
       checking = false;
     }
   }
@@ -715,6 +1012,7 @@
      ========================================================= */
 
   function startTimer() {
+
     if (timer) {
       clearInterval(timer);
     }
@@ -722,6 +1020,7 @@
     timer =
       setInterval(
         function () {
+
           if (
             document.hidden
           ) {
@@ -731,22 +1030,26 @@
           checkForUpdate(
             false
           );
+
         },
         CHECK_INTERVAL
       );
   }
 
   /* =========================================================
-     Safari / 手機前景切換
+     Safari / iPhone
      ========================================================= */
 
   function bindVisibilityEvents() {
+
     document.addEventListener(
       "visibilitychange",
       function () {
+
         if (
           !document.hidden
         ) {
+
           checkForUpdate(
             true
           );
@@ -757,6 +1060,7 @@
     window.addEventListener(
       "pageshow",
       function () {
+
         checkForUpdate(
           true
         );
@@ -766,6 +1070,7 @@
     window.addEventListener(
       "focus",
       function () {
+
         checkForUpdate(
           true
         );
@@ -775,6 +1080,7 @@
     window.addEventListener(
       "heatmap:data-updated",
       function () {
+
         scheduleStrengthMarks(
           120
         );
@@ -783,10 +1089,11 @@
   }
 
   /* =========================================================
-     切換到熱力圖時立即更新
+     切回熱力圖
      ========================================================= */
 
   function bindHeatmapNavigation() {
+
     const heatPage =
       document.getElementById(
         "heat"
@@ -799,6 +1106,7 @@
     const observer =
       new MutationObserver(
         function () {
+
           if (
             heatPage
               .classList
@@ -806,6 +1114,7 @@
                 "active"
               )
           ) {
+
             checkForUpdate(
               true
             );
@@ -833,6 +1142,7 @@
      ========================================================= */
 
   async function init() {
+
     injectStrengthStyles();
 
     ensureStrengthNote();
@@ -840,6 +1150,7 @@
     observeStrengthRows();
 
     try {
+
       const data =
         await fetchHeatmap();
 
@@ -852,6 +1163,7 @@
       );
 
     } catch (error) {
+
       console.error(
         "heatmap auto refresh init failed:",
         error
@@ -873,12 +1185,15 @@
     document.readyState ===
     "loading"
   ) {
+
     document.addEventListener(
       "DOMContentLoaded",
       init
     );
 
   } else {
+
     init();
   }
+
 })();
