@@ -1,3 +1,42 @@
+name: Daily close update
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tw-market-data-writer
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync latest main
+        run: |
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily update
+        run: python scripts/update_all.py
+
       - name: Commit updated data
         run: |
           set -e
@@ -20,21 +59,20 @@
             echo "======================================"
 
             #
-            # 重新取得目前 GitHub 最新 main
+            # 取得目前 GitHub 最新 main
             #
             git fetch origin main
 
             #
-            # 直接回到最新 main
+            # 回到最新 main
             #
-            # 不做 merge
-            # 不做 rebase
-            # 所以不會產生 heatmap.json conflict
+            # 不 merge
+            # 不 rebase
             #
             git reset --hard origin/main
 
             #
-            # 把這次 Daily 剛產生的資料
+            # 把這次 Daily 產生的資料
             # 蓋回最新 main
             #
             rm -rf data
@@ -43,7 +81,7 @@
             cp -a /tmp/generated-data/. data/
 
             #
-            # 重新建立 commit
+            # 建立 commit
             #
             git add data
 
@@ -56,7 +94,7 @@
             git commit -m "data: daily close update"
 
             #
-            # 嘗試 push
+            # Push
             #
             if git push origin HEAD:main; then
               echo "Push successful"
@@ -67,9 +105,6 @@
             echo "Remote changed during push."
             echo "Retrying with latest main..."
 
-            #
-            # 下一輪重新抓最新 main
-            #
             sleep 3
           done
 
