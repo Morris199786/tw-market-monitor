@@ -1,14 +1,15 @@
 /* =========================================================
-   市場熱力圖：市值加權 / 族群廣度（單一個股權重上限 25%）
-   2026-10-01
+   市場熱力圖：市值加權 / 族群廣度
+   單一個股權重上限 25%
 
    功能：
-   1. 保留原本「市值加權」
-   2. 新增「族群廣度」
-   3. 族群廣度單一個股最高權重 25%
-   4. 超過 25% 的權重重新分配給其他成分股
-   5. 顯示族群上漲家數比例
-   6. 切換模式後重新依族群漲跌幅排序
+   1. 保留原本市值加權
+   2. 新增族群廣度
+   3. 單一個股最高權重 25%
+   4. 超額權重重新分配
+   5. 顯示上漲家數
+   6. 依目前模式重新排序
+   7. 展開族群時停止重新排序，避免 detail 跑位
    ========================================================= */
 
 (function () {
@@ -21,6 +22,7 @@
 
   let heatData = null;
   let busy = false;
+  let observerBusy = false;
 
   const $ = selector =>
     document.querySelector(selector);
@@ -50,13 +52,6 @@
 
   /* =========================================================
      25% 權重上限
-
-     原本：
-     個股市值 / 族群總市值
-
-     新模式：
-     單一個股最高 25%
-     超出的權重重新分配
      ========================================================= */
 
   function cappedWeights(
@@ -184,7 +179,7 @@
 
 
   /* =========================================================
-     計算族群廣度模式漲跌幅
+     計算族群廣度
      ========================================================= */
 
   function calcBreadth(sec) {
@@ -561,6 +556,11 @@
                 mode
               );
 
+              /*
+                切換模式時重新抓最新資料
+              */
+              await loadHeatData();
+
               updateToggle();
 
               await decorate();
@@ -595,7 +595,7 @@
 
 
   /* =========================================================
-     更新切換按鈕狀態
+     更新切換按鈕
      ========================================================= */
 
   function updateToggle() {
@@ -655,7 +655,20 @@
 
 
   /* =========================================================
-     修改熱力圖族群卡片
+     是否有展開 detail
+     ========================================================= */
+
+  function hasOpenDetail() {
+    return Boolean(
+      document.querySelector(
+        "#heatGrid .heat-detail"
+      )
+    );
+  }
+
+
+  /* =========================================================
+     修改族群卡片
      ========================================================= */
 
   function decorateButtons() {
@@ -734,6 +747,22 @@
           );
         }
 
+        /*
+          市值加權模式不顯示廣度資訊
+        */
+
+        if (
+          mode !== "breadth"
+        ) {
+          line.style.display =
+            "none";
+
+          return;
+        }
+
+        line.style.display =
+          "";
+
         if (breadth.valid) {
           const ratio =
             (
@@ -751,12 +780,23 @@
       }
     );
 
-    reorderButtons();
+    /*
+      關鍵：
+      detail 展開時禁止重新排序
+    */
+
+    if (!hasOpenDetail()) {
+      reorderButtons();
+    }
   }
 
 
   /* =========================================================
-     根據目前模式重新排序
+     重新排序
+
+     重要：
+     有任何 detail 展開時，
+     絕對不能搬動族群卡片
      ========================================================= */
 
   function reorderButtons() {
@@ -768,16 +808,17 @@
     }
 
     /*
-      展開族群詳細資料時，
-      不重新搬動 DOM，
-      避免 detail 卡片位置跑掉
+      app.js 會把 detail 插在
+      被點擊卡片後方。
+
+      detail 存在時如果 appendChild(button)，
+      卡片會被搬走，
+      detail 卻留在原位置。
+
+      所以這裡直接停止。
     */
 
-    if (
-      $(
-        "#heatGrid .heat-detail"
-      )
-    ) {
+    if (hasOpenDetail()) {
       return;
     }
 
@@ -823,13 +864,19 @@
 
         const aNumber =
           valueA === null ||
-          valueA === undefined
+          valueA === undefined ||
+          Number.isNaN(
+            Number(valueA)
+          )
             ? -999
             : Number(valueA);
 
         const bNumber =
           valueB === null ||
-          valueB === undefined
+          valueB === undefined ||
+          Number.isNaN(
+            Number(valueB)
+          )
             ? -999
             : Number(valueB);
 
@@ -851,7 +898,7 @@
 
 
   /* =========================================================
-     展開族群時顯示廣度資訊
+     展開族群詳細資料
      ========================================================= */
 
   function decorateOpenDetail() {
@@ -868,22 +915,47 @@
       return;
     }
 
-    const openButton =
-      $$(
-        "#heatGrid > button.heat[data-sec]"
-      ).find(
-        button =>
-          button.nextElementSibling ===
-          detail
-      );
+    /*
+      app.js 正常情況下：
+      button
+      detail
+
+      所以優先找 detail.previousElementSibling
+    */
+
+    let openButton =
+      detail.previousElementSibling;
+
+    if (
+      !openButton ||
+      !openButton.matches?.(
+        "button.heat[data-sec]"
+      )
+    ) {
+      /*
+        fallback：
+        找 nextElementSibling 是 detail 的卡片
+      */
+
+      openButton =
+        $$(
+          "#heatGrid > button.heat[data-sec]"
+        ).find(
+          button =>
+            button.nextElementSibling ===
+            detail
+        );
+    }
+
+    if (!openButton) {
+      return;
+    }
 
     const name =
-      openButton
-        ?.dataset.sec ||
-      detail
-        .querySelector("b")
-        ?.textContent
-        ?.trim();
+      String(
+        openButton.dataset.sec ||
+        ""
+      );
 
     const sec =
       (
@@ -893,8 +965,7 @@
         item =>
           String(
             item.name
-          ) ===
-          String(name)
+          ) === name
       );
 
     if (!sec) {
@@ -904,10 +975,74 @@
     const breadth =
       calcBreadth(sec);
 
+    /*
+      找 detail 標題區。
+
+      app.js 原本顯示的是市值加權值，
+      breadth 模式時改成 25% 權重值。
+    */
+
+    const detailValue =
+      mode === "breadth"
+        ? breadth.change_pct
+        : sec.change_pct;
+
+    /*
+      嘗試尋找 detail 裡原本的百分比元素
+    */
+
+    const candidates =
+      [
+        ...detail.querySelectorAll(
+          "b, strong, span"
+        )
+      ];
+
+    for (
+      const element
+      of candidates
+    ) {
+      const text =
+        (
+          element.textContent ||
+          ""
+        ).trim();
+
+      if (
+        /^[+-]?\d+(?:\.\d+)?%$/.test(
+          text
+        )
+      ) {
+        element.textContent =
+          pct(detailValue);
+
+        break;
+      }
+    }
+
+    /*
+      廣度說明
+    */
+
     let note =
       detail.querySelector(
         ".heat-detail-breadth-note"
       );
+
+    /*
+      市值加權模式：
+      不需要顯示 25% 說明
+    */
+
+    if (
+      mode !== "breadth"
+    ) {
+      if (note) {
+        note.remove();
+      }
+
+      return;
+    }
 
     if (!note) {
       note =
@@ -991,7 +1126,12 @@
 
 
   /* =========================================================
-     監聽原本熱力圖重新 render
+     監聽 app.js 熱力圖 DOM 變化
+
+     只監聽 heatGrid 第一層 childList。
+
+     不監聽 subtree，
+     避免我們自己修改文字時又觸發 observer。
      ========================================================= */
 
   function observe() {
@@ -1004,10 +1144,74 @@
 
     const observer =
       new MutationObserver(
-        () => {
-          setTimeout(
-            decorate,
-            0
+        mutations => {
+          if (observerBusy) {
+            return;
+          }
+
+          /*
+            只處理第一層新增／移除：
+            - heat card
+            - heat-detail
+
+            卡片內文字改動不處理。
+          */
+
+          const structuralChange =
+            mutations.some(
+              mutation => {
+                if (
+                  mutation.type !==
+                  "childList"
+                ) {
+                  return false;
+                }
+
+                const nodes = [
+                  ...mutation.addedNodes,
+                  ...mutation.removedNodes
+                ];
+
+                return nodes.some(
+                  node =>
+                    node.nodeType === 1 &&
+                    (
+                      node.matches?.(
+                        "button.heat[data-sec]"
+                      ) ||
+                      node.classList
+                        ?.contains(
+                          "heat-detail"
+                        )
+                    )
+                );
+              }
+            );
+
+          if (!structuralChange) {
+            return;
+          }
+
+          observerBusy = true;
+
+          requestAnimationFrame(
+            async () => {
+              try {
+                /*
+                  如果 detail 剛被加入：
+                  decorateButtons 會看到 detail 已存在，
+                  因此不會排序。
+
+                  如果 detail 剛被移除：
+                  才允許重新排序。
+                */
+
+                await decorate();
+
+              } finally {
+                observerBusy = false;
+              }
+            }
           );
         }
       );
@@ -1016,7 +1220,26 @@
       grid,
       {
         childList: true,
-        subtree: true
+        subtree: false
+      }
+    );
+  }
+
+
+  /* =========================================================
+     自動刷新事件
+
+     heatmap_auto_refresh.js 更新資料後
+     重新載入 breadth 使用的 heatData。
+     ========================================================= */
+
+  function bindAutoRefresh() {
+    window.addEventListener(
+      "heatmap:data-updated",
+      async () => {
+        await loadHeatData();
+
+        await decorate();
       }
     );
   }
@@ -1030,6 +1253,8 @@
     ensureStyles();
 
     await loadHeatData();
+
+    bindAutoRefresh();
 
     let tries = 0;
 
