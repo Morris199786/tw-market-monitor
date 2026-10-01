@@ -1,6 +1,7 @@
 from sources import *
 
 import re
+from collections import Counter
 
 
 TWSE_REV = f"{TWSE}/opendata/t187ap05_L"
@@ -21,6 +22,9 @@ def parse_roc_month(s):
     try:
         roc_y = int(raw[:-2])
         month = int(raw[-2:])
+
+        if month < 1 or month > 12:
+            return None
 
         return (
             roc_y + 1911,
@@ -165,6 +169,10 @@ def fetch_market(url, market):
             continue
 
         raw_month = row_month(r)
+        month = month_key(raw_month)
+
+        if not month:
+            continue
 
         out.append(
             {
@@ -172,7 +180,7 @@ def fetch_market(url, market):
                 "name": row_name(r),
                 "market": market,
                 "raw_month": raw_month,
-                "month": month_key(raw_month),
+                "month": month,
                 "month_label": month_label(raw_month),
                 "revenue_100m": (
                     revenue_thousand(r)
@@ -225,9 +233,7 @@ def load_sector_map():
             )
 
             if short_name:
-                ticker_names[ticker] = (
-                    short_name
-                )
+                ticker_names[ticker] = short_name
 
         sectors.append(
             {
@@ -383,6 +389,22 @@ def update_tracker(rows):
     )
 
 
+def newest_row_per_ticker(rows):
+    newest = {}
+
+    for x in rows:
+        ticker = x["ticker"]
+        old = newest.get(ticker)
+
+        if (
+            old is None
+            or x["month"] > old["month"]
+        ):
+            newest[ticker] = x
+
+    return list(newest.values())
+
+
 def main():
     sector_defs, sector_names = (
         load_sector_map()
@@ -425,12 +447,33 @@ def main():
         ("tpex", TPEX_REV),
     ):
         try:
-            all_rows.extend(
-                fetch_market(
-                    url,
-                    market,
-                )
+            market_rows = fetch_market(
+                url,
+                market,
             )
+
+            market_latest = max(
+                (
+                    x["month"]
+                    for x in market_rows
+                    if x.get("month")
+                ),
+                default="none",
+            )
+
+            print(
+                "monthly revenue source",
+                market,
+                "rows",
+                len(market_rows),
+                "latest",
+                market_latest,
+            )
+
+            all_rows.extend(
+                market_rows
+            )
+
         except Exception as exc:
             print(
                 "monthly revenue source fail",
@@ -452,16 +495,35 @@ def main():
             "no monthly revenue rows"
         )
 
-    latest_month = max(
+    source_latest_month = max(
         x["month"]
         for x in all_rows
     )
 
-    rows = [
-        x
+    source_month_counts = Counter(
+        x["month"]
         for x in all_rows
-        if x["month"] == latest_month
-    ]
+    )
+
+    print(
+        "monthly revenue source months",
+        dict(
+            sorted(
+                source_month_counts.items()
+            )
+        ),
+    )
+
+    # 歷史資料保留來源抓到的所有月份
+    update_history(all_rows)
+    update_tracker(all_rows)
+
+    # 每檔股票各自取最新月份：
+    # 已公布新月份 -> 使用新月份
+    # 尚未公布     -> 保留上一月份
+    rows = newest_row_per_ticker(
+        all_rows
+    )
 
     for x in rows:
         ticker = x["ticker"]
@@ -478,6 +540,11 @@ def main():
 
         x["is_custom_sector"] = (
             ticker in sector_tickers
+        )
+
+        x["is_latest_month"] = (
+            x["month"]
+            == source_latest_month
         )
 
     by_ticker = {
@@ -542,7 +609,33 @@ def main():
                 }
             )
 
-    sample = rows[0]
+    display_month_counts = Counter(
+        x["month"]
+        for x in rows
+    )
+
+    latest_rows = [
+        x
+        for x in rows
+        if x["month"]
+        == source_latest_month
+    ]
+
+    pending_rows = [
+        x
+        for x in rows
+        if x["month"]
+        != source_latest_month
+    ]
+
+    latest_tech_count = len(
+        [
+            x
+            for x in latest_rows
+            if x["ticker"]
+            in tech_tickers
+        ]
+    )
 
     mom10_count = len(
         {
@@ -565,12 +658,10 @@ def main():
                     timespec="minutes"
                 )
             ),
-            "month": latest_month,
+            "month": source_latest_month,
             "month_label": (
-                sample.get(
-                    "month_label"
-                )
-                or latest_month
+                f"{source_latest_month[:4]}年"
+                f"{int(source_latest_month[5:7])}月營收"
             ),
             "universe": (
                 "全上市櫃科技股＋自訂族群股"
@@ -582,10 +673,21 @@ def main():
                 tech_rows
             ),
             "union_count": len(
-                {
-                    x["ticker"]
-                    for x in rows
-                }
+                rows
+            ),
+            "latest_month_count": len(
+                latest_rows
+            ),
+            "latest_month_tech_count": (
+                latest_tech_count
+            ),
+            "pending_count": len(
+                pending_rows
+            ),
+            "month_counts": dict(
+                sorted(
+                    display_month_counts.items()
+                )
             ),
             "highlight_basis": (
                 "MoM > 10%"
@@ -599,21 +701,30 @@ def main():
         },
     )
 
-    update_history(rows)
-    update_tracker(rows)
-
     print(
         "Telegram disabled: "
         "monthly revenue only updates website"
     )
 
     print(
-        "monthly revenue",
-        latest_month,
-        "rows",
+        "monthly revenue latest source month",
+        source_latest_month,
+        "display rows",
         len(rows),
+        "latest-month rows",
+        len(latest_rows),
+        "pending old-month rows",
+        len(pending_rows),
+        "display months",
+        dict(
+            sorted(
+                display_month_counts.items()
+            )
+        ),
         "tech",
         len(tech_rows),
+        "latest tech",
+        latest_tech_count,
         "sectors",
         len(sectors_out),
         "mom > 10%",
