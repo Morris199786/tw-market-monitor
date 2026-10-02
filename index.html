@@ -11,467 +11,75 @@
 <link rel="stylesheet" href="./assets/reports_v2.css?v=20260928-reports-v3">
 <link rel="stylesheet" href="./assets/tw_ratings.css?v=20260930-v1">
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
+<link rel="stylesheet" href="./assets/earnings_tracker.css?v=20261002-v1">
 
 <style>
   #selfReportSearchInput{
-    display:block;
-    width:100%;
-    box-sizing:border-box;
-    font:inherit;
-    outline:none;
-    border-radius:12px;
-    padding:11px 88px 11px 14px;
-    border:1px solid #d8dee8 !important;
-    background-color:#ffffff !important;
-    background-image:none !important;
-    color:#111827 !important;
-    -webkit-text-fill-color:#111827 !important;
-    caret-color:#111827 !important;
-    box-shadow:none !important;
-    -webkit-box-shadow:none !important;
-    -webkit-appearance:none !important;
-    appearance:none !important;
+    display:block;width:100%;box-sizing:border-box;font:inherit;outline:none;border-radius:12px;
+    padding:11px 88px 11px 14px;border:1px solid #d8dee8 !important;background-color:#ffffff !important;
+    background-image:none !important;color:#111827 !important;-webkit-text-fill-color:#111827 !important;
+    caret-color:#111827 !important;box-shadow:none !important;-webkit-box-shadow:none !important;
+    -webkit-appearance:none !important;appearance:none !important;
   }
-
-  #selfReportSearchInput::placeholder{
-    color:#8a94a3 !important;
-    opacity:1 !important;
-    -webkit-text-fill-color:#8a94a3 !important;
-  }
-
-  #selfReportSearchClear{
-    -webkit-appearance:none !important;
-    appearance:none !important;
-    background:#f3f4f6 !important;
-    color:#475569 !important;
-    border:1px solid #d8dee8 !important;
-  }
-
-  html[data-theme="dark"] #selfReportSearchInput{
-    border-color:#343c49 !important;
-    background-color:#171b22 !important;
-    color:#f1f5f9 !important;
-    -webkit-text-fill-color:#f1f5f9 !important;
-    caret-color:#f1f5f9 !important;
-  }
-
-  html[data-theme="dark"] #selfReportSearchInput::placeholder{
-    color:#94a3b8 !important;
-    -webkit-text-fill-color:#94a3b8 !important;
-  }
-
-  html[data-theme="dark"] #selfReportSearchClear{
-    background:#242a33 !important;
-    color:#cbd5e1 !important;
-    border-color:#343c49 !important;
-  }
-
+  #selfReportSearchInput::placeholder{color:#8a94a3 !important;opacity:1 !important;-webkit-text-fill-color:#8a94a3 !important}
+  #selfReportSearchClear{-webkit-appearance:none !important;appearance:none !important;background:#f3f4f6 !important;color:#475569 !important;border:1px solid #d8dee8 !important}
+  html[data-theme="dark"] #selfReportSearchInput{border-color:#343c49 !important;background-color:#171b22 !important;color:#f1f5f9 !important;-webkit-text-fill-color:#f1f5f9 !important;caret-color:#f1f5f9 !important}
+  html[data-theme="dark"] #selfReportSearchInput::placeholder{color:#94a3b8 !important;-webkit-text-fill-color:#94a3b8 !important}
+  html[data-theme="dark"] #selfReportSearchClear{background:#242a33 !important;color:#cbd5e1 !important;border-color:#343c49 !important}
   @media (max-width:700px){
-    .self-report-search-card{
-      display:block !important;
-      padding:12px 14px !important;
-    }
-
-    .self-report-search-wrap{
-      width:100% !important;
-      min-width:0 !important;
-      margin:0 !important;
-    }
-
-    #selfReportSearchInput{
-      display:block !important;
-      width:100% !important;
-      min-width:0 !important;
-      padding-right:14px !important;
-    }
-
-    #selfReportSearchClear{
-      right:8px !important;
-    }
-
-    #selfReportSearchMeta{
-      display:block !important;
-      width:100% !important;
-      margin-top:10px !important;
-      white-space:normal !important;
-      text-align:left !important;
-    }
+    .self-report-search-card{display:block !important;padding:12px 14px !important}
+    .self-report-search-wrap{width:100% !important;min-width:0 !important;margin:0 !important}
+    #selfReportSearchInput{display:block !important;width:100% !important;min-width:0 !important;padding-right:14px !important}
+    #selfReportSearchClear{right:8px !important}
+    #selfReportSearchMeta{display:block !important;width:100% !important;margin-top:10px !important;white-space:normal !important;text-align:left !important}
   }
 </style>
-
 </head>
-
 <body>
-
-<header>
-  <div class="head">
-
-    <div class="brand">
-      <b>台股市場監測</b>
-      <small>TAIWAN MARKET MONITOR</small>
-    </div>
-
-    <nav>
-      <button class="nav active" data-p="home">總覽</button>
-      <button class="nav" data-p="heat">市場熱力圖</button>
-      <button class="nav" data-p="reports">券商報告</button>
-      <button class="nav" data-p="selfReports">自結公布</button>
-      <button class="nav" data-p="flows">籌碼日報</button>
-      <button class="nav" data-p="volume">突然放量</button>
-      <button class="nav" data-p="turnover">成交排行</button>
-      <button class="nav" data-p="marginLending">融資／借券</button>
-      <button class="nav" data-p="ai">AI選股</button>
-      <button class="nav" data-p="holders">大戶籌碼</button>
-      <button class="nav" data-p="monthlyRevenue">月營收公布</button>
-    </nav>
-
-    <div id="clock" class="clock"></div>
-    <div class="header-actions"></div>
-
-    <select id="mobileNav" aria-label="切換分頁">
-      <option value="home">總覽</option>
-      <option value="heat">市場熱力圖</option>
-      <option value="reports">券商報告</option>
-      <option value="selfReports">自結公布</option>
-      <option value="flows">籌碼日報</option>
-      <option value="volume">突然放量</option>
-      <option value="turnover">成交排行</option>
-      <option value="marginLending">融資／借券</option>
-      <option value="ai">AI選股</option>
-      <option value="holders">大戶籌碼</option>
-      <option value="monthlyRevenue">月營收公布</option>
-    </select>
-
-  </div>
-</header>
-
+<header><div class="head">
+<div class="brand"><b>台股市場監測</b><small>TAIWAN MARKET MONITOR</small></div>
+<nav>
+<button class="nav active" data-p="home">總覽</button>
+<button class="nav" data-p="heat">市場熱力圖</button>
+<button class="nav" data-p="reports">券商報告</button>
+<button class="nav" data-p="selfReports">財報追蹤</button>
+<button class="nav" data-p="flows">籌碼日報</button>
+<button class="nav" data-p="volume">突然放量</button>
+<button class="nav" data-p="turnover">成交排行</button>
+<button class="nav" data-p="marginLending">融資／借券</button>
+<button class="nav" data-p="ai">AI選股</button>
+<button class="nav" data-p="holders">大戶籌碼</button>
+<button class="nav" data-p="monthlyRevenue">月營收公布</button>
+</nav>
+<div id="clock" class="clock"></div><div class="header-actions"></div>
+<select id="mobileNav" aria-label="切換分頁">
+<option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">券商報告</option>
+<option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
+<option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
+<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option>
+</select></div></header>
 <main>
-
-  <section id="home" class="page active">
-    <div class="hero">
-      <div>
-        <div class="kicker">MARKET DASHBOARD</div>
-        <h1>台股市場監測</h1>
-        <p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p>
-      </div>
-      <div class="badges">
-        <span class="badge live">GitHub 自動更新</span>
-      </div>
-    </div>
-
-    <div id="featureRail" class="feature-rail"></div>
-    <div id="homeCards" class="grid four"></div>
-
-    <div class="section">
-      <h2>目前強勢族群</h2>
-      <span>市值加權</span>
-    </div>
-
-    <div id="topSectors" class="grid three"></div>
-  </section>
-
-  <section id="heat" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">SECTOR HEATMAP</div>
-        <h1>市場熱力圖</h1>
-        <p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p>
-      </div>
-      <div class="badges">
-        <span class="badge live">盤中每 5 分鐘</span>
-        <span id="heatTime" class="badge"></span>
-      </div>
-    </div>
-    <div id="heatGrid" class="heatgrid"></div>
-  </section>
-
-  <section id="reports" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">BROKER RESEARCH</div>
-        <h1>券商報告</h1>
-        <p>券商研究報告與台股評等／目標價調整</p>
-      </div>
-      <span class="badge">每 15 分鐘檢查</span>
-    </div>
-
-    <div class="report-mode-tabs" role="tablist" aria-label="券商報告分類">
-      <button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">券商報告</button>
-      <button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button>
-    </div>
-
-    <div id="reportList" class="card"></div>
-    <div id="twRatingsPanel" class="tw-ratings-panel" hidden>
-      <div id="twRatingsStatus" class="status"></div>
-      <div id="twRatingsList"></div>
-    </div>
-  </section>
-
-  <section id="selfReports" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">SELF-REPORTED EARNINGS</div>
-        <h1>自結公布</h1>
-        <p>全台股即時監控｜每 30 分鐘自動檢查｜僅新公告自動推播</p>
-      </div>
-      <div class="badges">
-        <span id="selfWeekBadge" class="badge"></span>
-      </div>
-    </div>
-
-    <div id="selfWeekTabs" class="week-strip"></div>
-
-    <div
-      class="card self-report-search-card"
-      style="
-        display:flex;
-        gap:10px;
-        align-items:center;
-        flex-wrap:wrap;
-        margin-bottom:14px;
-        padding:12px 14px;
-      "
-    >
-      <div
-        class="self-report-search-wrap"
-        style="
-          position:relative;
-          flex:1 1 260px;
-          min-width:0;
-        "
-      >
-        <input
-          id="selfReportSearchInput"
-          type="text"
-          inputmode="search"
-          autocomplete="off"
-          placeholder="搜尋股票名稱或代號，例如：南茂、8150"
-          aria-label="搜尋自結股票名稱或股票代號"
-          
-        >
-
-        <button
-          id="selfReportSearchClear"
-          type="button"
-          style="
-            position:absolute;
-            right:8px;
-            top:50%;
-            transform:translateY(-50%);
-            display:none;
-            align-items:center;
-            justify-content:center;
-            border:1px solid rgba(148,163,184,.28);
-            border-radius:9px;
-            padding:6px 9px;
-            background:#f3f4f6;
-            color:#475569;
-            font:inherit;
-            cursor:pointer;
-          "
-        >
-          清除
-        </button>
-      </div>
-
-      <span
-        id="selfReportSearchMeta"
-        style="
-          font-size:13px;
-          opacity:.72;
-          white-space:nowrap;
-        "
-      ></span>
-    </div>
-
-    <div id="selfStatus" class="status"></div>
-    <div id="selfReportCards" class="grid three"></div>
-  </section>
-
-  <section id="flows" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">INSTITUTIONAL FLOW</div>
-        <h1>籌碼日報</h1>
-        <p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p>
-      </div>
-      <span id="flowDate" class="badge"></span>
-    </div>
-
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-period="1d">當天</button>
-        <button class="tab" data-period="3d">近三日</button>
-        <button class="tab" data-period="5d">近五日</button>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-inst="foreign">外資</button>
-        <button class="tab" data-inst="trust">投信</button>
-        <button class="tab" data-inst="dealer">自營商</button>
-        <button class="tab" data-inst="total">三大法人合計</button>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-market="twse">上市</button>
-        <button class="tab" data-market="tpex">上櫃</button>
-      </div>
-    </div>
-
-    <div id="flowStatus" class="status"></div>
-    <div class="grid two">
-      <div class="card tablewrap">
-        <table>
-          <thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
-          <tbody id="buyRows"></tbody>
-        </table>
-      </div>
-      <div class="card tablewrap">
-        <table>
-          <thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead>
-          <tbody id="sellRows"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section id="volume" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">VOLUME SURGE</div>
-        <h1>科技股突然放量</h1>
-        <p>今日成交量 ÷ 前五個交易日平均量</p>
-      </div>
-      <span id="volDate" class="badge"></span>
-    </div>
-    <div class="toolbar">
-      <button id="advanced" class="tab">進階篩選 ＋</button>
-    </div>
-    <div id="volStatus" class="status"></div>
-    <div class="card tablewrap">
-      <table>
-        <thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead>
-        <tbody id="volRows"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="turnover" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">TURNOVER</div>
-        <h1>成交金額 TOP30</h1>
-        <p>採官方每日行情實際成交金額</p>
-      </div>
-      <span id="turnDate" class="badge"></span>
-    </div>
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-turn="twse">上市</button>
-        <button class="tab" data-turn="tpex">上櫃</button>
-      </div>
-    </div>
-    <div class="card tablewrap">
-      <table>
-        <thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead>
-        <tbody id="turnRows"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="marginLending" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">MARGIN / SECURITIES LENDING</div>
-        <h1>融資／借券賣出異動</h1>
-        <p>融資與借券賣出｜先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p>
-      </div>
-      <div class="badges">
-        <span class="badge">盤後更新</span>
-        <span id="mlDate" class="badge"></span>
-      </div>
-    </div>
-
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-ml-kind="margin">融資增加</button>
-        <button class="tab" data-ml-kind="borrow">借券賣出增加</button>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-ml-market="twse">上市</button>
-        <button class="tab" data-ml-market="tpex">上櫃</button>
-      </div>
-    </div>
-
-    <div id="mlStatus" class="status"></div>
-    <div id="mlLogic"></div>
-    <div id="mlCards" class="grid three"></div>
-  </section>
-
-  <section id="ai" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">AI PICKS</div>
-        <h1>AI選股</h1>
-        <p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p>
-      </div>
-      <span class="badge">每天 18:00</span>
-    </div>
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-aim="twse">上市</button>
-        <button class="tab" data-aim="tpex">上櫃</button>
-      </div>
-    </div>
-    <div id="aiStatus" class="status"></div>
-    <div id="aiCards" class="grid three"></div>
-  </section>
-
-  <section id="holders" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">LARGE HOLDERS</div>
-        <h1>本週大戶籌碼集中</h1>
-        <p>400張以上與千張以上持股比例增加幅度</p>
-      </div>
-      <span id="holderDate" class="badge">週六 17:00</span>
-    </div>
-    <div class="toolbar">
-      <div class="tabs">
-        <button class="tab active" data-hm="twse">上市</button>
-        <button class="tab" data-hm="tpex">上櫃</button>
-      </div>
-      <div class="tabs">
-        <button class="tab active" data-hk="400">400張大戶增加</button>
-        <button class="tab" data-hk="1000">千張大戶增加</button>
-      </div>
-    </div>
-    <div id="holderStatus" class="status"></div>
-    <div class="card tablewrap">
-      <table>
-        <thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead>
-        <tbody id="holderRows"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="monthlyRevenue" class="page">
-    <div class="hero">
-      <div>
-        <div class="kicker">MONTHLY REVENUE</div>
-        <h1>月營收公布</h1>
-        <p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p>
-      </div>
-      <div class="badges">
-        <span id="revenueMonthBadge" class="badge"></span>
-      </div>
-    </div>
-
-    <div id="revenueStatus" class="status"></div>
-    <div id="revenueSectorTabs" class="week-strip"></div>
-    <div id="revenueSections"></div>
-  </section>
-
+<section id="home" class="page active"><div class="hero"><div><div class="kicker">MARKET DASHBOARD</div><h1>台股市場監測</h1><p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p></div><div class="badges"><span class="badge live">GitHub 自動更新</span></div></div><div id="featureRail" class="feature-rail"></div><div id="homeCards" class="grid four"></div><div class="section"><h2>目前強勢族群</h2><span>市值加權</span></div><div id="topSectors" class="grid three"></div></section>
+<section id="heat" class="page"><div class="hero"><div><div class="kicker">SECTOR HEATMAP</div><h1>市場熱力圖</h1><p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p></div><div class="badges"><span class="badge live">盤中每 5 分鐘</span><span id="heatTime" class="badge"></span></div></div><div id="heatGrid" class="heatgrid"></div></section>
+<section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>券商報告</h1><p>券商研究報告與台股評等／目標價調整</p></div><span class="badge">每 15 分鐘檢查</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">券商報告</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div></section>
+<section id="selfReports" class="page">
+<div class="hero"><div><div class="kicker">EARNINGS TRACKER</div><h1>財報追蹤</h1><p>自結公布｜即將開財報｜季度財報</p></div><div class="badges"><span id="selfWeekBadge" class="badge"></span></div></div>
+<div id="selfWeekTabs" class="week-strip"></div>
+<div class="card self-report-search-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px">
+<div class="self-report-search-wrap" style="position:relative;flex:1 1 260px;min-width:0">
+<input id="selfReportSearchInput" type="text" inputmode="search" autocomplete="off" placeholder="搜尋股票名稱或代號，例如：南茂、8150" aria-label="搜尋自結股票名稱或股票代號">
+<button id="selfReportSearchClear" type="button" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;align-items:center;justify-content:center;border:1px solid rgba(148,163,184,.28);border-radius:9px;padding:6px 9px;background:#f3f4f6;color:#475569;font:inherit;cursor:pointer">清除</button>
+</div><span id="selfReportSearchMeta" style="font-size:13px;opacity:.72;white-space:nowrap"></span></div>
+<div id="selfStatus" class="status"></div><div id="selfReportCards" class="grid three"></div>
+</section>
+<section id="flows" class="page"><div class="hero"><div><div class="kicker">INSTITUTIONAL FLOW</div><h1>籌碼日報</h1><p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p></div><span id="flowDate" class="badge"></span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-period="1d">當天</button><button class="tab" data-period="3d">近三日</button><button class="tab" data-period="5d">近五日</button></div><div class="tabs"><button class="tab active" data-inst="foreign">外資</button><button class="tab" data-inst="trust">投信</button><button class="tab" data-inst="dealer">自營商</button><button class="tab" data-inst="total">三大法人合計</button></div><div class="tabs"><button class="tab active" data-market="twse">上市</button><button class="tab" data-market="tpex">上櫃</button></div></div><div id="flowStatus" class="status"></div><div class="grid two"><div class="card tablewrap"><table><thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="buyRows"></tbody></table></div><div class="card tablewrap"><table><thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="sellRows"></tbody></table></div></div></section>
+<section id="volume" class="page"><div class="hero"><div><div class="kicker">VOLUME SURGE</div><h1>科技股突然放量</h1><p>今日成交量 ÷ 前五個交易日平均量</p></div><span id="volDate" class="badge"></span></div><div class="toolbar"><button id="advanced" class="tab">進階篩選 ＋</button></div><div id="volStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead><tbody id="volRows"></tbody></table></div></section>
+<section id="turnover" class="page"><div class="hero"><div><div class="kicker">TURNOVER</div><h1>成交金額 TOP30</h1><p>採官方每日行情實際成交金額</p></div><span id="turnDate" class="badge"></span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-turn="twse">上市</button><button class="tab" data-turn="tpex">上櫃</button></div></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead><tbody id="turnRows"></tbody></table></div></section>
+<section id="marginLending" class="page"><div class="hero"><div><div class="kicker">MARGIN / SECURITIES LENDING</div><h1>融資／借券賣出異動</h1><p>融資與借券賣出｜先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p></div><div class="badges"><span class="badge">盤後更新</span><span id="mlDate" class="badge"></span></div></div><div class="toolbar"><div class="tabs"><button class="tab active" data-ml-kind="margin">融資增加</button><button class="tab" data-ml-kind="borrow">借券賣出增加</button></div><div class="tabs"><button class="tab active" data-ml-market="twse">上市</button><button class="tab" data-ml-market="tpex">上櫃</button></div></div><div id="mlStatus" class="status"></div><div id="mlLogic"></div><div id="mlCards" class="grid three"></div></section>
+<section id="ai" class="page"><div class="hero"><div><div class="kicker">AI PICKS</div><h1>AI選股</h1><p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p></div><span class="badge">每天 18:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-aim="twse">上市</button><button class="tab" data-aim="tpex">上櫃</button></div></div><div id="aiStatus" class="status"></div><div id="aiCards" class="grid three"></div></section>
+<section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
+<section id="monthlyRevenue" class="page"><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
 </main>
-
 <script src="./assets/app.js?v=20260929-deeplink-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20260929-selfreport-search-v19"></script>
@@ -481,28 +89,18 @@
 <script src="./assets/tw_ratings.js?v=20260930-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/heatmap_sector_filter.js?v=20260929-sector-v1"></script>
-<script src="./assets/heatmap_breadth_mode.js?v=20261001-breadth-v1"></script> 
+<script src="./assets/heatmap_breadth_mode.js?v=20261001-breadth-v1"></script>
 <script src="./assets/heatmap_auto_refresh.js?v=20261001-auto-v1"></script>
 <script src="./assets/refresh_controller.js?v=20261002-resume-v1"></script>
+<script src="./assets/earnings_tracker.js?v=20261002-v1"></script>
 <script>
 (function () {
   const params = new URLSearchParams(window.location.search);
   const target = params.get("page");
-
   if (!target) return;
-
   const section = document.getElementById(target);
-
-  if (
-    section &&
-    section.classList.contains("page") &&
-    typeof page === "function"
-  ) {
-    page(target);
-  }
+  if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-
 </body>
 </html>
-
