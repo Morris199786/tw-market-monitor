@@ -1,392 +1,219 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-台股底部型態掃描器 v2｜紅點時機版
-- W / 多重底
-- U / 碗型底
-- 破底洗盤後收回
-- VCP / 底部收斂
-- 目標：找「右側剛轉折、尚未離底太遠」的候選股
-- 純測試版：不更新網站、不發 Telegram
-
-使用：
-  python pattern_scanner.py
-  python pattern_scanner.py --top 30
-  python pattern_scanner.py --tickers 8046,3211,3037
-  python pattern_scanner.py --universe stocks.txt
-
-stocks.txt 格式：每行一個股票代號，或「代號,名稱」
+台股底部型態掃描器 v3｜底部結構 + 壓力逐層消化版
+重點：底部有效性、Higher Low、上攻逐層收復壓力、VCP、量價、右側轉折與買點時機
 """
-
-import argparse
-import csv
-import json
-import math
-import statistics
-import time
+import argparse, csv, json, time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 import requests
 
-UA = "Mozilla/5.0"
-YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart/"
-OUT_CSV = "pattern_scan_top30.csv"
-OUT_JSON = "pattern_scan_top30.json"
+UA="Mozilla/5.0"; YAHOO="https://query1.finance.yahoo.com/v8/finance/chart/"
+OUT_CSV="pattern_scan_top30.csv"; OUT_JSON="pattern_scan_top30.json"
+DEFAULT_TICKERS=["2330","2454","2308","2382","3231","6669","3661","3443","3035","3529","6533","6643","8227","6695","3228","3037","8046","3189","2368","2383","6274","6213","5347","2313","4958","2367","2408","2344","8299","6488","3260","3017","3324","3653","4979","6223","3131","6510","6220","6187","3211","3533","3583","4977","6515","6640","6789","6196","2467","5434","8028","8086","6239","3665","6279","2059","2395","6414","5269"]
 
-# 先放一批測試股票；正式接網站時改吃你的完整科技股池
-DEFAULT_TICKERS = [
-    "2330","2454","2308","2382","3231","6669","3661","3443","3035","3529",
-    "6533","6643","8227","6695","3228","3037","8046","3189","2368","2383",
-    "6274","6213","5347","2313","4958","2367","2408","2344","8299","6488",
-    "3260","3017","3324","3653","4979","6223","3131","6510","6220","6187",
-    "3211","3533","3583","4977","6515","6640","6789","6196","2467","5434",
-    "6643","8028","8086","6239","3665","6279","2059","2395","6414","5269",
-]
-
-def clamp(x, lo=0.0, hi=1.0):
-    return max(lo, min(hi, x))
-
-def mean(xs):
-    return sum(xs) / len(xs) if xs else 0.0
-
-def pct(a, b):
-    return (a / b - 1.0) if b else 0.0
-
-def sma(xs, n):
-    if len(xs) < n: return None
-    return mean(xs[-n:])
-
-def true_ranges(h, l, c):
-    out = []
-    for i in range(len(c)):
-        pc = c[i-1] if i else c[i]
-        out.append(max(h[i]-l[i], abs(h[i]-pc), abs(l[i]-pc)))
+def clamp(x,lo=0.,hi=1.): return max(lo,min(hi,x))
+def mean(x): return sum(x)/len(x) if x else 0.
+def pct(a,b): return a/b-1 if b else 0.
+def sma(x,n): return mean(x[-n:]) if len(x)>=n else None
+def slope(x):
+    n=len(x)
+    if n<2:return 0.
+    xm=(n-1)/2; ym=mean(x); d=sum((i-xm)**2 for i in range(n))
+    return sum((i-xm)*(v-ym) for i,v in enumerate(x))/d if d else 0.
+def extrema(c,r=3,mode="min"):
+    out=[]
+    for i in range(r,len(c)-r):
+        w=c[i-r:i+r+1]
+        if c[i]==(min(w) if mode=="min" else max(w)): out.append((i,c[i]))
     return out
-
-def lin_slope(values):
-    n = len(values)
-    if n < 2: return 0.0
-    xm = (n-1)/2
-    ym = mean(values)
-    den = sum((i-xm)**2 for i in range(n))
-    return sum((i-xm)*(v-ym) for i,v in enumerate(values))/den if den else 0.0
-
-def local_minima(c, radius=3):
-    pts=[]
-    for i in range(radius, len(c)-radius):
-        w=c[i-radius:i+radius+1]
-        if c[i] == min(w):
-            pts.append((i,c[i]))
-    return pts
-
-def local_maxima(c, radius=3):
-    pts=[]
-    for i in range(radius, len(c)-radius):
-        w=c[i-radius:i+radius+1]
-        if c[i] == max(w):
-            pts.append((i,c[i]))
-    return pts
-
-def yahoo_symbol(code, suffix):
-    return f"{code}.{suffix}"
+def trange(h,l,c):
+    return [max(h[i]-l[i],abs(h[i]-(c[i-1] if i else c[i])),abs(l[i]-(c[i-1] if i else c[i]))) for i in range(len(c))]
 
 def fetch_one(code):
-    # 上市 .TW / 上櫃 .TWO 自動嘗試
-    sess = requests.Session()
-    sess.headers.update({"User-Agent": UA})
+    s=requests.Session(); s.headers.update({"User-Agent":UA})
     for suffix in ("TW","TWO"):
-        sym = yahoo_symbol(code, suffix)
-        url = YAHOO + quote(sym)
-        params={"range":"2y","interval":"1d","events":"div,splits","includeAdjustedClose":"true"}
+        sym=f"{code}.{suffix}"
         try:
-            r=sess.get(url, params=params, timeout=15)
-            if r.status_code != 200: continue
+            r=s.get(YAHOO+quote(sym),params={"range":"2y","interval":"1d","events":"div,splits","includeAdjustedClose":"true"},timeout=15)
+            if r.status_code!=200: continue
             obj=r.json()["chart"]["result"]
             if not obj: continue
-            x=obj[0]
-            q=x["indicators"]["quote"][0]
-            ts=x["timestamp"]
+            x=obj[0]; q=x["indicators"]["quote"][0]; ts=x["timestamp"]
             name=x.get("meta",{}).get("longName") or x.get("meta",{}).get("shortName") or code
             rows=[]
             for i,t in enumerate(ts):
                 vals=[q.get(k,[None]*len(ts))[i] for k in ("open","high","low","close","volume")]
                 if any(v is None for v in vals[:4]): continue
                 rows.append((t,*vals))
-            if len(rows) >= 140:
-                return sym,name,rows
-        except Exception:
-            pass
+            if len(rows)>=160:return sym,name,rows
+        except Exception: pass
     return None
 
-def score_stock(code, name, rows):
-    rows=rows[-260:]
-    O=[r[1] for r in rows]; H=[r[2] for r in rows]; L=[r[3] for r in rows]
-    C=[r[4] for r in rows]; V=[float(r[5] or 0) for r in rows]
-    n=len(C)
-    if n < 140 or C[-1] <= 0: return None
+def score_stock(code,name,rows):
+    rows=rows[-300:]; H=[r[2] for r in rows]; L=[r[3] for r in rows]; C=[r[4] for r in rows]; V=[float(r[5] or 0) for r in rows]
+    if len(C)<160 or C[-1]<=0:return None
+    w=min(140,len(C)); c=C[-w:]; h=H[-w:]; l=L[-w:]; v=V[-w:]
+    mins=extrema(c,3,"min"); maxs=extrema(c,3,"max")
+    rmins=[p for p in mins if p[0]>=w-110]; rmaxs=[p for p in maxs if p[0]>=w-110]
+    labels=[]; reasons=[]
 
-    # 聚焦最近約 120 日底部，但用更長資料確認先前下降趨勢
-    w=min(120,n)
-    c=C[-w:]; h=H[-w:]; l=L[-w:]; v=V[-w:]
-    mins=local_minima(c,3)
-    maxs=local_maxima(c,3)
+    # A. 底部有效性：先有下降/夠深的整理
+    pre=c[:max(35,w-90)]; pre_sl=slope(pre)/(mean(pre) or 1)
+    depth=max(c)/min(c)-1
+    base_valid=.55*clamp((-pre_sl+.0003)/.0035)+.45*clamp((depth-.10)/.28)
+    if rmins: base_valid=clamp(base_valid+.12*clamp((rmins[-1][0]-(w-80))/50))
+    s_base=15*base_valid
 
-    score_structure=0
-    labels=[]
+    # B. W / U 只當型態佐證
+    ws=0.
+    for a in range(len(rmins)):
+        for b in range(a+1,len(rmins)):
+            i1,p1=rmins[a]; i2,p2=rmins[b]; gap=i2-i1
+            if not 8<=gap<=70: continue
+            sim=1-clamp(abs(p2/p1-1)/.11); bounce=max(c[i1:i2+1])/min(p1,p2)-1
+            ws=max(ws,.42*sim+.36*clamp((bounce-.035)/.16)+.22*clamp((i2-(w-85))/60))
+    thirds=max(18,w//3); left=c[:thirds]; mid=c[thirds:2*thirds]; right=c[2*thirds:]; scale=mean(c) or 1
+    us=.34*clamp((-slope(left)/scale)/.004)+.30*clamp((.0027-abs(slope(mid)/scale))/.0027)+.36*clamp((slope(right)/scale)/.003)
+    if ws>=.55: labels.append("W/多重底"); reasons.append("存在相近雙底/多重底")
+    if us>=.58: labels.append("U/碗型"); reasons.append("左降→底部鈍化→右側翻正")
+    s_shape=10*max(ws,us)
 
-    # ---- U / 碗型：左降、中平、右升 ----
-    thirds=max(15,w//3)
-    left=c[:thirds]
-    mid=c[thirds:2*thirds]
-    right=c[2*thirds:]
-    scale=max(mean(c),1e-9)
-    sl=lin_slope(left)/scale
-    sm=lin_slope(mid)/scale
-    sr=lin_slope(right)/scale
-    u_shape = clamp((-sl)/0.004)*0.35 + clamp(sr/0.003)*0.35 + clamp((0.0025-abs(sm))/0.0025)*0.30
-    if u_shape >= .58:
-        labels.append("U/碗型")
-        score_structure=max(score_structure, 25*u_shape)
+    # C. Higher Low / 不再持續破底
+    lowq=0.; hlratio=0.
+    if len(rmins)>=3:
+        vals=[x[1] for x in rmins[-5:]]; ch=[pct(vals[i],vals[i-1]) for i in range(1,len(vals))][-3:]
+        nobreak=mean([clamp((x+.035)/.055) for x in ch]); hlratio=sum(x>=-.005 for x in ch)/len(ch)
+        lowq=.45*nobreak+.35*hlratio+.20*clamp((vals[-1]/vals[-2]-.97)/.07)
+    s_low=15*lowq
+    if lowq>=.62: reasons.append("右側低點不再破底並逐步墊高")
 
-    # ---- W / 多重底：近 100 日找相近的兩個低點，中間有反彈 ----
-    wscore=0
-    recent_mins=[p for p in mins if p[0] >= max(0,w-100)]
-    for a in range(len(recent_mins)):
-        for b in range(a+1,len(recent_mins)):
-            i1,p1=recent_mins[a]; i2,p2=recent_mins[b]
-            gap=i2-i1
-            if not 8 <= gap <= 65: continue
-            similarity=1-clamp(abs(p2/p1-1)/0.10)
-            bounce=max(c[i1:i2+1])/min(p1,p2)-1
-            bounce_score=clamp((bounce-.04)/.16)
-            rightness=clamp((i2-(w-75))/55)
-            s=.45*similarity+.35*bounce_score+.20*rightness
-            wscore=max(wscore,s)
-    if wscore >= .55:
-        labels.append("W/多重底")
-        score_structure=max(score_structure,25*wscore)
-
-    # ---- 破底洗盤後快速收回：新低後 1~5 日站回前低，且收回日有量 ----
-    wash_score=0
-    wash_count=0
-    for j in range(max(25,w-90), w-5):
-        prev_low=min(c[max(0,j-25):j])
-        if c[j] < prev_low*0.995:
-            depth=(prev_low-c[j])/prev_low
+    # D. 破底洗盤收回
+    wash=0.; wash_n=0
+    for j in range(max(25,w-100),w-5):
+        pl=min(c[max(0,j-25):j])
+        if c[j]<pl*.995:
+            dep=(pl-c[j])/pl
             for k in range(j+1,min(w,j+6)):
-                if c[k] >= prev_low:
-                    volbase=mean(v[max(0,k-20):k]) or 1
-                    volratio=v[k]/volbase
-                    fast=1-(k-j-1)/5
-                    s=.40*clamp(depth/.07)+.35*clamp(volratio/1.5)+.25*fast
-                    wash_score=max(wash_score,s)
-                    wash_count+=1
-                    break
-    score_wash=15*wash_score
-    if wash_score >= .45: labels.append("破底收回")
+                if c[k]>=pl:
+                    vr=v[k]/(mean(v[max(0,k-20):k]) or 1)
+                    wash=max(wash,.38*clamp(dep/.07)+.34*clamp(vr/1.5)+.28*(1-(k-j-1)/5)); wash_n+=1; break
+    s_wash=8*wash
+    if wash>=.48: labels.append("破底收回"); reasons.append("破底後快速收回")
 
-    # ---- 低點改善：Lower Low -> Equal/Higher Low ----
-    lows=[p for p in recent_mins[-5:]]
-    improve=0
-    if len(lows)>=3:
-        vals=[x[1] for x in lows]
-        changes=[pct(vals[i],vals[i-1]) for i in range(1,len(vals))]
-        recent=changes[-2:]
-        # 最近低點不再大幅破底；higher low 最佳
-        improve=mean([clamp((x+.035)/.07) for x in recent])
-        # 最後一底高於前底再加強
-        if vals[-1] >= vals[-2]*.995: improve=min(1,improve+.15)
-    score_lows=15*improve
+    # E. V3核心：每波上攻是否逐層碰/收復前一壓力
+    pressure=0.; touches=0; reclaims=0; hs=rmaxs[-5:]
+    if len(hs)>=3:
+        ps=[]
+        for i in range(1,len(hs)):
+            ratio=hs[i][1]/hs[i-1][1]; ps.append(clamp((ratio-.94)/.06))
+            if ratio>=.97: touches+=1
+            if ratio>=1.: reclaims+=1
+        cur=clamp((c[-1]/hs[-1][1]-.94)/.06)
+        pressure=clamp(.72*mean(ps[-3:])+.28*cur)
+    # 區間階梯備援
+    zones=[]
+    for lb in (80,60,40,25):
+        if len(c)>lb+5:
+            seg=c[-lb:-5]; zones.append(min(seg[-max(8,lb//4):]))
+    zones=sorted(set(zones)); zscore=sum(c[-1]>=z for z in zones)/len(zones) if zones else 0
+    pressure=max(pressure,.75*zscore); s_pressure=20*pressure
+    if pressure>=.65: reasons.append(f"上攻逐層測試/收復前壓力（觸碰{touches}、收復{reclaims}）")
 
-    # ---- 波動收斂：ATR% 近期 < 前期 ----
-    tr=true_ranges(h,l,c)
-    atr_old=mean(tr[-60:-30])/(mean(c[-60:-30]) or 1)
-    atr_new=mean(tr[-20:])/(mean(c[-20:]) or 1)
-    atr_ratio=atr_new/(atr_old or 1e-9)
-    range_old=(max(c[-60:-30])/min(c[-60:-30])-1) if min(c[-60:-30]) else 1
-    range_new=(max(c[-20:])/min(c[-20:])-1) if min(c[-20:]) else 1
-    contraction=.55*clamp((1.15-atr_ratio)/.55)+.45*clamp((1.10-(range_new/(range_old or 1e-9)))/.70)
-    score_contract=15*contraction
-    if contraction>=.62: labels.append("VCP/收斂")
+    # F. VCP：ATR + 區間逐段縮
+    tr=trange(h,l,c)
+    ao=mean(tr[-70:-35])/(mean(c[-70:-35]) or 1); am=mean(tr[-35:-15])/(mean(c[-35:-15]) or 1); an=mean(tr[-15:])/(mean(c[-15:]) or 1)
+    ac=.45*clamp((1.12-am/(ao or 1e-9))/.55)+.55*clamp((1.10-an/(am or 1e-9))/.50)
+    rr=[]
+    for n in (60,35,20):
+        seg=c[-n:]; rr.append(max(seg)/min(seg)-1)
+    rc=.5*clamp((1.08-rr[1]/(rr[0] or 1e-9))/.60)+.5*clamp((1.08-rr[2]/(rr[1] or 1e-9))/.60)
+    contract=.58*ac+.42*rc; s_contract=12*contract
+    if contract>=.60: labels.append("VCP/收斂"); reasons.append("波動與回檔幅度逐步收斂")
 
-    # ---- 成交量：整理末端量縮 + 上漲/收回日量較佳 ----
-    vol20=mean(v[-20:]); vol_prev=mean(v[-60:-20]) or 1
-    dry=clamp((1.15-vol20/vol_prev)/.55)
-    upvol=[v[i] for i in range(w-20,w) if c[i]>=c[i-1]]
-    dnvol=[v[i] for i in range(w-20,w) if c[i]<c[i-1]]
-    uv=mean(upvol); dv=mean(dnvol) or 1
-    demand=clamp((uv/dv-.85)/.65)
-    score_volume=15*(.55*dry+.45*demand)
+    # G. 量價：整理量縮、攻擊量增
+    vol20=mean(v[-20:]); vp=mean(v[-60:-20]) or 1; dry=clamp((1.15-vol20/vp)/.55)
+    uv=[]; dv=[]
+    for i in range(w-20,w):
+        (uv if c[i]>=c[i-1] else dv).append(v[i])
+    demand=clamp(((mean(uv)/(mean(dv) or 1))-.85)/.70)
+    ar=[]
+    for i in range(w-25,w):
+        if c[i]/c[i-1]-1>=.02: ar.append(v[i]/(mean(v[max(0,i-20):i]) or 1))
+    attack=clamp(((max(ar) if ar else .8)-.9)/.9)
+    vq=.35*dry+.35*demand+.30*attack; s_vol=10*vq
+    if vq>=.62: reasons.append("整理量縮、攻擊波量能較佳")
 
-    # ---- 右側轉折：MA5/10 翻揚、Higher Low、價格站回 MA20 ----
-    ma5=sma(c,5); ma10=sma(c,10); ma20=sma(c,20); ma60=sma(c,60)
-    ma5_prev=mean(c[-10:-5]); ma10_prev=mean(c[-20:-10])
-    turn=0
-    turn += .25*clamp((ma5/ma5_prev-1+.01)/.035)
-    turn += .25*clamp((ma10/ma10_prev-1+.01)/.035)
-    turn += .25*(1 if c[-1]>=ma20 else clamp(c[-1]/ma20-.96,.0,.04)/.04)
-    turn += .25*improve
-    score_turn=10*turn
+    # H. 右側轉折，不要求60MA已翻多
+    m5=sma(c,5); m10=sma(c,10); m20=sma(c,20); m60=sma(c,60)
+    turn=.22*clamp((m5/mean(c[-10:-5])-1+.008)/.030)+.22*clamp((m10/mean(c[-20:-10])-1+.008)/.030)+.22*clamp((m20/mean(c[-40:-20])-1+.012)/.040)+.18*(1 if c[-1]>=m20 else clamp((c[-1]/m20-.96)/.04))+.16*lowq
+    s_turn=10*turn
+    if turn>=.62: reasons.append("5/10/20MA 與價格開始右側轉強")
 
-    # ---- 時機 / 紅點位置 ----
-    low60=min(c[-60:])
-    dist=c[-1]/low60-1
-    resistance=max(c[-40:-5]) if len(c)>=45 else max(c[:-5])
-    breakout_pct=c[-1]/resistance-1 if resistance else 0
-    ma20_ext=c[-1]/ma20-1 if ma20 else 0
-    ret5=c[-1]/c[-6]-1 if len(c)>=6 else 0
-    ret10=c[-1]/c[-11]-1 if len(c)>=11 else 0
-    below_neck=(resistance-c[-1])/resistance if resistance else 1
+    # I. 時機 / 過熱懲罰
+    low60=min(c[-60:]); dist=c[-1]/low60-1; resistance=max(c[-45:-5])
+    bp=c[-1]/resistance-1; below=(resistance-c[-1])/resistance; ext=c[-1]/m20-1; r5=c[-1]/c[-6]-1; r10=c[-1]/c[-11]-1
+    neck=1. if 0<=below<=.08 else clamp(1-(below-.08)/.07) if .08<below<=.15 else .88 if -.035<=below<0 else .45 if -.07<=below<-.035 else 0.
+    basepos=1. if .05<=dist<=.24 else .75*clamp(1-(dist-.24)/.10) if .24<dist<=.34 else clamp(dist/.05) if dist<.05 else 0.
+    m60gap=c[-1]/m60-1; m60setup=1. if -.05<=m60gap<=.04 else clamp(1-abs(m60gap)/.14)
+    raw=.26*turn+.23*neck+.18*basepos+.18*pressure+.10*contract+.05*m60setup
+    heat=(.32*clamp((ext-.12)/.12) if ext>.12 else 0)+(.28*clamp((r5-.14)/.12) if r5>.14 else 0)+(.40*clamp((r10-.24)/.18) if r10>.24 else 0)
+    timing=clamp(raw-heat); s_time=15*timing
+    penalty=(7*clamp((bp-.05)/.10) if bp>.05 else 0)+(10*clamp((dist-.34)/.22) if dist>.34 else 0)+(7*clamp((ext-.12)/.12) if ext>.12 else 0)+(4*clamp((r5-.14)/.12) if r5>.14 else 0)+(5*clamp((r10-.24)/.18) if r10>.24 else 0)
+    missed=bp>.11 or dist>.42 or ext>.20 or r10>.35
 
-    if 0 <= below_neck <= .08: neck_score=1.0
-    elif .08 < below_neck <= .15: neck_score=clamp(1-(below_neck-.08)/.07)
-    elif -.03 <= below_neck < 0: neck_score=.80
-    elif -.06 <= below_neck < -.03: neck_score=.35
-    else: neck_score=0.0
+    total=s_base+s_shape+s_low+s_wash+s_pressure+s_contract+s_vol+s_turn+s_time-penalty
+    if base_valid<.35: total=min(total,59.)
+    if lowq<.25 and len(rmins)>=3: total=min(total,62.)
+    if not labels and pressure<.50: total=min(total,54.)
+    if missed: total=min(total,64.9)
 
-    if .05 <= dist <= .22: base_pos=1.0
-    elif .22 < dist <= .30: base_pos=clamp(1-(dist-.22)/.08)*.75
-    elif dist < .05: base_pos=clamp(dist/.05)
-    else: base_pos=0.0
-
-    heat_penalty=0.0
-    if ma20_ext > .10: heat_penalty += clamp((ma20_ext-.10)/.10)*.35
-    if ret5 > .12: heat_penalty += clamp((ret5-.12)/.12)*.30
-    if ret10 > .20: heat_penalty += clamp((ret10-.20)/.15)*.35
-
-    timing_raw=.38*turn+.27*neck_score+.20*base_pos+.15*contraction
-    timing_score=clamp(timing_raw-heat_penalty)
-    score_pos=15*timing_score
-
-    extension_penalty=0.0
-    if breakout_pct > .03: extension_penalty += 8*clamp((breakout_pct-.03)/.09)
-    if dist > .30: extension_penalty += 10*clamp((dist-.30)/.20)
-    if ma20_ext > .10: extension_penalty += 6*clamp((ma20_ext-.10)/.10)
-    if ret5 > .12: extension_penalty += 4*clamp((ret5-.12)/.10)
-    if ret10 > .20: extension_penalty += 4*clamp((ret10-.20)/.15)
-
-    is_missed=(breakout_pct>.08 or dist>.35 or ma20_ext>.15 or ret10>.28)
-
-    base_total=score_structure+score_wash+score_lows+score_contract+score_volume+score_turn
-    total=base_total*0.90+score_pos-extension_penalty
-    if not labels: total=min(total,49)
-    if is_missed: total=min(total,64.9)
-
-    if is_missed: stage="⚪ 已錯過/已漲一段"
-    elif -.03 <= breakout_pct <= .03 and turn>=.55: stage="🔴 突破初期"
-    elif 0 <= below_neck <= .10 and turn>=.58 and contraction>=.40: stage="🟠 紅點準備區"
-    elif contraction>=.58 and turn>=.42 and breakout_pct < 0: stage="🟡 築底末端"
+    if missed: stage="⚪ 已錯過/已漲一段"
+    elif 0<=below<=.10 and turn>=.56 and pressure>=.55 and lowq>=.45: stage="🟠 紅點準備區"
+    elif -.04<=bp<=.04 and turn>=.58 and pressure>=.58: stage="🔴 突破初期"
+    elif contract>=.55 and lowq>=.45 and bp<0: stage="🟡 築底末端"
     else: stage="⚪ 築底中"
 
-    # 參考支撐 / 突破
-    support=min(c[-20:])
-    vol_ratio=v[-1]/(mean(v[-20:-1]) or 1)
-
-    reasons=[]
-    if u_shape>=.58: reasons.append("左降→底部走平→右側斜率翻正")
-    if wscore>=.55: reasons.append("近端存在相近雙底/多重底")
-    if wash_score>=.45: reasons.append(f"破底後快速收回訊號 {wash_count} 次")
-    if improve>=.60: reasons.append("最近低點由破底轉為等低/墊高")
-    if contraction>=.62: reasons.append("ATR/區間振幅明顯收斂")
-    if dry>=.55: reasons.append("底部整理量縮")
-    if turn>=.62: reasons.append("短均線與價格開始右側轉強")
-    if not reasons: reasons.append("綜合底部條件接近門檻")
-
-    return {
-        "code":code, "name":name, "score":round(total,1),
-        "pattern":" + ".join(dict.fromkeys(labels)) if labels else "底部候選",
-        "stage":stage,
-        "close":round(c[-1],2),
-        "support":round(support,2),
-        "breakout":round(resistance,2),
-        "vol_ratio":round(vol_ratio,2),
-        "dist_from_60d_low_pct":round(dist*100,1),
-        "breakout_pct":round(breakout_pct*100,1),
-        "ma20_ext_pct":round(ma20_ext*100,1),
-        "ret5_pct":round(ret5*100,1),
-        "ret10_pct":round(ret10*100,1),
-        "timing":round(score_pos,1),
-        "extension_penalty":round(extension_penalty,1),
-        "structure":round(score_structure,1),
-        "washout":round(score_wash,1),
-        "low_improve":round(score_lows,1),
-        "contraction":round(score_contract,1),
-        "volume":round(score_volume,1),
-        "right_turn":round(score_turn,1),
-        "position":round(score_pos,1),
-        "reason":"；".join(reasons)
-    }
+    if not reasons: reasons=["底部結構接近門檻"]
+    return {"code":code,"name":name,"score":round(max(0,total),1),"pattern":" + ".join(dict.fromkeys(labels)) if labels else "底部候選","stage":stage,"close":round(c[-1],2),"support":round(min(c[-20:]),2),"breakout":round(resistance,2),"vol_ratio":round(v[-1]/(mean(v[-20:-1]) or 1),2),"dist_from_60d_low_pct":round(dist*100,1),"breakout_pct":round(bp*100,1),"ma20_ext_pct":round(ext*100,1),"ret5_pct":round(r5*100,1),"ret10_pct":round(r10*100,1),"timing":round(s_time,1),"extension_penalty":round(penalty,1),"structure":round(s_shape,1),"washout":round(s_wash,1),"low_improve":round(s_low,1),"contraction":round(s_contract,1),"volume":round(s_vol,1),"right_turn":round(s_turn,1),"position":round(s_time,1),"base_validity":round(s_base,1),"pressure_reclaim":round(s_pressure,1),"higher_low_ratio":round(hlratio,2),"ma60_gap_pct":round(m60gap*100,1),"reason":"；".join(reasons)}
 
 def read_universe(path):
     out=[]
-    with open(path,"r",encoding="utf-8-sig") as f:
+    with open(path,encoding="utf-8-sig") as f:
         for line in f:
             s=line.strip()
-            if not s or s.startswith("#"): continue
+            if not s or s.startswith("#"):continue
             code=s.split(",")[0].strip()
-            if code.isdigit() and len(code)==4:
-                out.append(code)
+            if code.isdigit() and len(code)==4:out.append(code)
     return list(dict.fromkeys(out))
 
+def priority(stage):
+    return 0 if stage.startswith("🟠") else 1 if stage.startswith("🔴") else 2 if stage.startswith("🟡") else 4 if "錯過" in stage else 3
+
 def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument("--top",type=int,default=30)
-    ap.add_argument("--tickers",default="")
-    ap.add_argument("--universe",default="")
-    ap.add_argument("--sleep",type=float,default=.15)
-    args=ap.parse_args()
-
-    if args.tickers:
-        tickers=[x.strip() for x in args.tickers.split(",") if x.strip()]
-    elif args.universe:
-        tickers=read_universe(args.universe)
-    else:
-        tickers=DEFAULT_TICKERS
-
-    print(f"掃描 {len(tickers)} 檔；只輸出測試結果，不更新網站、不推播")
-    results=[]
-    failed=[]
-    for idx,code in enumerate(tickers,1):
-        data=fetch_one(code)
-        if not data:
-            failed.append(code)
-            print(f"[{idx:>3}/{len(tickers)}] {code} 下載失敗")
-            continue
-        sym,name,rows=data
-        r=score_stock(code,name,rows)
-        if r:
-            results.append(r)
-            print(f"[{idx:>3}/{len(tickers)}] {code} {r['score']:>5.1f} {r['pattern']} {r['stage']}")
-        time.sleep(args.sleep)
-
-    results.sort(key=lambda x:x["score"], reverse=True)
-    top=results[:args.top]
-
-    fields=["rank","code","name","score","pattern","stage","close","support","breakout",
-            "vol_ratio","dist_from_60d_low_pct","breakout_pct","ma20_ext_pct","ret5_pct","ret10_pct",
-            "timing","extension_penalty","structure","washout","low_improve",
-            "contraction","volume","right_turn","position","reason"]
+    ap=argparse.ArgumentParser(); ap.add_argument("--top",type=int,default=30); ap.add_argument("--tickers",default=""); ap.add_argument("--universe",default=""); ap.add_argument("--sleep",type=float,default=.15); a=ap.parse_args()
+    tickers=[x.strip() for x in a.tickers.split(",") if x.strip()] if a.tickers else read_universe(a.universe) if a.universe else DEFAULT_TICKERS
+    print(f"V3 掃描 {len(tickers)} 檔｜底部結構 + 壓力逐層消化")
+    results=[]; failed=[]
+    for i,code in enumerate(tickers,1):
+        d=fetch_one(code)
+        if not d: failed.append(code); print(f"[{i:>3}/{len(tickers)}] {code} 下載失敗"); continue
+        _,name,rows=d; r=score_stock(code,name,rows)
+        if r: results.append(r); print(f"[{i:>3}/{len(tickers)}] {code} {r['score']:>5.1f} 壓力:{r['pressure_reclaim']:>4.1f} {r['stage']}")
+        time.sleep(a.sleep)
+    results.sort(key=lambda x:(-x["score"],priority(x["stage"]))); top=results[:a.top]
+    fields=["rank","code","name","score","pattern","stage","close","support","breakout","vol_ratio","dist_from_60d_low_pct","breakout_pct","ma20_ext_pct","ret5_pct","ret10_pct","timing","extension_penalty","structure","washout","low_improve","contraction","volume","right_turn","position","base_validity","pressure_reclaim","higher_low_ratio","ma60_gap_pct","reason"]
     with open(OUT_CSV,"w",newline="",encoding="utf-8-sig") as f:
-        w=csv.DictWriter(f,fieldnames=fields)
-        w.writeheader()
-        for i,r in enumerate(top,1):
-            w.writerow({"rank":i,**r})
-
-    payload={
-        "generated_at":datetime.now(timezone.utc).isoformat(),
-        "scanned":len(tickers),"success":len(results),"failed":failed,
-        "top":top
-    }
-    Path(OUT_JSON).write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding="utf-8")
-
-    print("\n===== TOP =====")
+        wr=csv.DictWriter(f,fieldnames=fields); wr.writeheader()
+        for i,r in enumerate(top,1):wr.writerow({"rank":i,**r})
+    Path(OUT_JSON).write_text(json.dumps({"version":"v3","generated_at":datetime.now(timezone.utc).isoformat(),"scanned":len(tickers),"success":len(results),"failed":failed,"top":top},ensure_ascii=False,indent=2),encoding="utf-8")
+    print("\n===== V3 TOP =====")
     for i,r in enumerate(top,1):
-        print(f"{i:>2}. {r['code']} {r['name'][:12]:<12} {r['score']:>5.1f} "
-              f"{r['pattern']:<24} {r['stage']}")
-        print(f"    支撐 {r['support']}｜突破參考 {r['breakout']}｜量比 {r['vol_ratio']}｜{r['reason']}")
+        print(f"{i:>2}. {r['code']} {r['name'][:12]:<12} {r['score']:>5.1f} {r['pattern']:<22} {r['stage']}")
+        print(f"    支撐 {r['support']}｜突破 {r['breakout']}｜底部有效 {r['base_validity']}｜壓力消化 {r['pressure_reclaim']}｜{r['reason']}")
     print(f"\n輸出：{OUT_CSV} / {OUT_JSON}")
-    if failed: print("下載失敗：",",".join(failed))
+    if failed:print("下載失敗：",",".join(failed))
 
-if __name__=="__main__":
-    main()
+if __name__=="__main__":main()
