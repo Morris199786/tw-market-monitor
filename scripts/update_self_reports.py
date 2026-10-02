@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-02-v23-openapi-company-rescue-telegram-only"
+VERSION = "2026-10-02-v24-safe-company-rescue-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -696,15 +696,20 @@ def fetch_mops_company_today(ticker, iso_date):
 
 def fetch_mops_search():
     """
-    v23 discovery:
-    1) MOPS 當日 broad scan
-    2) 取得 TWSE / TPEx 當日重大訊息 OpenAPI 中出現的所有普通股 ticker
-    3) 對 broad scan 尚未包含的 ticker，直接逐公司查 MOPS 當日重大訊息
-    4) broad scan 完全失敗才跑舊 keyword fallback
+    v24 SAFE / ADDITIVE discovery
 
-    不再依賴 v22 的 TWSE 注意股 endpoint，因實測該 endpoint 回 rows=0。
-    逐公司 MOPS 查詢仍以 subject_is_candidate() 篩選，因此不會把一般重大訊息
-    當成自結；只把「注意交易 / 財務業務 / 自結」類公告補回。
+    主流程不動：
+      A. MOPS 當日 broad scan -> 原本抓得到的公司照常抓
+      B. 原 EPS parser 照常解析
+
+    只新增補漏：
+      C. 從 TWSE / TPEx 官方重大訊息 feed 取得「目前 feed 內所有普通股 ticker」
+         （不再判斷 OpenAPI 日期欄位，避免 v23 today_tickers=0 的漏洞）
+      D. 只對 broad scan 沒有出現的 ticker 做 MOPS 公司別「今天」查詢
+      E. 公司別結果仍必須通過 subject_is_candidate()，
+         所以一般重大訊息不會混入自結
+
+    這樣是補洞，不會把已正常的晶心科等既有流程換掉。
     """
     today = now_tpe().date().isoformat()
     dt = datetime.strptime(today, "%Y-%m-%d")
@@ -726,6 +731,7 @@ def fetch_mops_search():
         seen_rows.add(sig)
         raw_rows.append((source_keyword, row))
 
+    # ---------- A. Existing broad scan: keep as primary ----------
     broad_payloads = [
         {
             "firstin": "1", "step": "1", "off": "1", "TYPEK": "all",
@@ -776,15 +782,18 @@ def fetch_mops_search():
         if broad_ok:
             break
 
+    # Every ticker already visible in the broad list. These companies need no rescue.
     broad_tickers = set()
     for row in broad_all_rows:
         m = re.search(r"(?<!\d)(\d{4})(?!\d)", row.get("text", ""))
         if m and ordinary_ticker(m.group(1)):
             broad_tickers.add(m.group(1))
 
-    # 直接從官方 TWSE / TPEx 當日重大訊息 OpenAPI 建立公司清單。
-    # 這裡不先套 subject filter，因為目的只是取得「今天有公告的公司代號」，
-    # 再逐公司回 MOPS 查詢真正的注意交易 / 財務業務公告。
+    # ---------- C. Additive rescue pool ----------
+    # Important: DO NOT parse/filter OpenAPI date here.
+    # v23 proved the field-name/date assumption can turn a valid 78-row feed into 0 targets.
+    # The feed itself is already a compact recent-announcement universe; company query below
+    # is explicitly constrained to TODAY, so older feed tickers are harmless.
     rescue_tickers = set()
     rescue_source_debug = []
 
@@ -803,17 +812,14 @@ def fetch_mops_search():
                 ticker = str(
                     p(row, ["公司代號", "證券代號", "股票代號", "代號"], "")
                 ).strip()
-                publish_date = roc_to_iso(
-                    p(row, ["發言日期", "公告日期", "出表日期"], "")
-                )
-                if ordinary_ticker(ticker) and publish_date == today:
+                if ordinary_ticker(ticker):
                     market_tickers.add(ticker)
 
             rescue_tickers.update(market_tickers)
             rescue_source_debug.append({
                 "market": market,
                 "rows": len(rows),
-                "today_tickers": len(market_tickers),
+                "ticker_pool": len(market_tickers),
             })
         except Exception as exc:
             rescue_source_debug.append({
@@ -822,29 +828,33 @@ def fetch_mops_search():
             })
 
     debug.append({
-        "mode": "openapi_ticker_pool",
+        "mode": "openapi_rescue_pool",
         "sources": rescue_source_debug,
         "tickers": len(rescue_tickers),
     })
 
-    # broad list 裡「已經出現過」的 ticker 不需要再查。
-    # 其餘今天有公告的公司逐一做 company-specific MOPS query。
+    # ---------- D. Company-specific rescue ----------
+    # Only query companies absent from broad list. This is additive and cannot suppress
+    # companies already found by the primary path.
     targets = sorted(rescue_tickers - broad_tickers)
 
+    rescued_tickers = []
     for ticker in targets:
         rows, status = fetch_mops_company_today(ticker, today)
         debug.append({"mode": "company_rescue", **status})
+        if rows:
+            rescued_tickers.append(ticker)
         for row in rows:
             add_row("daily_broad", row)
 
-    # 額外保險：
-    # OpenAPI 有可能和 broad list 同步延遲不同，因此 broad scan 中所有普通股
-    # 若 subject 本身疑似注意交易但尚未進 raw_rows，也再納入一次。
-    for row in broad_all_rows:
-        row_text = row.get("text", "")
-        if subject_is_candidate(row_text):
-            add_row("daily_broad", row)
+    debug.append({
+        "mode": "company_rescue_summary",
+        "targets": len(targets),
+        "rescued": len(rescued_tickers),
+        "rescued_tickers": rescued_tickers,
+    })
 
+    # ---------- E. Old keyword fallback only if broad endpoint itself failed ----------
     if not broad_ok and not raw_rows:
         debug.append({
             "mode": "fallback",
@@ -1141,7 +1151,7 @@ def main():
         "updated_at": updated_at,
         "monitor_start_date": MONITOR_START_DATE,
         "filter_version": VERSION,
-        "source_mode": "MOPS daily broad + official OpenAPI ticker-pool company rescue + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
+        "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
         "diagnostics": {
             "candidate_count": len(all_candidates), "parsed_count": len(display_items),
             "parse_failed_count": len(parse_failed), "parse_failed": parse_failed,
