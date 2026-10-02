@@ -182,14 +182,31 @@ def read_universe(path):
     return list(dict.fromkeys(out))
 
 def shared_tech_universe():
+    """
+    完全沿用網站既有科技股標準：
+      1. 官方科技產業股
+      2. data/sectors.json 自訂科技族群
+      3. config.json 跨產業科技供應鏈白名單
+      4. 扣除 tech_exclude_tickers（若有）
+
+    優先讀 repo 已產生的 data/master.json，避免 scanner
+    自己重新抓 master 後因來源欄位差異造成股票池不一致。
+    """
     try:
-        master=fetch_master()
-        tickers=sorted(tech_tickers(master))
+        master_path = ROOT / "data" / "master.json"
+        if master_path.exists():
+            obj = json.loads(master_path.read_text(encoding="utf-8"))
+            master = obj.get("stocks", obj)
+        else:
+            master = fetch_master()
+
+        tickers = sorted(tech_tickers(master))
         if tickers:
-            print(f"共用科技股池：{len(tickers)} 檔")
+            print(f"網站共用科技股池：{len(tickers)} 檔")
             return tickers
     except Exception as e:
-        print(f"共用科技股池取得失敗：{e}")
+        print(f"網站共用科技股池取得失敗：{e}")
+
     print(f"改用 fallback DEFAULT_TICKERS：{len(DEFAULT_TICKERS)} 檔")
     return DEFAULT_TICKERS
 
