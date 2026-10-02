@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-02-v24-safe-company-rescue-telegram-only"
+VERSION = "2026-10-02-v25-eps-layout-fix-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -71,7 +71,7 @@ CELL = (
     r"(?:[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\s*%?"
     r"|\(\s*\d+(?:\.\d+)?\s*\)\s*%?"
     r"|不適用|不適合|無法計算|由虧轉盈|由盈轉虧"
-    r"|轉虧為盈|轉盈為虧|N/?A|--+|—|-)"
+    r"|轉虧為盈|轉盈為虧|虧損減少|虧損增加|N/?A|--+|—|-)"
 )
 
 
@@ -189,7 +189,7 @@ def _empty_metrics():
 def _find_month_period(text):
     patterns = (
         r"(?<!\d)(\d{2,4})\s*年\s*(\d{1,2})\s*月",
-        r"(?<!\d)(\d{2,4})\s*/\s*(\d{1,2})(?!\s*/\s*\d)",
+        r"(?<!\d)(\d{2,4})\s*[/\.]\s*(\d{1,2})(?!\s*/\s*\d)",
         r"(?<!\d)(20\d{2})[-/](\d{1,2})(?![-/]\d)",
     )
     for pattern in patterns:
@@ -202,10 +202,11 @@ def _find_month_period(text):
 
 
 def _find_quarter_period(text):
+    text = re.sub(r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季\s*(?:至|~|～)", "", text)
     patterns = (
-        r"(?<!\d)(\d{2,4})\s*年\s*第?\s*([1-4一二三四])\s*季",
-        r"(?<!\d)(20\d{2})\s*Q\s*([1-4])",
-        r"(?<!\d)(\d{2,3})\s*Q\s*([1-4])",
+        r"(?<!\d)(\d{2,4})\s*年?\s*第?\s*([1-4一二三四])\s*季",
+        r"(?<!\d)(20\d{2})\s*[.]?\s*Q\s*([1-4])",
+        r"(?<!\d)(\d{2,3})\s*[.]?\s*Q\s*([1-4])",
     )
     for pattern in patterns:
         m = re.search(pattern, text, re.I)
@@ -214,92 +215,69 @@ def _find_quarter_period(text):
     return None
 
 
-def _extract_mops_section_eps(section):
-    if not section:
-        return None
+def _eps_cells(section):
+    """Read only adjacent EPS cells; never scan later notes for numbers."""
     m = re.search(EPS_WORD, section, re.I)
     if not m:
-        return None
+        return []
     tail = section[m.end():]
-    tail = re.sub(r"^\s*[（(]?\s*(?:元|新台幣元)\s*[）)]?\s*", "", tail, flags=re.I)
-    vals = re.findall(CELL, tail, re.I)
-    if not vals:
+    tail = re.split(r"\s+[4-9]\s*[.、]\s*[^\d]", tail, maxsplit=1)[0]
+    tail = re.sub(r"^\s*[（(]?\s*(?:元|新台幣元)\s*[）)]?\s*", "", tail)
+    tail = re.sub(r"^\s*[:：]\s*", "", tail)
+    cells = []
+    for _ in range(8):
+        tail = tail.lstrip(" \t\r\n/|｜")
+        token = re.match(CELL, tail, re.I)
+        if not token:
+            break
+        cells.append(token.group(0).strip())
+        tail = tail[token.end():]
+    return cells
+
+
+def _growth(raw):
+    value = _number(raw, growth=True)
+    return value, (raw.strip() if value is None or "%" in raw else f"{value:+.2f}%")
+
+
+def _extract_eps_triplet(section):
+    vals = _eps_cells(section)
+    if len(vals) < 3 or "%" in vals[0] or "%" in vals[1]:
         return None
     current = _number(vals[0])
     if current is None:
         return None
-    previous = None
-    yoy = None
-    yoy_text = None
-    if len(vals) >= 2 and "%" not in vals[1]:
-        previous = _number(vals[1])
-    for raw in vals[1:4]:
-        if "%" in raw:
-            yoy = _number(raw, growth=True)
-            yoy_text = raw.strip()
-            break
-    if yoy_text is None:
-        for raw in vals[1:4]:
-            if re.search(r"不適用|不適合|無法計算|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧|N/?A|--+|—", raw, re.I):
-                yoy_text = raw.strip()
-                break
-    return current, previous, yoy, yoy_text
+    yoy, label = _growth(vals[2])
+    return current, _number(vals[1]), yoy, label
 
 
-def _extract_eps_triplet(section):
-    eps = re.search(EPS_WORD, section, re.I)
-    if not eps:
-        return None
-    tail = section[eps.end():]
-    tail = re.sub(r"^\s*[（(]?\s*元\s*[）)]?\s*", "", tail)
-    values = re.findall(CELL, tail, re.I)
-    if len(values) < 3:
-        return None
-    current, previous, yoy = values[:3]
-    if "%" in current or "%" in previous:
-        return None
-    current_num = _number(current)
-    previous_num = _number(previous)
-    yoy_num = _number(yoy, growth=True)
-    if current_num is None:
-        return None
-    return current_num, previous_num, yoy_num, yoy.strip()
+def _extract_mops_section_eps(section):
+    return _extract_eps_triplet(section)
 
 
 def _extract_horizontal_eps(text):
-    eps = re.search(EPS_WORD, text, re.I)
-    if not eps:
+    vals = _eps_cells(text)
+    # Shared-row layouts: month/YoY/quarter/YoY/(trailing four quarters)
+    # or month/prior-month/YoY/quarter/prior-quarter/YoY/(trailing).
+    # YoY column headers, not a mandatory percent suffix, establish the units.
+    if len(vals) in (4, 5):
+        mi, my, qi, qy = 0, 1, 2, 3
+    elif len(vals) in (6, 7):
+        mi, my, qi, qy = 0, 2, 3, 5
+    else:
         return None
-    tail = text[eps.end():]
-    stop = re.search(r"(?:\s4\.|\s有無[「\"]|最近四季累計)", tail)
-    if stop:
-        tail = tail[:stop.start()]
-    vals = re.findall(CELL, tail, re.I)
-    if not vals:
+    if _number(vals[mi]) is None or _number(vals[qi]) is None:
         return None
-
-    # 月EPS、月YoY、季EPS、季YoY
-    if len(vals) >= 4 and "%" in vals[1] and "%" in vals[3]:
-        return {
-            "monthly_eps": _number(vals[0]),
-            "monthly_eps_yoy": _number(vals[1], growth=True),
-            "monthly_eps_yoy_text": vals[1].strip(),
-            "quarter_eps": _number(vals[2]),
-            "quarter_eps_yoy": _number(vals[3], growth=True),
-            "quarter_eps_yoy_text": vals[3].strip(),
-        }
-
-    # 月EPS、去年月EPS、月YoY、季EPS、去年季EPS、季YoY
-    if len(vals) >= 6 and "%" in vals[2] and "%" in vals[5]:
-        return {
-            "monthly_eps": _number(vals[0]),
-            "monthly_eps_yoy": _number(vals[2], growth=True),
-            "monthly_eps_yoy_text": vals[2].strip(),
-            "quarter_eps": _number(vals[3]),
-            "quarter_eps_yoy": _number(vals[5], growth=True),
-            "quarter_eps_yoy_text": vals[5].strip(),
-        }
-    return None
+    month_yoy, month_label = _growth(vals[my])
+    quarter_yoy, quarter_label = _growth(vals[qy])
+    return {
+        "monthly_eps": _number(vals[mi]),
+        "monthly_eps_yoy": month_yoy,
+        "monthly_eps_yoy_text": month_label,
+        "quarter_eps": _number(vals[qi]),
+        "quarter_eps_yoy": quarter_yoy,
+        "quarter_eps_yoy_text": quarter_label,
+    }
 
 
 def _slice_semantic_sections(text):
@@ -317,7 +295,11 @@ def _slice_semantic_sections(text):
             if next_start > start and next_kind != kind:
                 end = next_start
                 break
-        sections[kind] = text[start:end]
+        section = text[start:end]
+        cumulative = re.search(r"最近四季累計", section)
+        if cumulative:
+            section = section[:cumulative.start()]
+        sections[kind] = section
     return sections
 
 
@@ -326,7 +308,7 @@ def _fallback_period_sections(text):
         r"(?<!\d)(?:\d{2,4}\s*年\s*\d{1,2}\s*月|20\d{2}[-/]\d{1,2})", text
     )
     quarter = re.search(
-        r"(?<!\d)(?:\d{2,4}\s*年\s*第?\s*[1-4一二三四]\s*季|20\d{2}\s*Q\s*[1-4])",
+        r"(?<!\d)(?:\d{2,4}\s*年\s*第?\s*[1-4一二三四]\s*季|20\d{2}\s*[.]?\s*Q\s*[1-4])",
         text, re.I,
     )
     sections = {}
@@ -393,7 +375,22 @@ def extract_metrics(text):
         and quarter_marker.start() < eps_marker.start()
     )
 
-    if shared_horizontal_eps_row or out["monthly_eps"] is None or out["quarter_eps"] is None:
+    if shared_horizontal_eps_row:
+        for key in ("monthly_eps", "monthly_eps_yoy", "monthly_eps_yoy_text",
+                    "quarter_eps", "quarter_eps_yoy", "quarter_eps_yoy_text"):
+            out[key] = None
+        header = text[month_marker.start():eps_marker.start()]
+        # Strip cumulative date ranges so their starting quarter cannot become Q2's label
+        header = re.sub(r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季\s*(?:至|~|～)\s*\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季", "", header)
+        out["monthly_period"] = _find_month_period(header)
+        header = re.split(r"營業收入|營收", header, maxsplit=1)[0]
+        quarters = re.findall(r"(?<!\d)(\d{2,4})\s*年?\s*第?\s*([1-4一二三四])\s*季", header)
+        out["quarter_period"] = (
+            max(f"{_ad_year(y)}-Q{_quarter_num(q)}" for y, q in quarters)
+            if quarters else _find_quarter_period(header)
+        )
+
+    if shared_horizontal_eps_row:
         horizontal = _extract_horizontal_eps(text)
         if horizontal:
             for key, value in horizontal.items():
@@ -1182,3 +1179,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
