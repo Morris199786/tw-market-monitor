@@ -14,7 +14,7 @@ import requests
 ROOT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT/"scripts"))
 from sources import fetch_master
-from tech_universe import tech_tickers
+from tech_universe import tech_tickers, _sector_tickers
 
 UA="Mozilla/5.0"; YAHOO="https://query1.finance.yahoo.com/v8/finance/chart/"
 OUT_CSV="pattern_scan_top30.csv"; OUT_JSON="pattern_scan_top30.json"
@@ -200,9 +200,11 @@ def shared_tech_universe():
         else:
             master = fetch_master()
 
-        tickers = sorted(tech_tickers(master))
+        website_tech = set(tech_tickers(master))
+        sector_stocks = set(_sector_tickers())
+        tickers = sorted(website_tech | sector_stocks)
         if tickers:
-            print(f"網站共用科技股池：{len(tickers)} 檔")
+            print(f"Scanner 股票池：{len(tickers)} 檔（網站科技股 + 全部族群，聯集去重）")
             return tickers
     except Exception as e:
         print(f"網站共用科技股池取得失敗：{e}")
