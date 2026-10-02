@@ -1,29 +1,36 @@
 /* =========================================================
-   台股市場監測｜全站即時更新控制器
+   台股市場監測｜全站即時更新控制器｜效能版 2026-10-02
    ========================================================= */
 
 (function () {
   "use strict";
 
-  const FALLBACK_INTERVAL = 60 * 1000;
-
   /*
-   * iPhone Safari / PWA 從背景回來時，
-   * visibilitychange、pageshow、focus
-   * 很可能連續一起觸發
-   *
-   * 拉長 debounce，合併成一次 refresh
+   * iPhone Safari / PWA
+   * 從背景回來時合併事件
    */
   const RESUME_DEBOUNCE = 700;
 
   /*
-   * 同一頁短時間內不要一直刷新
+   * 同一頁短時間內
+   * 不要重複 refresh
    */
   const MIN_REFRESH_GAP = 5000;
 
+  /*
+   * 不再全站每 60 秒重畫
+   *
+   * 熱力圖：
+   * 使用者停留熱力圖頁面時
+   * 每 5 分鐘做一次前端保底更新
+   */
+  const HEAT_FALLBACK_INTERVAL =
+    5 * 60 * 1000;
+
   let lastRefreshAt = 0;
+
   let running = false;
-  let queued = false;
+
   let resumeTimer = null;
 
   /* =========================================================
@@ -32,13 +39,15 @@
 
   function getActivePage() {
     return (
-      document.querySelector(".page.active")?.id ||
+      document.querySelector(
+        ".page.active"
+      )?.id ||
       "home"
     );
   }
 
   /*
-   * 財報追蹤裡面有三個子分頁：
+   * 財報追蹤子分頁：
    *
    * self
    * upcoming
@@ -64,17 +73,22 @@
       window[name];
 
     if (
-      typeof fn !== "function"
+      typeof fn !==
+      "function"
     ) {
       return false;
     }
 
     try {
-      await fn(...args);
+
+      await fn(
+        ...args
+      );
 
       return true;
 
     } catch (error) {
+
       console.warn(
         "[Live Refresh] refresh failed:",
         name,
@@ -85,36 +99,84 @@
     }
   }
 
+  /*
+   * 清除 app.js
+   * 共用 JSON memory cache
+   */
+  function invalidate(path) {
+    if (
+      typeof window.invalidateJson ===
+      "function"
+    ) {
+      window.invalidateJson(
+        path
+      );
+    }
+  }
+
   /* =========================================================
      首頁
   ========================================================= */
 
-  async function refreshHome() {
+  async function refreshHome(
+    force = true
+  ) {
+
+    /*
+     * 真的需要重新整理時
+     * 才清除相關 cache
+     */
+    if (force) {
+
+      invalidate(
+        "./data/heatmap.json"
+      );
+
+      invalidate(
+        "./data/ai_picks.json"
+      );
+
+      invalidate(
+        "./data/holders.json"
+      );
+
+      invalidate(
+        "./data/self_reports.json"
+      );
+
+      invalidate(
+        "./data/volume.json"
+      );
+
+      invalidate(
+        "./data/monthly_revenue.json"
+      );
+    }
+
     await callFunction(
-      "home"
+      "home",
+      force
     );
 
     /*
      * Market Pulse
+     *
+     * 不再 remove 整塊 DOM
+     * 避免首頁閃爍 / 重排
+     *
+     * buildMarketPulse()
+     * 會直接更新原本區塊
      */
-
-    const oldPulse =
-      document.getElementById(
-        "marketPulse"
-      );
-
-    if (oldPulse) {
-      oldPulse.remove();
-    }
-
     await callFunction(
-      "buildMarketPulse"
+      "buildMarketPulse",
+      force
     );
 
     /*
-     * 首頁券商報告數量
+     * 首頁其他模組
+     * 若有監聽這個事件
+     * 可以自行更新
      */
-
     window.dispatchEvent(
       new CustomEvent(
         "tw-market:refresh-home"
@@ -124,30 +186,31 @@
 
   /* =========================================================
      財報追蹤
-
-     這裡是這次最重要的修正
   ========================================================= */
 
-  async function refreshEarningsTracker() {
+  async function refreshEarningsTracker(
+    force = true
+  ) {
     const mode =
       getEarningsMode();
 
-    console.log(
-      "[Live Refresh] earnings mode →",
-      mode
-    );
-
     /*
      * 自結公布
-     *
-     * 只有真的停在「自結公布」
-     * 才允許執行 selfReports()
      */
     if (
-      mode === "self"
+      mode ===
+      "self"
     ) {
+
+      if (force) {
+        invalidate(
+          "./data/self_reports.json"
+        );
+      }
+
       await callFunction(
-        "selfReports"
+        "selfReports",
+        force
       );
 
       return;
@@ -157,16 +220,16 @@
      * 即將開財報
      * 財報
      *
-     * 不准執行 selfReports()
-     *
-     * 只更新 quarterly earnings
+     * 不執行 selfReports()
      */
     if (
       mode === "upcoming" ||
       mode === "reports"
     ) {
+
       await callFunction(
-        "refreshQuarterlyReports"
+        "refreshQuarterlyReports",
+        force
       );
 
       return;
@@ -174,24 +237,34 @@
   }
 
   /* =========================================================
-     各頁 Refresh
+     各分頁 Refresh
   ========================================================= */
 
   async function refreshPage(
-    pageId
+    pageId,
+    force = true
   ) {
     switch (pageId) {
 
       case "home":
 
-        await refreshHome();
+        await refreshHome(
+          force
+        );
 
         break;
 
       case "heat":
 
+        if (force) {
+          invalidate(
+            "./data/heatmap.json"
+          );
+        }
+
         await callFunction(
-          "heat"
+          "heat",
+          force
         );
 
         window.dispatchEvent(
@@ -204,48 +277,95 @@
 
       case "flows":
 
+        if (force) {
+          invalidate(
+            "./data/institutional.json"
+          );
+        }
+
         await callFunction(
-          "flows"
+          "flows",
+          force
         );
 
         break;
 
       case "volume":
 
+        if (force) {
+
+          invalidate(
+            "./data/volume.json"
+          );
+
+          invalidate(
+            "./data/screener.json"
+          );
+        }
+
         await callFunction(
-          "volume"
+          "volume",
+          force
         );
 
         break;
 
       case "turnover":
 
+        if (force) {
+          invalidate(
+            "./data/turnover.json"
+          );
+        }
+
         await callFunction(
-          "turnover"
+          "turnover",
+          force
         );
 
         break;
 
       case "marginLending":
 
+        if (force) {
+          invalidate(
+            "./data/margin_lending.json"
+          );
+        }
+
         await callFunction(
-          "marginLending"
+          "marginLending",
+          force
         );
 
         break;
 
       case "ai":
 
+        if (force) {
+          invalidate(
+            "./data/ai_picks.json"
+          );
+        }
+
         await callFunction(
-          "ai"
+          "ai",
+          force
         );
 
         break;
 
       case "holders":
 
+        if (force) {
+          invalidate(
+            "./data/holders.json"
+          );
+        }
+
         await callFunction(
-          "holders"
+          "holders",
+          force
         );
 
         break;
@@ -255,19 +375,39 @@
        */
       case "selfReports":
 
-        await refreshEarningsTracker();
+        await refreshEarningsTracker(
+          force
+        );
 
         break;
 
       case "monthlyRevenue":
 
+        if (force) {
+          invalidate(
+            "./data/monthly_revenue.json"
+          );
+        }
+
         await callFunction(
-          "monthlyRevenue"
+          "monthlyRevenue",
+          force
         );
 
         break;
 
       case "reports":
+
+        if (force) {
+          invalidate(
+            "./data/reports.json"
+          );
+        }
+
+        await callFunction(
+          "reports",
+          force
+        );
 
         window.dispatchEvent(
           new CustomEvent(
@@ -283,8 +423,8 @@
     }
 
     /*
-     * 更新目前頁面
-     * 最後更新時間
+     * 只更新目前頁面的
+     * 更新時間資訊
      */
     await callFunction(
       "setupPageUpdateMeta",
@@ -300,6 +440,7 @@
     reason = "manual",
     force = false
   ) {
+
     /*
      * App 在背景
      * 完全不更新
@@ -314,20 +455,13 @@
       Date.now();
 
     /*
-     * 即使 force
+     * 非手動強制更新：
      *
-     * iPhone 回前景時，
-     * 5 秒內仍只允許刷新一次
-     *
-     * 避免：
-     *
-     * pageshow
-     * visibilitychange
-     * focus
-     *
-     * 三連發
+     * 5 秒內不允許
+     * 同頁連續 refresh
      */
     if (
+      !force &&
       now -
       lastRefreshAt <
       MIN_REFRESH_GAP
@@ -336,11 +470,10 @@
     }
 
     /*
-     * 已經有 refresh 在跑
+     * 已經有 refresh
+     * 正在執行
      *
-     * 不再 queue 第二輪
-     *
-     * 這是另一個卡頓來源
+     * 不 queue 第二輪
      */
     if (
       running
@@ -366,7 +499,8 @@
     try {
 
       await refreshPage(
-        pageId
+        pageId,
+        force
       );
 
       window.dispatchEvent(
@@ -375,7 +509,8 @@
           {
             detail: {
               reason,
-              page: pageId,
+              page:
+                pageId,
               at:
                 new Date()
                   .toISOString()
@@ -394,7 +529,6 @@
     } finally {
 
       running = false;
-      queued = false;
 
     }
   }
@@ -407,6 +541,7 @@
     reason,
     force = false
   ) {
+
     if (
       resumeTimer
     ) {
@@ -437,64 +572,105 @@
   ========================================================= */
 
   function bindPageChanges() {
-    document
-      .querySelectorAll(
-        ".page"
-      )
-      .forEach(page => {
 
-        let wasActive =
-          page.classList.contains(
-            "active"
+    /*
+     * 舊版：
+     *
+     * 每一個 .page
+     * 都建立 MutationObserver
+     *
+     * 切頁後：
+     * app.js lazy load 一次
+     * refresh_controller 又 refresh 一次
+     *
+     * 造成重複 request / DOM render
+     *
+     *
+     * 新版：
+     *
+     * app.js / ui_v2.js
+     * 負責真正 Lazy Load
+     *
+     * controller 只補
+     * setupPageUpdateMeta()
+     */
+
+    document.addEventListener(
+      "click",
+      e => {
+
+        const btn =
+          e.target.closest(
+            `
+              [data-p],
+              [data-feature],
+              [data-pulse-target]
+            `
           );
 
-        const observer =
-          new MutationObserver(
+        if (!btn) {
+          return;
+        }
+
+        requestAnimationFrame(
+          () => {
+
+            const id =
+              getActivePage();
+
+            callFunction(
+              "setupPageUpdateMeta",
+              id
+            );
+
+          }
+        );
+
+      },
+      {
+        passive: true
+      }
+    );
+
+    /*
+     * 手機下拉選單
+     */
+    const mobile =
+      document.getElementById(
+        "mobileNav"
+      );
+
+    if (mobile) {
+
+      mobile.addEventListener(
+        "change",
+        () => {
+
+          requestAnimationFrame(
             () => {
 
-              const isActive =
-                page.classList.contains(
-                  "active"
-                );
+              callFunction(
+                "setupPageUpdateMeta",
+                getActivePage()
+              );
 
-              if (
-                isActive &&
-                !wasActive
-              ) {
-                scheduleRefresh(
-                  "page-change",
-                  false
-                );
-              }
-
-              wasActive =
-                isActive;
             }
           );
 
-        observer.observe(
-          page,
-          {
-            attributes: true,
-            attributeFilter: [
-              "class"
-            ]
-          }
-        );
-      });
+        },
+        {
+          passive: true
+        }
+      );
+    }
   }
 
   /* =========================================================
      財報追蹤子 Tab
-
-     自結 / 即將開財報 / 財報
-     切換時不做網路 refresh
-
-     earnings_tracker.js 已有 cache
-     所以只讓它自己瞬間切畫面
   ========================================================= */
 
   function bindEarningsTabs() {
+
     document.addEventListener(
       "click",
       e => {
@@ -509,17 +685,11 @@
         }
 
         /*
-         * 很重要：
-         *
-         * 不在這裡 refresh
+         * 不在這裡重新 fetch
          *
          * earnings_tracker.js
-         * 自己會從 cache render
+         * 使用自己的 cache
          */
-        console.log(
-          "[Live Refresh] earnings tab →",
-          btn.dataset.earningsMode
-        );
 
       },
       {
@@ -530,7 +700,7 @@
 
   /* =========================================================
      Safari / iPhone / PWA
-     回到網站
+     從背景回到網站
   ========================================================= */
 
   function bindResumeEvents() {
@@ -538,7 +708,7 @@
     /*
      * visibilitychange
      *
-     * 這個當主要事件
+     * 作為主要 resume 事件
      */
     document.addEventListener(
       "visibilitychange",
@@ -547,19 +717,19 @@
         if (
           !document.hidden
         ) {
+
           scheduleRefresh(
             "visibilitychange",
             false
           );
+
         }
 
       }
     );
 
     /*
-     * pageshow
-     *
-     * Safari BFCache 才需要
+     * Safari BFCache
      */
     window.addEventListener(
       "pageshow",
@@ -568,19 +738,21 @@
         if (
           event.persisted
         ) {
+
           scheduleRefresh(
             "pageshow-bfcache",
             false
           );
+
         }
 
       }
     );
 
     /*
-     * 不再監聽 focus
+     * 不監聽 focus
      *
-     * 原本 iPhone 很容易：
+     * 避免 iPhone：
      *
      * visibilitychange
      * +
@@ -588,7 +760,7 @@
      * +
      * focus
      *
-     * 一次觸發三輪
+     * 三連發
      */
 
     /*
@@ -608,17 +780,29 @@
   }
 
   /* =========================================================
-     60 秒保底刷新
-
-     財報 / 即將開財報：
-     不需要每分鐘抓一次
-
-     自結：
-     原本資料源本身 30 分鐘更新，
-     網頁沒必要每 60 秒重畫
+     熱力圖 5 分鐘保底更新
   ========================================================= */
 
   function startFallbackTimer() {
+
+    /*
+     * 舊版：
+     *
+     * 全站每 60 秒
+     * refreshNow()
+     *
+     * 即使資料沒有變
+     * 也重新 fetch + render
+     *
+     * 這是網站長時間開著
+     * 越來越卡的重要原因之一
+     *
+     *
+     * 新版：
+     *
+     * 只有停留在熱力圖頁面
+     * 才每 5 分鐘做一次保底更新
+     */
 
     setInterval(
       () => {
@@ -632,28 +816,20 @@
         const pageId =
           getActivePage();
 
-        /*
-         * 財報追蹤整頁
-         *
-         * 不跑 60 秒 fallback
-         *
-         * 避免閱讀財報時
-         * 背景突然重畫
-         */
         if (
-          pageId ===
-          "selfReports"
+          pageId !==
+          "heat"
         ) {
           return;
         }
 
         refreshNow(
-          "60s-fallback",
-          false
+          "5m-heat-fallback",
+          true
         );
 
       },
-      FALLBACK_INTERVAL
+      HEAT_FALLBACK_INTERVAL
     );
   }
 
@@ -667,9 +843,13 @@
       "tw-market:refresh",
       () => {
 
+        /*
+         * 外部模組真的要求更新
+         * 才 force
+         */
         scheduleRefresh(
           "custom",
-          false
+          true
         );
 
       }
@@ -684,11 +864,14 @@
     function () {
 
       /*
-       * 使用者真的手動要求更新時
-       * 才直接執行
+       * 使用者真的手動要求更新
+       *
+       * 清 cache
+       * 並重新抓目前頁
        */
 
-      lastRefreshAt = 0;
+      lastRefreshAt =
+        0;
 
       return refreshNow(
         "manual",
@@ -713,7 +896,7 @@
     startFallbackTimer();
 
     console.log(
-      "[Live Refresh] controller ready"
+      "[Live Refresh] performance controller ready"
     );
   }
 
