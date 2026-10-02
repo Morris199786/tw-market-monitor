@@ -2,424 +2,82 @@
    券商報告 V3
    ========================================================= */
 
-.report-v2-wrap{
-  padding:0 !important;
-  border:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-}
+.report-v2-wrap{padding:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important}
+.report-v2-tools{display:grid;gap:10px;margin-bottom:10px}
+.report-search-wrap{position:relative}
+.report-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;pointer-events:none}
+#reportSearch{width:100%;min-height:46px;padding:0 14px 0 39px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;font-size:11px;outline:none}
+#reportSearch:focus{border-color:#7b8da5;box-shadow:0 0 0 3px rgba(100,116,139,.09)}
+.report-v2-tabs{display:flex;gap:7px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
+.report-v2-tabs::-webkit-scrollbar{display:none}
+.report-filter{flex:0 0 auto;min-height:34px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);font-size:10px;font-weight:800}
+.report-filter.active{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.report-history-note{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 2px 13px;color:var(--muted);font-size:9px}
+.report-date-group{margin-bottom:12px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.36);overflow:hidden}
+.report-date-head{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:11px 14px;background:rgba(248,250,252,.72)}
+.report-date-head::-webkit-details-marker{display:none}
+.report-date-head > span:first-child{display:flex;align-items:baseline;gap:9px}
+.report-date-head b{color:var(--ink);font-size:13px}
+.report-date-head small{color:var(--muted);font-size:9px}
+.report-date-arrow{color:var(--muted);font-size:16px;transition:.18s ease}
+.report-date-group[open] .report-date-arrow{transform:rotate(180deg)}
+.report-date-body{padding:10px}
+.report-v2-card{margin-bottom:10px;padding:15px;border:1px solid var(--line);border-radius:15px;background:var(--card);box-shadow:var(--shadow);transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.report-v2-card:last-child{margin-bottom:0}
+.report-v2-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.report-broker{color:var(--muted);font-size:9px;font-weight:800}
+.report-title{margin-top:4px;font-size:16px;font-weight:900;line-height:1.4}
+.report-action{flex:0 0 auto;padding:6px 9px;border-radius:999px;font-size:9px;font-weight:900}
+.report-action.is-up{background:rgba(239,68,68,.10);color:#dc2626}
+.report-action.is-down{background:rgba(5,150,105,.10);color:#059669}
+.report-action.is-init{background:rgba(37,99,235,.10);color:#2563eb}
+.report-action.is-neutral{background:var(--soft);color:var(--muted)}
+.report-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px;color:var(--muted);font-size:9px}
+.report-chip{display:inline-flex;align-items:center;min-height:25px;padding:0 8px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800}
+.report-original-date{color:var(--muted)}
 
-.report-v2-tools{
-  display:grid;
-  gap:10px;
-  margin-bottom:10px;
-}
+/* 報告摘要：桌機 / iPad 14px */
+.report-summary{margin:13px 0 0;padding-left:18px;font-size:14px;line-height:1.7}
+.report-summary li + li{margin-top:4px}
 
-.report-search-wrap{
-  position:relative;
-}
-
-.report-search-icon{
-  position:absolute;
-  left:13px;
-  top:50%;
-  transform:translateY(-50%);
-  color:var(--muted);
-  font-size:16px;
-  pointer-events:none;
-}
-
-#reportSearch{
-  width:100%;
-  min-height:46px;
-  padding:0 14px 0 39px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--card);
-  color:var(--ink);
-  font:inherit;
-  font-size:11px;
-  outline:none;
-}
-
-#reportSearch:focus{
-  border-color:#7b8da5;
-  box-shadow:0 0 0 3px rgba(100,116,139,.09);
-}
-
-.report-v2-tabs{
-  display:flex;
-  gap:7px;
-  overflow:auto;
-  padding-bottom:2px;
-  scrollbar-width:none;
-}
-
-.report-v2-tabs::-webkit-scrollbar{
-  display:none;
-}
-
-.report-filter{
-  flex:0 0 auto;
-  min-height:34px;
-  padding:0 12px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:var(--card);
-  color:var(--muted);
-  font-size:10px;
-  font-weight:800;
-}
-
-.report-filter.active{
-  background:var(--ink);
-  color:var(--card);
-  border-color:var(--ink);
-}
-
-.report-history-note{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin:8px 2px 13px;
-  color:var(--muted);
-  font-size:9px;
-}
-
-.report-date-group{
-  margin-bottom:12px;
-  border:1px solid var(--line);
-  border-radius:17px;
-  background:rgba(255,255,255,.36);
-  overflow:hidden;
-}
-
-.report-date-head{
-  list-style:none;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  min-height:52px;
-  padding:11px 14px;
-  background:rgba(248,250,252,.72);
-}
-
-.report-date-head::-webkit-details-marker{
-  display:none;
-}
-
-.report-date-head > span:first-child{
-  display:flex;
-  align-items:baseline;
-  gap:9px;
-}
-
-.report-date-head b{
-  color:var(--ink);
-  font-size:13px;
-}
-
-.report-date-head small{
-  color:var(--muted);
-  font-size:9px;
-}
-
-.report-date-arrow{
-  color:var(--muted);
-  font-size:16px;
-  transition:.18s ease;
-}
-
-.report-date-group[open] .report-date-arrow{
-  transform:rotate(180deg);
-}
-
-.report-date-body{
-  padding:10px;
-}
-
-.report-v2-card{
-  margin-bottom:10px;
-  padding:15px;
-  border:1px solid var(--line);
-  border-radius:15px;
-  background:var(--card);
-  box-shadow:var(--shadow);
-  transition:
-    border-color .2s ease,
-    box-shadow .2s ease,
-    transform .2s ease;
-}
-
-.report-v2-card:last-child{
-  margin-bottom:0;
-}
-
-.report-v2-top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-}
-
-.report-broker{
-  color:var(--muted);
-  font-size:9px;
-  font-weight:800;
-}
-
-.report-title{
-  margin-top:4px;
-  font-size:16px;
-  font-weight:900;
-  line-height:1.4;
-}
-
-.report-action{
-  flex:0 0 auto;
-  padding:6px 9px;
-  border-radius:999px;
-  font-size:9px;
-  font-weight:900;
-}
-
-.report-action.is-up{
-  background:rgba(239,68,68,.10);
-  color:#dc2626;
-}
-
-.report-action.is-down{
-  background:rgba(5,150,105,.10);
-  color:#059669;
-}
-
-.report-action.is-init{
-  background:rgba(37,99,235,.10);
-  color:#2563eb;
-}
-
-.report-action.is-neutral{
-  background:var(--soft);
-  color:var(--muted);
-}
-
-.report-meta{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  gap:6px;
-  margin-top:9px;
-  color:var(--muted);
-  font-size:9px;
-}
-
-.report-chip{
-  display:inline-flex;
-  align-items:center;
-  min-height:25px;
-  padding:0 8px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:var(--soft);
-  color:var(--ink);
-  font-weight:800;
-}
-
-.report-original-date{
-  color:var(--muted);
-}
-
-.report-summary{
-  margin:13px 0 0;
-  padding-left:18px;
-  font-size:11px;
-  line-height:1.65;
-}
-
-.report-summary li + li{
-  margin-top:4px;
-}
-
-.report-beneficiaries{
-  margin-top:13px;
-}
-
-.report-subtitle{
-  margin-bottom:7px;
-  color:var(--muted);
-  font-size:9px;
-  font-weight:900;
-}
-
-.report-stock-chips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-
-.report-stock-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  border:0;
-  padding:7px 9px;
-  border-radius:10px;
-  background:var(--soft);
-  color:var(--ink);
-  font-size:10px;
-  font-weight:800;
-  cursor:pointer;
-}
-
-.report-stock-chip small{
-  color:var(--muted);
-  font-size:8px;
-}
-
-.report-details{
-  margin-top:13px;
-  border-top:1px solid var(--line);
-  padding-top:10px;
-}
-
-.report-details summary{
-  cursor:pointer;
-  color:var(--muted);
-  font-size:10px;
-  font-weight:800;
-}
-
-.report-details-body{
-  padding-top:12px;
-}
-
-.report-detail-block + .report-detail-block{
-  margin-top:13px;
-}
-
-.report-detail-block p,
-.report-detail-block ul{
-  margin:0;
-  font-size:10px;
-  line-height:1.7;
-}
-
-.report-detail-block ul{
-  padding-left:18px;
-}
-
-.report-source-link{
-  display:inline-flex;
-  margin-top:14px;
-  min-height:34px;
-  align-items:center;
-  padding:0 11px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  color:var(--ink);
-  text-decoration:none;
-  font-size:9px;
-  font-weight:900;
-}
-
-.report-v2-empty{
-  padding:24px;
-  border:1px dashed var(--line);
-  border-radius:14px;
-  color:var(--muted);
-  text-align:center;
-  font-size:10px;
-}
-
-.report-deep-highlight{
-  border-color:#3b82f6 !important;
-  box-shadow:
-    0 0 0 4px rgba(59,130,246,.12),
-    var(--shadow) !important;
-  transform:translateY(-1px);
-}
-
-.signal-report{
-  color:#2563eb;
-  background:rgba(37,99,235,.09);
-}
+.report-beneficiaries{margin-top:13px}
+.report-subtitle{margin-bottom:7px;color:var(--muted);font-size:9px;font-weight:900}
+.report-stock-chips{display:flex;flex-wrap:wrap;gap:6px}
+.report-stock-chip{display:inline-flex;align-items:center;gap:5px;border:0;padding:7px 9px;border-radius:10px;background:var(--soft);color:var(--ink);font-size:10px;font-weight:800;cursor:pointer}
+.report-stock-chip small{color:var(--muted);font-size:8px}
+.report-details{margin-top:13px;border-top:1px solid var(--line);padding-top:10px}
+.report-details summary{cursor:pointer;color:var(--muted);font-size:10px;font-weight:800}
+.report-details-body{padding-top:12px}
+.report-detail-block + .report-detail-block{margin-top:13px}
+.report-detail-block p,.report-detail-block ul{margin:0;font-size:10px;line-height:1.7}
+.report-detail-block ul{padding-left:18px}
+.report-source-link{display:inline-flex;margin-top:14px;min-height:34px;align-items:center;padding:0 11px;border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font-size:9px;font-weight:900}
+.report-v2-empty{padding:24px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;font-size:10px}
+.report-deep-highlight{border-color:#3b82f6 !important;box-shadow:0 0 0 4px rgba(59,130,246,.12),var(--shadow) !important;transform:translateY(-1px)}
+.signal-report{color:#2563eb;background:rgba(37,99,235,.09)}
 
 /* Dark */
-html[data-theme="dark"] .report-date-group{
-  background:#181c21 !important;
-  border-color:#303741 !important;
-}
-
-html[data-theme="dark"] .report-date-head{
-  background:#20252c !important;
-}
-
+html[data-theme="dark"] .report-date-group{background:#181c21 !important;border-color:#303741 !important}
+html[data-theme="dark"] .report-date-head{background:#20252c !important}
 html[data-theme="dark"] .report-v2-card,
 html[data-theme="dark"] #reportSearch,
-html[data-theme="dark"] .report-filter{
-  background:#1b2026 !important;
-  border-color:#303741 !important;
-}
-
+html[data-theme="dark"] .report-filter{background:#1b2026 !important;border-color:#303741 !important}
 html[data-theme="dark"] .report-chip,
 html[data-theme="dark"] .report-stock-chip,
-html[data-theme="dark"] .report-action.is-neutral{
-  background:#242a31 !important;
-}
-
-html[data-theme="dark"] .report-deep-highlight{
-  border-color:#6ea8ff !important;
-  box-shadow:
-    0 0 0 4px rgba(110,168,255,.14) !important;
-}
+html[data-theme="dark"] .report-action.is-neutral{background:#242a31 !important}
+html[data-theme="dark"] .report-deep-highlight{border-color:#6ea8ff !important;box-shadow:0 0 0 4px rgba(110,168,255,.14) !important}
 
 @media(max-width:720px){
-  .report-v2-card{
-    padding:13px;
-  }
-
-  .report-title{
-    font-size:14px;
-  }
-
-  .report-summary{
-    font-size:10px;
-  }
-
-  .report-date-body{
-    padding:8px;
-  }
-
-  .report-history-note{
-    padding:0 2px;
-  }
+  .report-v2-card{padding:13px}
+  .report-title{font-size:14px}
+  /* 報告摘要：手機 13px */
+  .report-summary{font-size:13px;line-height:1.7}
+  .report-date-body{padding:8px}
+  .report-history-note{padding:0 2px}
 }
 
 /* 目標價調整顏色：台股慣例紅漲綠跌 */
-.report-target-up{
-  color:#dc2626 !important;
-  border-color:rgba(220,38,38,.22) !important;
-  background:rgba(220,38,38,.07) !important;
-}
-
-.report-target-down{
-  color:#059669 !important;
-  border-color:rgba(5,150,105,.22) !important;
-  background:rgba(5,150,105,.07) !important;
-}
-
-html[data-theme="dark"] .report-target-up{
-  color:#ff7b7b !important;
-  border-color:rgba(255,123,123,.24) !important;
-  background:rgba(255,123,123,.09) !important;
-}
-
-html[data-theme="dark"] .report-target-down{
-  color:#65d6a7 !important;
-  border-color:rgba(101,214,167,.24) !important;
-  background:rgba(101,214,167,.09) !important;
-}
-
+.report-target-up{color:#dc2626 !important;border-color:rgba(220,38,38,.22) !important;background:rgba(220,38,38,.07) !important}
+.report-target-down{color:#059669 !important;border-color:rgba(5,150,105,.22) !important;background:rgba(5,150,105,.07) !important}
+html[data-theme="dark"] .report-target-up{color:#ff7b7b !important;border-color:rgba(255,123,123,.24) !important;background:rgba(255,123,123,.09) !important}
+html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-color:rgba(101,214,167,.24) !important;background:rgba(101,214,167,.09) !important}
