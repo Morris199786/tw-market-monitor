@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-02T15:32+08:00",
+  "updated_at": "2026-10-02T16:07+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-01-v19-eps-unit-label-fix-telegram-only",
+  "filter_version": "2026-10-02-v20-horizontal-eps-row-fix-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
-    "candidate_count": 32,
-    "parsed_count": 20,
-    "parse_failed_count": 6,
+    "candidate_count": 34,
+    "parsed_count": 21,
+    "parse_failed_count": 7,
     "parse_failed": [
+      {
+        "ticker": "8046",
+        "name": "南電",
+        "publish_date": "2026-10-02",
+        "publish_time": "15:41:15",
+        "subject": "8046 南電 115/10/02 15:41:15 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "partial",
+        "eps_parse_reason": "only_one_eps_section_parsed",
+        "monthly_eps": null,
+        "quarter_eps": 1.69
+      },
       {
         "ticker": "3004",
         "name": "豐達科",
@@ -15,7 +28,7 @@
         "publish_time": "14:42:21",
         "subject": "3004 豐達科 115/10/02 14:42:21 新聞稿--豐達九月自結合併營收為5.37億元",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -28,7 +41,7 @@
         "publish_time": "14:08:41",
         "subject": "6235 華孚 115/10/02 14:08:41 新聞稿-華孚115年9月自結合併營收為新台幣5.30億元",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -91,8 +104,8 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 8,
-      "self_reports": 6,
+      "rows": 12,
+      "self_reports": 8,
       "debug": [
         {
           "base": "https://mops.twse.com.tw",
@@ -115,35 +128,35 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "注意交易",
-          "rows": 66,
+          "rows": 87,
+          "hits": 6
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mops.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "財務業務",
+          "rows": 87,
           "hits": 4
         },
         {
           "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 66,
-          "hits": 2
-        },
-        {
-          "base": "https://mops.twse.com.tw",
           "keyword": "近期財務",
           "rows": 0,
           "hits": 0
@@ -163,13 +176,13 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 66,
+          "rows": 87,
           "hits": 0
         },
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 66,
+          "rows": 87,
           "hits": 0
         },
         {
@@ -181,8 +194,7 @@
         {
           "base": "https://mops.twse.com.tw",
           "keyword": "自結",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7fe25ad69d90>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -199,7 +211,12 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自結",
-          "rows": 66,
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fe25ad69460>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+        },
+        {
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自結",
+          "rows": 88,
           "hits": 2
         }
       ],
@@ -220,6 +237,30 @@
     }
   },
   "items": [
+    {
+      "market": "",
+      "ticker": "6533",
+      "name": "晶心科",
+      "publish_date": "2026-10-02",
+      "publish_time": "15:52:26",
+      "subject": "6533 晶心科 115/10/02 15:52:26 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 6533 晶心科 公司提供 序號 1 發言日期 115/10/02 發言時間 15:52:26 發言人 李耿民 發言人職稱 董事長特別助理 發言人電話 03-5726533 主旨 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/10/02 說明 1.事實發生日:115/10/02 2.發生緣由:依臺灣證券交易所股份有限公司通知辦理。 3.財務業務資訊: 期間 ( 月 ) ( 季 ) (最近四季累計) ===================== ======================== =============== 科目 最近一月 與去年同期 最近一季 與去年同期 114第3季至 115年8月 增減% 115年第2季 增減% 115第2季 (自結數) (自結數) (自結數) ======== ======== ======== ========== ============ 營業收入(百萬) 114 -26% 566 103% 1,820 稅前淨(損)利(百萬) (44) -246% (105) 68% (333) 本期淨(損)利(百萬) (45) -247% (68) 76% (252) 每股盈餘(元) (0.88) -248% (1.34) 76% (4.97) 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無 7.其他應敘明事項:無 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6533&SPOKE_DATE=20261002&SPOKE_TIME=155226&SEQ_NO=1&skey=6533202610021",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": -0.88,
+      "monthly_eps": -0.88,
+      "monthly_eps_yoy": -248.0,
+      "monthly_period": "2026-08",
+      "quarter_eps": -1.34,
+      "quarter_eps_yoy": 76.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "-248%",
+      "quarter_eps_yoy_text": "76%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
+    },
     {
       "market": "",
       "ticker": "6643",
@@ -284,11 +325,11 @@
       "monthly_eps": -0.04,
       "monthly_eps_yoy": -184.88,
       "monthly_period": "2026-01",
-      "quarter_eps": -0.04,
-      "quarter_eps_yoy": -184.88,
+      "quarter_eps": 0.01,
+      "quarter_eps_yoy": 102.72,
       "quarter_period": null,
       "monthly_eps_yoy_text": "-184.88%",
-      "quarter_eps_yoy_text": "-184.88%",
+      "quarter_eps_yoy_text": "102.72%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -308,11 +349,11 @@
       "monthly_eps": 2.0,
       "monthly_eps_yoy": 471.43,
       "monthly_period": "2026-08",
-      "quarter_eps": 2.0,
-      "quarter_eps_yoy": 471.43,
+      "quarter_eps": 2.96,
+      "quarter_eps_yoy": 138.71,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "471.43%",
-      "quarter_eps_yoy_text": "471.43%",
+      "quarter_eps_yoy_text": "138.71%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -356,11 +397,11 @@
       "monthly_eps": 0.28,
       "monthly_eps_yoy": -62.67,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.28,
-      "quarter_eps_yoy": -62.67,
+      "quarter_eps": 3.26,
+      "quarter_eps_yoy": 77.17,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "-62.67%",
-      "quarter_eps_yoy_text": "-62.67%",
+      "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -380,11 +421,11 @@
       "monthly_eps": 0.28,
       "monthly_eps_yoy": -62.67,
       "monthly_period": "2026-04",
-      "quarter_eps": 0.28,
-      "quarter_eps_yoy": -62.67,
+      "quarter_eps": 3.26,
+      "quarter_eps_yoy": 77.17,
       "quarter_period": "2025-Q2",
       "monthly_eps_yoy_text": "-62.67%",
-      "quarter_eps_yoy_text": "-62.67%",
+      "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -404,11 +445,11 @@
       "monthly_eps": 0.25,
       "monthly_eps_yoy": 2500.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.25,
-      "quarter_eps_yoy": 2500.0,
+      "quarter_eps": 0.65,
+      "quarter_eps_yoy": 533.0,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "2500%",
-      "quarter_eps_yoy_text": "2500%",
+      "quarter_eps_yoy_text": "533%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -428,11 +469,11 @@
       "monthly_eps": -0.01,
       "monthly_eps_yoy": -125.0,
       "monthly_period": "2026-08",
-      "quarter_eps": -0.01,
-      "quarter_eps_yoy": -125.0,
+      "quarter_eps": 0.13,
+      "quarter_eps_yoy": 137.14,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "-125.00%",
-      "quarter_eps_yoy_text": "-125.00%",
+      "quarter_eps_yoy_text": "137.14%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -452,11 +493,11 @@
       "monthly_eps": 0.76,
       "monthly_eps_yoy": 153.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.76,
-      "quarter_eps_yoy": 153.0,
+      "quarter_eps": 2.33,
+      "quarter_eps_yoy": 203.0,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "153%",
-      "quarter_eps_yoy_text": "153%",
+      "quarter_eps_yoy_text": "203%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -524,11 +565,11 @@
       "monthly_eps": 0.62,
       "monthly_eps_yoy": 121.4,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.62,
-      "quarter_eps_yoy": 121.4,
+      "quarter_eps": 1.28,
+      "quarter_eps_yoy": 270.7,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "121.4%",
-      "quarter_eps_yoy_text": "121.4%",
+      "quarter_eps_yoy_text": "270.7%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -548,11 +589,11 @@
       "monthly_eps": 7.35,
       "monthly_eps_yoy": 95.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 7.35,
-      "quarter_eps_yoy": 95.0,
+      "quarter_eps": 15.8,
+      "quarter_eps_yoy": 101.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "95%",
-      "quarter_eps_yoy_text": "95%",
+      "quarter_eps_yoy_text": "101%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -572,11 +613,11 @@
       "monthly_eps": 1.41,
       "monthly_eps_yoy": -25.4,
       "monthly_period": "2026-08",
-      "quarter_eps": 1.41,
-      "quarter_eps_yoy": -25.4,
+      "quarter_eps": 3.11,
+      "quarter_eps_yoy": 13.1,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "-25.4%",
-      "quarter_eps_yoy_text": "-25.4%",
+      "quarter_eps_yoy_text": "13.1%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -596,11 +637,11 @@
       "monthly_eps": 0.26,
       "monthly_eps_yoy": 508.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.26,
-      "quarter_eps_yoy": 508.0,
+      "quarter_eps": 1.05,
+      "quarter_eps_yoy": 527.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "508%",
-      "quarter_eps_yoy_text": "508%",
+      "quarter_eps_yoy_text": "527%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -674,11 +715,11 @@
       "monthly_eps": 1.33,
       "monthly_eps_yoy": 285.04,
       "monthly_period": "2026-08",
-      "quarter_eps": 1.33,
-      "quarter_eps_yoy": 285.04,
+      "quarter_eps": 3.87,
+      "quarter_eps_yoy": 179.09,
       "quarter_period": "2025-Q3",
       "monthly_eps_yoy_text": "285.04%",
-      "quarter_eps_yoy_text": "285.04%",
+      "quarter_eps_yoy_text": "179.09%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
