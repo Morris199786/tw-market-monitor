@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-02T19:31+08:00",
+  "updated_at": "2026-10-02T20:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -15,7 +15,7 @@
         "publish_time": "14:42:21",
         "subject": "3004 豐達科 115/10/02 14:42:21 新聞稿--豐達九月自結合併營收為5.37億元",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -85,7 +85,7 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 142,
+          "rows": 145,
           "hits": 8
         },
         {
@@ -107,7 +107,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1525",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
