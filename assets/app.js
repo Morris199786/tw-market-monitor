@@ -144,10 +144,12 @@ function page(id) {
     nav.value = id;
   }
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+  /*
+   * 不用 smooth
+   * iPhone 在 DOM 較大的頁面切換時，
+   * smooth scroll 會讓切頁明顯卡頓
+   */
+  window.scrollTo(0, 0);
 }
 
 $$(".nav").forEach(b => {
@@ -264,12 +266,16 @@ function setupToTop() {
 
   document.body.appendChild(btn);
 
-  window.addEventListener("scroll", () => {
-    btn.classList.toggle(
-      "show",
-      window.scrollY > 500
-    );
-  });
+  window.addEventListener(
+    "scroll",
+    () => {
+      btn.classList.toggle(
+        "show",
+        window.scrollY > 500
+      );
+    },
+    { passive: true }
+  );
 
   btn.onclick = () => {
     window.scrollTo({
@@ -343,11 +349,9 @@ async function home() {
     cards.innerHTML = `
       <div class="card metric">
         <small>市場熱力圖</small>
-
         <strong>
           ${h.sectors?.length || 0} 族群
         </strong>
-
         <small>
           盤中每 5 分鐘更新
         </small>
@@ -355,14 +359,12 @@ async function home() {
 
       <div class="card metric">
         <small>AI 選股</small>
-
         <strong>
           ${
             (a.twse?.length || 0) +
             (a.tpex?.length || 0)
           } 檔
         </strong>
-
         <small>
           每天 18:00 更新
         </small>
@@ -370,11 +372,9 @@ async function home() {
 
       <div class="card metric">
         <small>大戶籌碼</small>
-
         <strong>
           ${ho.complete ? "完整" : "待補"}
         </strong>
-
         <small>
           每週六 15:00
         </small>
@@ -382,11 +382,9 @@ async function home() {
 
       <div class="card metric">
         <small>目前最強族群</small>
-
         <strong>
           ${top[0]?.name || "—"}
         </strong>
-
         <small
           class="${cl(
             top[0]?.change_pct
@@ -1822,10 +1820,6 @@ async function heat() {
     return;
   }
 
-  /*
-    手機版展開族群明細時，
-    改成自動列高，避免與下方卡片重疊
-  */
   const mobileHeat =
     window.matchMedia(
       "(max-width: 720px)"
@@ -1842,11 +1836,6 @@ async function heat() {
       "";
   }
 
-  /*
-    族群排序：
-    漲幅最高 → 最低
-    缺值排最後
-  */
   const sectors = [
     ...(d.sectors || [])
   ].sort((a, b) => {
@@ -2093,6 +2082,144 @@ async function reports() {
 }
 
 /* -----------------------------
+   Lazy Load
+
+   重點：
+   以前進網站就同時跑
+   home / flows / volume / turnover /
+   holders / ai / heat / reports
+
+   現在只載入使用者正在看的頁面
+----------------------------- */
+
+const pageLoaders = {
+  home,
+  flows,
+  volume,
+  turnover,
+  holders,
+  ai,
+  heat,
+  reports
+};
+
+const loadedPages =
+  new Set();
+
+const loadingPages =
+  new Map();
+
+async function loadPageOnce(id) {
+  const fn =
+    pageLoaders[id];
+
+  if (!fn) {
+    return;
+  }
+
+  if (
+    loadedPages.has(id)
+  ) {
+    return;
+  }
+
+  if (
+    loadingPages.has(id)
+  ) {
+    return loadingPages.get(id);
+  }
+
+  const promise =
+    Promise.resolve()
+      .then(() => fn())
+      .then(() => {
+        loadedPages.add(id);
+      })
+      .catch(err => {
+        console.error(
+          "[lazy page]",
+          id,
+          err
+        );
+      })
+      .finally(() => {
+        loadingPages.delete(id);
+      });
+
+  loadingPages.set(
+    id,
+    promise
+  );
+
+  return promise;
+}
+
+function loadCurrentPage() {
+  const active =
+    document.querySelector(
+      ".page.active"
+    );
+
+  if (!active) {
+    return;
+  }
+
+  loadPageOnce(
+    active.id
+  );
+}
+
+/* -----------------------------
+   重新包裝 page()
+
+   切到哪一頁才載哪一頁
+----------------------------- */
+
+const originalPage =
+  page;
+
+page = function(id) {
+  originalPage(id);
+
+  /*
+   * 先完成畫面切換，
+   * 下一個 frame 才開始抓該頁資料
+   */
+  requestAnimationFrame(
+    () => {
+      loadPageOnce(id);
+    }
+  );
+};
+
+/*
+ * 前面 nav 的 onclick
+ * 建立時綁到全域 page 名稱，
+ * 執行時會使用目前的新 page()
+ */
+
+/* -----------------------------
+   提供外部更新使用
+
+   refresh_controller 如果更新某頁，
+   可以把該頁標記為已載入
+----------------------------- */
+
+window.markPageLoaded =
+  function(id) {
+    if (id) {
+      loadedPages.add(id);
+    }
+  };
+
+window.invalidatePage =
+  function(id) {
+    if (id) {
+      loadedPages.delete(id);
+    }
+  };
+
+/* -----------------------------
    啟動
 ----------------------------- */
 
@@ -2100,18 +2227,20 @@ async function init() {
   setupTheme();
   setupToTop();
 
+  /*
+   * sectors.json 很小，
+   * 股票簡稱是多個頁面共同使用，
+   * 保留啟動時載入
+   */
   await loadShortNames();
 
-  await Promise.all([
-    home(),
-    flows(),
-    volume(),
-    turnover(),
-    holders(),
-    ai(),
-    heat(),
-    reports()
-  ]);
+  /*
+   * 只載入目前真的顯示的頁面
+   *
+   * 不再 Promise.all()
+   * 一次建立整個網站所有 DOM
+   */
+  loadCurrentPage();
 }
 
 init();
