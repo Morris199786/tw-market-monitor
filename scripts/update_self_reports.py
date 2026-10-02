@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-02-v20-horizontal-eps-row-fix-telegram-only"
+VERSION = "2026-10-02-v21-daily-broad-mops-scan-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -545,7 +545,10 @@ def fetch_detail(params):
 def parse_candidate_row(row, source_keyword):
     text = row.get("text", "")
     compact = compact_text(text)
-    if compact_text(source_keyword) not in compact and not subject_is_candidate(text):
+    if source_keyword == "daily_broad":
+        if not subject_is_candidate(text):
+            return None
+    elif compact_text(source_keyword) not in compact and not subject_is_candidate(text):
         return None
     ticker_match = re.search(r"(?<!\d)(\d{4})(?!\d)", text)
     if not ticker_match:
@@ -580,37 +583,154 @@ def parse_candidate_row(row, source_keyword):
 
 
 def fetch_mops_search():
+    """
+    先抓「今日全部重大訊息」再在 Python 本地篩選。
+    關鍵字查詢只做 fallback，不再作為主要 discovery，
+    避免 MOPS 關鍵字 endpoint timeout 時漏掉南電這類注意交易公告。
+    """
     today = now_tpe().date().isoformat()
-    raw_rows = []
+    dt = datetime.strptime(today, "%Y-%m-%d")
+    roc_year = dt.year - 1911
+    month = str(dt.month)
+    day = str(dt.day)
+
     debug = []
-    for keyword in SEARCH_KEYWORDS:
-        got_keyword = False
-        for base in MOPS_BASES:
-            for payload in query_payloads(today, keyword):
-                try:
-                    html_text = fetch_mops(base, payload)
-                    rows = parse_rows(html_text)
-                    wanted = compact_text(keyword)
-                    hits = [row for row in rows if wanted in compact_text(row.get("text", ""))]
-                    debug.append({"base": base, "keyword": keyword, "rows": len(rows), "hits": len(hits)})
-                    if hits:
-                        raw_rows.extend((keyword, row) for row in hits)
-                        got_keyword = True
-                        break
-                except Exception as exc:
-                    debug.append({"base": base, "keyword": keyword, "error": repr(exc)})
-            if got_keyword:
-                break
+    raw_rows = []
+    seen_rows = set()
+
+    # MOPS t05st01：不帶 keyword，直接取當日全部重大訊息
+    broad_payloads = [
+        {
+            "firstin": "1", "step": "1", "off": "1", "TYPEK": "all",
+            "year": str(roc_year), "month": month,
+            "b_date": day, "e_date": day,
+            "keyword4": "", "queryName": "co_id", "co_id": "",
+        },
+        {
+            "firstin": "1", "step": "1", "TYPEK": "all",
+            "year": str(roc_year), "month": month,
+            "b_date": day, "e_date": day,
+            "keyWord": "", "Condition2": "", "keyWord2": "",
+        },
+        {
+            "firstin": "1", "step": "1", "TYPEK": "all",
+            "year": str(roc_year), "month1": month,
+            "b_date": day, "e_date": day,
+            "keyWord": "", "KIND": "all",
+        },
+    ]
+
+    broad_ok = False
+    for base in reversed(MOPS_BASES):
+        for idx, payload in enumerate(broad_payloads, 1):
+            try:
+                html_text = fetch_mops(base, payload)
+                rows = parse_rows(html_text)
+                candidates = [
+                    row for row in rows
+                    if subject_is_candidate(row.get("text", ""))
+                ]
+                debug.append({
+                    "mode": "daily_broad",
+                    "base": base,
+                    "payload": idx,
+                    "rows": len(rows),
+                    "hits": len(candidates),
+                })
+
+                # 有拿到當日完整列表就停止換 payload；
+                # 即使 candidates=0，也代表 endpoint 有正常回應。
+                if rows:
+                    for row in candidates:
+                        sig = (
+                            compact_text(row.get("text", "")),
+                            tuple(row.get("attrs", [])),
+                        )
+                        if sig not in seen_rows:
+                            seen_rows.add(sig)
+                            raw_rows.append(("daily_broad", row))
+                    broad_ok = True
+                    break
+            except Exception as exc:
+                debug.append({
+                    "mode": "daily_broad",
+                    "base": base,
+                    "payload": idx,
+                    "error": repr(exc),
+                })
+        if broad_ok:
+            break
+
+    # 只有 broad scan 完全拿不到資料時才退回舊版 keyword 搜尋。
+    if not broad_ok:
+        debug.append({
+            "mode": "fallback",
+            "reason": "daily_broad_returned_no_rows",
+        })
+        for keyword in SEARCH_KEYWORDS:
+            got_keyword = False
+            for base in reversed(MOPS_BASES):
+                for payload in query_payloads(today, keyword):
+                    try:
+                        html_text = fetch_mops(base, payload)
+                        rows = parse_rows(html_text)
+                        wanted = compact_text(keyword)
+                        hits = [
+                            row for row in rows
+                            if wanted in compact_text(row.get("text", ""))
+                        ]
+                        debug.append({
+                            "mode": "keyword_fallback",
+                            "base": base,
+                            "keyword": keyword,
+                            "rows": len(rows),
+                            "hits": len(hits),
+                        })
+                        if hits:
+                            for row in hits:
+                                sig = (
+                                    compact_text(row.get("text", "")),
+                                    tuple(row.get("attrs", [])),
+                                )
+                                if sig not in seen_rows:
+                                    seen_rows.add(sig)
+                                    raw_rows.append((keyword, row))
+                            got_keyword = True
+                            break
+                    except Exception as exc:
+                        debug.append({
+                            "mode": "keyword_fallback",
+                            "base": base,
+                            "keyword": keyword,
+                            "error": repr(exc),
+                        })
+                if got_keyword:
+                    break
+
     items = {}
     rejected = []
-    for keyword, row in raw_rows:
-        item = parse_candidate_row(row, keyword)
+
+    for source_keyword, row in raw_rows:
+        item = parse_candidate_row(row, source_keyword)
         if not item:
-            rejected.append({"keyword": keyword, "reason": "candidate_row_rejected", "text": row.get("text", "")[:500]})
+            rejected.append({
+                "keyword": source_keyword,
+                "reason": "candidate_row_rejected",
+                "text": row.get("text", "")[:500],
+            })
             continue
+
         key = identity(item)
         items[key] = merge_item(items[key], item) if key in items else item
-    return {"ok": True, "rows": len(raw_rows), "items": list(items.values()), "debug": debug, "rejected": rejected, "error": ""}
+
+    return {
+        "ok": broad_ok or bool(raw_rows),
+        "rows": len(raw_rows),
+        "items": list(items.values()),
+        "debug": debug,
+        "rejected": rejected,
+        "error": "" if broad_ok or raw_rows else "mops_daily_scan_no_rows",
+    }
 
 
 def row_all_text(row):
@@ -844,7 +964,7 @@ def main():
         "updated_at": updated_at,
         "monitor_start_date": MONITOR_START_DATE,
         "filter_version": VERSION,
-        "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
+        "source_mode": "MOPS ajax_t05st01 daily broad scan + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
         "diagnostics": {
             "candidate_count": len(all_candidates), "parsed_count": len(display_items),
             "parse_failed_count": len(parse_failed), "parse_failed": parse_failed,
