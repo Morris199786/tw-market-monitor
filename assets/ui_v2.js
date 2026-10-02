@@ -119,8 +119,7 @@ function buildFeatureRail() {
   `).join("");
 
   $$("[data-feature]").forEach(b => {
-    b.onclick = () =>
-      page(b.dataset.feature);
+    b.onclick = () => page(b.dataset.feature);
   });
 }
 
@@ -163,17 +162,12 @@ function selfMetric(label, value, suffix = "") {
 ------------------------------------------------- */
 
 function setupPageHistory() {
-  if (
-    typeof page !== "function"
-  ) {
+  if (typeof page !== "function") {
     return;
   }
 
-  const originalPage =
-    page;
-
-  let fromPopState =
-    false;
+  const originalPage = page;
+  let fromPopState = false;
 
   page = function(id) {
     originalPage(id);
@@ -200,10 +194,7 @@ function setupPageHistory() {
   };
 
   const initial =
-    location.hash.replace(
-      "#",
-      ""
-    ) ||
+    location.hash.replace("#", "") ||
     "home";
 
   history.replaceState(
@@ -216,137 +207,53 @@ function setupPageHistory() {
 
   if (
     initial &&
-    document.getElementById(
-      initial
-    )
+    document.getElementById(initial)
   ) {
-    originalPage(
-      initial
-    );
+    originalPage(initial);
   }
 
   window.addEventListener(
     "popstate",
     e => {
-      fromPopState =
-        true;
+      fromPopState = true;
 
       const target =
         e.state?.twPage ||
-        location.hash.replace(
-          "#",
-          ""
-        ) ||
+        location.hash.replace("#", "") ||
         "home";
 
       originalPage(
-        document.getElementById(
-          target
-        )
+        document.getElementById(target)
           ? target
           : "home"
       );
 
-      fromPopState =
-        false;
+      fromPopState = false;
     }
   );
 }
 
 /* -------------------------------------------------
    首頁 Market Pulse
+   先建立畫面，再分別載入資料
 ------------------------------------------------- */
 
-async function buildMarketPulse() {
-  const rail =
-    $("#featureRail");
+function ensureMarketPulse() {
+  const rail = $("#featureRail");
 
-  if (
-    !rail ||
-    $("#marketPulse")
-  ) {
-    return;
+  if (!rail) {
+    return null;
   }
 
-  const [
-    heatData,
-    selfData,
-    volumeData,
-    aiData,
-    revenueData
-  ] = await Promise.all([
-    J("./data/heatmap.json"),
-    J("./data/self_reports.json"),
-    J("./data/volume.json"),
-    J("./data/ai_picks.json"),
-    J("./data/monthly_revenue.json")
-  ]);
+  let pulse = $("#marketPulse");
 
-  const sectors =
-    [
-      ...(heatData.sectors || [])
-    ]
-      .filter(
-        x =>
-          x.change_pct !== null &&
-          x.change_pct !== undefined
-      )
-      .sort(
-        (a, b) =>
-          Number(
-            b.change_pct
-          ) -
-          Number(
-            a.change_pct
-          )
-      );
+  if (pulse) {
+    return pulse;
+  }
 
-  const leader =
-    sectors[0] ||
-    null;
+  pulse = document.createElement("section");
 
-  const strongSectors =
-    sectors.slice(
-      1,
-      5
-    );
-
-  const selfCount =
-    (
-      selfData.items ||
-      []
-    ).length;
-
-  const volumeCount =
-    (
-      volumeData.items ||
-      []
-    ).length;
-
-  const aiCount =
-    (
-      aiData.items ||
-      aiData.picks ||
-      []
-    ).length ||
-    (
-      (aiData.twse || []).length +
-      (aiData.tpex || []).length
-    );
-
-  const momHotCount =
-    Number(
-      revenueData.mom_gt_10_count ||
-      0
-    );
-
-  const pulse =
-    document.createElement(
-      "section"
-    );
-
-  pulse.id =
-    "marketPulse";
+  pulse.id = "marketPulse";
 
   pulse.className =
     "market-pulse market-pulse-pro";
@@ -386,27 +293,12 @@ async function buildMarketPulse() {
 
         <div class="market-leader-main">
 
-          <strong>
-            ${
-              leader?.name ||
-              "—"
-            }
+          <strong data-pulse-leader-name>
+            載入中
           </strong>
 
-          <b
-            class="${
-              cl(
-                leader?.change_pct
-              )
-            }"
-          >
-            ${
-              leader
-                ? pct(
-                    leader.change_pct
-                  )
-                : "—"
-            }
+          <b data-pulse-leader-pct>
+            —
           </b>
 
         </div>
@@ -440,20 +332,293 @@ async function buildMarketPulse() {
 
         </div>
 
-        <div class="strong-sector-list">
+        <div
+          class="strong-sector-list"
+          data-pulse-strong
+        >
+          <div class="strong-sector-empty">
+            載入中
+          </div>
+        </div>
 
-          ${
-            strongSectors.length
-              ? strongSectors
+        <div class="market-card-link">
+          查看完整熱力圖 →
+        </div>
+
+      </button>
+
+      <button
+        class="self-monitor-card"
+        data-pulse-target="selfReports"
+      >
+
+        <div class="market-card-label">
+
+          <span class="market-mini-icon">
+            ◎
+          </span>
+
+          自結監控
+
+        </div>
+
+        <div class="self-monitor-main">
+
+          <strong data-pulse-self>
+            —
+          </strong>
+
+          <span>
+            筆新公告
+          </span>
+
+        </div>
+
+        <div class="self-monitor-foot">
+          點擊查看自結公布
+          <span>→</span>
+        </div>
+
+      </button>
+
+    </div>
+
+    <div class="daily-signal-panel">
+
+      <div class="daily-signal-head">
+
+        <div>
+          <span class="pulse-kicker">
+            TODAY'S SIGNALS
+          </span>
+
+          <h3>
+            今日異動
+          </h3>
+        </div>
+
+        <span class="daily-signal-note">
+          點擊直接前往分頁
+        </span>
+
+      </div>
+
+      <div class="daily-signal-grid">
+
+        <button
+          class="daily-signal-item"
+          data-pulse-target="volume"
+        >
+
+          <span class="daily-signal-icon signal-volume">
+            ⚡
+          </span>
+
+          <span>
+            <small>
+              突然放量
+            </small>
+
+            <strong data-pulse-volume>
+              —
+            </strong>
+          </span>
+
+          <i>→</i>
+
+        </button>
+
+        <button
+          class="daily-signal-item"
+          data-pulse-target="ai"
+        >
+
+          <span class="daily-signal-icon signal-ai">
+            ✦
+          </span>
+
+          <span>
+            <small>
+              AI 選股
+            </small>
+
+            <strong data-pulse-ai>
+              —
+            </strong>
+          </span>
+
+          <i>→</i>
+
+        </button>
+
+        <button
+          class="daily-signal-item"
+          data-pulse-target="monthlyRevenue"
+        >
+
+          <span class="daily-signal-icon signal-revenue">
+            ↗
+          </span>
+
+          <span>
+            <small>
+              MoM &gt; 10%
+            </small>
+
+            <strong data-pulse-revenue>
+              —
+            </strong>
+          </span>
+
+          <i>→</i>
+
+        </button>
+
+        <button
+          class="daily-signal-item"
+          data-pulse-target="selfReports"
+        >
+
+          <span class="daily-signal-icon signal-self">
+            ◎
+          </span>
+
+          <span>
+            <small>
+              自結公告
+            </small>
+
+            <strong data-pulse-self-2>
+              —
+            </strong>
+          </span>
+
+          <i>→</i>
+
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  rail.insertAdjacentElement(
+    "afterend",
+    pulse
+  );
+
+  pulse
+    .querySelectorAll(
+      "[data-pulse-target]"
+    )
+    .forEach(
+      b => {
+        b.onclick =
+          () =>
+            page(
+              b.dataset.pulseTarget
+            );
+      }
+    );
+
+  return pulse;
+}
+
+async function buildMarketPulse(force = false) {
+  const pulse =
+    ensureMarketPulse();
+
+  if (!pulse) {
+    return;
+  }
+
+  /*
+   * 不再 Promise.all 等五個 JSON
+   * 哪一份先回來，就先更新哪一區
+   */
+
+  J(
+    "./data/heatmap.json",
+    { force }
+  )
+    .then(
+      heatData => {
+
+        const sectors =
+          [
+            ...(heatData.sectors || [])
+          ]
+            .filter(
+              x =>
+                x.change_pct !== null &&
+                x.change_pct !== undefined
+            )
+            .sort(
+              (a, b) =>
+                Number(
+                  b.change_pct
+                ) -
+                Number(
+                  a.change_pct
+                )
+            );
+
+        const leader =
+          sectors[0] ||
+          null;
+
+        const strong =
+          sectors.slice(
+            1,
+            5
+          );
+
+        const name =
+          pulse.querySelector(
+            "[data-pulse-leader-name]"
+          );
+
+        const value =
+          pulse.querySelector(
+            "[data-pulse-leader-pct]"
+          );
+
+        const list =
+          pulse.querySelector(
+            "[data-pulse-strong]"
+          );
+
+        if (name) {
+          name.textContent =
+            leader?.name ||
+            "—";
+        }
+
+        if (value) {
+          value.textContent =
+            leader
+              ? pct(
+                  leader.change_pct
+                )
+              : "—";
+
+          value.className =
+            leader
+              ? cl(
+                  leader.change_pct
+                )
+              : "";
+        }
+
+        if (list) {
+          list.innerHTML =
+            strong.length
+              ? strong
                   .map(
                     (x, i) => `
-                      <div
-                        class="strong-sector-row"
-                      >
+                      <div class="strong-sector-row">
 
-                        <span
-                          class="strong-rank"
-                        >
+                        <span class="strong-rank">
                           ${
                             String(
                               i + 2
@@ -464,9 +629,7 @@ async function buildMarketPulse() {
                           }
                         </span>
 
-                        <span
-                          class="strong-name"
-                        >
+                        <span class="strong-name">
                           ${x.name}
                         </span>
 
@@ -489,221 +652,123 @@ async function buildMarketPulse() {
                   )
                   .join("")
               : `
-                <div
-                  class="strong-sector-empty"
-                >
+                <div class="strong-sector-empty">
                   尚無族群資料
                 </div>
-              `
-          }
+              `;
+        }
 
-        </div>
+      }
+    );
 
-        <div
-          class="market-card-link"
-        >
-          查看完整熱力圖 →
-        </div>
-
-      </button>
-
-      <button
-        class="self-monitor-card"
-        data-pulse-target="selfReports"
-      >
-
-        <div
-          class="market-card-label"
-        >
-
-          <span
-            class="market-mini-icon"
-          >
-            ◎
-          </span>
-
-          自結監控
-
-        </div>
-
-        <div
-          class="self-monitor-main"
-        >
-
-          <strong>
-            ${selfCount}
-          </strong>
-
-          <span>
-            筆新公告
-          </span>
-
-        </div>
-
-        <div
-          class="self-monitor-foot"
-        >
-          點擊查看自結公布
-          <span>→</span>
-        </div>
-
-      </button>
-
-    </div>
-
-    <div
-      class="daily-signal-panel"
-    >
-
-      <div
-        class="daily-signal-head"
-      >
-
-        <div>
-          <span
-            class="pulse-kicker"
-          >
-            TODAY'S SIGNALS
-          </span>
-
-          <h3>
-            今日異動
-          </h3>
-        </div>
-
-        <span
-          class="daily-signal-note"
-        >
-          點擊直接前往分頁
-        </span>
-
-      </div>
-
-      <div
-        class="daily-signal-grid"
-      >
-
-        <button
-          class="daily-signal-item"
-          data-pulse-target="volume"
-        >
-
-          <span
-            class="daily-signal-icon signal-volume"
-          >
-            ⚡
-          </span>
-
-          <span>
-            <small>
-              突然放量
-            </small>
-
-            <strong>
-              ${volumeCount}
-            </strong>
-          </span>
-
-          <i>→</i>
-
-        </button>
-
-        <button
-          class="daily-signal-item"
-          data-pulse-target="ai"
-        >
-
-          <span
-            class="daily-signal-icon signal-ai"
-          >
-            ✦
-          </span>
-
-          <span>
-            <small>
-              AI 選股
-            </small>
-
-            <strong>
-              ${aiCount || "—"}
-            </strong>
-          </span>
-
-          <i>→</i>
-
-        </button>
-
-        <button
-          class="daily-signal-item"
-          data-pulse-target="monthlyRevenue"
-        >
-
-          <span
-            class="daily-signal-icon signal-revenue"
-          >
-            ↗
-          </span>
-
-          <span>
-            <small>
-              MoM &gt; 10%
-            </small>
-
-            <strong>
-              ${momHotCount}
-            </strong>
-          </span>
-
-          <i>→</i>
-
-        </button>
-
-        <button
-          class="daily-signal-item"
-          data-pulse-target="selfReports"
-        >
-
-          <span
-            class="daily-signal-icon signal-self"
-          >
-            ◎
-          </span>
-
-          <span>
-            <small>
-              自結公告
-            </small>
-
-            <strong>
-              ${selfCount}
-            </strong>
-          </span>
-
-          <i>→</i>
-
-        </button>
-
-      </div>
-
-    </div>
-  `;
-
-  rail.insertAdjacentElement(
-    "afterend",
-    pulse
-  );
-
-  $$(
-    "[data-pulse-target]"
+  J(
+    "./data/self_reports.json",
+    { force }
   )
-    .forEach(
-      b => {
-        b.onclick =
-          () =>
-            page(
-              b.dataset
-                .pulseTarget
+    .then(
+      d => {
+
+        const count =
+          (
+            d.items ||
+            []
+          ).length;
+
+        pulse
+          .querySelectorAll(
+            "[data-pulse-self], [data-pulse-self-2]"
+          )
+          .forEach(
+            el => {
+              el.textContent =
+                count;
+            }
+          );
+
+      }
+    );
+
+  J(
+    "./data/volume.json",
+    { force }
+  )
+    .then(
+      d => {
+
+        const el =
+          pulse.querySelector(
+            "[data-pulse-volume]"
+          );
+
+        if (el) {
+          el.textContent =
+            (
+              d.items ||
+              []
+            ).length;
+        }
+
+      }
+    );
+
+  J(
+    "./data/ai_picks.json",
+    { force }
+  )
+    .then(
+      d => {
+
+        const count =
+          (
+            d.items ||
+            d.picks ||
+            []
+          ).length ||
+          (
+            (
+              d.twse ||
+              []
+            ).length +
+            (
+              d.tpex ||
+              []
+            ).length
+          );
+
+        const el =
+          pulse.querySelector(
+            "[data-pulse-ai]"
+          );
+
+        if (el) {
+          el.textContent =
+            count ||
+            "—";
+        }
+
+      }
+    );
+
+  J(
+    "./data/monthly_revenue.json",
+    { force }
+  )
+    .then(
+      d => {
+
+        const el =
+          pulse.querySelector(
+            "[data-pulse-revenue]"
+          );
+
+        if (el) {
+          el.textContent =
+            Number(
+              d.mom_gt_10_count ||
+              0
             );
+        }
+
       }
     );
 }
@@ -713,18 +778,19 @@ async function buildMarketPulse() {
 ------------------------------------------------- */
 
 function selfEpsMetric(x, kind, label) {
-  const esc = value =>
-    String(value ?? "")
-      .replace(
-        /[&<>"']/g,
-        c => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        }[c])
-      );
+  const esc =
+    value =>
+      String(value ?? "")
+        .replace(
+          /[&<>"']/g,
+          c => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          }[c])
+        );
 
   const value =
     x[kind + "_eps"];
@@ -792,6 +858,7 @@ function selfEpsMetric(x, kind, label) {
       >
         與去年同期增減
         <br>
+
         <b>
           ${esc(yoy)}
         </b>
@@ -800,25 +867,22 @@ function selfEpsMetric(x, kind, label) {
   `;
 }
 
-async function selfReports() {
+async function selfReports(force = false) {
   const d =
     await J(
-      "./data/self_reports.json"
+      "./data/self_reports.json",
+      { force }
     );
 
   const heroP =
-    $(
-      "#selfReports .hero p"
-    );
+    $("#selfReports .hero p");
 
   if (heroP) {
     heroP.textContent =
       "全台股即時監控｜每 30 分鐘自動檢查｜僅新公告自動推播";
   }
 
-  if (
-    $("#selfWeekBadge")
-  ) {
+  if ($("#selfWeekBadge")) {
     $("#selfWeekBadge")
       .textContent =
         "每30分鐘";
@@ -838,12 +902,10 @@ async function selfReports() {
 
   if (status) {
     const twse =
-      d.source_status
-        ?.twse;
+      d.source_status?.twse;
 
     const tpex =
-      d.source_status
-        ?.tpex;
+      d.source_status?.tpex;
 
     const sourceText =
       [
@@ -862,16 +924,12 @@ async function selfReports() {
     status.innerHTML =
       d.updated_at
         ? `
-          <span
-            class="status-dot"
-          ></span>
+          <span class="status-dot"></span>
 
           最後更新
           ${d.updated_at}
 
-          <span
-            class="status-divider"
-          >
+          <span class="status-divider">
             ·
           </span>
 
@@ -929,9 +987,7 @@ async function selfReports() {
         );
 
   const input =
-    $(
-      "#selfReportSearchInput"
-    );
+    $("#selfReportSearchInput");
 
   if (
     input &&
@@ -943,9 +999,7 @@ async function selfReports() {
   }
 
   const clearBtn =
-    $(
-      "#selfReportSearchClear"
-    );
+    $("#selfReportSearchClear");
 
   if (clearBtn) {
     clearBtn.style.display =
@@ -955,9 +1009,7 @@ async function selfReports() {
   }
 
   const resultMeta =
-    $(
-      "#selfReportSearchMeta"
-    );
+    $("#selfReportSearchMeta");
 
   if (resultMeta) {
     resultMeta.textContent =
@@ -974,6 +1026,21 @@ async function selfReports() {
   }
 
   if (!arr.length) {
+    const safe =
+      String(
+        selfReportSearch
+      )
+        .replace(
+          /[&<>"']/g,
+          c => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          }[c])
+        );
+
     box.innerHTML = `
       <div
         class="
@@ -983,9 +1050,7 @@ async function selfReports() {
         "
       >
 
-        <div
-          class="empty-icon"
-        >
+        <div class="empty-icon">
           ${
             featureIcon(
               "earnings"
@@ -996,13 +1061,7 @@ async function selfReports() {
         <b>
           ${
             selfReportSearch
-              ? `找不到「${String(selfReportSearch).replace(/[&<>"']/g, c => ({
-                  "&": "&amp;",
-                  "<": "&lt;",
-                  ">": "&gt;",
-                  '"': "&quot;",
-                  "'": "&#39;"
-                }[c]))}」的自結資料`
+              ? `找不到「${safe}」的自結資料`
               : "目前尚未偵測到新的自結公告"
           }
         </b>
@@ -1033,13 +1092,9 @@ async function selfReports() {
             "
           >
 
-            <div
-              class="card-accent"
-            ></div>
+            <div class="card-accent"></div>
 
-            <div
-              class="eyebrow"
-            >
+            <div class="eyebrow">
               ${
                 x.publish_date ||
                 ""
@@ -1051,9 +1106,7 @@ async function selfReports() {
               }
             </div>
 
-            <div
-              class="titleline"
-            >
+            <div class="titleline">
 
               <b>
                 ${
@@ -1104,18 +1157,17 @@ async function selfReports() {
 
 function setupSelfReportSearch() {
   const input =
-    $(
-      "#selfReportSearchInput"
-    );
+    $("#selfReportSearchInput");
 
   const clearBtn =
-    $(
-      "#selfReportSearchClear"
-    );
+    $("#selfReportSearchClear");
 
   if (!input) {
     return;
   }
+
+  let timer =
+    null;
 
   input.addEventListener(
     "input",
@@ -1123,7 +1175,17 @@ function setupSelfReportSearch() {
       selfReportSearch =
         input.value;
 
-      selfReports();
+      clearTimeout(
+        timer
+      );
+
+      timer =
+        setTimeout(
+          () => {
+            selfReports(false);
+          },
+          120
+        );
     }
   );
 
@@ -1136,7 +1198,9 @@ function setupSelfReportSearch() {
       ) {
         selfReportSearch = "";
         input.value = "";
-        selfReports();
+
+        selfReports(false);
+
         input.blur();
       }
     }
@@ -1147,7 +1211,9 @@ function setupSelfReportSearch() {
       () => {
         selfReportSearch = "";
         input.value = "";
-        selfReports();
+
+        selfReports(false);
+
         input.focus();
       };
   }
@@ -1184,9 +1250,7 @@ function revenueCard(x) {
       ${
         isMomHot
           ? `
-            <div
-              class="mom-hot-glow"
-            ></div>
+            <div class="mom-hot-glow"></div>
           `
           : ""
       }
@@ -1310,44 +1374,35 @@ function dedupeRevenueStocks(
    月營收頁
 ------------------------------------------------- */
 
-async function monthlyRevenue() {
+async function monthlyRevenue(force = false) {
   const d =
     await J(
-      "./data/monthly_revenue.json"
+      "./data/monthly_revenue.json",
+      { force }
     );
 
-  if (
+  if ($("#revenueMonthBadge")) {
     $("#revenueMonthBadge")
-  ) {
-    $(
-      "#revenueMonthBadge"
-    ).textContent =
-      d.month_label
-        ? `目前顯示 ${d.month_label}`
-        : "尚無資料";
+      .textContent =
+        d.month_label
+          ? `目前顯示 ${d.month_label}`
+          : "尚無資料";
   }
 
   const revenueHeroP =
-    $(
-      "#monthlyRevenue .hero p"
-    );
+    $("#monthlyRevenue .hero p");
 
-  if (
-    revenueHeroP
-  ) {
+  if (revenueHeroP) {
     revenueHeroP.textContent =
       "19 個科技族群｜最新已公布月份｜營收、MoM、YoY";
   }
 
-  if (
+  if ($("#revenueStatus")) {
     $("#revenueStatus")
-  ) {
-    $(
-      "#revenueStatus"
-    ).textContent =
-      d.updated_at
-        ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示`
-        : "尚未產生月營收資料";
+      .textContent =
+        d.updated_at
+          ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示`
+          : "尚未產生月營收資料";
   }
 
   const sectors =
@@ -1384,28 +1439,15 @@ async function monthlyRevenue() {
 
   if (selector) {
     selector.innerHTML = `
-      <label
-        for="revenueSectorSelect"
-      >
+      <label for="revenueSectorSelect">
         選擇族群
       </label>
 
-      <div
-        class="revenue-select-wrap"
-      >
+      <div class="revenue-select-wrap">
 
-        <select
-          id="revenueSectorSelect"
-        >
+        <select id="revenueSectorSelect">
 
-          <option
-            value="all"
-            ${
-              revenueSectorSelected === "all"
-                ? "selected"
-                : ""
-            }
-          >
+          <option value="all">
             全部族群
           </option>
 
@@ -1413,14 +1455,7 @@ async function monthlyRevenue() {
             sectors
               .map(
                 s => `
-                  <option
-                    value="${s.name}"
-                    ${
-                      revenueSectorSelected === s.name
-                        ? "selected"
-                        : ""
-                    }
-                  >
+                  <option value="${s.name}">
                     ${s.name}
                   </option>
                 `
@@ -1430,9 +1465,7 @@ async function monthlyRevenue() {
 
         </select>
 
-        <span
-          class="revenue-select-arrow"
-        >
+        <span class="revenue-select-arrow">
           ⌄
         </span>
 
@@ -1444,19 +1477,16 @@ async function monthlyRevenue() {
         "#revenueSectorSelect"
       );
 
-    if (
-      sectorSelect
-    ) {
+    if (sectorSelect) {
       sectorSelect.value =
         revenueSectorSelected;
 
       sectorSelect.onchange =
         () => {
-
           revenueSectorSelected =
             sectorSelect.value;
 
-          monthlyRevenue();
+          monthlyRevenue(false);
         };
     }
   }
@@ -1504,9 +1534,7 @@ async function monthlyRevenue() {
         ↓ MoM 高→低
       </button>
 
-      <span
-        class="revenue-sort-note"
-      >
+      <span class="revenue-sort-note">
         ${
           revenueMomSort
             ? "再次點擊恢復族群原排序"
@@ -1521,11 +1549,10 @@ async function monthlyRevenue() {
       )
       .onclick =
       () => {
-
         revenueMomSort =
           !revenueMomSort;
 
-        monthlyRevenue();
+        monthlyRevenue(false);
       };
   }
 
@@ -1577,11 +1604,10 @@ async function monthlyRevenue() {
         b => {
           b.onclick =
             () => {
-
               revenueSectorSelected =
                 b.dataset.revSec;
 
-              monthlyRevenue();
+              monthlyRevenue(false);
             };
         }
       );
@@ -1598,9 +1624,7 @@ async function monthlyRevenue() {
 
   let list;
 
-  if (
-    revenueMomSort
-  ) {
+  if (revenueMomSort) {
     let stocks;
 
     if (
@@ -1664,9 +1688,7 @@ async function monthlyRevenue() {
 
   if (!list.length) {
     box.innerHTML = `
-      <div
-        class="card empty"
-      >
+      <div class="card empty">
         目前沒有月營收資料
       </div>
     `;
@@ -1693,13 +1715,9 @@ async function monthlyRevenue() {
               .length;
 
           return `
-            <section
-              class="sector-revenue"
-            >
+            <section class="sector-revenue">
 
-              <div
-                class="sector-revenue-head"
-              >
+              <div class="sector-revenue-head">
 
                 <div>
 
@@ -1710,9 +1728,7 @@ async function monthlyRevenue() {
                   ${
                     hotCount
                       ? `
-                        <span
-                          class="sector-mom-count"
-                        >
+                        <span class="sector-mom-count">
                           ${hotCount}
                           檔 MoM &gt; 10%
                         </span>
@@ -1734,9 +1750,7 @@ async function monthlyRevenue() {
 
               </div>
 
-              <div
-                class="revenue-grid"
-              >
+              <div class="revenue-grid">
 
                 ${
                   (
@@ -1844,9 +1858,7 @@ function setupBackHomeButton() {
     );
 
     btn.innerHTML = `
-      <span
-        class="back-home-icon"
-      >
+      <span class="back-home-icon">
         ←
       </span>
 
@@ -1863,7 +1875,6 @@ function setupBackHomeButton() {
 
   const refresh =
     () => {
-
       const active =
         document.querySelector(
           ".page.active"
@@ -1882,7 +1893,6 @@ function setupBackHomeButton() {
 
   btn.onclick =
     () => {
-
       if (
         typeof page ===
         "function"
@@ -1895,29 +1905,31 @@ function setupBackHomeButton() {
       refresh();
     };
 
+  /*
+   * 原本每個 page 都建立一個 MutationObserver
+   * 改成只保留一個
+   */
   const observer =
     new MutationObserver(
       refresh
     );
 
-  document
-    .querySelectorAll(
-      ".page"
-    )
-    .forEach(
-      el => {
+  const main =
+    document.querySelector(
+      "main"
+    ) ||
+    document.body;
 
-        observer.observe(
-          el,
-          {
-            attributes: true,
-            attributeFilter: [
-              "class"
-            ]
-          }
-        );
-      }
-    );
+  observer.observe(
+    main,
+    {
+      subtree: true,
+      attributes: true,
+      attributeFilter: [
+        "class"
+      ]
+    }
+  );
 
   refresh();
 }
@@ -2015,119 +2027,126 @@ function formatUpdateTime(
     return "尚無更新紀錄";
   }
 
-  const text =
-    String(raw)
-      .replace(
-        "T",
-        " "
-      )
-      .replace(
-        "+08:00",
-        ""
-      );
-
-  return text;
+  return String(raw)
+    .replace(
+      "T",
+      " "
+    )
+    .replace(
+      "+08:00",
+      ""
+    );
 }
 
-async function setupPageUpdateMeta() {
-  for (
-    const [
-      pageId,
-      cfg
-    ]
-    of Object.entries(
-      pageUpdateConfig
-    )
-  ) {
-    const section =
-      document.getElementById(
-        pageId
-      );
+/*
+ * 效能修正：
+ *
+ * 舊版：
+ * setupPageUpdateMeta()
+ * 一進網站就把所有分頁 JSON 依序抓一次
+ *
+ * 新版：
+ * 只讀目前正在看的頁面
+ */
+async function setupPageUpdateMeta(
+  pageId
+) {
+  const id =
+    pageId ||
+    document.querySelector(
+      ".page.active"
+    )?.id;
 
-    if (!section) {
-      continue;
-    }
+  const cfg =
+    pageUpdateConfig[id];
 
-    const hero =
-      section.querySelector(
-        ".hero"
-      );
-
-    if (!hero) {
-      continue;
-    }
-
-    let data =
-      {};
-
-    try {
-      data =
-        await J(
-          cfg.file
-        );
-    } catch (e) {
-      data =
-        {};
-    }
-
-    const actual =
-      data.updated_at ||
-      data.date ||
-      data.month_label ||
-      "";
-
-    let meta =
-      section.querySelector(
-        ".page-update-meta"
-      );
-
-    if (!meta) {
-      meta =
-        document.createElement(
-          "div"
-        );
-
-      meta.className =
-        "page-update-meta";
-
-      hero.insertAdjacentElement(
-        "afterend",
-        meta
-      );
-    }
-
-    meta.innerHTML = `
-      <span
-        class="page-update-dot"
-      ></span>
-
-      <span>
-        <b>
-          更新頻率
-        </b>
-
-        ${cfg.label}
-      </span>
-
-      <span
-        class="page-update-separator"
-      >
-        ·
-      </span>
-
-      <span>
-        <b>
-          最後更新
-        </b>
-
-        ${
-          formatUpdateTime(
-            actual
-          )
-        }
-      </span>
-    `;
+  if (!cfg) {
+    return;
   }
+
+  const section =
+    document.getElementById(
+      id
+    );
+
+  if (!section) {
+    return;
+  }
+
+  const hero =
+    section.querySelector(
+      ".hero"
+    );
+
+  if (!hero) {
+    return;
+  }
+
+  let data =
+    {};
+
+  try {
+    data =
+      await J(
+        cfg.file
+      );
+  } catch (e) {
+    data = {};
+  }
+
+  const actual =
+    data.updated_at ||
+    data.date ||
+    data.month_label ||
+    "";
+
+  let meta =
+    section.querySelector(
+      ".page-update-meta"
+    );
+
+  if (!meta) {
+    meta =
+      document.createElement(
+        "div"
+      );
+
+    meta.className =
+      "page-update-meta";
+
+    hero.insertAdjacentElement(
+      "afterend",
+      meta
+    );
+  }
+
+  meta.innerHTML = `
+    <span class="page-update-dot"></span>
+
+    <span>
+      <b>
+        更新頻率
+      </b>
+
+      ${cfg.label}
+    </span>
+
+    <span class="page-update-separator">
+      ·
+    </span>
+
+    <span>
+      <b>
+        最後更新
+      </b>
+
+      ${
+        formatUpdateTime(
+          actual
+        )
+      }
+    </span>
+  `;
 }
 
 /* -------------------------------------------------
@@ -2248,9 +2267,7 @@ function setupFontScaleControl() {
         A−
       </button>
 
-      <span
-        id="fontScaleValue"
-      >
+      <span id="fontScaleValue">
         100%
       </span>
 
@@ -2294,7 +2311,6 @@ function setupFontScaleControl() {
     )
     .onclick =
       e => {
-
         e.stopPropagation();
 
         const current =
@@ -2329,7 +2345,6 @@ function setupFontScaleControl() {
     )
     .onclick =
       e => {
-
         e.stopPropagation();
 
         const current =
@@ -2353,9 +2368,7 @@ function setupFontScaleControl() {
             Math.min(
               FONT_LEVELS.length -
               1,
-
-              index +
-              1
+              index + 1
             )
           ]
         );
@@ -2364,7 +2377,6 @@ function setupFontScaleControl() {
   document.addEventListener(
     "click",
     e => {
-
       if (
         !wrap.contains(
           e.target
@@ -2455,6 +2467,99 @@ function setupHomeOrder() {
 }
 
 /* -------------------------------------------------
+   自結 / 月營收 Lazy Load
+------------------------------------------------- */
+
+const extraLoading =
+  new Map();
+
+function loadExtraPage(id) {
+  let fn =
+    null;
+
+  if (
+    id ===
+    "selfReports"
+  ) {
+    fn =
+      selfReports;
+  }
+
+  if (
+    id ===
+    "monthlyRevenue"
+  ) {
+    fn =
+      monthlyRevenue;
+  }
+
+  if (!fn) {
+    return;
+  }
+
+  if (
+    extraLoading.has(
+      id
+    )
+  ) {
+    return extraLoading.get(
+      id
+    );
+  }
+
+  const promise =
+    Promise.resolve()
+      .then(
+        () =>
+          fn(false)
+      )
+      .finally(
+        () => {
+          extraLoading.delete(
+            id
+          );
+        }
+      );
+
+  extraLoading.set(
+    id,
+    promise
+  );
+
+  return promise;
+}
+
+function bindExtraLazyPages() {
+  if (
+    typeof page !==
+    "function"
+  ) {
+    return;
+  }
+
+  const originalPage =
+    page;
+
+  page =
+    function(id) {
+
+      originalPage(id);
+
+      requestAnimationFrame(
+        () => {
+
+          loadExtraPage(id);
+
+          setupPageUpdateMeta(
+            id
+          );
+
+        }
+      );
+    };
+}
+
+/* -------------------------------------------------
    啟動
 ------------------------------------------------- */
 
@@ -2466,16 +2571,64 @@ buildFeatureRail();
 
 setupHomeOrder();
 
-buildMarketPulse();
+/*
+ * 首頁先直接建立 Market Pulse 外框
+ * 不等任何 JSON
+ */
+ensureMarketPulse();
+
+/*
+ * 下一個 frame 再背景抓資料
+ */
+requestAnimationFrame(
+  () => {
+    buildMarketPulse(false);
+  }
+);
 
 setupSelfReportSearch();
 
-selfReports();
-
-monthlyRevenue();
-
-setupPageUpdateMeta();
+/*
+ * 舊版這裡會直接：
+ *
+ * selfReports();
+ * monthlyRevenue();
+ * setupPageUpdateMeta();
+ *
+ * 造成首頁同時載入大量 JSON
+ *
+ * 新版全部移除
+ */
 
 setupFontScaleControl();
 
 setupBackHomeButton();
+
+bindExtraLazyPages();
+
+/*
+ * 只處理目前真的正在看的分頁
+ */
+requestAnimationFrame(
+  () => {
+
+    const id =
+      document.querySelector(
+        ".page.active"
+      )?.id ||
+      "home";
+
+    loadExtraPage(
+      id
+    );
+
+    setupPageUpdateMeta(
+      id
+    );
+
+  }
+);
+
+console.log(
+  "[UI] performance module ready"
+);
