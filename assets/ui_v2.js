@@ -876,14 +876,6 @@ async function selfReports() {
           </span>
 
           ${sourceText}
-
-          <span
-            class="status-divider"
-          >
-            ·
-          </span>
-
-          Pushover 已啟用
         `
         : "尚未開始自結監控";
   }
@@ -1354,7 +1346,7 @@ async function monthlyRevenue() {
       "#revenueStatus"
     ).textContent =
       d.updated_at
-        ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示＋Pushover`
+        ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示`
         : "尚未產生月營收資料";
   }
 
@@ -1528,13 +1520,13 @@ async function monthlyRevenue() {
         "button"
       )
       .onclick =
-        () => {
+      () => {
 
-          revenueMomSort =
-            !revenueMomSort;
+        revenueMomSort =
+          !revenueMomSort;
 
-          monthlyRevenue();
-        };
+        monthlyRevenue();
+      };
   }
 
   if (tabs) {
