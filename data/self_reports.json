@@ -1,26 +1,13 @@
 {
-  "updated_at": "2026-10-02T16:31+08:00",
+  "updated_at": "2026-10-02T16:48+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-02-v23-openapi-company-rescue-telegram-only",
-  "source_mode": "MOPS daily broad + official OpenAPI ticker-pool company rescue + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
+  "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
+  "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
     "candidate_count": 34,
-    "parsed_count": 21,
-    "parse_failed_count": 7,
+    "parsed_count": 23,
+    "parse_failed_count": 5,
     "parse_failed": [
-      {
-        "ticker": "8046",
-        "name": "南電",
-        "publish_date": "2026-10-02",
-        "publish_time": "15:41:15",
-        "subject": "8046 南電 115/10/02 15:41:15 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
-        "source": "mops_ajax",
-        "source_error": "",
-        "eps_parse_status": "partial",
-        "eps_parse_reason": "only_one_eps_section_parsed",
-        "monthly_eps": null,
-        "quarter_eps": 1.69
-      },
       {
         "ticker": "3004",
         "name": "豐達科",
@@ -46,19 +33,6 @@
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
         "quarter_eps": null
-      },
-      {
-        "ticker": "3518",
-        "name": "柏騰",
-        "publish_date": "2026-10-01",
-        "publish_time": "14:56:11",
-        "subject": "3518 柏騰 115/10/01 14:56:11 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
-        "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
-        "eps_parse_status": "partial",
-        "eps_parse_reason": "only_one_eps_section_parsed",
-        "monthly_eps": null,
-        "quarter_eps": 0.35
       },
       {
         "ticker": "8171",
@@ -111,24 +85,390 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 92,
+          "rows": 100,
           "hits": 8
         },
         {
-          "mode": "openapi_ticker_pool",
+          "mode": "openapi_rescue_pool",
           "sources": [
             {
               "market": "twse",
               "rows": 78,
-              "today_tickers": 0
+              "ticker_pool": 52
             },
             {
               "market": "tpex",
               "rows": 42,
-              "today_tickers": 0
+              "ticker_pool": 0
             }
           ],
-          "tickers": 0
+          "tickers": 52
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1525",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1527",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1589",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1617",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1721",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1727",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1730",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1734",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1795",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1907",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1909",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2024",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2303",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2323",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2329",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2367",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2399",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2409",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2442",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2458",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2461",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2464",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2536",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2712",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2727",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2881",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2882",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2897",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "3006",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "3016",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "3711",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4119",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4763",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "5244",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6168",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6257",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6405",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6558",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6598",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6695",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6794",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6914",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6957",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "8996",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "9918",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue_summary",
+          "targets": 45,
+          "rescued": 0,
+          "rescued_tickers": []
         }
       ],
       "rejected": [],
@@ -174,6 +514,30 @@
     },
     {
       "market": "",
+      "ticker": "8046",
+      "name": "南電",
+      "publish_date": "2026-10-02",
+      "publish_time": "15:41:15",
+      "subject": "8046 南電 115/10/02 15:41:15 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 8046 南電 公司提供 序號 1 發言日期 115/10/02 發言時間 15:41:15 發言人 呂連瑞 發言人職稱 總經理 發言人電話 03-3223751 主旨 因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解 符合條款 第 51 款 事實發生日 115/10/02 說明 1.事實發生日:115/10/02 2.發生緣由:依據臺灣證券交易所股份有限公司通知辦理 3.財務業務資訊: 最近一月 與去年同 最近一季 與去年同 最近四季累計 合併自結數 期增減% 合併核閱數 期增減% 合併核閱數 (115年8月) (115年第2季) (114年第3季至 115年第2季) ----------------------------------------------------------------------------- 營業收入 5,353 40.59% 13,575 41.66% 46,885 (百萬) 稅前淨利 1,486 732.81% 2,976 - 6,890 (百萬) 歸屬母公司 1,092 664.93% 2,262 - 5,497 業主淨利 (百萬) 每股盈餘 1.69 668.18% 3.50 - 8.51 (元) 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無 7.其他應敘明事項:無 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8046&SPOKE_DATE=20261002&SPOKE_TIME=154115&SEQ_NO=1&skey=8046202610021",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": 1.69,
+      "monthly_eps": 1.69,
+      "monthly_eps_yoy": 668.18,
+      "monthly_period": "2026-08",
+      "quarter_eps": 3.5,
+      "quarter_eps_yoy": null,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "668.18%",
+      "quarter_eps_yoy_text": "-",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
+    },
+    {
+      "market": "",
       "ticker": "6643",
       "name": "M31",
       "publish_date": "2026-10-02",
@@ -189,10 +553,10 @@
       "monthly_eps_yoy": null,
       "monthly_period": "2026-08",
       "quarter_eps": -0.06,
-      "quarter_eps_yoy": 3.0,
+      "quarter_eps_yoy": null,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "由虧轉盈",
-      "quarter_eps_yoy_text": "3",
+      "quarter_eps_yoy_text": "虧損減少",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -235,10 +599,10 @@
       "eps": -0.04,
       "monthly_eps": -0.04,
       "monthly_eps_yoy": -184.88,
-      "monthly_period": "2026-01",
+      "monthly_period": "2026-08",
       "quarter_eps": 0.01,
       "quarter_eps_yoy": 102.72,
-      "quarter_period": null,
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-184.88%",
       "quarter_eps_yoy_text": "102.72%",
       "eps_parse_status": "parsed",
@@ -310,7 +674,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 3.26,
       "quarter_eps_yoy": 77.17,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-62.67%",
       "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
@@ -334,7 +698,7 @@
       "monthly_period": "2026-04",
       "quarter_eps": 3.26,
       "quarter_eps_yoy": 77.17,
-      "quarter_period": "2025-Q2",
+      "quarter_period": "2026-Q1",
       "monthly_eps_yoy_text": "-62.67%",
       "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
@@ -358,7 +722,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 0.65,
       "quarter_eps_yoy": 533.0,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "2500%",
       "quarter_eps_yoy_text": "533%",
       "eps_parse_status": "parsed",
@@ -382,9 +746,33 @@
       "monthly_period": "2026-08",
       "quarter_eps": 0.13,
       "quarter_eps_yoy": 137.14,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-125.00%",
       "quarter_eps_yoy_text": "137.14%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
+    },
+    {
+      "market": "twse",
+      "ticker": "3518",
+      "name": "柏騰",
+      "publish_date": "2026-10-01",
+      "publish_time": "14:56:11",
+      "subject": "3518 柏騰 115/10/01 14:56:11 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 3518 柏騰 公司提供 序號 1 發言日期 115/10/01 發言時間 14:56:11 發言人 劉明怡 發言人職稱 財務處執行副總經理 發言人電話 (03)212-8833 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解 符合條款 第 51 款 事實發生日 115/10/01 說明 1.事實發生日:115/10/01 2.發生緣由: 近日本公司股票有交易異常之情形，目前本公司之財務及營運一切正常，故公佈相關 財務業務資訊以利投資人區別暸解，茲就本公司財務業務資訊說明如下: 3.財務業務資訊: 合併財務資訊： 最近四季累計 最近一月 最近一季 (114年第3季至 (115年8月) 與去年同期 (115年第2季) 與去年同期 115年第2季) 自結數 增減% IFRS查核數 增減% IFRS查核數 ---------- -------- ------------ -------- -------------- 營業收入(百萬元)： 22.71 (18.87) 53.30 (36.78) 276.94 稅前淨利(百萬元)： 35.36 298.83 (4.20) (227.66) 241.40 歸屬母公司業主淨利 (百萬元)： 35.02 336.11 (3.77) (189.48) 216.18 每股盈餘(元) ： 0.35 337.50 ( 0.04) (200.00) 2.12 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 7.其他應敘明事項: (1)本公司營運狀況一切正常，對於近日本公司股票價格及成交量之波動，係屬市場 自由交易行為，敬請投資人審慎評估。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3518&SPOKE_DATE=20261001&SPOKE_TIME=145611&SEQ_NO=1&skey=3518202610011",
+      "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
+      "match_reason": "attention_trading",
+      "eps": 0.35,
+      "monthly_eps": 0.35,
+      "monthly_eps_yoy": 337.5,
+      "monthly_period": "2026-08",
+      "quarter_eps": -0.04,
+      "quarter_eps_yoy": -200.0,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "+337.50%",
+      "quarter_eps_yoy_text": "-200.00%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
     },
@@ -406,7 +794,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 2.33,
       "quarter_eps_yoy": 203.0,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "153%",
       "quarter_eps_yoy_text": "203%",
       "eps_parse_status": "parsed",
@@ -431,10 +819,10 @@
       "quarter_eps": 2.16,
       "quarter_eps_yoy": 61.19,
       "quarter_period": "2026-Q2",
-      "monthly_eps_yoy_text": "44.27",
-      "quarter_eps_yoy_text": "61.19",
+      "monthly_eps_yoy_text": "+44.27%",
+      "quarter_eps_yoy_text": "+61.19%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "only_one_eps_section_parsed"
+      "eps_parse_reason": ""
     },
     {
       "market": "",
@@ -454,7 +842,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 5.1,
       "quarter_eps_yoy": 145.19,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "184.18%",
       "quarter_eps_yoy_text": "145.19%",
       "eps_parse_status": "parsed",
@@ -478,7 +866,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 1.28,
       "quarter_eps_yoy": 270.7,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "121.4%",
       "quarter_eps_yoy_text": "270.7%",
       "eps_parse_status": "parsed",
@@ -526,7 +914,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 3.11,
       "quarter_eps_yoy": 13.1,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-25.4%",
       "quarter_eps_yoy_text": "13.1%",
       "eps_parse_status": "parsed",
@@ -628,7 +1016,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 3.87,
       "quarter_eps_yoy": 179.09,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "285.04%",
       "quarter_eps_yoy_text": "179.09%",
       "eps_parse_status": "parsed",
@@ -655,7 +1043,7 @@
       "monthly_period": "2026-08",
       "quarter_eps": 0.59,
       "quarter_eps_yoy": 1375.0,
-      "quarter_period": "2025-Q3",
+      "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-6%",
       "quarter_eps_yoy_text": "1375%",
       "eps_parse_status": "parsed",
