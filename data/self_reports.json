@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-10-02T16:07+08:00",
+  "updated_at": "2026-10-02T16:15+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-02-v20-horizontal-eps-row-fix-telegram-only",
-  "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
+  "filter_version": "2026-10-02-v21-daily-broad-mops-scan-telegram-only",
+  "source_mode": "MOPS ajax_t05st01 daily broad scan + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
     "candidate_count": 34,
     "parsed_count": 21,
@@ -104,120 +104,15 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 12,
+      "rows": 8,
       "self_reports": 8,
       "debug": [
         {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 0,
-          "hits": 0
-        },
-        {
+          "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "注意交易",
-          "rows": 87,
-          "hits": 6
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "財務業務",
-          "rows": 87,
-          "hits": 4
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 87,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 87,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "近期財務",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自結",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7fe25ad69d90>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自結",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自結",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自結",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7fe25ad69460>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
-        },
-        {
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自結",
-          "rows": 88,
-          "hits": 2
+          "payload": 1,
+          "rows": 90,
+          "hits": 8
         }
       ],
       "rejected": [],
