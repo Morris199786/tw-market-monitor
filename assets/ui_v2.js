@@ -15,27 +15,6 @@ let revenueSectorSelected = "all";
 let revenueMomSort = false;
 let selfReportSearch = "";
 
-let selfReportDataCache = null;
-let selfReportDataCacheAt = 0;
-let selfReportSearchTimer = 0;
-
-async function getSelfReportData(force = false) {
-  if (
-    !force &&
-    selfReportDataCache &&
-    Date.now() - selfReportDataCacheAt < 30000
-  ) {
-    return selfReportDataCache;
-  }
-
-  const data = await J("./data/self_reports.json");
-
-  selfReportDataCache = data;
-  selfReportDataCacheAt = Date.now();
-
-  return data;
-}
-
 function featureIcon(name) {
   const icons = {
     heat: `<svg viewBox="0 0 24 24" aria-hidden="true">
@@ -140,7 +119,8 @@ function buildFeatureRail() {
   `).join("");
 
   $$("[data-feature]").forEach(b => {
-    b.onclick = () => page(b.dataset.feature);
+    b.onclick = () =>
+      page(b.dataset.feature);
   });
 }
 
@@ -183,12 +163,17 @@ function selfMetric(label, value, suffix = "") {
 ------------------------------------------------- */
 
 function setupPageHistory() {
-  if (typeof page !== "function") {
+  if (
+    typeof page !== "function"
+  ) {
     return;
   }
 
-  const originalPage = page;
-  let fromPopState = false;
+  const originalPage =
+    page;
+
+  let fromPopState =
+    false;
 
   page = function(id) {
     originalPage(id);
@@ -204,7 +189,9 @@ function setupPageHistory() {
 
       if (current !== id) {
         history.pushState(
-          { twPage: id },
+          {
+            twPage: id
+          },
           "",
           nextHash
         );
@@ -213,39 +200,55 @@ function setupPageHistory() {
   };
 
   const initial =
-    location.hash.replace("#", "") ||
+    location.hash.replace(
+      "#",
+      ""
+    ) ||
     "home";
 
   history.replaceState(
-    { twPage: initial },
+    {
+      twPage: initial
+    },
     "",
     `#${initial}`
   );
 
   if (
     initial &&
-    document.getElementById(initial)
+    document.getElementById(
+      initial
+    )
   ) {
-    originalPage(initial);
+    originalPage(
+      initial
+    );
   }
 
   window.addEventListener(
     "popstate",
     e => {
-      fromPopState = true;
+      fromPopState =
+        true;
 
       const target =
         e.state?.twPage ||
-        location.hash.replace("#", "") ||
+        location.hash.replace(
+          "#",
+          ""
+        ) ||
         "home";
 
       originalPage(
-        document.getElementById(target)
+        document.getElementById(
+          target
+        )
           ? target
           : "home"
       );
 
-      fromPopState = false;
+      fromPopState =
+        false;
     }
   );
 }
@@ -255,7 +258,8 @@ function setupPageHistory() {
 ------------------------------------------------- */
 
 async function buildMarketPulse() {
-  const rail = $("#featureRail");
+  const rail =
+    $("#featureRail");
 
   if (
     !rail ||
@@ -289,8 +293,12 @@ async function buildMarketPulse() {
       )
       .sort(
         (a, b) =>
-          Number(b.change_pct) -
-          Number(a.change_pct)
+          Number(
+            b.change_pct
+          ) -
+          Number(
+            a.change_pct
+          )
       );
 
   const leader =
@@ -298,13 +306,22 @@ async function buildMarketPulse() {
     null;
 
   const strongSectors =
-    sectors.slice(1, 5);
+    sectors.slice(
+      1,
+      5
+    );
 
   const selfCount =
-    (selfData.items || []).length;
+    (
+      selfData.items ||
+      []
+    ).length;
 
   const volumeCount =
-    (volumeData.items || []).length;
+    (
+      volumeData.items ||
+      []
+    ).length;
 
   const aiCount =
     (
@@ -324,9 +341,12 @@ async function buildMarketPulse() {
     );
 
   const pulse =
-    document.createElement("section");
+    document.createElement(
+      "section"
+    );
 
-  pulse.id = "marketPulse";
+  pulse.id =
+    "marketPulse";
 
   pulse.className =
     "market-pulse market-pulse-pro";
@@ -673,7 +693,9 @@ async function buildMarketPulse() {
     pulse
   );
 
-  $$("[data-pulse-target]")
+  $$(
+    "[data-pulse-target]"
+  )
     .forEach(
       b => {
         b.onclick =
@@ -778,19 +800,25 @@ function selfEpsMetric(x, kind, label) {
   `;
 }
 
-async function selfReports(force = false) {
+async function selfReports() {
   const d =
-    await getSelfReportData(force);
+    await J(
+      "./data/self_reports.json"
+    );
 
   const heroP =
-    $("#selfReports .hero p");
+    $(
+      "#selfReports .hero p"
+    );
 
   if (heroP) {
     heroP.textContent =
       "全台股即時監控｜每 30 分鐘自動檢查｜僅新公告自動推播";
   }
 
-  if ($("#selfWeekBadge")) {
+  if (
+    $("#selfWeekBadge")
+  ) {
     $("#selfWeekBadge")
       .textContent =
         "每30分鐘";
@@ -827,7 +855,9 @@ async function selfReports(force = false) {
           ? "上櫃正常"
           : "上櫃來源異常"
       ]
-        .join(" · ");
+        .join(
+          " · "
+        );
 
     status.innerHTML =
       d.updated_at
@@ -846,6 +876,14 @@ async function selfReports(force = false) {
           </span>
 
           ${sourceText}
+
+          <span
+            class="status-divider"
+          >
+            ·
+          </span>
+
+          Pushover 已啟用
         `
         : "尚未開始自結監控";
   }
@@ -899,7 +937,9 @@ async function selfReports(force = false) {
         );
 
   const input =
-    $("#selfReportSearchInput");
+    $(
+      "#selfReportSearchInput"
+    );
 
   if (
     input &&
@@ -911,7 +951,9 @@ async function selfReports(force = false) {
   }
 
   const clearBtn =
-    $("#selfReportSearchClear");
+    $(
+      "#selfReportSearchClear"
+    );
 
   if (clearBtn) {
     clearBtn.style.display =
@@ -921,7 +963,9 @@ async function selfReports(force = false) {
   }
 
   const resultMeta =
-    $("#selfReportSearchMeta");
+    $(
+      "#selfReportSearchMeta"
+    );
 
   if (resultMeta) {
     resultMeta.textContent =
@@ -1068,10 +1112,14 @@ async function selfReports(force = false) {
 
 function setupSelfReportSearch() {
   const input =
-    $("#selfReportSearchInput");
+    $(
+      "#selfReportSearchInput"
+    );
 
   const clearBtn =
-    $("#selfReportSearchClear");
+    $(
+      "#selfReportSearchClear"
+    );
 
   if (!input) {
     return;
@@ -1083,17 +1131,7 @@ function setupSelfReportSearch() {
       selfReportSearch =
         input.value;
 
-      clearTimeout(
-        selfReportSearchTimer
-      );
-
-      selfReportSearchTimer =
-        setTimeout(
-          () => {
-            selfReports();
-          },
-          160
-        );
+      selfReports();
     }
   );
 
@@ -1104,15 +1142,9 @@ function setupSelfReportSearch() {
         e.key ===
         "Escape"
       ) {
-        clearTimeout(
-          selfReportSearchTimer
-        );
-
         selfReportSearch = "";
         input.value = "";
-
         selfReports();
-
         input.blur();
       }
     }
@@ -1121,15 +1153,9 @@ function setupSelfReportSearch() {
   if (clearBtn) {
     clearBtn.onclick =
       () => {
-        clearTimeout(
-          selfReportSearchTimer
-        );
-
         selfReportSearch = "";
         input.value = "";
-
         selfReports();
-
         input.focus();
       };
   }
@@ -1298,28 +1324,38 @@ async function monthlyRevenue() {
       "./data/monthly_revenue.json"
     );
 
-  if ($("#revenueMonthBadge")) {
+  if (
     $("#revenueMonthBadge")
-      .textContent =
-        d.month_label
-          ? `目前顯示 ${d.month_label}`
-          : "尚無資料";
+  ) {
+    $(
+      "#revenueMonthBadge"
+    ).textContent =
+      d.month_label
+        ? `目前顯示 ${d.month_label}`
+        : "尚無資料";
   }
 
   const revenueHeroP =
-    $("#monthlyRevenue .hero p");
+    $(
+      "#monthlyRevenue .hero p"
+    );
 
-  if (revenueHeroP) {
+  if (
+    revenueHeroP
+  ) {
     revenueHeroP.textContent =
       "19 個科技族群｜最新已公布月份｜營收、MoM、YoY";
   }
 
-  if ($("#revenueStatus")) {
+  if (
     $("#revenueStatus")
-      .textContent =
-        d.updated_at
-          ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示`
-          : "尚未產生月營收資料";
+  ) {
+    $(
+      "#revenueStatus"
+    ).textContent =
+      d.updated_at
+        ? `最後更新 ${d.updated_at}｜MoM > 10%：金色標示＋Pushover`
+        : "尚未產生月營收資料";
   }
 
   const sectors =
@@ -1416,12 +1452,15 @@ async function monthlyRevenue() {
         "#revenueSectorSelect"
       );
 
-    if (sectorSelect) {
+    if (
+      sectorSelect
+    ) {
       sectorSelect.value =
         revenueSectorSelected;
 
       sectorSelect.onchange =
         () => {
+
           revenueSectorSelected =
             sectorSelect.value;
 
@@ -1490,6 +1529,7 @@ async function monthlyRevenue() {
       )
       .onclick =
         () => {
+
           revenueMomSort =
             !revenueMomSort;
 
@@ -1538,11 +1578,14 @@ async function monthlyRevenue() {
 
     `;
 
-    $$("[data-rev-sec]")
+    $$(
+      "[data-rev-sec]"
+    )
       .forEach(
         b => {
           b.onclick =
             () => {
+
               revenueSectorSelected =
                 b.dataset.revSec;
 
@@ -1563,7 +1606,9 @@ async function monthlyRevenue() {
 
   let list;
 
-  if (revenueMomSort) {
+  if (
+    revenueMomSort
+  ) {
     let stocks;
 
     if (
@@ -1850,7 +1895,9 @@ function setupBackHomeButton() {
         typeof page ===
         "function"
       ) {
-        page("home");
+        page(
+          "home"
+        );
       }
 
       refresh();
@@ -1969,7 +2016,9 @@ const pageUpdateConfig = {
   }
 };
 
-function formatUpdateTime(raw) {
+function formatUpdateTime(
+  raw
+) {
   if (!raw) {
     return "尚無更新紀錄";
   }
@@ -1988,118 +2037,105 @@ function formatUpdateTime(raw) {
   return text;
 }
 
-/*
-  改成只抓目前分頁的更新資訊
-  不再進首頁時一次抓全部 JSON
-*/
-
-async function loadPageUpdateMeta(pageId) {
-  const cfg =
-    pageUpdateConfig[
-      pageId
-    ];
-
-  const section =
-    document.getElementById(
-      pageId
-    );
-
-  if (
-    !cfg ||
-    !section
+async function setupPageUpdateMeta() {
+  for (
+    const [
+      pageId,
+      cfg
+    ]
+    of Object.entries(
+      pageUpdateConfig
+    )
   ) {
-    return;
-  }
+    const section =
+      document.getElementById(
+        pageId
+      );
 
-  const hero =
-    section.querySelector(
-      ".hero"
-    );
+    if (!section) {
+      continue;
+    }
 
-  if (!hero) {
-    return;
-  }
+    const hero =
+      section.querySelector(
+        ".hero"
+      );
 
-  let data = {};
+    if (!hero) {
+      continue;
+    }
 
-  try {
-    /*
-      自結頁如果已有 cache，
-      直接共用，不再多打一個 request
-    */
-    if (
-      pageId ===
-      "selfReports"
-    ) {
-      data =
-        await getSelfReportData();
-    } else {
+    let data =
+      {};
+
+    try {
       data =
         await J(
           cfg.file
         );
+    } catch (e) {
+      data =
+        {};
     }
-  } catch (e) {
-    data = {};
-  }
 
-  const actual =
-    data.updated_at ||
-    data.date ||
-    data.month_label ||
-    "";
+    const actual =
+      data.updated_at ||
+      data.date ||
+      data.month_label ||
+      "";
 
-  let meta =
-    section.querySelector(
-      ".page-update-meta"
-    );
-
-  if (!meta) {
-    meta =
-      document.createElement(
-        "div"
+    let meta =
+      section.querySelector(
+        ".page-update-meta"
       );
 
-    meta.className =
-      "page-update-meta";
+    if (!meta) {
+      meta =
+        document.createElement(
+          "div"
+        );
 
-    hero.insertAdjacentElement(
-      "afterend",
-      meta
-    );
+      meta.className =
+        "page-update-meta";
+
+      hero.insertAdjacentElement(
+        "afterend",
+        meta
+      );
+    }
+
+    meta.innerHTML = `
+      <span
+        class="page-update-dot"
+      ></span>
+
+      <span>
+        <b>
+          更新頻率
+        </b>
+
+        ${cfg.label}
+      </span>
+
+      <span
+        class="page-update-separator"
+      >
+        ·
+      </span>
+
+      <span>
+        <b>
+          最後更新
+        </b>
+
+        ${
+          formatUpdateTime(
+            actual
+          )
+        }
+      </span>
+    `;
   }
-
-  meta.innerHTML = `
-    <span
-      class="page-update-dot"
-    ></span>
-
-    <span>
-      <b>
-        更新頻率
-      </b>
-
-      ${cfg.label}
-    </span>
-
-    <span
-      class="page-update-separator"
-    >
-      ·
-    </span>
-
-    <span>
-      <b>
-        最後更新
-      </b>
-
-      ${
-        formatUpdateTime(
-          actual
-        )
-      }
-    </span>
-  `;
 }
 
 /* -------------------------------------------------
@@ -2427,138 +2463,6 @@ function setupHomeOrder() {
 }
 
 /* -------------------------------------------------
-   Lazy Load
-------------------------------------------------- */
-
-const uiLoadedPages =
-  new Set();
-
-const uiLoadingPages =
-  new Set();
-
-async function loadUiPage(pageId) {
-  if (
-    !pageId ||
-    uiLoadedPages.has(
-      pageId
-    ) ||
-    uiLoadingPages.has(
-      pageId
-    )
-  ) {
-    return;
-  }
-
-  uiLoadingPages.add(
-    pageId
-  );
-
-  try {
-
-    /*
-      首頁才抓 Market Pulse
-    */
-    if (
-      pageId ===
-      "home"
-    ) {
-      await buildMarketPulse();
-    }
-
-    /*
-      進財報追蹤／自結頁
-      才抓自結資料
-    */
-    if (
-      pageId ===
-      "selfReports"
-    ) {
-      await selfReports();
-    }
-
-    /*
-      進月營收頁
-      才抓月營收
-    */
-    if (
-      pageId ===
-      "monthlyRevenue"
-    ) {
-      await monthlyRevenue();
-    }
-
-    /*
-      只抓目前分頁的更新時間
-    */
-    await loadPageUpdateMeta(
-      pageId
-    );
-
-    uiLoadedPages.add(
-      pageId
-    );
-
-  } catch (err) {
-
-    console.error(
-      "[ui_v2 lazy load]",
-      pageId,
-      err
-    );
-
-  } finally {
-
-    uiLoadingPages.delete(
-      pageId
-    );
-  }
-}
-
-function scheduleUiPageLoad(pageId) {
-  const run =
-    () =>
-      loadUiPage(
-        pageId
-      );
-
-  if (
-    "requestIdleCallback"
-    in window
-  ) {
-    requestIdleCallback(
-      run,
-      {
-        timeout: 250
-      }
-    );
-  } else {
-    setTimeout(
-      run,
-      0
-    );
-  }
-}
-
-function activateCurrentUiPage() {
-  const active =
-    document.querySelector(
-      ".page.active"
-    );
-
-  const pageId =
-    active?.id ||
-    location.hash.replace(
-      "#",
-      ""
-    ) ||
-    "home";
-
-  scheduleUiPageLoad(
-    pageId
-  );
-}
-
-/* -------------------------------------------------
    啟動
 ------------------------------------------------- */
 
@@ -2570,67 +2474,16 @@ buildFeatureRail();
 
 setupHomeOrder();
 
+buildMarketPulse();
+
 setupSelfReportSearch();
+
+selfReports();
+
+monthlyRevenue();
+
+setupPageUpdateMeta();
 
 setupFontScaleControl();
 
 setupBackHomeButton();
-
-/*
-  監聽目前顯示的 page
-  切到哪一頁才載入哪一頁
-*/
-
-const uiPageObserver =
-  new MutationObserver(
-    mutations => {
-
-      for (
-        const mutation
-        of mutations
-      ) {
-        const el =
-          mutation.target;
-
-        if (
-          el instanceof HTMLElement &&
-          el.classList.contains(
-            "page"
-          ) &&
-          el.classList.contains(
-            "active"
-          )
-        ) {
-          scheduleUiPageLoad(
-            el.id
-          );
-        }
-      }
-    }
-  );
-
-document
-  .querySelectorAll(
-    ".page"
-  )
-  .forEach(
-    el => {
-
-      uiPageObserver.observe(
-        el,
-        {
-          attributes: true,
-          attributeFilter: [
-            "class"
-          ]
-        }
-      );
-    }
-  );
-
-/*
-  第一次開網站
-  只載入目前所在頁
-*/
-
-activateCurrentUiPage();
