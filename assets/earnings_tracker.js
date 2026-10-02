@@ -94,17 +94,24 @@ function passes(d) {
 
   const t = todayISO();
 
-  if (filter === "today")
+  if (filter === "today") {
     return d === t;
+  }
 
-  if (filter === "tomorrow")
+  if (filter === "tomorrow") {
     return d === addDays(t, 1);
+  }
 
-  if (filter === "date")
+  if (filter === "date") {
     return d === pickedDate;
+  }
 
   const [a, b] =
-    weekRange(filter === "nextweek" ? 1 : 0);
+    weekRange(
+      filter === "nextweek"
+        ? 1
+        : 0
+    );
 
   return d >= a && d <= b;
 }
@@ -112,56 +119,70 @@ function passes(d) {
 
 /* =========================================================
    自結區
+
+   這版不再建立 selfLegacyArea
+   不搬 DOM
+   只控制既有自結元件顯示 / 隱藏
    ========================================================= */
 
-function ensureSelfWrapper() {
-  const page = $("#selfReports");
+function getSelfNodes() {
+  const page =
+    $("#selfReports");
 
-  if (!page) return null;
+  if (!page) return [];
 
-  let wrap = $("#selfLegacyArea");
-
-  if (wrap) return wrap;
-
-  const nodes = [
+  return [
     $("#selfWeekBadge"),
     $("#selfWeekTabs"),
     $(".self-report-search-card", page),
     $("#selfStatus"),
     $("#selfReportCards")
   ].filter(Boolean);
-
-  if (!nodes.length) return null;
-
-  wrap = document.createElement("div");
-  wrap.id = "selfLegacyArea";
-
-  nodes[0].parentNode.insertBefore(
-    wrap,
-    nodes[0]
-  );
-
-  nodes.forEach(n =>
-    wrap.appendChild(n)
-  );
-
-  return wrap;
 }
 
 
 function showSelf(show) {
+  getSelfNodes().forEach(el => {
+
+    el.hidden = !show;
+
+    if (show) {
+      el.style.removeProperty(
+        "display"
+      );
+    } else {
+      el.style.setProperty(
+        "display",
+        "none",
+        "important"
+      );
+    }
+
+  });
+}
+
+
+function removeOldWrapper() {
   const wrap =
-    ensureSelfWrapper();
+    $("#selfLegacyArea");
 
   if (!wrap) return;
 
-  wrap.hidden = !show;
+  const parent =
+    wrap.parentNode;
 
-  wrap.style.setProperty(
-    "display",
-    show ? "" : "none",
-    "important"
-  );
+  if (!parent) return;
+
+  while (
+    wrap.firstChild
+  ) {
+    parent.insertBefore(
+      wrap.firstChild,
+      wrap
+    );
+  }
+
+  wrap.remove();
 }
 
 
@@ -179,7 +200,9 @@ function removePushoverText() {
 
   const nodes = [];
 
-  while (walker.nextNode()) {
+  while (
+    walker.nextNode()
+  ) {
     if (
       /Pushover/i.test(
         walker.currentNode.nodeValue || ""
@@ -192,20 +215,21 @@ function removePushoverText() {
   }
 
   nodes.forEach(n => {
+
     n.nodeValue =
       (n.nodeValue || "")
         .replace(
           /\s*[·｜]?\s*Pushover\s*已啟用/gi,
           ""
         );
+
   });
 }
 
 
 /* =========================================================
-   財報 JSON
-   不做背景預載
-   只有使用者真的點「即將開財報 / 財報」才 fetch
+   財報資料
+   只有真正點擊財報頁籤才抓
    ========================================================= */
 
 async function load(force = false) {
@@ -231,6 +255,7 @@ async function load(force = false) {
       }
     )
     .then(r => {
+
       if (!r.ok) {
         throw new Error(
           `HTTP ${r.status}`
@@ -238,13 +263,19 @@ async function load(force = false) {
       }
 
       return r.json();
+
     })
     .then(d => {
+
       cache = d;
+
       return d;
+
     })
     .finally(() => {
+
       loadingPromise = null;
+
     });
 
   return loadingPromise;
@@ -259,40 +290,53 @@ function upcomingHTML(arr) {
   const groups = {};
 
   arr.forEach(x => {
-    const d =
-      dateOnly(x.planned_date);
 
-    if (!passes(d))
+    const d =
+      dateOnly(
+        x.planned_date
+      );
+
+    if (!passes(d)) {
       return;
+    }
 
     (
       groups[d || "未定"] ||=
       []
     ).push(x);
+
   });
 
   const keys =
     Object.keys(groups)
-      .sort((a, b) =>
-        a === "未定"
-          ? 1
-          : b === "未定"
-            ? -1
-            : a.localeCompare(b)
-      );
+      .sort((a, b) => {
+
+        if (a === "未定")
+          return 1;
+
+        if (b === "未定")
+          return -1;
+
+        return a.localeCompare(b);
+
+      });
 
   if (!keys.length) {
+
     return `
       <div class="earnings-empty">
         這個日期範圍目前沒有即將開財報的公司
       </div>
     `;
+
   }
 
   return keys.map(d => `
+
     <section class="earnings-day">
 
       <div class="earnings-day-head">
+
         <b>
           ${
             d === "未定"
@@ -304,16 +348,19 @@ function upcomingHTML(arr) {
         <span>
           ${groups[d].length} 檔
         </span>
+
       </div>
 
       <div class="earnings-compact-list">
 
         ${groups[d].map(x => `
+
           <details class="earnings-row">
 
             <summary>
 
               <div class="earnings-company">
+
                 <b>
                   ${esc(
                     x.name ||
@@ -324,12 +371,16 @@ function upcomingHTML(arr) {
                 <span>
                   ${esc(x.ticker)}
                 </span>
+
               </div>
 
               <div class="earnings-row-right">
 
                 <span class="earnings-period">
-                  ${esc(x.period || "")}
+                  ${esc(
+                    x.period ||
+                    ""
+                  )}
                 </span>
 
                 <span class="earnings-chevron">
@@ -343,16 +394,21 @@ function upcomingHTML(arr) {
             <div class="earnings-detail">
 
               <div>
+
                 <small>
                   上一季 EPS
                 </small>
 
                 <b>
-                  ${n2(x.prev_eps)} 元
+                  ${n2(
+                    x.prev_eps
+                  )} 元
                 </b>
+
               </div>
 
               <div>
+
                 <small>
                   上一季毛利率
                 </small>
@@ -362,22 +418,25 @@ function upcomingHTML(arr) {
                     x.prev_gross_margin
                   )}
                 </b>
+
               </div>
 
             </div>
 
           </details>
+
         `).join("")}
 
       </div>
 
     </section>
+
   `).join("");
 }
 
 
 /* =========================================================
-   已公布財報
+   財報
    ========================================================= */
 
 function reportItem(x) {
@@ -398,12 +457,17 @@ function reportItem(x) {
     x.gross_margin != null &&
     x.prev_gross_margin != null
 
-      ? Number(x.gross_margin) -
-        Number(x.prev_gross_margin)
+      ? Number(
+          x.gross_margin
+        ) -
+        Number(
+          x.prev_gross_margin
+        )
 
       : null;
 
   return `
+
     <details class="earnings-report-row">
 
       <summary>
@@ -418,7 +482,9 @@ function reportItem(x) {
           </b>
 
           <span>
-            ${esc(x.ticker)}
+            ${esc(
+              x.ticker
+            )}
           </span>
 
         </div>
@@ -426,7 +492,9 @@ function reportItem(x) {
         <div class="earnings-report-main">
 
           <b>
-            ${n2(x.eps)} 元
+            ${n2(
+              x.eps
+            )} 元
           </b>
 
           <span>
@@ -438,7 +506,10 @@ function reportItem(x) {
         <div class="earnings-row-right">
 
           <span class="earnings-period">
-            ${esc(x.period || "")}
+            ${esc(
+              x.period ||
+              ""
+            )}
           </span>
 
           <span class="earnings-chevron">
@@ -452,12 +523,15 @@ function reportItem(x) {
       <div class="earnings-detail four">
 
         <div>
+
           <small>
             本季 EPS
           </small>
 
           <b>
-            ${n2(x.eps)} 元
+            ${n2(
+              x.eps
+            )} 元
           </b>
 
           ${
@@ -471,9 +545,11 @@ function reportItem(x) {
                 </em>
               `
           }
+
         </div>
 
         <div>
+
           <small>
             本季毛利率
           </small>
@@ -496,9 +572,11 @@ function reportItem(x) {
                 </em>
               `
           }
+
         </div>
 
         <div>
+
           <small>
             上一季 EPS
           </small>
@@ -508,9 +586,11 @@ function reportItem(x) {
               x.prev_eps
             )} 元
           </b>
+
         </div>
 
         <div>
+
           <small>
             上一季毛利率
           </small>
@@ -520,11 +600,13 @@ function reportItem(x) {
               x.prev_gross_margin
             )}
           </b>
+
         </div>
 
       </div>
 
     </details>
+
   `;
 }
 
@@ -538,6 +620,7 @@ function reportHTML(arr) {
     );
 
   if (!filtered.length) {
+
     return `
       <div class="earnings-empty">
         ${
@@ -547,6 +630,7 @@ function reportHTML(arr) {
         }
       </div>
     `;
+
   }
 
   const shown =
@@ -614,6 +698,7 @@ async function render(force = false) {
   }
 
   try {
+
     const d =
       await load(force);
 
@@ -626,8 +711,16 @@ async function render(force = false) {
 
     const arr =
       mode === "upcoming"
-        ? (d.upcoming || [])
-        : (d.reports || []);
+
+        ? (
+            d.upcoming ||
+            []
+          )
+
+        : (
+            d.reports ||
+            []
+          );
 
     const count =
       mode === "upcoming"
@@ -647,6 +740,7 @@ async function render(force = false) {
           ).length;
 
     status.innerHTML = `
+
       <b>
         ${
           mode === "upcoming"
@@ -671,6 +765,7 @@ async function render(force = false) {
           )
         )}
       </span>
+
     `;
 
     cards.innerHTML =
@@ -678,26 +773,7 @@ async function render(force = false) {
         ? upcomingHTML(arr)
         : reportHTML(arr);
 
-    const more =
-      $("#earningsLoadMore");
-
-    if (more) {
-      more.onclick = () => {
-        reportLimit +=
-          PAGE_SIZE;
-
-        cards.innerHTML =
-          reportHTML(arr);
-
-        const next =
-          $("#earningsLoadMore");
-
-        if (next) {
-          next.onclick =
-            more.onclick;
-        }
-      };
-    }
+    bindLoadMore(arr);
 
   } catch (e) {
 
@@ -717,27 +793,55 @@ async function render(force = false) {
     `;
 
     console.error(e);
+
   }
 }
 
 
+function bindLoadMore(arr) {
+  const more =
+    $("#earningsLoadMore");
+
+  if (!more) return;
+
+  more.onclick = () => {
+
+    reportLimit +=
+      PAGE_SIZE;
+
+    const cards =
+      $("#quarterlyEarningsCards");
+
+    if (!cards) return;
+
+    cards.innerHTML =
+      reportHTML(arr);
+
+    bindLoadMore(arr);
+  };
+}
+
+
 /* =========================================================
-   三個財報模式
+   Mode
    ========================================================= */
 
 function switchMode(next) {
   mode = next;
+
   reportLimit =
     PAGE_SIZE;
 
   $$(
     "[data-earnings-mode]"
   ).forEach(b => {
+
     b.classList.toggle(
       "active",
       b.dataset.earningsMode ===
         next
     );
+
   });
 
   const panel =
@@ -748,6 +852,7 @@ function switchMode(next) {
   ) {
 
     if (panel) {
+
       panel.hidden = true;
 
       panel.style.setProperty(
@@ -755,6 +860,7 @@ function switchMode(next) {
         "none",
         "important"
       );
+
     }
 
     showSelf(true);
@@ -765,6 +871,7 @@ function switchMode(next) {
   showSelf(false);
 
   if (panel) {
+
     panel.hidden = false;
 
     panel.style.setProperty(
@@ -772,6 +879,7 @@ function switchMode(next) {
       "block",
       "important"
     );
+
   }
 
   render(false);
@@ -779,22 +887,69 @@ function switchMode(next) {
 
 
 /* =========================================================
-   建立財報追蹤 UI
+   強制固定三顆按鈕在 HERO 正下方
+   ========================================================= */
 
-   重點修正：
-   先建立 selfLegacyArea
-   再把三顆按鈕插在 selfLegacyArea 前面
+function forceTabsBelowHero() {
+  const page =
+    $("#selfReports");
 
-   因此 DOM 永遠是：
-   HERO
-   ↓
-   三顆按鈕
-   ↓
-   財報 panel
-   ↓
-   原本自結內容
+  if (!page) return;
 
-   不會再跑到自結卡片最下面
+  const hero =
+    page.querySelector(
+      ".hero"
+    );
+
+  const tabs =
+    $("#earningsModeTabs");
+
+  const panel =
+    $("#quarterlyEarningsPanel");
+
+  if (
+    !hero ||
+    !tabs
+  ) {
+    return;
+  }
+
+  /*
+   * 不管其他 JS 怎麼改 DOM
+   * 都重新把 tabs 移到 hero 正後方
+   */
+  if (
+    hero.nextElementSibling !==
+    tabs
+  ) {
+
+    hero.insertAdjacentElement(
+      "afterend",
+      tabs
+    );
+
+  }
+
+  /*
+   * panel 必須緊接在 tabs 後面
+   */
+  if (
+    panel &&
+    tabs.nextElementSibling !==
+    panel
+  ) {
+
+    tabs.insertAdjacentElement(
+      "afterend",
+      panel
+    );
+
+  }
+}
+
+
+/* =========================================================
+   Setup
    ========================================================= */
 
 function setup() {
@@ -803,12 +958,21 @@ function setup() {
 
   if (!page) return;
 
+  /*
+   * 清掉舊版 wrapper
+   */
+  removeOldWrapper();
+
+
   $$(
     '[data-p="selfReports"]'
   ).forEach(x => {
+
     x.textContent =
       "財報追蹤";
+
   });
+
 
   const opt =
     $(
@@ -819,6 +983,7 @@ function setup() {
     opt.textContent =
       "財報追蹤";
   }
+
 
   const kicker =
     page.querySelector(
@@ -834,6 +999,7 @@ function setup() {
     page.querySelector(
       ".hero p"
     );
+
 
   if (kicker) {
     kicker.textContent =
@@ -852,172 +1018,163 @@ function setup() {
 
 
   /*
-   * 先包住舊自結區
-   * 這是修正按鈕跑到底部的關鍵
+   * 建立 tabs
    */
-  const selfWrap =
-    ensureSelfWrapper();
-
-
   if (
     !$("#earningsModeTabs")
   ) {
 
-    const html = `
-      <div
-        id="earningsModeTabs"
-        class="earnings-mode-tabs"
-      >
+    const hero =
+      page.querySelector(
+        ".hero"
+      );
 
-        <button
-          type="button"
-          class="earnings-mode active"
-          data-earnings-mode="self"
-        >
-          自結公布
-        </button>
+    if (hero) {
 
-        <button
-          type="button"
-          class="earnings-mode"
-          data-earnings-mode="upcoming"
-        >
-          即將開財報
-        </button>
-
-        <button
-          type="button"
-          class="earnings-mode"
-          data-earnings-mode="reports"
-        >
-          財報
-        </button>
-
-      </div>
-
-      <div
-        id="quarterlyEarningsPanel"
-        hidden
-      >
+      hero.insertAdjacentHTML(
+        "afterend",
+        `
 
         <div
-          id="earningsFilters"
-          class="earnings-filters"
+          id="earningsModeTabs"
+          class="earnings-mode-tabs"
         >
 
-          <div class="earnings-quick">
-
-            <button
-              type="button"
-              data-date-filter="all"
-              class="active"
-            >
-              全部
-            </button>
-
-            <button
-              type="button"
-              data-date-filter="today"
-            >
-              今天
-            </button>
-
-            <button
-              type="button"
-              data-date-filter="tomorrow"
-            >
-              明天
-            </button>
-
-            <button
-              type="button"
-              data-date-filter="week"
-            >
-              本週
-            </button>
-
-            <button
-              type="button"
-              data-date-filter="nextweek"
-            >
-              下週
-            </button>
-
-          </div>
-
-          <label
-            class="earnings-date-picker"
+          <button
+            type="button"
+            class="earnings-mode active"
+            data-earnings-mode="self"
           >
+            自結公布
+          </button>
 
-            <span>
-              指定日期
-            </span>
+          <button
+            type="button"
+            class="earnings-mode"
+            data-earnings-mode="upcoming"
+          >
+            即將開財報
+          </button>
 
-            <input
-              id="earningsDatePicker"
-              type="date"
-            >
-
-          </label>
+          <button
+            type="button"
+            class="earnings-mode"
+            data-earnings-mode="reports"
+          >
+            財報
+          </button>
 
         </div>
 
-        <div
-          id="quarterlyEarningsStatus"
-          class="earnings-status"
-        ></div>
 
         <div
-          id="quarterlyEarningsCards"
-          class="earnings-list"
-        ></div>
+          id="quarterlyEarningsPanel"
+          hidden
+        >
 
-      </div>
-    `;
+          <div
+            id="earningsFilters"
+            class="earnings-filters"
+          >
+
+            <div class="earnings-quick">
+
+              <button
+                type="button"
+                data-date-filter="all"
+                class="active"
+              >
+                全部
+              </button>
+
+              <button
+                type="button"
+                data-date-filter="today"
+              >
+                今天
+              </button>
+
+              <button
+                type="button"
+                data-date-filter="tomorrow"
+              >
+                明天
+              </button>
+
+              <button
+                type="button"
+                data-date-filter="week"
+              >
+                本週
+              </button>
+
+              <button
+                type="button"
+                data-date-filter="nextweek"
+              >
+                下週
+              </button>
+
+            </div>
 
 
-    /*
-     * 最優先：
-     * 插到舊自結 wrapper 前面
-     */
-    if (
-      selfWrap &&
-      selfWrap.parentNode
-    ) {
+            <label
+              class="earnings-date-picker"
+            >
 
-      selfWrap.insertAdjacentHTML(
-        "beforebegin",
-        html
+              <span>
+                指定日期
+              </span>
+
+              <input
+                id="earningsDatePicker"
+                type="date"
+              >
+
+            </label>
+
+          </div>
+
+
+          <div
+            id="quarterlyEarningsStatus"
+            class="earnings-status"
+          ></div>
+
+
+          <div
+            id="quarterlyEarningsCards"
+            class="earnings-list"
+          ></div>
+
+        </div>
+
+        `
       );
 
-    } else {
-
-      /*
-       * fallback
-       */
-      const hero =
-        page.querySelector(
-          ".hero"
-        );
-
-      if (hero) {
-        hero.insertAdjacentHTML(
-          "afterend",
-          html
-        );
-      }
     }
   }
+
+
+  /*
+   * 再強制校正一次位置
+   */
+  forceTabsBelowHero();
 
 
   $$(
     "[data-earnings-mode]"
   ).forEach(b => {
 
-    b.onclick = () =>
+    b.onclick = () => {
+
+      forceTabsBelowHero();
+
       switchMode(
         b.dataset.earningsMode
       );
+
+    };
 
   });
 
@@ -1055,6 +1212,7 @@ function setup() {
       });
 
       render(false);
+
     };
 
   });
@@ -1078,15 +1236,68 @@ function setup() {
 
       $$(
         "[data-date-filter]"
-      ).forEach(x =>
+      ).forEach(x => {
+
         x.classList.remove(
           "active"
-        )
-      );
+        );
+
+      });
 
       render(false);
+
     };
+
   }
+}
+
+
+/* =========================================================
+   防止其他 JS 再把 tabs 推到底部
+
+   監聽 selfReports DOM
+   如果位置被改掉就搬回 HERO 下方
+   ========================================================= */
+
+function setupPositionGuard() {
+  const page =
+    $("#selfReports");
+
+  if (!page) return;
+
+  let scheduled = false;
+
+  const observer =
+    new MutationObserver(() => {
+
+      if (scheduled) {
+        return;
+      }
+
+      scheduled = true;
+
+      requestAnimationFrame(() => {
+
+        scheduled = false;
+
+        forceTabsBelowHero();
+
+        if (
+          mode !== "self"
+        ) {
+          showSelf(false);
+        }
+
+      });
+
+    });
+
+  observer.observe(
+    page,
+    {
+      childList: true
+    }
+  );
 }
 
 
@@ -1099,39 +1310,36 @@ function boot() {
 
   removePushoverText();
 
+  forceTabsBelowHero();
+
   switchMode("self");
 
-
-  /*
-   * 不再預先 fetch quarterly_earnings.json
-   *
-   * 原本這裡會 requestIdleCallback(load)
-   * 現在完全拿掉
-   *
-   * 使用者點「即將開財報」
-   * 或「財報」時才抓
-   */
+  setupPositionGuard();
 
 
   /*
-   * ui_v2.js 可能稍晚才建立 / 重畫自結區
-   * 只重新確認 wrapper
-   * 不重新 render 財報
-   * 不 fetch JSON
+   * ui_v2.js 可能延後建立自結內容
+   * 再確認一次位置即可
+   *
+   * 不 fetch 財報 JSON
    */
   setTimeout(() => {
 
-    ensureSelfWrapper();
+    removeOldWrapper();
+
+    forceTabsBelowHero();
 
     removePushoverText();
 
     if (
-      mode !== "self"
+      mode === "self"
     ) {
+      showSelf(true);
+    } else {
       showSelf(false);
     }
 
-  }, 700);
+  }, 800);
 }
 
 
@@ -1156,7 +1364,7 @@ if (
 
 
 /* =========================================================
-   提供 refresh_controller.js 呼叫
+   refresh_controller.js 使用
    ========================================================= */
 
 window.refreshQuarterlyReports =
@@ -1169,7 +1377,9 @@ window.refreshQuarterlyReports =
       if (
         mode !== "self"
       ) {
+
         render(false);
+
       }
 
     } catch (e) {
