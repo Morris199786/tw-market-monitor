@@ -36,8 +36,8 @@
 .report-chip{display:inline-flex;align-items:center;min-height:25px;padding:0 8px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--ink);font-weight:800}
 .report-original-date{color:var(--muted)}
 
-/* 報告摘要：桌機 / iPad 16px */
-.report-summary{margin:13px 0 0;padding-left:18px;font-size:16px;line-height:1.7}
+/* 上方重點摘要：桌機 / iPad 14px */
+.report-summary{margin:13px 0 0;padding-left:18px;font-size:14px;line-height:1.7}
 .report-summary li + li{margin-top:4px}
 
 .report-beneficiaries{margin-top:13px}
@@ -49,7 +49,7 @@
 .report-details summary{cursor:pointer;color:var(--muted);font-size:10px;font-weight:800}
 .report-details-body{padding-top:12px}
 .report-detail-block + .report-detail-block{margin-top:13px}
-.report-detail-block p,.report-detail-block ul{margin:0;font-size:10px;line-height:1.7}
+.report-detail-block p,.report-detail-block ul{margin:0;font-size:16px;line-height:1.75}
 .report-detail-block ul{padding-left:18px}
 .report-source-link{display:inline-flex;margin-top:14px;min-height:34px;align-items:center;padding:0 11px;border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;font-size:9px;font-weight:900}
 .report-v2-empty{padding:24px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;font-size:10px}
@@ -70,8 +70,9 @@ html[data-theme="dark"] .report-deep-highlight{border-color:#6ea8ff !important;b
 @media(max-width:720px){
   .report-v2-card{padding:13px}
   .report-title{font-size:14px}
-  /* 報告摘要：手機 14px */
-  .report-summary{font-size:14px;line-height:1.7}
+  /* 上方重點摘要：手機 13px；完整摘要手機 14px */
+  .report-summary{font-size:13px;line-height:1.7}
+  .report-detail-block p,.report-detail-block ul{font-size:14px;line-height:1.75}
   .report-date-body{padding:8px}
   .report-history-note{padding:0 2px}
 }
