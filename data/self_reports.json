@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-10-02T16:23+08:00",
+  "updated_at": "2026-10-02T16:27+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-02-v22-attention-rescue-telegram-only",
-  "source_mode": "MOPS daily broad + TWSE attention ticker company-rescue + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
+  "filter_version": "2026-10-02-v23-openapi-company-rescue-telegram-only",
+  "source_mode": "MOPS daily broad + official OpenAPI ticker-pool company rescue + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
   "diagnostics": {
     "candidate_count": 34,
     "parsed_count": 21,
@@ -28,7 +28,7 @@
         "publish_time": "14:42:21",
         "subject": "3004 豐達科 115/10/02 14:42:21 新聞稿--豐達九月自結合併營收為5.37億元",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -41,7 +41,7 @@
         "publish_time": "14:08:41",
         "subject": "6235 華孚 115/10/02 14:08:41 新聞稿-華孚115年9月自結合併營收為新台幣5.30億元",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ReadTimeout;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -111,15 +111,24 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 91,
+          "rows": 92,
           "hits": 8
         },
         {
-          "mode": "twse_attention_list",
-          "ok": true,
-          "rows": 0,
-          "tickers": 0,
-          "error": ""
+          "mode": "openapi_ticker_pool",
+          "sources": [
+            {
+              "market": "twse",
+              "rows": 78,
+              "today_tickers": 0
+            },
+            {
+              "market": "tpex",
+              "rows": 42,
+              "today_tickers": 0
+            }
+          ],
+          "tickers": 0
         }
       ],
       "rejected": [],
