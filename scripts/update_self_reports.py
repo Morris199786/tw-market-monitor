@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-02-v21-daily-broad-mops-scan-telegram-only"
+VERSION = "2026-10-02-v22-attention-rescue-telegram-only"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -582,11 +582,128 @@ def parse_candidate_row(row, source_keyword):
     }
 
 
+TWSE_ATTENTION_URL = "https://www.twse.com.tw/rwd/zh/announcement/notice"
+
+
+def fetch_twse_attention_tickers(iso_date):
+    """
+    取得 TWSE 當日公布注意有價證券名單。
+    這個來源只拿 ticker，真正自結內容仍回 MOPS 公司別重大訊息查詢確認。
+    """
+    params = {
+        "response": "json",
+        "startDate": iso_date.replace("-", ""),
+        "endDate": iso_date.replace("-", ""),
+    }
+    try:
+        response = S.get(
+            TWSE_ATTENTION_URL,
+            params=params,
+            headers={"User-Agent": mops_headers()["User-Agent"]},
+            timeout=(10, 25),
+        )
+        response.raise_for_status()
+        data = response.json()
+    except Exception as exc:
+        return [], {"ok": False, "error": repr(exc)}
+
+    tickers = []
+    seen = set()
+
+    # TWSE rwd JSON 通常是 data 二維陣列；保留 dict fallback 以防格式調整。
+    rows = data.get("data") or []
+    for row in rows:
+        ticker = ""
+        if isinstance(row, list):
+            for cell in row[:4]:
+                m = re.fullmatch(r"\s*(\d{4})\s*", str(cell or ""))
+                if m and ordinary_ticker(m.group(1)):
+                    ticker = m.group(1)
+                    break
+        elif isinstance(row, dict):
+            for key in ("Code", "證券代號", "股票代號", "代號"):
+                value = str(row.get(key) or "").strip()
+                if ordinary_ticker(value):
+                    ticker = value
+                    break
+        if ticker and ticker not in seen:
+            seen.add(ticker)
+            tickers.append(ticker)
+
+    return tickers, {
+        "ok": True,
+        "rows": len(rows),
+        "tickers": len(tickers),
+        "error": "",
+    }
+
+
+def fetch_mops_company_today(ticker, iso_date):
+    """
+    直接用公司代號查 MOPS 當日重大訊息。
+    用來補 daily broad / OpenAPI 尚未同步，但公司精華頁已經看得到的公告。
+    """
+    dt = datetime.strptime(iso_date, "%Y-%m-%d")
+    payload = {
+        "encodeURIComponent": "1",
+        "step": "1",
+        "firstin": "1",
+        "off": "1",
+        "keyword4": "",
+        "code1": "",
+        "TYPEK2": "",
+        "checkbtn": "",
+        "queryName": "co_id",
+        "inpuType": "co_id",
+        "TYPEK": "all",
+        "co_id": ticker,
+        "year": str(dt.year - 1911),
+        "month": str(dt.month),
+        "b_date": str(dt.day),
+        "e_date": str(dt.day),
+    }
+
+    errors = []
+    for base in reversed(MOPS_BASES):
+        try:
+            html_text = fetch_mops(base, payload)
+            rows = parse_rows(html_text)
+            candidates = []
+            for row in rows:
+                row_text = row.get("text", "")
+                if ticker not in row_text:
+                    continue
+                if not subject_is_candidate(row_text):
+                    continue
+                candidates.append(row)
+            return candidates, {
+                "ticker": ticker,
+                "base": base,
+                "rows": len(rows),
+                "hits": len(candidates),
+                "error": "",
+            }
+        except Exception as exc:
+            errors.append(f"{base}:{type(exc).__name__}")
+
+    return [], {
+        "ticker": ticker,
+        "rows": 0,
+        "hits": 0,
+        "error": ";".join(errors),
+    }
+
+
 def fetch_mops_search():
     """
-    先抓「今日全部重大訊息」再在 Python 本地篩選。
-    關鍵字查詢只做 fallback，不再作為主要 discovery，
-    避免 MOPS 關鍵字 endpoint timeout 時漏掉南電這類注意交易公告。
+    v22 discovery:
+    1) MOPS 當日 broad scan
+    2) TWSE 當日注意股名單 -> 逐公司查 MOPS 當日重大訊息 rescue
+    3) broad scan 完全失敗時才跑舊 keyword fallback
+
+    原因：10/02 實測南電 8046 已出現在公司精華頁，但同時間
+    MOPS daily broad / TWSE OpenAPI 尚未包含該筆；晶心科 6533 則已包含。
+    因此不能只依賴 daily list 的同步速度。
     """
     today = now_tpe().date().isoformat()
     dt = datetime.strptime(today, "%Y-%m-%d")
@@ -598,7 +715,16 @@ def fetch_mops_search():
     raw_rows = []
     seen_rows = set()
 
-    # MOPS t05st01：不帶 keyword，直接取當日全部重大訊息
+    def add_row(source_keyword, row):
+        sig = (
+            compact_text(row.get("text", "")),
+            tuple(row.get("attrs", [])),
+        )
+        if sig in seen_rows:
+            return
+        seen_rows.add(sig)
+        raw_rows.append((source_keyword, row))
+
     broad_payloads = [
         {
             "firstin": "1", "step": "1", "off": "1", "TYPEK": "all",
@@ -611,12 +737,6 @@ def fetch_mops_search():
             "year": str(roc_year), "month": month,
             "b_date": day, "e_date": day,
             "keyWord": "", "Condition2": "", "keyWord2": "",
-        },
-        {
-            "firstin": "1", "step": "1", "TYPEK": "all",
-            "year": str(roc_year), "month1": month,
-            "b_date": day, "e_date": day,
-            "keyWord": "", "KIND": "all",
         },
     ]
 
@@ -631,42 +751,48 @@ def fetch_mops_search():
                     if subject_is_candidate(row.get("text", ""))
                 ]
                 debug.append({
-                    "mode": "daily_broad",
-                    "base": base,
-                    "payload": idx,
-                    "rows": len(rows),
-                    "hits": len(candidates),
+                    "mode": "daily_broad", "base": base, "payload": idx,
+                    "rows": len(rows), "hits": len(candidates),
                 })
-
-                # 有拿到當日完整列表就停止換 payload；
-                # 即使 candidates=0，也代表 endpoint 有正常回應。
                 if rows:
                     for row in candidates:
-                        sig = (
-                            compact_text(row.get("text", "")),
-                            tuple(row.get("attrs", [])),
-                        )
-                        if sig not in seen_rows:
-                            seen_rows.add(sig)
-                            raw_rows.append(("daily_broad", row))
+                        add_row("daily_broad", row)
                     broad_ok = True
                     break
             except Exception as exc:
                 debug.append({
-                    "mode": "daily_broad",
-                    "base": base,
-                    "payload": idx,
+                    "mode": "daily_broad", "base": base, "payload": idx,
                     "error": repr(exc),
                 })
         if broad_ok:
             break
 
-    # 只有 broad scan 完全拿不到資料時才退回舊版 keyword 搜尋。
-    if not broad_ok:
-        debug.append({
-            "mode": "fallback",
-            "reason": "daily_broad_returned_no_rows",
-        })
+    # 關鍵 rescue：
+    # daily broad / OpenAPI 有同步延遲時，公司自己的 MOPS 精華頁可能已先更新。
+    # 用 TWSE 當日注意股名單取得 ticker，再逐公司查今天重大訊息。
+    attention_tickers, attention_status = fetch_twse_attention_tickers(today)
+    debug.append({
+        "mode": "twse_attention_list",
+        **attention_status,
+    })
+
+    broad_tickers = set()
+    for _, row in raw_rows:
+        m = re.search(r"(?<!\d)(\d{4})(?!\d)", row.get("text", ""))
+        if m:
+            broad_tickers.add(m.group(1))
+
+    # 已在 broad scan 的公司不用再查，降低 MOPS request 數量。
+    rescue_targets = [t for t in attention_tickers if t not in broad_tickers]
+    for ticker in rescue_targets:
+        rows, status = fetch_mops_company_today(ticker, today)
+        debug.append({"mode": "company_rescue", **status})
+        for row in rows:
+            add_row("daily_broad", row)
+
+    # broad 完全拿不到任何資料時才使用舊 keyword 搜尋。
+    if not broad_ok and not raw_rows:
+        debug.append({"mode": "fallback", "reason": "daily_broad_returned_no_rows"})
         for keyword in SEARCH_KEYWORDS:
             got_keyword = False
             for base in reversed(MOPS_BASES):
@@ -680,36 +806,24 @@ def fetch_mops_search():
                             if wanted in compact_text(row.get("text", ""))
                         ]
                         debug.append({
-                            "mode": "keyword_fallback",
-                            "base": base,
-                            "keyword": keyword,
-                            "rows": len(rows),
-                            "hits": len(hits),
+                            "mode": "keyword_fallback", "base": base,
+                            "keyword": keyword, "rows": len(rows), "hits": len(hits),
                         })
                         if hits:
                             for row in hits:
-                                sig = (
-                                    compact_text(row.get("text", "")),
-                                    tuple(row.get("attrs", [])),
-                                )
-                                if sig not in seen_rows:
-                                    seen_rows.add(sig)
-                                    raw_rows.append((keyword, row))
+                                add_row(keyword, row)
                             got_keyword = True
                             break
                     except Exception as exc:
                         debug.append({
-                            "mode": "keyword_fallback",
-                            "base": base,
-                            "keyword": keyword,
-                            "error": repr(exc),
+                            "mode": "keyword_fallback", "base": base,
+                            "keyword": keyword, "error": repr(exc),
                         })
                 if got_keyword:
                     break
 
     items = {}
     rejected = []
-
     for source_keyword, row in raw_rows:
         item = parse_candidate_row(row, source_keyword)
         if not item:
@@ -719,7 +833,6 @@ def fetch_mops_search():
                 "text": row.get("text", "")[:500],
             })
             continue
-
         key = identity(item)
         items[key] = merge_item(items[key], item) if key in items else item
 
@@ -964,7 +1077,7 @@ def main():
         "updated_at": updated_at,
         "monitor_start_date": MONITOR_START_DATE,
         "filter_version": VERSION,
-        "source_mode": "MOPS ajax_t05st01 daily broad scan + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
+        "source_mode": "MOPS daily broad + TWSE attention ticker company-rescue + keyword fallback + TWSE/TPEx OpenAPI union; Telegram only",
         "diagnostics": {
             "candidate_count": len(all_candidates), "parsed_count": len(display_items),
             "parse_failed_count": len(parse_failed), "parse_failed": parse_failed,
