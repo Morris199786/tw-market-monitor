@@ -2,13 +2,19 @@
 # -*- coding: utf-8 -*-
 """
 台股底部型態掃描器 v3｜底部結構 + 壓力逐層消化版
-重點：底部有效性、Higher Low、上攻逐層收復壓力、VCP、量價、右側轉折與買點時機
+預設股票池：共用 scripts/tech_universe.py 的「全台股科技普通股」
+評分公式維持原 V3。
 """
-import argparse, csv, json, time
-from datetime import datetime, timezone
+import argparse,csv,json,time,sys
+from datetime import datetime,timezone
 from pathlib import Path
 from urllib.parse import quote
 import requests
+
+ROOT=Path(__file__).resolve().parent
+sys.path.insert(0,str(ROOT/"scripts"))
+from sources import fetch_master
+from tech_universe import tech_tickers
 
 UA="Mozilla/5.0"; YAHOO="https://query1.finance.yahoo.com/v8/finance/chart/"
 OUT_CSV="pattern_scan_top30.csv"; OUT_JSON="pattern_scan_top30.json"
@@ -60,14 +66,11 @@ def score_stock(code,name,rows):
     rmins=[p for p in mins if p[0]>=w-110]; rmaxs=[p for p in maxs if p[0]>=w-110]
     labels=[]; reasons=[]
 
-    # A. 底部有效性：先有下降/夠深的整理
-    pre=c[:max(35,w-90)]; pre_sl=slope(pre)/(mean(pre) or 1)
-    depth=max(c)/min(c)-1
+    pre=c[:max(35,w-90)]; pre_sl=slope(pre)/(mean(pre) or 1); depth=max(c)/min(c)-1
     base_valid=.55*clamp((-pre_sl+.0003)/.0035)+.45*clamp((depth-.10)/.28)
     if rmins: base_valid=clamp(base_valid+.12*clamp((rmins[-1][0]-(w-80))/50))
     s_base=15*base_valid
 
-    # B. W / U 只當型態佐證
     ws=0.
     for a in range(len(rmins)):
         for b in range(a+1,len(rmins)):
@@ -81,7 +84,6 @@ def score_stock(code,name,rows):
     if us>=.58: labels.append("U/碗型"); reasons.append("左降→底部鈍化→右側翻正")
     s_shape=10*max(ws,us)
 
-    # C. Higher Low / 不再持續破底
     lowq=0.; hlratio=0.
     if len(rmins)>=3:
         vals=[x[1] for x in rmins[-5:]]; ch=[pct(vals[i],vals[i-1]) for i in range(1,len(vals))][-3:]
@@ -90,7 +92,6 @@ def score_stock(code,name,rows):
     s_low=15*lowq
     if lowq>=.62: reasons.append("右側低點不再破底並逐步墊高")
 
-    # D. 破底洗盤收回
     wash=0.; wash_n=0
     for j in range(max(25,w-100),w-5):
         pl=min(c[max(0,j-25):j])
@@ -103,7 +104,6 @@ def score_stock(code,name,rows):
     s_wash=8*wash
     if wash>=.48: labels.append("破底收回"); reasons.append("破底後快速收回")
 
-    # E. V3核心：每波上攻是否逐層碰/收復前一壓力
     pressure=0.; touches=0; reclaims=0; hs=rmaxs[-5:]
     if len(hs)>=3:
         ps=[]
@@ -111,9 +111,7 @@ def score_stock(code,name,rows):
             ratio=hs[i][1]/hs[i-1][1]; ps.append(clamp((ratio-.94)/.06))
             if ratio>=.97: touches+=1
             if ratio>=1.: reclaims+=1
-        cur=clamp((c[-1]/hs[-1][1]-.94)/.06)
-        pressure=clamp(.72*mean(ps[-3:])+.28*cur)
-    # 區間階梯備援
+        cur=clamp((c[-1]/hs[-1][1]-.94)/.06); pressure=clamp(.72*mean(ps[-3:])+.28*cur)
     zones=[]
     for lb in (80,60,40,25):
         if len(c)>lb+5:
@@ -122,7 +120,6 @@ def score_stock(code,name,rows):
     pressure=max(pressure,.75*zscore); s_pressure=20*pressure
     if pressure>=.65: reasons.append(f"上攻逐層測試/收復前壓力（觸碰{touches}、收復{reclaims}）")
 
-    # F. VCP：ATR + 區間逐段縮
     tr=trange(h,l,c)
     ao=mean(tr[-70:-35])/(mean(c[-70:-35]) or 1); am=mean(tr[-35:-15])/(mean(c[-35:-15]) or 1); an=mean(tr[-15:])/(mean(c[-15:]) or 1)
     ac=.45*clamp((1.12-am/(ao or 1e-9))/.55)+.55*clamp((1.10-an/(am or 1e-9))/.50)
@@ -133,26 +130,21 @@ def score_stock(code,name,rows):
     contract=.58*ac+.42*rc; s_contract=12*contract
     if contract>=.60: labels.append("VCP/收斂"); reasons.append("波動與回檔幅度逐步收斂")
 
-    # G. 量價：整理量縮、攻擊量增
     vol20=mean(v[-20:]); vp=mean(v[-60:-20]) or 1; dry=clamp((1.15-vol20/vp)/.55)
     uv=[]; dv=[]
-    for i in range(w-20,w):
-        (uv if c[i]>=c[i-1] else dv).append(v[i])
+    for i in range(w-20,w): (uv if c[i]>=c[i-1] else dv).append(v[i])
     demand=clamp(((mean(uv)/(mean(dv) or 1))-.85)/.70)
     ar=[]
     for i in range(w-25,w):
         if c[i]/c[i-1]-1>=.02: ar.append(v[i]/(mean(v[max(0,i-20):i]) or 1))
-    attack=clamp(((max(ar) if ar else .8)-.9)/.9)
-    vq=.35*dry+.35*demand+.30*attack; s_vol=10*vq
+    attack=clamp(((max(ar) if ar else .8)-.9)/.9); vq=.35*dry+.35*demand+.30*attack; s_vol=10*vq
     if vq>=.62: reasons.append("整理量縮、攻擊波量能較佳")
 
-    # H. 右側轉折，不要求60MA已翻多
     m5=sma(c,5); m10=sma(c,10); m20=sma(c,20); m60=sma(c,60)
     turn=.22*clamp((m5/mean(c[-10:-5])-1+.008)/.030)+.22*clamp((m10/mean(c[-20:-10])-1+.008)/.030)+.22*clamp((m20/mean(c[-40:-20])-1+.012)/.040)+.18*(1 if c[-1]>=m20 else clamp((c[-1]/m20-.96)/.04))+.16*lowq
     s_turn=10*turn
     if turn>=.62: reasons.append("5/10/20MA 與價格開始右側轉強")
 
-    # I. 時機 / 過熱懲罰
     low60=min(c[-60:]); dist=c[-1]/low60-1; resistance=max(c[-45:-5])
     bp=c[-1]/resistance-1; below=(resistance-c[-1])/resistance; ext=c[-1]/m20-1; r5=c[-1]/c[-6]-1; r10=c[-1]/c[-11]-1
     neck=1. if 0<=below<=.08 else clamp(1-(below-.08)/.07) if .08<below<=.15 else .88 if -.035<=below<0 else .45 if -.07<=below<-.035 else 0.
@@ -189,12 +181,24 @@ def read_universe(path):
             if code.isdigit() and len(code)==4:out.append(code)
     return list(dict.fromkeys(out))
 
+def shared_tech_universe():
+    try:
+        master=fetch_master()
+        tickers=sorted(tech_tickers(master))
+        if tickers:
+            print(f"共用科技股池：{len(tickers)} 檔")
+            return tickers
+    except Exception as e:
+        print(f"共用科技股池取得失敗：{e}")
+    print(f"改用 fallback DEFAULT_TICKERS：{len(DEFAULT_TICKERS)} 檔")
+    return DEFAULT_TICKERS
+
 def priority(stage):
     return 0 if stage.startswith("🟠") else 1 if stage.startswith("🔴") else 2 if stage.startswith("🟡") else 4 if "錯過" in stage else 3
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--top",type=int,default=30); ap.add_argument("--tickers",default=""); ap.add_argument("--universe",default=""); ap.add_argument("--sleep",type=float,default=.15); a=ap.parse_args()
-    tickers=[x.strip() for x in a.tickers.split(",") if x.strip()] if a.tickers else read_universe(a.universe) if a.universe else DEFAULT_TICKERS
+    tickers=[x.strip() for x in a.tickers.split(",") if x.strip()] if a.tickers else read_universe(a.universe) if a.universe else shared_tech_universe()
     print(f"V3 掃描 {len(tickers)} 檔｜底部結構 + 壓力逐層消化")
     results=[]; failed=[]
     for i,code in enumerate(tickers,1):
@@ -208,7 +212,7 @@ def main():
     with open(OUT_CSV,"w",newline="",encoding="utf-8-sig") as f:
         wr=csv.DictWriter(f,fieldnames=fields); wr.writeheader()
         for i,r in enumerate(top,1):wr.writerow({"rank":i,**r})
-    Path(OUT_JSON).write_text(json.dumps({"version":"v3","generated_at":datetime.now(timezone.utc).isoformat(),"scanned":len(tickers),"success":len(results),"failed":failed,"top":top},ensure_ascii=False,indent=2),encoding="utf-8")
+    Path(OUT_JSON).write_text(json.dumps({"version":"v3-tech-universe","generated_at":datetime.now(timezone.utc).isoformat(),"scanned":len(tickers),"success":len(results),"failed":failed,"top":top},ensure_ascii=False,indent=2),encoding="utf-8")
     print("\n===== V3 TOP =====")
     for i,r in enumerate(top,1):
         print(f"{i:>2}. {r['code']} {r['name'][:12]:<12} {r['score']:>5.1f} {r['pattern']:<22} {r['stage']}")
