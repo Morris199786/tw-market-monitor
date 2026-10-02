@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-02T13:02+08:00",
+  "updated_at": "2026-10-02T13:33+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-01-v19-eps-unit-label-fix-telegram-only",
   "source_mode": "MOPS ajax_t05st01 broad candidate search + TWSE/TPEx OpenAPI union; Telegram only",
@@ -173,8 +173,7 @@
         {
           "base": "https://mopsov.twse.com.tw",
           "keyword": "近期財務",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectionError(ReadTimeoutError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out.\"))"
         },
         {
           "base": "https://mops.twse.com.tw",
@@ -185,8 +184,7 @@
         {
           "base": "https://mops.twse.com.tw",
           "keyword": "自結",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectionError(ProtocolError('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
         },
         {
           "base": "https://mops.twse.com.tw",
