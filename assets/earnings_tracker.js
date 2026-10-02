@@ -9,28 +9,19 @@
   let mode = "self";
   let cache = null;
   let loadingPromise = null;
-
   let filter = "all";
   let pickedDate = "";
   let reportLimit = PAGE_SIZE;
-
   let renderToken = 0;
 
-  /* =========================
-     基本工具
-  ========================= */
-
   const esc = v =>
-    String(v ?? "").replace(
-      /[&<>"']/g,
-      c => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      }[c])
-    );
+    String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c]));
 
   const n2 = v =>
     v == null || Number.isNaN(Number(v))
@@ -46,11 +37,7 @@
     String(v || "").slice(0, 10);
 
   const localISO = d =>
-    `${d.getFullYear()}-${String(
-      d.getMonth() + 1
-    ).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")}`;
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
   const todayISO = () =>
     localISO(new Date());
@@ -68,9 +55,7 @@
   function addDays(s, n) {
     const d = new Date(`${s}T12:00:00`);
 
-    d.setDate(
-      d.getDate() + n
-    );
+    d.setDate(d.getDate() + n);
 
     return localISO(d);
   }
@@ -111,10 +96,6 @@
     );
   }
 
-  /* =========================
-     日期篩選
-  ========================= */
-
   function passes(d) {
     if (filter === "all") {
       return true;
@@ -132,10 +113,7 @@
     }
 
     if (filter === "tomorrow") {
-      return d === addDays(
-        today,
-        1
-      );
+      return d === addDays(today, 1);
     }
 
     if (filter === "date") {
@@ -154,11 +132,6 @@
       d <= b
     );
   }
-
-  /* =========================
-     把原本自結 UI 包起來
-     避免 ui_v2.js 又把它叫回來
-  ========================= */
 
   function ensureSelfWrapper() {
     const page =
@@ -188,9 +161,7 @@
     }
 
     wrap =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
     wrap.id =
       "selfLegacyArea";
@@ -225,10 +196,6 @@
     );
   }
 
-  /* =========================
-     移除舊 Pushover 字樣
-  ========================= */
-
   function removePushoverText() {
     const page =
       $("#selfReports");
@@ -245,13 +212,10 @@
 
     const nodes = [];
 
-    while (
-      walker.nextNode()
-    ) {
+    while (walker.nextNode()) {
       if (
         /Pushover/i.test(
-          walker.currentNode
-            .nodeValue || ""
+          walker.currentNode.nodeValue || ""
         )
       ) {
         nodes.push(
@@ -262,25 +226,14 @@
 
     nodes.forEach(n => {
       n.nodeValue =
-        (
-          n.nodeValue || ""
-        ).replace(
+        (n.nodeValue || "").replace(
           /\s*[·｜]?\s*Pushover\s*已啟用/gi,
           ""
         );
     });
   }
 
-  /* =========================
-     財報 JSON
-
-     第一次抓完後 cache
-     tab 切換不重新下載
-  ========================= */
-
-  async function load(
-    force = false
-  ) {
+  async function load(force = false) {
     if (
       cache &&
       !force
@@ -297,7 +250,7 @@
 
     loadingPromise =
       fetch(
-        `./data/quarterly_earnings.json?v=${Date.now()}`,
+        `./data/quarterly_earnings.json?t=${Date.now()}`,
         {
           cache: "no-store"
         }
@@ -321,10 +274,6 @@
 
     return loadingPromise;
   }
-
-  /* =========================
-     即將開財報
-  ========================= */
 
   function upcomingHTML(arr) {
     const groups = {};
@@ -368,118 +317,106 @@
       `;
     }
 
-    return keys
-      .map(d => {
-        return `
-          <section class="earnings-day">
+    return keys.map(d => `
+      <section class="earnings-day">
 
-            <div class="earnings-day-head">
+        <div class="earnings-day-head">
 
-              <b>
-                ${
-                  d === "未定"
-                    ? "日期未定"
-                    : fmtFull(d)
-                }
-              </b>
+          <b>
+            ${
+              d === "未定"
+                ? "日期未定"
+                : fmtFull(d)
+            }
+          </b>
 
-              <span>
-                ${groups[d].length} 檔
-              </span>
+          <span>
+            ${groups[d].length} 檔
+          </span>
 
-            </div>
+        </div>
 
-            <div class="earnings-compact-list">
+        <div class="earnings-compact-list">
 
-              ${
-                groups[d]
-                  .map(x => `
-                    <details class="earnings-row">
+          ${
+            groups[d].map(x => `
+              <details class="earnings-row">
 
-                      <summary>
+                <summary>
 
-                        <div class="earnings-company">
+                  <div class="earnings-company">
 
-                          <b>
-                            ${esc(
-                              x.name ||
-                              x.ticker
-                            )}
-                          </b>
+                    <b>
+                      ${esc(
+                        x.name ||
+                        x.ticker
+                      )}
+                    </b>
 
-                          <span>
-                            ${esc(
-                              x.ticker
-                            )}
-                          </span>
+                    <span>
+                      ${esc(x.ticker)}
+                    </span>
 
-                        </div>
+                  </div>
 
-                        <div class="earnings-row-right">
+                  <div class="earnings-row-right">
 
-                          <span class="earnings-period">
-                            ${esc(
-                              x.period ||
-                              ""
-                            )}
-                          </span>
+                    <span class="earnings-period">
+                      ${esc(
+                        x.period ||
+                        ""
+                      )}
+                    </span>
 
-                          <span class="earnings-chevron">
-                            ›
-                          </span>
+                    <span class="earnings-chevron">
+                      ›
+                    </span>
 
-                        </div>
+                  </div>
 
-                      </summary>
+                </summary>
 
-                      <div class="earnings-detail">
+                <div class="earnings-detail">
 
-                        <div>
+                  <div>
 
-                          <small>
-                            上一季 EPS
-                          </small>
+                    <small>
+                      上一季 EPS
+                    </small>
 
-                          <b>
-                            ${n2(
-                              x.prev_eps
-                            )} 元
-                          </b>
+                    <b>
+                      ${n2(
+                        x.prev_eps
+                      )} 元
+                    </b>
 
-                        </div>
+                  </div>
 
-                        <div>
+                  <div>
 
-                          <small>
-                            上一季毛利率
-                          </small>
+                    <small>
+                      上一季毛利率
+                    </small>
 
-                          <b>
-                            ${pct(
-                              x.prev_gross_margin
-                            )}
-                          </b>
+                    <b>
+                      ${pct(
+                        x.prev_gross_margin
+                      )}
+                    </b>
 
-                        </div>
+                  </div>
 
-                      </div>
+                </div>
 
-                    </details>
-                  `)
-                  .join("")
-              }
+              </details>
+            `).join("")
+          }
 
-            </div>
+        </div>
 
-          </section>
-        `;
-      })
-      .join("");
+      </section>
+    `).join("");
   }
-
-  /* =========================
-     單一財報列
-  ========================= */
 
   function reportItem(x) {
     const epsQoQ =
@@ -496,12 +433,8 @@
     const gmQoQ =
       x.gross_margin != null &&
       x.prev_gross_margin != null
-        ? Number(
-            x.gross_margin
-          ) -
-          Number(
-            x.prev_gross_margin
-          )
+        ? Number(x.gross_margin) -
+          Number(x.prev_gross_margin)
         : null;
 
     return `
@@ -519,9 +452,7 @@
             </b>
 
             <span>
-              ${esc(
-                x.ticker
-              )}
+              ${esc(x.ticker)}
             </span>
 
           </div>
@@ -529,9 +460,7 @@
           <div class="earnings-report-main">
 
             <b>
-              ${n2(
-                x.eps
-              )} 元
+              ${n2(x.eps)} 元
             </b>
 
             <span>
@@ -566,9 +495,7 @@
             </small>
 
             <b>
-              ${n2(
-                x.eps
-              )} 元
+              ${n2(x.eps)} 元
             </b>
 
             ${
@@ -651,12 +578,6 @@
     `;
   }
 
-  /* =========================
-     財報清單
-
-     一次只 render 30 筆
-  ========================= */
-
   function reportHTML(arr) {
     const filtered =
       arr.filter(x =>
@@ -706,9 +627,31 @@
     );
   }
 
-  /* =========================
-     Render
-  ========================= */
+  function bindLoadMore(arr) {
+    const btn =
+      $("#earningsLoadMore");
+
+    if (!btn) {
+      return;
+    }
+
+    btn.onclick = () => {
+      reportLimit +=
+        PAGE_SIZE;
+
+      const cards =
+        $("#quarterlyEarningsCards");
+
+      if (!cards) {
+        return;
+      }
+
+      cards.innerHTML =
+        reportHTML(arr);
+
+      bindLoadMore(arr);
+    };
+  }
 
   async function render(
     force = false
@@ -735,12 +678,6 @@
     const token =
       ++renderToken;
 
-    /*
-     * 只有第一次沒有 cache
-     * 才顯示讀取中
-     *
-     * tab 來回切換不閃畫面
-     */
     if (!cache) {
       status.textContent =
         "讀取中…";
@@ -829,7 +766,7 @@
 
       cards.innerHTML = `
         <div class="earnings-empty">
-          quarterly_earnings.json 讀取失敗
+          財報資料讀取失敗
         </div>
       `;
 
@@ -837,43 +774,17 @@
     }
   }
 
-  /* =========================
-     載入更多
-
-     每次 +30
-  ========================= */
-
-  function bindLoadMore(arr) {
-    const btn =
-      $("#earningsLoadMore");
-
-    if (!btn) {
+  function switchMode(next) {
+    /*
+     * 已經在同一頁就不重畫
+     */
+    if (
+      mode === next &&
+      next !== "self"
+    ) {
       return;
     }
 
-    btn.onclick = () => {
-      reportLimit +=
-        PAGE_SIZE;
-
-      const cards =
-        $("#quarterlyEarningsCards");
-
-      if (!cards) {
-        return;
-      }
-
-      cards.innerHTML =
-        reportHTML(arr);
-
-      bindLoadMore(arr);
-    };
-  }
-
-  /* =========================
-     三個 Tab
-  ========================= */
-
-  function switchMode(next) {
     mode = next;
 
     reportLimit =
@@ -910,10 +821,6 @@
       return;
     }
 
-    /*
-     * 財報 / 即將開財報
-     * 強制關掉整個自結區
-     */
     showSelf(false);
 
     if (panel) {
@@ -926,16 +833,8 @@
       );
     }
 
-    /*
-     * 不 force
-     * 直接使用 cache
-     */
     render(false);
   }
-
-  /* =========================
-     建立 UI
-  ========================= */
 
   function setup() {
     const page =
@@ -1113,27 +1012,17 @@
         );
     }
 
-    /*
-     * 先把自結原 UI 包起來
-     */
     ensureSelfWrapper();
 
-    /*
-     * 三個 tab
-     */
     $$(
       "[data-earnings-mode]"
     ).forEach(b => {
       b.onclick = () =>
         switchMode(
-          b.dataset
-            .earningsMode
+          b.dataset.earningsMode
         );
     });
 
-    /*
-     * 日期快速篩選
-     */
     $$(
       "[data-date-filter]"
     ).forEach(b => {
@@ -1166,9 +1055,6 @@
       };
     });
 
-    /*
-     * 指定日期
-     */
     const dp =
       $("#earningsDatePicker");
 
@@ -1196,24 +1082,16 @@
     }
   }
 
-  /* =========================
-     啟動
-  ========================= */
-
   function boot() {
     setup();
 
     removePushoverText();
 
-    switchMode(
-      "self"
-    );
+    switchMode("self");
 
     /*
-     * 背景預載財報 JSON
-     *
-     * 使用者真正按「財報」
-     * 通常已經下載完成
+     * 預先下載財報 JSON
+     * 但不 render
      */
     const idle =
       window.requestIdleCallback ||
@@ -1231,12 +1109,6 @@
       );
     });
 
-    /*
-     * ui_v2.js 有可能比較晚
-     * 才建立 / 更新自結內容
-     *
-     * 再確認一次 wrapper
-     */
     setTimeout(
       () => {
         ensureSelfWrapper();
@@ -1268,10 +1140,9 @@
     boot();
   }
 
-  /* =========================
-     給 refresh_controller 使用
-  ========================= */
-
+  /*
+   * 給 refresh_controller 呼叫
+   */
   window.refreshQuarterlyReports =
     async () => {
       try {
@@ -1287,14 +1158,10 @@
       }
     };
 
-  /* =========================
-     回到 Safari / PWA
-
-     背景更新
-     不清掉 cache
-     不讓畫面重新閃讀取中
-  ========================= */
-
+  /*
+   * 從 LINE / 其他 App 回來
+   * 背景更新，不清畫面
+   */
   let lastResumeRefresh = 0;
 
   function resumeRefresh() {
@@ -1307,13 +1174,6 @@
     const now =
       Date.now();
 
-    /*
-     * pageshow +
-     * visibilitychange
-     * 常常會連續觸發
-     *
-     * 15 秒內只跑一次
-     */
     if (
       now -
         lastResumeRefresh <
