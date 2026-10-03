@@ -9,25 +9,30 @@
     ["20", "20日"]
   ];
 
+  const PERIOD_LABEL = {
+    "1": "當日",
+    "5": "近5日",
+    "10": "近10日",
+    "20": "近20日"
+  };
+
   let activePeriod = "1";
   let heatData = null;
   let detailData = null;
-  let promise = null;
-  let timer = null;
-  let observer = null;
+  let dataPromise = null;
   let applying = false;
+  let observer = null;
+  let timer = null;
+
+  window.__heatmapPeriodManaged = true;
+
+  window.getHeatmapActivePeriod =
+    () => activePeriod;
+
 
   /* =========================================================
      動態個股權重上限
-
-     1檔      100%
-     2檔       65%
-     3檔       50%
-     4檔       40%
-     5～6檔    35%
-     7～9檔    30%
-     10檔以上  25%
-  ========================================================= */
+     ========================================================= */
 
   function weightCap(n) {
     if (n <= 1) return 1;
@@ -40,15 +45,7 @@
     return 0.25;
   }
 
-  /*
-   * 先依市值算原始權重
-   *
-   * 超過上限者固定在上限
-   * 剩餘權重再依剩餘股票市值比例重新分配
-   *
-   * 如果重新分配後又有人超過上限
-   * 繼續迭代，直到全部符合上限
-   */
+
   function cappedWeights(items) {
     const valid =
       items.filter(
@@ -65,9 +62,7 @@
     }
 
     const limit =
-      weightCap(
-        valid.length
-      );
+      weightCap(valid.length);
 
     let rest =
       [...valid];
@@ -75,7 +70,10 @@
     let left =
       1;
 
-    while (rest.length) {
+    while (
+      rest.length &&
+      left > 1e-12
+    ) {
       const sum =
         rest.reduce(
           (s, x) =>
@@ -142,21 +140,15 @@
           x =>
             !over.includes(x)
         );
-
-      if (
-        left <=
-        1e-12
-      ) {
-        break;
-      }
     }
 
     return out;
   }
 
+
   /* =========================================================
      報酬資料
-  ========================================================= */
+     ========================================================= */
 
   function lastNumber(arr) {
     if (
@@ -172,9 +164,7 @@
       i -= 1
     ) {
       const n =
-        Number(
-          arr[i]
-        );
+        Number(arr[i]);
 
       if (
         Number.isFinite(n)
@@ -186,14 +176,11 @@
     return null;
   }
 
+
   function stockReturn(
     ticker,
     today
   ) {
-    /*
-     * 當日直接使用 heatmap.json
-     * 原本的即時／收盤漲跌幅
-     */
     if (
       activePeriod ===
       "1"
@@ -211,22 +198,12 @@
     const stock =
       detailData
         ?.stocks
-        ?.[
-          String(ticker)
-        ];
+        ?.[String(ticker)];
 
     if (!stock) {
       return null;
     }
 
-    /*
-     * stock_detail.json 已有：
-     * returns_by_period["5"]
-     * returns_by_period["10"]
-     * returns_by_period["20"]
-     *
-     * returns 保留作 5 日舊欄位 fallback
-     */
     const series =
       stock
         .returns_by_period
@@ -239,15 +216,14 @@
       );
 
     return (
-      lastNumber(
-        series
-      )
+      lastNumber(series)
     );
   }
 
+
   /* =========================================================
      族群報酬
-  ========================================================= */
+     ========================================================= */
 
   function sectorReturn(sec) {
     const usable =
@@ -334,9 +310,100 @@
     );
   }
 
+
   /* =========================================================
-     顯示工具
-  ========================================================= */
+     大盤同期報酬
+     ========================================================= */
+
+  function benchmarkReturn() {
+    const benchmark =
+      detailData
+        ?.benchmark;
+
+    if (!benchmark) {
+      return null;
+    }
+
+    /*
+     * 5 / 10 / 20 日
+     * 直接使用 stock_detail.json
+     * 已經算好的上市加權指數累積報酬
+     */
+    if (
+      activePeriod !==
+      "1"
+    ) {
+      return (
+        lastNumber(
+          benchmark
+            .returns_by_period
+            ?.[activePeriod] ||
+          (
+            activePeriod ===
+            "5"
+              ? benchmark.returns
+              : null
+          )
+        )
+      );
+    }
+
+    /*
+     * 當日：
+     * stock_detail 的 5 日 benchmark
+     * 是從同一基準日開始累積
+     *
+     * 用最後兩個累積報酬
+     * 反推最後一個交易日漲跌幅
+     */
+    const arr =
+      benchmark
+        .returns_by_period
+        ?.["5"] ||
+      benchmark.returns ||
+      [];
+
+    const nums =
+      arr
+        .map(Number)
+        .filter(
+          Number.isFinite
+        );
+
+    if (
+      nums.length < 2
+    ) {
+      return null;
+    }
+
+    const prev =
+      nums[
+        nums.length - 2
+      ] / 100;
+
+    const curr =
+      nums[
+        nums.length - 1
+      ] / 100;
+
+    return (
+      (
+        (
+          1 + curr
+        ) /
+        (
+          1 + prev
+        ) -
+        1
+      ) *
+      100
+    );
+  }
+
+
+  /* =========================================================
+     顯示
+     ========================================================= */
 
   function pct(value) {
     const n =
@@ -357,9 +424,71 @@
     );
   }
 
-  function heatClass(
-    value
-  ) {
+
+  /*
+   * 不同期間使用不同色階
+   *
+   * 避免 10 / 20 日
+   * 全部 +5% 以上都變成同一個最深色
+   */
+
+  function periodThresholds() {
+    if (
+      activePeriod ===
+      "1"
+    ) {
+      return [
+        0.5,
+        1,
+        2,
+        3,
+        5
+      ];
+    }
+
+    if (
+      activePeriod ===
+      "5"
+    ) {
+      return [
+        1,
+        2.5,
+        5,
+        8,
+        12
+      ];
+    }
+
+    if (
+      activePeriod ===
+      "10"
+    ) {
+      return [
+        2,
+        5,
+        10,
+        15,
+        22
+      ];
+    }
+
+    return [
+      3,
+      7,
+      14,
+      22,
+      32
+    ];
+  }
+
+
+  /*
+   * 台股：
+   * 紅 = 漲
+   * 綠 = 跌
+   */
+
+  function heatTone(value) {
     const n =
       Number(value);
 
@@ -367,54 +496,75 @@
       !Number.isFinite(n) ||
       n === 0
     ) {
-      return "";
+      return {
+        bg: "",
+        fg: ""
+      };
     }
 
     const a =
       Math.abs(n);
 
-    const prefix =
-      n > 0
-        ? "up"
-        : "dn";
+    const t =
+      periodThresholds();
 
-    if (a >= 5) {
-      return (
-        prefix +
-        "5"
-      );
+    let level =
+      1;
+
+    if (
+      a >= t[4]
+    ) {
+      level = 5;
+
+    } else if (
+      a >= t[3]
+    ) {
+      level = 4;
+
+    } else if (
+      a >= t[2]
+    ) {
+      level = 3;
+
+    } else if (
+      a >= t[1]
+    ) {
+      level = 2;
     }
 
-    if (a >= 3) {
-      return (
-        prefix +
-        "4"
-      );
-    }
+    const up = [
+      "rgba(220,38,38,.72)",
+      "rgba(220,38,38,.80)",
+      "rgba(220,38,38,.88)",
+      "rgba(185,28,28,.92)",
+      "rgba(127,29,29,.96)"
+    ];
 
-    if (a >= 2) {
-      return (
-        prefix +
-        "3"
-      );
-    }
+    const down = [
+      "rgba(22,163,74,.70)",
+      "rgba(21,128,61,.78)",
+      "rgba(21,128,61,.86)",
+      "rgba(22,101,52,.92)",
+      "rgba(20,83,45,.96)"
+    ];
 
-    if (a >= 1) {
-      return (
-        prefix +
-        "2"
-      );
-    }
+    return {
+      bg:
+        (
+          n > 0
+            ? up
+            : down
+        )[level - 1],
 
-    return (
-      prefix +
-      "1"
-    );
+      fg:
+        "#fff"
+    };
   }
 
+
   /* =========================================================
-     期間按鈕樣式
-  ========================================================= */
+     樣式
+     ========================================================= */
 
   function injectStyle() {
     if (
@@ -439,20 +589,25 @@
         align-items:center;
         gap:8px;
         flex-wrap:wrap;
-        margin:0 0 14px;
+        margin:0 0 8px;
       }
 
       .heat-period-tabs{
-        display:inline-flex;
-        align-items:center;
-        gap:4px;
+        display:grid;
+        grid-template-columns:
+          repeat(
+            4,
+            minmax(0,1fr)
+          );
 
+        width:100%;
         padding:4px;
 
-        border:1px solid
+        border:
+          1px solid
           var(--line);
 
-        border-radius:12px;
+        border-radius:14px;
 
         background:
           var(--card);
@@ -462,11 +617,10 @@
         appearance:none;
 
         border:0;
-
-        border-radius:9px;
+        border-radius:11px;
 
         padding:
-          7px 12px;
+          10px 8px;
 
         background:
           transparent;
@@ -476,64 +630,92 @@
 
         font:inherit;
 
-        font-size:12px;
-
-        font-weight:800;
-
+        font-size:13px;
+        font-weight:900;
         line-height:1;
 
         cursor:pointer;
       }
 
       .heat-period-btn.active{
-        background:
-          var(--ink);
-
-        color:
-          var(--card);
+        background:#111827;
+        color:#fff;
       }
 
-      .heat-period-note{
-        color:
-          var(--muted);
+      html[data-theme="dark"]
+      .heat-period-btn.active{
+        background:#f8fafc;
+        color:#111827;
+      }
+
+      .heat-period-meta{
+        display:flex;
+        align-items:center;
+        justify-content:
+          space-between;
+
+        gap:12px;
+
+        width:100%;
+        min-height:28px;
+
+        margin:
+          0 0 4px;
 
         font-size:11px;
+        font-weight:800;
 
-        font-weight:700;
+        color:
+          var(--muted);
+      }
+
+      .heat-period-benchmark{
+        display:inline-flex;
+        align-items:center;
+
+        gap:6px;
+
+        white-space:
+          nowrap;
+      }
+
+      .heat-period-benchmark
+      strong{
+        font-size:13px;
+      }
+
+      .heat-period-benchmark
+      .up{
+        color:#dc2626;
+      }
+
+      .heat-period-benchmark
+      .dn{
+        color:#15803d;
       }
 
       @media(
         max-width:720px
       ){
         .heat-period-wrap{
-          margin-bottom:
-            10px;
-        }
-
-        .heat-period-tabs{
-          width:100%;
-
-          display:grid;
-
-          grid-template-columns:
-            repeat(
-              4,
-              minmax(
-                0,
-                1fr
-              )
-            );
+          margin-bottom:6px;
         }
 
         .heat-period-btn{
-          width:100%;
-
           padding:
-            8px 5px;
+            10px 4px;
+
+          font-size:12px;
         }
 
-        .heat-period-note{
-          width:100%;
+        .heat-period-meta{
+          align-items:
+            flex-start;
+
+          flex-direction:
+            column;
+
+          gap:4px;
 
           font-size:10px;
         }
@@ -545,9 +727,10 @@
     );
   }
 
+
   /* =========================================================
      期間按鈕
-  ========================================================= */
+     ========================================================= */
 
   function ensureControls() {
     const grid =
@@ -559,144 +742,204 @@
       return;
     }
 
-    if (
+    let wrap =
       document.getElementById(
         "heatPeriodWrap"
-      )
-    ) {
+      );
+
+    if (!wrap) {
+      wrap =
+        document.createElement(
+          "div"
+        );
+
+      wrap.id =
+        "heatPeriodWrap";
+
+      wrap.className =
+        "heat-period-wrap";
+
+      wrap.innerHTML = `
+        <div
+          class="heat-period-tabs"
+          role="tablist"
+          aria-label="熱力圖期間"
+        >
+          ${
+            PERIODS
+              .map(
+                (
+                  [
+                    key,
+                    label
+                  ]
+                ) => `
+                  <button
+                    type="button"
+                    class="
+                      heat-period-btn
+                      ${
+                        key ===
+                        activePeriod
+                          ? "active"
+                          : ""
+                      }
+                    "
+                    data-heat-period="${key}"
+                  >
+                    ${label}
+                  </button>
+                `
+              )
+              .join("")
+          }
+        </div>
+
+        <div
+          class="heat-period-meta"
+        >
+          <span>
+            族群採市值加權｜個股權重上限依族群家數動態調整
+          </span>
+
+          <span
+            id="heatPeriodBenchmark"
+            class="heat-period-benchmark"
+          ></span>
+        </div>
+      `;
+
+      grid
+        .parentNode
+        .insertBefore(
+          wrap,
+          grid
+        );
+
+      wrap.addEventListener(
+        "click",
+        event => {
+          const button =
+            event.target.closest(
+              "[data-heat-period]"
+            );
+
+          if (!button) {
+            return;
+          }
+
+          const next =
+            String(
+              button
+                .dataset
+                .heatPeriod ||
+              "1"
+            );
+
+          if (
+            !PERIODS.some(
+              ([key]) =>
+                key === next
+            ) ||
+            next ===
+              activePeriod
+          ) {
+            return;
+          }
+
+          activePeriod =
+            next;
+
+          wrap
+            .querySelectorAll(
+              "[data-heat-period]"
+            )
+            .forEach(
+              x => {
+                x.classList.toggle(
+                  "active",
+                  x.dataset
+                    .heatPeriod ===
+                    activePeriod
+                );
+              }
+            );
+
+          /*
+           * 只有切換期間
+           * 才重新排序
+           */
+          applyPeriod({
+            reorder: true,
+            force: false,
+            reason: "period"
+          });
+        }
+      );
+    }
+  }
+
+
+  /* =========================================================
+     大盤同期漲幅
+     ========================================================= */
+
+  function updateBenchmark() {
+    const box =
+      document.getElementById(
+        "heatPeriodBenchmark"
+      );
+
+    if (!box) {
       return;
     }
 
-    const wrap =
-      document.createElement(
-        "div"
-      );
+    const value =
+      benchmarkReturn();
 
-    wrap.id =
-      "heatPeriodWrap";
+    const cls =
+      value > 0
+        ? "up"
+        : value < 0
+        ? "dn"
+        : "";
 
-    wrap.className =
-      "heat-period-wrap";
+    const label =
+      activePeriod ===
+      "1"
+        ? "大盤當日漲幅"
+        : `大盤近${activePeriod}日漲幅`;
 
-    wrap.innerHTML = `
-      <div
-        class="heat-period-tabs"
-        role="tablist"
-        aria-label="熱力圖期間"
+    box.innerHTML = `
+      ${label}
+
+      <strong
+        class="${cls}"
       >
-        ${
-          PERIODS
-            .map(
-              (
-                [
-                  key,
-                  label
-                ]
-              ) => `
-                <button
-                  type="button"
-                  class="
-                    heat-period-btn
-                    ${
-                      key ===
-                      activePeriod
-                        ? "active"
-                        : ""
-                    }
-                  "
-                  data-heat-period="${key}"
-                >
-                  ${label}
-                </button>
-              `
-            )
-            .join("")
-        }
-      </div>
-
-      <span
-        class="heat-period-note"
-      >
-        族群採市值加權｜個股權重上限依族群家數動態調整
-      </span>
+        ${pct(value)}
+      </strong>
     `;
-
-    grid.parentNode.insertBefore(
-      wrap,
-      grid
-    );
-
-    wrap.addEventListener(
-      "click",
-      event => {
-        const button =
-          event.target.closest(
-            "[data-heat-period]"
-          );
-
-        if (!button) {
-          return;
-        }
-
-        const next =
-          String(
-            button.dataset
-              .heatPeriod ||
-            "1"
-          );
-
-        if (
-          !PERIODS.some(
-            ([key]) =>
-              key === next
-          )
-        ) {
-          return;
-        }
-
-        activePeriod =
-          next;
-
-        wrap
-          .querySelectorAll(
-            "[data-heat-period]"
-          )
-          .forEach(
-            x => {
-              x.classList.toggle(
-                "active",
-                x.dataset
-                  .heatPeriod ===
-                  activePeriod
-              );
-            }
-          );
-
-        scheduleApply(
-          0
-        );
-      }
-    );
   }
+
 
   /* =========================================================
      載入資料
-  ========================================================= */
+     ========================================================= */
 
   async function loadData(
     force = false
   ) {
     if (
-      promise &&
+      dataPromise &&
       !force
     ) {
-      return promise;
+      return dataPromise;
     }
 
     const stamp =
       Date.now();
 
-    promise =
+    dataPromise =
       Promise.all([
         fetch(
           "./data/heatmap.json" +
@@ -776,17 +1019,18 @@
         )
         .finally(
           () => {
-            promise =
+            dataPromise =
               null;
           }
         );
 
-    return promise;
+    return dataPromise;
   }
 
+
   /* =========================================================
-     更新族群方塊
-  ========================================================= */
+     更新族群卡片
+     ========================================================= */
 
   function updateSectorButton(
     button,
@@ -802,6 +1046,13 @@
         pct(value);
     }
 
+    /*
+     * 移除舊熱力圖色階 class
+     *
+     * 避免出現：
+     * +18% 卻顯示綠色
+     */
+
     [
       "up1",
       "up2",
@@ -816,35 +1067,99 @@
     ]
       .forEach(
         className => {
-          button.classList.remove(
-            className
-          );
+          button
+            .classList
+            .remove(
+              className
+            );
         }
       );
 
-    const className =
-      heatClass(
-        value
+    const tone =
+      heatTone(value);
+
+    if (tone.bg) {
+      button.style.setProperty(
+        "background",
+        tone.bg,
+        "important"
       );
 
-    if (className) {
-      button.classList.add(
-        className
+      button.style.setProperty(
+        "color",
+        tone.fg,
+        "important"
+      );
+
+    } else {
+      button.style.removeProperty(
+        "background"
+      );
+
+      button.style.removeProperty(
+        "color"
       );
     }
 
-    button.dataset
+    button
+      .dataset
       .periodReturn =
-      Number.isFinite(
-        value
-      )
+      Number.isFinite(value)
         ? String(value)
         : "";
   }
 
+
   /* =========================================================
-     更新展開後個股
-  ========================================================= */
+     個股
+     ========================================================= */
+
+  function tickerFromRow(row) {
+    const candidates = [
+      row?.dataset?.ticker,
+
+      row?.getAttribute?.(
+        "data-ticker"
+      ),
+
+      row
+        ?.querySelector?.(
+          "[data-ticker]"
+        )
+        ?.getAttribute?.(
+          "data-ticker"
+        ),
+
+      row
+        ?.querySelector?.(
+          ".t"
+        )
+        ?.textContent,
+
+      row?.textContent
+    ];
+
+    for (
+      const candidate
+      of candidates
+    ) {
+      const match =
+        String(
+          candidate ||
+          ""
+        )
+          .match(
+            /\b\d{4,6}\b/
+          );
+
+      if (match) {
+        return match[0];
+      }
+    }
+
+    return "";
+  }
+
 
   function updateDetail(
     detail,
@@ -905,15 +1220,9 @@
     rows.forEach(
       row => {
         const ticker =
-          String(
+          tickerFromRow(
             row
-              .querySelector(
-                ".t"
-              )
-              ?.textContent ||
-            ""
-          )
-            .trim();
+          );
 
         const stock =
           stockMap.get(
@@ -949,7 +1258,8 @@
             }`;
         }
 
-        row.dataset
+        row
+          .dataset
           .periodReturn =
           Number.isFinite(
             value
@@ -960,8 +1270,13 @@
     );
 
     /*
-     * 個股依目前選擇期間的報酬重新排序
+     * 展開後：
+     * 個股依目前期間報酬排序
+     *
+     * 這只排序族群內個股
+     * 不會改變整張族群熱力圖位置
      */
+
     const list =
       detail.querySelector(
         ".heat-stock-list"
@@ -976,29 +1291,33 @@
           ) => {
             const av =
               Number(
-                a.dataset
+                a
+                  .dataset
                   .periodReturn
               );
 
             const bv =
               Number(
-                b.dataset
+                b
+                  .dataset
                   .periodReturn
               );
 
-            const aa =
-              Number.isFinite(av)
-                ? av
-                : -999999;
-
-            const bb =
-              Number.isFinite(bv)
-                ? bv
-                : -999999;
-
             return (
-              bb -
-              aa
+              (
+                Number.isFinite(
+                  bv
+                )
+                  ? bv
+                  : -999999
+              ) -
+              (
+                Number.isFinite(
+                  av
+                )
+                  ? av
+                  : -999999
+              )
             );
           }
         )
@@ -1011,9 +1330,10 @@
     }
   }
 
+
   /* =========================================================
-     族群依目前期間重新排序
-  ========================================================= */
+     族群重新排序
+     ========================================================= */
 
   function reorderGrid() {
     const grid =
@@ -1025,13 +1345,13 @@
       return;
     }
 
-    const groups =
-      [];
-
     const children =
       [
         ...grid.children
       ];
+
+    const groups =
+      [];
 
     for (
       let i = 0;
@@ -1064,9 +1384,11 @@
       groups.push({
         button,
         detail,
+
         value:
           Number(
-            button.dataset
+            button
+              .dataset
               .periodReturn
           )
       });
@@ -1115,13 +1437,16 @@
       );
   }
 
-  /* =========================================================
-     套用目前期間
-  ========================================================= */
 
-  async function applyPeriod(
-    force = false
-  ) {
+  /* =========================================================
+     套用期間
+     ========================================================= */
+
+  async function applyPeriod({
+    reorder = false,
+    force = false,
+    reason = ""
+  } = {}) {
     if (applying) {
       return;
     }
@@ -1175,16 +1500,14 @@
         )
         .forEach(
           button => {
-            const name =
-              String(
-                button.dataset
-                  .sec ||
-                ""
-              );
-
             const sector =
               sectors.get(
-                name
+                String(
+                  button
+                    .dataset
+                    .sec ||
+                  ""
+                )
               );
 
             if (!sector) {
@@ -1223,7 +1546,30 @@
           }
         );
 
-      reorderGrid();
+      updateBenchmark();
+
+      /*
+       * 最重要的修正：
+       *
+       * 只有：
+       * 1. 第一次載入
+       * 2. 切換期間
+       * 3. 真正資料更新
+       *
+       * 才重新排序
+       *
+       * 點族群展開 / 收合
+       * 絕對不重新排序
+       */
+
+      if (reorder) {
+        reorderGrid();
+      }
+
+      /*
+       * 通知金標模組：
+       * 現在期間已改變
+       */
 
       window.dispatchEvent(
         new CustomEvent(
@@ -1231,7 +1577,14 @@
           {
             detail: {
               period:
-                activePeriod
+                activePeriod,
+
+              label:
+                PERIOD_LABEL[
+                  activePeriod
+                ],
+
+              reason
             }
           }
         )
@@ -1249,13 +1602,14 @@
     }
   }
 
-  /* =========================================================
-     Debounce
-  ========================================================= */
 
-  function scheduleApply(
-    delay = 80,
-    force = false
+  /* =========================================================
+     展開族群後只補內容
+     不重新排序
+     ========================================================= */
+
+  function scheduleDetailRefresh(
+    delay = 100
   ) {
     if (timer) {
       clearTimeout(
@@ -1269,17 +1623,16 @@
           timer =
             null;
 
-          applyPeriod(
-            force
-          );
+          applyPeriod({
+            reorder: false,
+            force: false,
+            reason: "detail"
+          });
         },
         delay
       );
   }
 
-  /* =========================================================
-     監聽原本 heatmap render
-  ========================================================= */
 
   function observeGrid() {
     const grid =
@@ -1312,7 +1665,7 @@
             );
 
           if (changed) {
-            scheduleApply(
+            scheduleDetailRefresh(
               100
             );
           }
@@ -1328,9 +1681,10 @@
     );
   }
 
+
   /* =========================================================
-     資料更新事件
-  ========================================================= */
+     真正資料刷新
+     ========================================================= */
 
   function bindRefresh() {
     window.addEventListener(
@@ -1342,12 +1696,18 @@
         detailData =
           null;
 
-        scheduleApply(
-          150,
-          true
+        setTimeout(
+          () =>
+            applyPeriod({
+              reorder: true,
+              force: true,
+              reason: "data"
+            }),
+          150
         );
       }
     );
+
 
     window.addEventListener(
       "tw-market:refreshed",
@@ -1367,27 +1727,48 @@
         detailData =
           null;
 
-        scheduleApply(
-          150,
-          true
+        setTimeout(
+          () =>
+            applyPeriod({
+              reorder: true,
+              force: true,
+              reason: "refresh"
+            }),
+          150
         );
       }
     );
 
+
     window.addEventListener(
       "tw-market:refresh-heatmap",
       () => {
-        scheduleApply(
-          180,
-          false
+        /*
+         * refresh request 本身
+         * 不先移動族群
+         *
+         * 等真的 data-updated
+         * 才重新排序
+         */
+
+        setTimeout(
+          () =>
+            applyPeriod({
+              reorder: false,
+              force: false,
+              reason:
+                "refresh-request"
+            }),
+          180
         );
       }
     );
   }
 
+
   /* =========================================================
      初始化
-  ========================================================= */
+     ========================================================= */
 
   function init() {
     injectStyle();
@@ -1398,14 +1779,26 @@
 
     bindRefresh();
 
-    scheduleApply(
+    /*
+     * 第一次載入
+     * 依當日重新排序一次
+     */
+
+    setTimeout(
+      () =>
+        applyPeriod({
+          reorder: true,
+          force: false,
+          reason: "init"
+        }),
       200
     );
 
     console.log(
-      "[Heat Period] ready"
+      "[Heat Period] v3 ready"
     );
   }
+
 
   if (
     document.readyState ===
