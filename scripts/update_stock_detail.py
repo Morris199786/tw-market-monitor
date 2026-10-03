@@ -2,7 +2,7 @@ from sources import *
 from sources import _idx
 
 TREND_DAYS = 20
-FLOW_DAYS = 5
+FLOW_DAYS = 20
 NEEDED_MARKET_DAYS = TREND_DAYS + 1
 PERIODS = (5, 10, 20)
 
@@ -764,12 +764,12 @@ def build_stock_series(
                 periods["5"]
             ),
 
-            # 新增5 / 20日
+            # 5 / 10 / 20日
             "returns_by_period": (
                 periods
             ),
 
-            # 籌碼固定5日
+            # 籌碼保留近20日，前端依5／10／20日切換
             "institutional": (
                 institutional
             ),
@@ -778,7 +778,7 @@ def build_stock_series(
                 sum(
                     x["total_lots"]
                     for x
-                    in institutional
+                    in institutional[-5:]
                 ),
                 1,
             ),
@@ -890,12 +890,12 @@ def main():
         ),
 
         "note": (
-            "走勢可切換近5／10／20個已完成交易日；"
-            "各期間皆以前一交易日收盤為0%基準；"
-            "籌碼固定近5日"
+            "走勢與籌碼可同步切換近5／10／20個已完成交易日；"
+            "各走勢期間皆以前一交易日收盤為0%基準；"
+            "法人籌碼保留近20日"
         ),
 
-        "default_period": 20,
+        "default_period": 5,
 
         "available_periods": [
             5,
@@ -912,7 +912,7 @@ def main():
             label_periods["5"]
         ),
 
-        # 新的5 / 20日資料
+        # 5 / 10 / 20日資料
         "dates_by_period": (
             date_periods
         ),
