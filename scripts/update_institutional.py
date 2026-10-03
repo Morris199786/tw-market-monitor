@@ -4,10 +4,7 @@ PERIODS = [("1d", 1), ("3d", 3), ("5d", 5)]
 MARKETS = ("twse", "tpex")
 KINDS = ("foreign", "trust", "dealer", "total")
 
-# 個股詳細頁需要 20 個交易日法人資料
 REQUIRED_HISTORY_DAYS = 20
-
-# 用較寬的市場歷史窗口避開休市日、單日 API 異常
 LOOKBACK_MARKET_DAYS = 40
 
 
@@ -20,10 +17,7 @@ def load_display_names():
     ).get("stocks", {})
 
     for ticker, row in master.items():
-        name = str(
-            row.get("name") or ""
-        ).strip()
-
+        name = str(row.get("name") or "").strip()
         name = (
             name.replace("股份有限公司", "")
                 .replace("有限公司", "")
@@ -40,13 +34,8 @@ def load_display_names():
 
     for sec in sectors.get("sectors", []):
         for row in sec.get("stocks", []):
-            ticker = str(
-                row.get("ticker") or ""
-            ).strip()
-
-            name = str(
-                row.get("name") or ""
-            ).strip()
+            ticker = str(row.get("ticker") or "").strip()
+            name = str(row.get("name") or "").strip()
 
             if ticker and name:
                 names[ticker] = name
@@ -112,36 +101,36 @@ def healthy(rows):
     )
 
 
-def fetch_fresh(date, market):
-    if market == "twse":
-        rows = fetch_twse_institutional(date)
-    else:
-        rows = fetch_tpex_institutional(date)
+def fetch_fresh(date, market, latest_market_date):
+    """
+    最新交易日：
+      TPEx 直接走 sources.py 已有的官方 OpenAPI，不碰不穩定的歷史 PHP
+      TWSE 維持原本官方來源
 
+    舊交易日：
+      只有 TWSE 允許補抓
+      TPEx 不再逐日轟歷史 PHP，避免 RemoteDisconnected + 7~8 分鐘 timeout
+    """
+    if market == "tpex":
+        if date != latest_market_date:
+            return {}
+
+        rows = fetch_tpex_institutional()
+        return repair_dealer(rows)
+
+    rows = fetch_twse_institutional(date)
     return repair_dealer(rows)
 
 
-def maintain_history_for_market(
-    market,
-    market_snapshots
-):
+def load_cached_history(market, market_snapshots):
     """
-    第一次：把缺少的歷史日期補到 20 個有效交易日
-    之後：健康舊檔直接沿用，只抓新出現的交易日
-
-    因此正常 Daily close 不會再每天重抓 20 日。
+    只讀 repo 已經存在而且健康的法人歷史
+    不呼叫任何外部 API
+    回傳舊 -> 新
     """
     valid = []
 
-    candidates = list(
-        reversed(
-            market_snapshots[
-                -LOOKBACK_MARKET_DAYS:
-            ]
-        )
-    )
-
-    for m in candidates:
+    for m in market_snapshots[-LOOKBACK_MARKET_DAYS:]:
         date = m.get("date")
         closes = m.get("stocks", {})
 
@@ -153,133 +142,228 @@ def maintain_history_for_market(
             / f"data/history/institutional/{date}.json"
         )
 
-        old = load_json(
-            history_path,
-            {}
-        )
+        old = load_json(history_path, {})
+        rows = repair_dealer(old.get(market, {}))
 
-        cached_rows = repair_dealer(
-            old.get(market, {})
-        )
+        if not healthy(rows):
+            continue
 
-        if healthy(cached_rows):
-            # 關鍵：已有健康資料就不再打官方 API
-            rows = cached_rows
+        merged = dict(old)
+        merged["date"] = date
+        merged["closes"] = closes
+        merged[market] = rows
+
+        valid.append(merged)
+
+    return valid[-REQUIRED_HISTORY_DAYS:]
+
+
+def save_market_day(date, market, closes, rows):
+    history_path = (
+        ROOT
+        / f"data/history/institutional/{date}.json"
+    )
+
+    old = load_json(history_path, {})
+    merged = dict(old)
+
+    merged["date"] = date
+    merged["updated_at"] = (
+        now_tpe().isoformat(timespec="minutes")
+    )
+    merged["closes"] = closes
+    merged[market] = rows
+
+    save_json(history_path, merged)
+    return merged
+
+
+def maintain_history_for_market(market, market_snapshots):
+    """
+    安全增量模式
+
+    1. 先沿用所有健康 cache
+    2. TPEx 不再回補舊日期，避免歷史 PHP 連續斷線
+    3. 最新交易日缺資料時才抓一次
+       - TPEx：官方 OpenAPI 最新日
+       - TWSE：原官方來源
+    4. 不到 20 日不再 raise
+       既有 9 日會保留，之後每個交易日自然累積到 20 日
+    5. 籌碼日報只需要 5 日，因此只要 >=5 日仍可正常產出
+    """
+    cached = load_cached_history(
+        market,
+        market_snapshots
+    )
+
+    cached_dates = {
+        x.get("date")
+        for x in cached
+        if x.get("date")
+    }
+
+    latest_snapshot = market_snapshots[-1]
+    latest_date = latest_snapshot.get("date")
+    latest_closes = latest_snapshot.get("stocks", {})
+
+    print(
+        "cached healthy history",
+        market,
+        len(cached),
+        sorted(cached_dates)
+    )
+
+    # 正常每天只處理最新一個交易日
+    if (
+        latest_date
+        and latest_closes
+        and latest_date not in cached_dates
+    ):
+        rows = {}
+
+        try:
+            rows = fetch_fresh(
+                latest_date,
+                market,
+                latest_date
+            )
 
             print(
-                "reuse healthy cache",
+                "latest fresh",
                 market,
-                date,
+                latest_date,
                 source_health(rows)
             )
 
+        except Exception as e:
+            print(
+                "latest fetch failed",
+                market,
+                latest_date,
+                repr(e)
+            )
+
+        if healthy(rows):
+            merged = save_market_day(
+                latest_date,
+                market,
+                latest_closes,
+                rows
+            )
+
+            cached.append(merged)
+            cached = cached[-REQUIRED_HISTORY_DAYS:]
+
         else:
-            rows = {}
+            print(
+                "latest invalid; keep existing cache",
+                market,
+                latest_date,
+                source_health(rows)
+            )
+
+    # TWSE 若未滿 20，可有限度補歷史
+    # TPEx 明確不再碰會 RemoteDisconnected 的歷史 PHP
+    if (
+        market == "twse"
+        and len(cached) < REQUIRED_HISTORY_DAYS
+    ):
+        cached_dates = {
+            x.get("date")
+            for x in cached
+            if x.get("date")
+        }
+
+        missing_candidates = [
+            m
+            for m in reversed(
+                market_snapshots[-LOOKBACK_MARKET_DAYS:]
+            )
+            if m.get("date")
+            and m.get("stocks")
+            and m.get("date") not in cached_dates
+        ]
+
+        for m in missing_candidates:
+            if len(cached) >= REQUIRED_HISTORY_DAYS:
+                break
+
+            date = m.get("date")
+            closes = m.get("stocks", {})
 
             try:
-                rows = fetch_fresh(
-                    date,
-                    market
-                )
+                rows = fetch_twse_institutional(date)
+                rows = repair_dealer(rows)
 
                 print(
-                    "fresh",
-                    market,
+                    "twse backfill",
                     date,
                     source_health(rows)
                 )
 
             except Exception as e:
                 print(
-                    "fresh fetch failed",
-                    market,
+                    "twse backfill failed",
                     date,
                     repr(e)
                 )
-
-            if not healthy(rows):
-                print(
-                    "skip invalid day",
-                    market,
-                    date,
-                    "fresh=",
-                    source_health(rows),
-                    "cache=",
-                    source_health(cached_rows)
-                )
                 continue
 
-        merged = dict(old)
+            if not healthy(rows):
+                continue
 
-        merged["date"] = date
-        merged["updated_at"] = (
-            now_tpe()
-            .isoformat(timespec="minutes")
-        )
+            merged = save_market_day(
+                date,
+                market,
+                closes,
+                rows
+            )
 
-        # 同日期行情一起保留，供法人買賣超金額計算
-        merged["closes"] = closes
-        merged[market] = rows
+            cached.append(merged)
+            cached.sort(
+                key=lambda x: x.get("date") or ""
+            )
+            cached = cached[-REQUIRED_HISTORY_DAYS:]
+            cached_dates.add(date)
 
-        save_json(
-            history_path,
-            merged
-        )
-
-        valid.append(merged)
-
-        if len(valid) >= REQUIRED_HISTORY_DAYS:
-            break
-
-    # 上面是新 -> 舊；後續統一使用舊 -> 新
-    valid = list(reversed(valid))
-
-    if len(valid) < REQUIRED_HISTORY_DAYS:
+    if len(cached) < 5:
         raise RuntimeError(
             f"{market} institutional data only "
-            f"{len(valid)}/{REQUIRED_HISTORY_DAYS} "
-            f"healthy trading days"
+            f"{len(cached)} healthy trading days; "
+            f"minimum 5 required for ranking"
         )
 
-    return valid
+    if len(cached) < REQUIRED_HISTORY_DAYS:
+        print(
+            "history not full yet",
+            market,
+            f"{len(cached)}/{REQUIRED_HISTORY_DAYS}",
+            "- continue safely; future trading days will accumulate"
+        )
+    else:
+        print(
+            "history full",
+            market,
+            f"{len(cached)}/{REQUIRED_HISTORY_DAYS}"
+        )
+
+    return cached
 
 
-def build_period(
-    history,
-    market,
-    kind,
-    days,
-    names
-):
+def build_period(history, market, kind, days, names):
     use = history[-days:]
     sums = {}
 
     for h in use:
-        closes = h.get(
-            "closes",
-            {}
-        )
-
-        rows = h.get(
-            market,
-            {}
-        )
+        closes = h.get("closes", {})
+        rows = h.get(market, {})
 
         for ticker, r in rows.items():
             ticker = str(ticker)
 
-            q = closes.get(
-                ticker,
-                {}
-            )
-
-            price = float(
-                q.get("price") or 0
-            )
-
-            shares = int(
-                r.get(kind) or 0
-            )
+            q = closes.get(ticker, {})
+            price = float(q.get("price") or 0)
+            shares = int(r.get(kind) or 0)
 
             if price <= 0:
                 continue
@@ -298,18 +382,12 @@ def build_period(
             )
 
             x["shares"] += shares
-            x["amount"] += (
-                shares * price
-            )
+            x["amount"] += shares * price
 
-    arr = list(
-        sums.values()
-    )
+    arr = list(sums.values())
 
     for x in arr:
-        x["amount_100m"] = (
-            x["amount"] / 1e8
-        )
+        x["amount_100m"] = x["amount"] / 1e8
 
     buy = sorted(
         [
@@ -328,11 +406,7 @@ def build_period(
         key=lambda x: x["amount"]
     )[:20]
 
-    latest = (
-        use[-1]
-        if use
-        else {}
-    )
+    latest = use[-1] if use else {}
 
     for x in buy + sell:
         q = latest.get(
@@ -343,20 +417,13 @@ def build_period(
             {}
         )
 
-        x["change_pct"] = (
-            q.get("change_pct")
-        )
-
-        x["price"] = (
-            q.get("price")
-        )
+        x["change_pct"] = q.get("change_pct")
+        x["price"] = q.get("price")
 
     return {
         "buy": buy,
         "sell": sell,
-        "complete": (
-            len(use) >= days
-        ),
+        "complete": len(use) >= days,
         "days_used": len(use),
         "dates_used": [
             x.get("date")
@@ -424,21 +491,19 @@ def main():
     market_snapshots = []
 
     for p in market_files:
-        d = load_json(
-            p,
-            {}
-        )
+        d = load_json(p, {})
 
-        if (
-            d.get("date")
-            and d.get("stocks")
-        ):
+        if d.get("date") and d.get("stocks"):
             market_snapshots.append(d)
 
     if not market_snapshots:
         raise RuntimeError(
             "market history missing"
         )
+
+    market_snapshots.sort(
+        key=lambda x: x.get("date") or ""
+    )
 
     names = load_display_names()
     histories = {}
@@ -454,17 +519,14 @@ def main():
         print(
             "healthy history",
             market,
+            len(histories[market]),
             [
                 x.get("date")
-                for x
-                in histories[market]
+                for x in histories[market]
             ]
         )
 
-    today = (
-        market_snapshots[-1]
-        .get("date")
-    )
+    today = market_snapshots[-1].get("date")
 
     out = {
         "date": today,
@@ -475,20 +537,14 @@ def main():
         "periods": {},
     }
 
-    # 籌碼日報原本只需要 1 / 3 / 5 日排行；
-    # 20 日歷史則保留給 stock_detail 使用。
     for period, days in PERIODS:
         out["periods"][period] = {}
 
         for market in MARKETS:
-            out["periods"][
-                period
-            ][market] = {}
+            out["periods"][period][market] = {}
 
             for kind in KINDS:
-                out["periods"][
-                    period
-                ][market][kind] = (
+                out["periods"][period][market][kind] = (
                     build_period(
                         histories[market],
                         market,
@@ -501,8 +557,7 @@ def main():
     validate_output(out)
 
     save_json(
-        ROOT
-        / "data/institutional.json",
+        ROOT / "data/institutional.json",
         out
     )
 
