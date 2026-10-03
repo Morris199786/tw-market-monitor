@@ -106,7 +106,16 @@ jobs:
               tracked - existing
           )
 
-          if missing:
+          benchmark = detail_data.get("tpex_benchmark", {}) if detail_path.exists() else {}
+          heatmap = json.loads(Path("data/heatmap.json").read_text(encoding="utf-8"))
+          market_files = sorted(Path("data/history/market").glob("*.json"))
+          target_date = market_files[-1].stem if market_files else None
+          needs_index = (
+              not benchmark.get("changes_by_period")
+              or any(benchmark.get("changes_by_period", {}).get(str(n)) is None for n in (1, 5, 10, 20))
+              or (target_date and detail_data.get("as_of_date") != target_date)
+          )
+          if missing or needs_index:
               print(
                   "Missing stock detail:",
                   ", ".join(missing),
@@ -221,3 +230,4 @@ jobs:
 
           echo "Failed to push heatmap data after 5 attempts"
           exit 1
+
