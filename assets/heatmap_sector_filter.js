@@ -569,38 +569,15 @@
   }
 
   function applySectorFilter() {
-    const rows =
-      directHeatButtons();
-
-    if (!rows.length) {
-      return;
-    }
-
-    if (!activeSector) {
-      rows.forEach(
-        row => {
-          row.hidden = false;
-        }
-      );
-
-      return;
-    }
-
-    const allowed =
-      stockTickerSet(
-        activeSector,
-        activeSubgroup
-      );
-
-    rows.forEach(
-      row => {
-        const ticker =
-          tickerFromRow(row);
-
-        row.hidden =
-          !allowed.has(ticker);
-      }
-    );
+    /*
+     * 熱力圖本身已由原本的 UI 負責族群展開／收合
+     * 這裡不能再對整個 #heatGrid 的 .heat-stock 設 hidden，
+     * 否則只要 activeSector 有值，就會把其他族群的個股全部隱藏
+     *
+     * 保留函式是為了不影響既有呼叫流程；
+     * 個股點擊與 ticker 解析仍由本檔處理
+     */
+    decorateHeatStocks();
   }
 
   function decorateHeatStocks() {
@@ -1445,10 +1422,6 @@
         return;
       }
 
-      /*
-       * 如果點擊當下沒有取得族群，
-       * 使用後端 primary_sector / sectors
-       */
       if (
         !activeSector ||
         !data?.sectors?.[
@@ -1746,7 +1719,7 @@
 
     return [];
   }
-    function renderTrendPanel(
+     function renderTrendPanel(
     stock
   ) {
     /*
@@ -1863,9 +1836,7 @@
         : null;
 
     return `
-      <div
-        class="stock-detail-section-title"
-      >
+      <div class="stock-detail-section-title">
         <strong>
           近${activePeriod}日相對走勢
         </strong>
@@ -1875,15 +1846,9 @@
         </small>
       </div>
 
-      <div
-        class="stock-detail-kpis"
-      >
-        <div
-          class="stock-detail-kpi"
-        >
-          <span>
-            個股
-          </span>
+      <div class="stock-detail-kpis">
+        <div class="stock-detail-kpi">
+          <span>個股</span>
 
           <strong
             class="${
@@ -1900,12 +1865,8 @@
           </strong>
         </div>
 
-        <div
-          class="stock-detail-kpi"
-        >
-          <span>
-            相對族群
-          </span>
+        <div class="stock-detail-kpi">
+          <span>相對族群</span>
 
           <strong
             class="${
@@ -1922,12 +1883,8 @@
           </strong>
         </div>
 
-        <div
-          class="stock-detail-kpi"
-        >
-          <span>
-            相對大盤
-          </span>
+        <div class="stock-detail-kpi">
+          <span>相對大盤</span>
 
           <strong
             class="${
@@ -1945,9 +1902,7 @@
         </div>
       </div>
 
-      <div
-        class="stock-detail-chart"
-      >
+      <div class="stock-detail-chart">
         ${
           lineChartSvg(
             labels,
@@ -1975,9 +1930,7 @@
         }
       </div>
 
-      <div
-        class="stock-detail-legend"
-      >
+      <div class="stock-detail-legend">
         <span>
           <i
             class="stock-detail-dot stock"
@@ -2046,9 +1999,7 @@
       !labels.length
     ) {
       return `
-        <div
-          class="stock-detail-empty"
-        >
+        <div class="stock-detail-empty">
           暫無完整走勢資料
         </div>
       `;
@@ -2340,9 +2291,7 @@
         .reverse();
 
     return `
-      <table
-        class="stock-flow-table"
-      >
+      <table class="stock-flow-table">
         <thead>
           <tr>
             <th>日期</th>
@@ -2441,9 +2390,7 @@
 
     if (!allRows.length) {
       return `
-        <div
-          class="stock-detail-empty"
-        >
+        <div class="stock-detail-empty">
           目前沒有法人籌碼資料
         </div>
       `;
@@ -2477,9 +2424,7 @@
         : recent5;
 
     return `
-      <div
-        class="stock-detail-section-title"
-      >
+      <div class="stock-detail-section-title">
         <strong>
           近${activePeriod}日法人籌碼
         </strong>
@@ -2489,9 +2434,7 @@
         </small>
       </div>
 
-      <div
-        class="stock-flow-summary"
-      >
+      <div class="stock-flow-summary">
         <span>
           近${activePeriod}日三大法人合計
         </span>
@@ -2515,18 +2458,12 @@
         }"
         id="stockFlowStage"
       >
-        <div
-          class="stock-flow-chart-wrap"
-        >
-          <div
-            class="stock-detail-note"
-          >
+        <div class="stock-flow-chart-wrap">
+          <div class="stock-detail-note">
             長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜單位：張
           </div>
 
-          <div
-            class="stock-detail-chart"
-          >
+          <div class="stock-detail-chart">
             ${
               flowBarChartSvg(
                 chartRows
@@ -2535,9 +2472,7 @@
           </div>
         </div>
 
-        <div
-          class="stock-flow-table-caption"
-        >
+        <div class="stock-flow-table-caption">
           ${
             flowExpanded
               ? `近${
@@ -2547,12 +2482,8 @@
           }
         </div>
 
-        <div
-          class="stock-flow-table-wrap"
-        >
-          <div
-            class="stock-flow-table-scroll"
-          >
+        <div class="stock-flow-table-wrap">
+          <div class="stock-flow-table-scroll">
             ${
               flowTableHtml(
                 tableRows
@@ -3078,6 +3009,4 @@
   } else {
     init();
   }
-})(); 
-   
-   
+})();
