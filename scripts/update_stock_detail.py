@@ -158,147 +158,59 @@ def fetch_taiex(dates):
 
 
 def _parse_tpex_daily_index(data, target_date):
-    """
-    解析櫃買中心「櫃買指數暨產業分類指數（日查詢）」。
-    只取「櫃買指數 / 發行量加權股價指數」收盤值。
-    """
-    tables = []
-
-    if isinstance(data, dict):
-        if isinstance(data.get("tables"), list):
-            tables.extend(data.get("tables") or [])
-
-        if isinstance(data.get("data"), list):
-            tables.append({
-                "fields": data.get("fields") or [],
-                "data": data.get("data") or [],
-            })
-
-    for tb in tables:
-        fields = tb.get("fields") or []
-        rows = tb.get("data") or []
-
-        # 新版 API 常見欄位：指數名稱、收盤指數
-        name_idx = None
-        close_idx = None
-
-        for i, field in enumerate(fields):
-            f = str(field or "").replace(" ", "")
-
-            if name_idx is None and (
-                "指數名稱" in f
-                or f in ("名稱", "種類")
-            ):
-                name_idx = i
-
-            if close_idx is None and (
-                "收盤指數" in f
-                or "收市指數" in f
-                or f in ("收盤", "收市")
-            ):
-                close_idx = i
-
-        if name_idx is None or close_idx is None:
+    """Accept only the dated price-index table, never the total-return index."""
+    if not isinstance(data, dict):
+        return None
+    if str(data.get("date", "")) != target_date.replace("-", ""):
+        return None
+    for table in data.get("tables", []):
+        if parse_twse_date(table.get("date")) != target_date:
             continue
-
+        fields = [str(f).strip() for f in table.get("fields", [])]
+        if "指數" not in fields or "收市指數" not in fields:
+            continue
+        rows = table.get("data", [])
+        if int(table.get("totalCount", -1)) != len(rows):
+            continue
+        ni, ci = fields.index("指數"), fields.index("收市指數")
         for row in rows:
-            try:
-                name = str(row[name_idx] or "").strip()
-            except Exception:
-                continue
-
-            if name not in (
-                "櫃買指數",
-                "發行量加權股價指數",
-            ):
-                continue
-
-            try:
-                value = n(row[close_idx])
-            except Exception:
-                value = 0
-
-            if value > 0:
-                return value
-
+            if len(row) > max(ni, ci) and str(row[ni]).strip() == "櫃買指數":
+                value = n(row[ci])
+                return value if value > 0 else None
     return None
 
 
 def fetch_tpex_index(dates):
-    """
-    官方 TPEx 櫃買指數歷史收盤。
-
-    改用「櫃買指數暨產業分類指數（日查詢）」逐交易日取得，
-    避免先前 monthly daily-indices endpoint 的 schema 差異。
-    """
+    """Official dated closing price index; missing days remain missing."""
     values = {}
-
     for ds in dates:
-        y, m, d = map(int, ds.split("-"))
-        roc_date = f"{y - 1911}/{m:02d}/{d:02d}"
-
-        candidates = [
-            (
-                "https://www.tpex.org.tw/www/zh-tw/indices/"
-                "stock-index/industrial/inxsect",
-                {
-                    "date": roc_date,
-                    "response": "json",
-                },
-            ),
-            (
-                "https://www.tpex.org.tw/web/stock/iNdex_info/"
-                "inxh/inx_result.php",
-                {
-                    "l": "zh-tw",
-                    "d": roc_date,
-                    "o": "json",
-                },
-            ),
-        ]
-
-        value = None
-
-        for url, params in candidates:
-            try:
-                data = get_json(
-                    url,
-                    params=params,
-                    timeout=45,
-                )
-
-                value = _parse_tpex_daily_index(
-                    data,
-                    ds,
-                )
-
-                if value is not None:
-                    break
-
-            except Exception as e:
-                print(
-                    "TPEX index fetch failed",
-                    ds,
-                    url,
-                    repr(e),
-                )
-
-        if value is not None:
-            values[ds] = value
-        else:
-            print(
-                "TPEX index missing",
-                ds,
+        try:
+            data = get_json(
+                "https://www.tpex.org.tw/www/zh-tw/afterTrading/indexSummary",
+                params={"date": ds.replace("-", "/"), "response": "json"},
+                timeout=30, tries=2,
             )
-
-    print(
-        "TPEX index points",
-        len(values),
-        "/",
-        len(dates),
-    )
-
+            value = _parse_tpex_daily_index(data, ds)
+            if value is not None:
+                values[ds] = value
+            else:
+                print("TPEX index missing or invalid", ds)
+        except Exception as exc:
+            print("TPEX index fetch failed", ds, repr(exc))
+    print("TPEX index points", len(values), "/", len(dates))
     return values
+
+
+def benchmark_changes(values):
+    # Do not derive daily returns from rounded cumulative percentages.
+    result = {}
+    for days in (1, 5, 10, 20):
+        window = values[-(days + 1):]
+        valid = len(window) == days + 1 and all(
+            v is not None and float(v) > 0 for v in window
+        )
+        result[str(days)] = pct_from_base(window[-1], window[0]) if valid else None
+    return result
 
 
 def pct_from_base(value, base):
@@ -522,13 +434,16 @@ def main():
         "benchmark": {
             "name": "上市加權指數",
             "source": "TWSE FMTQIK",
+            "changes_by_period": benchmark_changes(taiex_series),
             "returns": benchmark_periods["5"],
             "returns_by_period": benchmark_periods,
         },
 
         "tpex_benchmark": {
             "name": "櫃買指數",
-            "source": "TPEx 日成交量值、指數",
+            "source": "TPEx afterTrading/indexSummary",
+            "changes_by_period": benchmark_changes(tpex_series),
+            "missing_dates": [d for d in dates_all if d not in tpex_values],
             "returns": tpex_benchmark_periods["5"],
             "returns_by_period": tpex_benchmark_periods,
         },
@@ -553,3 +468,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
