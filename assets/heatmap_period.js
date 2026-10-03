@@ -4,20 +4,13 @@
   /*
    * heatmap_period.js
    *
-   * 現在只負責：
+   * 負責：
    * 1. 當日 / 5日 / 10日 / 20日按鈕樣式
    * 2. 市值加權 / 權重上限按鈕樣式
-   * 3. 大盤同期漲幅區塊樣式
+   * 3. 大盤 + OTC 同期漲幅顯示
    *
-   * 熱力圖資料、期間、權重計算、排序
-   * 全部由 app.js 統一處理
-   *
-   * 這支不再：
-   * - fetch JSON
-   * - 修改熱力圖數值
-   * - MutationObserver 重畫
-   * - 自己管理期間
-   * - 自己管理權重
+   * 熱力圖資料、期間、權重計算、排序仍全部由 app.js 處理
+   * 本檔不修改任何熱力圖族群或個股數值
    */
 
   if (window.__heatmapPeriodStyleOnlyLoaded) {
@@ -29,12 +22,241 @@
 
   const STYLE_ID = "heatmap-period-style";
 
-  function injectStyle() {
-    if (document.getElementById(STYLE_ID)) {
+  let detailCache = null;
+  let detailPromise = null;
+
+  function pct(v) {
+    if (
+      v === null ||
+      v === undefined ||
+      !Number.isFinite(Number(v))
+    ) {
+      return "—";
+    }
+
+    const n = Number(v);
+
+    return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+  }
+
+  function activePeriod() {
+    if (
+      typeof window.getHeatmapActivePeriod ===
+      "function"
+    ) {
+      return String(
+        window.getHeatmapActivePeriod() || "1"
+      );
+    }
+
+    return "1";
+  }
+
+  function periodLabel(period) {
+    return period === "1"
+      ? "當日"
+      : `近${period}日`;
+  }
+
+  function lastNumber(arr) {
+    const nums = (arr || [])
+      .map(Number)
+      .filter(Number.isFinite);
+
+    return nums.length
+      ? nums[nums.length - 1]
+      : null;
+  }
+
+  /*
+   * stock_detail.json 的 benchmark：
+   *
+   * 5 / 10 / 20 日：
+   * returns_by_period 最後一個值
+   * 就是該期間截至最新交易日的累積報酬
+   *
+   * 當日：
+   * 利用近5日累積報酬的最後兩點
+   * 還原最新一個交易日的單日漲跌幅
+   */
+  function benchmarkReturn(
+    benchmark,
+    period
+  ) {
+    if (!benchmark) {
+      return null;
+    }
+
+    if (period !== "1") {
+      return lastNumber(
+        benchmark
+          .returns_by_period?.[period] ||
+        (
+          period === "5"
+            ? benchmark.returns
+            : null
+        )
+      );
+    }
+
+    const values =
+      benchmark
+        .returns_by_period?.["5"] ||
+      benchmark.returns ||
+      [];
+
+    const nums = values
+      .map(Number)
+      .filter(Number.isFinite);
+
+    if (nums.length < 2) {
+      return null;
+    }
+
+    const prev =
+      nums[nums.length - 2] / 100;
+
+    const curr =
+      nums[nums.length - 1] / 100;
+
+    return (
+      (
+        (1 + curr) /
+        (1 + prev)
+      ) - 1
+    ) * 100;
+  }
+
+  async function loadDetail() {
+    if (detailCache) {
+      return detailCache;
+    }
+
+    if (detailPromise) {
+      return detailPromise;
+    }
+
+    detailPromise = fetch(
+      `./data/stock_detail.json?v=${Date.now()}`,
+      {
+        cache: "no-store"
+      }
+    )
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(
+            `HTTP ${r.status}`
+          );
+        }
+
+        return r.json();
+      })
+      .then(d => {
+        detailCache = d || {};
+
+        return detailCache;
+      })
+      .catch(err => {
+        console.warn(
+          "[OTC benchmark]",
+          err
+        );
+
+        return {};
+      })
+      .finally(() => {
+        detailPromise = null;
+      });
+
+    return detailPromise;
+  }
+
+  function benchmarkChip(
+    label,
+    value,
+    extraClass = ""
+  ) {
+    const cls =
+      Number(value) > 0
+        ? "up"
+        : Number(value) < 0
+          ? "down"
+          : "";
+
+    return `
+      <span
+        class="
+          heat-benchmark-chip
+          ${extraClass}
+        "
+      >
+        ${label}
+
+        <strong class="${cls}">
+          ${pct(value)}
+        </strong>
+      </span>
+    `;
+  }
+
+  async function renderBenchmarks() {
+    const host =
+      document.getElementById(
+        "heatPeriodBenchmark"
+      );
+
+    if (!host) {
       return;
     }
 
-    const style = document.createElement("style");
+    const d =
+      await loadDetail();
+
+    const period =
+      activePeriod();
+
+    const label =
+      periodLabel(period);
+
+    const taiex =
+      benchmarkReturn(
+        d.benchmark,
+        period
+      );
+
+    const otc =
+      benchmarkReturn(
+        d.tpex_benchmark,
+        period
+      );
+
+    host.innerHTML = `
+      ${benchmarkChip(
+        `大盤${label}漲幅`,
+        taiex
+      )}
+
+      ${benchmarkChip(
+        `OTC${label}漲幅`,
+        otc,
+        "otc"
+      )}
+    `;
+  }
+
+  function injectStyle() {
+    if (
+      document.getElementById(
+        STYLE_ID
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
 
     style.id = STYLE_ID;
 
@@ -48,39 +270,65 @@
         display: flex;
         flex-direction: column;
         gap: 9px;
-        margin: 0 0 14px;
-        width: 100%;
-        box-sizing: border-box;
+
+        margin:
+          0 0 14px;
+
+        width:
+          100%;
+
+        box-sizing:
+          border-box;
       }
 
+
       .heat-control-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        width: 100%;
-        box-sizing: border-box;
+        display:
+          flex;
+
+        align-items:
+          center;
+
+        justify-content:
+          space-between;
+
+        gap:
+          12px;
+
+        flex-wrap:
+          wrap;
+
+        width:
+          100%;
+
+        box-sizing:
+          border-box;
       }
 
 
       /* =========================================================
          期間按鈕
-         當日 / 5日 / 10日 / 20日
       ========================================================= */
 
       .heat-period-tabs {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        display:
+          inline-flex;
 
-        padding: 4px;
+        align-items:
+          center;
+
+        gap:
+          6px;
+
+        padding:
+          4px;
 
         border:
           1px solid
           var(--line);
 
-        border-radius: 12px;
+        border-radius:
+          12px;
 
         background:
           var(--card);
@@ -92,21 +340,27 @@
 
       /* =========================================================
          權重模式按鈕
-         市值加權 / 權重上限
       ========================================================= */
 
       .heat-weight-tabs {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        display:
+          inline-flex;
 
-        padding: 4px;
+        align-items:
+          center;
+
+        gap:
+          6px;
+
+        padding:
+          4px;
 
         border:
           1px solid
           var(--line);
 
-        border-radius: 12px;
+        border-radius:
+          12px;
 
         background:
           var(--card);
@@ -122,15 +376,23 @@
 
       .heat-period-btn,
       .heat-weight-btn {
-        appearance: none;
-        -webkit-appearance: none;
+        appearance:
+          none;
 
-        border: 0;
-        outline: 0;
+        -webkit-appearance:
+          none;
 
-        cursor: pointer;
+        border:
+          0;
 
-        height: 34px;
+        outline:
+          0;
+
+        cursor:
+          pointer;
+
+        height:
+          34px;
 
         padding:
           0 13px;
@@ -171,12 +433,14 @@
 
 
       .heat-period-btn {
-        min-width: 54px;
+        min-width:
+          54px;
       }
 
 
       .heat-weight-btn {
-        min-width: 82px;
+        min-width:
+          82px;
       }
 
 
@@ -218,20 +482,30 @@
 
 
       /* =========================================================
-         說明 + 大盤漲幅
+         說明 + 大盤 / OTC
       ========================================================= */
 
       .heat-period-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display:
+          flex;
 
-        gap: 12px;
+        align-items:
+          center;
 
-        flex-wrap: wrap;
+        justify-content:
+          space-between;
 
-        width: 100%;
-        min-width: 0;
+        gap:
+          12px;
+
+        flex-wrap:
+          wrap;
+
+        width:
+          100%;
+
+        min-width:
+          0;
 
         color:
           var(--muted);
@@ -248,16 +522,57 @@
 
 
       #heatWeightDescription {
-        min-width: 0;
-        flex: 1 1 auto;
+        min-width:
+          0;
+
+        flex:
+          1 1 auto;
       }
 
 
-      .heat-period-benchmark {
-        display: inline-flex;
-        align-items: center;
+      /*
+       * benchmark 外層現在容納兩個框：
+       *
+       * 大盤近20日漲幅
+       * OTC近20日漲幅
+       */
 
-        gap: 5px;
+      .heat-period-benchmark {
+        display:
+          inline-flex;
+
+        align-items:
+          center;
+
+        gap:
+          6px;
+
+        padding:
+          0;
+
+        border:
+          0;
+
+        background:
+          transparent;
+
+        white-space:
+          nowrap;
+
+        box-sizing:
+          border-box;
+      }
+
+
+      .heat-benchmark-chip {
+        display:
+          inline-flex;
+
+        align-items:
+          center;
+
+        gap:
+          5px;
 
         padding:
           6px 9px;
@@ -280,7 +595,7 @@
       }
 
 
-      .heat-period-benchmark strong {
+      .heat-benchmark-chip strong {
         font-size:
           11px;
 
@@ -294,13 +609,13 @@
        * 紅漲綠跌
        */
 
-      .heat-period-benchmark .up {
+      .heat-benchmark-chip .up {
         color:
           #dc2626;
       }
 
 
-      .heat-period-benchmark .down {
+      .heat-benchmark-chip .down {
         color:
           #15803d;
       }
@@ -330,7 +645,7 @@
       .heat-weight-tabs,
 
       [data-theme="dark"]
-      .heat-period-benchmark {
+      .heat-benchmark-chip {
         background:
           var(--card);
       }
@@ -348,6 +663,7 @@
           align-items:
             stretch;
         }
+
 
         .heat-period-tabs,
         .heat-weight-tabs {
@@ -367,47 +683,50 @@
       ) {
 
         .heat-period-wrap {
-          gap: 8px;
+          gap:
+            8px;
 
           margin-bottom:
             12px;
         }
 
 
-        /*
-         * 手機改成兩排：
-         *
-         * 第一排
-         * 當日 5日 10日 20日
-         *
-         * 第二排
-         * 市值加權 權重上限
-         */
-
         .heat-control-row {
-          display: grid;
+          display:
+            grid;
 
           grid-template-columns:
-            minmax(0, 1fr);
+            minmax(
+              0,
+              1fr
+            );
 
-          gap: 8px;
+          gap:
+            8px;
 
-          width: 100%;
+          width:
+            100%;
         }
 
 
         .heat-period-tabs {
-          display: grid;
+          display:
+            grid;
 
           grid-template-columns:
             repeat(
               4,
-              minmax(0, 1fr)
+              minmax(
+                0,
+                1fr
+              )
             );
 
-          gap: 5px;
+          gap:
+            5px;
 
-          width: 100%;
+          width:
+            100%;
 
           box-sizing:
             border-box;
@@ -415,17 +734,23 @@
 
 
         .heat-weight-tabs {
-          display: grid;
+          display:
+            grid;
 
           grid-template-columns:
             repeat(
               2,
-              minmax(0, 1fr)
+              minmax(
+                0,
+                1fr
+              )
             );
 
-          gap: 5px;
+          gap:
+            5px;
 
-          width: 100%;
+          width:
+            100%;
 
           box-sizing:
             border-box;
@@ -434,9 +759,11 @@
 
         .heat-period-btn,
         .heat-weight-btn {
-          width: 100%;
+          width:
+            100%;
 
-          min-width: 0;
+          min-width:
+            0;
 
           padding:
             0 6px;
@@ -444,9 +771,11 @@
 
 
         .heat-period-meta {
-          width: 100%;
+          width:
+            100%;
 
-          gap: 8px;
+          gap:
+            8px;
 
           align-items:
             center;
@@ -455,15 +784,47 @@
 
         #heatWeightDescription {
           flex:
-            1 1 160px;
+            1 1 100%;
 
-          min-width: 0;
+          min-width:
+            0;
         }
 
 
+        /*
+         * 手機上大盤 / OTC 並排
+         */
+
         .heat-period-benchmark {
-          flex:
-            0 0 auto;
+          width:
+            100%;
+
+          display:
+            grid;
+
+          grid-template-columns:
+            repeat(
+              2,
+              minmax(
+                0,
+                1fr
+              )
+            );
+
+          gap:
+            6px;
+        }
+
+
+        .heat-benchmark-chip {
+          justify-content:
+            center;
+
+          min-width:
+            0;
+
+          padding:
+            6px 7px;
         }
 
       }
@@ -496,13 +857,16 @@
         }
 
 
-        .heat-period-benchmark {
+        .heat-benchmark-chip {
           padding:
-            5px 7px;
+            5px 5px;
+
+          gap:
+            4px;
         }
 
 
-        .heat-period-benchmark strong {
+        .heat-benchmark-chip strong {
           font-size:
             10px;
         }
@@ -518,15 +882,7 @@
         max-width: 360px
       ) {
 
-        .heat-period-tabs {
-          gap:
-            3px;
-
-          padding:
-            3px;
-        }
-
-
+        .heat-period-tabs,
         .heat-weight-tabs {
           gap:
             3px;
@@ -545,12 +901,27 @@
             10px;
         }
 
+
+        .heat-benchmark-chip {
+          font-size:
+            8px;
+        }
+
       }
 
     `;
 
     document.head.appendChild(
       style
+    );
+  }
+
+
+  function refreshSoon() {
+    requestAnimationFrame(
+      () => {
+        renderBenchmarks();
+      }
     );
   }
 
@@ -565,13 +936,54 @@
   ) {
     document.addEventListener(
       "DOMContentLoaded",
-      injectStyle,
+      () => {
+        injectStyle();
+        refreshSoon();
+      },
       {
         once: true
       }
     );
   } else {
     injectStyle();
+    refreshSoon();
   }
+
+
+  /*
+   * app.js 切換熱力圖期間時，
+   * OTC / 大盤同步切換
+   */
+
+  window.addEventListener(
+    "heatmap:period-changed",
+    refreshSoon
+  );
+
+
+  window.addEventListener(
+    "heatmap:weight-changed",
+    refreshSoon
+  );
+
+
+  window.addEventListener(
+    "heatmap:detail-rendered",
+    refreshSoon
+  );
+
+
+  /*
+   * 從背景切回網站時重新抓一次，
+   * 避免手機 Safari 留著舊 benchmark
+   */
+
+  window.addEventListener(
+    "focus",
+    () => {
+      detailCache = null;
+      refreshSoon();
+    }
+  );
 
 })();
