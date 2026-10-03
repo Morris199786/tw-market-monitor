@@ -4,7 +4,7 @@ from sources import _idx
 TREND_DAYS = 20
 FLOW_DAYS = 5
 NEEDED_MARKET_DAYS = TREND_DAYS + 1
-PERIODS = (5, 20)
+PERIODS = (5, 10, 20)
 
 
 def _pick_number(obj, keys):
@@ -890,7 +890,7 @@ def main():
         ),
 
         "note": (
-            "走勢可切換近5／20個已完成交易日；"
+            "走勢可切換近5／10／20個已完成交易日；"
             "各期間皆以前一交易日收盤為0%基準；"
             "籌碼固定近5日"
         ),
@@ -899,6 +899,7 @@ def main():
 
         "available_periods": [
             5,
+            10,
             20,
         ],
 
