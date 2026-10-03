@@ -94,19 +94,15 @@ def _extract_inst_lots(row, kind):
     )
 
     if lot_value:
-        return round(
-            lot_value,
-            1
-        )
+        return int(round(lot_value))
 
-    return round(
+    return int(round(
         _pick_number(
             row,
             share_keys.get(kind, [])
         )
-        / 1000,
-        1,
-    )
+        / 1000
+    ))
 
 
 def market_history():
@@ -723,11 +719,10 @@ def build_stock_series(
                         "dealer"
                     )
                 ),
-                "total_lots": round(
+                "total_lots": int(round(
                     total_shares
-                    / 1000,
-                    1,
-                ),
+                    / 1000
+                )),
             })
 
         out[t] = {
@@ -774,14 +769,13 @@ def build_stock_series(
                 institutional
             ),
 
-            "institutional_5d_total_lots": round(
+            "institutional_5d_total_lots": int(round(
                 sum(
                     x["total_lots"]
                     for x
                     in institutional[-5:]
-                ),
-                1,
-            ),
+                )
+            )),
         }
 
     return out
@@ -877,6 +871,50 @@ def main():
         )
     )
 
+    ticker_sectors = {}
+
+    for sec in sectors:
+        sec_name = str(
+            sec.get("name") or ""
+        ).strip()
+
+        if not sec_name:
+            continue
+
+        for row in sec.get("stocks", []):
+            ticker = str(
+                row.get("ticker") or ""
+            ).strip()
+
+            if not ticker:
+                continue
+
+            ticker_sectors.setdefault(
+                ticker,
+                []
+            ).append(sec_name)
+
+    stock_series = build_stock_series(
+        tickers,
+        market_rows,
+        inst_rows,
+        names,
+        markets,
+    )
+
+    for ticker, stock in stock_series.items():
+        sector_names = ticker_sectors.get(
+            ticker,
+            []
+        )
+
+        stock["sectors"] = sector_names
+        stock["primary_sector"] = (
+            sector_names[0]
+            if sector_names
+            else ""
+        )
+
     out = {
         "updated_at": (
             now_tpe()
@@ -949,15 +987,7 @@ def main():
             )
         ),
 
-        "stocks": (
-            build_stock_series(
-                tickers,
-                market_rows,
-                inst_rows,
-                names,
-                markets,
-            )
-        ),
+        "stocks": stock_series,
     }
 
     save_json(
