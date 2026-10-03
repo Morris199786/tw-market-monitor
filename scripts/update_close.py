@@ -17,10 +17,70 @@ def history_files():
     )
 
 
+def saved_tpex_quotes_by_date(
+    trade_date
+):
+    """
+    TPEx 指定日期 API 若暫時 520，
+    僅允許使用 repo 中「同一交易日」已保存的 TPEx 行情。
+    絕不拿最新行情冒充歷史日期。
+    """
+    p = (
+        ROOT
+        / "data/history/market"
+        / f"{trade_date}.json"
+    )
+
+    if not p.exists():
+        return {}
+
+    snap = load_json(
+        p,
+        {}
+    )
+
+    if (
+        snap.get("date")
+        != trade_date
+    ):
+        return {}
+
+    stocks = snap.get(
+        "stocks",
+        {}
+    )
+
+    out = {
+        str(t): q
+        for t, q in stocks.items()
+        if (
+            ordinary_ticker(t)
+            and q.get("market")
+            == "tpex"
+        )
+    }
+
+    if len(out) >= MIN_TPEX_ROWS:
+        print(
+            "TPEx same-date saved snapshot fallback",
+            trade_date,
+            len(out),
+        )
+
+        return out
+
+    return {}
+
+
 def fetch_latest_official_close():
     """
-    逐日查官方指定日期收盤資料，
-    只有同一天 TWSE + TPEx 都取得足夠筆數才接受。
+    逐日查官方指定日期收盤資料。
+    TWSE 與 TPEx 必須是同一交易日。
+
+    TPEx 指定日期端點若發生 520：
+    - 優先使用官方指定日期 API
+    - 失敗時，只允許使用 repo 已存在的同日期 TPEx snapshot
+    - 不會拿 latest TPEx 資料冒充舊日期
     """
     today = now_tpe().date()
 
@@ -37,15 +97,14 @@ def fetch_latest_official_close():
         ds = d.isoformat()
 
         try:
-            twse = fetch_twse_quotes_by_date(
-                ds
-            )
-            tpex = fetch_tpex_quotes_by_date(
-                ds
+            twse = (
+                fetch_twse_quotes_by_date(
+                    ds
+                )
             )
         except Exception as e:
             print(
-                "official close fetch failed",
+                "TWSE official close fetch failed",
                 ds,
                 repr(e)
             )
@@ -58,6 +117,35 @@ def fetch_latest_official_close():
             ).items()
             if ordinary_ticker(t)
         }
+
+        if len(twse) < MIN_TWSE_ROWS:
+            print(
+                "TWSE official close incomplete",
+                ds,
+                len(twse),
+            )
+            continue
+
+        tpex = {}
+
+        try:
+            tpex = (
+                fetch_tpex_quotes_by_date(
+                    ds
+                )
+            )
+        except Exception as e:
+            print(
+                "TPEx date-specific close failed",
+                ds,
+                repr(e),
+            )
+
+            tpex = (
+                saved_tpex_quotes_by_date(
+                    ds
+                )
+            )
 
         tpex = {
             str(t): q
@@ -76,9 +164,6 @@ def fetch_latest_official_close():
             len(tpex),
         )
 
-        if len(twse) < MIN_TWSE_ROWS:
-            continue
-
         if len(tpex) < MIN_TPEX_ROWS:
             continue
 
@@ -88,7 +173,7 @@ def fetch_latest_official_close():
         }
 
     raise RuntimeError(
-        "no complete official close data found"
+        "no complete same-date official close data found"
     )
 
 
@@ -387,7 +472,7 @@ def main():
         "date": trade_date,
         "updated_at": updated_at,
         "source": (
-            "official date-specific "
+            "official same-date "
             "TWSE + TPEx close"
         ),
         "stocks": filtered,
@@ -433,7 +518,7 @@ def main():
         "date": trade_date,
         "updated_at": updated_at,
         "source": (
-            "official date-specific "
+            "official same-date "
             "TWSE + TPEx close"
         ),
         "twse": [],
@@ -645,7 +730,7 @@ def main():
             "date": trade_date,
             "updated_at": updated_at,
             "source": (
-                "official date-specific "
+                "official same-date "
                 "TWSE + TPEx close"
             ),
             "complete": (
@@ -666,7 +751,7 @@ def main():
             "date": trade_date,
             "updated_at": updated_at,
             "source": (
-                "official date-specific "
+                "official same-date "
                 "TWSE + TPEx close"
             ),
             "complete": (
