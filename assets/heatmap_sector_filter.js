@@ -1,15 +1,29 @@
 /* =========================================================
-   市場熱力圖：族群下拉 + PCB 細分 + 個股近5日資訊
-   2026-09-30
+   市場熱力圖：族群下拉 + 細分類 + 個股資訊
+   個股視窗：5 / 10 / 20 日共用期間
+   籌碼：圖表預設，支援上拉／點箭頭展開明細
+   2026-10-03
    ========================================================= */
 
 (function () {
-  const $h = s => document.querySelector(s);
+  const $h = (s, root = document) => root.querySelector(s);
+
+  const PERIODS = [5, 10, 20];
+  const DEFAULT_PERIOD = 5;
 
   let sectorConfig = [];
   let selectedSector = "all";
   let selectedSubgroup = "all";
   let applying = false;
+
+  let stockDetailData = null;
+  let stockDetailPromise = null;
+  let activeTicker = null;
+  let activeSector = null;
+  let activeTab = "trend";
+  let activePeriod = DEFAULT_PERIOD;
+  let flowExpanded = false;
+  let flowTouchStartY = null;
 
   async function loadSectorConfig() {
     try {
@@ -23,139 +37,78 @@
       }
 
       const d = await r.json();
-
-      sectorConfig =
-        d.sectors || [];
-
+      sectorConfig = d.sectors || [];
       return sectorConfig;
     } catch (e) {
-      console.error(
-        "sector selector load failed",
-        e
-      );
-
+      console.error("sector selector load failed", e);
       sectorConfig = [];
-
       return [];
     }
   }
 
   function findSector(name) {
-    return sectorConfig.find(
-      x => x.name === name
-    );
+    return sectorConfig.find(x => x.name === name);
   }
 
   function directHeatButtons() {
-    const grid =
-      $h("#heatGrid");
+    const grid = $h("#heatGrid");
+    if (!grid) return [];
 
-    if (!grid) {
-      return [];
-    }
-
-    return [
-      ...grid.children
-    ].filter(
-      el =>
-        el.matches?.(
-          "button.heat[data-sec]"
-        )
+    return [...grid.children].filter(
+      el => el.matches?.("button.heat[data-sec]")
     );
   }
 
   function updateStaticLabels() {
-    const count =
-      sectorConfig.length;
+    const count = sectorConfig.length;
 
-    const heatHero =
-      $h("#heat .hero p");
-
+    const heatHero = $h("#heat .hero p");
     if (heatHero) {
       heatHero.textContent =
         `${count} 個自訂族群｜市值加權｜紅漲綠跌｜可直接下拉選族群`;
     }
 
-    const revenueHero =
-      $h(
-        "#monthlyRevenue .hero p"
-      );
-
+    const revenueHero = $h("#monthlyRevenue .hero p");
     if (revenueHero) {
       revenueHero.textContent =
         `${count} 個科技族群｜最新已公布月份｜營收、MoM、YoY`;
     }
 
-    document
-      .querySelectorAll(
-        ".feature-card"
-      )
-      .forEach(card => {
-        const title =
-          card.querySelector(
-            ".feature-copy b"
-          )?.textContent
-            ?.trim();
+    document.querySelectorAll(".feature-card").forEach(card => {
+      const title =
+        card.querySelector(".feature-copy b")
+          ?.textContent?.trim();
 
-        const small =
-          card.querySelector(
-            ".feature-copy small"
-          );
+      const small =
+        card.querySelector(".feature-copy small");
 
-        if (!small) {
-          return;
-        }
+      if (!small) return;
 
-        if (
-          title ===
-          "市場熱力圖"
-        ) {
-          small.textContent =
-            `${count}族群・5分鐘`;
-        }
+      if (title === "市場熱力圖") {
+        small.textContent = `${count}族群・5分鐘`;
+      }
 
-        if (
-          title ===
-          "月營收公布"
-        ) {
-          small.textContent =
-            `${count}族群`;
-        }
-      });
+      if (title === "月營收公布") {
+        small.textContent = `${count}族群`;
+      }
+    });
   }
 
   function ensureControls() {
-    const grid =
-      $h("#heatGrid");
+    const grid = $h("#heatGrid");
 
-    if (
-      !grid ||
-      $h("#heatSectorControl")
-    ) {
+    if (!grid || $h("#heatSectorControl")) {
       return;
     }
 
-    const wrap =
-      document.createElement(
-        "div"
-      );
-
-    wrap.id =
-      "heatSectorControl";
-
-    wrap.className =
-      "heat-sector-control";
+    const wrap = document.createElement("div");
+    wrap.id = "heatSectorControl";
+    wrap.className = "heat-sector-control";
 
     wrap.innerHTML = `
       <div class="heat-sector-copy">
-        <span class="heat-sector-kicker">
-          SECTOR FILTER
-        </span>
-
-        <strong>
-          選擇想看的族群
-        </strong>
-
+        <span class="heat-sector-kicker">SECTOR FILTER</span>
+        <strong>選擇想看的族群</strong>
         <small id="heatSectorMeta">
           ${sectorConfig.length} 個自訂族群
         </small>
@@ -166,29 +119,19 @@
           class="heat-sector-select-wrap"
           for="heatSectorSelect"
         >
-          <span>
-            族群
-          </span>
+          <span>族群</span>
 
           <select
             id="heatSectorSelect"
             aria-label="選擇熱力圖族群"
           >
-            <option value="all">
-              全部族群
-            </option>
+            <option value="all">全部族群</option>
 
-            ${sectorConfig
-              .map(
-                sec => `
-                  <option
-                    value="${sec.name}"
-                  >
-                    ${sec.name}
-                  </option>
-                `
-              )
-              .join("")}
+            ${sectorConfig.map(sec => `
+              <option value="${sec.name}">
+                ${sec.name}
+              </option>
+            `).join("")}
           </select>
         </label>
 
@@ -202,91 +145,53 @@
       </div>
     `;
 
-    grid.parentNode.insertBefore(
-      wrap,
-      grid
+    grid.parentNode.insertBefore(wrap, grid);
+
+    $h("#heatSectorSelect")?.addEventListener(
+      "change",
+      e => {
+        selectedSector = e.target.value;
+        selectedSubgroup = "all";
+        rerenderSelected();
+      }
     );
 
-    $h("#heatSectorSelect")
-      ?.addEventListener(
-        "change",
-        e => {
-          selectedSector =
-            e.target.value;
+    $h("#heatSectorReset")?.addEventListener(
+      "click",
+      () => {
+        selectedSector = "all";
+        selectedSubgroup = "all";
 
-          selectedSubgroup =
-            "all";
+        const sel = $h("#heatSectorSelect");
+        if (sel) sel.value = "all";
 
-          rerenderSelected();
-        }
-      );
-
-    $h("#heatSectorReset")
-      ?.addEventListener(
-        "click",
-        () => {
-          selectedSector =
-            "all";
-
-          selectedSubgroup =
-            "all";
-
-          const sel =
-            $h(
-              "#heatSectorSelect"
-            );
-
-          if (sel) {
-            sel.value =
-              "all";
-          }
-
-          rerenderSelected();
-        }
-      );
+        rerenderSelected();
+      }
+    );
   }
 
   function rerenderSelected() {
     try {
-      if (
-        typeof st !==
-        "undefined"
-      ) {
+      if (typeof st !== "undefined") {
         st.openSector =
-          selectedSector ===
-          "all"
+          selectedSector === "all"
             ? null
             : selectedSector;
       }
 
-      if (
-        typeof heat ===
-        "function"
-      ) {
-        Promise
-          .resolve(
-            heat()
-          )
-          .finally(
-            () => {
-              setTimeout(
-                () => {
-                  applySectorFilter();
-                  injectSubgroupControl();
-                  decorateHeatStocks();
-                },
-                20
-              );
-            }
-          );
+      if (typeof heat === "function") {
+        Promise.resolve(heat()).finally(() => {
+          setTimeout(() => {
+            applySectorFilter();
+            injectSubgroupControl();
+            decorateHeatStocks();
+          }, 20);
+        });
 
         return;
       }
     } catch (e) {
-      console.warn(
-        "heat rerender fallback",
-        e
-      );
+      console.warn("heat rerender fallback", e);
     }
 
     applySectorFilter();
@@ -295,46 +200,29 @@
   }
 
   function applySectorFilter() {
-    if (applying) {
-      return;
-    }
+    if (applying) return;
 
     applying = true;
 
-    directHeatButtons()
-      .forEach(
-        btn => {
-          btn.hidden =
-            selectedSector !==
-              "all" &&
-            btn.dataset.sec !==
-              selectedSector;
-        }
-      );
+    directHeatButtons().forEach(btn => {
+      btn.hidden =
+        selectedSector !== "all" &&
+        btn.dataset.sec !== selectedSector;
+    });
 
-    const meta =
-      $h(
-        "#heatSectorMeta"
-      );
-
+    const meta = $h("#heatSectorMeta");
     if (meta) {
       meta.textContent =
-        selectedSector ===
-        "all"
+        selectedSector === "all"
           ? `${sectorConfig.length} 個自訂族群`
           : `目前：${selectedSector}`;
     }
 
-    const reset =
-      $h(
-        "#heatSectorReset"
-      );
-
+    const reset = $h("#heatSectorReset");
     if (reset) {
       reset.classList.toggle(
         "active",
-        selectedSector !==
-          "all"
+        selectedSector !== "all"
       );
     }
 
@@ -342,284 +230,140 @@
   }
 
   function injectSubgroupControl() {
-    if (
-      selectedSector ===
-      "all"
-    ) {
-      return;
-    }
+    if (selectedSector === "all") return;
 
-    const detail =
-      $h(
-        "#heatGrid .heat-detail"
-      );
+    const detail = $h("#heatGrid .heat-detail");
+    if (!detail) return;
 
-    if (!detail) {
-      return;
-    }
+    const sector = findSector(selectedSector);
+    const groups = sector?.subgroups || [];
 
-    const sector =
-      findSector(
-        selectedSector
-      );
+    if (!groups.length) return;
 
-    const groups =
-      sector?.subgroups ||
-      [];
-
-    if (!groups.length) {
-      return;
-    }
-
-    if (
-      detail.querySelector(
-        ".heat-subgroup-control"
-      )
-    ) {
+    if (detail.querySelector(".heat-subgroup-control")) {
       filterSubgroupStocks();
-
       return;
     }
 
-    const control =
-      document.createElement(
-        "div"
-      );
-
-    control.className =
-      "heat-subgroup-control";
+    const control = document.createElement("div");
+    control.className = "heat-subgroup-control";
 
     control.innerHTML = `
       <div>
-        <span
-          class="heat-subgroup-kicker"
-        >
-          SUB-SECTOR
-        </span>
-
-        <b>
-          ${sector.name}
-        </b>
+        <span class="heat-subgroup-kicker">SUB-SECTOR</span>
+        <b>${sector.name}</b>
       </div>
 
-      <label
-        class="heat-subgroup-select-wrap"
-      >
-        <span>
-          細分類
-        </span>
+      <label class="heat-subgroup-select-wrap">
+        <span>細分類</span>
 
         <select
           id="heatSubgroupSelect"
           aria-label="選擇細分產業"
         >
-          <option value="all">
-            全部成分
-          </option>
+          <option value="all">全部成分</option>
 
-          ${groups
-            .map(
-              g => `
-                <option
-                  value="${g.name}"
-                >
-                  ${g.name}
-                </option>
-              `
-            )
-            .join("")}
+          ${groups.map(g => `
+            <option value="${g.name}">
+              ${g.name}
+            </option>
+          `).join("")}
         </select>
       </label>
     `;
 
-    const list =
-      detail.querySelector(
-        ".heat-stock-list"
-      );
+    const list = detail.querySelector(".heat-stock-list");
+    if (!list) return;
 
-    if (!list) {
-      return;
-    }
-
-    detail.insertBefore(
-      control,
-      list
-    );
+    detail.insertBefore(control, list);
 
     const select =
-      control.querySelector(
-        "#heatSubgroupSelect"
-      );
+      control.querySelector("#heatSubgroupSelect");
 
     if (select) {
-      select.value =
-        selectedSubgroup;
+      select.value = selectedSubgroup;
 
-      select.addEventListener(
-        "change",
-        e => {
-          selectedSubgroup =
-            e.target.value;
-
-          filterSubgroupStocks();
-        }
-      );
+      select.addEventListener("change", e => {
+        selectedSubgroup = e.target.value;
+        filterSubgroupStocks();
+      });
     }
 
     filterSubgroupStocks();
   }
 
   function filterSubgroupStocks() {
-    const detail =
-      $h(
-        "#heatGrid .heat-detail"
-      );
+    const detail = $h("#heatGrid .heat-detail");
+    const sector = findSector(selectedSector);
 
-    const sector =
-      findSector(
-        selectedSector
-      );
+    if (!detail || !sector) return;
 
-    if (
-      !detail ||
-      !sector
-    ) {
-      return;
-    }
+    const group = (sector.subgroups || []).find(
+      g => g.name === selectedSubgroup
+    );
 
-    const group =
-      (
-        sector.subgroups ||
-        []
-      ).find(
-        g =>
-          g.name ===
-          selectedSubgroup
-      );
-
-    const allowed =
-      group
-        ? new Set(
-            (
-              group.tickers ||
-              []
-            ).map(
-              String
-            )
-          )
-        : null;
+    const allowed = group
+      ? new Set((group.tickers || []).map(String))
+      : null;
 
     const rows = [
-      ...detail.querySelectorAll(
-        ".heat-stock"
-      )
+      ...detail.querySelectorAll(".heat-stock")
     ];
 
     let visible = 0;
 
-    rows.forEach(
-      row => {
-        const ticker =
-          row.querySelector(
-            ".t"
-          )?.textContent
-            ?.trim();
+    rows.forEach(row => {
+      const ticker =
+        row.querySelector(".t")
+          ?.textContent?.trim();
 
-        const show =
-          !allowed ||
-          allowed.has(
-            String(
-              ticker
-            )
-          );
+      const show =
+        !allowed ||
+        allowed.has(String(ticker));
 
-        row.hidden =
-          !show;
-
-        if (show) {
-          visible += 1;
-        }
-      }
-    );
+      row.hidden = !show;
+      if (show) visible += 1;
+    });
 
     const meta =
-      detail.querySelector(
-        ".heat-detail-head > span"
-      );
+      detail.querySelector(".heat-detail-head > span");
 
     if (meta) {
       meta.textContent =
-        selectedSubgroup ===
-          "all"
+        selectedSubgroup === "all"
           ? `${rows.length} 檔｜依漲跌幅排序`
           : `${selectedSubgroup}｜${visible} 檔｜依漲跌幅排序`;
     }
   }
 
   function observeHeatmap() {
-    const grid =
-      $h(
-        "#heatGrid"
-      );
+    const grid = $h("#heatGrid");
+    if (!grid) return;
 
-    if (!grid) {
-      return;
-    }
+    const observer = new MutationObserver(() => {
+      if (applying) return;
 
-    const observer =
-      new MutationObserver(
-        () => {
-          if (applying) {
-            return;
-          }
+      applySectorFilter();
 
-          applySectorFilter();
+      setTimeout(() => {
+        injectSubgroupControl();
+        decorateHeatStocks();
+      }, 0);
+    });
 
-          setTimeout(
-            () => {
-              injectSubgroupControl();
-              decorateHeatStocks();
-            },
-            0
-          );
-        }
-      );
-
-    observer.observe(
-      grid,
-      {
-        childList: true,
-        subtree: true
-      }
-    );
+    observer.observe(grid, {
+      childList: true,
+      subtree: true
+    });
   }
 
-  /* =========================================================
-     個股近5日資訊
-     ========================================================= */
-
-  let stockDetailData = null;
-  let stockDetailPromise = null;
-  let activeTicker = null;
-  let activeSector = null;
-  let activeTab = "trend";
-
   function injectStockDetailStyles() {
-    if (
-      document.getElementById(
-        "stockDetailStyle"
-      )
-    ) {
+    if (document.getElementById("stockDetailStyle")) {
       return;
     }
 
-    const style =
-      document.createElement(
-        "style"
-      );
-
-    style.id =
-      "stockDetailStyle";
+    const style = document.createElement("style");
+    style.id = "stockDetailStyle";
 
     style.textContent = `
       .heat-stock{
@@ -655,7 +399,7 @@
 
       .stock-detail-sheet{
         width:min(820px,100%);
-        max-height:min(88vh,900px);
+        max-height:min(90vh,920px);
         overflow:auto;
         border:1px solid var(--line);
         border-radius:24px;
@@ -668,7 +412,7 @@
       .stock-detail-head{
         position:sticky;
         top:0;
-        z-index:5;
+        z-index:8;
         display:flex;
         align-items:flex-start;
         justify-content:space-between;
@@ -706,11 +450,42 @@
         cursor:pointer
       }
 
+      .stock-period-wrap{
+        padding:13px 20px 0
+      }
+
+      .stock-period-switch{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:6px;
+        padding:4px;
+        border:1px solid var(--line);
+        border-radius:14px;
+        background:var(--soft)
+      }
+
+      .stock-period-btn{
+        min-height:38px;
+        border:0;
+        border-radius:10px;
+        background:transparent;
+        color:var(--muted);
+        font-size:12px;
+        font-weight:900;
+        cursor:pointer
+      }
+
+      .stock-period-btn.active{
+        background:var(--card);
+        color:var(--ink);
+        box-shadow:0 2px 8px rgba(15,23,42,.10)
+      }
+
       .stock-detail-tabs{
         display:grid;
         grid-template-columns:1fr 1fr;
         gap:8px;
-        padding:14px 20px 0
+        padding:10px 20px 0
       }
 
       .stock-detail-tab{
@@ -821,7 +596,11 @@
         padding:12px 10px 8px;
         border:1px solid var(--line);
         border-radius:17px;
-        background:linear-gradient(180deg,var(--soft),color-mix(in srgb,var(--soft) 72%,var(--card)));
+        background:linear-gradient(
+          180deg,
+          var(--soft),
+          color-mix(in srgb,var(--soft) 72%,var(--card))
+        );
         overflow:hidden
       }
 
@@ -881,12 +660,71 @@
         font-variant-numeric:tabular-nums
       }
 
+      .stock-flow-stage{
+        position:relative
+      }
+
+      .stock-flow-chart-wrap{
+        transition:opacity .18s ease,transform .18s ease
+      }
+
+      .stock-flow-pull{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:100%;
+        min-height:46px;
+        margin:8px 0 0;
+        border:0;
+        background:transparent;
+        color:var(--ink);
+        cursor:pointer;
+        touch-action:pan-y
+      }
+
+      .stock-flow-pull-icon{
+        display:block;
+        width:16px;
+        height:16px;
+        border-left:4px solid currentColor;
+        border-top:4px solid currentColor;
+        transform:rotate(45deg);
+        border-radius:2px
+      }
+
+      .stock-flow-stage.expanded .stock-flow-pull-icon{
+        transform:rotate(225deg)
+      }
+
+      .stock-flow-pull-label{
+        margin-left:12px;
+        color:var(--muted);
+        font-size:10px;
+        font-weight:800
+      }
+
       .stock-flow-table-wrap{
-        margin-top:14px;
+        display:none;
+        margin-top:2px;
         overflow:hidden;
         border:1px solid var(--line);
         border-radius:16px;
         background:var(--card)
+      }
+
+      .stock-flow-stage.expanded .stock-flow-chart-wrap{
+        display:none
+      }
+
+      .stock-flow-stage.expanded .stock-flow-table-wrap{
+        display:block
+      }
+
+      .stock-flow-table-scroll{
+        max-height:52vh;
+        overflow:auto;
+        overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch
       }
 
       .stock-flow-table{
@@ -908,6 +746,9 @@
       }
 
       .stock-flow-table th{
+        position:sticky;
+        top:0;
+        z-index:2;
         background:var(--soft);
         color:var(--muted);
         font-size:10px;
@@ -949,7 +790,11 @@
       }
 
       .stock-flow-table tbody tr:nth-child(even){
-        background:color-mix(in srgb,var(--soft) 55%,transparent)
+        background:color-mix(
+          in srgb,
+          var(--soft) 55%,
+          transparent
+        )
       }
 
       .stock-detail-loading,
@@ -968,7 +813,7 @@
 
         .stock-detail-sheet{
           width:100%;
-          max-height:91vh;
+          max-height:92vh;
           border-radius:22px 22px 0 0;
           border-left:0;
           border-right:0;
@@ -983,8 +828,17 @@
           font-size:20px
         }
 
+        .stock-period-wrap{
+          padding:11px 14px 0
+        }
+
+        .stock-period-btn{
+          min-height:36px;
+          font-size:11px
+        }
+
         .stock-detail-tabs{
-          padding:11px 14px 0;
+          padding:9px 14px 0;
           gap:7px
         }
 
@@ -1053,38 +907,25 @@
       }
     `;
 
-    document.head.appendChild(
-      style
-    );
+    document.head.appendChild(style);
   }
 
   function ensureStockDetailModal() {
     let overlay =
-      document.getElementById(
-        "stockDetailOverlay"
-      );
+      document.getElementById("stockDetailOverlay");
 
-    if (overlay) {
-      return overlay;
-    }
+    if (overlay) return overlay;
 
-    overlay =
-      document.createElement(
-        "div"
-      );
-
-    overlay.id =
-      "stockDetailOverlay";
-
-    overlay.className =
-      "stock-detail-overlay";
+    overlay = document.createElement("div");
+    overlay.id = "stockDetailOverlay";
+    overlay.className = "stock-detail-overlay";
 
     overlay.innerHTML = `
       <div
         class="stock-detail-sheet"
         role="dialog"
         aria-modal="true"
-        aria-label="個股近五日資訊"
+        aria-label="個股資訊"
       >
         <div class="stock-detail-head">
           <div>
@@ -1111,13 +952,35 @@
           </button>
         </div>
 
+        <div class="stock-period-wrap">
+          <div
+            class="stock-period-switch"
+            role="tablist"
+            aria-label="選擇資料期間"
+          >
+            ${PERIODS.map(p => `
+              <button
+                class="stock-period-btn ${
+                  p === DEFAULT_PERIOD
+                    ? "active"
+                    : ""
+                }"
+                type="button"
+                data-stock-period="${p}"
+              >
+                ${p}日
+              </button>
+            `).join("")}
+          </div>
+        </div>
+
         <div class="stock-detail-tabs">
           <button
             class="stock-detail-tab active"
             type="button"
             data-stock-detail-tab="trend"
           >
-            近5日走勢
+            走勢
           </button>
 
           <button
@@ -1125,7 +988,7 @@
             type="button"
             data-stock-detail-tab="flow"
           >
-            近5日籌碼
+            籌碼
           </button>
         </div>
 
@@ -1136,65 +999,84 @@
       </div>
     `;
 
-    document.body.appendChild(
-      overlay
-    );
+    document.body.appendChild(overlay);
 
     overlay
-      .querySelector(
-        "#stockDetailClose"
-      )
+      .querySelector("#stockDetailClose")
       ?.addEventListener(
         "click",
         closeStockDetail
       );
 
-    overlay.addEventListener(
-      "click",
-      e => {
-        if (
-          e.target === overlay
-        ) {
-          closeStockDetail();
-        }
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) {
+        closeStockDetail();
       }
-    );
+    });
+
+    overlay
+      .querySelectorAll("[data-stock-period]")
+      .forEach(btn => {
+        btn.addEventListener("click", () => {
+          const p =
+            Number(btn.dataset.stockPeriod);
+
+          if (!PERIODS.includes(p)) {
+            return;
+          }
+
+          activePeriod = p;
+          flowExpanded = false;
+
+          overlay
+            .querySelectorAll(
+              "[data-stock-period]"
+            )
+            .forEach(x => {
+              x.classList.toggle(
+                "active",
+                Number(
+                  x.dataset.stockPeriod
+                ) === activePeriod
+              );
+            });
+
+          renderActiveStockDetail();
+        });
+      });
 
     overlay
       .querySelectorAll(
         "[data-stock-detail-tab]"
       )
       .forEach(btn => {
-        btn.addEventListener(
-          "click",
-          () => {
-            activeTab =
-              btn.dataset
-                .stockDetailTab;
+        btn.addEventListener("click", () => {
+          activeTab =
+            btn.dataset.stockDetailTab;
 
-            overlay
-              .querySelectorAll(
-                "[data-stock-detail-tab]"
-              )
-              .forEach(x => {
-                x.classList.toggle(
-                  "active",
-                  x === btn
-                );
-              });
+          flowExpanded = false;
 
-            renderActiveStockDetail();
-          }
-        );
+          overlay
+            .querySelectorAll(
+              "[data-stock-detail-tab]"
+            )
+            .forEach(x => {
+              x.classList.toggle(
+                "active",
+                x === btn
+              );
+            });
+
+          renderActiveStockDetail();
+        });
       });
 
     document.addEventListener(
       "keydown",
       e => {
         if (
-          e.key === "Escape"
-          && overlay.classList
-            .contains("open")
+          e.key === "Escape" &&
+          overlay.classList.contains("open")
         ) {
           closeStockDetail();
         }
@@ -1213,40 +1095,36 @@
       return stockDetailPromise;
     }
 
-    stockDetailPromise =
-      fetch(
-        "./data/stock_detail.json?v="
-        + Date.now(),
-        {
-          cache: "no-store"
-        }
-      )
-        .then(r => {
-          if (!r.ok) {
-            throw new Error(
-              "HTTP " + r.status
-            );
-          }
-
-          return r.json();
-        })
-        .then(d => {
-          stockDetailData = d;
-
-          return d;
-        })
-        .catch(e => {
-          console.error(
-            "stock detail load failed",
-            e
+    stockDetailPromise = fetch(
+      "./data/stock_detail.json?v=" +
+        Date.now(),
+      {
+        cache: "no-store"
+      }
+    )
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(
+            "HTTP " + r.status
           );
+        }
 
-          throw e;
-        })
-        .finally(() => {
-          stockDetailPromise =
-            null;
-        });
+        return r.json();
+      })
+      .then(d => {
+        stockDetailData = d;
+        return d;
+      })
+      .catch(e => {
+        console.error(
+          "stock detail load failed",
+          e
+        );
+        throw e;
+      })
+      .finally(() => {
+        stockDetailPromise = null;
+      });
 
     return stockDetailPromise;
   }
@@ -1269,20 +1147,16 @@
 
         row.setAttribute(
           "aria-label",
-          "開啟個股近五日資訊"
+          "開啟個股資訊"
         );
       });
   }
 
   function sectorFromRow(row) {
     const detail =
-      row.closest(
-        ".heat-detail"
-      );
+      row.closest(".heat-detail");
 
-    if (!detail) {
-      return "";
-    }
+    if (!detail) return "";
 
     const prev =
       detail.previousElementSibling;
@@ -1292,10 +1166,7 @@
         "button.heat[data-sec]"
       )
     ) {
-      return (
-        prev.dataset.sec
-        || ""
-      );
+      return prev.dataset.sec || "";
     }
 
     const head =
@@ -1303,32 +1174,23 @@
         ".heat-detail-head b"
       );
 
-    if (!head) {
-      return "";
-    }
+    if (!head) return "";
 
-    return (
-      [...head.childNodes]
-        .filter(
-          n =>
-            n.nodeType ===
-            Node.TEXT_NODE
-        )
-        .map(
-          n =>
-            n.textContent
-        )
-        .join(" ")
-        .trim()
-    );
+    return [...head.childNodes]
+      .filter(
+        n =>
+          n.nodeType ===
+          Node.TEXT_NODE
+      )
+      .map(n => n.textContent)
+      .join(" ")
+      .trim();
   }
 
   function tickerFromRow(row) {
     return (
-      row.querySelector(
-        ".t"
-      )?.textContent
-        ?.trim()
+      row.querySelector(".t")
+        ?.textContent?.trim()
       || ""
     );
   }
@@ -1337,18 +1199,14 @@
     ticker,
     sector
   ) {
-    if (!ticker) {
-      return;
-    }
+    if (!ticker) return;
 
-    activeTicker =
-      String(ticker);
+    activeTicker = String(ticker);
+    activeSector = String(sector || "");
 
-    activeSector =
-      String(sector || "");
-
-    activeTab =
-      "trend";
+    activeTab = "trend";
+    activePeriod = DEFAULT_PERIOD;
+    flowExpanded = false;
 
     const overlay =
       ensureStockDetailModal();
@@ -1360,18 +1218,27 @@
       .forEach(btn => {
         btn.classList.toggle(
           "active",
-          btn.dataset
-            .stockDetailTab
-          === "trend"
+          btn.dataset.stockDetailTab ===
+            "trend"
         );
       });
 
-    overlay.classList.add(
-      "open"
-    );
+    overlay
+      .querySelectorAll(
+        "[data-stock-period]"
+      )
+      .forEach(btn => {
+        btn.classList.toggle(
+          "active",
+          Number(
+            btn.dataset.stockPeriod
+          ) === activePeriod
+        );
+      });
 
-    document.body.style
-      .overflow = "hidden";
+    overlay.classList.add("open");
+    document.body.style.overflow =
+      "hidden";
 
     const body =
       overlay.querySelector(
@@ -1379,23 +1246,18 @@
       );
 
     body.innerHTML = `
-      <div
-        class="stock-detail-loading"
-      >
-        載入近5日資料…
+      <div class="stock-detail-loading">
+        載入資料…
       </div>
     `;
 
     try {
       await loadStockDetailData();
-
       renderActiveStockDetail();
     } catch (e) {
       body.innerHTML = `
-        <div
-          class="stock-detail-empty"
-        >
-          尚未產生個股近5日資料<br>
+        <div class="stock-detail-empty">
+          尚未產生個股資料<br>
           請先執行一次 Daily close update
         </div>
       `;
@@ -1408,87 +1270,69 @@
         "stockDetailOverlay"
       );
 
-    overlay?.classList
-      .remove("open");
+    overlay?.classList.remove("open");
 
-    document.body.style
-      .overflow = "";
+    document.body.style.overflow = "";
 
     activeTicker = null;
+    activePeriod = DEFAULT_PERIOD;
+    flowExpanded = false;
   }
 
   function fmtPct(v) {
     if (
-      v === null
-      || v === undefined
-      || Number.isNaN(
-        Number(v)
-      )
+      v === null ||
+      v === undefined ||
+      Number.isNaN(Number(v))
     ) {
       return "—";
     }
 
-    const n =
-      Number(v);
+    const n = Number(v);
 
     return (
-      (n > 0 ? "+" : "")
-      + n.toFixed(2)
-      + "%"
+      (n > 0 ? "+" : "") +
+      n.toFixed(2) +
+      "%"
     );
   }
 
   function fmtLots(v) {
     if (
-      v === null
-      || v === undefined
-      || Number.isNaN(
-        Number(v)
-      )
+      v === null ||
+      v === undefined ||
+      Number.isNaN(Number(v))
     ) {
       return "—";
     }
 
     const n =
-      Math.round(
-        Number(v)
-      );
+      Math.round(Number(v));
 
     return (
-      (n > 0 ? "+" : "")
-      + n.toLocaleString(
-          "zh-TW"
-        )
-      + " 張"
+      (n > 0 ? "+" : "") +
+      n.toLocaleString("zh-TW") +
+      " 張"
     );
   }
 
   function valueClass(v) {
-    const n =
-      Number(v);
+    const n = Number(v);
 
-    if (n > 0) {
-      return "up";
-    }
-
-    if (n < 0) {
-      return "down";
-    }
+    if (n > 0) return "up";
+    if (n < 0) return "down";
 
     return "";
   }
 
   function latestValue(arr) {
     const xs =
-      (arr || [])
-        .filter(
-          x =>
-            x !== null
-            && x !== undefined
-            && !Number.isNaN(
-              Number(x)
-            )
-        );
+      (arr || []).filter(
+        x =>
+          x !== null &&
+          x !== undefined &&
+          !Number.isNaN(Number(x))
+      );
 
     if (!xs.length) {
       return null;
@@ -1499,10 +1343,60 @@
     );
   }
 
+  function getPeriodArray(
+    obj,
+    period
+  ) {
+    const map =
+      obj?.returns_by_period || {};
+
+    const arr =
+      map[String(period)] ||
+      map[period];
+
+    if (Array.isArray(arr)) {
+      return arr;
+    }
+
+    if (
+      period === 5 &&
+      Array.isArray(obj?.returns)
+    ) {
+      return obj.returns;
+    }
+
+    return [];
+  }
+
+  function getPeriodLabels(period) {
+    const map =
+      stockDetailData
+        ?.date_labels_by_period ||
+      {};
+
+    const arr =
+      map[String(period)] ||
+      map[period];
+
+    if (Array.isArray(arr)) {
+      return arr;
+    }
+
+    if (period === 5) {
+      return (
+        stockDetailData
+          ?.date_labels ||
+        []
+      );
+    }
+
+    return [];
+  }
+
   function renderActiveStockDetail() {
     if (
-      !stockDetailData
-      || !activeTicker
+      !stockDetailData ||
+      !activeTicker
     ) {
       return;
     }
@@ -1512,19 +1406,14 @@
 
     const stock =
       stockDetailData
-        .stocks?.[
-          activeTicker
-        ];
+        .stocks?.[activeTicker];
 
     const sector =
       stockDetailData
-        .sectors?.[
-          activeSector
-        ];
+        .sectors?.[activeSector];
 
     const bench =
-      stockDetailData
-        .benchmark || {};
+      stockDetailData.benchmark || {};
 
     const nameBox =
       overlay.querySelector(
@@ -1549,10 +1438,8 @@
         activeSector;
 
       body.innerHTML = `
-        <div
-          class="stock-detail-empty"
-        >
-          這檔目前沒有近5日資料
+        <div class="stock-detail-empty">
+          這檔目前沒有個股資料
         </div>
       `;
 
@@ -1560,23 +1447,25 @@
     }
 
     nameBox.textContent =
-      `${stock.name || activeTicker} ${activeTicker}`;
+      `${
+        stock.name ||
+        activeTicker
+      } ${activeTicker}`;
 
     metaBox.textContent =
-      `${activeSector || "—"}｜截至 ${
+      `${
+        activeSector || "—"
+      }｜截至 ${
         stockDetailData
-          .as_of_date || "—"
+          .as_of_date ||
+        "—"
       }`;
 
-    if (
-      activeTab ===
-      "flow"
-    ) {
+    if (activeTab === "flow") {
       body.innerHTML =
-        renderFlowPanel(
-          stock
-        );
+        renderFlowPanel(stock);
 
+      bindFlowPull(body);
       return;
     }
 
@@ -1594,17 +1483,27 @@
     bench
   ) {
     const dates =
-      stockDetailData
-        .date_labels || [];
+      getPeriodLabels(
+        activePeriod
+      );
 
     const sr =
-      stock.returns || [];
+      getPeriodArray(
+        stock,
+        activePeriod
+      );
 
     const gr =
-      sector?.returns || [];
+      getPeriodArray(
+        sector,
+        activePeriod
+      );
 
     const ir =
-      bench?.returns || [];
+      getPeriodArray(
+        bench,
+        activePeriod
+      );
 
     const stockLast =
       latestValue(sr);
@@ -1616,23 +1515,21 @@
       latestValue(ir);
 
     const vsSector =
-      stockLast !== null
-      && sectorLast !== null
+      stockLast !== null &&
+      sectorLast !== null
         ? stockLast - sectorLast
         : null;
 
     const vsIndex =
-      stockLast !== null
-      && indexLast !== null
+      stockLast !== null &&
+      indexLast !== null
         ? stockLast - indexLast
         : null;
 
     return `
-      <div
-        class="stock-detail-section-title"
-      >
+      <div class="stock-detail-section-title">
         <strong>
-          近5日相對走勢
+          近${activePeriod}日相對走勢
         </strong>
 
         <small>
@@ -1640,20 +1537,29 @@
         </small>
       </div>
 
-      <div
-        class="stock-detail-metrics"
-      >
+      <div class="stock-detail-metrics">
         <div
           class="stock-detail-metric stock"
         >
           <small>
-            ${stock.name || activeTicker}
+            ${
+              stock.name ||
+              activeTicker
+            }
           </small>
 
           <strong
-            class="${valueClass(stockLast)}"
+            class="${
+              valueClass(
+                stockLast
+              )
+            }"
           >
-            ${fmtPct(stockLast)}
+            ${
+              fmtPct(
+                stockLast
+              )
+            }
           </strong>
         </div>
 
@@ -1661,13 +1567,24 @@
           class="stock-detail-metric sector"
         >
           <small>
-            ${activeSector || "同族群"}
+            ${
+              activeSector ||
+              "同族群"
+            }
           </small>
 
           <strong
-            class="${valueClass(sectorLast)}"
+            class="${
+              valueClass(
+                sectorLast
+              )
+            }"
           >
-            ${fmtPct(sectorLast)}
+            ${
+              fmtPct(
+                sectorLast
+              )
+            }
           </strong>
         </div>
 
@@ -1675,65 +1592,100 @@
           class="stock-detail-metric index"
         >
           <small>
-            ${bench.name || "上市加權指數"}
+            ${
+              bench.name ||
+              "上市加權指數"
+            }
           </small>
 
           <strong
-            class="${valueClass(indexLast)}"
+            class="${
+              valueClass(
+                indexLast
+              )
+            }"
           >
-            ${fmtPct(indexLast)}
+            ${
+              fmtPct(
+                indexLast
+              )
+            }
           </strong>
         </div>
       </div>
 
-      <div
-        class="stock-detail-note"
-      >
-        ${stockDetailData.note || "近5個已完成交易日"}
-        ${vsSector !== null ? `｜相對族群 ${fmtPct(vsSector)}` : ""}
-        ${vsIndex !== null ? `｜相對大盤 ${fmtPct(vsIndex)}` : ""}
+      <div class="stock-detail-note">
+        近${activePeriod}個已完成交易日；以前一交易日收盤為0%基準
+        ${
+          vsSector !== null
+            ? `｜相對族群 ${
+                fmtPct(
+                  vsSector
+                )
+              }`
+            : ""
+        }
+        ${
+          vsIndex !== null
+            ? `｜相對大盤 ${
+                fmtPct(
+                  vsIndex
+                )
+              }`
+            : ""
+        }
       </div>
 
-      <div
-        class="stock-detail-chart"
-      >
-        ${lineChartSvg(
-          dates,
-          [
-            {
-              label: stock.name || activeTicker,
-              values: sr,
-              color: "#dc2626"
-            },
-            {
-              label: activeSector || "同族群",
-              values: gr,
-              color: "#2563eb"
-            },
-            {
-              label: bench.name || "上市加權指數",
-              values: ir,
-              color: "#64748b"
-            }
-          ]
-        )}
+      <div class="stock-detail-chart">
+        ${
+          lineChartSvg(
+            dates,
+            [
+              {
+                values: sr,
+                color:
+                  "#dc2626"
+              },
+              {
+                values: gr,
+                color:
+                  "#2563eb"
+              },
+              {
+                values: ir,
+                color:
+                  "#64748b"
+              }
+            ]
+          )
+        }
 
-        <div
-          class="stock-detail-legend"
-        >
+        <div class="stock-detail-legend">
           <span>
-            <i class="stock-detail-dot stock"></i>
+            <i
+              class="stock-detail-dot stock"
+            ></i>
             個股
           </span>
 
           <span>
-            <i class="stock-detail-dot sector"></i>
-            ${activeSector || "同族群"}
+            <i
+              class="stock-detail-dot sector"
+            ></i>
+            ${
+              activeSector ||
+              "同族群"
+            }
           </span>
 
           <span>
-            <i class="stock-detail-dot index"></i>
-            ${bench.name || "上市加權指數"}
+            <i
+              class="stock-detail-dot index"
+            ></i>
+            ${
+              bench.name ||
+              "上市加權指數"
+            }
           </span>
         </div>
       </div>
@@ -1745,7 +1697,7 @@
     series
   ) {
     const width = 680;
-    const height = 310;
+    const height = 300;
 
     const pad = {
       left: 52,
@@ -1756,214 +1708,319 @@
 
     const values =
       series
-        .flatMap(s => s.values || [])
+        .flatMap(
+          s => s.values || []
+        )
         .filter(
           v =>
-            v !== null
-            && v !== undefined
-            && !Number.isNaN(Number(v))
+            v !== null &&
+            v !== undefined &&
+            !Number.isNaN(
+              Number(v)
+            )
         )
         .map(Number);
 
-    if (!values.length) {
+    if (
+      !values.length ||
+      !labels.length
+    ) {
       return `
-        <div class="stock-detail-empty">
+        <div
+          class="stock-detail-empty"
+        >
           暫無完整走勢資料
         </div>
       `;
     }
 
-    let min = Math.min(0, ...values);
-    let max = Math.max(0, ...values);
+    let min =
+      Math.min(0, ...values);
 
-    if (Math.abs(max - min) < 0.5) {
+    let max =
+      Math.max(0, ...values);
+
+    if (
+      Math.abs(max - min) <
+      0.5
+    ) {
       max += 1;
       min -= 1;
     }
 
-    const span = max - min;
-    const extra = span * 0.14;
+    const span =
+      max - min;
 
-    max += extra;
-    min -= extra;
+    max += span * 0.14;
+    min -= span * 0.14;
 
-    const plotW = width - pad.left - pad.right;
-    const plotH = height - pad.top - pad.bottom;
+    const plotW =
+      width -
+      pad.left -
+      pad.right;
+
+    const plotH =
+      height -
+      pad.top -
+      pad.bottom;
 
     const xAt = i =>
-      pad.left + (
+      pad.left +
+      (
         labels.length <= 1
           ? plotW / 2
-          : i / (labels.length - 1) * plotW
+          : (
+              i /
+              (
+                labels.length -
+                1
+              )
+            ) *
+            plotW
       );
 
     const yAt = v =>
-      pad.top
-      + ((max - Number(v)) / (max - min)) * plotH;
-
-    const ticks = [];
-
-    for (let i = 0; i < 5; i += 1) {
-      ticks.push(max - (max - min) * i / 4);
-    }
-
-    const grids =
-      ticks
-        .map(
-          v => `
-            <line
-              x1="${pad.left}"
-              y1="${yAt(v)}"
-              x2="${width - pad.right}"
-              y2="${yAt(v)}"
-              stroke="currentColor"
-              opacity=".09"
-              stroke-dasharray="4 5"
-            />
-
-            <text
-              x="${pad.left - 9}"
-              y="${yAt(v) + 4}"
-              text-anchor="end"
-              font-size="10"
-              fill="currentColor"
-              opacity=".52"
-            >
-              ${v.toFixed(1)}%
-            </text>
-          `
+      pad.top +
+      (
+        (
+          max -
+          Number(v)
+        ) /
+        (
+          max -
+          min
         )
-        .join("");
+      ) *
+      plotH;
+
+    const ticks =
+      Array.from(
+        {
+          length: 5
+        },
+        (_, i) =>
+          max -
+          (
+            (
+              max -
+              min
+            ) *
+            i /
+            4
+          )
+      );
+
+    const grid =
+      ticks.map(v => `
+        <g>
+          <line
+            x1="${pad.left}"
+            x2="${
+              width -
+              pad.right
+            }"
+            y1="${yAt(v)}"
+            y2="${yAt(v)}"
+            stroke="currentColor"
+            opacity=".10"
+          />
+
+          <text
+            x="${
+              pad.left - 8
+            }"
+            y="${
+              yAt(v) + 4
+            }"
+            text-anchor="end"
+            fill="currentColor"
+            opacity=".55"
+            font-size="10"
+          >
+            ${v.toFixed(1)}%
+          </text>
+        </g>
+      `).join("");
+
+    const paths =
+      series.map(s => {
+        let d = "";
+        let drawing = false;
+
+        (s.values || [])
+          .forEach(
+            (v, i) => {
+              if (
+                v === null ||
+                v === undefined ||
+                Number.isNaN(
+                  Number(v)
+                )
+              ) {
+                drawing = false;
+                return;
+              }
+
+              d += `${
+                drawing
+                  ? " L"
+                  : "M"
+              } ${
+                xAt(i)
+                  .toFixed(1)
+              } ${
+                yAt(v)
+                  .toFixed(1)
+              }`;
+
+              drawing = true;
+            }
+          );
+
+        return `
+          <path
+            d="${d}"
+            fill="none"
+            stroke="${s.color}"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        `;
+      }).join("");
+
+    const maxLabels =
+      activePeriod >= 20
+        ? 6
+        : 5;
+
+    const step =
+      Math.max(
+        1,
+        Math.ceil(
+          labels.length /
+          maxLabels
+        )
+      );
+
+    const xLabels =
+      labels.map(
+        (label, i) => {
+          if (
+            i !== 0 &&
+            i !==
+              labels.length - 1 &&
+            i % step !== 0
+          ) {
+            return "";
+          }
+
+          return `
+            <text
+              x="${xAt(i)}"
+              y="${
+                height - 15
+              }"
+              text-anchor="middle"
+              fill="currentColor"
+              opacity=".55"
+              font-size="10"
+            >
+              ${label}
+            </text>
+          `;
+        }
+      ).join("");
 
     const zero =
-      min <= 0 && max >= 0
+      (
+        min <= 0 &&
+        max >= 0
+      )
         ? `
           <line
             x1="${pad.left}"
+            x2="${
+              width -
+              pad.right
+            }"
             y1="${yAt(0)}"
-            x2="${width - pad.right}"
             y2="${yAt(0)}"
             stroke="currentColor"
             opacity=".28"
-            stroke-width="1.2"
+            stroke-dasharray="4 4"
           />
         `
         : "";
 
-    const paths =
-      series
-        .map((s, seriesIndex) => {
-          const valid = [];
-
-          (s.values || []).forEach(
-            (v, i) => {
-              if (
-                v === null
-                || v === undefined
-                || Number.isNaN(Number(v))
-              ) {
-                return;
-              }
-
-              valid.push({
-                x: xAt(i),
-                y: yAt(v),
-                v: Number(v)
-              });
-            }
-          );
-
-          if (valid.length < 2) {
-            return "";
-          }
-
-          const points =
-            valid.map(p => `${p.x},${p.y}`).join(" ");
-
-          const circles =
-            valid
-              .map((p, i) => `
-                <circle
-                  cx="${p.x}"
-                  cy="${p.y}"
-                  r="${i === valid.length - 1 ? 4.2 : 3}"
-                  fill="${s.color}"
-                  stroke="var(--card)"
-                  stroke-width="2"
-                />
-              `)
-              .join("");
-
-          return `
-            <polyline
-              fill="none"
-              stroke="${s.color}"
-              stroke-width="${seriesIndex === 0 ? 3.6 : 2.8}"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              points="${points}"
-            />
-            ${circles}
-          `;
-        })
-        .join("");
-
-    const xlabels =
-      labels
-        .map(
-          (label, i) => `
-            <text
-              x="${xAt(i)}"
-              y="${height - 15}"
-              text-anchor="middle"
-              font-size="10"
-              font-weight="650"
-              fill="currentColor"
-              opacity=".62"
-            >
-              ${label}
-            </text>
-          `
-        )
-        .join("");
-
     return `
       <svg
         viewBox="0 0 ${width} ${height}"
-        aria-label="近5日個股、族群與上市加權指數走勢"
+        aria-label="近${activePeriod}日相對走勢"
       >
-        ${grids}
+        ${grid}
         ${zero}
         ${paths}
-        ${xlabels}
+        ${xLabels}
       </svg>
     `;
   }
 
+  function flowRowsForPeriod(
+    stock
+  ) {
+    const rows =
+      Array.isArray(
+        stock?.institutional
+      )
+        ? stock.institutional
+        : [];
+
+    return rows.slice(
+      -activePeriod
+    );
+  }
 
   function renderFlowPanel(
     stock
   ) {
     const rows =
-      stock.institutional || [];
+      flowRowsForPeriod(stock);
+
+    if (!rows.length) {
+      return `
+        <div
+          class="stock-detail-empty"
+        >
+          目前沒有近${activePeriod}日法人籌碼資料
+        </div>
+      `;
+    }
 
     const total =
-      Number(
-        stock
-          .institutional_5d_total_lots
-        || 0
+      rows.reduce(
+        (sum, row) =>
+          sum +
+          Number(
+            row.total_lots ||
+            0
+          ),
+        0
       );
+
+    const newestFirst =
+      [...rows].reverse();
 
     return `
       <div
         class="stock-detail-section-title"
       >
         <strong>
-          近5日法人籌碼
+          近${activePeriod}日法人籌碼
         </strong>
 
         <small>
-          長條圖看合計｜下表看法人拆分
+          長條圖看合計｜上拉看法人拆分
         </small>
       </div>
 
@@ -1971,290 +2028,531 @@
         class="stock-flow-summary"
       >
         <span>
-          近5日三大法人合計
+          近${activePeriod}日三大法人合計
         </span>
 
         <strong
-          class="${valueClass(
-            total
-          )}"
+          class="${
+            valueClass(total)
+          }"
         >
-          ${fmtLots(
-            total
-          )}
+          ${fmtLots(total)}
         </strong>
       </div>
 
-      <p
-        class="stock-detail-note"
-      >
-        長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜下表拆開顯示外資、投信、自營商｜單位：張
-      </p>
-
       <div
-        class="stock-detail-chart"
+        class="stock-flow-stage ${
+          flowExpanded
+            ? "expanded"
+            : ""
+        }"
+        id="stockFlowStage"
       >
-        ${barChartSvg(
-          rows
-        )}
-      </div>
+        <div
+          class="stock-flow-chart-wrap"
+        >
+          <div
+            class="stock-detail-note"
+          >
+            長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜單位：張
+          </div>
 
-      <div
-        class="stock-flow-table-wrap"
-      >
-      <table
-        class="stock-flow-table"
-      >
-        <thead>
-          <tr>
-            <th>
-              日期
-            </th>
+          <div
+            class="stock-detail-chart"
+          >
+            ${
+              flowBarChartSvg(
+                rows
+              )
+            }
+          </div>
+        </div>
 
-            <th>
-              外資
-            </th>
+        <button
+          class="stock-flow-pull"
+          id="stockFlowPull"
+          type="button"
+          aria-expanded="${
+            flowExpanded
+              ? "true"
+              : "false"
+          }"
+          aria-label="${
+            flowExpanded
+              ? "收回籌碼明細"
+              : "上拉展開籌碼明細"
+          }"
+        >
+          <span
+            class="stock-flow-pull-icon"
+          ></span>
 
-            <th>
-              投信
-            </th>
+          <span
+            class="stock-flow-pull-label"
+          >
+            ${
+              flowExpanded
+                ? "收回圖表"
+                : "上拉看明細"
+            }
+          </span>
+        </button>
 
-            <th>
-              自營商
-            </th>
-
-            <th>
-              合計
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          ${rows
-            .slice()
-            .reverse()
-            .map(
-              row => `
+        <div
+          class="stock-flow-table-wrap"
+        >
+          <div
+            class="stock-flow-table-scroll"
+          >
+            <table
+              class="stock-flow-table"
+            >
+              <thead>
                 <tr>
-                  <td>
-                    ${row.date_label || "—"}
-                  </td>
-
-                  <td
-                    class="${valueClass(
-                      row.foreign_lots
-                    )}"
-                  >
-                    ${fmtLots(
-                      row.foreign_lots
-                    )}
-                  </td>
-
-                  <td
-                    class="${valueClass(
-                      row.trust_lots
-                    )}"
-                  >
-                    ${fmtLots(
-                      row.trust_lots
-                    )}
-                  </td>
-
-                  <td
-                    class="${valueClass(
-                      row.dealer_lots
-                    )}"
-                  >
-                    ${fmtLots(
-                      row.dealer_lots
-                    )}
-                  </td>
-
-                  <td
-                    class="${valueClass(
-                      row.total_lots
-                    )}"
-                  >
-                    ${fmtLots(
-                      row.total_lots
-                    )}
-                  </td>
+                  <th>日期</th>
+                  <th>外資</th>
+                  <th>投信</th>
+                  <th>自營商</th>
+                  <th>合計</th>
                 </tr>
-              `
-            )
-            .join("")}
-        </tbody>
-      </table>
+              </thead>
+
+              <tbody>
+                ${
+                  newestFirst
+                    .map(
+                      row => `
+                        <tr>
+                          <td>
+                            ${
+                              row.date_label ||
+                              "—"
+                            }
+                          </td>
+
+                          <td
+                            class="${
+                              valueClass(
+                                row.foreign_lots
+                              )
+                            }"
+                          >
+                            ${
+                              fmtLots(
+                                row.foreign_lots
+                              )
+                            }
+                          </td>
+
+                          <td
+                            class="${
+                              valueClass(
+                                row.trust_lots
+                              )
+                            }"
+                          >
+                            ${
+                              fmtLots(
+                                row.trust_lots
+                              )
+                            }
+                          </td>
+
+                          <td
+                            class="${
+                              valueClass(
+                                row.dealer_lots
+                              )
+                            }"
+                          >
+                            ${
+                              fmtLots(
+                                row.dealer_lots
+                              )
+                            }
+                          </td>
+
+                          <td
+                            class="${
+                              valueClass(
+                                row.total_lots
+                              )
+                            }"
+                          >
+                            ${
+                              fmtLots(
+                                row.total_lots
+                              )
+                            }
+                          </td>
+                        </tr>
+                      `
+                    )
+                    .join("")
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     `;
   }
 
-  function barChartSvg(rows) {
-    const width = 680;
-    const height = 280;
+  function bindFlowPull(body) {
+    const stage =
+      body.querySelector(
+        "#stockFlowStage"
+      );
 
-    const pad = {
-      left: 48,
-      right: 18,
-      top: 18,
-      bottom: 42
+    const pull =
+      body.querySelector(
+        "#stockFlowPull"
+      );
+
+    if (
+      !stage ||
+      !pull
+    ) {
+      return;
+    }
+
+    const applyState = () => {
+      stage.classList.toggle(
+        "expanded",
+        flowExpanded
+      );
+
+      pull.setAttribute(
+        "aria-expanded",
+        flowExpanded
+          ? "true"
+          : "false"
+      );
+
+      pull.setAttribute(
+        "aria-label",
+        flowExpanded
+          ? "收回籌碼明細"
+          : "上拉展開籌碼明細"
+      );
+
+      const label =
+        pull.querySelector(
+          ".stock-flow-pull-label"
+        );
+
+      if (label) {
+        label.textContent =
+          flowExpanded
+            ? "收回圖表"
+            : "上拉看明細";
+      }
     };
 
-    const values =
+    pull.addEventListener(
+      "click",
+      () => {
+        flowExpanded =
+          !flowExpanded;
+
+        applyState();
+      }
+    );
+
+    pull.addEventListener(
+      "touchstart",
+      e => {
+        flowTouchStartY =
+          e.touches?.[0]
+            ?.clientY ??
+          null;
+      },
+      {
+        passive: true
+      }
+    );
+
+    pull.addEventListener(
+      "touchend",
+      e => {
+        if (
+          flowTouchStartY ===
+          null
+        ) {
+          return;
+        }
+
+        const endY =
+          e.changedTouches?.[0]
+            ?.clientY;
+
+        if (
+          endY ===
+          undefined
+        ) {
+          flowTouchStartY =
+            null;
+
+          return;
+        }
+
+        const delta =
+          endY -
+          flowTouchStartY;
+
+        if (
+          delta < -24 &&
+          !flowExpanded
+        ) {
+          flowExpanded = true;
+          applyState();
+        } else if (
+          delta > 24 &&
+          flowExpanded
+        ) {
+          flowExpanded = false;
+          applyState();
+        }
+
+        flowTouchStartY = null;
+      },
+      {
+        passive: true
+      }
+    );
+  }
+
+  function flowBarChartSvg(
+    rows
+  ) {
+    const width = 680;
+    const height = 260;
+
+    const pad = {
+      left: 52,
+      right: 18,
+      top: 22,
+      bottom: 44
+    };
+
+    const vals =
       rows.map(
         x =>
           Number(
-            x.total_lots || 0
+            x.total_lots ||
+            0
           )
       );
 
     const maxAbs =
       Math.max(
         1,
-        ...values.map(
-          Math.abs
+        ...vals.map(
+          v =>
+            Math.abs(v)
         )
       );
 
-    const max =
-      maxAbs * 1.15;
-
-    const min =
-      -max;
-
     const plotW =
-      width
-      - pad.left
-      - pad.right;
+      width -
+      pad.left -
+      pad.right;
 
     const plotH =
-      height
-      - pad.top
-      - pad.bottom;
-
-    const yAt =
-      v =>
-        pad.top
-        + (
-          (
-            max - v
-          )
-          / (
-            max - min
-          )
-        )
-        * plotH;
+      height -
+      pad.top -
+      pad.bottom;
 
     const zeroY =
-      yAt(0);
+      pad.top +
+      plotH / 2;
+
+    const yAt = v =>
+      zeroY -
+      (
+        Number(v) /
+        maxAbs
+      ) *
+      (
+        plotH / 2 -
+        8
+      );
 
     const slot =
-      rows.length
-        ? plotW
-          / rows.length
-        : plotW;
+      plotW /
+      Math.max(
+        1,
+        rows.length
+      );
 
     const barW =
-      Math.min(
-        52,
-        slot * 0.52
+      Math.max(
+        6,
+        Math.min(
+          44,
+          slot * 0.56
+        )
+      );
+
+    const maxLabels =
+      activePeriod >= 20
+        ? 6
+        : activePeriod >= 10
+          ? 5
+          : activePeriod;
+
+    const labelStep =
+      Math.max(
+        1,
+        Math.ceil(
+          rows.length /
+          maxLabels
+        )
       );
 
     const bars =
-      rows
-        .map(
-          (row, i) => {
-            const v =
-              Number(
-                row.total_lots
-                || 0
-              );
+      rows.map(
+        (row, i) => {
+          const v =
+            Number(
+              row.total_lots ||
+              0
+            );
 
-            const x =
-              pad.left
-              + slot * i
-              + (
-                slot - barW
-              ) / 2;
+          const x =
+            pad.left +
+            slot * i +
+            (
+              slot -
+              barW
+            ) /
+            2;
 
-            const y =
-              v >= 0
-                ? yAt(v)
-                : zeroY;
+          const y =
+            v >= 0
+              ? yAt(v)
+              : zeroY;
 
-            const h =
-              Math.max(
-                1.5,
-                Math.abs(
-                  yAt(v)
-                  - zeroY
-                )
-              );
+          const h =
+            Math.max(
+              1.5,
+              Math.abs(
+                yAt(v) -
+                zeroY
+              )
+            );
 
-            const color =
-              v >= 0
-                ? "#dc2626"
-                : "#168357";
+          const color =
+            v >= 0
+              ? "#dc2626"
+              : "#168357";
 
-            return `
-              <rect
-                x="${x}"
-                y="${y}"
-                width="${barW}"
-                height="${h}"
-                rx="4"
-                fill="${color}"
-              />
+          const showLabel =
+            i === 0 ||
+            i ===
+              rows.length -
+              1 ||
+            i %
+              labelStep ===
+              0;
 
-              <text
-                x="${x + barW / 2}"
-                y="${height - 15}"
-                text-anchor="middle"
-                font-size="10"
-                fill="currentColor"
-                opacity=".65"
-              >
-                ${row.date_label || ""}
-              </text>
-            `;
-          }
-        )
-        .join("");
+          return `
+            <rect
+              x="${x}"
+              y="${y}"
+              width="${barW}"
+              height="${h}"
+              rx="4"
+              fill="${color}"
+            />
+
+            ${
+              showLabel
+                ? `
+                  <text
+                    x="${
+                      x +
+                      barW / 2
+                    }"
+                    y="${
+                      height -
+                      15
+                    }"
+                    text-anchor="middle"
+                    font-size="10"
+                    fill="currentColor"
+                    opacity=".65"
+                  >
+                    ${
+                      row.date_label ||
+                      ""
+                    }
+                  </text>
+                `
+                : ""
+            }
+          `;
+        }
+      ).join("");
 
     return `
       <svg
         viewBox="0 0 ${width} ${height}"
-        aria-label="近5日三大法人合計買賣超"
+        aria-label="近${activePeriod}日三大法人合計買賣超"
       >
         <line
           x1="${pad.left}"
           y1="${zeroY}"
-          x2="${width - pad.right}"
+          x2="${
+            width -
+            pad.right
+          }"
           y2="${zeroY}"
           stroke="currentColor"
           opacity=".3"
         />
 
         <text
-          x="${pad.left - 8}"
-          y="${pad.top + 4}"
+          x="${
+            pad.left - 8
+          }"
+          y="${
+            pad.top + 4
+          }"
           text-anchor="end"
           font-size="10"
           fill="currentColor"
           opacity=".58"
         >
-          +${maxAbs.toLocaleString("zh-TW")}
+          +${
+            Math.round(
+              maxAbs
+            ).toLocaleString(
+              "zh-TW"
+            )
+          }
         </text>
 
         <text
-          x="${pad.left - 8}"
-          y="${height - pad.bottom}"
+          x="${
+            pad.left - 8
+          }"
+          y="${
+            height -
+            pad.bottom
+          }"
           text-anchor="end"
           font-size="10"
           fill="currentColor"
           opacity=".58"
         >
-          -${maxAbs.toLocaleString("zh-TW")}
+          -${
+            Math.round(
+              maxAbs
+            ).toLocaleString(
+              "zh-TW"
+            )
+          }
         </text>
 
         ${bars}
@@ -2271,17 +2569,11 @@
             "#heatGrid .heat-stock"
           );
 
-        if (!row) {
-          return;
-        }
+        if (!row) return;
 
         openStockDetail(
-          tickerFromRow(
-            row
-          ),
-          sectorFromRow(
-            row
-          )
+          tickerFromRow(row),
+          sectorFromRow(row)
         );
       }
     );
@@ -2290,8 +2582,8 @@
       "keydown",
       e => {
         if (
-          e.key !== "Enter"
-          && e.key !== " "
+          e.key !== "Enter" &&
+          e.key !== " "
         ) {
           return;
         }
@@ -2301,19 +2593,13 @@
             "#heatGrid .heat-stock"
           );
 
-        if (!row) {
-          return;
-        }
+        if (!row) return;
 
         e.preventDefault();
 
         openStockDetail(
-          tickerFromRow(
-            row
-          ),
-          sectorFromRow(
-            row
-          )
+          tickerFromRow(row),
+          sectorFromRow(row)
         );
       }
     );
@@ -2346,18 +2632,13 @@
               .length
           ) {
             applySectorFilter();
-
-            clearInterval(
-              wait
-            );
+            clearInterval(wait);
           }
 
           if (
             tries > 30
           ) {
-            clearInterval(
-              wait
-            );
+            clearInterval(wait);
           }
         },
         150
