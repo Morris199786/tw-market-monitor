@@ -4,18 +4,14 @@ PERIODS = [("1d", 1), ("3d", 3), ("5d", 5)]
 MARKETS = ("twse", "tpex")
 KINDS = ("foreign", "trust", "dealer", "total")
 
-# 為了避免舊 cache 把錯誤資料一直沿用，
-# 每次執行都會重新抓最近法人資料，直到各市場各自取得 5 個有效交易日。
-LOOKBACK_MARKET_DAYS = 12
-REQUIRED_VALID_DAYS = 5
+# 個股詳細頁需要 20 個交易日法人資料
+REQUIRED_HISTORY_DAYS = 20
+
+# 用較寬的市場歷史窗口避開休市日、單日 API 異常
+LOOKBACK_MARKET_DAYS = 40
 
 
 def load_display_names():
-    """
-    網頁顯示名稱：
-    1. sectors.json 的自訂市場簡稱優先
-    2. master.json 次之
-    """
     names = {}
 
     master = load_json(
@@ -59,12 +55,6 @@ def load_display_names():
 
 
 def repair_dealer(rows):
-    """
-    三大法人合計 = 外資 + 投信 + 自營商
-    如果來源的 dealer 欄位因欄名變動而抓成 0，
-    但 total 明顯不等於 foreign + trust，
-    直接用恆等式補回 dealer。
-    """
     fixed = {}
 
     for ticker, row in (rows or {}).items():
@@ -76,8 +66,7 @@ def repair_dealer(rows):
         total = int(r.get("total") or 0)
 
         if dealer == 0 and total != foreign + trust:
-            dealer = total - foreign - trust
-            r["dealer"] = dealer
+            r["dealer"] = total - foreign - trust
 
         fixed[str(ticker)] = r
 
@@ -85,11 +74,6 @@ def repair_dealer(rows):
 
 
 def source_health(rows):
-    """
-    檢查法人來源是否真的有解析到各分類。
-    不只看 rows 是否存在，避免再次出現
-    「有 900 檔股票，但 foreign/trust/dealer 全部是 0」。
-    """
     rows = rows or {}
 
     stats = {
@@ -117,10 +101,6 @@ def source_health(rows):
 
 
 def healthy(rows):
-    """
-    正常交易日不可能全市場所有法人分類都同時為 0。
-    這個 gate 可直接擋掉欄位解析錯誤。
-    """
     s = source_health(rows)
 
     return (
@@ -141,16 +121,15 @@ def fetch_fresh(date, market):
     return repair_dealer(rows)
 
 
-def refresh_history_for_market(
+def maintain_history_for_market(
     market,
     market_snapshots
 ):
     """
-    強制重抓，不沿用最近五日的舊解析結果。
+    第一次：把缺少的歷史日期補到 20 個有效交易日
+    之後：健康舊檔直接沿用，只抓新出現的交易日
 
-    若當日 API 暫時失敗：
-    - 舊檔若通過健康檢查才允許 fallback
-    - 舊檔若也是壞資料，直接跳過並往更早日期補
+    因此正常 Daily close 不會再每天重抓 20 日。
     """
     valid = []
 
@@ -179,57 +158,55 @@ def refresh_history_for_market(
             {}
         )
 
-        rows = {}
+        cached_rows = repair_dealer(
+            old.get(market, {})
+        )
 
-        try:
-            rows = fetch_fresh(
-                date,
-                market
-            )
-
-            stats = source_health(rows)
+        if healthy(cached_rows):
+            # 關鍵：已有健康資料就不再打官方 API
+            rows = cached_rows
 
             print(
-                "fresh",
+                "reuse healthy cache",
                 market,
                 date,
-                stats
+                source_health(rows)
             )
 
-        except Exception as e:
-            print(
-                "fresh fetch failed",
-                market,
-                date,
-                repr(e)
-            )
+        else:
+            rows = {}
 
-        if not healthy(rows):
-            old_rows = repair_dealer(
-                old.get(market, {})
-            )
-
-            if healthy(old_rows):
-                print(
-                    "fallback healthy cache",
-                    market,
+            try:
+                rows = fetch_fresh(
                     date,
-                    source_health(old_rows)
+                    market
                 )
 
-                rows = old_rows
-
-            else:
                 print(
-                    "reject invalid day",
+                    "fresh",
+                    market,
+                    date,
+                    source_health(rows)
+                )
+
+            except Exception as e:
+                print(
+                    "fresh fetch failed",
+                    market,
+                    date,
+                    repr(e)
+                )
+
+            if not healthy(rows):
+                print(
+                    "skip invalid day",
                     market,
                     date,
                     "fresh=",
                     source_health(rows),
                     "cache=",
-                    source_health(old_rows)
+                    source_health(cached_rows)
                 )
-
                 continue
 
         merged = dict(old)
@@ -240,7 +217,7 @@ def refresh_history_for_market(
             .isoformat(timespec="minutes")
         )
 
-        # 每次都更新對應的收盤行情
+        # 同日期行情一起保留，供法人買賣超金額計算
         merged["closes"] = closes
         merged[market] = rows
 
@@ -251,17 +228,16 @@ def refresh_history_for_market(
 
         valid.append(merged)
 
-        if len(valid) >= REQUIRED_VALID_DAYS:
+        if len(valid) >= REQUIRED_HISTORY_DAYS:
             break
 
-    # candidates 是新 -> 舊
-    # build_period 需要舊 -> 新
+    # 上面是新 -> 舊；後續統一使用舊 -> 新
     valid = list(reversed(valid))
 
-    if len(valid) < REQUIRED_VALID_DAYS:
+    if len(valid) < REQUIRED_HISTORY_DAYS:
         raise RuntimeError(
             f"{market} institutional data only "
-            f"{len(valid)}/{REQUIRED_VALID_DAYS} "
+            f"{len(valid)}/{REQUIRED_HISTORY_DAYS} "
             f"healthy trading days"
         )
 
@@ -305,7 +281,6 @@ def build_period(
                 r.get(kind) or 0
             )
 
-            # 沒有當日收盤價就不能算「逐日買賣超 × 當日收盤價」
             if price <= 0:
                 continue
 
@@ -391,13 +366,6 @@ def build_period(
 
 
 def validate_output(out):
-    """
-    產檔前自動回測／健檢。
-
-    如果任何市場在任何 1/3/5 日區間的四種法人分類
-    沒有買超或賣超資料，直接讓 workflow fail，
-    不再把「看似成功但其實整欄空白」的 JSON commit 上去。
-    """
     errors = []
 
     for period, days in PERIODS:
@@ -423,7 +391,6 @@ def validate_output(out):
                         f"expected={days}"
                     )
 
-                # 排行至少要有一邊有資料
                 if (
                     len(g.get("buy", [])) == 0
                     and len(g.get("sell", [])) == 0
@@ -444,28 +411,6 @@ def validate_output(out):
         )
 
     print("VALIDATION PASSED")
-
-    for period, days in PERIODS:
-        for market in MARKETS:
-            line = []
-
-            for kind in KINDS:
-                g = out["periods"][
-                    period
-                ][market][kind]
-
-                line.append(
-                    f"{kind}:"
-                    f"{len(g['buy'])}/"
-                    f"{len(g['sell'])}"
-                )
-
-            print(
-                period,
-                market,
-                f"{days} days",
-                " ".join(line)
-            )
 
 
 def main():
@@ -496,12 +441,11 @@ def main():
         )
 
     names = load_display_names()
-
     histories = {}
 
     for market in MARKETS:
         histories[market] = (
-            refresh_history_for_market(
+            maintain_history_for_market(
                 market,
                 market_snapshots
             )
@@ -526,13 +470,13 @@ def main():
         "date": today,
         "updated_at": (
             now_tpe()
-            .isoformat(
-                timespec="minutes"
-            )
+            .isoformat(timespec="minutes")
         ),
         "periods": {},
     }
 
+    # 籌碼日報原本只需要 1 / 3 / 5 日排行；
+    # 20 日歷史則保留給 stock_detail 使用。
     for period, days in PERIODS:
         out["periods"][period] = {}
 
@@ -554,7 +498,6 @@ def main():
                     )
                 )
 
-    # 先驗證，通過才寫入正式檔
     validate_output(out)
 
     save_json(
@@ -566,16 +509,12 @@ def main():
     print(
         "institutional saved",
         today,
-        "twse_dates",
-        [
-            x.get("date")
-            for x in histories["twse"]
-        ],
-        "tpex_dates",
-        [
-            x.get("date")
-            for x in histories["tpex"]
-        ]
+        "twse_history_days",
+        len(histories["twse"]),
+        "tpex_history_days",
+        len(histories["tpex"]),
+        "incremental_mode",
+        True,
     )
 
 
