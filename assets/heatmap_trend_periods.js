@@ -1,11 +1,11 @@
 /* =========================================================
    Heatmap stock detail trend periods
-   5 / 20 trading days, default 20
+   5 / 10 / 20 trading days, default 20
    - Trend metrics and overlay chart switch together
    - Institutional flow remains fixed at 5 days
    ========================================================= */
 (function () {
-  const PERIODS = [5, 20];
+  const PERIODS = [5, 10, 20];
   const DEFAULT_PERIOD = 20;
 
   let activePeriod = DEFAULT_PERIOD;
@@ -13,7 +13,8 @@
   let detailPromise = null;
   let rendering = false;
 
-  const $ = (s, root = document) => root.querySelector(s);
+  const $ = (s, root = document) =>
+    root.querySelector(s);
 
   function fmtPct(v) {
     if (
@@ -36,13 +37,8 @@
   function valueClass(v) {
     const n = Number(v);
 
-    if (n > 0) {
-      return "up";
-    }
-
-    if (n < 0) {
-      return "down";
-    }
+    if (n > 0) return "up";
+    if (n < 0) return "down";
 
     return "";
   }
@@ -70,14 +66,17 @@
     }
 
     detailPromise = fetch(
-      "./data/stock_detail.json?v=" + Date.now(),
+      "./data/stock_detail.json?v=" +
+        Date.now(),
       {
         cache: "no-store"
       }
     )
       .then(r => {
         if (!r.ok) {
-          throw new Error("HTTP " + r.status);
+          throw new Error(
+            "HTTP " + r.status
+          );
         }
 
         return r.json();
@@ -94,13 +93,17 @@
   }
 
   function ensureStyles() {
-    if ($("#stockTrendPeriodStyle")) {
+    if (
+      $("#stockTrendPeriodStyle")
+    ) {
       return;
     }
 
-    const style = document.createElement("style");
+    const style =
+      document.createElement("style");
 
-    style.id = "stockTrendPeriodStyle";
+    style.id =
+      "stockTrendPeriodStyle";
 
     style.textContent = `
       .stock-trend-periods{
@@ -173,11 +176,14 @@
   }
 
   function getContext() {
-    const overlay = $("#stockDetailOverlay");
+    const overlay =
+      $("#stockDetailOverlay");
 
     if (
       !overlay ||
-      !overlay.classList.contains("open")
+      !overlay.classList.contains(
+        "open"
+      )
     ) {
       return null;
     }
@@ -189,15 +195,18 @@
 
     if (
       !trendTab ||
-      !trendTab.classList.contains("active")
+      !trendTab.classList.contains(
+        "active"
+      )
     ) {
       return null;
     }
 
     const nameText =
-      $("#stockDetailName", overlay)
-        ?.textContent
-        ?.trim() || "";
+      $(
+        "#stockDetailName",
+        overlay
+      )?.textContent?.trim() || "";
 
     const ticker =
       nameText
@@ -205,9 +214,10 @@
         .pop() || "";
 
     const meta =
-      $("#stockDetailMeta", overlay)
-        ?.textContent
-        ?.trim() || "";
+      $(
+        "#stockDetailMeta",
+        overlay
+      )?.textContent?.trim() || "";
 
     const sector =
       meta
@@ -221,7 +231,10 @@
     };
   }
 
-  function getPeriodArray(obj, period) {
+  function getPeriodArray(
+    obj,
+    period
+  ) {
     const map =
       obj?.returns_by_period || {};
 
@@ -245,7 +258,9 @@
 
   function getLabels(period) {
     const map =
-      detailData?.date_labels_by_period || {};
+      detailData
+        ?.date_labels_by_period ||
+      {};
 
     const arr =
       map[String(period)] ||
@@ -256,13 +271,19 @@
     }
 
     if (period === 5) {
-      return detailData?.date_labels || [];
+      return (
+        detailData?.date_labels ||
+        []
+      );
     }
 
     return [];
   }
 
-  function lineChartSvg(labels, series) {
+  function lineChartSvg(
+    labels,
+    series
+  ) {
     const width = 680;
     const height = 310;
 
@@ -275,12 +296,16 @@
 
     const values =
       series
-        .flatMap(s => s.values || [])
+        .flatMap(
+          s => s.values || []
+        )
         .filter(
           v =>
             v !== null &&
             v !== undefined &&
-            !Number.isNaN(Number(v))
+            !Number.isNaN(
+              Number(v)
+            )
         )
         .map(Number);
 
@@ -289,14 +314,19 @@
       !labels.length
     ) {
       return `
-        <div class="stock-detail-empty">
+        <div
+          class="stock-detail-empty"
+        >
           暫無完整走勢資料
         </div>
       `;
     }
 
-    let min = Math.min(0, ...values);
-    let max = Math.max(0, ...values);
+    let min =
+      Math.min(0, ...values);
+
+    let max =
+      Math.max(0, ...values);
 
     if (
       Math.abs(max - min) < 0.5
@@ -305,7 +335,8 @@
       min -= 1;
     }
 
-    const span = max - min;
+    const span =
+      max - min;
 
     max += span * 0.14;
     min -= span * 0.14;
@@ -361,7 +392,10 @@
             <g>
               <line
                 x1="${pad.left}"
-                x2="${width - pad.right}"
+                x2="${
+                  width -
+                  pad.right
+                }"
                 y1="${yAt(v)}"
                 y2="${yAt(v)}"
                 stroke="currentColor"
@@ -369,8 +403,12 @@
               />
 
               <text
-                x="${pad.left - 8}"
-                y="${yAt(v) + 4}"
+                x="${
+                  pad.left - 8
+                }"
+                y="${
+                  yAt(v) + 4
+                }"
                 text-anchor="end"
                 fill="currentColor"
                 opacity=".55"
@@ -389,30 +427,33 @@
           let d = "";
           let drawing = false;
 
-          (s.values || []).forEach(
-            (v, i) => {
-              if (
-                v === null ||
-                v === undefined ||
-                Number.isNaN(Number(v))
-              ) {
-                drawing = false;
-                return;
+          (s.values || [])
+            .forEach(
+              (v, i) => {
+                if (
+                  v === null ||
+                  v === undefined ||
+                  Number.isNaN(
+                    Number(v)
+                  )
+                ) {
+                  drawing = false;
+                  return;
+                }
+
+                d += `${
+                  drawing
+                    ? " L"
+                    : "M"
+                } ${
+                  xAt(i).toFixed(1)
+                } ${
+                  yAt(v).toFixed(1)
+                }`;
+
+                drawing = true;
               }
-
-              d += `${
-                drawing
-                  ? " L"
-                  : "M"
-              } ${
-                xAt(i).toFixed(1)
-              } ${
-                yAt(v).toFixed(1)
-              }`;
-
-              drawing = true;
-            }
-          );
+            );
 
           return `
             <path
@@ -447,7 +488,8 @@
           (label, i) => {
             if (
               i !== 0 &&
-              i !== labels.length - 1 &&
+              i !==
+                labels.length - 1 &&
               i % step !== 0
             ) {
               return "";
@@ -456,7 +498,9 @@
             return `
               <text
                 x="${xAt(i)}"
-                y="${height - 15}"
+                y="${
+                  height - 15
+                }"
                 text-anchor="middle"
                 fill="currentColor"
                 opacity=".55"
@@ -477,7 +521,10 @@
         ? `
           <line
             x1="${pad.left}"
-            x2="${width - pad.right}"
+            x2="${
+              width -
+              pad.right
+            }"
             y1="${yAt(0)}"
             y2="${yAt(0)}"
             stroke="currentColor"
@@ -509,7 +556,8 @@
       return;
     }
 
-    const ctx = getContext();
+    const ctx =
+      getContext();
 
     if (!ctx?.ticker) {
       return;
@@ -525,11 +573,12 @@
 
     const sector =
       detailData
-        .sectors?.[ctx.sector] || {};
+        .sectors?.[ctx.sector] ||
+      {};
 
     const bench =
-      detailData
-        .benchmark || {};
+      detailData.benchmark ||
+      {};
 
     const body = $(
       "#stockDetailBody",
@@ -575,7 +624,8 @@
         stockLast !== null &&
         sectorLast !== null
       )
-        ? stockLast - sectorLast
+        ? stockLast -
+          sectorLast
         : null;
 
     const vsIndex =
@@ -583,7 +633,8 @@
         stockLast !== null &&
         indexLast !== null
       )
-        ? stockLast - indexLast
+        ? stockLast -
+          indexLast
         : null;
 
     rendering = true;
@@ -602,7 +653,8 @@
                 class="
                   stock-trend-period
                   ${
-                    p === activePeriod
+                    p ===
+                    activePeriod
                       ? "active"
                       : ""
                   }
@@ -616,7 +668,9 @@
           .join("")}
       </div>
 
-      <div class="stock-detail-section-title">
+      <div
+        class="stock-detail-section-title"
+      >
         <strong>
           近${activePeriod}日相對走勢
         </strong>
@@ -626,61 +680,114 @@
         </small>
       </div>
 
-      <div class="stock-detail-metrics">
-        <div class="stock-detail-metric stock">
+      <div
+        class="stock-detail-metrics"
+      >
+        <div
+          class="stock-detail-metric stock"
+        >
           <small>
-            ${stock.name || ctx.ticker}
+            ${
+              stock.name ||
+              ctx.ticker
+            }
           </small>
 
           <strong
-            class="${valueClass(stockLast)}"
+            class="${
+              valueClass(
+                stockLast
+              )
+            }"
           >
-            ${fmtPct(stockLast)}
+            ${
+              fmtPct(
+                stockLast
+              )
+            }
           </strong>
         </div>
 
-        <div class="stock-detail-metric sector">
+        <div
+          class="stock-detail-metric sector"
+        >
           <small>
-            ${ctx.sector || "同族群"}
+            ${
+              ctx.sector ||
+              "同族群"
+            }
           </small>
 
           <strong
-            class="${valueClass(sectorLast)}"
+            class="${
+              valueClass(
+                sectorLast
+              )
+            }"
           >
-            ${fmtPct(sectorLast)}
+            ${
+              fmtPct(
+                sectorLast
+              )
+            }
           </strong>
         </div>
 
-        <div class="stock-detail-metric index">
+        <div
+          class="stock-detail-metric index"
+        >
           <small>
-            ${bench.name || "上市加權指數"}
+            ${
+              bench.name ||
+              "上市加權指數"
+            }
           </small>
 
           <strong
-            class="${valueClass(indexLast)}"
+            class="${
+              valueClass(
+                indexLast
+              )
+            }"
           >
-            ${fmtPct(indexLast)}
+            ${
+              fmtPct(
+                indexLast
+              )
+            }
           </strong>
         </div>
       </div>
 
-      <div class="stock-detail-note">
+      <div
+        class="stock-detail-note"
+      >
         近${activePeriod}個已完成交易日；以${activePeriod}日前一交易日收盤為0%基準
         ${
           vsSector !== null
-            ? "｜相對族群 " +
-              fmtPct(vsSector)
+            ? (
+                "｜相對族群 " +
+                fmtPct(
+                  vsSector
+                )
+              )
             : ""
         }
         ${
           vsIndex !== null
-            ? "｜相對大盤 " +
-              fmtPct(vsIndex)
+            ? (
+                "｜相對大盤 " +
+                fmtPct(
+                  vsIndex
+                )
+              )
             : ""
         }
       </div>
 
-      <div class="stock-trend-chart">
+      <div
+        class="stock-trend-chart"
+      >
         ${
           lineChartSvg(
             labels,
@@ -690,40 +797,57 @@
                   stock.name ||
                   ctx.ticker,
                 values: sr,
-                color: "#dc2626"
+                color:
+                  "#dc2626"
               },
               {
                 label:
                   ctx.sector ||
                   "同族群",
                 values: gr,
-                color: "#2563eb"
+                color:
+                  "#2563eb"
               },
               {
                 label:
                   bench.name ||
                   "上市加權指數",
                 values: ir,
-                color: "#64748b"
+                color:
+                  "#64748b"
               }
             ]
           )
         }
 
-        <div class="stock-detail-legend">
+        <div
+          class="stock-detail-legend"
+        >
           <span>
-            <i class="stock-detail-dot stock"></i>
+            <i
+              class="stock-detail-dot stock"
+            ></i>
             個股
           </span>
 
           <span>
-            <i class="stock-detail-dot sector"></i>
-            ${ctx.sector || "同族群"}
+            <i
+              class="stock-detail-dot sector"
+            ></i>
+            ${
+              ctx.sector ||
+              "同族群"
+            }
           </span>
 
           <span>
-            <i class="stock-detail-dot index"></i>
-            ${bench.name || "上市加權指數"}
+            <i
+              class="stock-detail-dot index"
+            ></i>
+            ${
+              bench.name ||
+              "上市加權指數"
+            }
           </span>
         </div>
       </div>
@@ -746,13 +870,17 @@
         if (p) {
           const requested =
             Number(
-              p.dataset.trendPeriod
+              p.dataset
+                .trendPeriod
             );
 
           if (
-            PERIODS.includes(requested)
+            PERIODS.includes(
+              requested
+            )
           ) {
-            activePeriod = requested;
+            activePeriod =
+              requested;
           } else {
             activePeriod =
               DEFAULT_PERIOD;
@@ -812,11 +940,10 @@
             return;
           }
 
-          const body =
-            $(
-              "#stockDetailBody",
-              ctx.overlay
-            );
+          const body = $(
+            "#stockDetailBody",
+            ctx.overlay
+          );
 
           if (
             body &&
@@ -831,13 +958,22 @@
               );
           }
 
-          const trendTab =
-            $(
-              '[data-stock-detail-tab="trend"]',
-              ctx.overlay
-            );
+          const trendTab = $(
+            '[data-stock-detail-tab="trend"]',
+            ctx.overlay
+          );
 
-          if (trendTab) {
+          /*
+           * 重要：
+           * 只有文字真的不同時才修改
+           * 避免 MutationObserver
+           * 因自己修改 DOM 而無限觸發
+           */
+          if (
+            trendTab &&
+            trendTab.textContent !==
+              "走勢"
+          ) {
             trendTab.textContent =
               "走勢";
           }
