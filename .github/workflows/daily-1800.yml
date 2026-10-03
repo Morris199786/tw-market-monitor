@@ -1,6 +1,14 @@
 name: Daily close update
 
 on:
+  schedule:
+    # 台灣 18:00 = UTC 10:00
+    - cron: "0 10 * * *"
+
+    # 台灣 18:20 = UTC 10:20
+    # 補跑一次，避免官方資料 18:00 尚未完全更新
+    - cron: "20 10 * * *"
+
   workflow_dispatch:
 
 permissions:
@@ -58,31 +66,14 @@ jobs:
             echo "Push attempt $i/5"
             echo "======================================"
 
-            #
-            # 取得目前 GitHub 最新 main
-            #
             git fetch origin main
-
-            #
-            # 回到最新 main
-            #
-            # 不 merge
-            # 不 rebase
-            #
             git reset --hard origin/main
 
-            #
-            # 把這次 Daily 產生的資料
-            # 蓋回最新 main
-            #
             rm -rf data
             mkdir -p data
 
             cp -a /tmp/generated-data/. data/
 
-            #
-            # 建立 commit
-            #
             git add data
 
             if git diff --cached --quiet; then
@@ -93,9 +84,6 @@ jobs:
 
             git commit -m "data: daily close update"
 
-            #
-            # Push
-            #
             if git push origin HEAD:main; then
               echo "Push successful"
               success=true
