@@ -24,6 +24,7 @@
 
   let detailCache = null;
   let detailPromise = null;
+  let detailLoadedAt = 0;
 
   function pct(v) {
     if (
@@ -58,77 +59,30 @@
       : `近${period}日`;
   }
 
-  function lastNumber(arr) {
-    const nums = (arr || [])
-      .map(Number)
-      .filter(Number.isFinite);
-
-    return nums.length
-      ? nums[nums.length - 1]
-      : null;
+  function finiteValue(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
   }
 
-  /*
-   * stock_detail.json 的 benchmark：
-   *
-   * 5 / 10 / 20 日：
-   * returns_by_period 最後一個值
-   * 就是該期間截至最新交易日的累積報酬
-   *
-   * 當日：
-   * 利用近5日累積報酬的最後兩點
-   * 還原最新一個交易日的單日漲跌幅
-   */
-  function benchmarkReturn(
-    benchmark,
-    period
-  ) {
-    if (!benchmark) {
-      return null;
+  function benchmarkReturn(benchmark, period) {
+    if (!benchmark) return null;
+    if (benchmark.changes_by_period) {
+      return finiteValue(benchmark.changes_by_period[period]);
     }
-
-    if (period !== "1") {
-      return lastNumber(
-        benchmark
-          .returns_by_period?.[period] ||
-        (
-          period === "5"
-            ? benchmark.returns
-            : null
-        )
-      );
-    }
-
-    const values =
-      benchmark
-        .returns_by_period?.["5"] ||
-      benchmark.returns ||
-      [];
-
-    const nums = values
-      .map(Number)
-      .filter(Number.isFinite);
-
-    if (nums.length < 2) {
-      return null;
-    }
-
-    const prev =
-      nums[nums.length - 2] / 100;
-
-    const curr =
-      nums[nums.length - 1] / 100;
-
-    return (
-      (
-        (1 + curr) /
-        (1 + prev)
-      ) - 1
-    ) * 100;
+    // Compatibility with existing TAIEX data. Never skip missing dates.
+    const values = benchmark.returns_by_period?.[period === "1" ? "5" : period]
+      || ((period === "1" || period === "5") ? benchmark.returns : null);
+    if (!Array.isArray(values) || !values.length) return null;
+    const curr = finiteValue(values[values.length - 1]);
+    if (period !== "1") return curr;
+    const prev = finiteValue(values[values.length - 2]);
+    if (curr === null || prev === null || prev <= -100) return null;
+    return ((1 + curr / 100) / (1 + prev / 100) - 1) * 100;
   }
 
   async function loadDetail() {
-    if (detailCache) {
+    if (detailCache && Date.now() - detailLoadedAt < 60000) {
       return detailCache;
     }
 
@@ -153,6 +107,7 @@
       })
       .then(d => {
         detailCache = d || {};
+        detailLoadedAt = Date.now();
 
         return detailCache;
       })
@@ -230,7 +185,7 @@
         period
       );
 
-    host.innerHTML = `
+    const markup = `
       ${benchmarkChip(
         `大盤${label}漲幅`,
         taiex
@@ -242,6 +197,10 @@
         "otc"
       )}
     `;
+    const dataDate = /^\d{4}-\d{2}-\d{2}$/.test(d.as_of_date || "") ? d.as_of_date : "尚無資料";
+    const datedMarkup = markup + `<small style="grid-column:1/-1;text-align:center;opacity:.75">指數收盤資料：${dataDate}｜依已完成交易日計算</small>`;
+    if (host.innerHTML !== datedMarkup) host.innerHTML = datedMarkup;
+    host.title = `指數資料日期：${d.as_of_date || "尚無資料"}；依已完成交易日收盤計算`;
   }
 
   function injectStyle() {
@@ -987,3 +946,4 @@
   );
 
 })();
+
