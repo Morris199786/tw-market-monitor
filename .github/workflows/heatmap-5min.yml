@@ -1,6 +1,14 @@
 name: Heatmap 5min
 
 on:
+  schedule:
+    # GitHub 內建排程保留當備援
+    # 台灣平日 09:00-13:59，每 5 分鐘
+    - cron: "*/5 1-5 * * 1-5"
+
+  repository_dispatch:
+    types: [heatmap]
+
   workflow_dispatch:
 
 permissions:
@@ -154,7 +162,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 先把這次 Action 產生的資料暫存起來
           rm -rf /tmp/heatmap-generated
           mkdir -p /tmp/heatmap-generated
 
@@ -168,9 +175,6 @@ jobs:
             fi
           done
 
-          # 最多嘗試 5 次
-          # 如果中途 main 被其他 Action 或手動 commit 更新，
-          # 就重新同步 main，再把本次產生的資料放回去重新 commit
           for attempt in 1 2 3 4 5
           do
             echo "======================================"
