@@ -21,8 +21,7 @@
     "marginLending",
     "ai",
     "holders",
-    "monthlyRevenue",
-    "marketMonitor"
+    "monthlyRevenue"
   ];
 
   let editing = false;
