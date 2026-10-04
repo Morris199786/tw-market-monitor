@@ -41,3 +41,14 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
  .earnings-detail.four{grid-template-columns:repeat(2,minmax(0,1fr))}
  .earnings-report-main{display:none}
 }
+
+/* 季度比較直接顯示，避免手機上只有 EPS 摘要 */
+#quarterlyEarningsPanel .earnings-result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 14px}
+#quarterlyEarningsPanel .earnings-note{margin:0 14px 12px;line-height:1.6;color:var(--muted);font-size:12px}
+#quarterlyEarningsPanel .earnings-source{padding:0 14px 14px;color:var(--muted);font-size:12px}
+#quarterlyEarningsPanel .earnings-source summary{display:list-item;padding:0;min-height:0;cursor:pointer}
+#quarterlyEarningsPanel .earnings-source p{line-height:1.6;overflow-wrap:anywhere}
+#quarterlyEarningsPanel .earnings-source a{color:var(--ink)}
+#quarterlyEarningsPanel .earnings-detail.four{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#quarterlyEarningsPanel .earnings-detail small{line-height:1.5}
+@media(max-width:480px){#quarterlyEarningsPanel .earnings-result-head{align-items:flex-start;flex-direction:column}}
