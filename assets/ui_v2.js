@@ -15,6 +15,46 @@ const featureItems = [
 let revenueSectorSelected = "all";
 let revenueMomSort = false;
 let selfReportSearch = "";
+let selfReportDate = "";
+
+function taiwanToday() {
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    ).formatToParts(
+      new Date()
+    );
+
+  const get =
+    type =>
+      parts.find(
+        x =>
+          x.type === type
+      )?.value || "";
+
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function normalizeSelfReportDate(value) {
+  return String(
+    value || ""
+  )
+    .trim()
+    .slice(
+      0,
+      10
+    )
+    .replace(
+      /\//g,
+      "-"
+    );
+}
 
 function featureIcon(name) {
   const icons = {
@@ -236,7 +276,6 @@ function setupPageHistory() {
 
 /* -------------------------------------------------
    首頁 Market Pulse
-   先建立畫面，再分別載入資料
 ------------------------------------------------- */
 
 function ensureMarketPulse() {
@@ -533,11 +572,6 @@ async function buildMarketPulse(force = false) {
     return;
   }
 
-  /*
-   * 不再 Promise.all 等五個 JSON
-   * 哪一份先回來，就先更新哪一區
-   */
-
   J(
     "./data/heatmap.json",
     { force }
@@ -662,6 +696,10 @@ async function buildMarketPulse(force = false) {
       }
     );
 
+  /*
+   * 自結：
+   * 首頁只計算台灣時間「今天」公告的公司
+   */
   J(
     "./data/self_reports.json",
     { force }
@@ -669,11 +707,22 @@ async function buildMarketPulse(force = false) {
     .then(
       d => {
 
+        const today =
+          taiwanToday();
+
         const count =
           (
             d.items ||
             []
-          ).length;
+          )
+            .filter(
+              x =>
+                normalizeSelfReportDate(
+                  x.publish_date
+                ) ===
+                today
+            )
+            .length;
 
         pulse
           .querySelectorAll(
@@ -943,6 +992,193 @@ async function selfReports(force = false) {
     d.items ||
     [];
 
+  /*
+   * 所有有資料的公告日期
+   * 新日期排在最前面
+   */
+  const availableDates =
+    [
+      ...new Set(
+        allItems
+          .map(
+            x =>
+              normalizeSelfReportDate(
+                x.publish_date
+              )
+          )
+          .filter(
+            Boolean
+          )
+      )
+    ]
+      .sort(
+        (a, b) =>
+          b.localeCompare(a)
+      );
+
+  /*
+   * 第一次進入自結頁：
+   * 預設顯示最新一個有資料的日期
+   *
+   * 例如週日沒有公告，
+   * 就會顯示上一個有公告的交易日
+   */
+  if (
+    !selfReportDate ||
+    !availableDates.includes(
+      selfReportDate
+    )
+  ) {
+    selfReportDate =
+      availableDates[0] ||
+      "";
+  }
+
+  /*
+   * 建立日期篩選器
+   * 不需要修改 index.html
+   */
+  const searchInput =
+    $("#selfReportSearchInput");
+
+  const searchMeta =
+    $("#selfReportSearchMeta");
+
+  let dateWrap =
+    $("#selfReportDateFilter");
+
+  if (!dateWrap) {
+    dateWrap =
+      document.createElement(
+        "div"
+      );
+
+    dateWrap.id =
+      "selfReportDateFilter";
+
+    dateWrap.style.cssText = `
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:0 0 12px 0;
+      width:100%;
+    `;
+
+    /*
+     * 優先放在搜尋框上方
+     */
+    if (
+      searchInput &&
+      searchInput.parentElement
+    ) {
+      searchInput
+        .parentElement
+        .insertAdjacentElement(
+          "beforebegin",
+          dateWrap
+        );
+    } else if (
+      searchMeta &&
+      searchMeta.parentElement
+    ) {
+      searchMeta
+        .parentElement
+        .insertBefore(
+          dateWrap,
+          searchMeta
+        );
+    }
+  }
+
+  if (dateWrap) {
+    dateWrap.innerHTML = `
+      <label
+        for="selfReportDateSelect"
+        style="
+          font-size:13px;
+          font-weight:700;
+          color:var(--muted);
+          white-space:nowrap;
+        "
+      >
+        公告日期
+      </label>
+
+      <select
+        id="selfReportDateSelect"
+        aria-label="篩選自結公告日期"
+        style="
+          min-width:160px;
+          min-height:42px;
+          padding:0 36px 0 12px;
+          border:1px solid var(--line);
+          border-radius:11px;
+          background:var(--card);
+          color:inherit;
+          font:inherit;
+          font-weight:700;
+          outline:none;
+        "
+      >
+        ${
+          availableDates.length
+            ? availableDates
+                .map(
+                  date => `
+                    <option
+                      value="${date}"
+                      ${
+                        date === selfReportDate
+                          ? "selected"
+                          : ""
+                      }
+                    >
+                      ${date}
+                    </option>
+                  `
+                )
+                .join("")
+            : `
+              <option value="">
+                尚無資料
+              </option>
+            `
+        }
+      </select>
+    `;
+
+    const dateSelect =
+      $("#selfReportDateSelect");
+
+    if (dateSelect) {
+      dateSelect.onchange =
+        () => {
+          selfReportDate =
+            dateSelect.value;
+
+          selfReports(
+            false
+          );
+        };
+    }
+  }
+
+  /*
+   * 第一層：
+   * 先依公告日期篩選
+   */
+  const dateItems =
+    selfReportDate
+      ? allItems.filter(
+          x =>
+            normalizeSelfReportDate(
+              x.publish_date
+            ) ===
+            selfReportDate
+        )
+      : [];
+
   const normalizeSearch =
     value =>
       String(
@@ -961,10 +1197,14 @@ async function selfReports(force = false) {
       selfReportSearch
     );
 
+  /*
+   * 第二層：
+   * 再在所選日期裡搜尋股票
+   */
   const arr =
     !keyword
-      ? allItems
-      : allItems.filter(
+      ? dateItems
+      : dateItems.filter(
           x => {
             const ticker =
               normalizeSearch(
@@ -1013,10 +1253,20 @@ async function selfReports(force = false) {
     $("#selfReportSearchMeta");
 
   if (resultMeta) {
-    resultMeta.textContent =
+    if (
+      !selfReportDate
+    ) {
+      resultMeta.textContent =
+        "目前沒有自結資料";
+    } else if (
       selfReportSearch
-        ? `找到 ${arr.length} 筆｜共 ${allItems.length} 筆自結`
-        : `共 ${allItems.length} 筆自結`;
+    ) {
+      resultMeta.textContent =
+        `找到 ${arr.length} 筆｜${selfReportDate} 共 ${dateItems.length} 筆自結`;
+    } else {
+      resultMeta.textContent =
+        `${selfReportDate}｜共 ${dateItems.length} 筆自結`;
+    }
   }
 
   const box =
@@ -1063,14 +1313,16 @@ async function selfReports(force = false) {
           ${
             selfReportSearch
               ? `找不到「${safe}」的自結資料`
-              : "目前尚未偵測到新的自結公告"
+              : selfReportDate
+                ? `${selfReportDate} 沒有自結公告`
+                : "目前尚未偵測到新的自結公告"
           }
         </b>
 
         <span>
           ${
             selfReportSearch
-              ? "可輸入股票名稱或股票代號搜尋"
+              ? `搜尋範圍：${selfReportDate || "目前日期"}`
               : "系統每 30 分鐘自動檢查"
           }
         </span>
@@ -1906,10 +2158,6 @@ function setupBackHomeButton() {
       refresh();
     };
 
-  /*
-   * 原本每個 page 都建立一個 MutationObserver
-   * 改成只保留一個
-   */
   const observer =
     new MutationObserver(
       refresh
@@ -2039,16 +2287,6 @@ function formatUpdateTime(
     );
 }
 
-/*
- * 效能修正：
- *
- * 舊版：
- * setupPageUpdateMeta()
- * 一進網站就把所有分頁 JSON 依序抓一次
- *
- * 新版：
- * 只讀目前正在看的頁面
- */
 async function setupPageUpdateMeta(
   pageId
 ) {
@@ -2588,18 +2826,6 @@ requestAnimationFrame(
 );
 
 setupSelfReportSearch();
-
-/*
- * 舊版這裡會直接：
- *
- * selfReports();
- * monthlyRevenue();
- * setupPageUpdateMeta();
- *
- * 造成首頁同時載入大量 JSON
- *
- * 新版全部移除
- */
 
 setupFontScaleControl();
 
