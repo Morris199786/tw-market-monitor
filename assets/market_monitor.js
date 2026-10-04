@@ -26,9 +26,10 @@
   function render() {
     if (!dataset) return;
 
+    // 日期由小到大排列：1號 → 31號
     const rows = dataset.rows
       .filter(r => r.date.slice(0, 7) === month.value)
-      .reverse();
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     root.querySelector('[data-mm-status]').textContent =
       `資料截至 ${dataset.as_of_date || '尚無資料'}` +
@@ -142,4 +143,4 @@
   if (root.classList.contains('active')) {
     load();
   }
-})(); 
+})();
