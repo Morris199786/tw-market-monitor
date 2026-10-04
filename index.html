@@ -33,6 +33,102 @@
     #selfReportSearchClear{right:8px !important}
     #selfReportSearchMeta{display:block !important;width:100% !important;margin-top:10px !important;white-space:normal !important;text-align:left !important}
   }
+
+  /* 2026-10-04 custom mobile page menu: avoids iOS native select sheet */
+  @media (max-width:900px){
+    #mobileNav{
+      position:absolute !important;
+      width:1px !important;
+      height:1px !important;
+      opacity:0 !important;
+      pointer-events:none !important;
+      overflow:hidden !important;
+    }
+    .mobile-page-nav{
+      position:relative;
+      width:100%;
+      order:20;
+      margin-top:12px;
+      z-index:1000;
+    }
+    .mobile-page-nav-toggle{
+      width:100%;
+      min-height:52px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:0 18px;
+      border:1px solid rgba(148,163,184,.30);
+      border-radius:15px;
+      background:rgba(255,255,255,.07);
+      color:#f8fafc;
+      font:inherit;
+      font-size:17px;
+      font-weight:700;
+      text-align:left;
+      -webkit-appearance:none;
+      appearance:none;
+    }
+    .mobile-page-nav-toggle::after{
+      content:"⌄";
+      font-size:22px;
+      line-height:1;
+      transition:transform .18s ease;
+    }
+    .mobile-page-nav.open .mobile-page-nav-toggle::after{
+      transform:rotate(180deg);
+    }
+    .mobile-page-nav-menu{
+      display:none;
+      position:absolute;
+      top:calc(100% + 8px);
+      left:0;
+      right:0;
+      max-height:min(66vh,560px);
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:7px;
+      border:1px solid rgba(148,163,184,.24);
+      border-radius:18px;
+      background:#fff;
+      box-shadow:0 18px 50px rgba(15,23,42,.24);
+    }
+    .mobile-page-nav.open .mobile-page-nav-menu{display:block}
+    .mobile-page-nav-item{
+      width:100%;
+      display:flex;
+      align-items:center;
+      min-height:46px;
+      padding:0 14px;
+      border:0;
+      border-radius:11px;
+      background:transparent;
+      color:#111827;
+      font:inherit;
+      font-size:16px;
+      font-weight:650;
+      text-align:left;
+    }
+    .mobile-page-nav-item.active{
+      background:#eef4ff;
+      color:#1d4ed8;
+    }
+    html[data-theme="dark"] .mobile-page-nav-menu{
+      background:#171b22;
+      border-color:#343c49;
+      box-shadow:0 18px 50px rgba(0,0,0,.38);
+    }
+    html[data-theme="dark"] .mobile-page-nav-item{color:#f1f5f9}
+    html[data-theme="dark"] .mobile-page-nav-item.active{
+      background:#24334f;
+      color:#bfdbfe;
+    }
+  }
+  @media (min-width:901px){
+    .mobile-page-nav{display:none !important}
+  }
+
 </style>
 <link rel="stylesheet" href="./assets/market_monitor.css?v=20261004-mobile-table">
 </head>
@@ -60,7 +156,12 @@
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
 <option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option>
 <option value="marketMonitor">大盤監控</option>
-</select></div></header>
+</select>
+<div id="mobilePageNav" class="mobile-page-nav">
+  <button id="mobilePageNavToggle" class="mobile-page-nav-toggle" type="button" aria-expanded="false">總覽</button>
+  <div id="mobilePageNavMenu" class="mobile-page-nav-menu" role="menu"></div>
+</div>
+</div></header>
 <main>
 <section id="home" class="page active"><div class="hero"><div><div class="kicker">MARKET DASHBOARD</div><h1>台股市場監測</h1><p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p></div><div class="badges"><span class="badge live">GitHub 自動更新</span></div></div><div id="featureRail" class="feature-rail"></div><div id="homeCards" class="grid four"></div><div class="section"><h2>目前強勢族群</h2><span>市值加權</span></div><div id="topSectors" class="grid three"></div></section>
 <section id="heat" class="page"><div class="hero"><div><div class="kicker">SECTOR HEATMAP</div><h1>市場熱力圖</h1><p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p></div><div class="badges"><span class="badge live">盤中每 5 分鐘</span><span id="heatTime" class="badge"></span></div></div><div id="heatGrid" class="heatgrid"></div></section>
@@ -95,7 +196,7 @@
 </main>
 <script src="./assets/app.js?v=20261003-heat-weight-toggle-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
-<script src="./assets/ui_v2.js?v=20261004-market-monitor-nav"></script>
+<script src="./assets/ui_v2.js?v=20261004-market-monitor-nav2"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20261004-market-monitor-nav"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
@@ -118,5 +219,76 @@
 })();
 </script>
 <script src="./assets/market_monitor.js?v=20261004"></script>
+<script>
+(function(){
+  const wrap = document.getElementById("mobilePageNav");
+  const toggle = document.getElementById("mobilePageNavToggle");
+  const menu = document.getElementById("mobilePageNavMenu");
+  const nativeSelect = document.getElementById("mobileNav");
+  if (!wrap || !toggle || !menu || !nativeSelect) return;
+
+  const items = Array.from(nativeSelect.options).map(o => ({
+    id: o.value,
+    label: o.textContent.trim()
+  }));
+
+  menu.innerHTML = items.map(x =>
+    `<button type="button" class="mobile-page-nav-item" data-mobile-page="${x.id}" role="menuitem">${x.label}</button>`
+  ).join("");
+
+  function activeId(){
+    return document.querySelector(".page.active")?.id || "home";
+  }
+
+  function sync(){
+    const id = activeId();
+    const item = items.find(x => x.id === id) || items[0];
+    toggle.textContent = item.label;
+    nativeSelect.value = id;
+    menu.querySelectorAll(".mobile-page-nav-item").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.mobilePage === id);
+    });
+  }
+
+  function close(){
+    wrap.classList.remove("open");
+    toggle.setAttribute("aria-expanded","false");
+  }
+
+  toggle.addEventListener("click", function(e){
+    e.stopPropagation();
+    const open = wrap.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  menu.addEventListener("click", function(e){
+    const btn = e.target.closest("[data-mobile-page]");
+    if (!btn) return;
+    const id = btn.dataset.mobilePage;
+    close();
+    if (typeof page === "function") page(id);
+    sync();
+  });
+
+  document.addEventListener("click", function(e){
+    if (!wrap.contains(e.target)) close();
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape") close();
+  });
+
+  const main = document.querySelector("main");
+  if (main) {
+    new MutationObserver(sync).observe(main, {
+      subtree:true,
+      attributes:true,
+      attributeFilter:["class"]
+    });
+  }
+
+  sync();
+})();
+</script>
 </body>
 </html>
