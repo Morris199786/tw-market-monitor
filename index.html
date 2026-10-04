@@ -40,7 +40,6 @@
 <header><div class="head">
 <div class="brand"><b>台股市場監測</b><small>TAIWAN MARKET MONITOR</small></div>
 <nav>
-<button class="nav" data-p="marketMonitor">大盤監控</button>
 <button class="nav active" data-p="home">總覽</button>
 <button class="nav" data-p="heat">市場熱力圖</button>
 <button class="nav" data-p="reports">券商報告</button>
@@ -52,13 +51,15 @@
 <button class="nav" data-p="ai">AI選股</button>
 <button class="nav" data-p="holders">大戶籌碼</button>
 <button class="nav" data-p="monthlyRevenue">月營收公布</button>
+<button class="nav" data-p="marketMonitor">大盤監控</button>
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
 <select id="mobileNav" aria-label="切換分頁">
-<option value="home">總覽</option><option value="marketMonitor">大盤監控</option><option value="heat">市場熱力圖</option><option value="reports">券商報告</option>
+<option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">券商報告</option>
 <option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
 <option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option>
+<option value="marketMonitor">大盤監控</option>
 </select></div></header>
 <main>
 <section id="home" class="page active"><div class="hero"><div><div class="kicker">MARKET DASHBOARD</div><h1>台股市場監測</h1><p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p></div><div class="badges"><span class="badge live">GitHub 自動更新</span></div></div><div id="featureRail" class="feature-rail"></div><div id="homeCards" class="grid four"></div><div class="section"><h2>目前強勢族群</h2><span>市值加權</span></div><div id="topSectors" class="grid three"></div></section>
@@ -94,9 +95,9 @@
 </main>
 <script src="./assets/app.js?v=20261003-heat-weight-toggle-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
-<script src="./assets/ui_v2.js?v=20261002-performance-v1"></script>
+<script src="./assets/ui_v2.js?v=20261004-market-monitor-nav"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
-<script src="./assets/feature_sort.js?v=20260929-feature-sort-v4"></script>
+<script src="./assets/feature_sort.js?v=20261004-market-monitor-nav"></script>
 <script src="./assets/reports_v2.js?v=20260929-deeplink-v1"></script>
 <script src="./assets/tw_ratings.js?v=20260930-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
