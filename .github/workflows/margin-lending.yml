@@ -31,6 +31,9 @@ jobs:
       - name: Update margin and lending
         run: python scripts/update_margin_lending.py
 
+      - name: Update market monitor
+        run: python scripts/update_market_monitor.py
+
       - name: Commit updated data
         shell: bash
         run: |
@@ -39,14 +42,15 @@ jobs:
 
           git add \
             data/margin_lending.json \
-            data/history/margin_lending
+            data/history/margin_lending \
+            data/market_monitor.json
 
           if git diff --cached --quiet; then
             echo "No data changes"
             exit 0
           fi
 
-          git commit -m "data: margin lending update"
+          git commit -m "data: margin lending and market monitor update"
 
           success=false
 
