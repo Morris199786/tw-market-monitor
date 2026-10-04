@@ -1,0 +1,13 @@
+#marketMonitor .mm-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}
+#marketMonitor select,#marketMonitor button{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+#marketMonitor table{width:100%;border-collapse:separate;border-spacing:0 6px;font-variant-numeric:tabular-nums}
+#marketMonitor th,#marketMonitor td{text-align:center;padding:12px 8px;white-space:normal}
+#marketMonitor td small{display:block;font-size:11px;opacity:.8;margin-top:4px}
+#marketMonitor .mm-yellow{background:#fff0bf;color:#725000}
+#marketMonitor .mm-red{background:#ffe0df;color:#941e2d}
+#marketMonitor .mm-missing{color:var(--muted)}
+#marketMonitor details{margin:18px 0;line-height:1.8;color:var(--muted)}
+#marketMonitor summary{cursor:pointer;font-weight:700;color:var(--ink)}
+[data-theme="dark"] #marketMonitor .mm-yellow{background:#493b1d;color:#ffdc83}
+[data-theme="dark"] #marketMonitor .mm-red{background:#4b252d;color:#ffb4bd}
+@media(max-width:600px){#marketMonitor th,#marketMonitor td{font-size:12px;padding:10px 5px}#marketMonitor .status{font-size:12px}}
