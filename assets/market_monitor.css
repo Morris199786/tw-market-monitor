@@ -11,3 +11,40 @@
 [data-theme="dark"] #marketMonitor .mm-yellow{background:#493b1d;color:#ffdc83}
 [data-theme="dark"] #marketMonitor .mm-red{background:#4b252d;color:#ffb4bd}
 @media(max-width:600px){#marketMonitor th,#marketMonitor td{font-size:12px;padding:10px 5px}#marketMonitor .status{font-size:12px}}
+
+/* 大盤監控保留四欄表格，不套用全站手機版個股卡片規則 */
+#marketMonitor .tablewrap{overflow-x:auto;padding:0}
+#marketMonitor .tablewrap table{display:table;width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;border-spacing:0}
+#marketMonitor .tablewrap thead{display:table-header-group}
+#marketMonitor .tablewrap tbody{display:table-row-group}
+#marketMonitor .tablewrap tr,
+#marketMonitor .tablewrap tbody tr{display:table-row;padding:0;border:0}
+#marketMonitor .tablewrap th,
+#marketMonitor .tablewrap tbody td,
+#marketMonitor .tablewrap tbody td:first-child,
+#marketMonitor .tablewrap tbody td:not(:first-child){
+  display:table-cell;grid-column:auto;grid-row:auto;vertical-align:middle;
+  text-align:center;padding:14px 8px;line-height:1.5;
+  border:0;border-bottom:1px solid var(--line);white-space:normal;
+}
+#marketMonitor .tablewrap th{font-size:13px;font-weight:700;background:var(--soft,var(--card));color:var(--muted)}
+#marketMonitor .tablewrap th:nth-child(1){width:16%}
+#marketMonitor .tablewrap th:nth-child(2){width:29%}
+#marketMonitor .tablewrap th:nth-child(3){width:34%}
+#marketMonitor .tablewrap th:nth-child(4){width:21%}
+#marketMonitor .tablewrap tbody td:not(:first-child)::before{content:none;display:none}
+#marketMonitor .tablewrap tbody tr:last-child td{border-bottom:0}
+#marketMonitor .tablewrap td small{display:block;line-height:1.4;margin-top:3px}
+#marketMonitor .mm-tools label{display:flex;align-items:center;gap:8px;min-width:0}
+#marketMonitor .status{overflow-wrap:anywhere;line-height:1.6}
+@media(max-width:700px){
+  #marketMonitor .tablewrap th,
+  #marketMonitor .tablewrap tbody td,
+  #marketMonitor .tablewrap tbody td:first-child,
+  #marketMonitor .tablewrap tbody td:not(:first-child){padding:11px 4px;font-size:12px}
+  #marketMonitor .tablewrap td small{font-size:10px}
+  #marketMonitor .mm-tools{gap:10px;justify-content:space-between}
+  #marketMonitor .mm-tools select,#marketMonitor .mm-tools button{font-size:14px;padding:9px 10px}
+  #marketMonitor .mm-tools label{font-size:14px}
+  #marketMonitor .status{font-size:12px}
+}
