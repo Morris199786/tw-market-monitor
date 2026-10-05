@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 from datetime import datetime, timezone
@@ -9,6 +10,9 @@ from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 import requests
+from report_identity import registry, audit_report, VERSION, alias_hits, explicit_tickers
+
+COMPANIES = {}
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -463,7 +467,9 @@ def analyze_report(src: dict) -> dict:
         or ""
     )
 
-    text = text[:160000]
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    if len(text)>240000:
+        raise ValueError("Report exceeds safe input limit; no silent truncation")
 
     system = """你是台股券商研究報告整理器。
 只可以根據使用者提供的報告文字整理，不得補充外部資料、不得自行推測未寫明的評等或目標價。
@@ -485,8 +491,9 @@ def analyze_report(src: dict) -> dict:
 12. forecast_changes 只有明確上修/下修或財測調整才列
 13. detail 用 250~600 字整理全文核心，不要寫成泛泛而談
 14. broker、日期、標題盡量從報告本身辨識；辨識不到可留空
-15. 股票代號若報告明確出現才填
-16. push_reason 是給手機推播看的極短原因，限 15~35 個中文字，直接說明評等/目標價改變的主因；若是產業報告則寫最重要的產業變化，不要寫「報告認為」
+15. 公司名稱與代號必須依下方已驗證公司對照表，禁止自行翻譯公司中文名稱；只有英文名稱但能唯一對應也可填代號，不得把 ISU Petasys 認成台灣公司
+16. 產業報告仍須在 summary 第一條列出台灣個股的評等及目標價，不能只寫產業趨勢；目標價設定、目標價調升、評等調升必須區分；n.a. 為 null，不是現價
+17. push_reason 是給手機推播看的極短原因，限 15~35 個中文字，直接說明評等/目標價改變的主因；若是產業報告則寫最重要的產業變化，不要寫「報告認為」
 
 固定 JSON 欄位：
 {
@@ -510,6 +517,9 @@ def analyze_report(src: dict) -> dict:
   "detail": ""
 }"""
 
+    candidates=explicit_tickers(text)|alias_hits(text,COMPANIES)
+    mapping={t:COMPANIES[t] for t in sorted(candidates) if t in COMPANIES}
+    system += "\n已驗證公司名稱對照（僅用於身分，不是財測來源）："+json.dumps(mapping,ensure_ascii=False)
     user = f"""檔名：
 {src.get("name")}
 
@@ -574,10 +584,7 @@ Drive 日期：
         )
     )
 
-    return normalize_report(
-        obj,
-        src,
-    )
+    return audit_report(normalize_report(obj, src), src, COMPANIES)
 
 
 def action_zh(action: str) -> str:
@@ -700,10 +707,10 @@ def build_push(report: dict):
 
         lines = [first]
 
-        if reason:
-            lines.append(
-                f"重點：{reason}"
-            )
+        if report.get("recommendation_headlines"):
+            lines.extend(report["recommendation_headlines"][:8])
+        elif reason:
+            lines.append(f"重點：{reason}")
 
         message = "\n".join(
             lines
@@ -912,10 +919,8 @@ def backfill_dates(
 
 
 def main():
-    if not OPENAI_API_KEY:
-        raise RuntimeError(
-            "OPENAI_API_KEY is missing"
-        )
+    global COMPANIES
+    COMPANIES=registry(refresh=True)
 
     inbox = load_json(
         INBOX_PATH,
@@ -958,74 +963,31 @@ def main():
     failed = 0
 
     for src in inbox_items:
-        if (
-            src.get("status")
-            != "pending_ai"
-        ):
+        file_id=src.get("drive_file_id")
+        if not file_id: continue
+        old=by_source.get(file_id)
+        # Previously completed reports are re-audited without another model call
+        if old and old.get("audit_version")==VERSION and old.get("validation_status")=="verified" and old.get("source_text_hash")==hashlib.sha256(str(src.get("text") or "").encode()).hexdigest():
             continue
-
-        file_id = src.get(
-            "drive_file_id"
-        )
-
-        if not file_id:
-            continue
-
-        if file_id in by_source:
-            src["status"] = "done"
-            continue
-
-        print(
-            "AI processing:",
-            src.get("name"),
-        )
-
+        if not old and src.get("status") not in ("pending_ai","audit_error"): continue
         try:
-            report = analyze_report(
-                src
-            )
-
-            items.append(
-                report
-            )
-
-            by_source[
-                file_id
-            ] = report
-
-            src["status"] = "done"
-            src[
-                "ai_processed_at"
-            ] = now_tpe()
-
-            src.pop(
-                "ai_error",
-                None,
-            )
-
-            processed += 1
-
-            print(
-                "  OK:",
-                report.get("broker"),
-                report.get("title"),
-            )
-
-        except Exception as e:
-            failed += 1
-
-            src["ai_error"] = (
-                str(e)[:1000]
-            )
-
-            src[
-                "ai_last_attempt_at"
-            ] = now_tpe()
-
-            print(
-                "  ERROR:",
-                repr(e),
-            )
+            if old:
+                report=audit_report(old,src,COMPANIES)
+                old.clear();old.update(report)
+            else:
+                if not OPENAI_API_KEY: raise RuntimeError("OPENAI_API_KEY is missing")
+                report=analyze_report(src);items.append(report);by_source[file_id]=report
+            src["status"]="done";src["audit_version"]=VERSION;src.pop("ai_error",None)
+            src["ai_processed_at"]=now_tpe();processed+=1
+        except Exception as exc:
+            failed+=1;src["status"]="audit_error";src["ai_error"]=str(exc)[:500]
+            if old:
+                old["validation_status"]="needs_review"
+                old["validation_error"]=str(exc)[:500]
+            print("Report audit failed:",src.get("name"),str(exc)[:200])
+        # Checkpoint each audited document before any notification
+        reports["items"]=items
+        save_json(REPORTS_PATH,reports);save_json(INBOX_PATH,inbox)
 
     # 第一次啟用 Telegram 時，不把既有舊報告全部補發
     if not reports.get(
@@ -1052,18 +1014,8 @@ def main():
     telegram_pushed = 0
 
     for report in items:
-        if not report.get(
-            "push_sent_at"
-        ):
-            if send_pushover(
-                report
-            ):
-                report[
-                    "push_sent_at"
-                ] = now_tpe()
-
-                pushed += 1
-
+        if report.get("validation_status")!="verified":
+            continue
         if not report.get(
             "telegram_sent_at"
         ):
@@ -1075,6 +1027,8 @@ def main():
                 ] = now_tpe()
 
                 telegram_pushed += 1
+                reports["items"]=items
+                save_json(REPORTS_PATH,reports)
 
     items.sort(
         key=lambda x: (
@@ -1095,7 +1049,7 @@ def main():
         "由 Google Drive 券商報告自動整理。"
         "group_date 使用 Drive 收到日期做網站分組；"
         "date 保留報告本身日期。"
-        "Pushover 與 Telegram 分別記錄發送狀態。"
+        "公司身分與目標價經來源驗證，僅 Telegram 推播；重新審核保留既有推播狀態。"
     )
 
     inbox["updated_at"] = (
@@ -1123,3 +1077,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

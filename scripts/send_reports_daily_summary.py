@@ -265,7 +265,9 @@ def sector_block(report):
         f"• {title}",
     ]
 
-    if reason:
+    if report.get("recommendation_headlines"):
+        lines.extend("• " + line for line in report["recommendation_headlines"])
+    elif reason:
         lines.append(
             f"  {reason}"
         )
@@ -602,7 +604,7 @@ def main():
             )
             or []
         )
-        if report_in_window(
+        if r.get("validation_status") != "needs_review" and report_in_window(
             r,
             window["start"],
             window["end"],
@@ -686,3 +688,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

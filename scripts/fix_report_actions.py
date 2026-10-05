@@ -67,6 +67,7 @@ def as_number(value):
 
 
 def classify_action(report):
+    if report.get("validation_status")=="needs_review": return "none"
     report_type = str(
         report.get("report_type")
         or ""
@@ -204,3 +205,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
