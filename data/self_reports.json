@@ -1,13 +1,39 @@
 {
-  "updated_at": "2026-10-05T16:01+08:00",
+  "updated_at": "2026-10-05T16:12+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 45,
+    "candidate_count": 47,
     "parsed_count": 31,
-    "parse_failed_count": 8,
+    "parse_failed_count": 10,
     "parse_failed": [
+      {
+        "ticker": "2733",
+        "name": "維格餅家",
+        "publish_date": "2026-10-05",
+        "publish_time": "16:07:44",
+        "subject": "2733 維格餅家 115/10/05 16:07:44 公告本公司因有價證券達財團法人證券櫃檯買賣中心興櫃 股票買賣辦法第11-1條暫停交易標準，公告相關財務業務資訊。",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "3665",
+        "name": "貿聯-KY",
+        "publish_date": "2026-10-05",
+        "publish_time": "16:01:30",
+        "subject": "3665 貿聯-KY 115/10/05 16:01:30 公告本公司115年9月份自結合併營收",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "6768",
         "name": "志強-KY",
@@ -117,15 +143,15 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 11,
-      "self_reports": 11,
+      "rows": 13,
+      "self_reports": 13,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 46,
-          "hits": 11
+          "rows": 49,
+          "hits": 13
         },
         {
           "mode": "openapi_rescue_pool",
