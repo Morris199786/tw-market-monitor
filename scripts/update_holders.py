@@ -5,6 +5,10 @@ import io
 from datetime import datetime, timedelta
 
 
+MIN_AVG_TURNOVER_5D = 10_000_000
+TURNOVER_LOOKBACK_DAYS = 5
+
+
 def field(r, names):
     return pick(r, names, None)
 
@@ -253,6 +257,40 @@ def weekly_price_change_pct(ticker, start_snapshot, end_snapshot):
     return round((cur / old - 1) * 100, 4)
 
 
+def average_turnover_on_or_before(ticker, end_date, snapshots, days=5):
+    """
+    計算指定日期以前最近 N 個有市場資料交易日的平均成交金額。
+    必須湊滿 N 個交易日；資料不足時回傳 None，避免把缺資料誤當低流動性。
+    """
+    target = normalize_market_date(end_date)
+    values = []
+
+    for snap in reversed(snapshots):
+        if not snap.get("date") or snap["date"] > target:
+            continue
+
+        row = snap.get("stocks", {}).get(str(ticker), {})
+        turnover = row.get("turnover")
+
+        try:
+            turnover = float(turnover)
+        except Exception:
+            continue
+
+        if turnover < 0:
+            continue
+
+        values.append(turnover)
+
+        if len(values) >= days:
+            break
+
+    if len(values) < days:
+        return None
+
+    return sum(values) / days
+
+
 def main():
     # 1. 官方 TDCC OpenAPI
     official_rows = normalize_rows(fetch_tdcc_distribution())
@@ -342,12 +380,19 @@ def main():
         "archive_latest_date": archive_date,
         "universe": "全台股科技普通股",
         "universe_count": len(tech),
+        "liquidity_filter": {
+            "lookback_trading_days": TURNOVER_LOOKBACK_DAYS,
+            "min_avg_turnover": MIN_AVG_TURNOVER_5D,
+            "min_avg_turnover_million": MIN_AVG_TURNOVER_5D / 1_000_000
+        },
         "twse": {"400": [], "1000": []},
         "tpex": {"400": [], "1000": []}
     }
 
     if prev:
         pstocks = prev.get("stocks", {})
+        liquidity_filtered = 0
+        liquidity_data_missing = 0
 
         for t, d in latest.items():
             if t not in pstocks or t not in master or t not in tech:
@@ -355,6 +400,21 @@ def main():
 
             mk = master[t]["market"]
             if mk not in ("twse", "tpex"):
+                continue
+
+            avg_turnover_5d = average_turnover_on_or_before(
+                t,
+                date,
+                market_hist,
+                TURNOVER_LOOKBACK_DAYS
+            )
+
+            if avg_turnover_5d is None:
+                liquidity_data_missing += 1
+                continue
+
+            if avg_turnover_5d < MIN_AVG_TURNOVER_5D:
+                liquidity_filtered += 1
                 continue
 
             week_change_pct = weekly_price_change_pct(
@@ -375,8 +435,12 @@ def main():
                     "ratio": cur,
                     "delta": delta,
                     "week_change_pct": week_change_pct,
+                    "avg_turnover_5d": round(avg_turnover_5d),
                     "score": 0
                 })
+
+        out["liquidity_filtered_count"] = liquidity_filtered
+        out["liquidity_data_missing_count"] = liquidity_data_missing
 
         for mk in ("twse", "tpex"):
             for kind in ("400", "1000"):
@@ -409,6 +473,10 @@ def main():
         out["price_change_end_date"],
         "universe",
         len(tech),
+        "liquidity-filtered",
+        out.get("liquidity_filtered_count", 0),
+        "liquidity-missing",
+        out.get("liquidity_data_missing_count", 0),
         "twse400",
         len(out["twse"]["400"]),
         "twse1000",
