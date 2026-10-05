@@ -1,0 +1,37 @@
+name: Repair institutional history
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tw-market-data-writer
+  cancel-in-progress: false
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Repair latest 20 institutional trading days
+        run: python scripts/update_institutional.py
+      - name: Rebuild stock detail
+        run: python scripts/update_stock_detail.py
+      - name: Commit repaired data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/history/institutional data/institutional.json data/stock_detail.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Repair institutional history and stock detail'
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            if [ "$i" = 3 ]; then exit 1; fi
+            sleep 3
+          done
