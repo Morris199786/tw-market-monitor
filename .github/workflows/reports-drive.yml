@@ -35,7 +35,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y poppler-utils
           python -m pip install --upgrade pip
-          python -m pip install pillow pillow-heif
+          python -m pip install pillow pillow-heif requests
 
       - name: Ingest new broker reports
         env:
@@ -90,6 +90,7 @@ jobs:
             data/report_inbox.json \
             data/processed_reports.json \
             data/reports.json \
+            data/report_company_registry.json \
             data/tw_ratings.json \
             data/tw_ratings_state.json
 
@@ -112,3 +113,4 @@ jobs:
 
             sleep 5
           done
+
