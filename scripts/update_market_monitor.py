@@ -1,4 +1,4 @@
-"""2026 大盤監控：上市全市場官方金額，沿用使用者試算表日頻門檻。"""
+"""2024 年起大盤監控：上市全市場官方金額，沿用使用者試算表日頻門檻。"""
 import json, math, statistics, time, urllib.request, urllib.parse
 from pathlib import Path
 from datetime import datetime
@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'data/market_monitor.json'
 BASE = 'https://www.twse.com.tw/rwd/zh/'
+START_YEAR = 2024
+WARMUP_START = '2023-11'
 
 def number(v):
     x = float(str(v).replace(',', '').strip())
@@ -29,15 +31,25 @@ def date_iso(v):
 
 def indices(today):
     result={};errors=[]
-    months=['2025-12']+[f'2026-{m:02}' for m in range(1,13) if f'2026-{m:02}'<=today[:7]]
-    for ym in months:
+    months=[f'{y}-{m:02}' for y in range(2023,int(today[:4])+1) for m in range(1,13) if WARMUP_START <= f'{y}-{m:02}' <= today[:7]]
+    def month_index(ym):
+        found={}
         try:
             data=fetch('afterTrading/FMTQIK',date=ym.replace('-','')+'01')
+            if not data.get('data'): raise ValueError('empty trading calendar')
             fields=data['fields'];di=fields.index('日期');ci=fields.index('發行量加權股價指數')
             for row in data['data']:
                 ds=date_iso(row[di])
-                if ds<=today and ds.startswith(ym): result[ds]=number(row[ci])
-        except Exception as e: errors.append(f'{ym} 指數來源失敗：{type(e).__name__}')
+                if not ds.startswith(ym): raise ValueError('month mismatch')
+                if ds<=today:found[ds]=number(row[ci])
+            if not found: raise ValueError('empty trading calendar')
+            return found,None
+        except Exception as e:return {},f'{ym} 指數來源失敗：{type(e).__name__}'
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for ym,(found,error) in zip(months,pool.map(month_index,months)):
+            result.update(found)
+            if error:errors.append(error)
+            print(f'交易日清單 {ym}：{error or str(len(found))+" 日"}',flush=True)
     return result,errors
 
 def daily(ds):
@@ -64,7 +76,7 @@ def daily(ds):
 def calculate(raw):
     rows=[]
     for i,r in enumerate(raw):
-        if not r['date'].startswith('2026-'): continue
+        if int(r['date'][:4]) < START_YEAR: continue
         x=dict(r);x.update(relative=None,z=None,p10=None,relative5=None,relative20=None,foreign_light=None,margin_light=None,intersection=None)
         def window(key,n):
             w=raw[max(0,i-n+1):i+1]
@@ -89,25 +101,51 @@ def calculate(raw):
         rows.append(x)
     return rows
 
+def save(saved, dates, today, errors):
+    # Keep calendar placeholders: missing sessions must never disappear from windows.
+    raw=[saved[d] for d in dates if d<=today]
+    rows=calculate(raw)
+    coverage={}
+    for year in range(START_YEAR,int(today[:4])+1):
+        yr=[r for r in rows if r['date'].startswith(str(year)+'-')]
+        coverage[str(year)]={'sessions':len(yr),
+            'missing_data':sum(any(r.get(k) is None for k in ('foreign','margin','index')) for r in yr),
+            'missing_signals':sum(r.get('intersection') is None for r in yr)}
+    out={'year':int(today[:4]),'years':list(range(START_YEAR,int(today[:4])+1)),
+         'coverage':coverage,'calendar_complete':True,
+         'updated_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat(timespec='minutes'),
+         'as_of_date':max((r['date'] for r in rows),default=None),
+         'errors':errors,'raw':raw,'rows':rows,
+         'scope':'上市全市場；外資及陸資不含外資自營商；融資金額餘額；加權指數',
+         'standard_deviation':'STDEV.S（樣本標準差）；原檔未明示母體或樣本',
+         'sources':[BASE+'fund/BFI82U',BASE+'marginTrading/MI_MARGN',BASE+'afterTrading/FMTQIK']}
+    OUT.parent.mkdir(parents=True,exist_ok=True)
+    tmp=OUT.with_suffix('.tmp');tmp.write_text(json.dumps(out,ensure_ascii=False,indent=2),encoding='utf-8');tmp.replace(OUT)
+    return out
+
+
 def main():
-    today=datetime.now(ZoneInfo('Asia/Taipei')).date().isoformat();old=json.loads(OUT.read_text()) if OUT.exists() else {}
-    saved={r['date']:r for r in old.get('raw',[])};idx,errors=indices(today)
+    today=datetime.now(ZoneInfo('Asia/Taipei')).date().isoformat()
+    old=json.loads(OUT.read_text(encoding='utf-8')) if OUT.exists() else {}
+    saved={r['date']:r for r in old.get('raw',[])}
+    idx,errors=indices(today)
     if errors: raise RuntimeError('指數交易日清單不完整，保留原檔：'+'; '.join(errors))
     for ds,v in idx.items():saved.setdefault(ds,{'date':ds})['index']=v
     dates=sorted(idx);retry=set(dates[-3:])
     needed=[d for d in dates if d in retry or saved[d].get('foreign') is None or saved[d].get('margin') is None]
+    print(f'需更新或回補 {len(needed)} 個交易日',flush=True)
+    save(saved,dates,today,errors)
     with ThreadPoolExecutor(max_workers=6) as pool:
         for k,(r,err) in enumerate(pool.map(daily,needed),1):
             saved[r['date']].update(r);errors.extend(err)
-            if k%20==0: print(f'回補 {k}/{len(needed)}',flush=True)
+            if k%20==0:
+                save(saved,dates,today,errors)
+                print(f'回補 {k}/{len(needed)}',flush=True)
     # Next day's previous balance is TWSE's final corrected balance.
     for j, ds in enumerate(dates[1:], 1):
-        previous = saved[ds].get('margin_previous')
-        if previous is not None:
-            saved[dates[j-1]]['margin'] = previous
-    raw=[saved[d] for d in sorted(saved) if d<=today]
-    rows=calculate(raw)
-    out={'year':2026,'updated_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat(timespec='minutes'),'as_of_date':max((r['date'] for r in rows),default=None),'errors':errors,'raw':raw,'rows':rows,'scope':'上市全市場；外資及陸資不含外資自營商；融資金額餘額；加權指數','standard_deviation':'STDEV.S（樣本標準差）；原檔未明示母體或樣本','sources':[BASE+'fund/BFI82U',BASE+'marginTrading/MI_MARGN',BASE+'afterTrading/FMTQIK']}
-    OUT.parent.mkdir(parents=True,exist_ok=True);tmp=OUT.with_suffix('.tmp');tmp.write_text(json.dumps(out,ensure_ascii=False,indent=2));tmp.replace(OUT)
-    print(json.dumps({'rows':len(rows),'missing':sum(r.get('foreign') is None or r.get('margin') is None for r in rows),'errors':errors},ensure_ascii=False))
+        previous=saved[ds].get('margin_previous')
+        if previous is not None:saved[dates[j-1]]['margin']=previous
+    out=save(saved,dates,today,errors)
+    print(json.dumps({'coverage':out['coverage'],'errors':errors},ensure_ascii=False))
+
 if __name__=='__main__':main()
