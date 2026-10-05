@@ -35,20 +35,22 @@ jobs:
         run: python scripts/update_self_reports.py
 
       - name: Update quarterly earnings
+        if: ${{ !cancelled() }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update_quarterly_earnings.py
 
       - name: Commit updated data
+        if: ${{ !cancelled() }}
         run: |
           set -e
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 先保存這次程式產生的所有資料變更
-          git add \
+          # Save files produced by either updater, even if the other source failed
+          for file in \
             data/self_reports.json \
             data/self_reports_history.json \
             data/self_reports_sent.json \
@@ -58,6 +60,9 @@ jobs:
             data/quarterly_earnings_events.json \
             data/quarterly_earnings_scan.json \
             data/earnings_calendar.json
+          do
+            if [ -f "$file" ]; then git add "$file"; fi
+          done
 
           # 沒有資料變更就直接結束
           if git diff --cached --quiet; then
@@ -81,4 +86,5 @@ jobs:
           if git stash list | grep -q "workflow-temp"; then
             git stash drop
           fi
+
 
