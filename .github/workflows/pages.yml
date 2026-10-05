@@ -8,6 +8,7 @@ on:
 
   workflow_run:
     workflows:
+      - Market monitor
       - Repair institutional history
       - Daily close update
       - Heatmap 5min
@@ -57,4 +58,3 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
-

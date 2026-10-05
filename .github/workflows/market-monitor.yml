@@ -11,17 +11,19 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Update monitor
         run: python scripts/update_market_monitor.py
       - name: Save monitor data
+        if: ${{ always() }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -33,3 +35,4 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+
