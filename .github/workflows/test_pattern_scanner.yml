@@ -9,7 +9,7 @@ permissions:
 jobs:
   scan-patterns:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -28,21 +28,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Check scanner file
+      - name: Check Python files
         run: |
           echo "Checking pattern_scanner.py..."
           test -f pattern_scanner.py
           python -m py_compile pattern_scanner.py
-          echo "Scanner OK"
 
-      - name: Run pattern scanner
+          echo "Checking pattern_backtest.py..."
+          test -f pattern_backtest.py
+          python -m py_compile pattern_backtest.py
+
+          echo "Python files OK"
+
+      # ========================================================
+      # 目前正常 Top 50 選股
+      # ========================================================
+
+      - name: Run current Top 50 scanner
         run: |
           python pattern_scanner.py --top 50
 
-      - name: Show Top 50
-        if: always()
+      - name: Show current Top 50
         run: |
-          echo "========== PATTERN SCANNER RESULT =========="
+          echo "========== CURRENT TOP 50 =========="
 
           if [ -f pattern_scan_top30.csv ]; then
             cat pattern_scan_top30.csv
@@ -50,40 +58,87 @@ jobs:
             echo "pattern_scan_top30.csv not found"
           fi
 
-      - name: Upload scan results
+      # ========================================================
+      # 歷史滾動回測
+      #
+      # 每個歷史交易日：
+      # 1. 只使用當日以前資料
+      # 2. 成交金額 >= 1,000 萬
+      # 3. 使用完全相同的 W底 / 碗型 V3 評分
+      # 4. 取 Top 50
+      # 5. 計算未來 5 / 10 / 20 交易日報酬
+      # ========================================================
+
+      - name: Run 5D 10D 20D rolling backtest
+        run: |
+          python pattern_backtest.py --top 50
+
+      - name: Show backtest summary
+        if: always()
+        run: |
+          echo "========== BACKTEST SUMMARY =========="
+
+          if [ -f pattern_backtest_summary.csv ]; then
+            cat pattern_backtest_summary.csv
+          else
+            echo "pattern_backtest_summary.csv not found"
+          fi
+
+      # ========================================================
+      # Artifact
+      # ========================================================
+
+      - name: Upload scan and backtest results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pattern-scanner-result
+          name: pattern-scanner-backtest-result
           path: |
             pattern_scan_top30.csv
             pattern_scan_top30.json
+            pattern_backtest.csv
+            pattern_backtest_summary.csv
+            pattern_backtest.json
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Commit scan results
+      # ========================================================
+      # Commit
+      # ========================================================
+
+      - name: Commit scan and backtest results
         if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add pattern_scan_top30.csv pattern_scan_top30.json
+          git add \
+            pattern_scan_top30.csv \
+            pattern_scan_top30.json \
+            pattern_backtest.csv \
+            pattern_backtest_summary.csv \
+            pattern_backtest.json
 
           if git diff --cached --quiet; then
-            echo "No pattern scan changes to commit"
+            echo "No pattern scan/backtest changes to commit"
             exit 0
           fi
 
-          git commit -m "data: update pattern scanner results"
+          git commit -m "data: update pattern scanner and 5d 10d 20d backtest"
 
-          # 避免掃描期間其他 workflow 剛好更新 main
           git pull --rebase origin main
           git push origin HEAD:main
 
       - name: Done
         if: success()
         run: |
-          echo "Pattern scanner completed"
-          echo "Top 50 results committed:"
+          echo "Pattern scanner + backtest completed"
+          echo ""
+          echo "Current Top 50:"
           echo "  pattern_scan_top30.csv"
           echo "  pattern_scan_top30.json"
+          echo ""
+          echo "Backtest:"
+          echo "  pattern_backtest.csv"
+          echo "  pattern_backtest_summary.csv"
+          echo "  pattern_backtest.json"
