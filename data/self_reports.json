@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-05T21:32+08:00",
+  "updated_at": "2026-10-05T22:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -15,7 +15,7 @@
         "publish_time": "19:14:45",
         "subject": "2352 佳世達 115/10/05 19:14:45 佳世達115年9月份自結合併營收",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -28,7 +28,7 @@
         "publish_time": "17:10:18",
         "subject": "8404 百和興業-KY 115/10/05 17:10:18 公告本公司115年9月份自結合併營收概算",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -250,7 +250,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2891",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
