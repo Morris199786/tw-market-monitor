@@ -52,6 +52,7 @@
   }
 
   function num(value) {
+    if (value === null || value === undefined || value === "") return null;
     const n = Number(value);
 
     return Number.isFinite(n)
@@ -72,6 +73,7 @@
   }
 
   function fmtLots(value) {
+    if (value === null || value === undefined) return "待補";
     const n = num(value);
 
     if (n === null) {
@@ -2404,19 +2406,9 @@
     const recent5 =
       allRows.slice(-5);
 
-    const total =
-      chartRows.reduce(
-        (
-          sum,
-          row
-        ) =>
-          sum +
-          Number(
-            row.total_lots ||
-            0
-          ),
-        0
-      );
+    const missingCount = chartRows.filter(row => row.available === false || num(row.total_lots) === null).length;
+    const complete = chartRows.length === activePeriod && missingCount === 0;
+    const total = complete ? chartRows.reduce((sum,row) => sum + Number(row.total_lots),0) : null;
 
     const tableRows =
       flowExpanded
@@ -2430,7 +2422,7 @@
         </strong>
 
         <small>
-          長條圖看合計｜下方固定顯示近5日明細
+          ${complete ? "長條圖看合計｜下方預設近5日明細" : `資料待補：已取得 ${chartRows.length-missingCount}/${activePeriod} 日，不顯示完整期間合計`}
         </small>
       </div>
 
@@ -2748,6 +2740,7 @@
             row,
             i
           ) => {
+            if (row.available === false || num(row.total_lots) === null) return "";
             const v =
               Number(
                 row.total_lots ||
@@ -3010,3 +3003,4 @@
     init();
   }
 })();
+
