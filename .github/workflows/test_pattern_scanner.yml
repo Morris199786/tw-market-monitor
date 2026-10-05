@@ -37,9 +37,9 @@ jobs:
 
       - name: Run pattern scanner
         run: |
-          python pattern_scanner.py --top 30
+          python pattern_scanner.py --top 50
 
-      - name: Show Top 30
+      - name: Show Top 50
         if: always()
         run: |
           echo "========== PATTERN SCANNER RESULT =========="
@@ -84,6 +84,6 @@ jobs:
         if: success()
         run: |
           echo "Pattern scanner completed"
-          echo "Results committed:"
+          echo "Top 50 results committed:"
           echo "  pattern_scan_top30.csv"
           echo "  pattern_scan_top30.json"
