@@ -468,8 +468,11 @@ def analyze_report(src: dict) -> dict:
     )
 
     text = re.sub(r"[ \t]{2,}", " ", text)
-    if len(text)>240000:
-        raise ValueError("Report exceeds safe input limit; no silent truncation")
+
+    if len(text) > 240000:
+        raise ValueError(
+            "Report exceeds safe input limit; no silent truncation"
+        )
 
     system = """你是台股券商研究報告整理器。
 只可以根據使用者提供的報告文字整理，不得補充外部資料、不得自行推測未寫明的評等或目標價。
@@ -517,9 +520,25 @@ def analyze_report(src: dict) -> dict:
   "detail": ""
 }"""
 
-    candidates=explicit_tickers(text)|alias_hits(text,COMPANIES)
-    mapping={t:COMPANIES[t] for t in sorted(candidates) if t in COMPANIES}
-    system += "\n已驗證公司名稱對照（僅用於身分，不是財測來源）："+json.dumps(mapping,ensure_ascii=False)
+    candidates = explicit_tickers(text) | alias_hits(
+        text,
+        COMPANIES,
+    )
+
+    mapping = {
+        t: COMPANIES[t]
+        for t in sorted(candidates)
+        if t in COMPANIES
+    }
+
+    system += (
+        "\n已驗證公司名稱對照（僅用於身分，不是財測來源）："
+        + json.dumps(
+            mapping,
+            ensure_ascii=False,
+        )
+    )
+
     user = f"""檔名：
 {src.get("name")}
 
@@ -584,7 +603,14 @@ Drive 日期：
         )
     )
 
-    return audit_report(normalize_report(obj, src), src, COMPANIES)
+    return audit_report(
+        normalize_report(
+            obj,
+            src,
+        ),
+        src,
+        COMPANIES,
+    )
 
 
 def action_zh(action: str) -> str:
@@ -707,10 +733,18 @@ def build_push(report: dict):
 
         lines = [first]
 
-        if report.get("recommendation_headlines"):
-            lines.extend(report["recommendation_headlines"][:8])
+        if report.get(
+            "recommendation_headlines"
+        ):
+            lines.extend(
+                report[
+                    "recommendation_headlines"
+                ][:8]
+            )
         elif reason:
-            lines.append(f"重點：{reason}")
+            lines.append(
+                f"重點：{reason}"
+            )
 
         message = "\n".join(
             lines
@@ -920,7 +954,10 @@ def backfill_dates(
 
 def main():
     global COMPANIES
-    COMPANIES=registry(refresh=True)
+
+    COMPANIES = registry(
+        refresh=True
+    )
 
     inbox = load_json(
         INBOX_PATH,
@@ -963,39 +1000,161 @@ def main():
     failed = 0
 
     for src in inbox_items:
-        file_id=src.get("drive_file_id")
-        if not file_id: continue
-        old=by_source.get(file_id)
-        # Previously completed reports are re-audited without another model call
-        if old and old.get("audit_version")==VERSION and old.get("validation_status")=="verified" and old.get("source_text_hash")==hashlib.sha256(str(src.get("text") or "").encode()).hexdigest():
+        file_id = src.get(
+            "drive_file_id"
+        )
+
+        if not file_id:
             continue
-        if not old and src.get("status") not in ("pending_ai","audit_error"): continue
+
+        old = by_source.get(
+            file_id
+        )
+
+        current_text_hash = hashlib.sha256(
+            str(
+                src.get("text")
+                or ""
+            ).encode()
+        ).hexdigest()
+
+        # 已完成目前版本核對，而且來源文字沒有改變
+        # 就不需要再次處理
+        if (
+            old
+            and old.get("audit_version") == VERSION
+            and old.get("validation_status") == "verified"
+            and old.get("source_text_hash") == current_text_hash
+        ):
+            continue
+
+        if (
+            not old
+            and src.get("status")
+            not in (
+                "pending_ai",
+                "audit_error",
+            )
+        ):
+            continue
+
         try:
             if old:
-                report=audit_report(old,src,COMPANIES)
-                old.clear();old.update(report)
-            else:
-                if not OPENAI_API_KEY: raise RuntimeError("OPENAI_API_KEY is missing")
-                report=analyze_report(src);items.append(report);by_source[file_id]=report
-            src["status"]="done";src["audit_version"]=VERSION;src.pop("ai_error",None)
-            src["ai_processed_at"]=now_tpe();processed+=1
-        except Exception as exc:
-            failed+=1;src["status"]="audit_error";src["ai_error"]=str(exc)[:500]
-            if old:
-                old["validation_status"]="needs_review"
-                old["validation_error"]=str(exc)[:500]
-            print("Report audit failed:",src.get("name"),str(exc)[:200])
-        # Checkpoint each audited document before any notification
-        reports["items"]=items
-        save_json(REPORTS_PATH,reports);save_json(INBOX_PATH,inbox)
+                # 重要：
+                # audit_report 先產生新的 dict
+                # 只有 audit 完整成功後才覆蓋 old
+                # 因此 audit 中途失敗不會破壞既有報告
+                report = audit_report(
+                    old,
+                    src,
+                    COMPANIES,
+                )
 
-    # 第一次啟用 Telegram 時，不把既有舊報告全部補發
+                old.clear()
+                old.update(
+                    report
+                )
+
+                # 如果之前曾經 audit 失敗，
+                # 成功後清除診斷資訊
+                old.pop(
+                    "audit_error",
+                    None,
+                )
+                old.pop(
+                    "audit_failed_at",
+                    None,
+                )
+
+            else:
+                if not OPENAI_API_KEY:
+                    raise RuntimeError(
+                        "OPENAI_API_KEY is missing"
+                    )
+
+                report = analyze_report(
+                    src
+                )
+
+                items.append(
+                    report
+                )
+
+                by_source[
+                    file_id
+                ] = report
+
+            src["status"] = "done"
+            src["audit_version"] = VERSION
+            src.pop(
+                "ai_error",
+                None,
+            )
+            src["ai_processed_at"] = (
+                now_tpe()
+            )
+
+            processed += 1
+
+        except Exception as exc:
+            failed += 1
+
+            error_text = str(
+                exc
+            )[:500]
+
+            src["status"] = (
+                "audit_error"
+            )
+            src["ai_error"] = (
+                error_text
+            )
+
+            if old:
+                # 重新核對失敗：
+                #
+                # 不再：
+                # old["validation_status"] = "needs_review"
+                #
+                # 保留上一次成功解析/驗證的完整報告，
+                # 網站仍可正常顯示原本內容
+                old[
+                    "audit_error"
+                ] = error_text
+
+                old[
+                    "audit_failed_at"
+                ] = now_tpe()
+
+            print(
+                "Report audit failed:",
+                src.get("name"),
+                error_text[:200],
+            )
+
+        # 每篇處理後立即 checkpoint
+        reports["items"] = items
+
+        save_json(
+            REPORTS_PATH,
+            reports,
+        )
+
+        save_json(
+            INBOX_PATH,
+            inbox,
+        )
+
+    # 第一次啟用 Telegram 時，
+    # 不把既有舊報告全部補發
     if not reports.get(
         "_telegram_initialized"
     ):
         for report in items:
             if (
-                report.get("push_sent_at")
+                report.get(
+                    "push_sent_at"
+                )
                 and not report.get(
                     "telegram_sent_at"
                 )
@@ -1014,8 +1173,15 @@ def main():
     telegram_pushed = 0
 
     for report in items:
-        if report.get("validation_status")!="verified":
+        # 只有 verified 報告才允許首次 Telegram 推播
+        if (
+            report.get(
+                "validation_status"
+            )
+            != "verified"
+        ):
             continue
+
         if not report.get(
             "telegram_sent_at"
         ):
@@ -1027,8 +1193,15 @@ def main():
                 ] = now_tpe()
 
                 telegram_pushed += 1
-                reports["items"]=items
-                save_json(REPORTS_PATH,reports)
+
+                reports[
+                    "items"
+                ] = items
+
+                save_json(
+                    REPORTS_PATH,
+                    reports,
+                )
 
     items.sort(
         key=lambda x: (
@@ -1042,19 +1215,26 @@ def main():
         reverse=True,
     )
 
-    reports["items"] = items
-    reports["updated_at"] = now_tpe()
+    reports[
+        "items"
+    ] = items
+
+    reports[
+        "updated_at"
+    ] = now_tpe()
 
     reports["_help"] = (
         "由 Google Drive 券商報告自動整理。"
         "group_date 使用 Drive 收到日期做網站分組；"
         "date 保留報告本身日期。"
-        "公司身分與目標價經來源驗證，僅 Telegram 推播；重新審核保留既有推播狀態。"
+        "公司身分與目標價經來源驗證，僅 Telegram 推播；"
+        "重新審核失敗時保留上一次成功報告內容，"
+        "重新審核成功後才更新驗證結果。"
     )
 
-    inbox["updated_at"] = (
-        now_tpe()
-    )
+    inbox[
+        "updated_at"
+    ] = now_tpe()
 
     save_json(
         REPORTS_PATH,
@@ -1077,4 +1257,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
