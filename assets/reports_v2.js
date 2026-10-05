@@ -233,6 +233,7 @@
   }
 
   function targetText(r) {
+    if (r.validation_status === "needs_review") return "";
     const oldTp =
       r.target_price_old;
 
@@ -316,6 +317,7 @@
 
   function chips(r) {
     const arr = [];
+    if (r.validation_status === "needs_review") return `<span class="report-chip">來源核對未通過，請先查看原始報告</span>`;
 
     if (r.rating) {
       arr.push(
@@ -508,8 +510,9 @@
             "產業研究"
           );
 
-    const summary =
-      Array.isArray(
+    const summary = r.validation_status === "needs_review"
+      ? ["此份報告的公司或目標價尚未通過來源核對，請查看原始報告"]
+      : Array.isArray(
         r.summary
       )
         ? r.summary
@@ -1620,3 +1623,4 @@
     boot();
   }
 })();
+
