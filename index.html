@@ -118,8 +118,8 @@
 <section id="ai" class="page"><div class="hero"><div><div class="kicker">AI PICKS</div><h1>AI選股</h1><p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p></div><span class="badge">每天 18:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-aim="twse">上市</button><button class="tab" data-aim="tpex">上櫃</button></div></div><div id="aiStatus" class="status"></div><div id="aiCards" class="grid three"></div></section>
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
 <section id="monthlyRevenue" class="page"><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
-<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>2026 年每日外資資金與融資相對大盤增幅</p></div></div>
-<div class="mm-tools"><label>月份 <select aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
+<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>2024 年起每日外資資金與融資相對大盤增幅</p></div></div>
+<div class="mm-tools"><label>年份 <select data-mm-year aria-label="大盤監控年份"></select></label><label>月份 <select data-mm-month aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
 <div class="status" data-mm-status>開啟分頁後載入資料</div>
 
 <div id="marketMonitorLogic" class="mm-logic">
@@ -163,7 +163,7 @@
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-<script src="./assets/market_monitor.js?v=20261004"></script>
+<script src="./assets/market_monitor.js?v=20261005-years"></script>
 <script>
 (function(){
   const wrap = document.getElementById("mobilePageNav");
@@ -241,5 +241,6 @@
 </script>
 </body>
 </html>
+
 
 
