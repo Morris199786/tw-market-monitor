@@ -1,13 +1,39 @@
 {
-  "updated_at": "2026-10-05T16:12+08:00",
+  "updated_at": "2026-10-05T16:33+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 47,
-    "parsed_count": 31,
-    "parse_failed_count": 10,
+    "candidate_count": 50,
+    "parsed_count": 32,
+    "parse_failed_count": 12,
     "parse_failed": [
+      {
+        "ticker": "3003",
+        "name": "健和興",
+        "publish_date": "2026-10-05",
+        "publish_time": "16:30:20",
+        "subject": "3003 健和興 115/10/05 16:30:20 公告本公司115年09月份自結合併營收概算",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "9938",
+        "name": "百和",
+        "publish_date": "2026-10-05",
+        "publish_time": "16:18:36",
+        "subject": "9938 百和 115/10/05 16:18:36 公告本公司115年9月份自結合併營收概算",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "2733",
         "name": "維格餅家",
@@ -67,7 +93,7 @@
         "publish_time": "14:38:31",
         "subject": "2637 慧洋-KY 115/10/05 14:38:31 補充公告本公司115年09月份自結盈餘",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -143,15 +169,15 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 13,
-      "self_reports": 13,
+      "rows": 16,
+      "self_reports": 16,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 49,
-          "hits": 13
+          "rows": 55,
+          "hits": 16
         },
         {
           "mode": "openapi_rescue_pool",
@@ -201,6 +227,30 @@
     }
   },
   "items": [
+    {
+      "market": "",
+      "ticker": "2340",
+      "name": "台亞",
+      "publish_date": "2026-10-05",
+      "publish_time": "16:19:31",
+      "subject": "2340 台亞 115/10/05 16:19:31 (更正) 係因本公司有價證券於集中交易市場達公 布注意交易資訊標準，故公布相關財務業務等重大訊息 ，以利投資人區別瞭解。",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 2340 台亞 公司提供 序號 4 發言日期 115/10/05 發言時間 16:19:31 發言人 賴文聰 發言人職稱 協理 發言人電話 (03)5638951 主旨 (更正) 係因本公司有價證券於集中交易市場達公 布注意交易資訊標準，故公布相關財務業務等重大訊息 ，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/10/05 說明 1.事實發生日:115/10/05 2.發生緣由:依臺灣證券交易所股份有限公司通知辦理 3.財務業務資訊: 公司最近期財務資訊如下:(單位:百萬元) 最近一月 與去年同期 最近一季 與去年同期 最近四季累計 期間 115年8月 增減% 115年第2季 增減% 114年第3季至 115年第2季 科目 (IFRS合併自結數) (IFRS合併核閱數) (IFRS合併核閱數) ============================================================================= 營業收入 474 21.89% 1,209 5.08% 4,372 稅前淨利 -70 -207.75% -200 50.47% - 960 歸屬母公司 -64 -78.12% -193 48.65% - 951 業主淨利 每股盈餘(元) -0.15 -78.12% -0.44 48.84% -2.17 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無。 7.其他應敘明事項: 1.本期稅前淨利較去年同期變動幅度大，主係受外幣匯率波動及認列金融資產評價損失 所致，連帶影響歸屬於母公司業主淨利及每股盈餘。 2.誤植115年8月營業收入及每股盈餘與去年同期增減百分比資訊。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2340&SPOKE_DATE=20261005&SPOKE_TIME=161931&SEQ_NO=4&skey=2340202610054",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": -0.15,
+      "monthly_eps": -0.15,
+      "monthly_eps_yoy": -78.12,
+      "monthly_period": "2026-08",
+      "quarter_eps": -0.44,
+      "quarter_eps_yoy": 48.84,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "-78.12%",
+      "quarter_eps_yoy_text": "48.84%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
+    },
     {
       "market": "",
       "ticker": "3701",
@@ -379,7 +429,7 @@
       "detail": "公開資訊觀測站 本資料由 (上市公司) 2466 冠西電 公司提供 序號 1 發言日期 115/10/05 發言時間 14:17:34 發言人 盧筱瑄 發言人職稱 財務長 發言人電話 (02)8226-9893 主旨 因本公司有價證券於集中市場達公布注意交易資訊 標準故公布相關財務業務等重大訊息,以利投資人區別瞭解 符合條款 第 51 款 事實發生日 115/10/05 說明 1.事實發生日:115/10/05 2.發生緣由:依臺灣證券交易所通知辦理 3.財務業務資訊: 期間 (月) (季) (最近四季累計) 最近一月 與去年同期 最近一季 與去年同期 114年第3季至 115年08月 增 減% 115年第2季 增 減% 115年第2季 科目 (IFRS-合併自結數) (IFRS-合併核閱數) (IFRS-合併查核數) ======== ========= ========== =========== ========== ============ 營業收入 225 59.92% 239 -1.89% 900 (百萬) 稅前淨利 (38) 2.68% 5 103.35% 335 (百萬) 歸屬母公司 業主淨利 (38) 2.68% 3 102.47% 272 每股盈餘 (0.22) 3.58% 0.02 102.47% 1.59 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無 7.其他應敘明事項:無 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2466&SPOKE_DATE=20261005&SPOKE_TIME=141734&SEQ_NO=1&skey=2466202610051",
-      "source_error": "",
+      "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
       "match_reason": "attention_trading",
       "eps": -0.22,
       "monthly_eps": -0.22,
