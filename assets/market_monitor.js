@@ -7,7 +7,9 @@
   let dataset = null;
   let pending = null;
 
-  const month = root.querySelector('select');
+  const year = root.querySelector('[data-mm-year]');
+  const month = root.querySelector('[data-mm-month]');
+  if (!year || !month) return;
 
   const fmt = (v, d = 2) =>
     v == null
@@ -28,18 +30,17 @@
 
     // 日期由小到大排列：1號 → 31號
     const rows = dataset.rows
-      .filter(r => r.date.slice(0, 7) === month.value)
+      .filter(r => r.date.slice(0, 7) === `${year.value}-${month.value}`)
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    const incomplete = rows.filter(r => r.foreign == null || r.margin == null || r.index == null).length;
+    const signals = rows.filter(r => r.intersection == null).length;
+    const coverage = rows.length
+      ? `${year.value}年${Number(month.value)}月 ${rows.length}個交易日｜` +
+        (incomplete || signals ? `原始資料待補 ${incomplete} 日、燈號待補 ${signals} 日` : '本月資料與燈號齊全')
+      : '本月尚無資料，請確認歷史回補是否完成';
     root.querySelector('[data-mm-status]').textContent =
-      `資料截至 ${dataset.as_of_date || '尚無資料'}` +
-      `｜${dataset.scope}` +
-      `｜${
-        dataset.errors.length
-          ? `來源有 ${dataset.errors.length} 項缺漏，尚未齊全`
-          : '來源已取得'
-      }` +
-      `｜更新 ${dataset.updated_at}`;
+      `資料截至 ${dataset.as_of_date || '尚無資料'}｜${dataset.scope || ''}｜${coverage}｜更新 ${dataset.updated_at || '—'}`;
 
     root.querySelector('tbody').innerHTML = rows.length
       ? rows.map(r => `
@@ -94,11 +95,13 @@
           throw new Error('資料格式錯誤');
         }
 
-        if (!month.value) {
-          month.value = (
-            dataset.as_of_date || '2026-01'
-          ).slice(0, 7);
-        }
+        const selectedYear = year.value;
+        const latest = dataset.as_of_date || new Date().toLocaleDateString('sv-SE', {timeZone: 'Asia/Taipei'});
+        const endYear = Math.max(2026, Number(latest.slice(0, 4)), ...dataset.rows.map(r => Number(r.date.slice(0, 4))));
+        year.replaceChildren(...Array.from({length: endYear - 2024 + 1}, (_, i) =>
+          new Option(`${2024 + i}年`, String(2024 + i))));
+        year.value = selectedYear || latest.slice(0, 4);
+        if (!month.value) month.value = latest.slice(5, 7);
 
         render();
       } catch (error) {
@@ -112,19 +115,12 @@
     return pending;
   }
 
-  month.innerHTML =
-    '<option value="" disabled>選擇月份</option>' +
-    Array.from({ length: 12 }, (_, i) => {
-      const value = `2026-${String(i + 1).padStart(2, '0')}`;
-
-      return `
-        <option value="${value}">
-          2026年${i + 1}月
-        </option>
-      `;
-    }).join('');
-
+  year.replaceChildren(...[2024, 2025, 2026].map(y => new Option(`${y}年`, String(y))));
+  year.value = '';
+  month.replaceChildren(...Array.from({length: 12}, (_, i) =>
+    new Option(`${i + 1}月`, String(i + 1).padStart(2, '0'))));
   month.value = '';
+  year.addEventListener('change', render);
 
   month.addEventListener('change', render);
 
@@ -144,3 +140,4 @@
     load();
   }
 })();
+
