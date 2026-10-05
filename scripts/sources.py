@@ -969,83 +969,40 @@ def _parse_tpex_inst_table(fields, rows):
 
 def fetch_tpex_institutional(date=None):
     if date:
-        dt = datetime.strptime(
-            date,
-            "%Y-%m-%d"
-        )
-
-        roc = (
-            f"{dt.year - 1911}/{dt:%m/%d}"
-        )
-
+        dt = datetime.strptime(date, "%Y-%m-%d")
         data = get_json(
-            "https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php",
-            params={
-                "l": "zh-tw",
-                "o": "json",
-                "se": "EW",
-                "t": "D",
-                "d": roc,
-                "s": "0,asc"
-            },
-            timeout=45
+            "https://www.tpex.org.tw/www/zh-tw/insti/dailyTrade",
+            params={"date": dt.strftime("%Y/%m/%d"), "type": "Daily", "sect": "EW", "response": "json"},
+            timeout=20, tries=2,
         )
-
-        out = {}
-
-        # 舊格式 aaData
-        aa = data.get("aaData", [])
-
-        if aa:
-            for row in aa:
-                if len(row) < 24:
-                    continue
-
-                t = str(row[0]).strip()
-
-                if not ordinary_ticker(t):
-                    continue
-
-                foreign = iv(row[10])
-                trust = iv(row[13])
-                dealer = iv(row[22])
-                total = iv(row[23])
-
-                if dealer == 0 and total != foreign + trust:
-                    dealer = total - foreign - trust
-
-                out[t] = {
-                    "ticker": t,
-                    "name": clean_name(row[1]),
-                    "foreign": foreign,
-                    "trust": trust,
-                    "dealer": dealer,
-                    "total": total
-                }
-
-            if out:
-                return out
-
-        # 新格式 tables
-        for tb in data.get("tables", []):
-            parsed = _parse_tpex_inst_table(
-                tb.get("fields", []),
-                tb.get("data", [])
-            )
-
-            if parsed:
-                return parsed
-
-        # 有些回傳直接是 fields / data
-        parsed = _parse_tpex_inst_table(
-            data.get("fields", []),
-            data.get("data", [])
-        )
-
-        if parsed:
-            return parsed
-
-        return {}
+        expected = f"{dt.year-1911}/{dt:%m/%d}"
+        for table in data.get("tables", []):
+            if table.get("date") != expected:
+                continue
+            fields = table.get("fields", [])
+            rows = table.get("data", [])
+            if len(fields) != 24 or fields[:2] != ["代號", "名稱"] or fields[-1] != "三大法人買賣超股數合計":
+                raise ValueError("TPEx institutional fields changed")
+            if int(table.get("totalCount", -1)) != len(rows) or not rows:
+                raise ValueError("TPEx institutional rows incomplete")
+            out = {}
+            for row in rows:
+                if len(row) != 24:
+                    raise ValueError("TPEx institutional row width changed")
+                nums = [int(str(v).replace(",", "").strip()) for v in row[2:]]
+                for i in range(0, 21, 3):
+                    if nums[i]-nums[i+1] != nums[i+2]:
+                        raise ValueError("TPEx buy/sell mismatch")
+                if nums[14]+nums[17] != nums[20] or nums[8]+nums[11]+nums[20] != nums[21]:
+                    raise ValueError("TPEx dealer/total mismatch")
+                ticker = str(row[0]).strip()
+                if ordinary_ticker(ticker):
+                    # Foreign dealers excluded; own-account and hedge dealers combined
+                    out[ticker] = {"ticker": ticker, "name": clean_name(row[1]),
+                        "foreign": nums[2], "trust": nums[11], "dealer": nums[20],
+                        "total": nums[2]+nums[11]+nums[20], "official_total": nums[21]}
+            return out
+        raise ValueError(f"TPEx no complete institutional table for {date}")
 
     # 最新一日優先使用 TPEx OpenAPI
     arr = get_json(
@@ -1294,3 +1251,4 @@ def fetch_mis_quotes(tickers):
         time.sleep(0.2)
 
     return out
+

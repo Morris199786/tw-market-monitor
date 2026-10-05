@@ -330,15 +330,12 @@ def build_stock_series(tickers, market_rows, inst_rows, names, markets):
                     or snap.get("tpex", {}).get(t, {})
                 )
 
-            total_shares = int(row.get("total") or 0)
-
+            available = snap.get("source_status", {}).get(market) != "unavailable" and bool(row) and all(row.get(k) is not None for k in ("foreign", "trust", "dealer", "total"))
             institutional.append({
                 "date": snap.get("date"),
                 "date_label": str(snap.get("date") or "")[5:].replace("-", "/"),
-                "foreign_lots": _extract_inst_lots(row, "foreign"),
-                "trust_lots": _extract_inst_lots(row, "trust"),
-                "dealer_lots": _extract_inst_lots(row, "dealer"),
-                "total_lots": int(round(total_shares / 1000)),
+                "available": available,
+                **{k+"_lots": float(row[k])/1000 if available else None for k in ("foreign", "trust", "dealer", "total")},
             })
 
         out[t] = {
@@ -353,7 +350,7 @@ def build_stock_series(tickers, market_rows, inst_rows, names, markets):
             "institutional": institutional,
             "institutional_5d_total_lots": int(round(
                 sum(x["total_lots"] for x in institutional[-5:])
-            )),
+            )) if len(institutional)>=5 and all(x["available"] for x in institutional[-5:]) else None,
         }
 
     return out
@@ -368,7 +365,7 @@ def main():
             f"market history days, got {len(market_rows)}"
         )
 
-    inst_rows = institutional_history()
+    inst_rows = [load_json(ROOT / f"data/history/institutional/{x['date']}.json", {"date": x["date"]}) for x in market_rows[-FLOW_DAYS:]]
     sectors = load_json(ROOT / "data/sectors.json", {}).get("sectors", [])
     names, shares, markets = display_names_and_shares()
 
@@ -468,4 +465,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

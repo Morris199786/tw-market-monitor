@@ -102,24 +102,8 @@ def healthy(rows):
 
 
 def fetch_fresh(date, market, latest_market_date):
-    """
-    最新交易日：
-      TPEx 直接走 sources.py 已有的官方 OpenAPI，不碰不穩定的歷史 PHP
-      TWSE 維持原本官方來源
-
-    舊交易日：
-      只有 TWSE 允許補抓
-      TPEx 不再逐日轟歷史 PHP，避免 RemoteDisconnected + 7~8 分鐘 timeout
-    """
-    if market == "tpex":
-        if date != latest_market_date:
-            return {}
-
-        rows = fetch_tpex_institutional()
-        return repair_dealer(rows)
-
-    rows = fetch_twse_institutional(date)
-    return repair_dealer(rows)
+    return (fetch_tpex_institutional(date) if market == "tpex"
+            else fetch_twse_institutional(date))
 
 
 def load_cached_history(market, market_snapshots):
@@ -173,186 +157,46 @@ def save_market_day(date, market, closes, rows):
     )
     merged["closes"] = closes
     merged[market] = rows
+    merged.setdefault("verified_sources", {})[market] = "dated-v2"
+    merged.setdefault("source_status", {})[market] = "available"
 
     save_json(history_path, merged)
     return merged
 
 
 def maintain_history_for_market(market, market_snapshots):
-    """
-    安全增量模式
-
-    1. 先沿用所有健康 cache
-    2. TPEx 不再回補舊日期，避免歷史 PHP 連續斷線
-    3. 最新交易日缺資料時才抓一次
-       - TPEx：官方 OpenAPI 最新日
-       - TWSE：原官方來源
-    4. 不到 20 日不再 raise
-       既有 9 日會保留，之後每個交易日自然累積到 20 日
-    5. 籌碼日報只需要 5 日，因此只要 >=5 日仍可正常產出
-    """
-    cached = load_cached_history(
-        market,
-        market_snapshots
-    )
-
-    cached_dates = {
-        x.get("date")
-        for x in cached
-        if x.get("date")
-    }
-
-    latest_snapshot = market_snapshots[-1]
-    latest_date = latest_snapshot.get("date")
-    latest_closes = latest_snapshot.get("stocks", {})
-
-    print(
-        "cached healthy history",
-        market,
-        len(cached),
-        sorted(cached_dates)
-    )
-
-    # 正常每天只處理最新一個交易日
-    if (
-        latest_date
-        and latest_closes
-        and latest_date not in cached_dates
-    ):
-        rows = {}
-
-        try:
-            rows = fetch_fresh(
-                latest_date,
-                market,
-                latest_date
-            )
-
-            print(
-                "latest fresh",
-                market,
-                latest_date,
-                source_health(rows)
-            )
-
-        except Exception as e:
-            print(
-                "latest fetch failed",
-                market,
-                latest_date,
-                repr(e)
-            )
-
-        if healthy(rows):
-            merged = save_market_day(
-                latest_date,
-                market,
-                latest_closes,
-                rows
-            )
-
-            cached.append(merged)
-            cached = cached[-REQUIRED_HISTORY_DAYS:]
-
-        else:
-            print(
-                "latest invalid; keep existing cache",
-                market,
-                latest_date,
-                source_health(rows)
-            )
-
-    # TWSE 若未滿 20，可有限度補歷史
-    # TPEx 明確不再碰會 RemoteDisconnected 的歷史 PHP
-    if (
-        market == "twse"
-        and len(cached) < REQUIRED_HISTORY_DAYS
-    ):
-        cached_dates = {
-            x.get("date")
-            for x in cached
-            if x.get("date")
-        }
-
-        missing_candidates = [
-            m
-            for m in reversed(
-                market_snapshots[-LOOKBACK_MARKET_DAYS:]
-            )
-            if m.get("date")
-            and m.get("stocks")
-            and m.get("date") not in cached_dates
-        ]
-
-        for m in missing_candidates:
-            if len(cached) >= REQUIRED_HISTORY_DAYS:
-                break
-
-            date = m.get("date")
-            closes = m.get("stocks", {})
-
+    # Exact market-calendar window: never replace missing days with older sessions
+    result = []
+    for snapshot in market_snapshots[-REQUIRED_HISTORY_DAYS:]:
+        date = snapshot["date"]
+        old = load_json(ROOT / f"data/history/institutional/{date}.json", {})
+        rows = old.get(market, {})
+        verified = market != "tpex" or old.get("verified_sources", {}).get(market) == "dated-v2"
+        if not healthy(rows) or not verified:
             try:
-                rows = fetch_twse_institutional(date)
-                rows = repair_dealer(rows)
-
-                print(
-                    "twse backfill",
-                    date,
-                    source_health(rows)
-                )
-
-            except Exception as e:
-                print(
-                    "twse backfill failed",
-                    date,
-                    repr(e)
-                )
-                continue
-
-            if not healthy(rows):
-                continue
-
-            merged = save_market_day(
-                date,
-                market,
-                closes,
-                rows
-            )
-
-            cached.append(merged)
-            cached.sort(
-                key=lambda x: x.get("date") or ""
-            )
-            cached = cached[-REQUIRED_HISTORY_DAYS:]
-            cached_dates.add(date)
-
-    if len(cached) < 5:
-        raise RuntimeError(
-            f"{market} institutional data only "
-            f"{len(cached)} healthy trading days; "
-            f"minimum 5 required for ranking"
-        )
-
-    if len(cached) < REQUIRED_HISTORY_DAYS:
-        print(
-            "history not full yet",
-            market,
-            f"{len(cached)}/{REQUIRED_HISTORY_DAYS}",
-            "- continue safely; future trading days will accumulate"
-        )
-    else:
-        print(
-            "history full",
-            market,
-            f"{len(cached)}/{REQUIRED_HISTORY_DAYS}"
-        )
-
-    return cached
+                fresh = fetch_fresh(date, market, market_snapshots[-1]["date"])
+                if not healthy(fresh):
+                    raise ValueError("institutional market data incomplete")
+                old = save_market_day(date, market, snapshot["stocks"], fresh)
+                rows = fresh
+                print("repaired", market, date, len(rows))
+            except Exception as exc:
+                print("missing", market, date, str(exc))
+                rows = {}  # Never relabel an unverified historical snapshot
+                old["date"] = date
+                old.setdefault("source_status", {})[market] = "unavailable"
+                save_json(ROOT / f"data/history/institutional/{date}.json", old)
+        result.append({"date": date, "closes": snapshot["stocks"], market: rows})
+    return result
 
 
 def build_period(history, market, kind, days, names):
     use = history[-days:]
     sums = {}
+    if len(use) != days or any(not healthy(h.get(market, {})) for h in use):
+        return {"buy": [], "sell": [], "complete": False, "days_used": sum(bool(h.get(market)) for h in use), "dates_used": [h["date"] for h in use]}
+    eligible = set.intersection(*(set(h.get(market, {})) for h in use))
+    eligible = {t for t in eligible if all(float(h.get("closes", {}).get(t, {}).get("price") or 0)>0 for h in use)}
 
     for h in use:
         closes = h.get("closes", {})
@@ -360,6 +204,7 @@ def build_period(history, market, kind, days, names):
 
         for ticker, r in rows.items():
             ticker = str(ticker)
+            if ticker not in eligible: continue
 
             q = closes.get(ticker, {})
             price = float(q.get("price") or 0)
@@ -554,7 +399,10 @@ def main():
                     )
                 )
 
-    validate_output(out)
+    try:
+        validate_output(out)
+    except RuntimeError as exc:
+        out["warning"] = str(exc)
 
     save_json(
         ROOT / "data/institutional.json",
@@ -575,3 +423,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
