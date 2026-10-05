@@ -8,6 +8,7 @@ on:
 
   workflow_run:
     workflows:
+      - Repair institutional history
       - Daily close update
       - Heatmap 5min
       - Weekly holders
@@ -56,3 +57,4 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
