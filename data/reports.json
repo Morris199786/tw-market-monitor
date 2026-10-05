@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-05T10:12+08:00",
+  "updated_at": "2026-10-05T10:17+08:00",
   "items": [
     {
       "id": "1Tn6T43uTiTjNMBS_kzJo4d8Hjr2cU02x",
@@ -188,7 +188,9 @@
       "ai_processed_at": "2026-10-05T08:35+08:00",
       "telegram_sent_at": "2026-10-05T08:36+08:00",
       "validation_status": "needs_review",
-      "validation_error": "price target has no validated issuer-specific source block"
+      "validation_error": "price target has no validated issuer-specific source block",
+      "audit_error": "price target has no validated issuer-specific source block",
+      "audit_failed_at": "2026-10-05T10:16+08:00"
     },
     {
       "id": "1ajBhq98ayyiPZNDfdYW_Jb2iDA8Ole46",
@@ -1245,7 +1247,9 @@
       "telegram_sent_at": "2026-09-30T09:41+08:00",
       "action_before_rule": "upgrade",
       "validation_status": "needs_review",
-      "validation_error": "price target has no validated issuer-specific source block"
+      "validation_error": "price target has no validated issuer-specific source block",
+      "audit_error": "price target has no validated issuer-specific source block",
+      "audit_failed_at": "2026-10-05T10:16+08:00"
     },
     {
       "id": "14sW7t3GOAdCrdiDeE_BjcOpnCR5WxCR4",
@@ -1578,7 +1582,9 @@
       "telegram_sent_at": "2026-09-29T11:06+08:00",
       "validation_status": "needs_review",
       "validation_error": "price target has no validated issuer-specific source block",
-      "action_before_rule": "maintain"
+      "action_before_rule": "maintain",
+      "audit_error": "price target has no validated issuer-specific source block",
+      "audit_failed_at": "2026-10-05T10:16+08:00"
     },
     {
       "id": "1we3L_tX_m1BjTSYtmkRuZZj2C_jD4xcC",
@@ -1926,7 +1932,9 @@
       "push_sent_at": "2026-09-29T10:01+08:00",
       "telegram_sent_at": "2026-09-29T10:01+08:00",
       "validation_status": "needs_review",
-      "validation_error": "price target has no validated issuer-specific source block"
+      "validation_error": "price target has no validated issuer-specific source block",
+      "audit_error": "price target has no validated issuer-specific source block",
+      "audit_failed_at": "2026-10-05T10:17+08:00"
     },
     {
       "id": "1jwGHoTWwAYG28AeubOjZjqDF38X-KmFE",
@@ -2661,7 +2669,7 @@
       "source_text_hash": "17deeea279896b8d7da1a59ac65c11828870a30700acee2442a544544386fcb7"
     }
   ],
-  "_help": "由 Google Drive 券商報告自動整理。group_date 使用 Drive 收到日期做網站分組；date 保留報告本身日期。公司身分與目標價經來源驗證，僅 Telegram 推播；重新審核保留既有推播狀態。",
+  "_help": "由 Google Drive 券商報告自動整理。group_date 使用 Drive 收到日期做網站分組；date 保留報告本身日期。公司身分與目標價經來源驗證，僅 Telegram 推播；重新審核失敗時保留上一次成功報告內容，重新審核成功後才更新驗證結果。",
   "_telegram_initialized": true,
   "_action_rule": "個股報告：若新舊目標價皆存在且不同，target_price_new > target_price_old 歸類上調；target_price_new < target_price_old 歸類下調；初評優先保留；無可比較目標價時保留報告明確評等動作。"
 }
