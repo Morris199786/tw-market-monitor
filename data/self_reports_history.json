@@ -1,11 +1,24 @@
 {
-  "updated_at": "2026-10-06T16:33+08:00",
+  "updated_at": "2026-10-06T17:04+08:00",
   "version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "monitor_start_date": "2026-09-26",
-  "candidate_count": 61,
+  "candidate_count": 62,
   "parsed_count": 39,
-  "parse_failed_count": 16,
+  "parse_failed_count": 17,
   "parse_failed": [
+    {
+      "ticker": "4994",
+      "name": "傳奇",
+      "publish_date": "2026-10-06",
+      "publish_time": "16:43:44",
+      "subject": "4994 傳奇 115/10/06 16:43:44 公告本公司115年09月份合併自結損益",
+      "source": "mops_ajax",
+      "source_error": "",
+      "eps_parse_status": "failed",
+      "eps_parse_reason": "eps_values_not_parsed",
+      "monthly_eps": null,
+      "quarter_eps": null
+    },
     {
       "ticker": "2352",
       "name": "佳世達",
@@ -216,6 +229,30 @@
     }
   ],
   "items": [
+    {
+      "market": "",
+      "ticker": "4994",
+      "name": "傳奇",
+      "publish_date": "2026-10-06",
+      "publish_time": "16:43:44",
+      "subject": "4994 傳奇 115/10/06 16:43:44 公告本公司115年09月份合併自結損益",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 4994 傳奇 公司提供 序號 1 發言日期 115/10/06 發言時間 16:43:44 發言人 周秋美 發言人職稱 營運副總 發言人電話 02-77186898 主旨 公告本公司115年09月份合併自結損益 符合條款 第 51 款 事實發生日 115/10/06 說明 1.事實發生日:115/10/06 2.公司名稱:傳奇網路遊戲股份有限公司 3.與公司關係(請輸入本公司或子公司):本公司 4.相互持股比例:不適用 5.發生緣由:公告本公司115年09月份合併自結損益 合併自結損益 --------------------09月(單位仟元) 115/01~09月累計(單位仟元)---------- 合併營業利益(損失) 1,052 81,984 合併稅前利益(損失) 1,569 72,852 稅前EPS 0.03 1.10 EPS計算以66,383仟股計算。 此資料為本公司合併自結數，尚未經會計師查核(核閱)。 6.因應措施:無 7.其他應敘明事項(若事件發生或決議之主體係屬公開發行以上公司，本則重大訊息同時 符合證券交易法施行細則第7條第9款所定對股東權益或證券價格有重大影響之事項): (1)請投資人參詳公開資訊觀測站，查詢路徑為營運概況\\自結損益公告自結損益公告月申報，再輸入本公司股票代碼即可查詢 (2)《咻咻史萊姆》日文版已於05月12日上市。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4994&SPOKE_DATE=20261006&SPOKE_TIME=164344&SEQ_NO=1&skey=4994202610061",
+      "source_error": "",
+      "match_reason": "direct_self_report",
+      "eps": null,
+      "monthly_eps": null,
+      "monthly_eps_yoy": null,
+      "monthly_period": "2026-09",
+      "quarter_eps": null,
+      "quarter_eps_yoy": null,
+      "quarter_period": null,
+      "monthly_eps_yoy_text": null,
+      "quarter_eps_yoy_text": null,
+      "eps_parse_status": "failed",
+      "eps_parse_reason": "eps_values_not_parsed"
+    },
     {
       "market": "",
       "ticker": "3311",
