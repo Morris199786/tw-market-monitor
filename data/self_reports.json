@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-06T08:33+08:00",
+  "updated_at": "2026-10-06T13:08+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -228,7 +228,7 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 7,
+          "rows": 10,
           "hits": 0
         },
         {
@@ -410,7 +410,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2646",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -426,15 +426,14 @@
         {
           "mode": "company_rescue",
           "ticker": "2884",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
           "ticker": "2885",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -442,7 +441,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2889",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -498,14 +497,6 @@
         {
           "mode": "company_rescue",
           "ticker": "4960",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
-          "hits": 0,
-          "error": ""
-        },
-        {
-          "mode": "company_rescue",
-          "ticker": "5534",
           "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
@@ -626,7 +617,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8404",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -657,7 +648,7 @@
         },
         {
           "mode": "company_rescue_summary",
-          "targets": 51,
+          "targets": 50,
           "rescued": 0,
           "rescued_tickers": []
         }
