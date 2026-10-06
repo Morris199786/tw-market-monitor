@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-06T08:04+08:00",
+  "updated_at": "2026-10-06T08:33+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -228,12 +228,6 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "error": "HTTPError('502 Server Error: Bad Gateway for url: https://mopsov.twse.com.tw/mops/web/ajax_t05st01')"
-        },
-        {
-          "mode": "daily_broad",
-          "base": "https://mopsov.twse.com.tw",
-          "payload": 2,
           "rows": 7,
           "hits": 0
         },
@@ -424,7 +418,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2882",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -440,9 +434,10 @@
         {
           "mode": "company_rescue",
           "ticker": "2885",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -463,14 +458,15 @@
         {
           "mode": "company_rescue",
           "ticker": "3543",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "3665",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
