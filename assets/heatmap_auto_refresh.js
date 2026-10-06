@@ -1,74 +1,30 @@
 /* =========================================================
-   Heatmap 各期間族群強勢股 Top 2 金色標記
-   2026-10-03
+   Heatmap 近 5 日強勢股 Top 2 金色標記
+   2026-10-06
 
-   功能：
-   1. 當日 / 5日 / 10日 / 20日
-      都依目前期間重新判斷 Top 2
-
-   2. 切換期間後：
-      金色標記跟著更新
-
-   3. 點族群展開：
-      只補金色標記
-      不改動族群排序
-
-   4. 不自行輪詢 heatmap.json
-
-   5. stock_detail.json
-      使用 5 分鐘記憶體快取
-
-   6. 保留 iPhone / Safari
-      回到頁面後補標記
+   規則：
+   1. 只有「當日」熱力圖顯示金標
+   2. 金標固定代表各族群「近 5 日累積漲幅前 2 強」
+   3. 5日 / 10日 / 20日模式不顯示金標
+   4. 個股排序仍由 app.js 依目前選擇期間處理
+   5. 不改動族群排序、不自行輪詢 heatmap.json
    ========================================================= */
 
 (function () {
   "use strict";
 
+  const TOP_COUNT = 2;
+  const RANK_PERIOD = "5";
+  const CACHE_MS = 5 * 60 * 1000;
+  const APPLY_DEBOUNCE = 180;
 
-  /* =========================================================
-     基本設定
-     ========================================================= */
+  let detailCache = null;
+  let detailCacheAt = 0;
+  let detailPromise = null;
 
-  const TOP_COUNT =
-    2;
-
-  const CACHE_MS =
-    5 * 60 * 1000;
-
-  const APPLY_DEBOUNCE =
-    180;
-
-
-  let detailCache =
-    null;
-
-  let detailCacheAt =
-    0;
-
-  let detailPromise =
-    null;
-
-
-  let heatCache =
-    null;
-
-  let heatCacheAt =
-    0;
-
-  let heatPromise =
-    null;
-
-
-  let applyTimer =
-    null;
-
-  let applying =
-    false;
-
-  let observer =
-    null;
-
+  let applyTimer = null;
+  let applying = false;
+  let observer = null;
 
   /* =========================================================
      Heatmap 是否正在顯示
@@ -87,7 +43,6 @@
       )
     );
   }
-
 
   /* =========================================================
      目前熱力圖期間
@@ -109,23 +64,6 @@
 
     return "1";
   }
-
-
-  function periodText(
-    period
-  ) {
-    if (
-      period ===
-      "1"
-    ) {
-      return "當日";
-    }
-
-    return (
-      `近${period}日`
-    );
-  }
-
 
   /* =========================================================
      工具
@@ -160,14 +98,6 @@
     return null;
   }
 
-
-  /*
-   * robust ticker parser
-   *
-   * 避免 ticker 不一定直接在
-   * .heat-stock dataset
-   */
-
   function tickerFromRow(
     row
   ) {
@@ -195,7 +125,6 @@
       row?.textContent
     ];
 
-
     for (
       const candidate
       of candidates
@@ -214,82 +143,8 @@
       }
     }
 
-
     return "";
   }
-
-
-  /* =========================================================
-     從展開區塊判斷族群
-     ========================================================= */
-
-  function sectorFromDetail(
-    detail
-  ) {
-    if (!detail) {
-      return "";
-    }
-
-
-    /*
-     * 正常情況：
-     *
-     * button.heat
-     * ↓
-     * .heat-detail
-     */
-
-    const prev =
-      detail
-        .previousElementSibling;
-
-
-    if (
-      prev?.matches?.(
-        "button.heat[data-sec]"
-      )
-    ) {
-      return String(
-        prev.dataset.sec ||
-        ""
-      );
-    }
-
-
-    /*
-     * fallback：
-     * 從 detail 標題抓族群名稱
-     */
-
-    const head =
-      detail.querySelector(
-        ".heat-detail-head b"
-      );
-
-
-    if (!head) {
-      return "";
-    }
-
-
-    return (
-      [
-        ...head.childNodes
-      ]
-        .filter(
-          node =>
-            node.nodeType ===
-            Node.TEXT_NODE
-        )
-        .map(
-          node =>
-            node.textContent
-        )
-        .join(" ")
-        .trim()
-    );
-  }
-
 
   /* =========================================================
      stock_detail.json
@@ -301,7 +156,6 @@
     const now =
       Date.now();
 
-
     if (
       !force &&
       detailCache &&
@@ -312,18 +166,11 @@
       return detailCache;
     }
 
-
-    /*
-     * 共用正在執行中的 Promise
-     * 避免同時下載多次
-     */
-
     if (
       detailPromise
     ) {
       return detailPromise;
     }
-
 
     detailPromise =
       fetch(
@@ -368,87 +215,8 @@
           }
         );
 
-
     return detailPromise;
   }
-
-
-  /* =========================================================
-     heatmap.json
-     ========================================================= */
-
-  async function getHeatmap(
-    force = false
-  ) {
-    const now =
-      Date.now();
-
-
-    if (
-      !force &&
-      heatCache &&
-      now -
-        heatCacheAt <
-        CACHE_MS
-    ) {
-      return heatCache;
-    }
-
-
-    if (
-      heatPromise
-    ) {
-      return heatPromise;
-    }
-
-
-    heatPromise =
-      fetch(
-        "./data/heatmap.json?v=" +
-        now,
-        {
-          cache:
-            "no-store"
-        }
-      )
-        .then(
-          response => {
-            if (
-              !response.ok
-            ) {
-              throw new Error(
-                "heatmap.json HTTP " +
-                response.status
-              );
-            }
-
-            return (
-              response.json()
-            );
-          }
-        )
-        .then(
-          data => {
-            heatCache =
-              data;
-
-            heatCacheAt =
-              Date.now();
-
-            return data;
-          }
-        )
-        .finally(
-          () => {
-            heatPromise =
-              null;
-          }
-        );
-
-
-    return heatPromise;
-  }
-
 
   /* =========================================================
      金標樣式
@@ -463,16 +231,13 @@
       return;
     }
 
-
     const style =
       document.createElement(
         "style"
       );
 
-
     style.id =
       "heatStrengthStyle";
-
 
     style.textContent = `
 
@@ -483,7 +248,6 @@
       .heat-strength-note{
         display:flex;
         align-items:center;
-
         gap:8px;
 
         width:max-content;
@@ -528,7 +292,6 @@
           1.35;
       }
 
-
       .heat-strength-swatch{
         width:11px;
         height:11px;
@@ -566,17 +329,9 @@
           );
       }
 
-
       /* =========================
          Top 2 金色背景
          ========================= */
-
-      #heatGrid
-      .heat-stock
-      .heat-stock-top2{
-        position:relative;
-      }
-
 
       #heatGrid
       .heat-stock.heat-stock-top2{
@@ -626,7 +381,6 @@
             .08
           );
       }
-
 
       /* =========================
          Top 1 / Top 2 標籤
@@ -687,7 +441,6 @@
           middle;
       }
 
-
       /* =========================
          深色模式
          ========================= */
@@ -713,7 +466,6 @@
         color:
           #fde68a;
       }
-
 
       html[data-theme="dark"]
       .heat-strength-swatch{
@@ -742,7 +494,6 @@
             )
           );
       }
-
 
       html[data-theme="dark"]
       #heatGrid
@@ -792,7 +543,6 @@
           );
       }
 
-
       html[data-theme="dark"]
       #heatGrid
       .heat-strength-rank{
@@ -816,7 +566,6 @@
           #fde68a;
       }
 
-
       /* =========================
          手機
          ========================= */
@@ -835,7 +584,6 @@
             9px;
         }
 
-
         #heatGrid
         .heat-strength-rank{
           margin-left:
@@ -848,7 +596,6 @@
             8px;
         }
       }
-
 
       @media(
         max-width:390px
@@ -864,12 +611,10 @@
       }
     `;
 
-
     document.head.appendChild(
       style
     );
   }
-
 
   /* =========================================================
      金標說明
@@ -881,17 +626,14 @@
         "heatGrid"
       );
 
-
     if (!grid) {
       return;
     }
-
 
     let note =
       document.getElementById(
         "heatStrengthNote"
       );
-
 
     if (!note) {
       note =
@@ -899,14 +641,11 @@
           "div"
         );
 
-
       note.id =
         "heatStrengthNote";
 
-
       note.className =
         "heat-strength-note";
-
 
       grid
         .parentNode
@@ -916,10 +655,23 @@
         );
     }
 
+    /*
+     * 只有「當日」顯示金標說明
+     * 5 / 10 / 20 日完全隱藏
+     */
 
-    const period =
-      activePeriod();
+    if (
+      activePeriod() !==
+      "1"
+    ) {
+      note.style.display =
+        "none";
 
+      return;
+    }
+
+    note.style.display =
+      "";
 
     note.innerHTML = `
       <span
@@ -928,11 +680,10 @@
       ></span>
 
       <span>
-        金色＝各族群${periodText(period)}累積漲幅前2強
+        金色＝各族群近5日累積漲幅前2強
       </span>
     `;
   }
-
 
   /* =========================================================
      清除舊金標
@@ -951,32 +702,23 @@
               "heat-stock-top2"
             );
 
-
           row.removeAttribute(
             "data-period-rank"
           );
-
 
           row.removeAttribute(
             "data-period-return"
           );
 
-
-          /*
-           * 相容舊版屬性
-           */
-
           row.removeAttribute(
             "data-5d-rank"
           );
-
 
           row.removeAttribute(
             "data-5d-return"
           );
         }
       );
-
 
     document
       .querySelectorAll(
@@ -989,59 +731,46 @@
       );
   }
 
-
   /* =========================================================
      加排名標籤
      ========================================================= */
 
   function addRankLabel(
     row,
-    rank,
-    period
+    rank
   ) {
     const ticker =
       row.querySelector(
         ".t"
       );
 
-
     if (!ticker) {
       return;
     }
-
-
-    /*
-     * 避免重複
-     */
 
     const old =
       row.querySelector(
         ".heat-strength-rank"
       );
 
-
     if (old) {
       old.remove();
     }
-
 
     const label =
       document.createElement(
         "span"
       );
 
-
     label.className =
       "heat-strength-rank";
 
-
     label.textContent =
-      `${periodText(period)}漲幅第${rank}`;
-
+      `近5日漲幅第${rank}`;
 
     /*
      * 股票代號後面
-     * 不蓋右側漲幅 %
+     * 不蓋右側當日漲跌幅
      */
 
     ticker.insertAdjacentElement(
@@ -1050,77 +779,24 @@
     );
   }
 
-
   /* =========================================================
-     個股目前期間報酬
+     固定取得近 5 日累積報酬
      ========================================================= */
 
-  function stockPeriodReturn(
+  function stock5dReturn(
     ticker,
-    period,
-    detailData,
-    heatSector
+    detailData
   ) {
-    /*
-     * 當日
-     */
-
-    if (
-      period ===
-      "1"
-    ) {
-      const item =
-        (
-          heatSector
-            ?.stocks ||
-          []
-        )
-          .find(
-            x =>
-              String(
-                x.ticker ||
-                ""
-              ) ===
-              ticker
-          );
-
-
-      const n =
-        Number(
-          item
-            ?.change_pct
-        );
-
-
-      return (
-        Number.isFinite(n)
-          ? n
-          : null
-      );
-    }
-
-
-    /*
-     * 5 / 10 / 20 日
-     */
-
     const stock =
       detailData
         ?.stocks
         ?.[ticker];
 
-
     const series =
       stock
         ?.returns_by_period
-        ?.[period] ||
-      (
-        period ===
-        "5"
-          ? stock?.returns
-          : null
-      );
-
+        ?.[RANK_PERIOD] ||
+      stock?.returns;
 
     return (
       latestValidNumber(
@@ -1129,46 +805,25 @@
     );
   }
 
-
   /* =========================================================
-     單一族群 Top 2
+     單一族群近 5 日 Top 2
      ========================================================= */
 
   function markTopStocks(
     detail,
-    detailData,
-    heatData
+    detailData
   ) {
-    const sectorName =
-      sectorFromDetail(
-        detail
-      );
+    /*
+     * 非當日模式
+     * 不產生任何金標
+     */
 
-
-    if (!sectorName) {
+    if (
+      activePeriod() !==
+      "1"
+    ) {
       return;
     }
-
-
-    const period =
-      activePeriod();
-
-
-    const heatSector =
-      (
-        heatData
-          ?.sectors ||
-        []
-      )
-        .find(
-          sector =>
-            String(
-              sector.name ||
-              ""
-            ) ===
-            sectorName
-        );
-
 
     const rows =
       [
@@ -1178,11 +833,9 @@
           )
       ];
 
-
     if (!rows.length) {
       return;
     }
-
 
     const ranked =
       rows
@@ -1193,17 +846,14 @@
                 row
               );
 
-
             return {
               row,
               ticker,
 
               value:
-                stockPeriodReturn(
+                stock5dReturn(
                   ticker,
-                  period,
-                  detailData,
-                  heatSector
+                  detailData
                 )
             };
           }
@@ -1226,7 +876,6 @@
             a.value
         );
 
-
     ranked
       .slice(
         0,
@@ -1240,7 +889,6 @@
           const rank =
             index + 1;
 
-
           item
             .row
             .classList
@@ -1248,14 +896,12 @@
               "heat-stock-top2"
             );
 
-
           item
             .row
             .setAttribute(
               "data-period-rank",
               String(rank)
             );
-
 
           item
             .row
@@ -1266,16 +912,33 @@
               )
             );
 
+          /*
+           * 保留舊版屬性相容性
+           */
+
+          item
+            .row
+            .setAttribute(
+              "data-5d-rank",
+              String(rank)
+            );
+
+          item
+            .row
+            .setAttribute(
+              "data-5d-return",
+              String(
+                item.value
+              )
+            );
 
           addRankLabel(
             item.row,
-            rank,
-            period
+            rank
           );
         }
       );
   }
-
 
   /* =========================================================
      套用金標
@@ -1291,22 +954,37 @@
       return;
     }
 
-
     const grid =
       document.getElementById(
         "heatGrid"
       );
 
-
     if (!grid) {
       return;
     }
-
 
     injectStyles();
 
     ensureStrengthNote();
 
+    /*
+     * 先清除舊標記
+     *
+     * 從當日切換到
+     * 5 / 10 / 20 日時
+     * 金標會立即消失
+     */
+
+    clearStrengthMarks();
+
+    if (
+      activePeriod() !==
+      "1"
+    ) {
+      ensureStrengthNote();
+
+      return;
+    }
 
     const details =
       [
@@ -1316,68 +994,49 @@
           )
       ];
 
-
     /*
      * 沒有展開族群
-     * 不需要下載資料
+     * 不下載 stock_detail
      */
 
     if (!details.length) {
-      clearStrengthMarks();
-
       return;
     }
-
 
     applying =
       true;
 
-
     try {
-      const period =
-        activePeriod();
+      const detailData =
+        await getStockDetail(
+          forceData
+        );
 
+      /*
+       * await 期間如果已經切到
+       * 5 / 10 / 20 日
+       * 就不要再補金標
+       */
 
-      const [
-        detailData,
-        heatData
-      ] =
-        await Promise.all([
-          getStockDetail(
-            forceData
-          ),
+      if (
+        activePeriod() !==
+        "1"
+      ) {
+        clearStrengthMarks();
 
-          /*
-           * 當日排名需要
-           * heatmap.json 的 change_pct
-           *
-           * 5/10/20 日不用
-           */
+        ensureStrengthNote();
 
-          period ===
-            "1"
-            ? getHeatmap(
-                forceData
-              )
-            : Promise.resolve(
-                heatCache
-              )
-        ]);
-
-
-      clearStrengthMarks();
-
+        return;
+      }
 
       details.forEach(
         detail => {
           markTopStocks(
             detail,
-            detailData,
-            heatData
+            detailData
           );
         }
       );
-
 
       ensureStrengthNote();
 
@@ -1392,7 +1051,6 @@
         false;
     }
   }
-
 
   /* =========================================================
      Debounce
@@ -1413,13 +1071,11 @@
       );
     }
 
-
     applyTimer =
       setTimeout(
         () => {
           applyTimer =
             null;
-
 
           applyStrengthMarks(
             forceData
@@ -1428,7 +1084,6 @@
         delay
       );
   }
-
 
   /* =========================================================
      監聽展開 / 收合
@@ -1440,18 +1095,15 @@
         "heatGrid"
       );
 
-
     if (!grid) {
       return;
     }
-
 
     if (
       observer
     ) {
       observer.disconnect();
     }
-
 
     observer =
       new MutationObserver(
@@ -1462,7 +1114,6 @@
             return;
           }
 
-
           const meaningful =
             mutations.some(
               mutation =>
@@ -1472,20 +1123,11 @@
                   grid
             );
 
-
           if (
             !meaningful
           ) {
             return;
           }
-
-
-          /*
-           * 只補金標
-           *
-           * 這裡完全不會呼叫
-           * heatmap 的 reorderGrid
-           */
 
           scheduleApply(
             APPLY_DEBOUNCE,
@@ -1493,7 +1135,6 @@
           );
         }
       );
-
 
     observer.observe(
       grid,
@@ -1507,7 +1148,6 @@
     );
   }
 
-
   /* =========================================================
      事件
      ========================================================= */
@@ -1515,18 +1155,16 @@
   function bindEvents() {
 
     /*
-     * 使用者切換：
-     * 當日 / 5 / 10 / 20
-     *
-     * heatmap_period.js
-     * 會送這個事件
+     * 切換：
+     * 當日 / 5日 / 10日 / 20日
      */
 
     window.addEventListener(
       "heatmap:period-changed",
       () => {
-        ensureStrengthNote();
+        clearStrengthMarks();
 
+        ensureStrengthNote();
 
         scheduleApply(
           40,
@@ -1535,10 +1173,8 @@
       }
     );
 
-
     /*
-     * 後台 Heatmap 資料
-     * 真的更新
+     * Heatmap 資料更新
      */
 
     window.addEventListener(
@@ -1550,21 +1186,12 @@
         detailCacheAt =
           0;
 
-
-        heatCache =
-          null;
-
-        heatCacheAt =
-          0;
-
-
         scheduleApply(
           220,
           true
         );
       }
     );
-
 
     /*
      * refresh controller
@@ -1579,7 +1206,6 @@
         );
       }
     );
-
 
     /*
      * 全站 refresh
@@ -1602,12 +1228,9 @@
       }
     );
 
-
     /*
-     * 點族群
-     *
-     * 等 app.js 展開後
-     * 再補 Top 2
+     * 點族群展開後
+     * 補近 5 日 Top 2
      */
 
     document.addEventListener(
@@ -1620,11 +1243,9 @@
               "#heatGrid [data-sec]"
             );
 
-
         if (!button) {
           return;
         }
-
 
         scheduleApply(
           220,
@@ -1636,7 +1257,6 @@
           true
       }
     );
-
 
     /*
      * iPhone / Safari
@@ -1652,14 +1272,12 @@
           return;
         }
 
-
         scheduleApply(
           300,
           false
         );
       }
     );
-
 
     window.addEventListener(
       "pageshow",
@@ -1671,7 +1289,6 @@
           return;
         }
 
-
         scheduleApply(
           300,
           false
@@ -1679,7 +1296,6 @@
       }
     );
   }
-
 
   /* =========================================================
      對外 API
@@ -1697,7 +1313,6 @@
       );
     };
 
-
   window.clearHeatStrengthCache =
     function () {
       detailCache =
@@ -1705,15 +1320,7 @@
 
       detailCacheAt =
         0;
-
-
-      heatCache =
-        null;
-
-      heatCacheAt =
-        0;
     };
-
 
   /* =========================================================
      初始化
@@ -1728,15 +1335,6 @@
 
     bindEvents();
 
-
-    /*
-     * 第一次不強迫抓資料
-     *
-     * 沒展開族群時
-     * applyStrengthMarks
-     * 也不會下載 stock_detail
-     */
-
     if (
       heatmapVisible()
     ) {
@@ -1746,12 +1344,10 @@
       );
     }
 
-
     console.log(
-      "[Heat Strength] period-aware module ready"
+      "[Heat Strength] 1D view / fixed 5D Top 2 module ready"
     );
   }
-
 
   if (
     document.readyState ===
