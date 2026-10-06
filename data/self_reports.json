@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-06T18:33+08:00",
+  "updated_at": "2026-10-06T19:03+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -28,7 +28,7 @@
         "publish_time": "17:03:25",
         "subject": "6581 鋼聯 115/10/06 17:03:25 公告115年9月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -41,7 +41,7 @@
         "publish_time": "16:43:44",
         "subject": "4994 傳奇 115/10/06 16:43:44 公告本公司115年09月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -267,7 +267,7 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 102,
+          "rows": 104,
           "hits": 9
         },
         {
