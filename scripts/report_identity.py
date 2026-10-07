@@ -70,13 +70,101 @@ def read(path, default):
         return default
 
 
-def registry(refresh=False):
-    path = ROOT / "data/report_company_registry.json"
+def _dedupe_aliases(values):
+    """
+    Alias 去重。
 
-    out = read(
+    舊版 registry 每次 refresh 都會把相同的
+    TWSE / TPEx 公司名稱重新 append，
+    導致 report_company_registry.json
+    每 5 分鐘持續膨脹。
+
+    這裡：
+    1. 移除空值
+    2. Unicode NFKC 正規化後比較
+    3. 不分英文大小寫去重
+    4. 保留第一次出現的原始文字
+    """
+
+    result = []
+    seen = set()
+
+    for value in values or []:
+        alias = str(
+            value or ""
+        ).strip()
+
+        if not alias:
+            continue
+
+        key = unicodedata.normalize(
+            "NFKC",
+            alias,
+        ).casefold()
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        result.append(alias)
+
+    return result
+
+
+def registry(refresh=False):
+    path = (
+        ROOT
+        / "data/report_company_registry.json"
+    )
+
+    raw = read(
         path,
         {},
     )
+
+    # -------------------------------------------------
+    # 先壓縮既有 registry
+    #
+    # 這一步很重要：
+    # 即使目前 JSON 已經累積大量重複 aliases，
+    # 下一次執行也會先把它壓回唯一值
+    #
+    # 不直接沿用原本 out = read(...)，
+    # 避免後續 refresh 再持續堆疊
+    # -------------------------------------------------
+
+    out = {}
+
+    for t, m in raw.items():
+        if not isinstance(
+            m,
+            dict,
+        ):
+            continue
+
+        ticker = str(
+            t or ""
+        ).strip()
+
+        if not ticker:
+            continue
+
+        out[ticker] = {
+            "name": str(
+                m.get("name")
+                or ticker
+            ).strip(),
+            "aliases": _dedupe_aliases(
+                m.get(
+                    "aliases",
+                    [],
+                )
+            ),
+        }
+
+    # -------------------------------------------------
+    # master.json
+    # -------------------------------------------------
 
     for t, m in read(
         ROOT / "data/master.json",
@@ -85,19 +173,40 @@ def registry(refresh=False):
         "stocks",
         {},
     ).items():
+
         if m.get("market") in (
             "twse",
             "tpex",
         ):
-            out.setdefault(
+            item = out.setdefault(
                 t,
                 {
-                    "aliases": []
+                    "name": t,
+                    "aliases": [],
                 },
-            )["name"] = m.get(
-                "name",
-                t,
             )
+
+            item["name"] = str(
+                m.get("name")
+                or item.get("name")
+                or t
+            ).strip()
+
+            # 保險：
+            # 即使舊 registry 已有重複，
+            # 此處再次確保乾淨
+            item["aliases"] = (
+                _dedupe_aliases(
+                    item.get(
+                        "aliases",
+                        [],
+                    )
+                )
+            )
+
+    # -------------------------------------------------
+    # TWSE / TPEx 官方公司資料
+    # -------------------------------------------------
 
     if refresh:
         urls = [
@@ -115,7 +224,9 @@ def registry(refresh=False):
 
                 for row in rows:
                     t = str(
-                        row.get("公司代號")
+                        row.get(
+                            "公司代號"
+                        )
                         or row.get(
                             "SecuritiesCompanyCode"
                         )
@@ -131,19 +242,28 @@ def registry(refresh=False):
                     item = out.setdefault(
                         t,
                         {
-                            "aliases": []
+                            "name": t,
+                            "aliases": [],
                         },
                     )
 
-                    item["name"] = (
-                        row.get("公司簡稱")
+                    item["name"] = str(
+                        row.get(
+                            "公司簡稱"
+                        )
                         or row.get(
                             "CompanyAbbreviation"
                         )
-                        or item.get("name")
-                        or row.get("公司名稱")
+                        or item.get(
+                            "name"
+                        )
+                        or row.get(
+                            "公司名稱"
+                        )
                         or t
-                    )
+                    ).strip()
+
+                    new_aliases = []
 
                     for k in (
                         "公司名稱",
@@ -161,10 +281,30 @@ def registry(refresh=False):
                         ).strip()
 
                         if len(v) >= 3:
-                            item.setdefault(
+                            new_aliases.append(
+                                v
+                            )
+
+                    # 舊版：
+                    #
+                    # item.setdefault(
+                    #     "aliases", []
+                    # ).append(v)
+                    #
+                    # 每次 workflow 都會一直增加
+                    #
+                    # 新版：
+                    # 合併後立即去重
+
+                    item["aliases"] = (
+                        _dedupe_aliases(
+                            item.get(
                                 "aliases",
                                 [],
-                            ).append(v)
+                            )
+                            + new_aliases
+                        )
+                    )
 
             except Exception as exc:
                 print(
@@ -172,26 +312,51 @@ def registry(refresh=False):
                     type(exc).__name__,
                 )
 
+    # -------------------------------------------------
+    # 中文公司名稱 alias
+    # -------------------------------------------------
+
     for t, m in out.items():
-        m.setdefault(
-            "aliases",
-            [],
-        ).extend(
-            [
-                m.get(
-                    "name",
-                    "",
-                ),
-                re.sub(
-                    r"[-*]?(?:KY)?$",
-                    "",
-                    m.get(
-                        "name",
-                        "",
-                    ),
-                ),
-            ]
+        name = str(
+            m.get("name")
+            or t
+        ).strip()
+
+        short_name = re.sub(
+            r"[-*]?(?:KY)?$",
+            "",
+            name,
         )
+
+        m["name"] = name
+
+        # 舊版使用 extend()，
+        # 每次執行都會重複加入 name / short_name
+        #
+        # 現在統一去重
+
+        m["aliases"] = (
+            _dedupe_aliases(
+                m.get(
+                    "aliases",
+                    [],
+                )
+                + [
+                    name,
+                    short_name,
+                ]
+            )
+        )
+
+    # -------------------------------------------------
+    # 人工確認過的英文名稱
+    #
+    # Elite Material -> 台光電
+    # Chenming       -> 晟銘電
+    # Jentech        -> 健策
+    #
+    # 必須保留
+    # -------------------------------------------------
 
     for t, m in SEEDS.items():
         old = out.get(
@@ -204,17 +369,42 @@ def registry(refresh=False):
                 old.get("name")
                 or m["name"]
             ),
-            "aliases": sorted(
-                set(
+            "aliases": (
+                _dedupe_aliases(
                     old.get(
                         "aliases",
                         [],
                     )
                     + m["aliases"]
-                    + [m["name"]]
+                    + [
+                        m["name"]
+                    ]
                 )
             ),
         }
+
+    # -------------------------------------------------
+    # 最終安全去重
+    #
+    # 無論來源是：
+    # - 舊 registry
+    # - master
+    # - TWSE
+    # - TPEx
+    # - SEEDS
+    #
+    # 寫檔前全部再壓一次
+    # -------------------------------------------------
+
+    for t, m in out.items():
+        m["aliases"] = (
+            _dedupe_aliases(
+                m.get(
+                    "aliases",
+                    [],
+                )
+            )
+        )
 
     if refresh:
         path.parent.mkdir(
@@ -531,8 +721,6 @@ def _issuer_for_target(
         :match.start()
     ]
 
-    # Strongest evidence:
-    # explicit ticker before target.
     ids = (
         explicit_tickers(head)
         & set(companies)
@@ -543,8 +731,6 @@ def _issuer_for_target(
             iter(ids)
         )
 
-    # Broker cover/header commonly places
-    # issuer + ticker near the beginning.
     ids = (
         explicit_tickers(
             page[:1800]
@@ -557,8 +743,6 @@ def _issuer_for_target(
             iter(ids)
         )
 
-    # If the page contains only one explicit
-    # Taiwan ticker, it is safe to use.
     ids = (
         explicit_tickers(page)
         & set(companies)
@@ -569,7 +753,6 @@ def _issuer_for_target(
             iter(ids)
         )
 
-    # Alias fallback before target.
     ids = (
         alias_hits(
             head,
@@ -583,7 +766,6 @@ def _issuer_for_target(
             iter(ids)
         )
 
-    # Final alias fallback limited to header area.
     ids = (
         alias_hits(
             page[:1800],
@@ -828,9 +1010,6 @@ def page_targets(
                 )
             )
 
-            # Explicit From / To revision table:
-            # second same-line TWD price is
-            # the new/current target.
             line = page[
                 match.start():
             ].split(
@@ -918,10 +1097,6 @@ def page_targets(
                 }
             )
 
-    # One unambiguous current target per issuer.
-    # Duplicate appearances of the SAME target
-    # are fine.
-    # Conflicting targets require manual review.
     out = []
 
     for t in sorted(
@@ -947,9 +1122,6 @@ def page_targets(
                 + t
             )
 
-        # Prefer the row carrying an explicit
-        # rating/action when duplicate target
-        # references exist.
         rows.sort(
             key=lambda v: (
                 bool(v.get("rating")),
@@ -1029,8 +1201,6 @@ def audit_report(
         r.get("report_type")
         == "company"
     ):
-        # Issuer on the cover takes precedence
-        # over generated Chinese translations.
         cover = (
             text.split("\f")[0][
                 :3500
@@ -1070,9 +1240,6 @@ def audit_report(
                 and old_name
                 != r["name"]
             ):
-                # Replace a hallucinated label
-                # only when it is absent from
-                # the source itself.
                 if (
                     old_name in text
                     and re.search(
@@ -1234,8 +1401,6 @@ def audit_report(
                 "target_price_new"
             ]
 
-            # Prefer source-validated rating
-            # when it exists.
             if own.get("rating"):
                 r["rating"] = (
                     own["rating"]
@@ -1304,8 +1469,6 @@ def audit_report(
         "identity_changes"
     ] = changes
 
-    # Successful audit clears all previous
-    # review/error state.
     r.pop(
         "validation_error",
         None,
