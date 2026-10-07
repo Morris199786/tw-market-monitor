@@ -2048,11 +2048,51 @@ def push_text(item):
     ]
 
     if item.get("match_reason") == "direct_self_report":
-        period = item.get("monthly_period")
-        label = f"{period} 單月 EPS" if period else "單月 EPS"
-        value = item.get("monthly_eps")
-        value_text = f"{value:.2f} 元" if value is not None else "未取得"
-        lines.append(f"{label}：{value_text}")
+        monthly_period = item.get("monthly_period")
+        monthly_label = (
+            f"{monthly_period} 單月 EPS"
+            if monthly_period
+            else "單月 EPS"
+        )
+        monthly_value = item.get("monthly_eps")
+        monthly_value_text = (
+            f"{monthly_value:.2f} 元"
+            if monthly_value is not None
+            else "未公布"
+        )
+        monthly_growth = item.get("monthly_eps_yoy")
+        monthly_growth_text = (
+            f"{monthly_growth:+.2f}%"
+            if monthly_growth is not None
+            else item.get("monthly_eps_yoy_text") or "未公布"
+        )
+        lines.append(
+            f"{monthly_label}：{monthly_value_text}"
+            f"｜與去年同期增減：{monthly_growth_text}"
+        )
+
+        quarter_period = item.get("quarter_period")
+        quarter_label = (
+            f"{quarter_period} 上一季 EPS"
+            if quarter_period
+            else "上一季 EPS"
+        )
+        quarter_value = item.get("quarter_eps")
+        quarter_value_text = (
+            f"{quarter_value:.2f} 元"
+            if quarter_value is not None
+            else "未公布"
+        )
+        quarter_growth = item.get("quarter_eps_yoy")
+        quarter_growth_text = (
+            f"{quarter_growth:+.2f}%"
+            if quarter_growth is not None
+            else item.get("quarter_eps_yoy_text") or "未公布"
+        )
+        lines.append(
+            f"{quarter_label}：{quarter_value_text}"
+            f"｜與去年同期增減：{quarter_growth_text}"
+        )
     else:
         lines.append(
             eps_line(
@@ -2061,13 +2101,13 @@ def push_text(item):
             )
         )
 
-    if item.get("quarter_eps") is not None:
-        lines.append(
-            eps_line(
-                item,
-                "quarter",
+        if item.get("quarter_eps") is not None:
+            lines.append(
+                eps_line(
+                    item,
+                    "quarter",
+                )
             )
-        )
 
     return "\n".join(lines)
 
@@ -2298,9 +2338,8 @@ def main():
         if new_score >= old_score:
             item.update(parsed)
 
-    # Voluntary self-reports may only publish the current monthly EPS.
-    # Fill only prior-quarter EPS and its YoY from official quarterly data.
-    enrich_direct_self_report_quarter_eps(all_candidates)
+    # Voluntary self-reports use only values published in the announcement.
+    # Missing comparison / prior-quarter values remain unpublished.
 
     all_candidates.sort(
         key=lambda item: (
