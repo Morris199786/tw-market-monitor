@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-07-v26-direct-self-report"
+VERSION = "2026-10-07-v27-voluntary-self-report-fix"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -393,65 +393,48 @@ def _fallback_period_sections(text):
 
 
 def _extract_direct_self_report_metrics(text):
-    normalized = normalize_for_parse(text)
+    """Only explicitly labelled single-month EPS; never use cumulative EPS.
 
-    if not direct_self_report_subject(normalized):
+    Voluntary disclosures need not include a previous quarter or YoY value.
+    Missing values remain None and use the existing presentation rules.
+    """
+    normalized = normalize_for_parse(text)
+    if not re.search(r"(?:自行結算|自結).{0,16}損益|損益.{0,16}(?:自行結算|自結)",
+                     compact_text(normalized)):
         return None
 
+    label = r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
+    number = r"(\(?[+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+)\)?)"
+    # Keep the month label adjacent to EPS: don't cross a net-income field,
+    # a cumulative-period label, or another numeric item to find a value.
     patterns = (
-        r"(?:當月|本月|單月)"
-        r".{0,80}?"
-        r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
-        r"\s*(?:[:：]|為)?\s*"
-        r"([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))",
-
-        r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
-        r".{0,30}?"
-        r"(?:當月|本月|單月)"
-        r"\s*(?:[:：]|為)?\s*"
-        r"([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))",
+        rf"(?:當月|本月|單月)\s*{label}\s*(?:\(元\)|元)?\s*(?:[:：]|為)?\s*{number}",
+        rf"{label}\s*(?:\(元\)|元)?\s*(?:[:：])?\s*(?:當月|本月|單月)\s*(?:[:：]|為)?\s*{number}",
     )
-
-    value = None
-
-    for pattern in patterns:
-        m = re.search(pattern, normalized, re.I)
-
-        if not m:
-            continue
-
-        value = _number(m.group(1))
-
-        if value is not None:
-            break
-
+    match = next((m for pattern in patterns
+                  if (m := re.search(pattern, normalized, re.I))), None)
+    if match is None:
+        return None
+    value = _number(match.group(1))
     if value is None:
         return None
 
-    return {
-        "eps": value,
-        "monthly_eps": value,
-        "monthly_eps_yoy": None,
-        "monthly_eps_yoy_text": "",
-        "monthly_period": _find_month_period(normalized),
-        "quarter_eps": None,
-        "quarter_eps_yoy": None,
-        "quarter_eps_yoy_text": "",
-        "quarter_period": None,
-        "eps_parse_status": "direct_self_report",
-        "eps_parse_reason": "",
-    }
+    # Prefer the reporting month in the subject over the announcement date.
+    period_match = re.search(
+        r"(?:截至|本公司|公告)[^\n]{0,30}?((?:20\d{2}|\d{2,3})\s*年\s*\d{1,2}\s*月)",
+        normalized,
+    )
+    period = _find_month_period(period_match.group(1)) if period_match else None
+    if not period:
+        period_match = re.search(r"(?:20\d{2}|\d{2,3})\s*年\s*\d{1,2}\s*月", normalized)
+        period = _find_month_period(period_match.group()) if period_match else None
+
+    return {"eps": value, "monthly_eps": value, "monthly_period": period}
 
 
 def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
-
-    direct = _extract_direct_self_report_metrics(text)
-
-    if direct:
-        out.update(direct)
-        return out
 
     if not re.search(EPS_WORD, text, re.I):
         out["eps_parse_reason"] = "eps_label_not_found"
@@ -570,6 +553,12 @@ def extract_metrics(text):
     if not out.get("quarter_period"):
         out["quarter_period"] = _find_quarter_period(text)
 
+    # Add voluntary disclosures after the existing attention-report parser.
+    # Do not discard a parsed quarter or YoY comparison.
+    direct = _extract_direct_self_report_metrics(text)
+    if direct and out["monthly_eps"] is None:
+        out.update(direct)
+
     out["eps"] = out["monthly_eps"]
 
     if (
@@ -577,6 +566,10 @@ def extract_metrics(text):
         and out["quarter_eps"] is not None
     ):
         out["eps_parse_status"] = "parsed"
+        out["eps_parse_reason"] = ""
+
+    elif direct and out["monthly_eps"] is not None:
+        out["eps_parse_status"] = "direct_self_report"
         out["eps_parse_reason"] = ""
 
     elif (
@@ -1149,7 +1142,7 @@ def fetch_mops_company_today(ticker, iso_date):
         "hits": 0,
         "error": ";".join(errors),
     }
-    def fetch_mops_search():
+def fetch_mops_search():
     """
     v26 SAFE / ADDITIVE discovery
 
