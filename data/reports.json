@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-07T09:48+08:00",
+  "updated_at": "2026-10-07T09:52+08:00",
   "items": [
     {
       "id": "1ozqCKe_hqFg_BGjcOHdUbtaYT2XGFR7Z",
@@ -3393,7 +3393,7 @@
       "source_text_hash": "17deeea279896b8d7da1a59ac65c11828870a30700acee2442a544544386fcb7"
     }
   ],
-  "_help": "由 Google Drive 券商報告自動整理。group_date 使用 Drive 收到日期做網站分組；date 保留報告本身日期。公司身分與目標價經來源驗證，僅 Telegram 推播；重新審核失敗時保留上一次成功報告內容，重新審核成功後才更新驗證結果。",
+  "_help": "由 Google Drive 券商報告自動整理。group_date 使用 Drive 收到日期做網站分組；date 保留報告本身日期。公司身分與目標價經來源驗證，僅 Telegram 推播；同一 audit version 驗證失敗後不會由排程無限重試；來源文字或 audit version 改變後才會重新核對。",
   "_telegram_initialized": true,
   "_action_rule": "個股報告：若新舊目標價皆存在且不同，target_price_new > target_price_old 歸類上調；target_price_new < target_price_old 歸類下調；初評優先保留；無可比較目標價時保留報告明確評等動作。"
 }
