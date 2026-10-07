@@ -5,11 +5,12 @@ import json
 import math
 import os
 import re
+import time
 import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-07-v29-direct-self-report-prev-quarter-eps"
+VERSION = "2026-10-07-v30-safe-revenue-prefilter-timing"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -170,6 +171,36 @@ def subject_is_candidate(subject):
         or any(compact_text(k) in text for k in ATTENTION_KEYWORDS)
         or any(compact_text(k) in text for k in SELF_REPORT_KEYWORDS)
     )
+
+
+def pure_revenue_self_report_subject(subject):
+    """Conservatively identify titles that are clearly revenue-only disclosures.
+
+    Attention-trading announcements are never filtered.  Any title mentioning
+    profit/loss, EPS, net income, or earnings stays on the original detail path.
+    """
+    text = compact_text(subject)
+
+    if not text:
+        return False
+
+    if any(compact_text(k) in text for k in ATTENTION_KEYWORDS):
+        return False
+
+    if not re.search(r"(?:自結|自行結算)", text):
+        return False
+
+    if not re.search(r"(?:合併)?(?:營業)?(?:收入|營收)", text):
+        return False
+
+    if re.search(
+        r"損益|盈餘|淨利|淨損|稅後|每股|EPS|財務業務|近期財務",
+        text,
+        re.I,
+    ):
+        return False
+
+    return True
 
 
 def _number(raw, growth=False):
@@ -918,6 +949,12 @@ def parse_candidate_row(row, source_keyword):
         )
         and "注意交易" not in compact
     ):
+        return None
+
+    # Safe speed optimization: skip only titles that are unambiguously
+    # revenue-only self-reports.  Attention-trading and any ambiguous title
+    # continue through the exact original detail-fetch path.
+    if pure_revenue_self_report_subject(text):
         return None
 
     date_match = re.search(
@@ -2213,6 +2250,7 @@ def main():
             identity(item)
         ] = item
 
+    mops_started = time.perf_counter()
     try:
         mops = fetch_mops_search()
 
@@ -2244,6 +2282,12 @@ def main():
             repr(exc),
         )
 
+    print(
+        "TIMING mops_search",
+        f"{time.perf_counter() - mops_started:.2f}s",
+    )
+
+    openapi_started = time.perf_counter()
     twse_result = fetch_openapi(
         "twse",
         TWSE_NEWS,
@@ -2252,6 +2296,10 @@ def main():
     tpex_result = fetch_openapi(
         "tpex",
         TPEX_NEWS,
+    )
+    print(
+        "TIMING official_openapi",
+        f"{time.perf_counter() - openapi_started:.2f}s",
     )
 
     fresh_map = {}
