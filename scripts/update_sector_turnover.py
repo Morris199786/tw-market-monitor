@@ -201,6 +201,18 @@ def main():
         history_sector.append((snap.get("date"), aggregate_sector_turnover(sectors, stock_turnover)))
 
     official_today = official_today_if_available(today)
+    current_time = now.timetz().replace(tzinfo=None)
+    market_is_open = (
+        now.weekday() < 5
+        and MARKET_OPEN <= current_time < MARKET_CLOSE
+    )
+
+    # 顯示模式只看台灣交易時間：
+    # 09:00–13:30 = 盤中成交進度
+    # 13:30 後 = 盤後較5日均
+    # 成交金額來源則獨立判斷：有官方資料優先用官方；否則暫用 MIS 估算。
+    intraday = market_is_open
+    progress = session_progress(now)
 
     if official_today:
         stock_turnover_today = {
@@ -210,14 +222,14 @@ def main():
         }
         source = "official_close"
         estimated = False
-        intraday = False
-        progress = 1.0
     else:
         stock_turnover_today = fetch_intraday_turnover(tickers, master)
-        source = "TWSE_MIS_price_x_accumulated_volume"
+        source = (
+            "TWSE_MIS_price_x_accumulated_volume"
+            if intraday
+            else "TWSE_MIS_close_price_x_accumulated_volume"
+        )
         estimated = True
-        intraday = True
-        progress = session_progress(now)
 
     today_sector = aggregate_sector_turnover(sectors, stock_turnover_today)
 
