@@ -1,232 +1,169 @@
 /* =========================================================
-   Heatmap 近 5 日強勢股 Top 2 金色標記
-   2026-10-06
+   Heatmap 強勢股金標 + 價 / 量模式
+   2026-10-07
 
-   規則：
-   1. 只有「當日」熱力圖顯示金標
-   2. 金標固定代表各族群「近 5 日累積漲幅前 2 強」
-   3. 5日 / 10日 / 20日模式不顯示金標
-   4. 個股排序仍由 app.js 依目前選擇期間處理
-   5. 不改動族群排序、不自行輪詢 heatmap.json
+   價：
+   - 完全保留 app.js 原本熱力圖
+   - 當日模式顯示各族群近5日漲幅前2金標
+
+   量：
+   - 方塊面積 = 當日族群成交金額
+   - 顏色 = 當日族群市值漲跌幅（紅漲綠跌）
+   - 固定單位 = 億元
+   - 顯示當日成交、5日均、相對5日均變化
    ========================================================= */
 
 (function () {
   "use strict";
 
-  const TOP_COUNT = 2;
-  const RANK_PERIOD = "5";
-  const CACHE_MS = 5 * 60 * 1000;
-  const APPLY_DEBOUNCE = 180;
+  const CACHE_MS =
+    5 * 60 * 1000;
 
   let detailCache = null;
-  let detailCacheAt = 0;
-  let detailPromise = null;
+  let detailAt = 0;
 
-  let applyTimer = null;
-  let applying = false;
+  let volumeCache = null;
+  let volumeAt = 0;
+
+  let mode = "price";
   let observer = null;
+  let applying = false;
 
-  /* =========================================================
-     Heatmap 是否正在顯示
-     ========================================================= */
-
-  function heatmapVisible() {
-    const page =
-      document.getElementById(
-        "heat"
+  const $ =
+    selector =>
+      document.querySelector(
+        selector
       );
 
-    return !!(
-      page &&
-      page.classList.contains(
-        "active"
+  const num =
+    value =>
+      Number.isFinite(
+        Number(value)
       )
+        ? Number(value)
+        : null;
+
+  /* =========================================================
+     Heatmap 是否顯示
+     ========================================================= */
+
+  function visible() {
+    return !!(
+      $("#heat")
+        ?.classList
+        .contains("active")
     );
   }
 
   /* =========================================================
-     目前熱力圖期間
+     目前價格熱力圖期間
      ========================================================= */
 
-  function activePeriod() {
-    if (
+  function period() {
+    return (
       typeof
         window
           .getHeatmapActivePeriod ===
       "function"
-    ) {
-      return String(
-        window
-          .getHeatmapActivePeriod() ||
-        "1"
+    )
+      ? String(
+          window
+            .getHeatmapActivePeriod() ||
+          "1"
+        )
+      : "1";
+  }
+
+  /* =========================================================
+     JSON
+     ========================================================= */
+
+  async function getJson(
+    url,
+    force = false
+  ) {
+    const version =
+      force
+        ? Date.now()
+        : Math.floor(
+            Date.now() /
+            CACHE_MS
+          );
+
+    const response =
+      await fetch(
+        `${url}?v=${version}`,
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `${url} HTTP ${response.status}`
       );
     }
 
-    return "1";
+    return response.json();
   }
 
-  /* =========================================================
-     工具
-     ========================================================= */
-
-  function latestValidNumber(
-    values
-  ) {
-    const arr =
-      Array.isArray(values)
-        ? values
-        : [];
-
-    for (
-      let i =
-        arr.length - 1;
-      i >= 0;
-      i -= 1
-    ) {
-      const n =
-        Number(
-          arr[i]
-        );
-
-      if (
-        Number.isFinite(n)
-      ) {
-        return n;
-      }
-    }
-
-    return null;
-  }
-
-  function tickerFromRow(
-    row
-  ) {
-    const candidates = [
-      row?.dataset?.ticker,
-
-      row?.getAttribute?.(
-        "data-ticker"
-      ),
-
-      row
-        ?.querySelector?.(
-          "[data-ticker]"
-        )
-        ?.getAttribute?.(
-          "data-ticker"
-        ),
-
-      row
-        ?.querySelector?.(
-          ".t"
-        )
-        ?.textContent,
-
-      row?.textContent
-    ];
-
-    for (
-      const candidate
-      of candidates
-    ) {
-      const match =
-        String(
-          candidate ||
-          ""
-        )
-          .match(
-            /\b\d{4,6}\b/
-          );
-
-      if (match) {
-        return match[0];
-      }
-    }
-
-    return "";
-  }
-
-  /* =========================================================
-     stock_detail.json
-     ========================================================= */
-
-  async function getStockDetail(
+  async function getDetail(
     force = false
   ) {
-    const now =
-      Date.now();
-
     if (
       !force &&
       detailCache &&
-      now -
-        detailCacheAt <
+      Date.now() -
+        detailAt <
         CACHE_MS
     ) {
       return detailCache;
     }
 
+    detailCache =
+      await getJson(
+        "./data/stock_detail.json",
+        force
+      );
+
+    detailAt =
+      Date.now();
+
+    return detailCache;
+  }
+
+  async function getVolume(
+    force = false
+  ) {
     if (
-      detailPromise
+      !force &&
+      volumeCache &&
+      Date.now() -
+        volumeAt <
+        CACHE_MS
     ) {
-      return detailPromise;
+      return volumeCache;
     }
 
-    detailPromise =
-      fetch(
-        "./data/stock_detail.json?v=" +
-        now,
-        {
-          cache:
-            "no-store"
-        }
-      )
-        .then(
-          response => {
-            if (
-              !response.ok
-            ) {
-              throw new Error(
-                "stock_detail.json HTTP " +
-                response.status
-              );
-            }
+    volumeCache =
+      await getJson(
+        "./data/sector_turnover.json",
+        force
+      );
 
-            return (
-              response.json()
-            );
-          }
-        )
-        .then(
-          data => {
-            detailCache =
-              data;
+    volumeAt =
+      Date.now();
 
-            detailCacheAt =
-              Date.now();
-
-            return data;
-          }
-        )
-        .finally(
-          () => {
-            detailPromise =
-              null;
-          }
-        );
-
-    return detailPromise;
+    return volumeCache;
   }
 
   /* =========================================================
-     金標樣式
+     CSS
      ========================================================= */
 
-  function injectStyles() {
+  function injectStyle() {
     if (
-      document.getElementById(
-        "heatStrengthStyle"
-      )
+      $("#heatPriceVolumeStyle")
     ) {
       return;
     }
@@ -237,12 +174,93 @@
       );
 
     style.id =
-      "heatStrengthStyle";
+      "heatPriceVolumeStyle";
 
     style.textContent = `
 
       /* =========================
-         上方金色說明
+         價 / 量切換
+         ========================= */
+
+      .heat-pv-wrap{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        margin:0 0 12px;
+        flex-wrap:wrap;
+      }
+
+      .heat-pv-tabs{
+        display:inline-flex;
+        padding:3px;
+
+        border:
+          1px solid
+          rgba(
+            148,
+            163,
+            184,
+            .30
+          );
+
+        border-radius:12px;
+
+        background:
+          rgba(
+            148,
+            163,
+            184,
+            .10
+          );
+      }
+
+      .heat-pv-btn{
+        border:0;
+
+        background:
+          transparent;
+
+        color:
+          inherit;
+
+        font:
+          inherit;
+
+        font-size:14px;
+        font-weight:800;
+
+        padding:
+          8px 18px;
+
+        border-radius:
+          9px;
+
+        cursor:pointer;
+      }
+
+      .heat-pv-btn.active{
+        background:#fff;
+
+        box-shadow:
+          0 1px 5px
+          rgba(
+            15,
+            23,
+            42,
+            .12
+          );
+
+        color:#111827;
+      }
+
+      html[data-theme="dark"]
+      .heat-pv-btn.active{
+        background:#29313d;
+        color:#f8fafc;
+      }
+
+      /* =========================
+         金標說明
          ========================= */
 
       .heat-strength-note{
@@ -279,64 +297,32 @@
             .56
           );
 
-        color:
-          #765314;
+        color:#765314;
 
         font-size:
           10px;
 
         font-weight:
           800;
-
-        line-height:
-          1.35;
       }
 
       .heat-strength-swatch{
         width:11px;
         height:11px;
 
-        flex:
-          0 0 11px;
-
-        border:
-          1px solid
-          rgba(
-            202,
-            138,
-            4,
-            .42
-          );
-
         border-radius:
           4px;
 
         background:
-          linear-gradient(
-            180deg,
-            rgba(
-              253,
-              230,
-              138,
-              .92
-            ),
-            rgba(
-              254,
-              243,
-              199,
-              .92
-            )
-          );
+          #f5d76e;
       }
 
       /* =========================
-         Top 2 金色背景
+         近5日 Top 2
          ========================= */
 
       #heatGrid
-      .heat-stock.heat-stock-top2{
-        position:relative;
-
+      .heat-stock-top2{
         border-color:
           rgba(
             202,
@@ -363,38 +349,11 @@
             )
           )
           !important;
-
-        box-shadow:
-          inset
-          0 0 0 1px
-          rgba(
-            245,
-            158,
-            11,
-            .08
-          ),
-          0 4px 12px
-          rgba(
-            161,
-            98,
-            7,
-            .08
-          );
       }
-
-      /* =========================
-         Top 1 / Top 2 標籤
-         ========================= */
 
       #heatGrid
       .heat-strength-rank{
         display:inline-flex;
-
-        align-items:center;
-        justify-content:center;
-
-        flex:
-          0 0 auto;
 
         margin-left:
           6px;
@@ -431,30 +390,12 @@
         font-weight:
           900;
 
-        line-height:
-          1;
-
         white-space:
           nowrap;
-
-        vertical-align:
-          middle;
       }
-
-      /* =========================
-         深色模式
-         ========================= */
 
       html[data-theme="dark"]
       .heat-strength-note{
-        border-color:
-          rgba(
-            234,
-            179,
-            8,
-            .30
-          );
-
         background:
           rgba(
             113,
@@ -468,45 +409,8 @@
       }
 
       html[data-theme="dark"]
-      .heat-strength-swatch{
-        border-color:
-          rgba(
-            250,
-            204,
-            21,
-            .42
-          );
-
-        background:
-          linear-gradient(
-            180deg,
-            rgba(
-              161,
-              98,
-              7,
-              .72
-            ),
-            rgba(
-              113,
-              63,
-              18,
-              .72
-            )
-          );
-      }
-
-      html[data-theme="dark"]
       #heatGrid
-      .heat-stock.heat-stock-top2{
-        border-color:
-          rgba(
-            250,
-            204,
-            21,
-            .42
-          )
-          !important;
-
+      .heat-stock-top2{
         background:
           linear-gradient(
             135deg,
@@ -524,46 +428,176 @@
             )
           )
           !important;
+      }
+
+      /* =========================
+         成交值 Treemap
+         ========================= */
+
+      .turnover-treemap{
+        position:relative;
+
+        width:100%;
+        height:680px;
+
+        border-radius:
+          16px;
+
+        overflow:hidden;
+
+        background:
+          rgba(
+            148,
+            163,
+            184,
+            .08
+          );
+      }
+
+      .turnover-box{
+        position:absolute;
+
+        box-sizing:
+          border-box;
+
+        padding:3px;
+      }
+
+      .turnover-inner{
+        width:100%;
+        height:100%;
+
+        box-sizing:
+          border-box;
+
+        border-radius:
+          10px;
+
+        padding:12px;
+
+        overflow:hidden;
+
+        color:#fff;
+
+        display:flex;
+
+        flex-direction:
+          column;
+
+        justify-content:
+          center;
 
         box-shadow:
           inset
           0 0 0 1px
           rgba(
-            250,
-            204,
-            21,
-            .08
-          ),
-          0 4px 14px
-          rgba(
-            0,
-            0,
-            0,
-            .12
+            255,
+            255,
+            255,
+            .18
           );
       }
 
-      html[data-theme="dark"]
-      #heatGrid
-      .heat-strength-rank{
-        border-color:
-          rgba(
-            250,
-            204,
-            21,
-            .28
+      /* 漲 */
+
+      .turnover-inner.r4{
+        background:#dc2626;
+      }
+
+      .turnover-inner.r3{
+        background:#e54848;
+      }
+
+      .turnover-inner.r2{
+        background:#ef6b6b;
+      }
+
+      .turnover-inner.r1{
+        background:#b76b6b;
+      }
+
+      /* 跌 */
+
+      .turnover-inner.g4{
+        background:#16834b;
+      }
+
+      .turnover-inner.g3{
+        background:#29965b;
+      }
+
+      .turnover-inner.g2{
+        background:#4a9d70;
+      }
+
+      .turnover-inner.g1{
+        background:#668979;
+      }
+
+      .turnover-inner.gray{
+        background:#6b7280;
+      }
+
+      .turnover-name{
+        font-size:
+          clamp(
+            12px,
+            1.35vw,
+            22px
           );
 
-        background:
-          rgba(
-            66,
-            32,
-            6,
-            .88
+        font-weight:
+          900;
+
+        line-height:
+          1.05;
+
+        margin-bottom:
+          7px;
+      }
+
+      .turnover-main{
+        font-size:
+          clamp(
+            12px,
+            1.2vw,
+            20px
           );
 
-        color:
-          #fde68a;
+        font-weight:
+          900;
+
+        line-height:
+          1.15;
+      }
+
+      .turnover-sub{
+        font-size:
+          clamp(
+            9px,
+            .85vw,
+            14px
+          );
+
+        font-weight:
+          750;
+
+        line-height:
+          1.35;
+
+        margin-top:
+          5px;
+      }
+
+      .turnover-note{
+        font-size:
+          12px;
+
+        opacity:
+          .72;
+
+        margin:
+          0 0 10px;
       }
 
       /* =========================
@@ -573,40 +607,41 @@
       @media(
         max-width:720px
       ){
-        .heat-strength-note{
-          margin-bottom:
-            10px;
+
+        .heat-pv-btn{
+          font-size:
+            13px;
 
           padding:
-            7px 9px;
-
-          font-size:
-            9px;
+            7px 16px;
         }
 
-        #heatGrid
-        .heat-strength-rank{
-          margin-left:
-            4px;
+        .turnover-treemap{
+          height:
+            760px;
+        }
 
+        .turnover-inner{
           padding:
-            3px 5px;
-
-          font-size:
             8px;
         }
-      }
 
-      @media(
-        max-width:390px
-      ){
-        #heatGrid
-        .heat-strength-rank{
-          padding:
-            2px 4px;
-
+        .turnover-name{
           font-size:
-            7px;
+            11px;
+
+          margin-bottom:
+            4px;
+        }
+
+        .turnover-main{
+          font-size:
+            11px;
+        }
+
+        .turnover-sub{
+          font-size:
+            8px;
         }
       }
     `;
@@ -617,23 +652,118 @@
   }
 
   /* =========================================================
+     價 / 量按鈕
+     ========================================================= */
+
+  function ensureTabs() {
+    const grid =
+      $("#heatGrid");
+
+    if (!grid) {
+      return;
+    }
+
+    let wrap =
+      $("#heatPriceVolumeWrap");
+
+    if (!wrap) {
+      wrap =
+        document.createElement(
+          "div"
+        );
+
+      wrap.id =
+        "heatPriceVolumeWrap";
+
+      wrap.className =
+        "heat-pv-wrap";
+
+      wrap.innerHTML = `
+        <div
+          class="heat-pv-tabs"
+        >
+          <button
+            type="button"
+            class="
+              heat-pv-btn
+              active
+            "
+            data-heat-view="price"
+          >
+            價
+          </button>
+
+          <button
+            type="button"
+            class="heat-pv-btn"
+            data-heat-view="volume"
+          >
+            量
+          </button>
+        </div>
+      `;
+
+      grid
+        .parentNode
+        .insertBefore(
+          wrap,
+          grid
+        );
+
+      wrap.addEventListener(
+        "click",
+        event => {
+          const button =
+            event
+              .target
+              .closest(
+                "[data-heat-view]"
+              );
+
+          if (!button) {
+            return;
+          }
+
+          setMode(
+            button.dataset
+              .heatView
+          );
+        }
+      );
+    }
+
+    wrap
+      .querySelectorAll(
+        "[data-heat-view]"
+      )
+      .forEach(
+        button => {
+          button
+            .classList
+            .toggle(
+              "active",
+              button.dataset
+                .heatView ===
+                mode
+            );
+        }
+      );
+  }
+
+  /* =========================================================
      金標說明
      ========================================================= */
 
-  function ensureStrengthNote() {
+  function ensureNote() {
     const grid =
-      document.getElementById(
-        "heatGrid"
-      );
+      $("#heatGrid");
 
     if (!grid) {
       return;
     }
 
     let note =
-      document.getElementById(
-        "heatStrengthNote"
-      );
+      $("#heatStrengthNote");
 
     if (!note) {
       note =
@@ -655,14 +785,9 @@
         );
     }
 
-    /*
-     * 只有「當日」顯示金標說明
-     * 5 / 10 / 20 日完全隱藏
-     */
-
     if (
-      activePeriod() !==
-      "1"
+      mode !== "price" ||
+      period() !== "1"
     ) {
       note.style.display =
         "none";
@@ -676,7 +801,6 @@
     note.innerHTML = `
       <span
         class="heat-strength-swatch"
-        aria-hidden="true"
       ></span>
 
       <span>
@@ -686,37 +810,57 @@
   }
 
   /* =========================================================
-     清除舊金標
+     金標工具
      ========================================================= */
 
-  function clearStrengthMarks() {
+  function ticker(row) {
+    return (
+      row?.textContent ||
+      ""
+    )
+      .match(
+        /\b\d{4,6}\b/
+      )?.[0] || "";
+  }
+
+  function last(arr) {
+    if (
+      !Array.isArray(arr)
+    ) {
+      return null;
+    }
+
+    for (
+      let i =
+        arr.length - 1;
+      i >= 0;
+      i -= 1
+    ) {
+      const value =
+        num(arr[i]);
+
+      if (
+        value !== null
+      ) {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  function clearGold() {
     document
       .querySelectorAll(
         "#heatGrid .heat-stock-top2"
       )
       .forEach(
-        row => {
-          row
+        element => {
+          element
             .classList
             .remove(
               "heat-stock-top2"
             );
-
-          row.removeAttribute(
-            "data-period-rank"
-          );
-
-          row.removeAttribute(
-            "data-period-return"
-          );
-
-          row.removeAttribute(
-            "data-5d-rank"
-          );
-
-          row.removeAttribute(
-            "data-5d-return"
-          );
         }
       );
 
@@ -725,413 +869,707 @@
         "#heatGrid .heat-strength-rank"
       )
       .forEach(
-        label => {
-          label.remove();
+        element => {
+          element.remove();
         }
       );
   }
 
-  /* =========================================================
-     加排名標籤
-     ========================================================= */
-
-  function addRankLabel(
-    row,
-    rank
-  ) {
-    const ticker =
-      row.querySelector(
-        ".t"
-      );
-
-    if (!ticker) {
-      return;
-    }
-
-    const old =
-      row.querySelector(
-        ".heat-strength-rank"
-      );
-
-    if (old) {
-      old.remove();
-    }
-
-    const label =
-      document.createElement(
-        "span"
-      );
-
-    label.className =
-      "heat-strength-rank";
-
-    label.textContent =
-      `近5日漲幅第${rank}`;
-
-    /*
-     * 股票代號後面
-     * 不蓋右側當日漲跌幅
-     */
-
-    ticker.insertAdjacentElement(
-      "afterend",
-      label
-    );
-  }
-
-  /* =========================================================
-     固定取得近 5 日累積報酬
-     ========================================================= */
-
-  function stock5dReturn(
-    ticker,
-    detailData
-  ) {
-    const stock =
-      detailData
-        ?.stocks
-        ?.[ticker];
-
-    const series =
-      stock
-        ?.returns_by_period
-        ?.[RANK_PERIOD] ||
-      stock?.returns;
-
-    return (
-      latestValidNumber(
-        series
-      )
-    );
-  }
-
-  /* =========================================================
-     單一族群近 5 日 Top 2
-     ========================================================= */
-
-  function markTopStocks(
-    detail,
-    detailData
-  ) {
-    /*
-     * 非當日模式
-     * 不產生任何金標
-     */
-
-    if (
-      activePeriod() !==
-      "1"
-    ) {
-      return;
-    }
-
-    const rows =
-      [
-        ...detail
-          .querySelectorAll(
-            ".heat-stock"
-          )
-      ];
-
-    if (!rows.length) {
-      return;
-    }
-
-    const ranked =
-      rows
-        .map(
-          row => {
-            const ticker =
-              tickerFromRow(
-                row
-              );
-
-            return {
-              row,
-              ticker,
-
-              value:
-                stock5dReturn(
-                  ticker,
-                  detailData
-                )
-            };
-          }
-        )
-        .filter(
-          item =>
-            item.ticker &&
-            item.value !==
-              null &&
-            Number.isFinite(
-              item.value
-            )
-        )
-        .sort(
-          (
-            a,
-            b
-          ) =>
-            b.value -
-            a.value
-        );
-
-    ranked
-      .slice(
-        0,
-        TOP_COUNT
-      )
-      .forEach(
-        (
-          item,
-          index
-        ) => {
-          const rank =
-            index + 1;
-
-          item
-            .row
-            .classList
-            .add(
-              "heat-stock-top2"
-            );
-
-          item
-            .row
-            .setAttribute(
-              "data-period-rank",
-              String(rank)
-            );
-
-          item
-            .row
-            .setAttribute(
-              "data-period-return",
-              String(
-                item.value
-              )
-            );
-
-          /*
-           * 保留舊版屬性相容性
-           */
-
-          item
-            .row
-            .setAttribute(
-              "data-5d-rank",
-              String(rank)
-            );
-
-          item
-            .row
-            .setAttribute(
-              "data-5d-return",
-              String(
-                item.value
-              )
-            );
-
-          addRankLabel(
-            item.row,
-            rank
-          );
-        }
-      );
-  }
-
-  /* =========================================================
-     套用金標
-     ========================================================= */
-
-  async function applyStrengthMarks(
-    forceData = false
+  async function applyGold(
+    force = false
   ) {
     if (
-      applying ||
-      !heatmapVisible()
+      mode !== "price" ||
+      period() !== "1" ||
+      !visible()
     ) {
-      return;
-    }
-
-    const grid =
-      document.getElementById(
-        "heatGrid"
-      );
-
-    if (!grid) {
-      return;
-    }
-
-    injectStyles();
-
-    ensureStrengthNote();
-
-    /*
-     * 先清除舊標記
-     *
-     * 從當日切換到
-     * 5 / 10 / 20 日時
-     * 金標會立即消失
-     */
-
-    clearStrengthMarks();
-
-    if (
-      activePeriod() !==
-      "1"
-    ) {
-      ensureStrengthNote();
-
       return;
     }
 
     const details =
       [
-        ...grid
+        ...document
           .querySelectorAll(
-            ".heat-detail"
+            "#heatGrid .heat-detail"
           )
       ];
-
-    /*
-     * 沒有展開族群
-     * 不下載 stock_detail
-     */
 
     if (!details.length) {
       return;
     }
 
-    applying =
-      true;
+    const data =
+      await getDetail(
+        force
+      );
 
-    try {
-      const detailData =
-        await getStockDetail(
-          forceData
-        );
+    clearGold();
 
-      /*
-       * await 期間如果已經切到
-       * 5 / 10 / 20 日
-       * 就不要再補金標
-       */
+    details.forEach(
+      detail => {
+        [
+          ...detail
+            .querySelectorAll(
+              ".heat-stock"
+            )
+        ]
+          .map(
+            row => {
+              const stockTicker =
+                ticker(row);
+
+              const stock =
+                data
+                  ?.stocks
+                  ?.[
+                    stockTicker
+                  ];
+
+              return {
+                row,
+
+                value:
+                  last(
+                    stock
+                      ?.returns_by_period
+                      ?.["5"] ||
+                    stock
+                      ?.returns
+                  )
+              };
+            }
+          )
+          .filter(
+            item =>
+              item.value !==
+              null
+          )
+          .sort(
+            (a, b) =>
+              b.value -
+              a.value
+          )
+          .slice(
+            0,
+            2
+          )
+          .forEach(
+            (
+              item,
+              index
+            ) => {
+              item
+                .row
+                .classList
+                .add(
+                  "heat-stock-top2"
+                );
+
+              const target =
+                item
+                  .row
+                  .querySelector(
+                    ".t"
+                  );
+
+              if (!target) {
+                return;
+              }
+
+              const label =
+                document
+                  .createElement(
+                    "span"
+                  );
+
+              label.className =
+                "heat-strength-rank";
+
+              label.textContent =
+                `近5日漲幅第${
+                  index + 1
+                }`;
+
+              target
+                .insertAdjacentElement(
+                  "afterend",
+                  label
+                );
+            }
+          );
+      }
+    );
+  }
+
+  /* =========================================================
+     成交金額格式
+     ========================================================= */
+
+  function fmtYi(value) {
+    const yi =
+      Number(
+        value || 0
+      ) /
+      100000000;
+
+    if (yi >= 10) {
+      return (
+        Math
+          .round(yi)
+          .toLocaleString(
+            "zh-TW"
+          ) +
+        " 億"
+      );
+    }
+
+    return (
+      yi.toFixed(1) +
+      " 億"
+    );
+  }
+
+  function pct(value) {
+    const n =
+      num(value);
+
+    if (n === null) {
+      return "—";
+    }
+
+    return (
+      (
+        n >= 0
+          ? "+"
+          : ""
+      ) +
+      n.toFixed(2) +
+      "%"
+    );
+  }
+
+  /* =========================================================
+     漲跌顏色
+     ========================================================= */
+
+  function heatClass(value) {
+    const n =
+      num(value);
+
+    if (n === null) {
+      return "gray";
+    }
+
+    const abs =
+      Math.abs(n);
+
+    const level =
+      abs >= 3
+        ? 4
+        : abs >= 2
+          ? 3
+          : abs >= 1
+            ? 2
+            : 1;
+
+    return (
+      n >= 0
+        ? "r"
+        : "g"
+    ) + level;
+  }
+
+  /* =========================================================
+     Treemap layout
+
+     面積依成交金額比例
+     ========================================================= */
+
+  function layout(
+    items,
+    x,
+    y,
+    width,
+    height,
+    output = []
+  ) {
+    if (!items.length) {
+      return output;
+    }
+
+    if (
+      items.length === 1
+    ) {
+      output.push({
+        ...items[0],
+        x,
+        y,
+        w: width,
+        h: height
+      });
+
+      return output;
+    }
+
+    const total =
+      items.reduce(
+        (
+          sum,
+          item
+        ) =>
+          sum +
+          item.value,
+        0
+      );
+
+    let accumulated = 0;
+    let cut = 1;
+
+    for (
+      let i = 0;
+      i <
+        items.length - 1;
+      i += 1
+    ) {
+      accumulated +=
+        items[i].value;
 
       if (
-        activePeriod() !==
-        "1"
+        accumulated >=
+        total / 2
       ) {
-        clearStrengthMarks();
+        cut =
+          i + 1;
 
-        ensureStrengthNote();
-
-        return;
+        break;
       }
-
-      details.forEach(
-        detail => {
-          markTopStocks(
-            detail,
-            detailData
-          );
-        }
-      );
-
-      ensureStrengthNote();
-
-    } catch (error) {
-      console.error(
-        "[Heat Strength]",
-        error
-      );
-
-    } finally {
-      applying =
-        false;
     }
-  }
 
-  /* =========================================================
-     Debounce
-     ========================================================= */
+    const first =
+      items.slice(
+        0,
+        cut
+      );
 
-  function scheduleApply(
-    delay =
-      APPLY_DEBOUNCE,
+    const second =
+      items.slice(
+        cut
+      );
 
-    forceData =
-      false
-  ) {
+    const firstTotal =
+      first.reduce(
+        (
+          sum,
+          item
+        ) =>
+          sum +
+          item.value,
+        0
+      );
+
+    const ratio =
+      total > 0
+        ? firstTotal /
+          total
+        : 0.5;
+
     if (
-      applyTimer
+      width >=
+      height
     ) {
-      clearTimeout(
-        applyTimer
+      layout(
+        first,
+        x,
+        y,
+        width *
+          ratio,
+        height,
+        output
+      );
+
+      layout(
+        second,
+        x +
+          width *
+            ratio,
+        y,
+        width *
+          (
+            1 -
+            ratio
+          ),
+        height,
+        output
+      );
+    } else {
+      layout(
+        first,
+        x,
+        y,
+        width,
+        height *
+          ratio,
+        output
+      );
+
+      layout(
+        second,
+        x,
+        y +
+          height *
+            ratio,
+        width,
+        height *
+          (
+            1 -
+            ratio
+          ),
+        output
       );
     }
 
-    applyTimer =
-      setTimeout(
-        () => {
-          applyTimer =
-            null;
-
-          applyStrengthMarks(
-            forceData
-          );
-        },
-        delay
-      );
+    return output;
   }
 
   /* =========================================================
-     監聽展開 / 收合
+     量熱力圖
      ========================================================= */
 
-  function observeHeatGrid() {
+  async function renderVolume(
+    force = false
+  ) {
     const grid =
-      document.getElementById(
-        "heatGrid"
-      );
+      $("#heatGrid");
 
     if (!grid) {
       return;
     }
 
+    const [
+      volumeData,
+      heatData
+    ] =
+      await Promise.all([
+        getVolume(force),
+
+        getJson(
+          "./data/heatmap.json",
+          force
+        )
+      ]);
+
+    const changes =
+      new Map(
+        (
+          heatData
+            .sectors ||
+          []
+        )
+          .map(
+            sector => [
+              sector.name,
+              num(
+                sector
+                  .change_pct
+              )
+            ]
+          )
+      );
+
+    const items =
+      (
+        volumeData
+          .sectors ||
+        []
+      )
+        .map(
+          sector => ({
+            ...sector,
+
+            value:
+              Number(
+                sector
+                  .turnover ||
+                0
+              ),
+
+            change:
+              changes.get(
+                sector.name
+              )
+          })
+        )
+        .filter(
+          sector =>
+            sector.value >
+            0
+        )
+        .sort(
+          (a, b) =>
+            b.value -
+            a.value
+        );
+
+    const boxes =
+      layout(
+        items,
+        0,
+        0,
+        100,
+        100,
+        []
+      );
+
+    const estimate =
+      volumeData
+        .estimated
+        ? "盤中成交金額為即時估算；"
+        : "";
+
+    grid.innerHTML = `
+
+      <div
+        class="turnover-note"
+      >
+        ${estimate}
+        成交金額與5日均統一使用「億元」
+      </div>
+
+      <div
+        class="turnover-treemap"
+      >
+
+        ${
+          boxes
+            .map(
+              box => {
+                const area =
+                  box.w *
+                  box.h;
+
+                const tiny =
+                  area < 80;
+
+                const veryTiny =
+                  area < 35;
+
+                const avgChange =
+                  box
+                    .vs_avg5_pct;
+
+                const avgText =
+                  avgChange ===
+                    null ||
+                  avgChange ===
+                    undefined
+                    ? ""
+                    : `（${
+                        avgChange >= 0
+                          ? "+"
+                          : ""
+                      }${
+                        Number(
+                          avgChange
+                        ).toFixed(0)
+                      }%）`;
+
+                return `
+                  <div
+                    class="turnover-box"
+
+                    style="
+                      left:${box.x}%;
+                      top:${box.y}%;
+                      width:${box.w}%;
+                      height:${box.h}%;
+                    "
+                  >
+                    <div
+                      class="
+                        turnover-inner
+                        ${
+                          heatClass(
+                            box.change
+                          )
+                        }
+                      "
+
+                      title="
+                        ${box.name}
+                        ｜成交 ${fmtYi(
+                          box.turnover
+                        )}
+                        ｜5日均 ${fmtYi(
+                          box.avg5_turnover
+                        )}
+                        ｜市值 ${pct(
+                          box.change
+                        )}
+                      "
+                    >
+
+                      <div
+                        class="turnover-name"
+                      >
+                        ${box.name}
+                      </div>
+
+                      <div
+                        class="turnover-main"
+                      >
+                        成交
+                        ${fmtYi(
+                          box.turnover
+                        )}
+                      </div>
+
+                      ${
+                        veryTiny
+                          ? ""
+                          : `
+                            <div
+                              class="turnover-sub"
+                            >
+                              5日均
+                              ${fmtYi(
+                                box.avg5_turnover
+                              )}
+                              ${avgText}
+                            </div>
+                          `
+                      }
+
+                      ${
+                        tiny
+                          ? ""
+                          : `
+                            <div
+                              class="turnover-sub"
+                            >
+                              市值
+                              ${pct(
+                                box.change
+                              )}
+                            </div>
+                          `
+                      }
+
+                    </div>
+                  </div>
+                `;
+              }
+            )
+            .join("")
+        }
+
+      </div>
+    `;
+  }
+
+  /* =========================================================
+     價 / 量切換
+     ========================================================= */
+
+  async function setMode(
+    next
+  ) {
     if (
-      observer
+      next !== "price" &&
+      next !== "volume"
     ) {
+      return;
+    }
+
+    mode =
+      next;
+
+    ensureTabs();
+    ensureNote();
+
+    clearGold();
+
+    /*
+     * 價
+     *
+     * 完全交還原本 app.js
+     */
+
+    if (
+      mode === "price"
+    ) {
+      if (
+        typeof
+          window
+            .renderHeatCurrentPeriod ===
+        "function"
+      ) {
+        window
+          .renderHeatCurrentPeriod();
+      }
+
+      setTimeout(
+        () => {
+          ensureTabs();
+          ensureNote();
+
+          applyGold(
+            false
+          );
+        },
+        80
+      );
+
+      return;
+    }
+
+    /*
+     * 量
+     */
+
+    await renderVolume(
+      true
+    );
+
+    ensureTabs();
+    ensureNote();
+  }
+
+  /* =========================================================
+     監聽原本熱力圖 render
+     ========================================================= */
+
+  function watch() {
+    const grid =
+      $("#heatGrid");
+
+    if (!grid) {
+      return;
+    }
+
+    if (observer) {
       observer.disconnect();
     }
 
     observer =
       new MutationObserver(
-        mutations => {
+        () => {
           if (
-            applying
+            applying ||
+            mode !== "price"
           ) {
             return;
           }
 
-          const meaningful =
-            mutations.some(
-              mutation =>
-                mutation.type ===
-                  "childList" &&
-                mutation.target ===
-                  grid
-            );
+          setTimeout(
+            () => {
+              ensureTabs();
+              ensureNote();
 
-          if (
-            !meaningful
-          ) {
-            return;
-          }
-
-          scheduleApply(
-            APPLY_DEBOUNCE,
-            false
+              applyGold(
+                false
+              );
+            },
+            120
           );
         }
       );
@@ -1149,32 +1587,50 @@
   }
 
   /* =========================================================
-     事件
+     初始化
      ========================================================= */
 
-  function bindEvents() {
+  function init() {
+    injectStyle();
+
+    ensureTabs();
+    ensureNote();
+
+    watch();
 
     /*
-     * 切換：
-     * 當日 / 5日 / 10日 / 20日
+     * 切換當日 / 5 / 10 / 20 日
+     *
+     * 期間切換屬於價格模式
      */
 
     window.addEventListener(
       "heatmap:period-changed",
       () => {
-        clearStrengthMarks();
+        if (
+          mode === "volume"
+        ) {
+          mode =
+            "price";
 
-        ensureStrengthNote();
+          ensureTabs();
+        }
 
-        scheduleApply(
-          40,
-          false
+        setTimeout(
+          () => {
+            ensureNote();
+
+            applyGold(
+              false
+            );
+          },
+          80
         );
       }
     );
 
     /*
-     * Heatmap 資料更新
+     * Heatmap 更新
      */
 
     window.addEventListener(
@@ -1183,74 +1639,58 @@
         detailCache =
           null;
 
-        detailCacheAt =
+        volumeCache =
+          null;
+
+        detailAt =
           0;
 
-        scheduleApply(
-          220,
-          true
-        );
-      }
-    );
+        volumeAt =
+          0;
 
-    /*
-     * refresh controller
-     */
-
-    window.addEventListener(
-      "tw-market:refresh-heatmap",
-      () => {
-        scheduleApply(
-          260,
-          false
-        );
-      }
-    );
-
-    /*
-     * 全站 refresh
-     */
-
-    window.addEventListener(
-      "tw-market:refreshed",
-      event => {
         if (
-          event
-            ?.detail
-            ?.page ===
-          "heat"
+          mode === "volume"
         ) {
-          scheduleApply(
-            260,
-            false
+          renderVolume(
+            true
+          );
+        } else {
+          setTimeout(
+            () => {
+              applyGold(
+                true
+              );
+            },
+            120
           );
         }
       }
     );
 
     /*
-     * 點族群展開後
-     * 補近 5 日 Top 2
+     * 價格模式展開族群
      */
 
     document.addEventListener(
       "click",
       event => {
-        const button =
+        if (
+          mode === "price" &&
           event
             .target
             .closest(
               "#heatGrid [data-sec]"
-            );
-
-        if (!button) {
-          return;
+            )
+        ) {
+          setTimeout(
+            () => {
+              applyGold(
+                false
+              );
+            },
+            150
+          );
         }
-
-        scheduleApply(
-          220,
-          false
-        );
       },
       {
         passive:
@@ -1259,94 +1699,21 @@
     );
 
     /*
-     * iPhone / Safari
+     * 初始
      */
 
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (
-          document.hidden ||
-          !heatmapVisible()
-        ) {
-          return;
-        }
-
-        scheduleApply(
-          300,
-          false
-        );
-      }
-    );
-
-    window.addEventListener(
-      "pageshow",
-      event => {
-        if (
-          !event.persisted ||
-          !heatmapVisible()
-        ) {
-          return;
-        }
-
-        scheduleApply(
-          300,
-          false
-        );
-      }
-    );
-  }
-
-  /* =========================================================
-     對外 API
-     ========================================================= */
-
-  window.refreshHeatStrength =
-    function (
-      forceData =
-        false
-    ) {
-      return (
-        applyStrengthMarks(
-          !!forceData
-        )
-      );
-    };
-
-  window.clearHeatStrengthCache =
-    function () {
-      detailCache =
-        null;
-
-      detailCacheAt =
-        0;
-    };
-
-  /* =========================================================
-     初始化
-     ========================================================= */
-
-  function init() {
-    injectStyles();
-
-    ensureStrengthNote();
-
-    observeHeatGrid();
-
-    bindEvents();
-
     if (
-      heatmapVisible()
+      visible()
     ) {
-      scheduleApply(
-        300,
-        false
+      setTimeout(
+        () => {
+          applyGold(
+            false
+          );
+        },
+        250
       );
     }
-
-    console.log(
-      "[Heat Strength] 1D view / fixed 5D Top 2 module ready"
-    );
   }
 
   if (
@@ -1357,13 +1724,10 @@
       "DOMContentLoaded",
       init,
       {
-        once:
-          true
+        once: true
       }
     );
-
   } else {
     init();
   }
-
 })();
