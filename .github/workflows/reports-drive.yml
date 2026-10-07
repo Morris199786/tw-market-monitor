@@ -7,6 +7,8 @@ permissions:
   contents: write
   id-token: write
 
+# Critical: never allow two broker-report runs to overlap.
+# A queued run starts only after the previous run has finished AND pushed its state.
 concurrency:
   group: broker-reports-drive
   cancel-in-progress: false
@@ -16,10 +18,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout latest main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
+
+      # A queued workflow may have been created before the previous run pushed.
+      # Force the workspace to the latest remote main before any API/Telegram work.
+      - name: Sync latest processed state
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -41,48 +51,36 @@ jobs:
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
-
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
-
-        run: |
-          python scripts/update_reports_drive.py
+        run: python scripts/update_reports_drive.py
 
       - name: Extract Taiwan rating adjustments
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
-
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
-
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
           REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
-
-        run: |
-          python scripts/update_tw_ratings.py
+        run: python scripts/update_tw_ratings.py
 
       - name: AI summarize broker reports
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
-
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
           REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
-
-        run: |
-          python scripts/update_reports_ai.py
+        run: python scripts/update_reports_ai.py
 
       - name: Fix upgrade and downgrade classification
-        run: |
-          python scripts/fix_report_actions.py
+        run: python scripts/fix_report_actions.py
 
       - name: Commit report data
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -101,16 +99,9 @@ jobs:
 
           git commit -m "Update broker reports"
 
-          for i in 1 2 3; do
-            git pull --rebase origin main && \
-            git push origin HEAD:main && \
-            break
-
-            if [ "$i" = "3" ]; then
-              echo "Push failed after 3 attempts"
-              exit 1
-            fi
-
-            sleep 5
-          done
-
+          # Concurrency + pre-run hard sync means main should not have moved because
+          # of this workflow. If another workflow changed main, rebase once BEFORE
+          # push; never rerun AI/Telegram as a retry mechanism.
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
