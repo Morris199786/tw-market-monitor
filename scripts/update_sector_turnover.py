@@ -46,53 +46,78 @@ def now_tpe():
 def tracked():
     cfg = load_json(SECTORS_PATH, {})
     sectors = cfg.get("sectors", []) or []
+
     ticker_to_sectors = {}
+    ticker_names = {}
+
     for sec in sectors:
         name = str(sec.get("name") or "").strip()
         if not name:
             continue
+
         for row in sec.get("stocks", []) or []:
-            t = str(row.get("ticker") or "").strip()
-            if t:
-                ticker_to_sectors.setdefault(t, []).append(name)
-    return sectors, ticker_to_sectors
+            ticker = str(row.get("ticker") or "").strip()
+            stock_name = str(row.get("name") or ticker).strip()
+
+            if ticker:
+                ticker_to_sectors.setdefault(ticker, []).append(name)
+                ticker_names[ticker] = stock_name
+
+    return sectors, ticker_to_sectors, ticker_names
 
 
-def latest_five_history():
+def latest_five_history(today):
     files = sorted(HISTORY_DIR.glob("*.json"))
     rows = []
-    for p in files[-5:]:
+
+    # 排除今天，確保5日均一定是「前5個完整交易日」
+    for p in reversed(files):
         d = load_json(p, {})
-        if d.get("date") and isinstance(d.get("stocks"), dict):
+        date = str(d.get("date") or "")
+
+        if not date or date >= today:
+            continue
+
+        if isinstance(d.get("stocks"), dict):
             rows.append(d)
+
+        if len(rows) >= 5:
+            break
+
+    rows.reverse()
     return rows
 
 
 def official_today_if_available(today):
     p = HISTORY_DIR / f"{today}.json"
     d = load_json(p, {})
+
     if d.get("date") == today and isinstance(d.get("stocks"), dict):
         return d
+
     return None
 
 
 def fetch_intraday_turnover(tickers, master):
     channels = []
-    for t in tickers:
-        market = str(master.get(t, {}).get("market") or "").lower()
+
+    for ticker in tickers:
+        market = str(master.get(ticker, {}).get("market") or "").lower()
+
         if market == "tpex":
-            channels.append(f"otc_{t}.tw")
+            channels.append(f"otc_{ticker}.tw")
         else:
-            channels.append(f"tse_{t}.tw")
+            channels.append(f"tse_{ticker}.tw")
 
     out = {}
-    s = requests.Session()
-    s.headers.update({"User-Agent": "Mozilla/5.0"})
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0"})
 
     for i in range(0, len(channels), 100):
         batch = channels[i:i + 100]
+
         try:
-            r = s.get(
+            r = session.get(
                 MIS,
                 params={
                     "ex_ch": "|".join(batch),
@@ -107,76 +132,97 @@ def fetch_intraday_turnover(tickers, master):
             print("MIS turnover batch failed:", repr(exc))
             continue
 
-        for q in data.get("msgArray", []) or []:
-            t = str(q.get("c") or "").strip()
-            if t not in tickers:
+        for quote in data.get("msgArray", []) or []:
+            ticker = str(quote.get("c") or "").strip()
+
+            if ticker not in tickers:
                 continue
 
-            price = num(q.get("z"))
+            price = num(quote.get("z"))
+
             if price <= 0:
-                bid = num(str(q.get("b") or "").split("_")[0])
-                ask = num(str(q.get("a") or "").split("_")[0])
+                bid = num(str(quote.get("b") or "").split("_")[0])
+                ask = num(str(quote.get("a") or "").split("_")[0])
+
                 if bid > 0 and ask > 0:
                     price = (bid + ask) / 2
                 else:
-                    price = bid or ask or num(q.get("y"))
+                    price = bid or ask or num(quote.get("y"))
 
-            # TWSE MIS 的 v 為累積成交張數，轉為股數後估算成交金額
-            lots = num(q.get("v"))
+            # MIS v = 盤中累積成交張數
+            # 盤中成交金額為估算值：目前價格 × 累積成交張數 × 1000
+            lots = num(quote.get("v"))
+
             if price > 0 and lots >= 0:
-                out[t] = price * lots * 1000.0
+                out[ticker] = price * lots * 1000.0
 
     return out
 
 
 def aggregate_sector_turnover(sectors, stock_turnover):
     result = {}
+
     for sec in sectors:
         name = str(sec.get("name") or "").strip()
         total = 0.0
         used = 0
+
         for row in sec.get("stocks", []) or []:
-            t = str(row.get("ticker") or "").strip()
-            v = stock_turnover.get(t)
-            if v is None:
+            ticker = str(row.get("ticker") or "").strip()
+            value = stock_turnover.get(ticker)
+
+            if value is None:
                 continue
-            total += float(v)
+
+            total += float(value)
             used += 1
+
         result[name] = {
             "turnover": total,
             "used_stocks": used,
             "total_stocks": len(sec.get("stocks", []) or []),
         }
+
     return result
 
 
 def main():
-    sectors, ticker_to_sectors = tracked()
+    sectors, ticker_to_sectors, ticker_names = tracked()
     tickers = set(ticker_to_sectors)
+
     master = load_json(MASTER_PATH, {}).get("stocks", {}) or {}
-    today = now_tpe().strftime("%Y-%m-%d")
 
-    history = latest_five_history()
+    now = now_tpe()
+    today = now.strftime("%Y-%m-%d")
 
-    # 近5個已完成交易日：官方成交金額
+    history = latest_five_history(today)
+
+    # 前5個完整交易日：官方成交金額
     history_sector = []
+
     for snap in history:
         stock_turnover = {
-            str(t): num(row.get("turnover"))
-            for t, row in (snap.get("stocks") or {}).items()
-            if str(t) in tickers and row.get("turnover") is not None
+            str(ticker): num(row.get("turnover"))
+            for ticker, row in (snap.get("stocks") or {}).items()
+            if str(ticker) in tickers and row.get("turnover") is not None
         }
+
         history_sector.append(
-            (snap.get("date"), aggregate_sector_turnover(sectors, stock_turnover))
+            (
+                snap.get("date"),
+                aggregate_sector_turnover(sectors, stock_turnover),
+            )
         )
 
     official_today = official_today_if_available(today)
+
     if official_today:
         stock_turnover_today = {
-            str(t): num(row.get("turnover"))
-            for t, row in (official_today.get("stocks") or {}).items()
-            if str(t) in tickers and row.get("turnover") is not None
+            str(ticker): num(row.get("turnover"))
+            for ticker, row in (official_today.get("stocks") or {}).items()
+            if str(ticker) in tickers and row.get("turnover") is not None
         }
+
         source = "official_close"
         estimated = False
     else:
@@ -187,18 +233,22 @@ def main():
     today_sector = aggregate_sector_turnover(sectors, stock_turnover_today)
 
     out_items = []
+
     for sec in sectors:
         name = str(sec.get("name") or "").strip()
-        cur = today_sector.get(name, {})
+        current_row = today_sector.get(name, {})
+
         values = [
-            float(x.get(name, {}).get("turnover") or 0)
-            for _, x in history_sector
+            float(snapshot.get(name, {}).get("turnover") or 0)
+            for _, snapshot in history_sector
         ]
-        valid = [x for x in values if x > 0]
+
+        valid = [value for value in values if value > 0]
         avg5 = sum(valid) / len(valid) if valid else None
-        current = float(cur.get("turnover") or 0)
+        current = float(current_row.get("turnover") or 0)
 
         ratio = None
+
         if avg5 and avg5 > 0:
             ratio = (current / avg5 - 1) * 100
 
@@ -207,27 +257,50 @@ def main():
             "turnover": round(current),
             "avg5_turnover": round(avg5) if avg5 is not None else None,
             "vs_avg5_pct": round(ratio, 1) if ratio is not None else None,
-            "used_stocks": cur.get("used_stocks", 0),
-            "total_stocks": cur.get("total_stocks", 0),
+            "used_stocks": current_row.get("used_stocks", 0),
+            "total_stocks": current_row.get("total_stocks", 0),
         })
 
     out_items.sort(key=lambda x: x.get("turnover") or 0, reverse=True)
 
-    save_json(OUT_PATH, {
-        "updated_at": now_tpe().isoformat(timespec="minutes"),
-        "date": today,
-        "unit": "TWD",
-        "display_unit": "億元",
-        "estimated": estimated,
-        "source": source,
-        "avg5_dates": [d for d, _ in history_sector],
-        "sectors": out_items,
-    })
+    # 新增個股成交金額，供量熱力圖點開族群後使用
+    out_stocks = []
+
+    for ticker in sorted(tickers):
+        turnover = stock_turnover_today.get(ticker)
+
+        if turnover is None:
+            continue
+
+        out_stocks.append({
+            "ticker": ticker,
+            "name": ticker_names.get(ticker, ticker),
+            "turnover": round(float(turnover)),
+            "sectors": ticker_to_sectors.get(ticker, []),
+        })
+
+    out_stocks.sort(key=lambda x: x.get("turnover") or 0, reverse=True)
+
+    save_json(
+        OUT_PATH,
+        {
+            "updated_at": now.isoformat(timespec="minutes"),
+            "date": today,
+            "unit": "TWD",
+            "display_unit": "億元",
+            "estimated": estimated,
+            "source": source,
+            "avg5_dates": [date for date, _ in history_sector],
+            "sectors": out_items,
+            "stocks": out_stocks,
+        },
+    )
 
     print(
         "sector turnover saved",
         today,
         "sectors", len(out_items),
+        "stocks", len(out_stocks),
         "source", source,
         "history_days", len(history_sector),
     )
