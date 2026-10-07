@@ -263,7 +263,22 @@ def main():
 
     out_items.sort(key=lambda x: x.get("turnover") or 0, reverse=True)
 
-    # 新增個股成交金額，供量熱力圖點開族群後使用
+    # 個股近5日平均成交金額：用前5個完整交易日官方成交金額
+    stock_history_values = {ticker: [] for ticker in tickers}
+
+    for snap in history:
+        snap_stocks = snap.get("stocks") or {}
+
+        for ticker in tickers:
+            row = snap_stocks.get(ticker)
+            if not isinstance(row, dict) or row.get("turnover") is None:
+                continue
+
+            value = num(row.get("turnover"))
+            if value > 0:
+                stock_history_values[ticker].append(value)
+
+    # 個股成交金額 + 5日均 + 成交增幅，供量熱力圖點開族群後排序與金標
     out_stocks = []
 
     for ticker in sorted(tickers):
@@ -272,10 +287,31 @@ def main():
         if turnover is None:
             continue
 
+        history_values = stock_history_values.get(ticker, [])
+        avg5_turnover = (
+            sum(history_values) / len(history_values)
+            if history_values
+            else None
+        )
+
+        vs_avg5_pct = None
+        if avg5_turnover and avg5_turnover > 0:
+            vs_avg5_pct = (float(turnover) / avg5_turnover - 1) * 100
+
         out_stocks.append({
             "ticker": ticker,
             "name": ticker_names.get(ticker, ticker),
             "turnover": round(float(turnover)),
+            "avg5_turnover": (
+                round(avg5_turnover)
+                if avg5_turnover is not None
+                else None
+            ),
+            "vs_avg5_pct": (
+                round(vs_avg5_pct, 1)
+                if vs_avg5_pct is not None
+                else None
+            ),
             "sectors": ticker_to_sectors.get(ticker, []),
         })
 
