@@ -29,14 +29,14 @@ SEARCH_KEYWORDS = (
     "近期財務",
     "自結",
     "自行結算",
-    "自結損益",
+    "自行結算損益",
 )
 
 SELF_REPORT_KEYWORDS = (
     "自結",
     "自行結算",
     "自行結算損益",
-    "自行結算損益情形",
+    "自結損益",
     "財務業務資訊",
     "相關財務業務",
     "近期財務資訊",
@@ -147,15 +147,10 @@ def subject_excluded(subject):
     return any(compact_text(k) in text for k in EXCLUDE_SUBJECT_KEYWORDS)
 
 
+# === v26 新增：辨識公司主動公布「自行結算損益」 ===
 def direct_self_report_subject(subject):
-    """
-    公司主動公布的自結損益公告。
-
-    例如：
-    公告本公司截至115年9月份自行結算損益情形
-    公告本公司自行結算損益
-    """
     text = compact_text(subject)
+
     if not text or subject_excluded(subject):
         return False
 
@@ -167,8 +162,10 @@ def direct_self_report_subject(subject):
 
 def subject_is_candidate(subject):
     text = compact_text(subject)
+
     if not text or subject_excluded(subject):
         return False
+
     return (
         direct_self_report_subject(subject)
         or any(compact_text(k) in text for k in ATTENTION_KEYWORDS)
@@ -231,35 +228,49 @@ def _find_quarter_period(text):
         "",
         text,
     )
+
     patterns = (
         r"(?<!\d)(\d{2,4})\s*年?\s*第?\s*([1-4一二三四])\s*季",
         r"(?<!\d)(20\d{2})\s*[.]?\s*Q\s*([1-4])",
         r"(?<!\d)(\d{2,3})\s*[.]?\s*Q\s*([1-4])",
     )
+
     for pattern in patterns:
         m = re.search(pattern, text, re.I)
         if m:
             return f"{_ad_year(m.group(1))}-Q{_quarter_num(m.group(2))}"
+
     return None
 
 
 def _eps_cells(section):
     """Read only adjacent EPS cells; never scan later notes for numbers."""
     m = re.search(EPS_WORD, section, re.I)
+
     if not m:
         return []
+
     tail = section[m.end():]
     tail = re.split(r"\s+[4-9]\s*[.、]\s*[^\d]", tail, maxsplit=1)[0]
-    tail = re.sub(r"^\s*[（(]?\s*(?:元|新台幣元)\s*[）)]?\s*", "", tail)
+    tail = re.sub(
+        r"^\s*[（(]?\s*(?:元|新台幣元)\s*[）)]?\s*",
+        "",
+        tail,
+    )
     tail = re.sub(r"^\s*[:：]\s*", "", tail)
+
     cells = []
+
     for _ in range(8):
         tail = tail.lstrip(" \t\r\n/|｜")
         token = re.match(CELL, tail, re.I)
+
         if not token:
             break
+
         cells.append(token.group(0).strip())
         tail = tail[token.end():]
+
     return cells
 
 
@@ -274,12 +285,17 @@ def _growth(raw):
 
 def _extract_eps_triplet(section):
     vals = _eps_cells(section)
+
     if len(vals) < 3 or "%" in vals[0] or "%" in vals[1]:
         return None
+
     current = _number(vals[0])
+
     if current is None:
         return None
+
     yoy, label = _growth(vals[2])
+
     return current, _number(vals[1]), yoy, label
 
 
@@ -292,8 +308,10 @@ def _extract_horizontal_eps(text):
 
     if len(vals) in (4, 5):
         mi, my, qi, qy = 0, 1, 2, 3
+
     elif len(vals) in (6, 7):
         mi, my, qi, qy = 0, 2, 3, 5
+
     else:
         return None
 
@@ -338,6 +356,7 @@ def _slice_semantic_sections(text):
                 break
 
         section = text[start:end]
+
         cumulative = re.search(r"最近四季累計", section)
 
         if cumulative:
@@ -366,6 +385,7 @@ def _fallback_period_sections(text):
         if month.start() < quarter.start():
             sections["monthly"] = text[month.start():quarter.start()]
             sections["quarter"] = text[quarter.start():]
+
         else:
             sections["quarter"] = text[quarter.start():month.start()]
             sections["monthly"] = text[month.start():]
@@ -373,26 +393,25 @@ def _fallback_period_sections(text):
     return sections
 
 
+# === v26 新增：主動自結公告只抓明確的「當月／本月／單月 EPS」 ===
+# 不會把「累計 EPS」誤認成單月 EPS
 def _extract_direct_self_report_metrics(text):
-    """
-    公司主動自結的格式與注意交易公告不同。
-
-    常見格式：
-      115年9月份
-      當月每股稅後盈餘：0.96元
-      累計每股稅後盈餘：10.89元
-
-    這類公告不一定提供上一季 EPS，因此獨立解析。
-    """
     normalized = normalize_for_parse(text)
 
     if not direct_self_report_subject(normalized):
         return None
 
     patterns = (
-        r"當月\s*每股(?:稅後)?(?:盈餘|損益)\s*[:：]?\s*"
+        r"(?:當月|本月|單月)"
+        r".{0,80}?"
+        r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
+        r"\s*(?:[:：]|為)?\s*"
         r"([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))",
-        r"(?:本月|單月)\s*每股(?:稅後)?(?:盈餘|損益)\s*[:：]?\s*"
+
+        r"(?:每股(?:稅後)?(?:盈餘|損益)|每股(?:基本)?盈餘|EPS)"
+        r".{0,30}?"
+        r"(?:當月|本月|單月)"
+        r"\s*(?:[:：]|為)?\s*"
         r"([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))",
     )
 
@@ -400,6 +419,7 @@ def _extract_direct_self_report_metrics(text):
 
     for pattern in patterns:
         m = re.search(pattern, normalized, re.I)
+
         if not m:
             continue
 
@@ -430,13 +450,14 @@ def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
 
-    # 主動自結優先走自己的 parser，避免被注意交易橫向表格邏輯誤判
+    # v26：先嘗試公司主動公布的自行結算損益
     direct = _extract_direct_self_report_metrics(text)
 
     if direct:
         out.update(direct)
         return out
 
+    # 以下全部維持 v25 原邏輯
     if not re.search(EPS_WORD, text, re.I):
         out["eps_parse_reason"] = "eps_label_not_found"
         return out
@@ -542,7 +563,10 @@ def extract_metrics(text):
 
         if horizontal:
             for key, value in horizontal.items():
-                if shared_horizontal_eps_row or out.get(key) is None:
+                if (
+                    shared_horizontal_eps_row
+                    or out.get(key) is None
+                ):
                     out[key] = value
 
     if not out.get("monthly_period"):
@@ -780,9 +804,7 @@ def extract_detail_params(
         "spoke_time" not in params
         and publish_time
     ):
-        params["spoke_time"] = (
-            publish_time.replace(":", "")
-        )
+        params["spoke_time"] = publish_time.replace(":", "")
 
     return params
 
@@ -807,10 +829,7 @@ def fetch_detail(params):
         "step": "1",
         "COMPANY_ID": params["co_id"],
         "SPOKE_DATE": date,
-        "SPOKE_TIME": params.get(
-            "spoke_time",
-            "",
-        ),
+        "SPOKE_TIME": params.get("spoke_time", ""),
         "SEQ_NO": params["seq_no"],
         "skey": (
             params.get("skey")
@@ -853,30 +872,21 @@ def fetch_detail(params):
 
             if (
                 params["co_id"] in clean
-                and re.search(
-                    EPS_WORD,
-                    clean,
-                    re.I,
-                )
+                and re.search(EPS_WORD, clean, re.I)
             ):
                 return (
                     clean,
-                    url
-                    + "?"
-                    + urlencode(payload),
+                    url + "?" + urlencode(payload),
                     "",
                 )
 
             errors.append(
-                base
-                + ":detail_validation_failed"
+                base + ":detail_validation_failed"
             )
 
         except Exception as exc:
             errors.append(
-                base
-                + ":"
-                + type(exc).__name__
+                base + ":" + type(exc).__name__
             )
 
     return "", "", ";".join(errors)
@@ -891,8 +901,7 @@ def parse_candidate_row(row, source_keyword):
             return None
 
     elif (
-        compact_text(source_keyword)
-        not in compact
+        compact_text(source_keyword) not in compact
         and not subject_is_candidate(text)
     ):
         return None
@@ -954,9 +963,9 @@ def parse_candidate_row(row, source_keyword):
 
     if after:
         name = re.split(
-            r"\s+|"
-            r"(?:20\d{2}|\d{2,3})"
-            r"[/-]\d{1,2}[/-]\d{1,2}",
+            r"\s*|"
+            r"(?:(?:20\d{2}|\d{2,3})"
+            r"[/\-]\d{1,2}[/\-]\d{1,2})",
             after,
             maxsplit=1,
         )[0].strip("｜| ")
@@ -968,8 +977,8 @@ def parse_candidate_row(row, source_keyword):
         publish_time,
     )
 
-    detail, source_url, detail_error = (
-        fetch_detail(detail_params)
+    detail, source_url, detail_error = fetch_detail(
+        detail_params
     )
 
     full_text = "\n".join(
@@ -1049,9 +1058,7 @@ def fetch_twse_attention_tickers(iso_date):
 
                 if (
                     m
-                    and ordinary_ticker(
-                        m.group(1)
-                    )
+                    and ordinary_ticker(m.group(1))
                 ):
                     ticker = m.group(1)
                     break
@@ -1071,10 +1078,7 @@ def fetch_twse_attention_tickers(iso_date):
                     ticker = value
                     break
 
-        if (
-            ticker
-            and ticker not in seen
-        ):
+        if ticker and ticker not in seen:
             seen.add(ticker)
             tickers.append(ticker)
 
@@ -1082,30 +1086,19 @@ def fetch_twse_attention_tickers(iso_date):
         "ok": True,
         "rows": len(rows),
         "tickers": len(tickers),
-        "error": "",
     }
 
 
-def fetch_mops_company_today(
-    ticker,
-    iso_date,
-):
+def fetch_mops_company_today(ticker, iso_date):
     dt = datetime.strptime(
         iso_date,
         "%Y-%m-%d",
     )
 
     payload = {
-        "encodeURIComponent": "1",
-        "step": "1",
         "firstin": "1",
+        "step": "1",
         "off": "1",
-        "keyword4": "",
-        "code1": "",
-        "TYPEK2": "",
-        "checkbtn": "",
-        "queryName": "co_id",
-        "inpuType": "co_id",
         "TYPEK": "all",
         "co_id": ticker,
         "year": str(dt.year - 1911),
@@ -1152,8 +1145,7 @@ def fetch_mops_company_today(
 
         except Exception as exc:
             errors.append(
-                f"{base}:"
-                f"{type(exc).__name__}"
+                f"{base}:{type(exc).__name__}"
             )
 
     return [], {
@@ -1166,21 +1158,12 @@ def fetch_mops_company_today(
     """
     v26 SAFE / ADDITIVE discovery
 
-    A. MOPS 當日 broad scan
-    B. 保留既有注意交易 / 財務業務自結
-    C. 新增主動自結 keyword discovery：
-       - 自行結算
-       - 自結損益
-       - 自結
-    D. TWSE / TPEx OpenAPI 建立公司 rescue pool
-    E. 對尚未抓到「候選自結公告」的公司做 MOPS company rescue
-
-    重點：
-    broad list 出現某公司，不代表已經抓到該公司的自結。
-    因此 rescue 排除條件改成「已經抓到 candidate 的 ticker」，
-    而不是「今天 broad list 出現過的 ticker」。
+    原本 broad scan 保留
+    額外補：
+      1. 公司主動公布「自行結算損益」
+      2. rescue 排除的是已成功辨識的 ticker，
+         不再是所有曾出現在 broad list 的 ticker
     """
-
     today = now_tpe().date().isoformat()
     dt = datetime.strptime(today, "%Y-%m-%d")
     roc_year = dt.year - 1911
@@ -1196,19 +1179,12 @@ def fetch_mops_company_today(
             compact_text(row.get("text", "")),
             tuple(row.get("attrs", [])),
         )
-
         if sig in seen_rows:
             return
-
         seen_rows.add(sig)
-        raw_rows.append(
-            (source_keyword, row)
-        )
+        raw_rows.append((source_keyword, row))
 
-    # ============================================================
-    # A. MOPS daily broad scan
-    # ============================================================
-
+    # ---------- A. 原本 broad scan ----------
     broad_payloads = [
         {
             "firstin": "1",
@@ -1239,21 +1215,13 @@ def fetch_mops_company_today(
 
     broad_ok = False
     broad_all_rows = []
+    candidate_tickers = set()
 
     for base in reversed(MOPS_BASES):
-        for idx, payload in enumerate(
-            broad_payloads,
-            1,
-        ):
+        for idx, payload in enumerate(broad_payloads, 1):
             try:
-                html_text = fetch_mops(
-                    base,
-                    payload,
-                )
-
-                rows = parse_rows(
-                    html_text
-                )
+                html_text = fetch_mops(base, payload)
+                rows = parse_rows(html_text)
 
                 candidates = [
                     row
@@ -1275,10 +1243,22 @@ def fetch_mops_company_today(
                     broad_all_rows = rows
 
                     for row in candidates:
-                        add_row(
-                            "daily_broad",
-                            row,
+                        add_row("daily_broad", row)
+
+                        m = re.search(
+                            r"(?<!\d)(\d{4})(?!\d)",
+                            row.get("text", ""),
                         )
+
+                        if (
+                            m
+                            and ordinary_ticker(
+                                m.group(1)
+                            )
+                        ):
+                            candidate_tickers.add(
+                                m.group(1)
+                            )
 
                     broad_ok = True
                     break
@@ -1294,32 +1274,23 @@ def fetch_mops_company_today(
         if broad_ok:
             break
 
-    # ============================================================
-    # B. 主動自結固定 keyword scan
+    # ---------- B. v26：主動自行結算 keyword 補抓 ----------
     #
-    # 這段與舊版最大差異：
-    # 不再等 broad endpoint 失敗才搜尋。
-    #
-    # broad 成功也照樣搜尋「自行結算」等關鍵字，
-    # 因此像德律這種公司主動公告自結損益也會進候選。
-    # ============================================================
-
-    direct_search_keywords = (
+    # 即使 broad endpoint 正常，也額外查「自行結算」，
+    # 避免德律這種公告只出現在特定搜尋結果中
+    # 而 broad list 沒成功辨識。
+    direct_keywords = (
         "自行結算",
-        "自結損益",
-        "自結",
+        "自行結算損益",
     )
 
-    for keyword in direct_search_keywords:
+    for keyword in direct_keywords:
         got_keyword = False
 
         for base in reversed(MOPS_BASES):
-            for payload_idx, payload in enumerate(
-                query_payloads(
-                    today,
-                    keyword,
-                ),
-                1,
+            for payload in query_payloads(
+                today,
+                keyword,
             ):
                 try:
                     html_text = fetch_mops(
@@ -1327,43 +1298,21 @@ def fetch_mops_company_today(
                         payload,
                     )
 
-                    rows = parse_rows(
-                        html_text
-                    )
+                    rows = parse_rows(html_text)
 
-                    wanted = compact_text(
-                        keyword
-                    )
-
-                    hits = []
-
-                    for row in rows:
-                        row_text = row.get(
-                            "text",
-                            "",
+                    hits = [
+                        row
+                        for row in rows
+                        if direct_self_report_subject(
+                            row.get("text", "")
                         )
-
-                        if (
-                            wanted
-                            not in compact_text(
-                                row_text
-                            )
-                        ):
-                            continue
-
-                        if not subject_is_candidate(
-                            row_text
-                        ):
-                            continue
-
-                        hits.append(row)
+                    ]
 
                     debug.append({
                         "mode":
                             "direct_self_report_keyword",
                         "base": base,
                         "keyword": keyword,
-                        "payload": payload_idx,
                         "rows": len(rows),
                         "hits": len(hits),
                     })
@@ -1375,6 +1324,26 @@ def fetch_mops_company_today(
                                 row,
                             )
 
+                            m = re.search(
+                                r"(?<!\d)"
+                                r"(\d{4})"
+                                r"(?!\d)",
+                                row.get(
+                                    "text",
+                                    "",
+                                ),
+                            )
+
+                            if (
+                                m
+                                and ordinary_ticker(
+                                    m.group(1)
+                                )
+                            ):
+                                candidate_tickers.add(
+                                    m.group(1)
+                                )
+
                         got_keyword = True
                         break
 
@@ -1384,48 +1353,13 @@ def fetch_mops_company_today(
                             "direct_self_report_keyword",
                         "base": base,
                         "keyword": keyword,
-                        "payload": payload_idx,
                         "error": repr(exc),
                     })
 
             if got_keyword:
                 break
 
-    # ============================================================
-    # C. 已經真正抓到 candidate 的 ticker
-    #
-    # 注意：
-    # 舊版使用 broad_tickers。
-    #
-    # 如果德律今天有其他重大訊息出現在 broad，
-    # 它就可能因此被排除 rescue。
-    #
-    # 現在只把「已經抓到候選自結公告」的 ticker
-    # 視為不需要 rescue。
-    # ============================================================
-
-    candidate_tickers = set()
-
-    for _, row in raw_rows:
-        m = re.search(
-            r"(?<!\d)(\d{4})(?!\d)",
-            row.get("text", ""),
-        )
-
-        if (
-            m
-            and ordinary_ticker(
-                m.group(1)
-            )
-        ):
-            candidate_tickers.add(
-                m.group(1)
-            )
-
-    # ============================================================
-    # D. TWSE / TPEx official feed rescue pool
-    # ============================================================
-
+    # ---------- C. 原本官方重大訊息 rescue pool ----------
     rescue_tickers = set()
     rescue_source_debug = []
 
@@ -1448,19 +1382,13 @@ def fetch_mops_company_today(
                     or []
                 )
 
-            if not isinstance(
-                rows,
-                list,
-            ):
+            if not isinstance(rows, list):
                 rows = []
 
             market_tickers = set()
 
             for row in rows:
-                if not isinstance(
-                    row,
-                    dict,
-                ):
+                if not isinstance(row, dict):
                     continue
 
                 ticker = str(
@@ -1476,12 +1404,8 @@ def fetch_mops_company_today(
                     )
                 ).strip()
 
-                if ordinary_ticker(
-                    ticker
-                ):
-                    market_tickers.add(
-                        ticker
-                    )
+                if ordinary_ticker(ticker):
+                    market_tickers.add(ticker)
 
             rescue_tickers.update(
                 market_tickers
@@ -1501,20 +1425,25 @@ def fetch_mops_company_today(
             })
 
     debug.append({
-        "mode":
-            "openapi_rescue_pool",
-        "sources":
-            rescue_source_debug,
-        "tickers":
-            len(rescue_tickers),
+        "mode": "openapi_rescue_pool",
+        "sources": rescue_source_debug,
+        "tickers": len(rescue_tickers),
     })
 
-    # ============================================================
-    # E. Company-specific rescue
+    # ---------- D. Company-specific rescue ----------
     #
-    # 只排除真正已抓到自結候選的 ticker。
-    # ============================================================
-
+    # v25：
+    #   rescue_tickers - broad_tickers
+    #
+    # 問題：
+    #   只要公司曾出現在 broad list，
+    #   即使該公告沒被辨識，也不會再 rescue。
+    #
+    # v26：
+    #   只有「已經成功辨識成候選公告」的 ticker
+    #   才不需要 rescue。
+    #
+    # 這就是德律漏抓的主要死角修正。
     targets = sorted(
         rescue_tickers
         - candidate_tickers
@@ -1531,15 +1460,12 @@ def fetch_mops_company_today(
         )
 
         debug.append({
-            "mode":
-                "company_rescue",
+            "mode": "company_rescue",
             **status,
         })
 
         if rows:
-            rescued_tickers.append(
-                ticker
-            )
+            rescued_tickers.append(ticker)
 
         for row in rows:
             add_row(
@@ -1550,25 +1476,15 @@ def fetch_mops_company_today(
     debug.append({
         "mode":
             "company_rescue_summary",
-        "targets":
-            len(targets),
+        "targets": len(targets),
         "rescued":
             len(rescued_tickers),
         "rescued_tickers":
             rescued_tickers,
     })
 
-    # ============================================================
-    # F. 舊 keyword fallback
-    #
-    # 只有 broad endpoint 完全失敗，
-    # 且前面的 direct search 也完全沒有抓到資料才執行。
-    # ============================================================
-
-    if (
-        not broad_ok
-        and not raw_rows
-    ):
+    # ---------- E. 原本 keyword fallback ----------
+    if not broad_ok and not raw_rows:
         debug.append({
             "mode": "fallback",
             "reason":
@@ -1617,10 +1533,8 @@ def fetch_mops_company_today(
                             "base": base,
                             "keyword":
                                 keyword,
-                            "rows":
-                                len(rows),
-                            "hits":
-                                len(hits),
+                            "rows": len(rows),
+                            "hits": len(hits),
                         })
 
                         if hits:
@@ -1637,8 +1551,7 @@ def fetch_mops_company_today(
                         debug.append({
                             "mode":
                                 "keyword_fallback",
-                            "base":
-                                base,
+                            "base": base,
                             "keyword":
                                 keyword,
                             "error":
@@ -1648,18 +1561,10 @@ def fetch_mops_company_today(
                 if got_keyword:
                     break
 
-    # ============================================================
-    # G. Parse candidates
-    # ============================================================
-
     items = {}
     rejected = []
 
-    for (
-        source_keyword,
-        row,
-    ) in raw_rows:
-
+    for source_keyword, row in raw_rows:
         item = parse_candidate_row(
             row,
             source_keyword,
@@ -1677,7 +1582,6 @@ def fetch_mops_company_today(
                         "",
                     )[:500],
             })
-
             continue
 
         key = identity(item)
@@ -1693,8 +1597,7 @@ def fetch_mops_company_today(
 
     return {
         "ok":
-            broad_ok
-            or bool(raw_rows),
+            broad_ok or bool(raw_rows),
         "rows":
             len(raw_rows),
         "items":
@@ -1715,14 +1618,11 @@ def row_all_text(row):
 
     if isinstance(row, dict):
         for key, value in row.items():
-
             if isinstance(
                 value,
                 (str, int, float),
             ):
-                value = norm_text(
-                    value
-                )
+                value = norm_text(value)
 
                 if value:
                     parts.append(
@@ -1784,9 +1684,7 @@ def fetch_openapi(market, url):
             )
         ).strip()
 
-        if not ordinary_ticker(
-            ticker
-        ):
+        if not ordinary_ticker(ticker):
             continue
 
         subject = norm_text(
@@ -1841,27 +1739,20 @@ def fetch_openapi(market, url):
             row_all_text(row),
         ])
 
-        subject_compact = (
-            compact_text(subject)
-        )
-
         items.append({
-            "market":
-                market,
-            "ticker":
-                ticker,
-            "name":
-                clean_name(
-                    p(
-                        row,
-                        [
-                            "公司名稱",
-                            "證券名稱",
-                            "名稱",
-                        ],
-                        "",
-                    )
-                ),
+            "market": market,
+            "ticker": ticker,
+            "name": clean_name(
+                p(
+                    row,
+                    [
+                        "公司名稱",
+                        "證券名稱",
+                        "名稱",
+                    ],
+                    "",
+                )
+            ),
             "publish_date":
                 publish_date,
             "publish_time":
@@ -1876,14 +1767,12 @@ def fetch_openapi(market, url):
                 "",
             "source_error":
                 "",
-            "match_reason":
-                (
-                    "attention_trading"
-                    if "注意交易"
-                    in subject_compact
-                    else
-                    "direct_self_report"
-                ),
+            "match_reason": (
+                "attention_trading"
+                if "注意交易"
+                in compact_text(subject)
+                else "direct_self_report"
+            ),
             **extract_metrics(
                 full_text
             ),
@@ -1905,15 +1794,11 @@ def identity(item):
             or ""
         ),
         str(
-            item.get(
-                "publish_date"
-            )
+            item.get("publish_date")
             or ""
         ),
         str(
-            item.get(
-                "publish_time"
-            )
+            item.get("publish_time")
             or ""
         ),
     ])
@@ -1937,26 +1822,13 @@ def merge_item(old, new):
     for key, value in new.items():
         if (
             value
-            not in (
-                None,
-                "",
-                [],
-                {},
-            )
+            not in (None, "", [], {})
             and out.get(key)
-            in (
-                None,
-                "",
-                [],
-                {},
-            )
+            in (None, "", [], {})
         ):
             out[key] = value
 
-    if (
-        new.get("source")
-        == "mops_ajax"
-    ):
+    if new.get("source") == "mops_ajax":
         for key in (
             "name",
             "subject",
@@ -1971,30 +1843,22 @@ def merge_item(old, new):
 
     old_score = (
         int(
-            old.get(
-                "monthly_eps"
-            )
+            old.get("monthly_eps")
             is not None
         )
         + int(
-            old.get(
-                "quarter_eps"
-            )
+            old.get("quarter_eps")
             is not None
         )
     )
 
     new_score = (
         int(
-            new.get(
-                "monthly_eps"
-            )
+            new.get("monthly_eps")
             is not None
         )
         + int(
-            new.get(
-                "quarter_eps"
-            )
+            new.get("quarter_eps")
             is not None
         )
     )
@@ -2014,9 +1878,7 @@ def merge_item(old, new):
             "eps",
         ):
             if key in new:
-                out[key] = new.get(
-                    key
-                )
+                out[key] = new.get(key)
 
     return out
 
@@ -2036,12 +1898,10 @@ def send_telegram(
         "",
     ).strip()
 
-    if (
-        not token
-        or not chat_id
-    ):
+    if not token or not chat_id:
         print(
-            "telegram secrets missing; skip"
+            "telegram secrets "
+            "missing; skip"
         )
         return False
 
@@ -2052,8 +1912,7 @@ def send_telegram(
                 f"bot{token}/sendMessage"
             ),
             data={
-                "chat_id":
-                    chat_id,
+                "chat_id": chat_id,
                 "text":
                     f"{title}\n{message}",
                 "disable_web_page_preview":
@@ -2061,16 +1920,14 @@ def send_telegram(
                 "reply_markup":
                     json.dumps(
                         {
-                            "inline_keyboard": [
-                                [
-                                    {
-                                        "text":
-                                            "開啟台股市場監測",
-                                        "url":
-                                            url,
-                                    }
-                                ]
-                            ]
+                            "inline_keyboard": [[
+                                {
+                                    "text":
+                                        "開啟台股市場監測",
+                                    "url":
+                                        url,
+                                }
+                            ]]
                         },
                         ensure_ascii=False,
                     ),
@@ -2081,9 +1938,7 @@ def send_telegram(
         response.raise_for_status()
 
         return bool(
-            response.json().get(
-                "ok"
-            )
+            response.json().get("ok")
         )
 
     except Exception as exc:
@@ -2132,8 +1987,7 @@ def eps_line(item, kind):
         f"{growth:+.2f}%"
         if growth is not None
         else item.get(
-            kind
-            + "_eps_yoy_text"
+            kind + "_eps_yoy_text"
         )
         or "未取得"
     )
@@ -2157,12 +2011,8 @@ def push_text(item):
         ),
     ]
 
-    # 注意交易自結仍顯示上一季 EPS
-    # 主動自結若公告本身沒有上一季 EPS，就不硬塞「未取得」
-    if (
-        item.get("quarter_eps")
-        is not None
-    ):
+    # 主動自行結算可能只公告單月 EPS
+    if item.get("quarter_eps") is not None:
         lines.append(
             eps_line(
                 item,
@@ -2173,36 +2023,32 @@ def push_text(item):
     return "\n".join(lines)
 
 
-def is_direct_self_report_item(item):
+def valid_eps_item(item):
+    # 注意交易：維持原本要求
+    # 「單月 EPS + 上一季 EPS」
+    if (
+        item.get("match_reason")
+        == "attention_trading"
+    ):
+        return (
+            item.get("monthly_eps")
+            is not None
+            and item.get("quarter_eps")
+            is not None
+        )
+
+    # 公司主動公布自行結算損益：
+    # 有明確單月 EPS 即可
     if (
         item.get("match_reason")
         == "direct_self_report"
-    ):
-        return True
-
-    return direct_self_report_subject(
-        item.get("subject", "")
-    )
-
-
-def valid_eps_item(item):
-    """
-    注意交易型：
-        維持舊規則
-        單月 EPS + 上一季 EPS 都要有
-
-    主動自結型：
-        只要公告有單月 EPS 即可收錄
-    """
-
-    if is_direct_self_report_item(
-        item
     ):
         return (
             item.get("monthly_eps")
             is not None
         )
 
+    # 未知舊資料仍沿用舊規則
     return (
         item.get("monthly_eps")
         is not None
@@ -2236,11 +2082,6 @@ def diagnostic_entry(item):
                 "source_error",
                 "",
             ),
-        "match_reason":
-            item.get(
-                "match_reason",
-                "",
-            ),
         "eps_parse_status":
             item.get(
                 "eps_parse_status",
@@ -2252,13 +2093,9 @@ def diagnostic_entry(item):
                 "",
             ),
         "monthly_eps":
-            item.get(
-                "monthly_eps"
-            ),
+            item.get("monthly_eps"),
         "quarter_eps":
-            item.get(
-                "quarter_eps"
-            ),
+            item.get("quarter_eps"),
     }
 
 
@@ -2382,13 +2219,7 @@ def main():
         saved.values()
     )
 
-    # ============================================================
-    # 重新解析 history
-    #
-    # 舊的注意交易資料照原 parser
-    # 主動自結資料則會自動走 direct parser
-    # ============================================================
-
+    # 保留原本重新解析 history
     for item in all_candidates:
         parse_text = "\n".join(
             x
@@ -2407,50 +2238,28 @@ def main():
 
         old_score = (
             int(
-                item.get(
-                    "monthly_eps"
-                )
+                item.get("monthly_eps")
                 is not None
             )
             + int(
-                item.get(
-                    "quarter_eps"
-                )
+                item.get("quarter_eps")
                 is not None
             )
         )
 
         new_score = (
             int(
-                parsed.get(
-                    "monthly_eps"
-                )
+                parsed.get("monthly_eps")
                 is not None
             )
             + int(
-                parsed.get(
-                    "quarter_eps"
-                )
+                parsed.get("quarter_eps")
                 is not None
             )
         )
 
         if new_score >= old_score:
-            item.update(
-                parsed
-            )
-
-        # 舊 history 如果原本沒有 match_reason，
-        # 這裡補上正確分類。
-        if direct_self_report_subject(
-            item.get(
-                "subject",
-                "",
-            )
-        ):
-            item["match_reason"] = (
-                "direct_self_report"
-            )
+            item.update(parsed)
 
     all_candidates.sort(
         key=lambda item: (
@@ -2480,9 +2289,7 @@ def main():
         diagnostic_entry(item)
         for item in all_candidates
         if (
-            not valid_eps_item(
-                item
-            )
+            not valid_eps_item(item)
             and subject_is_candidate(
                 item.get(
                     "subject",
@@ -2518,16 +2325,6 @@ def main():
     now = now_tpe()
     today = now.date().isoformat()
 
-    # ============================================================
-    # Telegram
-    #
-    # 注意交易：
-    # 單月 + 上一季
-    #
-    # 主動自結：
-    # 至少有單月 EPS 即可推播
-    # ============================================================
-
     for item in fresh:
         full_item = saved.get(
             identity(item),
@@ -2554,10 +2351,7 @@ def main():
         ):
             continue
 
-        if (
-            base_key
-            in telegram_sent
-        ):
+        if base_key in telegram_sent:
             continue
 
         page_url = (
@@ -2599,10 +2393,6 @@ def main():
         )
     )
 
-    # ============================================================
-    # history
-    # ============================================================
-
     save_json(
         history_path,
         {
@@ -2625,10 +2415,6 @@ def main():
         },
     )
 
-    # ============================================================
-    # Telegram sent state
-    # ============================================================
-
     save_json(
         sent_path,
         {
@@ -2645,51 +2431,34 @@ def main():
         },
     )
 
-    # ============================================================
-    # Website data
-    # ============================================================
-
     save_json(
         ROOT
         / "data/self_reports.json",
         {
             "updated_at":
                 updated_at,
-
             "monitor_start_date":
                 MONITOR_START_DATE,
-
             "filter_version":
                 VERSION,
-
             "source_mode":
                 (
-                    "MOPS daily broad + "
-                    "direct self-report keyword scan + "
-                    "official feed company rescue; "
+                    "MOPS daily broad primary "
+                    "+ direct self-report keyword "
+                    "+ official feed ticker "
+                    "company-rescue additive fallback; "
                     "Telegram only"
                 ),
-
             "diagnostics": {
                 "candidate_count":
-                    len(
-                        all_candidates
-                    ),
-
+                    len(all_candidates),
                 "parsed_count":
-                    len(
-                        display_items
-                    ),
-
+                    len(display_items),
                 "parse_failed_count":
-                    len(
-                        parse_failed
-                    ),
-
+                    len(parse_failed),
                 "parse_failed":
                     parse_failed,
             },
-
             "source_status": {
                 "mops": {
                     "ok":
@@ -2697,13 +2466,11 @@ def main():
                             "ok",
                             False,
                         ),
-
                     "rows":
                         mops.get(
                             "rows",
                             0,
                         ),
-
                     "self_reports":
                         len(
                             mops.get(
@@ -2711,33 +2478,28 @@ def main():
                                 [],
                             )
                         ),
-
                     "debug":
                         mops.get(
                             "debug",
                             [],
                         ),
-
                     "rejected":
                         mops.get(
                             "rejected",
                             [],
                         ),
-
                     "error":
                         mops.get(
                             "error",
                             "",
                         ),
                 },
-
                 "twse": {
                     "ok":
                         twse_result.get(
                             "ok",
                             False,
                         ),
-
                     "rows":
                         len(
                             twse_result.get(
@@ -2745,7 +2507,6 @@ def main():
                                 [],
                             )
                         ),
-
                     "self_reports":
                         len(
                             twse_result.get(
@@ -2753,21 +2514,18 @@ def main():
                                 [],
                             )
                         ),
-
                     "error":
                         twse_result.get(
                             "error",
                             "",
                         ),
                 },
-
                 "tpex": {
                     "ok":
                         tpex_result.get(
                             "ok",
                             False,
                         ),
-
                     "rows":
                         len(
                             tpex_result.get(
@@ -2775,7 +2533,6 @@ def main():
                                 [],
                             )
                         ),
-
                     "self_reports":
                         len(
                             tpex_result.get(
@@ -2783,7 +2540,6 @@ def main():
                                 [],
                             )
                         ),
-
                     "error":
                         tpex_result.get(
                             "error",
@@ -2791,7 +2547,6 @@ def main():
                         ),
                 },
             },
-
             "items":
                 display_items,
         },
@@ -2807,14 +2562,6 @@ def main():
         len(parse_failed),
         "fresh",
         len(fresh),
-        "direct",
-        sum(
-            1
-            for item in display_items
-            if is_direct_self_report_item(
-                item
-            )
-        ),
         "version",
         VERSION,
     )
