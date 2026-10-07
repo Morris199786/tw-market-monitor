@@ -9,7 +9,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-07-v27-voluntary-self-report-fix"
+VERSION = "2026-10-07-v29-direct-self-report-prev-quarter-eps"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -951,9 +951,7 @@ def parse_candidate_row(row, source_keyword):
 
     if after:
         name = re.split(
-            r"\s*|"
-            r"(?:(?:20\d{2}|\d{2,3})"
-            r"[/\-]\d{1,2}[/\-]\d{1,2})",
+            r"\s+|(?:20\d{2}|\d{2,3})[/-]\d{1,2}[/-]\d{1,2}",
             after,
             maxsplit=1,
         )[0].strip("｜| ")
@@ -1896,17 +1894,172 @@ def eps_line(item, kind):
     )
 
 
+
+def _previous_quarter_from_month_period(month_period):
+    m = re.fullmatch(r"(20\d{2})-(\d{2})", str(month_period or ""))
+    if not m:
+        return ""
+    year = int(m.group(1))
+    month = int(m.group(2))
+    if not 1 <= month <= 12:
+        return ""
+    current_q = (month - 1) // 3 + 1
+    if current_q == 1:
+        return f"{year - 1}-Q4"
+    return f"{year}-Q{current_q - 1}"
+
+
+def _previous_year_same_quarter(period):
+    m = re.fullmatch(r"(20\d{2})-Q([1-4])", str(period or ""))
+    if not m:
+        return ""
+    return f"{int(m.group(1)) - 1}-Q{m.group(2)}"
+
+
+def _quarterly_single_eps_from_history(rows_by_key, ticker, period):
+    row = rows_by_key.get((ticker, period))
+    if not row:
+        return None
+
+    q = int(period[-1])
+    if row.get("single_eps") is not None:
+        return _number(row.get("single_eps"))
+
+    current = _number(row.get("cum_eps"))
+    if current is None:
+        return None
+
+    if q == 1:
+        return current
+
+    year = int(period[:4])
+    prev_period = f"{year}-Q{q - 1}"
+    prev = rows_by_key.get((ticker, prev_period))
+    if not prev:
+        return None
+
+    prev_cum = _number(prev.get("cum_eps"))
+    if prev_cum is None:
+        return None
+
+    return round(current - prev_cum, 6)
+
+
+def _load_quarterly_eps_rows():
+    path = ROOT / "data/quarterly_earnings_history.json"
+    data = load_json(path, {"rows": []})
+    rows = data.get("rows", []) if isinstance(data, dict) else []
+    return {
+        (str(row.get("ticker") or ""), str(row.get("period") or "")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("ticker") and row.get("period")
+    }
+
+
+def _ensure_quarterly_eps_rows(ticker, periods, rows_by_key):
+    needed = set()
+    for period in periods:
+        if not period:
+            continue
+        needed.add(period)
+        if int(period[-1]) > 1:
+            needed.add(f"{period[:4]}-Q{int(period[-1]) - 1}")
+
+    complete = all((ticker, period) in rows_by_key for period in needed)
+    if complete:
+        return rows_by_key
+
+    try:
+        from update_quarterly_earnings import backfill_history
+
+        targets = {period: {ticker} for period in needed}
+        backfill_history(rows_by_key, needed, targets)
+    except Exception as exc:
+        print(
+            "quarter EPS fallback failed",
+            ticker,
+            type(exc).__name__,
+        )
+
+    return rows_by_key
+
+
+def enrich_direct_self_report_quarter_eps(items):
+    """Add only prior-quarter EPS + YoY to voluntary self-reports.
+
+    Existing attention-trading parsing is untouched.  Official quarterly
+    earnings history is used; when the cache lacks a required period, the
+    existing official MOPS quarterly backfill helper is called.
+    """
+    direct_items = [
+        item
+        for item in items
+        if item.get("match_reason") == "direct_self_report"
+        and item.get("monthly_eps") is not None
+    ]
+    if not direct_items:
+        return
+
+    rows_by_key = _load_quarterly_eps_rows()
+
+    for item in direct_items:
+        period = _previous_quarter_from_month_period(item.get("monthly_period"))
+        if not period:
+            continue
+
+        yoy_period = _previous_year_same_quarter(period)
+        rows_by_key = _ensure_quarterly_eps_rows(
+            str(item.get("ticker") or ""),
+            (period, yoy_period),
+            rows_by_key,
+        )
+
+        current_eps = _quarterly_single_eps_from_history(
+            rows_by_key,
+            str(item.get("ticker") or ""),
+            period,
+        )
+        last_year_eps = _quarterly_single_eps_from_history(
+            rows_by_key,
+            str(item.get("ticker") or ""),
+            yoy_period,
+        )
+
+        if current_eps is None:
+            continue
+
+        item["quarter_period"] = period
+        item["quarter_eps"] = current_eps
+        item["quarter_eps_yoy"] = None
+        item["quarter_eps_yoy_text"] = ""
+
+        if last_year_eps not in (None, 0):
+            yoy = (current_eps / last_year_eps - 1.0) * 100.0
+            if math.isfinite(yoy):
+                item["quarter_eps_yoy"] = yoy
+                item["quarter_eps_yoy_text"] = f"{yoy:+.2f}%"
+
 def push_text(item):
     lines = [
         (
             f"{item.get('name') or item['ticker']} "
             f"{item['ticker']}"
         ),
-        eps_line(
-            item,
-            "monthly",
-        ),
     ]
+
+    if item.get("match_reason") == "direct_self_report":
+        period = item.get("monthly_period")
+        label = f"{period} 單月 EPS" if period else "單月 EPS"
+        value = item.get("monthly_eps")
+        value_text = f"{value:.2f} 元" if value is not None else "未取得"
+        lines.append(f"{label}：{value_text}")
+    else:
+        lines.append(
+            eps_line(
+                item,
+                "monthly",
+            )
+        )
 
     if item.get("quarter_eps") is not None:
         lines.append(
@@ -2144,6 +2297,10 @@ def main():
 
         if new_score >= old_score:
             item.update(parsed)
+
+    # Voluntary self-reports may only publish the current monthly EPS.
+    # Fill only prior-quarter EPS and its YoY from official quarterly data.
+    enrich_direct_self_report_quarter_eps(all_candidates)
 
     all_candidates.sort(
         key=lambda item: (
