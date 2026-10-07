@@ -147,7 +147,6 @@ def subject_excluded(subject):
     return any(compact_text(k) in text for k in EXCLUDE_SUBJECT_KEYWORDS)
 
 
-# === v26 新增：辨識公司主動公布「自行結算損益」 ===
 def direct_self_report_subject(subject):
     text = compact_text(subject)
 
@@ -393,8 +392,6 @@ def _fallback_period_sections(text):
     return sections
 
 
-# === v26 新增：主動自結公告只抓明確的「當月／本月／單月 EPS」 ===
-# 不會把「累計 EPS」誤認成單月 EPS
 def _extract_direct_self_report_metrics(text):
     normalized = normalize_for_parse(text)
 
@@ -450,14 +447,12 @@ def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
 
-    # v26：先嘗試公司主動公布的自行結算損益
     direct = _extract_direct_self_report_metrics(text)
 
     if direct:
         out.update(direct)
         return out
 
-    # 以下全部維持 v25 原邏輯
     if not re.search(EPS_WORD, text, re.I):
         out["eps_parse_reason"] = "eps_label_not_found"
         return out
@@ -1214,7 +1209,6 @@ def fetch_mops_company_today(ticker, iso_date):
     ]
 
     broad_ok = False
-    broad_all_rows = []
     candidate_tickers = set()
 
     for base in reversed(MOPS_BASES):
@@ -1240,8 +1234,6 @@ def fetch_mops_company_today(ticker, iso_date):
                 })
 
                 if rows:
-                    broad_all_rows = rows
-
                     for row in candidates:
                         add_row("daily_broad", row)
 
@@ -1274,11 +1266,7 @@ def fetch_mops_company_today(ticker, iso_date):
         if broad_ok:
             break
 
-    # ---------- B. v26：主動自行結算 keyword 補抓 ----------
-    #
-    # 即使 broad endpoint 正常，也額外查「自行結算」，
-    # 避免德律這種公告只出現在特定搜尋結果中
-    # 而 broad list 沒成功辨識。
+    # ---------- B. 主動自行結算 keyword 補抓 ----------
     direct_keywords = (
         "自行結算",
         "自行結算損益",
@@ -1309,8 +1297,7 @@ def fetch_mops_company_today(ticker, iso_date):
                     ]
 
                     debug.append({
-                        "mode":
-                            "direct_self_report_keyword",
+                        "mode": "direct_self_report_keyword",
                         "base": base,
                         "keyword": keyword,
                         "rows": len(rows),
@@ -1325,13 +1312,8 @@ def fetch_mops_company_today(ticker, iso_date):
                             )
 
                             m = re.search(
-                                r"(?<!\d)"
-                                r"(\d{4})"
-                                r"(?!\d)",
-                                row.get(
-                                    "text",
-                                    "",
-                                ),
+                                r"(?<!\d)(\d{4})(?!\d)",
+                                row.get("text", ""),
                             )
 
                             if (
@@ -1349,8 +1331,7 @@ def fetch_mops_company_today(ticker, iso_date):
 
                 except Exception as exc:
                     debug.append({
-                        "mode":
-                            "direct_self_report_keyword",
+                        "mode": "direct_self_report_keyword",
                         "base": base,
                         "keyword": keyword,
                         "error": repr(exc),
@@ -1414,8 +1395,7 @@ def fetch_mops_company_today(ticker, iso_date):
             rescue_source_debug.append({
                 "market": market,
                 "rows": len(rows),
-                "ticker_pool":
-                    len(market_tickers),
+                "ticker_pool": len(market_tickers),
             })
 
         except Exception as exc:
@@ -1432,18 +1412,9 @@ def fetch_mops_company_today(ticker, iso_date):
 
     # ---------- D. Company-specific rescue ----------
     #
-    # v25：
-    #   rescue_tickers - broad_tickers
-    #
-    # 問題：
-    #   只要公司曾出現在 broad list，
-    #   即使該公告沒被辨識，也不會再 rescue。
-    #
-    # v26：
-    #   只有「已經成功辨識成候選公告」的 ticker
-    #   才不需要 rescue。
-    #
-    # 這就是德律漏抓的主要死角修正。
+    # 只有已經成功辨識為候選公告的 ticker 才排除 rescue
+    # 避免公司雖出現在 broad list，
+    # 但自行結算公告沒命中時完全漏抓
     targets = sorted(
         rescue_tickers
         - candidate_tickers
@@ -1452,11 +1423,9 @@ def fetch_mops_company_today(ticker, iso_date):
     rescued_tickers = []
 
     for ticker in targets:
-        rows, status = (
-            fetch_mops_company_today(
-                ticker,
-                today,
-            )
+        rows, status = fetch_mops_company_today(
+            ticker,
+            today,
         )
 
         debug.append({
@@ -1474,29 +1443,23 @@ def fetch_mops_company_today(ticker, iso_date):
             )
 
     debug.append({
-        "mode":
-            "company_rescue_summary",
+        "mode": "company_rescue_summary",
         "targets": len(targets),
-        "rescued":
-            len(rescued_tickers),
-        "rescued_tickers":
-            rescued_tickers,
+        "rescued": len(rescued_tickers),
+        "rescued_tickers": rescued_tickers,
     })
 
     # ---------- E. 原本 keyword fallback ----------
     if not broad_ok and not raw_rows:
         debug.append({
             "mode": "fallback",
-            "reason":
-                "daily_broad_returned_no_rows",
+            "reason": "daily_broad_returned_no_rows",
         })
 
         for keyword in SEARCH_KEYWORDS:
             got_keyword = False
 
-            for base in reversed(
-                MOPS_BASES
-            ):
+            for base in reversed(MOPS_BASES):
                 for payload in query_payloads(
                     today,
                     keyword,
@@ -1507,13 +1470,9 @@ def fetch_mops_company_today(ticker, iso_date):
                             payload,
                         )
 
-                        rows = parse_rows(
-                            html_text
-                        )
+                        rows = parse_rows(html_text)
 
-                        wanted = compact_text(
-                            keyword
-                        )
+                        wanted = compact_text(keyword)
 
                         hits = [
                             row
@@ -1528,11 +1487,9 @@ def fetch_mops_company_today(ticker, iso_date):
                         ]
 
                         debug.append({
-                            "mode":
-                                "keyword_fallback",
+                            "mode": "keyword_fallback",
                             "base": base,
-                            "keyword":
-                                keyword,
+                            "keyword": keyword,
                             "rows": len(rows),
                             "hits": len(hits),
                         })
@@ -1549,13 +1506,10 @@ def fetch_mops_company_today(ticker, iso_date):
 
                     except Exception as exc:
                         debug.append({
-                            "mode":
-                                "keyword_fallback",
+                            "mode": "keyword_fallback",
                             "base": base,
-                            "keyword":
-                                keyword,
-                            "error":
-                                repr(exc),
+                            "keyword": keyword,
+                            "error": repr(exc),
                         })
 
                 if got_keyword:
@@ -1572,15 +1526,12 @@ def fetch_mops_company_today(ticker, iso_date):
 
         if not item:
             rejected.append({
-                "keyword":
-                    source_keyword,
-                "reason":
-                    "candidate_row_rejected",
-                "text":
-                    row.get(
-                        "text",
-                        "",
-                    )[:500],
+                "keyword": source_keyword,
+                "reason": "candidate_row_rejected",
+                "text": row.get(
+                    "text",
+                    "",
+                )[:500],
             })
             continue
 
@@ -1596,20 +1547,16 @@ def fetch_mops_company_today(ticker, iso_date):
         )
 
     return {
-        "ok":
-            broad_ok or bool(raw_rows),
-        "rows":
-            len(raw_rows),
-        "items":
-            list(items.values()),
-        "debug":
-            debug,
-        "rejected":
-            rejected,
-        "error":
+        "ok": broad_ok or bool(raw_rows),
+        "rows": len(raw_rows),
+        "items": list(items.values()),
+        "debug": debug,
+        "rejected": rejected,
+        "error": (
             ""
             if broad_ok or raw_rows
-            else "mops_daily_scan_no_rows",
+            else "mops_daily_scan_no_rows"
+        ),
     }
 
 
@@ -1664,8 +1611,7 @@ def fetch_openapi(market, url):
             "ok": False,
             "rows": [],
             "items": [],
-            "error":
-                "response_is_not_list",
+            "error": "response_is_not_list",
         }
 
     items = []
@@ -1699,9 +1645,7 @@ def fetch_openapi(market, url):
             )
         )
 
-        if not subject_is_candidate(
-            subject
-        ):
+        if not subject_is_candidate(subject):
             continue
 
         publish_date = roc_to_iso(
@@ -1718,8 +1662,7 @@ def fetch_openapi(market, url):
 
         if (
             not publish_date
-            or publish_date
-            < MONITOR_START_DATE
+            or publish_date < MONITOR_START_DATE
         ):
             continue
 
@@ -1753,29 +1696,20 @@ def fetch_openapi(market, url):
                     "",
                 )
             ),
-            "publish_date":
-                publish_date,
-            "publish_time":
-                publish_time,
-            "subject":
-                subject,
-            "detail":
-                full_text,
-            "source":
-                f"{market}_openapi",
-            "source_url":
-                "",
-            "source_error":
-                "",
+            "publish_date": publish_date,
+            "publish_time": publish_time,
+            "subject": subject,
+            "detail": full_text,
+            "source": f"{market}_openapi",
+            "source_url": "",
+            "source_error": "",
             "match_reason": (
                 "attention_trading"
                 if "注意交易"
                 in compact_text(subject)
                 else "direct_self_report"
             ),
-            **extract_metrics(
-                full_text
-            ),
+            **extract_metrics(full_text),
         })
 
     return {
@@ -1789,25 +1723,14 @@ def fetch_openapi(market, url):
 
 def identity(item):
     return "|".join([
-        str(
-            item.get("ticker")
-            or ""
-        ),
-        str(
-            item.get("publish_date")
-            or ""
-        ),
-        str(
-            item.get("publish_time")
-            or ""
-        ),
+        str(item.get("ticker") or ""),
+        str(item.get("publish_date") or ""),
+        str(item.get("publish_time") or ""),
     ])
 
 
 def canonical_sent_id(value):
-    parts = str(
-        value or ""
-    ).split("|")
+    parts = str(value or "").split("|")
 
     return (
         "|".join(parts[:3])
@@ -1821,10 +1744,8 @@ def merge_item(old, new):
 
     for key, value in new.items():
         if (
-            value
-            not in (None, "", [], {})
-            and out.get(key)
-            in (None, "", [], {})
+            value not in (None, "", [], {})
+            and out.get(key) in (None, "", [], {})
         ):
             out[key] = value
 
@@ -1842,25 +1763,13 @@ def merge_item(old, new):
                 out[key] = new[key]
 
     old_score = (
-        int(
-            old.get("monthly_eps")
-            is not None
-        )
-        + int(
-            old.get("quarter_eps")
-            is not None
-        )
+        int(old.get("monthly_eps") is not None)
+        + int(old.get("quarter_eps") is not None)
     )
 
     new_score = (
-        int(
-            new.get("monthly_eps")
-            is not None
-        )
-        + int(
-            new.get("quarter_eps")
-            is not None
-        )
+        int(new.get("monthly_eps") is not None)
+        + int(new.get("quarter_eps") is not None)
     )
 
     if new_score >= old_score:
@@ -1913,24 +1822,19 @@ def send_telegram(
             ),
             data={
                 "chat_id": chat_id,
-                "text":
-                    f"{title}\n{message}",
-                "disable_web_page_preview":
-                    True,
-                "reply_markup":
-                    json.dumps(
-                        {
-                            "inline_keyboard": [[
-                                {
-                                    "text":
-                                        "開啟台股市場監測",
-                                    "url":
-                                        url,
-                                }
-                            ]]
-                        },
-                        ensure_ascii=False,
-                    ),
+                "text": f"{title}\n{message}",
+                "disable_web_page_preview": True,
+                "reply_markup": json.dumps(
+                    {
+                        "inline_keyboard": [[
+                            {
+                                "text": "開啟台股市場監測",
+                                "url": url,
+                            }
+                        ]]
+                    },
+                    ensure_ascii=False,
+                ),
             },
             timeout=30,
         )
@@ -2011,7 +1915,6 @@ def push_text(item):
         ),
     ]
 
-    # 主動自行結算可能只公告單月 EPS
     if item.get("quarter_eps") is not None:
         lines.append(
             eps_line(
@@ -2024,8 +1927,8 @@ def push_text(item):
 
 
 def valid_eps_item(item):
-    # 注意交易：維持原本要求
-    # 「單月 EPS + 上一季 EPS」
+    # 原本注意交易規則完全保留：
+    # 必須同時有單月 EPS + 上一季 EPS
     if (
         item.get("match_reason")
         == "attention_trading"
@@ -2038,7 +1941,7 @@ def valid_eps_item(item):
         )
 
     # 公司主動公布自行結算損益：
-    # 有明確單月 EPS 即可
+    # 只要有明確單月 EPS 即可
     if (
         item.get("match_reason")
         == "direct_self_report"
@@ -2048,7 +1951,6 @@ def valid_eps_item(item):
             is not None
         )
 
-    # 未知舊資料仍沿用舊規則
     return (
         item.get("monthly_eps")
         is not None
@@ -2059,43 +1961,32 @@ def valid_eps_item(item):
 
 def diagnostic_entry(item):
     return {
-        "ticker":
-            item.get("ticker", ""),
-        "name":
-            item.get("name", ""),
-        "publish_date":
-            item.get(
-                "publish_date",
-                "",
-            ),
-        "publish_time":
-            item.get(
-                "publish_time",
-                "",
-            ),
-        "subject":
-            item.get("subject", ""),
-        "source":
-            item.get("source", ""),
-        "source_error":
-            item.get(
-                "source_error",
-                "",
-            ),
-        "eps_parse_status":
-            item.get(
-                "eps_parse_status",
-                "",
-            ),
-        "eps_parse_reason":
-            item.get(
-                "eps_parse_reason",
-                "",
-            ),
-        "monthly_eps":
-            item.get("monthly_eps"),
-        "quarter_eps":
-            item.get("quarter_eps"),
+        "ticker": item.get("ticker", ""),
+        "name": item.get("name", ""),
+        "publish_date": item.get(
+            "publish_date",
+            "",
+        ),
+        "publish_time": item.get(
+            "publish_time",
+            "",
+        ),
+        "subject": item.get("subject", ""),
+        "source": item.get("source", ""),
+        "source_error": item.get(
+            "source_error",
+            "",
+        ),
+        "eps_parse_status": item.get(
+            "eps_parse_status",
+            "",
+        ),
+        "eps_parse_reason": item.get(
+            "eps_parse_reason",
+            "",
+        ),
+        "monthly_eps": item.get("monthly_eps"),
+        "quarter_eps": item.get("quarter_eps"),
     }
 
 
@@ -2358,23 +2249,23 @@ def main():
             SITE_URL
             + "?"
             + urlencode({
-                "page":
-                    "selfReports",
-                "ticker":
-                    full_item.get(
-                        "ticker"
-                    )
-                    or "",
-                "date":
+                "page": "selfReports",
+                "ticker": (
+                    full_item.get("ticker")
+                    or ""
+                ),
+                "date": (
                     full_item.get(
                         "publish_date"
                     )
-                    or "",
-                "time":
+                    or ""
+                ),
+                "time": (
                     full_item.get(
                         "publish_time"
                     )
-                    or "",
+                    or ""
+                ),
             })
         )
 
@@ -2396,10 +2287,8 @@ def main():
     save_json(
         history_path,
         {
-            "updated_at":
-                updated_at,
-            "version":
-                VERSION,
+            "updated_at": updated_at,
+            "version": VERSION,
             "monitor_start_date":
                 MONITOR_START_DATE,
             "candidate_count":
