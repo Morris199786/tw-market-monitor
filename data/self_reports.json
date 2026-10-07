@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-07T08:34+08:00",
+  "updated_at": "2026-10-07T13:03+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -267,7 +267,7 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 7,
+          "rows": 13,
           "hits": 0
         },
         {
@@ -313,14 +313,6 @@
         {
           "mode": "company_rescue",
           "ticker": "2028",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
-          "hits": 0,
-          "error": ""
-        },
-        {
-          "mode": "company_rescue",
-          "ticker": "2059",
           "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
@@ -505,7 +497,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3711",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -521,7 +513,7 @@
         {
           "mode": "company_rescue",
           "ticker": "4977",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -640,7 +632,7 @@
         },
         {
           "mode": "company_rescue_summary",
-          "targets": 44,
+          "targets": 43,
           "rescued": 0,
           "rescued_tickers": []
         }
