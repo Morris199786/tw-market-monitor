@@ -1,16 +1,23 @@
 /* =========================================================
-   Heatmap 強勢股金標 + 價 / 量模式
+   Heatmap 價 / 量模式
    2026-10-07
 
    價：
-   - 完全保留 app.js 原本熱力圖
-   - 當日模式顯示各族群近5日漲幅前2金標
+   - 使用 app.js 原本價格熱力圖
+   - 保留當日 / 5日 / 10日 / 20日
+   - 保留市值加權 / 權重上限
+   - 當日模式顯示各族群近5日漲幅 Top 2 金標
 
    量：
+   - 完全獨立成交金額 Treemap
    - 方塊面積 = 當日族群成交金額
-   - 顏色 = 當日族群市值漲跌幅（紅漲綠跌）
+   - 顏色 = 當日族群市值漲跌
    - 固定單位 = 億元
-   - 顯示當日成交、5日均、相對5日均變化
+   - 顯示：
+       成交 XXX 億
+       5日均 XXX 億（±XX%）
+       市值 ±X.XX%
+   - 隱藏價格模式專用控制項
    ========================================================= */
 
 (function () {
@@ -19,67 +26,94 @@
   const CACHE_MS =
     5 * 60 * 1000;
 
-  let detailCache = null;
-  let detailAt = 0;
+  const state = {
+    mode: "price",
 
-  let volumeCache = null;
-  let volumeAt = 0;
+    volumeData: null,
+    volumeAt: 0,
 
-  let mode = "price";
-  let observer = null;
-  let applying = false;
+    detailData: null,
+    detailAt: 0,
 
-  const $ =
-    selector =>
-      document.querySelector(
-        selector
-      );
+    renderingVolume: false,
+    restoringPrice: false,
 
-  const num =
-    value =>
-      Number.isFinite(
-        Number(value)
-      )
-        ? Number(value)
-        : null;
+    observer: null,
+    timer: null
+  };
 
   /* =========================================================
-     Heatmap 是否顯示
+     Helpers
      ========================================================= */
 
-  function visible() {
-    return !!(
-      $("#heat")
-        ?.classList
-        .contains("active")
+  function $(
+    selector,
+    root = document
+  ) {
+    return root.querySelector(
+      selector
     );
   }
 
-  /* =========================================================
-     目前價格熱力圖期間
-     ========================================================= */
+  function $$(
+    selector,
+    root = document
+  ) {
+    return [
+      ...root.querySelectorAll(
+        selector
+      )
+    ];
+  }
 
-  function period() {
-    return (
+  function number(
+    value
+  ) {
+    const n =
+      Number(value);
+
+    return Number.isFinite(n)
+      ? n
+      : null;
+  }
+
+  function heatVisible() {
+    const page =
+      document.getElementById(
+        "heat"
+      );
+
+    return !!(
+      page &&
+      page.classList.contains(
+        "active"
+      )
+    );
+  }
+
+  function activePeriod() {
+    if (
       typeof
         window
           .getHeatmapActivePeriod ===
       "function"
-    )
-      ? String(
-          window
-            .getHeatmapActivePeriod() ||
-          "1"
-        )
-      : "1";
+    ) {
+      return String(
+        window
+          .getHeatmapActivePeriod() ||
+        "1"
+      );
+    }
+
+    return "1";
   }
 
   /* =========================================================
      JSON
      ========================================================= */
 
-  async function getJson(
-    url,
+  async function loadJson(
+    path,
     force = false
   ) {
     const version =
@@ -92,78 +126,87 @@
 
     const response =
       await fetch(
-        `${url}?v=${version}`,
+        `${path}?v=${version}`,
         {
-          cache: "no-store"
+          cache:
+            "no-store"
         }
       );
 
     if (!response.ok) {
       throw new Error(
-        `${url} HTTP ${response.status}`
+        `${path} HTTP ${response.status}`
       );
     }
 
     return response.json();
   }
 
-  async function getDetail(
+  async function loadVolumeData(
     force = false
   ) {
     if (
       !force &&
-      detailCache &&
+      state.volumeData &&
       Date.now() -
-        detailAt <
+        state.volumeAt <
         CACHE_MS
     ) {
-      return detailCache;
+      return state.volumeData;
     }
 
-    detailCache =
-      await getJson(
-        "./data/stock_detail.json",
-        force
-      );
-
-    detailAt =
-      Date.now();
-
-    return detailCache;
-  }
-
-  async function getVolume(
-    force = false
-  ) {
-    if (
-      !force &&
-      volumeCache &&
-      Date.now() -
-        volumeAt <
-        CACHE_MS
-    ) {
-      return volumeCache;
-    }
-
-    volumeCache =
-      await getJson(
+    const data =
+      await loadJson(
         "./data/sector_turnover.json",
         force
       );
 
-    volumeAt =
+    state.volumeData =
+      data;
+
+    state.volumeAt =
       Date.now();
 
-    return volumeCache;
+    return data;
+  }
+
+  async function loadDetailData(
+    force = false
+  ) {
+    if (
+      !force &&
+      state.detailData &&
+      Date.now() -
+        state.detailAt <
+        CACHE_MS
+    ) {
+      return state.detailData;
+    }
+
+    const data =
+      await loadJson(
+        "./data/stock_detail.json",
+        force
+      );
+
+    state.detailData =
+      data;
+
+    state.detailAt =
+      Date.now();
+
+    return data;
   }
 
   /* =========================================================
      CSS
      ========================================================= */
 
-  function injectStyle() {
+  function injectStyles() {
     if (
-      $("#heatPriceVolumeStyle")
+      document.getElementById(
+        "heatPriceVolumeStyles"
+      )
     ) {
       return;
     }
@@ -174,25 +217,24 @@
       );
 
     style.id =
-      "heatPriceVolumeStyle";
+      "heatPriceVolumeStyles";
 
     style.textContent = `
 
-      /* =========================
-         價 / 量切換
-         ========================= */
+      /* ========================================
+         價 / 量
+         ======================================== */
 
-      .heat-pv-wrap{
+      .heat-pv-switch{
         display:flex;
         align-items:center;
-        gap:8px;
-        margin:0 0 12px;
-        flex-wrap:wrap;
-      }
 
-      .heat-pv-tabs{
-        display:inline-flex;
-        padding:3px;
+        width:max-content;
+
+        padding:4px;
+
+        margin:
+          0 0 18px;
 
         border:
           1px solid
@@ -200,22 +242,32 @@
             148,
             163,
             184,
-            .30
+            .32
           );
 
-        border-radius:12px;
+        border-radius:
+          14px;
 
         background:
           rgba(
             148,
             163,
             184,
-            .10
+            .08
           );
       }
 
-      .heat-pv-btn{
+      .heat-pv-switch button{
+        min-width:
+          88px;
+
+        padding:
+          10px 20px;
+
         border:0;
+
+        border-radius:
+          11px;
 
         background:
           transparent;
@@ -226,49 +278,62 @@
         font:
           inherit;
 
-        font-size:14px;
-        font-weight:800;
+        font-size:
+          15px;
 
-        padding:
-          8px 18px;
+        font-weight:
+          900;
 
-        border-radius:
-          9px;
+        cursor:
+          pointer;
 
-        cursor:pointer;
+        transition:
+          background .15s ease,
+          box-shadow .15s ease;
       }
 
-      .heat-pv-btn.active{
-        background:#fff;
+      .heat-pv-switch
+      button.active{
+        background:
+          #ffffff;
+
+        color:
+          #111827;
 
         box-shadow:
-          0 1px 5px
+          0 2px 8px
           rgba(
             15,
             23,
             42,
             .12
           );
-
-        color:#111827;
       }
 
       html[data-theme="dark"]
-      .heat-pv-btn.active{
-        background:#29313d;
-        color:#f8fafc;
+      .heat-pv-switch
+      button.active{
+        background:
+          #273142;
+
+        color:
+          #ffffff;
       }
 
-      /* =========================
-         金標說明
-         ========================= */
+
+      /* ========================================
+         金色 Top 2
+         ======================================== */
 
       .heat-strength-note{
         display:flex;
+
         align-items:center;
-        gap:8px;
+
+        gap:7px;
 
         width:max-content;
+
         max-width:100%;
 
         margin:
@@ -297,7 +362,8 @@
             .56
           );
 
-        color:#765314;
+        color:
+          #765314;
 
         font-size:
           10px;
@@ -307,8 +373,14 @@
       }
 
       .heat-strength-swatch{
-        width:11px;
-        height:11px;
+        width:
+          11px;
+
+        height:
+          11px;
+
+        flex:
+          0 0 11px;
 
         border-radius:
           4px;
@@ -317,12 +389,8 @@
           #f5d76e;
       }
 
-      /* =========================
-         近5日 Top 2
-         ========================= */
-
       #heatGrid
-      .heat-stock-top2{
+      .heat-stock.heat-stock-top2{
         border-color:
           rgba(
             202,
@@ -355,8 +423,10 @@
       .heat-strength-rank{
         display:inline-flex;
 
+        align-items:center;
+
         margin-left:
-          6px;
+          5px;
 
         padding:
           3px 6px;
@@ -390,6 +460,9 @@
         font-weight:
           900;
 
+        line-height:
+          1;
+
         white-space:
           nowrap;
       }
@@ -410,7 +483,7 @@
 
       html[data-theme="dark"]
       #heatGrid
-      .heat-stock-top2{
+      .heat-stock.heat-stock-top2{
         background:
           linear-gradient(
             135deg,
@@ -430,20 +503,77 @@
           !important;
       }
 
-      /* =========================
-         成交值 Treemap
-         ========================= */
 
+      /* ========================================
+         量模式說明
+         ======================================== */
+
+      .turnover-header{
+        display:flex;
+
+        align-items:flex-end;
+
+        justify-content:
+          space-between;
+
+        gap:
+          12px;
+
+        margin:
+          0 0 12px;
+      }
+
+      .turnover-header-main{
+        font-size:
+          13px;
+
+        font-weight:
+          800;
+
+        color:
+          inherit;
+      }
+
+      .turnover-header-sub{
+        margin-top:
+          4px;
+
+        font-size:
+          11px;
+
+        color:
+          #7c8798;
+      }
+
+      .turnover-date{
+        flex:
+          0 0 auto;
+
+        font-size:
+          11px;
+
+        color:
+          #8b95a5;
+      }
+
+
+      /* ========================================
+         Treemap
+         ======================================== */
+
+      #heatGrid
       .turnover-treemap{
         position:relative;
 
         width:100%;
-        height:680px;
+
+        height:
+          720px;
+
+        overflow:hidden;
 
         border-radius:
           16px;
-
-        overflow:hidden;
 
         background:
           rgba(
@@ -454,30 +584,30 @@
           );
       }
 
+      #heatGrid
       .turnover-box{
         position:absolute;
 
         box-sizing:
           border-box;
 
-        padding:3px;
+        padding:
+          3px;
       }
 
+      #heatGrid
       .turnover-inner{
-        width:100%;
-        height:100%;
+        width:
+          100%;
+
+        height:
+          100%;
 
         box-sizing:
           border-box;
 
-        border-radius:
-          10px;
-
-        padding:12px;
-
-        overflow:hidden;
-
-        color:#fff;
+        overflow:
+          hidden;
 
         display:flex;
 
@@ -487,6 +617,18 @@
         justify-content:
           center;
 
+        padding:
+          12px;
+
+        border-radius:
+          10px;
+
+        color:
+          #ffffff;
+
+        text-align:
+          left;
+
         box-shadow:
           inset
           0 0 0 1px
@@ -494,51 +636,111 @@
             255,
             255,
             255,
-            .18
+            .16
           );
       }
 
-      /* 漲 */
 
-      .turnover-inner.r4{
-        background:#dc2626;
-      }
+      /* 上漲 */
 
-      .turnover-inner.r3{
-        background:#e54848;
-      }
-
-      .turnover-inner.r2{
-        background:#ef6b6b;
-      }
-
+      #heatGrid
       .turnover-inner.r1{
-        background:#b76b6b;
+        background:
+          #a54d4d;
       }
 
-      /* 跌 */
-
-      .turnover-inner.g4{
-        background:#16834b;
+      #heatGrid
+      .turnover-inner.r2{
+        background:
+          #c84a4a;
       }
 
-      .turnover-inner.g3{
-        background:#29965b;
+      #heatGrid
+      .turnover-inner.r3{
+        background:
+          #dc3838;
       }
 
-      .turnover-inner.g2{
-        background:#4a9d70;
+      #heatGrid
+      .turnover-inner.r4{
+        background:
+          #e52626;
       }
 
+
+      /* 下跌 */
+
+      #heatGrid
       .turnover-inner.g1{
-        background:#668979;
+        background:
+          #557b69;
       }
 
+      #heatGrid
+      .turnover-inner.g2{
+        background:
+          #3d8b65;
+      }
+
+      #heatGrid
+      .turnover-inner.g3{
+        background:
+          #25965c;
+      }
+
+      #heatGrid
+      .turnover-inner.g4{
+        background:
+          #138348;
+      }
+
+
+      #heatGrid
       .turnover-inner.gray{
-        background:#6b7280;
+        background:
+          #687386;
       }
 
-      .turnover-name{
+
+      /* ========================================
+         Treemap 字
+         ======================================== */
+
+      .turnover-sector{
+        overflow:hidden;
+
+        text-overflow:
+          ellipsis;
+
+        white-space:
+          nowrap;
+
+        font-size:
+          clamp(
+            12px,
+            1.45vw,
+            23px
+          );
+
+        font-weight:
+          900;
+
+        line-height:
+          1.08;
+
+        margin-bottom:
+          8px;
+      }
+
+      .turnover-value{
+        overflow:hidden;
+
+        text-overflow:
+          ellipsis;
+
+        white-space:
+          nowrap;
+
         font-size:
           clamp(
             12px,
@@ -550,32 +752,51 @@
           900;
 
         line-height:
-          1.05;
-
-        margin-bottom:
-          7px;
+          1.1;
       }
 
-      .turnover-main{
-        font-size:
-          clamp(
-            12px,
-            1.2vw,
-            20px
-          );
+      .turnover-average{
+        overflow:hidden;
 
-        font-weight:
-          900;
+        text-overflow:
+          ellipsis;
 
-        line-height:
-          1.15;
-      }
+        white-space:
+          nowrap;
 
-      .turnover-sub{
+        margin-top:
+          6px;
+
         font-size:
           clamp(
             9px,
-            .85vw,
+            .9vw,
+            14px
+          );
+
+        font-weight:
+          800;
+
+        line-height:
+          1.2;
+      }
+
+      .turnover-market{
+        overflow:hidden;
+
+        text-overflow:
+          ellipsis;
+
+        white-space:
+          nowrap;
+
+        margin-top:
+          5px;
+
+        font-size:
+          clamp(
+            9px,
+            .86vw,
             14px
           );
 
@@ -583,50 +804,95 @@
           750;
 
         line-height:
-          1.35;
-
-        margin-top:
-          5px;
+          1.2;
       }
 
-      .turnover-note{
+
+      /* ========================================
+         Loading / Error
+         ======================================== */
+
+      .turnover-status{
+        width:100%;
+
+        padding:
+          32px 18px;
+
+        border:
+          1px solid
+          rgba(
+            148,
+            163,
+            184,
+            .22
+          );
+
+        border-radius:
+          14px;
+
+        text-align:
+          center;
+
+        color:
+          #7c8798;
+
         font-size:
-          12px;
+          13px;
 
-        opacity:
-          .72;
-
-        margin:
-          0 0 10px;
+        font-weight:
+          700;
       }
 
-      /* =========================
+
+      /* ========================================
          手機
-         ========================= */
+         ======================================== */
 
       @media(
         max-width:720px
       ){
 
-        .heat-pv-btn{
-          font-size:
-            13px;
+        .heat-pv-switch{
+          margin-bottom:
+            16px;
+        }
+
+        .heat-pv-switch
+        button{
+          min-width:
+            88px;
 
           padding:
-            7px 16px;
+            10px 18px;
+
+          font-size:
+            15px;
         }
 
+        .turnover-header{
+          align-items:
+            flex-start;
+
+          flex-direction:
+            column;
+
+          gap:
+            4px;
+        }
+
+        #heatGrid
         .turnover-treemap{
           height:
-            760px;
+            780px;
         }
 
+        #heatGrid
         .turnover-inner{
           padding:
             8px;
         }
 
-        .turnover-name{
+        .turnover-sector{
           font-size:
             11px;
 
@@ -634,16 +900,28 @@
             4px;
         }
 
-        .turnover-main{
+        .turnover-value{
           font-size:
             11px;
         }
 
-        .turnover-sub{
+        .turnover-average{
+          margin-top:
+            4px;
+
+          font-size:
+            8px;
+        }
+
+        .turnover-market{
+          margin-top:
+            3px;
+
           font-size:
             8px;
         }
       }
+
     `;
 
     document.head.appendChild(
@@ -652,19 +930,39 @@
   }
 
   /* =========================================================
+     找到 heatmap 上方區域
+     ========================================================= */
+
+  function heatGrid() {
+    return document.getElementById(
+      "heatGrid"
+    );
+  }
+
+  function heatParent() {
+    return (
+      heatGrid()
+        ?.parentElement ||
+      null
+    );
+  }
+
+  /* =========================================================
      價 / 量按鈕
      ========================================================= */
 
-  function ensureTabs() {
+  function ensureModeSwitch() {
     const grid =
-      $("#heatGrid");
+      heatGrid();
 
     if (!grid) {
       return;
     }
 
     let wrap =
-      $("#heatPriceVolumeWrap");
+      document.getElementById(
+        "heatPriceVolumeSwitch"
+      );
 
     if (!wrap) {
       wrap =
@@ -673,97 +971,241 @@
         );
 
       wrap.id =
-        "heatPriceVolumeWrap";
+        "heatPriceVolumeSwitch";
 
       wrap.className =
-        "heat-pv-wrap";
+        "heat-pv-switch";
 
       wrap.innerHTML = `
-        <div
-          class="heat-pv-tabs"
+        <button
+          type="button"
+          data-heat-mode="price"
         >
-          <button
-            type="button"
-            class="
-              heat-pv-btn
-              active
-            "
-            data-heat-view="price"
-          >
-            價
-          </button>
+          價
+        </button>
 
-          <button
-            type="button"
-            class="heat-pv-btn"
-            data-heat-view="volume"
-          >
-            量
-          </button>
-        </div>
+        <button
+          type="button"
+          data-heat-mode="volume"
+        >
+          量
+        </button>
       `;
 
-      grid
-        .parentNode
-        .insertBefore(
-          wrap,
-          grid
-        );
+      grid.parentNode.insertBefore(
+        wrap,
+        grid
+      );
 
       wrap.addEventListener(
         "click",
         event => {
           const button =
-            event
-              .target
-              .closest(
-                "[data-heat-view]"
-              );
+            event.target.closest(
+              "[data-heat-mode]"
+            );
 
           if (!button) {
             return;
           }
 
-          setMode(
-            button.dataset
-              .heatView
+          const next =
+            button.getAttribute(
+              "data-heat-mode"
+            );
+
+          changeMode(
+            next
           );
         }
       );
     }
 
-    wrap
-      .querySelectorAll(
-        "[data-heat-view]"
-      )
+    $$("#heatPriceVolumeSwitch [data-heat-mode]")
       .forEach(
         button => {
-          button
-            .classList
-            .toggle(
-              "active",
-              button.dataset
-                .heatView ===
-                mode
-            );
+          button.classList.toggle(
+            "active",
+            button.getAttribute(
+              "data-heat-mode"
+            ) ===
+              state.mode
+          );
         }
       );
   }
 
   /* =========================================================
-     金標說明
+     價格模式控制項
      ========================================================= */
 
-  function ensureNote() {
+  function collectPriceControls() {
     const grid =
-      $("#heatGrid");
+      heatGrid();
+
+    const parent =
+      heatParent();
+
+    if (
+      !grid ||
+      !parent
+    ) {
+      return [];
+    }
+
+    const controls =
+      [];
+
+    /*
+     * app.js 建立的期間與權重控制
+     * 以文字內容輔助辨識
+     */
+
+    [
+      ...parent.children
+    ].forEach(
+      element => {
+        if (
+          element === grid ||
+          element.id ===
+            "heatPriceVolumeSwitch" ||
+          element.id ===
+            "heatStrengthNote"
+        ) {
+          return;
+        }
+
+        const text =
+          (
+            element.textContent ||
+            ""
+          )
+            .replace(
+              /\s+/g,
+              " "
+            )
+            .trim();
+
+        const isPeriod =
+          text.includes(
+            "當日"
+          ) &&
+          text.includes(
+            "5日"
+          ) &&
+          text.includes(
+            "10日"
+          ) &&
+          text.includes(
+            "20日"
+          );
+
+        const isWeight =
+          text.includes(
+            "市值加權"
+          ) &&
+          text.includes(
+            "權重上限"
+          );
+
+        const isWeightNote =
+          text.includes(
+            "市值加權"
+          ) &&
+          text.includes(
+            "公司實際市值"
+          );
+
+        const isBenchmark =
+          (
+            text.includes(
+              "大盤"
+            ) &&
+            text.includes(
+              "OTC"
+            )
+          ) ||
+          text.includes(
+            "指數收盤資料"
+          );
+
+        if (
+          isPeriod ||
+          isWeight ||
+          isWeightNote ||
+          isBenchmark
+        ) {
+          controls.push(
+            element
+          );
+        }
+      }
+    );
+
+    return [
+      ...new Set(
+        controls
+      )
+    ];
+  }
+
+  function hidePriceControls() {
+    collectPriceControls()
+      .forEach(
+        element => {
+          if (
+            !element.hasAttribute(
+              "data-heat-original-display"
+            )
+          ) {
+            element.setAttribute(
+              "data-heat-original-display",
+              element.style.display ||
+                ""
+            );
+          }
+
+          element.style.display =
+            "none";
+        }
+      );
+  }
+
+  function showPriceControls() {
+    document
+      .querySelectorAll(
+        "[data-heat-original-display]"
+      )
+      .forEach(
+        element => {
+          element.style.display =
+            element.getAttribute(
+              "data-heat-original-display"
+            ) || "";
+
+          element.removeAttribute(
+            "data-heat-original-display"
+          );
+        }
+      );
+  }
+
+  /* =========================================================
+     金標
+     ========================================================= */
+
+  function ensureStrengthNote() {
+    const grid =
+      heatGrid();
 
     if (!grid) {
       return;
     }
 
     let note =
-      $("#heatStrengthNote");
+      document.getElementById(
+        "heatStrengthNote"
+      );
 
     if (!note) {
       note =
@@ -777,17 +1219,17 @@
       note.className =
         "heat-strength-note";
 
-      grid
-        .parentNode
-        .insertBefore(
-          note,
-          grid
-        );
+      grid.parentNode.insertBefore(
+        note,
+        grid
+      );
     }
 
     if (
-      mode !== "price" ||
-      period() !== "1"
+      state.mode !==
+        "price" ||
+      activePeriod() !==
+        "1"
     ) {
       note.style.display =
         "none";
@@ -809,146 +1251,189 @@
     `;
   }
 
-  /* =========================================================
-     金標工具
-     ========================================================= */
+  function clearStrengthMarks() {
+    $$("#heatGrid .heat-stock-top2")
+      .forEach(
+        row => {
+          row.classList.remove(
+            "heat-stock-top2"
+          );
+        }
+      );
 
-  function ticker(row) {
-    return (
-      row?.textContent ||
-      ""
-    )
-      .match(
-        /\b\d{4,6}\b/
-      )?.[0] || "";
+    $$("#heatGrid .heat-strength-rank")
+      .forEach(
+        label => {
+          label.remove();
+        }
+      );
   }
 
-  function last(arr) {
+  function tickerFromRow(
+    row
+  ) {
+    const tickerNode =
+      row.querySelector(
+        ".t"
+      );
+
+    const values = [
+      row.dataset?.ticker,
+      tickerNode
+        ?.textContent,
+      row.textContent
+    ];
+
+    for (
+      const value of values
+    ) {
+      const match =
+        String(
+          value || ""
+        ).match(
+          /\b\d{4,6}\b/
+        );
+
+      if (match) {
+        return match[0];
+      }
+    }
+
+    return "";
+  }
+
+  function latestNumber(
+    values
+  ) {
     if (
-      !Array.isArray(arr)
+      !Array.isArray(
+        values
+      )
     ) {
       return null;
     }
 
     for (
       let i =
-        arr.length - 1;
+        values.length - 1;
       i >= 0;
       i -= 1
     ) {
-      const value =
-        num(arr[i]);
+      const n =
+        number(
+          values[i]
+        );
 
       if (
-        value !== null
+        n !== null
       ) {
-        return value;
+        return n;
       }
     }
 
     return null;
   }
 
-  function clearGold() {
-    document
-      .querySelectorAll(
-        "#heatGrid .heat-stock-top2"
-      )
-      .forEach(
-        element => {
-          element
-            .classList
-            .remove(
-              "heat-stock-top2"
-            );
-        }
-      );
-
-    document
-      .querySelectorAll(
-        "#heatGrid .heat-strength-rank"
-      )
-      .forEach(
-        element => {
-          element.remove();
-        }
-      );
-  }
-
-  async function applyGold(
+  async function applyStrengthMarks(
     force = false
   ) {
     if (
-      mode !== "price" ||
-      period() !== "1" ||
-      !visible()
+      state.mode !==
+        "price" ||
+      activePeriod() !==
+        "1" ||
+      !heatVisible()
     ) {
       return;
     }
 
     const details =
-      [
-        ...document
-          .querySelectorAll(
-            "#heatGrid .heat-detail"
-          )
-      ];
+      $$("#heatGrid .heat-detail");
 
-    if (!details.length) {
+    if (
+      !details.length
+    ) {
       return;
     }
 
-    const data =
-      await getDetail(
-        force
+    let data;
+
+    try {
+      data =
+        await loadDetailData(
+          force
+        );
+    } catch (error) {
+      console.error(
+        "[heat strength]",
+        error
       );
 
-    clearGold();
+      return;
+    }
+
+    if (
+      state.mode !==
+        "price" ||
+      activePeriod() !==
+        "1"
+    ) {
+      return;
+    }
+
+    clearStrengthMarks();
 
     details.forEach(
       detail => {
-        [
-          ...detail
-            .querySelectorAll(
-              ".heat-stock"
-            )
-        ]
-          .map(
-            row => {
-              const stockTicker =
-                ticker(row);
+        const rows =
+          $$(".heat-stock", detail);
 
-              const stock =
-                data
-                  ?.stocks
-                  ?.[
-                    stockTicker
-                  ];
+        const ranked =
+          rows
+            .map(
+              row => {
+                const ticker =
+                  tickerFromRow(
+                    row
+                  );
 
-              return {
-                row,
+                const stock =
+                  data
+                    ?.stocks
+                    ?.[ticker];
 
-                value:
-                  last(
+                const value =
+                  latestNumber(
                     stock
                       ?.returns_by_period
                       ?.["5"] ||
                     stock
                       ?.returns
-                  )
-              };
-            }
-          )
-          .filter(
-            item =>
-              item.value !==
-              null
-          )
-          .sort(
-            (a, b) =>
-              b.value -
-              a.value
-          )
+                  );
+
+                return {
+                  row,
+                  ticker,
+                  value
+                };
+              }
+            )
+            .filter(
+              item =>
+                item.ticker &&
+                item.value !==
+                  null
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                b.value -
+                a.value
+            );
+
+        ranked
           .slice(
             0,
             2
@@ -958,29 +1443,23 @@
               item,
               index
             ) => {
-              item
-                .row
-                .classList
-                .add(
-                  "heat-stock-top2"
+              item.row.classList.add(
+                "heat-stock-top2"
+              );
+
+              const tickerNode =
+                item.row.querySelector(
+                  ".t"
                 );
 
-              const target =
-                item
-                  .row
-                  .querySelector(
-                    ".t"
-                  );
-
-              if (!target) {
+              if (!tickerNode) {
                 return;
               }
 
               const label =
-                document
-                  .createElement(
-                    "span"
-                  );
+                document.createElement(
+                  "span"
+                );
 
               label.className =
                 "heat-strength-rank";
@@ -990,11 +1469,10 @@
                   index + 1
                 }`;
 
-              target
-                .insertAdjacentElement(
-                  "afterend",
-                  label
-                );
+              tickerNode.insertAdjacentElement(
+                "afterend",
+                label
+              );
             }
           );
       }
@@ -1002,23 +1480,34 @@
   }
 
   /* =========================================================
-     成交金額格式
+     Format
      ========================================================= */
 
-  function fmtYi(value) {
+  function formatYi(
+    value
+  ) {
+    const n =
+      number(value);
+
+    if (
+      n === null
+    ) {
+      return "—";
+    }
+
     const yi =
-      Number(
-        value || 0
-      ) /
+      n /
       100000000;
 
-    if (yi >= 10) {
+    if (
+      yi >= 10
+    ) {
       return (
-        Math
-          .round(yi)
-          .toLocaleString(
-            "zh-TW"
-          ) +
+        Math.round(
+          yi
+        ).toLocaleString(
+          "zh-TW"
+        ) +
         " 億"
       );
     }
@@ -1029,11 +1518,16 @@
     );
   }
 
-  function pct(value) {
+  function formatPct(
+    value,
+    digits = 2
+  ) {
     const n =
-      num(value);
+      number(value);
 
-    if (n === null) {
+    if (
+      n === null
+    ) {
       return "—";
     }
 
@@ -1043,34 +1537,43 @@
           ? "+"
           : ""
       ) +
-      n.toFixed(2) +
+      n.toFixed(
+        digits
+      ) +
       "%"
     );
   }
 
-  /* =========================================================
-     漲跌顏色
-     ========================================================= */
-
-  function heatClass(value) {
+  function colorClass(
+    change
+  ) {
     const n =
-      num(value);
+      number(change);
 
-    if (n === null) {
+    if (
+      n === null
+    ) {
       return "gray";
     }
 
     const abs =
       Math.abs(n);
 
-    const level =
+    let level = 1;
+
+    if (
       abs >= 3
-        ? 4
-        : abs >= 2
-          ? 3
-          : abs >= 1
-            ? 2
-            : 1;
+    ) {
+      level = 4;
+    } else if (
+      abs >= 2
+    ) {
+      level = 3;
+    } else if (
+      abs >= 1
+    ) {
+      level = 2;
+    }
 
     return (
       n >= 0
@@ -1081,49 +1584,51 @@
 
   /* =========================================================
      Treemap layout
-
-     面積依成交金額比例
      ========================================================= */
 
-  function layout(
-    items,
-    x,
-    y,
-    width,
-    height,
-    output = []
+  function sumValues(
+    items
   ) {
-    if (!items.length) {
-      return output;
-    }
+    return items.reduce(
+      (
+        sum,
+        item
+      ) =>
+        sum +
+        Math.max(
+          0,
+          Number(
+            item.value ||
+            0
+          )
+        ),
+      0
+    );
+  }
 
+  function splitItems(
+    items
+  ) {
     if (
-      items.length === 1
+      items.length <=
+      1
     ) {
-      output.push({
-        ...items[0],
-        x,
-        y,
-        w: width,
-        h: height
-      });
-
-      return output;
+      return [
+        items,
+        []
+      ];
     }
 
     const total =
-      items.reduce(
-        (
-          sum,
-          item
-        ) =>
-          sum +
-          item.value,
-        0
+      sumValues(
+        items
       );
 
-    let accumulated = 0;
-    let cut = 1;
+    const half =
+      total / 2;
+
+    let running = 0;
+    let index = 1;
 
     for (
       let i = 0;
@@ -1131,40 +1636,79 @@
         items.length - 1;
       i += 1
     ) {
-      accumulated +=
+      running +=
         items[i].value;
 
-      if (
-        accumulated >=
-        total / 2
-      ) {
-        cut =
-          i + 1;
+      index =
+        i + 1;
 
+      if (
+        running >=
+        half
+      ) {
         break;
       }
     }
 
-    const first =
+    return [
       items.slice(
         0,
-        cut
+        index
+      ),
+
+      items.slice(
+        index
+      )
+    ];
+  }
+
+  function treemapLayout(
+    items,
+    x = 0,
+    y = 0,
+    width = 100,
+    height = 100,
+    output = []
+  ) {
+    if (
+      !items.length
+    ) {
+      return output;
+    }
+
+    if (
+      items.length ===
+      1
+    ) {
+      output.push({
+        ...items[0],
+
+        x,
+        y,
+
+        width,
+        height
+      });
+
+      return output;
+    }
+
+    const [
+      first,
+      second
+    ] =
+      splitItems(
+        items
       );
 
-    const second =
-      items.slice(
-        cut
+    const total =
+      sumValues(
+        items
       );
 
     const firstTotal =
-      first.reduce(
-        (
-          sum,
-          item
-        ) =>
-          sum +
-          item.value,
-        0
+      sumValues(
+        first
       );
 
     const ratio =
@@ -1177,53 +1721,51 @@
       width >=
       height
     ) {
-      layout(
+      const firstWidth =
+        width *
+        ratio;
+
+      treemapLayout(
         first,
         x,
         y,
-        width *
-          ratio,
+        firstWidth,
         height,
         output
       );
 
-      layout(
+      treemapLayout(
         second,
         x +
-          width *
-            ratio,
+          firstWidth,
         y,
-        width *
-          (
-            1 -
-            ratio
-          ),
+        width -
+          firstWidth,
         height,
         output
       );
     } else {
-      layout(
+      const firstHeight =
+        height *
+        ratio;
+
+      treemapLayout(
         first,
         x,
         y,
         width,
-        height *
-          ratio,
+        firstHeight,
         output
       );
 
-      layout(
+      treemapLayout(
         second,
         x,
         y +
-          height *
-            ratio,
+          firstHeight,
         width,
-        height *
-          (
-            1 -
-            ratio
-          ),
+        height -
+          firstHeight,
         output
       );
     }
@@ -1232,349 +1774,660 @@
   }
 
   /* =========================================================
-     量熱力圖
+     取得族群市值漲跌
+     ========================================================= */
+
+  function sectorChangeMap(
+    heatmap
+  ) {
+    const map =
+      new Map();
+
+    (
+      heatmap
+        ?.sectors ||
+      []
+    ).forEach(
+      sector => {
+        let change =
+          number(
+            sector
+              .change_pct
+          );
+
+        /*
+         * heatmap.json 新版若沒有 change_pct，
+         * 嘗試其他常見欄位
+         */
+
+        if (
+          change === null
+        ) {
+          change =
+            number(
+              sector
+                .return_pct
+            );
+        }
+
+        if (
+          change === null
+        ) {
+          change =
+            number(
+              sector
+                .market_return
+            );
+        }
+
+        if (
+          change === null
+        ) {
+          change =
+            number(
+              sector
+                .returns_by_period
+                ?.["1"]
+            );
+        }
+
+        map.set(
+          sector.name,
+          change
+        );
+      }
+    );
+
+    return map;
+  }
+
+  /* =========================================================
+     Render 成交金額 Treemap
      ========================================================= */
 
   async function renderVolume(
     force = false
   ) {
+    if (
+      state.mode !==
+      "volume"
+    ) {
+      return;
+    }
+
     const grid =
-      $("#heatGrid");
+      heatGrid();
 
     if (!grid) {
       return;
     }
 
-    const [
-      volumeData,
-      heatData
-    ] =
-      await Promise.all([
-        getVolume(force),
+    state.renderingVolume =
+      true;
 
-        getJson(
-          "./data/heatmap.json",
-          force
-        )
-      ]);
+    hidePriceControls();
 
-    const changes =
-      new Map(
+    clearStrengthMarks();
+
+    const note =
+      document.getElementById(
+        "heatStrengthNote"
+      );
+
+    if (note) {
+      note.style.display =
+        "none";
+    }
+
+    grid.innerHTML = `
+      <div
+        class="turnover-status"
+      >
+        成交金額資料載入中…
+      </div>
+    `;
+
+    try {
+      const [
+        volumeData,
+        heatmapData
+      ] =
+        await Promise.all([
+          loadVolumeData(
+            force
+          ),
+
+          loadJson(
+            "./data/heatmap.json",
+            force
+          )
+        ]);
+
+      /*
+       * await 期間若已切回價，
+       * 不可以把量畫面蓋回去
+       */
+
+      if (
+        state.mode !==
+        "volume"
+      ) {
+        return;
+      }
+
+      const changeMap =
+        sectorChangeMap(
+          heatmapData
+        );
+
+      const items =
         (
-          heatData
-            .sectors ||
+          volumeData
+            ?.sectors ||
           []
         )
           .map(
-            sector => [
-              sector.name,
-              num(
-                sector
-                  .change_pct
-              )
-            ]
+            sector => {
+              const turnover =
+                Number(
+                  sector
+                    .turnover ||
+                  0
+                );
+
+              return {
+                ...sector,
+
+                value:
+                  Math.max(
+                    0,
+                    turnover
+                  ),
+
+                change:
+                  changeMap.get(
+                    sector.name
+                  )
+              };
+            }
           )
-      );
+          .filter(
+            sector =>
+              sector.value >
+              0
+          )
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              b.value -
+              a.value
+          );
 
-    const items =
-      (
-        volumeData
-          .sectors ||
-        []
-      )
-        .map(
-          sector => ({
-            ...sector,
+      if (
+        !items.length
+      ) {
+        grid.innerHTML = `
+          <div
+            class="turnover-status"
+          >
+            目前沒有成交金額資料
+          </div>
+        `;
 
-            value:
-              Number(
-                sector
-                  .turnover ||
-                0
-              ),
+        return;
+      }
 
-            change:
-              changes.get(
-                sector.name
-              )
-          })
-        )
-        .filter(
-          sector =>
-            sector.value >
-            0
-        )
-        .sort(
-          (a, b) =>
-            b.value -
-            a.value
+      const boxes =
+        treemapLayout(
+          items
         );
 
-    const boxes =
-      layout(
-        items,
-        0,
-        0,
-        100,
-        100,
-        []
-      );
+      const date =
+        volumeData
+          ?.date ||
+        "";
 
-    const estimate =
-      volumeData
-        .estimated
-        ? "盤中成交金額為即時估算；"
-        : "";
+      const sourceText =
+        volumeData
+          ?.estimated
+          ? "盤中成交金額為即時累積估算"
+          : "成交金額為已完成交易資料";
 
-    grid.innerHTML = `
+      grid.innerHTML = `
 
-      <div
-        class="turnover-note"
-      >
-        ${estimate}
-        成交金額與5日均統一使用「億元」
-      </div>
+        <div
+          class="turnover-header"
+        >
+          <div>
+            <div
+              class="turnover-header-main"
+            >
+              族群成交金額
+            </div>
 
-      <div
-        class="turnover-treemap"
-      >
+            <div
+              class="turnover-header-sub"
+            >
+              方塊大小＝當日成交金額 ｜ 單位＝億元 ｜ ${sourceText}
+            </div>
+          </div>
 
-        ${
-          boxes
-            .map(
-              box => {
-                const area =
-                  box.w *
-                  box.h;
+          ${
+            date
+              ? `
+                <div
+                  class="turnover-date"
+                >
+                  ${date}
+                </div>
+              `
+              : ""
+          }
+        </div>
 
-                const tiny =
-                  area < 80;
+        <div
+          class="turnover-treemap"
+        >
+          ${
+            boxes
+              .map(
+                box => {
+                  const area =
+                    box.width *
+                    box.height;
 
-                const veryTiny =
-                  area < 35;
+                  const showAverage =
+                    area >=
+                    28;
 
-                const avgChange =
-                  box
-                    .vs_avg5_pct;
+                  const showMarket =
+                    area >=
+                    60;
 
-                const avgText =
-                  avgChange ===
-                    null ||
-                  avgChange ===
-                    undefined
-                    ? ""
-                    : `（${
-                        avgChange >= 0
-                          ? "+"
-                          : ""
-                      }${
-                        Number(
-                          avgChange
-                        ).toFixed(0)
-                      }%）`;
+                  const avgChange =
+                    number(
+                      box
+                        .vs_avg5_pct
+                    );
 
-                return `
-                  <div
-                    class="turnover-box"
+                  const avgChangeText =
+                    avgChange ===
+                      null
+                      ? ""
+                      : `（${formatPct(
+                          avgChange,
+                          0
+                        )}）`;
 
-                    style="
-                      left:${box.x}%;
-                      top:${box.y}%;
-                      width:${box.w}%;
-                      height:${box.h}%;
-                    "
-                  >
+                  const title = [
+                    box.name,
+
+                    `成交 ${formatYi(
+                      box.turnover
+                    )}`,
+
+                    `5日均 ${formatYi(
+                      box.avg5_turnover
+                    )}`,
+
+                    `市值 ${formatPct(
+                      box.change
+                    )}`
+                  ].join(
+                    "｜"
+                  );
+
+                  return `
+
                     <div
-                      class="
-                        turnover-inner
-                        ${
-                          heatClass(
-                            box.change
-                          )
-                        }
-                      "
+                      class="turnover-box"
 
-                      title="
-                        ${box.name}
-                        ｜成交 ${fmtYi(
-                          box.turnover
-                        )}
-                        ｜5日均 ${fmtYi(
-                          box.avg5_turnover
-                        )}
-                        ｜市值 ${pct(
-                          box.change
-                        )}
+                      style="
+                        left:${box.x}%;
+                        top:${box.y}%;
+                        width:${box.width}%;
+                        height:${box.height}%;
                       "
                     >
-
                       <div
-                        class="turnover-name"
+                        class="
+                          turnover-inner
+                          ${colorClass(
+                            box.change
+                          )}
+                        "
+
+                        title="${title}"
                       >
-                        ${box.name}
+
+                        <div
+                          class="turnover-sector"
+                        >
+                          ${box.name}
+                        </div>
+
+                        <div
+                          class="turnover-value"
+                        >
+                          成交
+                          ${formatYi(
+                            box.turnover
+                          )}
+                        </div>
+
+                        ${
+                          showAverage
+                            ? `
+                              <div
+                                class="turnover-average"
+                              >
+                                5日均
+                                ${formatYi(
+                                  box.avg5_turnover
+                                )}
+                                ${avgChangeText}
+                              </div>
+                            `
+                            : ""
+                        }
+
+                        ${
+                          showMarket
+                            ? `
+                              <div
+                                class="turnover-market"
+                              >
+                                市值
+                                ${formatPct(
+                                  box.change
+                                )}
+                              </div>
+                            `
+                            : ""
+                        }
+
                       </div>
-
-                      <div
-                        class="turnover-main"
-                      >
-                        成交
-                        ${fmtYi(
-                          box.turnover
-                        )}
-                      </div>
-
-                      ${
-                        veryTiny
-                          ? ""
-                          : `
-                            <div
-                              class="turnover-sub"
-                            >
-                              5日均
-                              ${fmtYi(
-                                box.avg5_turnover
-                              )}
-                              ${avgText}
-                            </div>
-                          `
-                      }
-
-                      ${
-                        tiny
-                          ? ""
-                          : `
-                            <div
-                              class="turnover-sub"
-                            >
-                              市值
-                              ${pct(
-                                box.change
-                              )}
-                            </div>
-                          `
-                      }
-
                     </div>
-                  </div>
-                `;
-              }
-            )
-            .join("")
-        }
 
-      </div>
-    `;
+                  `;
+                }
+              )
+              .join("")
+          }
+        </div>
+      `;
+
+    } catch (error) {
+      console.error(
+        "[turnover heatmap]",
+        error
+      );
+
+      if (
+        state.mode ===
+        "volume"
+      ) {
+        grid.innerHTML = `
+          <div
+            class="turnover-status"
+          >
+            成交金額資料讀取失敗
+          </div>
+        `;
+      }
+
+    } finally {
+      state.renderingVolume =
+        false;
+    }
   }
 
   /* =========================================================
-     價 / 量切換
+     Render 價格模式
      ========================================================= */
 
-  async function setMode(
+  function restorePrice() {
+    if (
+      state.restoringPrice
+    ) {
+      return;
+    }
+
+    state.restoringPrice =
+      true;
+
+    showPriceControls();
+
+    const note =
+      document.getElementById(
+        "heatStrengthNote"
+      );
+
+    if (note) {
+      note.style.display =
+        activePeriod() ===
+          "1"
+          ? ""
+          : "none";
+    }
+
+    /*
+     * 交回 app.js 原本 renderer
+     */
+
+    if (
+      typeof
+        window
+          .renderHeatCurrentPeriod ===
+      "function"
+    ) {
+      window
+        .renderHeatCurrentPeriod();
+    }
+
+    requestAnimationFrame(
+      () => {
+        state.restoringPrice =
+          false;
+
+        ensureModeSwitch();
+
+        ensureStrengthNote();
+
+        setTimeout(
+          () => {
+            applyStrengthMarks(
+              false
+            );
+          },
+          80
+        );
+      }
+    );
+  }
+
+  /* =========================================================
+     切換模式
+     ========================================================= */
+
+  function changeMode(
     next
   ) {
     if (
-      next !== "price" &&
-      next !== "volume"
+      next !==
+        "price" &&
+      next !==
+        "volume"
     ) {
       return;
     }
-
-    mode =
-      next;
-
-    ensureTabs();
-    ensureNote();
-
-    clearGold();
-
-    /*
-     * 價
-     *
-     * 完全交還原本 app.js
-     */
 
     if (
-      mode === "price"
+      next ===
+      state.mode
     ) {
+      /*
+       * 量模式再點一次時，
+       * 仍確保畫面真的是量
+       */
+
       if (
-        typeof
-          window
-            .renderHeatCurrentPeriod ===
-        "function"
+        next ===
+        "volume"
       ) {
-        window
-          .renderHeatCurrentPeriod();
+        renderVolume(
+          false
+        );
       }
-
-      setTimeout(
-        () => {
-          ensureTabs();
-          ensureNote();
-
-          applyGold(
-            false
-          );
-        },
-        80
-      );
 
       return;
     }
 
-    /*
-     * 量
-     */
+    state.mode =
+      next;
 
-    await renderVolume(
-      true
-    );
+    ensureModeSwitch();
 
-    ensureTabs();
-    ensureNote();
+    if (
+      next ===
+      "volume"
+    ) {
+      hidePriceControls();
+
+      clearStrengthMarks();
+
+      renderVolume(
+        true
+      );
+
+    } else {
+      restorePrice();
+    }
   }
 
   /* =========================================================
-     監聽原本熱力圖 render
+     防止 app.js 在量模式把價格畫面蓋回來
      ========================================================= */
 
-  function watch() {
+  function protectVolumeMode() {
     const grid =
-      $("#heatGrid");
+      heatGrid();
 
     if (!grid) {
       return;
     }
 
-    if (observer) {
-      observer.disconnect();
+    if (
+      state.observer
+    ) {
+      state.observer.disconnect();
     }
 
-    observer =
+    state.observer =
       new MutationObserver(
-        () => {
+        mutations => {
+          /*
+           * 我們自己正在 render 量，
+           * 不處理自己的 DOM 變化
+           */
+
           if (
-            applying ||
-            mode !== "price"
+            state.renderingVolume
           ) {
             return;
           }
 
-          setTimeout(
-            () => {
-              ensureTabs();
-              ensureNote();
+          if (
+            state.mode ===
+            "volume"
+          ) {
+            /*
+             * app.js 若把價格 heatmap
+             * 寫回 #heatGrid，
+             * 立刻重新畫成交金額 Treemap
+             */
 
-              applyGold(
-                false
+            const hasPriceHeat =
+              !!grid.querySelector(
+                "button.heat[data-sec]"
               );
-            },
-            120
-          );
+
+            const hasVolumeHeat =
+              !!grid.querySelector(
+                ".turnover-treemap"
+              );
+
+            if (
+              hasPriceHeat ||
+              !hasVolumeHeat
+            ) {
+              clearTimeout(
+                state.timer
+              );
+
+              state.timer =
+                setTimeout(
+                  () => {
+                    if (
+                      state.mode ===
+                      "volume"
+                    ) {
+                      hidePriceControls();
+
+                      renderVolume(
+                        false
+                      );
+                    }
+                  },
+                  20
+                );
+            }
+
+            return;
+          }
+
+          /*
+           * 價格模式：
+           * 原本 heatmap render 完後
+           * 補金標
+           */
+
+          const meaningful =
+            mutations.some(
+              mutation =>
+                mutation.type ===
+                  "childList"
+            );
+
+          if (
+            meaningful &&
+            state.mode ===
+              "price"
+          ) {
+            clearTimeout(
+              state.timer
+            );
+
+            state.timer =
+              setTimeout(
+                () => {
+                  ensureModeSwitch();
+
+                  ensureStrengthNote();
+
+                  applyStrengthMarks(
+                    false
+                  );
+                },
+                120
+              );
+          }
         }
       );
 
-    observer.observe(
+    state.observer.observe(
       grid,
       {
         childList:
@@ -1587,40 +2440,43 @@
   }
 
   /* =========================================================
-     初始化
+     Events
      ========================================================= */
 
-  function init() {
-    injectStyle();
-
-    ensureTabs();
-    ensureNote();
-
-    watch();
-
+  function bindEvents() {
     /*
-     * 切換當日 / 5 / 10 / 20 日
+     * 原本期間切換
      *
-     * 期間切換屬於價格模式
+     * 只應該存在於價模式
      */
 
     window.addEventListener(
       "heatmap:period-changed",
       () => {
         if (
-          mode === "volume"
+          state.mode ===
+          "volume"
         ) {
-          mode =
-            "price";
+          /*
+           * 理論上量模式控制項已隱藏
+           * 即使其他程式觸發事件，
+           * 也不允許切回價格畫面
+           */
 
-          ensureTabs();
+          renderVolume(
+            false
+          );
+
+          return;
         }
+
+        clearStrengthMarks();
+
+        ensureStrengthNote();
 
         setTimeout(
           () => {
-            ensureNote();
-
-            applyGold(
+            applyStrengthMarks(
               false
             );
           },
@@ -1630,26 +2486,27 @@
     );
 
     /*
-     * Heatmap 更新
+     * Heatmap 資料刷新
      */
 
     window.addEventListener(
       "heatmap:data-updated",
       () => {
-        detailCache =
+        state.volumeData =
           null;
 
-        volumeCache =
-          null;
-
-        detailAt =
+        state.volumeAt =
           0;
 
-        volumeAt =
+        state.detailData =
+          null;
+
+        state.detailAt =
           0;
 
         if (
-          mode === "volume"
+          state.mode ===
+          "volume"
         ) {
           renderVolume(
             true
@@ -1657,7 +2514,7 @@
         } else {
           setTimeout(
             () => {
-              applyGold(
+              applyStrengthMarks(
                 true
               );
             },
@@ -1668,29 +2525,36 @@
     );
 
     /*
-     * 價格模式展開族群
+     * 點價格族群展開
      */
 
     document.addEventListener(
       "click",
       event => {
         if (
-          mode === "price" &&
-          event
-            .target
-            .closest(
-              "#heatGrid [data-sec]"
-            )
+          state.mode !==
+          "price"
         ) {
-          setTimeout(
-            () => {
-              applyGold(
-                false
-              );
-            },
-            150
-          );
+          return;
         }
+
+        const button =
+          event.target.closest(
+            "#heatGrid button.heat[data-sec]"
+          );
+
+        if (!button) {
+          return;
+        }
+
+        setTimeout(
+          () => {
+            applyStrengthMarks(
+              false
+            );
+          },
+          160
+        );
       },
       {
         passive:
@@ -1699,21 +2563,151 @@
     );
 
     /*
-     * 初始
+     * iPhone Safari 返回頁面
      */
 
+    window.addEventListener(
+      "pageshow",
+      () => {
+        if (
+          !heatVisible()
+        ) {
+          return;
+        }
+
+        ensureModeSwitch();
+
+        if (
+          state.mode ===
+          "volume"
+        ) {
+          hidePriceControls();
+
+          renderVolume(
+            false
+          );
+        } else {
+          showPriceControls();
+
+          ensureStrengthNote();
+
+          setTimeout(
+            () => {
+              applyStrengthMarks(
+                false
+              );
+            },
+            100
+          );
+        }
+      }
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (
+          document.hidden ||
+          !heatVisible()
+        ) {
+          return;
+        }
+
+        if (
+          state.mode ===
+          "volume"
+        ) {
+          hidePriceControls();
+
+          renderVolume(
+            false
+          );
+        }
+      }
+    );
+  }
+
+  /* =========================================================
+     Public API
+     ========================================================= */
+
+  window.getHeatmapDisplayMode =
+    function () {
+      return state.mode;
+    };
+
+  window.setHeatmapDisplayMode =
+    function (
+      mode
+    ) {
+      changeMode(
+        mode
+      );
+    };
+
+  window.refreshHeatStrength =
+    function (
+      force = false
+    ) {
+      if (
+        state.mode !==
+        "price"
+      ) {
+        return;
+      }
+
+      return applyStrengthMarks(
+        !!force
+      );
+    };
+
+  window.refreshTurnoverHeatmap =
+    function (
+      force = false
+    ) {
+      if (
+        state.mode !==
+        "volume"
+      ) {
+        return;
+      }
+
+      return renderVolume(
+        !!force
+      );
+    };
+
+  /* =========================================================
+     Init
+     ========================================================= */
+
+  function init() {
+    injectStyles();
+
+    ensureModeSwitch();
+
+    ensureStrengthNote();
+
+    protectVolumeMode();
+
+    bindEvents();
+
     if (
-      visible()
+      heatVisible()
     ) {
       setTimeout(
         () => {
-          applyGold(
+          applyStrengthMarks(
             false
           );
         },
         250
       );
     }
+
+    console.log(
+      "[Heatmap] price / turnover mode ready"
+    );
   }
 
   if (
@@ -1724,10 +2718,12 @@
       "DOMContentLoaded",
       init,
       {
-        once: true
+        once:
+          true
       }
     );
   } else {
     init();
   }
+
 })();
