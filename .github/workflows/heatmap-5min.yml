@@ -1,233 +1,107 @@
-name: Heatmap 5min
+name: Broker reports Drive inbox
 
 on:
-  schedule:
-    # GitHub 內建排程保留當備援
-    # 台灣平日 09:00-13:59，每 5 分鐘
-    - cron: "*/5 1-5 * * 1-5"
-
-  repository_dispatch:
-    types: [heatmap]
-
   workflow_dispatch:
 
 permissions:
   contents: write
+  id-token: write
 
-# 與 Daily close 共用同一把鎖
-# Daily 在跑時 Heatmap 會排隊
-# Heatmap 在跑時 Daily 也會排隊
+# Critical: never allow two broker-report runs to overlap.
+# A queued run starts only after the previous run has finished AND pushed its state.
 concurrency:
-  group: tw-market-data-writer
+  group: broker-reports-drive
   cancel-in-progress: false
 
 jobs:
-  update:
+  ingest-reports:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout latest main
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
 
-      - name: Sync latest main
+      # A queued workflow may have been created before the previous run pushed.
+      # Force the workspace to the latest remote main before any API/Telegram work.
+      - name: Sync latest processed state
         run: |
           git fetch origin main
-          git checkout main
           git reset --hard origin/main
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
         with:
-          python-version: "3.12"
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Refresh master
-        run: python scripts/update_master.py
-
-      - name: Update heatmap
-        run: python scripts/update_heatmap.py
-
-      - name: Check new sector stocks and update stock detail
+      - name: Install document and image tools
         run: |
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-          from pathlib import Path
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install --upgrade pip
+          python -m pip install pillow pillow-heif requests
 
-          sectors_path = Path("data/sectors.json")
-          detail_path = Path("data/stock_detail.json")
+      - name: Ingest new broker reports
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REPORT_MODEL: gpt-5.6-luna
+        run: python scripts/update_reports_drive.py
 
-          with sectors_path.open(
-              "r",
-              encoding="utf-8",
-          ) as f:
-              sector_data = json.load(f)
+      - name: Extract Taiwan rating adjustments
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REPORT_MODEL: gpt-5.6-luna
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/update_tw_ratings.py
 
-          tracked = {
-              str(stock.get("ticker") or "").strip()
-              for sector in sector_data.get(
-                  "sectors",
-                  [],
-              )
-              for stock in sector.get(
-                  "stocks",
-                  [],
-              )
-              if str(
-                  stock.get("ticker") or ""
-              ).strip()
-          }
+      - name: AI summarize broker reports
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REPORT_MODEL: gpt-5.6-luna
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/update_reports_ai.py
 
-          if detail_path.exists():
-              with detail_path.open(
-                  "r",
-                  encoding="utf-8",
-              ) as f:
-                  detail_data = json.load(f)
+      - name: Fix upgrade and downgrade classification
+        run: python scripts/fix_report_actions.py
 
-              existing = set(
-                  (
-                      detail_data.get(
-                          "stocks",
-                          {},
-                      )
-                      or {}
-                  ).keys()
-              )
-          else:
-              existing = set()
-
-          missing = sorted(
-              tracked - existing
-          )
-
-          benchmark = detail_data.get("tpex_benchmark", {}) if detail_path.exists() else {}
-          heatmap = json.loads(Path("data/heatmap.json").read_text(encoding="utf-8"))
-          market_files = sorted(Path("data/history/market").glob("*.json"))
-          target_date = market_files[-1].stem if market_files else None
-          needs_index = (
-              not benchmark.get("changes_by_period")
-              or any(benchmark.get("changes_by_period", {}).get(str(n)) is None for n in (1, 5, 10, 20))
-              or (target_date and detail_data.get("as_of_date") != target_date)
-          )
-          if missing or needs_index:
-              print(
-                  "Missing stock detail:",
-                  ", ".join(missing),
-              )
-
-              subprocess.check_call(
-                  [
-                      sys.executable,
-                      "scripts/update_stock_detail.py",
-                  ]
-              )
-
-              with detail_path.open(
-                  "r",
-                  encoding="utf-8",
-              ) as f:
-                  rebuilt = json.load(f)
-
-              rebuilt_stocks = set(
-                  (
-                      rebuilt.get(
-                          "stocks",
-                          {},
-                      )
-                      or {}
-                  ).keys()
-              )
-
-              still_missing = sorted(
-                  tracked - rebuilt_stocks
-              )
-
-              if still_missing:
-                  raise RuntimeError(
-                      "stock_detail rebuild still missing: "
-                      + ", ".join(still_missing)
-                  )
-
-              print(
-                  "stock_detail rebuilt successfully"
-              )
-
-          else:
-              print(
-                  "stock_detail already contains all sector stocks"
-              )
-          PY
-
-      - name: Commit updated data
+      - name: Commit report data
         run: |
-          set -e
-
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          rm -rf /tmp/heatmap-generated
-          mkdir -p /tmp/heatmap-generated
+          git add \
+            data/report_inbox.json \
+            data/processed_reports.json \
+            data/reports.json \
+            data/report_company_registry.json \
+            data/tw_ratings.json \
+            data/tw_ratings_state.json
 
-          for file in \
-            data/master.json \
-            data/heatmap.json \
-            data/stock_detail.json
-          do
-            if [ -f "$file" ]; then
-              cp "$file" "/tmp/heatmap-generated/$(basename "$file")"
-            fi
-          done
+          if git diff --cached --quiet; then
+            echo "No report changes"
+            exit 0
+          fi
 
-          for attempt in 1 2 3 4 5
-          do
-            echo "======================================"
-            echo "Push attempt ${attempt}/5"
-            echo "======================================"
+          git commit -m "Update broker reports"
 
-            git fetch origin main
-            git reset --hard origin/main
-
-            if [ -f /tmp/heatmap-generated/master.json ]; then
-              cp /tmp/heatmap-generated/master.json data/master.json
-            fi
-
-            if [ -f /tmp/heatmap-generated/heatmap.json ]; then
-              cp /tmp/heatmap-generated/heatmap.json data/heatmap.json
-            fi
-
-            if [ -f /tmp/heatmap-generated/stock_detail.json ]; then
-              cp /tmp/heatmap-generated/stock_detail.json data/stock_detail.json
-            fi
-
-            git add \
-              data/master.json \
-              data/heatmap.json \
-              data/stock_detail.json
-
-            if git diff --cached --quiet; then
-              echo "No heatmap changes"
-              exit 0
-            fi
-
-            git commit -m "data: heatmap update"
-
-            if git push origin HEAD:main; then
-              echo "Heatmap data pushed successfully"
-              exit 0
-            fi
-
-            echo "Remote main changed before push."
-            echo "Retrying with latest main..."
-
-            sleep 3
-          done
-
-          echo "Failed to push heatmap data after 5 attempts"
-          exit 1
-
+          # Concurrency + pre-run hard sync means main should not have moved because
+          # of this workflow. If another workflow changed main, rebase once BEFORE
+          # push; never rerun AI/Telegram as a retry mechanism.
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
