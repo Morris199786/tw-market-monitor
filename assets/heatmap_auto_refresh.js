@@ -4,8 +4,9 @@
 
    量：
    - 盤中依成交進度；盤後依較5日均
-   - 依「成交放大 + 族群漲跌」分成六種資金方向
-   - 每個分類獨立使用完整 Treemap 畫布
+   - 資金流出＝族群下跌 + 成交動能較5日均放大至少10%
+   - 先抽出資金流出，其餘依成交熱度分 Tier 1 / 2 / 3
+   - 每個 Tier 最多 11 個族群
    ========================================================= */
 (function(){
 "use strict";
@@ -203,24 +204,64 @@ s.textContent=`
   line-height:1.45
 }
 
+
+/* =========================================================
+   判讀邏輯：預設收合
+   ========================================================= */
+
 .turnover-explain{
   margin:0 0 10px;
-  padding:10px 11px;
   border:1px solid var(--line);
-  border-radius:10px;
+  border-radius:11px;
   background:var(--soft);
+  overflow:hidden
+}
+
+.turnover-explain summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:11px 13px;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  list-style:none;
+  user-select:none
+}
+
+.turnover-explain summary::-webkit-details-marker{
+  display:none
+}
+
+.turnover-explain summary::after{
+  content:"點擊展開 ▾";
   color:var(--muted);
   font-size:10px;
   font-weight:800;
-  line-height:1.65
+  white-space:nowrap
 }
 
-.turnover-explain b{
+.turnover-explain[open] summary::after{
+  content:"點擊收合 ▴"
+}
+
+.turnover-explain-body{
+  padding:0 13px 12px;
+  border-top:1px solid var(--line);
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+  line-height:1.7
+}
+
+.turnover-explain-body b{
   color:var(--ink)
 }
 
-.turnover-explain .turnover-rule{
-  margin-top:5px
+.turnover-explain-body p{
+  margin:10px 0 0
 }
 
 #heatGrid.heat-volume-mode{
@@ -240,12 +281,12 @@ s.textContent=`
 
 
 /* =========================================================
-   六大資金方向按鈕
+   TIER / 資金流出按鈕
    ========================================================= */
 
 .turnover-group-switch{
   display:grid!important;
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
   width:100%!important;
   height:auto!important;
   min-height:0!important;
@@ -258,16 +299,16 @@ s.textContent=`
   position:static!important;
   width:auto!important;
   min-width:0!important;
-  min-height:40px!important;
+  min-height:42px!important;
   padding:7px 5px;
   border:1px solid var(--line);
   border-radius:9px;
   background:var(--soft);
   color:var(--muted);
   font:inherit;
-  font-size:11px;
+  font-size:10px;
   font-weight:900;
-  line-height:1.25;
+  line-height:1.2;
   cursor:pointer
 }
 
@@ -278,8 +319,8 @@ s.textContent=`
 }
 
 .turnover-group-switch button small{
-  display:inline-block;
-  margin-left:3px;
+  display:block;
+  margin-top:2px;
   font-size:9px;
   font-weight:900;
   opacity:.68
@@ -365,16 +406,13 @@ s.textContent=`
   font-weight:850
 }
 
-.turnover-direction{
-  margin-top:5px;
-  font-size:12px;
-  font-weight:950
-}
-
 .turnover-status{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   padding:28px 16px;
-  border:1px solid var(--line);
-  border-radius:13px;
   color:var(--muted);
   text-align:center;
   font-size:12px;
@@ -541,8 +579,7 @@ s.textContent=`
   }
 
   .turnover-avg,
-  .turnover-market,
-  .turnover-direction{
+  .turnover-market{
     font-size:10.5px
   }
 
@@ -552,7 +589,7 @@ s.textContent=`
 
   .turnover-group-switch button{
     font-size:10px!important;
-    min-height:40px!important
+    min-height:42px!important
   }
 
 }
@@ -873,111 +910,34 @@ function label(intra){
 
 
 /* =========================================================
-   六大資金方向
+   資金流出定義
    ========================================================= */
 
 /*
-   成交放大門檻：
-   ratio >= 1.10
+   資金流出：
+   1. 族群今日漲跌 < 0%
+   2. 成交動能 ratio >= 1.10
 
-   放量後再依族群今日漲跌分類：
+   盤中：
+   使用成交進度 ratio
 
-   >= +1.0%           資金流入
-   +0.3% ~ < +1.0%    偏流入
-   -0.3% ~ < +0.3%    放量震盪
-   -1.0% ~ <= -0.3%   偏流出
-   < -1.0%            資金流出
-
-   未達 1.10：
-   資金動能一般
+   盤後：
+   使用今日成交額 / 近5日平均成交額
 */
 
-function capitalDirection(metricRatio,change){
+function isCapitalOutflow(metricRatio,change){
 
 const r=n(metricRatio);
 const c=n(change);
 
-if(
-  r===null ||
-  c===null ||
-  r<1.10
-){
-  return{
-    label:"資金動能一般",
-    level:0
-  }
-}
-
-if(c>=1){
-
-  return{
-    label:"資金流入",
-    level:5
-  }
+return(
+  r!==null &&
+  c!==null &&
+  r>=1.10 &&
+  c<0
+)
 
 }
-
-if(c>=0.3){
-
-  return{
-    label:"偏流入",
-    level:4
-  }
-
-}
-
-if(c>-0.3){
-
-  return{
-    label:"放量震盪",
-    level:3
-  }
-
-}
-
-if(c>-1){
-
-  return{
-    label:"偏流出",
-    level:2
-  }
-
-}
-
-return{
-  label:"資金流出",
-  level:1
-}
-
-}
-
-
-const DIRECTION_GROUPS=[
-  {
-    label:"資金流入",
-    level:5
-  },
-  {
-    label:"偏流入",
-    level:4
-  },
-  {
-    label:"放量震盪",
-    level:3
-  },
-  {
-    label:"偏流出",
-    level:2
-  },
-  {
-    label:"資金流出",
-    level:1
-  },
-  {
-    label:"資金動能一般",
-    level:0
-  }
-];
 
 
 /* =========================================================
@@ -1254,11 +1214,6 @@ return window.innerWidth<=720
 
 function boxContent(x,intra){
 
-const d=capitalDirection(
-  x.metricRatio,
-  x.change
-);
-
 return`
   <div class="turnover-name">
     ${esc(x.name)}
@@ -1278,10 +1233,6 @@ return`
 
   <div class="turnover-market">
     今日 ${fmtPct(x.change,2)}
-  </div>
-
-  <div class="turnover-direction">
-    資金方向：${d.label}
   </div>
 `
 
@@ -1327,7 +1278,7 @@ const smetric=metric(
   intra
 );
 
-const sdirection=capitalDirection(
+const outflow=isCapitalOutflow(
   smetric.ratio,
   n(sec.change_pct)
 );
@@ -1388,7 +1339,7 @@ d.innerHTML=`
       ｜${label(intra)} ${fmtPct(smetric.pct)}
       ｜5日均 ${fmtYi(ts.avg5_turnover)}
       ｜今日 ${fmtPct(sec.change_pct,2)}
-      ｜資金方向：${sdirection.label}
+      ${outflow?"｜資金流出":""}
     </div>
 
   </div>
@@ -1541,10 +1492,10 @@ try{
 
   const hm=sectorMap(h);
 
-  /*
-     先建立所有族群資料
-     再依六大資金方向分類
-  */
+
+  /* =======================================================
+     建立所有族群資料
+     ======================================================= */
 
   const items=(t?.sectors||[])
     .map(s=>{
@@ -1558,8 +1509,8 @@ try{
         hm.get(s.name)?.change_pct
       );
 
-      const direction=
-        capitalDirection(
+      const outflow=
+        isCapitalOutflow(
           m.ratio,
           change
         );
@@ -1570,12 +1521,6 @@ try{
         metricRatio:m.ratio,
         metricPct:m.pct,
 
-        /*
-           Treemap 面積仍代表成交活躍程度
-
-           最低 0.05
-           最高 3 倍封頂
-        */
         value:
           m.ratio===null
             ?0
@@ -1588,17 +1533,13 @@ try{
               ),
 
         change,
-
-        direction:
-          direction.label,
-
-        directionLevel:
-          direction.level
+        outflow
 
       }
 
     })
     .filter(x=>x.value>0);
+
 
   if(!items.length){
 
@@ -1614,13 +1555,13 @@ try{
 
 
   /*
-     同一資金方向內：
+     所有排序都以成交動能為主：
 
      盤中：
-     依成交進度倍率排序
+     成交進度倍率
 
      盤後：
-     依今日成交 / 5日均排序
+     今日成交 / 5日均
   */
 
   items.sort(
@@ -1630,68 +1571,118 @@ try{
   );
 
 
-  const sub=intra
-    ?"依成交進度＋族群漲跌判斷資金方向"
-    :"依成交相對5日均＋族群漲跌判斷資金方向";
+  /* =======================================================
+     先抽出資金流出
+     ======================================================= */
+
+  const outflowItems=items
+    .filter(x=>x.outflow)
+    .sort(
+      (a,b)=>
+        (b.metricRatio??-Infinity)-
+        (a.metricRatio??-Infinity)
+    );
 
 
   /*
-     網頁上的完整判定說明
+     資金流出族群不再重複出現在 Tier
   */
+
+  const heatItems=items
+    .filter(x=>!x.outflow)
+    .sort(
+      (a,b)=>
+        (b.metricRatio??-Infinity)-
+        (a.metricRatio??-Infinity)
+    );
+
+
+  /* =======================================================
+     每 Tier 最多 11 個
+     ======================================================= */
+
+  const groups=[
+    {
+      label:"資金熱度 Tier 1",
+      shortLabel:"Tier 1",
+      items:heatItems.slice(0,11)
+    },
+    {
+      label:"資金熱度 Tier 2",
+      shortLabel:"Tier 2",
+      items:heatItems.slice(11,22)
+    },
+    {
+      label:"資金熱度 Tier 3",
+      shortLabel:"Tier 3",
+      items:heatItems.slice(22)
+    },
+    {
+      label:"資金流出",
+      shortLabel:"資金流出",
+      items:outflowItems
+    }
+  ];
+
+
+  if(
+    state.volumeGroup>=groups.length
+  ){
+    state.volumeGroup=0
+  }
+
+
+  const sub=intra
+    ?"依成交進度排序族群資金熱度"
+    :"依成交相對5日均排序族群資金熱度";
+
+
+  /* =======================================================
+     判讀邏輯
+     預設收合
+     ======================================================= */
 
   const exp=`
 
-    <b>資金方向怎麼看？</b><br>
+    <details class="turnover-explain">
 
-    先判斷成交是否明顯放大：
-    ${
-      intra
-        ?"盤中以「成交進度」相對近5日均衡量"
-        :"盤後以「今日成交 ÷ 近5日平均成交」衡量"
-    }，
-    達 <b>110%</b> 以上才進一步判斷資金方向；
-    未達 110% 顯示為
-    <b>資金動能一般</b>。
+      <summary>
+        <span>判讀邏輯</span>
+      </summary>
 
-    <div class="turnover-rule">
-      成交放大且今日族群
-      <b>≥ +1%</b> ＝ 資金流入<br>
-      <b>+0.3% ～ +1%</b> ＝ 偏流入<br>
-      <b>-0.3% ～ +0.3%</b> ＝ 放量震盪<br>
-      <b>-1% ～ -0.3%</b> ＝ 偏流出<br>
-      <b>≤ -1%</b> ＝ 資金流出
-    </div>
+      <div class="turnover-explain-body">
 
-    <div class="turnover-rule">
-      <b>方塊大小</b>＝該分類內的成交活躍程度；
-      每個資金方向都會使用完整畫布重新計算，
-      不與其他分類比較方塊大小。
-      <br>
-      <b>顏色</b>＝今日族群市值加權漲跌，
-      紅色上漲、綠色下跌。
-    </div>
+        <p>
+          <b>資金流出</b>：
+          族群今日下跌，且成交動能較近 5 日平均
+          <b>放大 10% 以上</b>
+        </p>
 
-    <div class="turnover-rule">
+        <p>
+          ${
+            intra
+              ?`
+                盤中以「成交進度」判斷，
+                依目前交易時間校正後，
+                預估全天成交額達近 5 日平均的
+                <b>110% 以上</b>
+              `
+              :`
+                盤後以「今日成交額 ÷ 近 5 日平均成交額」
+                判斷，達
+                <b>110% 以上</b>
+              `
+          }
+        </p>
 
-      ${
-        intra
-          ?`
-            盤中成交金額為
-            「當下股價 × 累積成交張數」估算，
-            成交進度已依目前交易時間校正。
-          `
-          :t?.estimated
-            ?`
-              官方成交金額尚未到位時，
-              暫以「收盤價 × 累積成交張數」估算；
-              官方資料到位後會改用實際成交金額。
-            `
-            :`
-              盤後使用官方實際成交金額。
-            `
-      }
+        <p>
+          符合條件的資金流出族群，
+          依<b>成交放大幅度由高至低</b>排序
+        </p>
 
-    </div>
+      </div>
+
+    </details>
 
   `;
 
@@ -1703,7 +1694,7 @@ try{
       <div>
 
         <div class="turnover-head-main">
-          族群資金方向
+          族群資金熱度
         </div>
 
         <div class="turnover-head-sub">
@@ -1719,9 +1710,7 @@ try{
     </div>
 
 
-    <div class="turnover-explain">
-      ${exp}
-    </div>
+    ${exp}
 
 
     <div
@@ -1765,42 +1754,9 @@ try{
   );
 
 
-  /*
-     六大分類
-     不再使用 1–11 / 12–22 / 23–33
-  */
-
-  const groups=DIRECTION_GROUPS.map(def=>{
-
-    const list=items
-      .filter(
-        x=>x.directionLevel===def.level
-      )
-      .sort(
-        (a,b)=>
-          (b.metricRatio??-Infinity)-
-          (a.metricRatio??-Infinity)
-      );
-
-    return{
-      ...def,
-      items:list
-    }
-
-  });
-
-
-  if(
-    state.volumeGroup>=groups.length
-  ){
-    state.volumeGroup=0
-  }
-
-
-  /*
-     六大方向按鈕
-     同時顯示該類族群數量
-  */
+  /* =======================================================
+     TIER 按鈕
+     ======================================================= */
 
   function renderSwitch(){
 
@@ -1816,10 +1772,12 @@ try{
                 :""
             }"
           >
-            ${esc(grp.label)}
+            ${esc(grp.shortLabel)}
+
             <small>
-              ${grp.items.length}
+              ${grp.items.length} 個族群
             </small>
+
           </button>
 
         `)
@@ -1828,9 +1786,9 @@ try{
   }
 
 
-  /*
-     每一分類都重新用完整畫布計算 Treemap
-  */
+  /* =======================================================
+     每組重新使用完整畫布計算 Treemap
+     ======================================================= */
 
   function renderMap(){
 
@@ -1849,19 +1807,17 @@ try{
       `${height}px`;
 
 
-    /*
-       某分類當天沒有任何族群
-    */
-
     if(!list.length){
 
       map.innerHTML=`
 
         <div class="turnover-status">
 
-          今日目前沒有
-          「${esc(grp?.label||"")}」
-          族群
+          ${
+            state.volumeGroup===3
+              ?"今日目前沒有符合條件的資金流出族群"
+              :"目前沒有族群資料"
+          }
 
         </div>
 
@@ -1871,16 +1827,6 @@ try{
 
     }
 
-
-    /*
-       每一類獨立 Squarify
-
-       因此：
-       資金流入有自己的完整畫布
-       偏流入有自己的完整畫布
-       放量震盪有自己的完整畫布
-       ...
-    */
 
     map.innerHTML=
       squarify(
@@ -1924,9 +1870,9 @@ try{
   renderMap();
 
 
-  /*
-     六大分類切換
-  */
+  /* =======================================================
+     TIER / 資金流出切換
+     ======================================================= */
 
   sw.addEventListener(
     "click",
@@ -1965,9 +1911,9 @@ try{
   );
 
 
-  /*
+  /* =======================================================
      點族群
-  */
+     ======================================================= */
 
   map.addEventListener(
     "click",
