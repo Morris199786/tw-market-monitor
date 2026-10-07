@@ -1,9 +1,11 @@
 /* =========================================================
-   券商報告 V3.2
+   券商報告 V3.3
    - 依收到日期分組
    - 歷史報告永久保留
    - 公司名稱 / 股票代號搜尋
    - 中文公司名可搜尋外資英文報告（依 ticker 自動對照）
+   - 搜尋結果數量顯示
+   - 搜尋框右側清除按鈕
    - Pushover deep link 直達指定報告
    - 首頁今日券商報告數
    - 券商報告移到導覽第 3 順位
@@ -233,7 +235,13 @@
   }
 
   function targetText(r) {
-    if (r.validation_status === "needs_review") return "";
+    if (
+      r.validation_status ===
+      "needs_review"
+    ) {
+      return "";
+    }
+
     const oldTp =
       r.target_price_old;
 
@@ -317,7 +325,17 @@
 
   function chips(r) {
     const arr = [];
-    if (r.validation_status === "needs_review") return `<span class="report-chip">來源核對未通過，請先查看原始報告</span>`;
+
+    if (
+      r.validation_status ===
+      "needs_review"
+    ) {
+      return `
+        <span class="report-chip">
+          來源核對未通過，請先查看原始報告
+        </span>
+      `;
+    }
 
     if (r.rating) {
       arr.push(
@@ -510,11 +528,15 @@
             "產業研究"
           );
 
-    const summary = r.validation_status === "needs_review"
-      ? ["此份報告的公司或目標價尚未通過來源核對，請查看原始報告"]
-      : Array.isArray(
-        r.summary
-      )
+    const summary =
+      r.validation_status ===
+      "needs_review"
+        ? [
+            "此份報告的公司或目標價尚未通過來源核對，請查看原始報告"
+          ]
+        : Array.isArray(
+            r.summary
+          )
         ? r.summary
         : [];
 
@@ -722,6 +744,52 @@
     );
   }
 
+  /* -----------------------------
+     搜尋欄狀態
+     ----------------------------- */
+
+  function updateSearchUi() {
+    const clearBtn =
+      $("#reportSearchClear");
+
+    const meta =
+      $("#reportSearchMeta");
+
+    const queryActive =
+      Boolean(
+        currentQuery.trim()
+      );
+
+    const filterActive =
+      currentFilter !==
+      "all";
+
+    const visibleCount =
+      allReports.filter(
+        matches
+      ).length;
+
+    if (clearBtn) {
+      clearBtn.style.display =
+        queryActive
+          ? "inline-flex"
+          : "none";
+    }
+
+    if (meta) {
+      if (
+        queryActive ||
+        filterActive
+      ) {
+        meta.textContent =
+          `找到 ${visibleCount} 份｜共 ${allReports.length} 份歷史報告`;
+      } else {
+        meta.textContent =
+          `共 ${allReports.length} 份歷史報告`;
+      }
+    }
+  }
+
   function renderGroups() {
     const target =
       $("#reportCardsV3");
@@ -729,6 +797,8 @@
     if (!target) {
       return;
     }
+
+    updateSearchUi();
 
     const groups =
       groupedVisibleReports();
@@ -957,6 +1027,133 @@
     return data;
   }
 
+  /* -----------------------------
+     搜尋欄樣式
+     只作用在券商報告
+     ----------------------------- */
+
+  function injectReportSearchStyle() {
+    if (
+      $("#reportSearchFieldStyle")
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "reportSearchFieldStyle";
+
+    style.textContent = `
+      #reports .report-search-card {
+        width: 100%;
+        min-width: 0;
+      }
+
+      #reports .report-search-wrap {
+        position: relative;
+        width: 100%;
+        min-width: 0;
+      }
+
+      #reports .report-search-wrap input {
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 82px !important;
+      }
+
+      #reports .report-search-clear {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+
+        display: none;
+        align-items: center;
+        justify-content: center;
+
+        min-height: 36px;
+        padding: 6px 12px;
+
+        border:
+          1px solid
+          rgba(148, 163, 184, .30);
+
+        border-radius: 9px;
+
+        background: #f3f4f6;
+        color: #475569;
+
+        font: inherit;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1;
+
+        cursor: pointer;
+
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      #reports .report-search-clear:active {
+        transform:
+          translateY(-50%)
+          scale(.97);
+      }
+
+      #reports .report-search-meta {
+        display: block;
+
+        margin-top: 9px;
+
+        color: var(--muted);
+        opacity: .82;
+
+        font-size: 13px;
+        font-weight: 650;
+        line-height: 1.45;
+      }
+
+      html[data-theme="dark"]
+      #reports
+      .report-search-clear {
+        border-color: #3b4656;
+        background: #273140;
+        color: #e2e8f0;
+      }
+
+      @media (max-width: 700px) {
+        #reports .report-search-wrap input {
+          padding-right: 76px !important;
+        }
+
+        #reports .report-search-clear {
+          right: 7px;
+
+          min-height: 34px;
+
+          padding:
+            6px
+            11px;
+
+          font-size: 12px;
+        }
+
+        #reports .report-search-meta {
+          margin-top: 8px;
+          font-size: 12px;
+        }
+      }
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
   async function renderReportsV3() {
     const box =
       $("#reportList");
@@ -998,20 +1195,40 @@
         class="report-v2-tools"
       >
         <div
-          class="report-search-wrap"
+          class="report-search-card"
         >
-          <span
-            class="report-search-icon"
+          <div
+            class="report-search-wrap"
           >
-            ⌕
-          </span>
+            <span
+              class="report-search-icon"
+            >
+              ⌕
+            </span>
 
-          <input
-            id="reportSearch"
-            type="search"
-            autocomplete="off"
-            placeholder="搜尋公司名稱或股票代號，例如 貿聯 / 3665"
-          >
+            <input
+              id="reportSearch"
+              type="search"
+              inputmode="search"
+              autocomplete="off"
+              placeholder="搜尋公司名稱或股票代號，例如 貿聯 / 3665"
+              aria-label="搜尋券商報告公司名稱或股票代號"
+            >
+
+            <button
+              id="reportSearchClear"
+              class="report-search-clear"
+              type="button"
+              aria-label="清除券商報告搜尋"
+            >
+              清除
+            </button>
+          </div>
+
+          <span
+            id="reportSearchMeta"
+            class="report-search-meta"
+          ></span>
         </div>
 
         <div
@@ -1064,10 +1281,7 @@
       <div
         class="report-history-note"
       >
-        <span>
-          共 ${allReports.length}
-          份歷史報告
-        </span>
+        <span></span>
 
         <span>
           依收到日期永久保留
@@ -1088,6 +1302,24 @@
           currentQuery =
             e.target.value ||
             "";
+
+          renderGroups();
+        }
+      );
+
+    $("#reportSearchClear")
+      ?.addEventListener(
+        "click",
+        () => {
+          const input =
+            $("#reportSearch");
+
+          currentQuery = "";
+
+          if (input) {
+            input.value = "";
+            input.focus();
+          }
 
           renderGroups();
         }
@@ -1584,6 +1816,8 @@
   }
 
   async function boot() {
+    injectReportSearchStyle();
+
     reorderNavigation();
 
     setupNotificationDeepLink();
@@ -1623,4 +1857,3 @@
     boot();
   }
 })();
-
