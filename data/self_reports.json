@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-07T17:35+08:00",
+  "updated_at": "2026-10-07T18:05+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-02-v25-eps-layout-fix-telegram-only",
   "source_mode": "MOPS daily broad primary + official feed ticker company-rescue additive fallback; Telegram only",
@@ -15,7 +15,7 @@
         "publish_time": "16:10:57",
         "subject": "4532 瑞智 115/10/07 16:10:57 本公司115年09月自結合併營收情形",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -28,7 +28,7 @@
         "publish_time": "15:18:13",
         "subject": "2327 國巨* 115/10/07 15:18:13 公告本公司115年9月自結合併營收",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -54,7 +54,7 @@
         "publish_time": "14:12:44",
         "subject": "6016 康和證 115/10/07 14:12:44 公告本公司115年9月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -67,7 +67,7 @@
         "publish_time": "14:06:11",
         "subject": "2428 興勤 115/10/07 14:06:11 本公司115年09月份自結合併營業收入公告",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -80,7 +80,7 @@
         "publish_time": "14:01:11",
         "subject": "6005 群益證 115/10/07 14:01:11 公告本公司115年9月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -106,7 +106,7 @@
         "publish_time": "13:47:00",
         "subject": "2476 鉅祥 115/10/07 13:47:00 公告本公司115年09月份自結合併營收",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectionError",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -371,7 +371,7 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 105,
+          "rows": 121,
           "hits": 12
         },
         {
@@ -393,7 +393,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1219",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -401,7 +401,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1514",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -409,7 +409,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2028",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -417,7 +417,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2301",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -425,7 +425,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2308",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -433,15 +433,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2312",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
-          "hits": 0,
-          "error": ""
-        },
-        {
-          "mode": "company_rescue",
-          "ticker": "2323",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -449,7 +441,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2328",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -457,7 +449,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2380",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -465,7 +457,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2426",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -473,15 +465,14 @@
         {
           "mode": "company_rescue",
           "ticker": "2439",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
           "ticker": "2474",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -489,7 +480,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2727",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -497,7 +488,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2838",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -712,7 +703,7 @@
         },
         {
           "mode": "company_rescue_summary",
-          "targets": 40,
+          "targets": 39,
           "rescued": 0,
           "rescued_tickers": []
         }
@@ -798,7 +789,7 @@
       "detail": "公開資訊觀測站 本資料由 (上櫃公司) 4556 旭然 公司提供 序號 2 發言日期 115/10/07 發言時間 14:31:01 發言人 何宜瑾 發言人職稱 總經理 發言人電話 (02)26984989 主旨 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解 符合條款 第 53 款 事實發生日 115/10/07 說明 1.事實發生日:115/10/07 2.發生緣由:依據財團法人中華民國證券櫃檯買賣中心通知處理及辦理公告 3.財務業務資訊: 單月(註1) 115年8月 114年8月 與去年同期增減% ---------------------- -------------- -------------- ------------------ 營業收入(百萬元) 64 54 18.73% 稅前淨利(百萬元) 9 2 413.27% 歸屬母公司淨利(百萬元) 7 1 400.27% 每股盈餘(元) 0.17 0.04 325.00% ========================================================================= 最近一季單季(註2) 115年第2季 114年第2季 與去年同期增減% ---------------------- -------------- -------------- ------------------ 營業收入(百萬元) 175 175 0.26% 稅前淨利(百萬元) 13 11 21.52% 歸屬母公司淨利(百萬元) 10 8 21.30% 每股盈餘(元) 0.24 0.20 20.00% =========================================================================== 最近四季累計(註3) 114年第3季~115年第2季 ----------------------- -------------------------- 營業收入(百萬元) 700 稅前淨利(百萬元) 62 歸屬母公司淨利(百萬元) 45 每股盈餘(元) 1.07 =========================================================================== 公司每股面額:10元 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）:無。 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事:無。 6.其他應敘明事項: 註1：以上115年08月及去年同期比較數之財務資料係本公司採IFRS會計準則編製 之合併數，未經會計師查核(閱)，僅供投資人參考。 註2：最近一季115年第2季係指單季數字，非為最近財務報告中之累計數字，且 係本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 註3：最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數，業 經會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4556&SPOKE_DATE=20261007&SPOKE_TIME=143101&SEQ_NO=2&skey=4556202610072",
-      "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
+      "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectTimeout",
       "match_reason": "attention_trading",
       "eps": 0.17,
       "monthly_eps": 0.17,
