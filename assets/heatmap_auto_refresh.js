@@ -903,7 +903,7 @@ return {ratio:r,pct:r===null?null:(intra?r*100:(r-1)*100)}
 }
 
 function label(intra){
-  return intra?"達全天均額":"較5日均"
+  return intra?"達成率":"較5日均"
 }
 
 function fmtMetric(v,intra){
@@ -1267,6 +1267,10 @@ return`
 
   <div class="turnover-value">
     成交 ${fmtYi(x.turnover)}
+  </div>
+
+  <div class="turnover-progress">
+    ${label(intra)} ${fmtMetric(x.metricPct,intra)}
   </div>
 
   <div class="turnover-avg">
@@ -1699,7 +1703,7 @@ try{
 
         <p>
           符合條件的資金流出族群依<b>成交倍率由高至低</b>排序；
-          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。前兩名使用大方塊，其餘每列三個；同列大小隨成交倍率調整，設有最小顯示面積。成交倍率點選族群查看。
+          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。前兩名使用大方塊，其餘每列三個；同列大小隨成交倍率調整，設有最小顯示面積。方塊直接顯示盤中達成率（累積成交額 ÷ 五日全天均額），盤後顯示較五日均額增減百分比。
           盤中缺少歷史同時間資料，達全天均額不代表同時間放量；
           判斷較保守。盤中成交額仍為價格乘累積成交量的估值，非實際成交淨流向
         </p>
@@ -2278,4 +2282,5 @@ window.refreshHeatStrength=
   f=>applyGold(!!f);
 
 })();
+
 
