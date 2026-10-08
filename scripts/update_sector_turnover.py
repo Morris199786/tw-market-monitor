@@ -84,7 +84,7 @@ def official_today_if_available(today):
 
 
 def session_progress(now):
-    """目前交易時間占完整 270 分鐘的比例。盤中用於成交進度的暫行時間校正。"""
+    """目前交易時間占完整 270 分鐘的比例。只供時間資訊顯示，不用於成交額推估。"""
     if now.weekday() >= 5:
         return 1.0
 
@@ -100,17 +100,14 @@ def session_progress(now):
 
 
 def progress_metric(turnover, avg5, progress):
-    """
-    盤中成交進度倍率：
-    (目前累積成交額 / 已完成交易時間比例) / 前5日平均全天成交額
+    """Accumulated turnover / previous five full-day average, without extrapolation.
 
-    progress_ratio=1.0 代表照目前速度推估，全天約等於5日均
-    progress_pct=(progress_ratio-1)*100
+    Keep the signature and output fields compatible with existing consumers.
+    progress is intentionally not used: elapsed time is not turnover progress.
     """
-    if not avg5 or avg5 <= 0 or not progress or progress <= 0:
+    if not avg5 or avg5 <= 0 or turnover is None:
         return None, None
-
-    ratio = (float(turnover) / float(progress)) / float(avg5)
+    ratio = float(turnover) / float(avg5)
     return ratio, (ratio - 1.0) * 100.0
 
 
@@ -331,7 +328,7 @@ def main():
             "source": source,
             "session_progress": round(progress, 4),
             "session_progress_pct": round(progress * 100, 1),
-            "progress_method": "linear_time_adjusted_vs_prev5_full_day_avg" if intraday else None,
+            "progress_method": "accumulated_vs_prev5_full_day_avg_no_projection" if intraday else None,
             "avg5_dates": [date for date, _ in history_sector],
             "sectors": out_items,
             "stocks": out_stocks,
@@ -352,3 +349,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
