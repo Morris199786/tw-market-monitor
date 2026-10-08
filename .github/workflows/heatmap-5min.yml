@@ -86,7 +86,12 @@ jobs:
           target_date = market_files[-1].stem if market_files else None
 
           needs_index = (
-              not benchmark.get("changes_by_period")
+              any(
+                  not detail_data.get(key, {}).get("price_dates")
+                  or not detail_data.get(key, {}).get("close_prices")
+                  for key in ("benchmark", "tpex_benchmark")
+              )
+              or not benchmark.get("changes_by_period")
               or any(
                   benchmark.get("changes_by_period", {}).get(str(n)) is None
                   for n in (1, 5, 10, 20)
@@ -230,3 +235,4 @@ jobs:
 
           echo "Failed to push heatmap data after 5 attempts"
           exit 1
+
