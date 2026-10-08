@@ -1,9 +1,10 @@
 from sources import *
 import time
+from datetime import datetime
 
 INDEX_CHANNELS = {
-    "twse": "tse_t00.tw",
-    "tpex": "otc_o00.tw",
+    'twse': 'tse_t00.tw',
+    'tpex': 'otc_o00.tw',
 }
 
 
@@ -16,27 +17,26 @@ def NumberLike(v):
 
 def latest_tdcc_totals():
     files = sorted(
-        (ROOT / "data/history/holders").glob("*.json"),
+        (ROOT / 'data/history/holders').glob('*.json'),
         reverse=True
     )
 
     for p in files:
-        stocks = load_json(p, {}).get("stocks", {})
+        stocks = load_json(p, {}).get('stocks', {})
 
         totals = {
-            str(t): int(r.get("total") or 0)
+            str(t): int(r.get('total') or 0)
             for t, r in stocks.items()
         }
 
         totals = {
-            t: v
-            for t, v in totals.items()
+            t: v for t, v in totals.items()
             if v > 0
         }
 
         if totals:
             print(
-                "heatmap share fallback:",
+                'heatmap share fallback:',
                 p.name,
                 len(totals)
             )
@@ -46,12 +46,10 @@ def latest_tdcc_totals():
 
 
 def first_book_price(raw):
-    for part in str(raw or "").split("_"):
+    for part in str(raw or '').split('_'):
         v = n(part)
-
         if v > 0:
             return v
-
     return 0.0
 
 
@@ -66,213 +64,231 @@ def get_mis_batch_with_retry(channels):
             data = get_json(
                 MIS,
                 params={
-                    "ex_ch": "|".join(channels),
-                    "json": "1",
-                    "delay": "0",
+                    'ex_ch': '|'.join(channels),
+                    'json': '1',
+                    'delay': '0'
                 },
-                timeout=25,
+                timeout=25
             )
 
-            if isinstance(data, dict):
-                return data
+            if not isinstance(data, dict):
+                raise RuntimeError(
+                    'MIS response is not dict'
+                )
 
-        except Exception as exc:
-            last_error = exc
             print(
-                "MIS retry",
-                attempt,
-                str(exc)
+                'MIS batch success',
+                f'attempt={attempt}',
+                f'channels={len(channels)}'
             )
 
-    if last_error:
-        print("MIS failed:", last_error)
+            return data
 
-    return {}
+        except Exception as e:
+            last_error = e
+
+            print(
+                'MIS batch failed',
+                f'attempt={attempt}/3',
+                repr(e)
+            )
+
+    print(
+        'WARNING: MIS batch skipped after 3 attempts:',
+        repr(last_error)
+    )
+
+    return {'msgArray': []}
 
 
 def fetch_heatmap_quotes(tickers, master):
     channels = []
-    channel_to_ticker = {}
 
-    for ticker in tickers:
+    for t in tickers:
         market = str(
-            master.get(ticker, {}).get("market", "")
+            master.get(t, {}).get('market', '')
         ).lower()
 
-        exchange = (
-            "otc"
-            if market in ("tpex", "otc", "上櫃")
-            else "tse"
+        if market == 'twse':
+            channels.append(f'tse_{t}.tw')
+
+        elif market == 'tpex':
+            channels.append(f'otc_{t}.tw')
+
+        else:
+            channels.extend([
+                f'tse_{t}.tw',
+                f'otc_{t}.tw'
+            ])
+
+    out = {}
+    quality = {}
+
+    for i in range(0, len(channels), 120):
+        data = get_mis_batch_with_retry(
+            channels[i:i + 120]
         )
 
-        channel = f"{exchange}_{ticker}.tw"
+        for r in data.get('msgArray', []):
+            t = str(r.get('c', '')).strip()
 
-        channels.append(channel)
-        channel_to_ticker[channel] = ticker
-
-    result = {}
-
-    for start in range(0, len(channels), 80):
-        batch = channels[start:start + 80]
-
-        data = get_mis_batch_with_retry(batch)
-
-        for row in data.get("msgArray", []):
-            channel = str(row.get("ch") or "")
-
-            ticker = channel_to_ticker.get(channel)
-
-            if not ticker:
-                ticker = str(row.get("c") or "")
-
-            if ticker not in tickers:
+            if not ordinary_ticker(t):
                 continue
 
-            previous = NumberLike(row.get("y"))
+            prev_close = n(r.get('y'))
+            trade = n(r.get('z'))
 
-            if previous <= 0:
-                continue
+            bid = first_book_price(r.get('b'))
+            ask = first_book_price(r.get('a'))
 
-            traded = NumberLike(row.get("z"))
+            if trade > 0:
+                price = trade
+                source = 'mis_trade'
+                score = 3
 
-            if traded > 0:
-                price = traded
-                source = "mis_trade"
+            elif bid > 0 or ask > 0:
+                price = (
+                    (bid + ask) / 2
+                    if bid > 0 and ask > 0
+                    else (bid or ask)
+                )
+
+                source = 'mis_book'
+                score = 2
+
             else:
-                bid = first_book_price(row.get("b"))
-                ask = first_book_price(row.get("a"))
-
-                if bid > 0 and ask > 0:
-                    price = (bid + ask) / 2
-                else:
-                    price = bid or ask
-
-                source = "mis_book"
-
-            if price <= 0:
                 continue
 
-            change = (
-                price / previous - 1
-            ) * 100
+            if (
+                prev_close <= 0
+                or price <= 0
+                or score < quality.get(t, -1)
+            ):
+                continue
 
-            result[ticker] = {
-                "price": price,
-                "change_pct": change,
-                "exchange": str(row.get("ex") or ""),
-                "quote_source": source,
+            out[t] = {
+                'price': price,
+                'prev_close': prev_close,
+                'change_pct': (
+                    price / prev_close - 1
+                ) * 100,
+                'exchange': r.get('ex', ''),
+                'quote_source': source
             }
 
-    return result
+            quality[t] = score
+
+        time.sleep(0.2)
+
+    return out
 
 
 def previous_quotes():
     old = load_json(
-        ROOT / "data/heatmap.json",
+        ROOT / 'data/heatmap.json',
         {}
     )
 
     out = {}
 
-    for sector in old.get("sectors", []):
-        for row in sector.get("stocks", []):
-            ticker = str(row.get("ticker") or "")
+    for sec in old.get('sectors', []):
+        for x in sec.get('stocks', []):
+            t = str(x.get('ticker') or '')
 
-            if not ordinary_ticker(ticker):
-                continue
-
-            price = NumberLike(row.get("price"))
-            change = row.get("change_pct")
-
-            if price <= 0 or change is None:
-                continue
-
-            out[ticker] = {
-                "price": price,
-                "change_pct": float(change),
-            }
+            if (
+                ordinary_ticker(t)
+                and NumberLike(x.get('price')) > 0
+                and x.get('change_pct') is not None
+            ):
+                out[t] = {
+                    'price': float(x['price']),
+                    'change_pct': float(
+                        x['change_pct']
+                    )
+                }
 
     return out
 
 
 def fetch_index_quotes():
     """
-    抓取加權指數與櫃買指數
+    抓取加權指數及櫃買指數
 
     僅接受：
-    1. 有有效指數值
-    2. 有有效昨收
-    3. 行情日期為今天
+    - 有效指數值
+    - 有效昨收
+    - 當日行情
 
-    不使用前一交易日行情冒充今日即時資料
+    輸出格式與 app.js 一致
     """
 
     data = get_mis_batch_with_retry(
         list(INDEX_CHANNELS.values())
     )
 
-    today = now_tpe().strftime("%Y%m%d")
+    today = now_tpe().strftime('%Y%m%d')
 
     out = {}
 
-    for row in data.get("msgArray", []):
-        channel = str(
-            row.get("ch") or ""
+    for row in data.get('msgArray', []):
+        ch = str(
+            row.get('ch') or ''
         ).lower()
 
         market = next(
             (
-                key
-                for key, value in INDEX_CHANNELS.items()
-                if value.lower() == channel
+                k for k, v in INDEX_CHANNELS.items()
+                if v.lower() == ch
             ),
             None
         )
 
         if not market:
-            code = str(
-                row.get("c") or ""
+            c = str(
+                row.get('c') or ''
             ).lower()
 
-            exchange = str(
-                row.get("ex") or ""
+            ex = str(
+                row.get('ex') or ''
             ).lower()
 
-            if code == "t00" and exchange == "tse":
-                market = "twse"
+            if c == 't00' and ex == 'tse':
+                market = 'twse'
 
-            elif code == "o00" and exchange == "otc":
-                market = "tpex"
+            elif c == 'o00' and ex == 'otc':
+                market = 'tpex'
 
         if not market:
             continue
 
-        price = NumberLike(row.get("z"))
-        previous = NumberLike(row.get("y"))
+        last = NumberLike(row.get('z'))
+        prev = NumberLike(row.get('y'))
 
-        if price <= 0 or previous <= 0:
+        if last <= 0 or prev <= 0:
             continue
 
         raw_date = str(
-            row.get("d") or ""
-        ).replace("-", "").replace("/", "")
+            row.get('d') or ''
+        ).replace('-', '').replace('/', '')
 
+        # 日期不存在或不是今天，一律不當成即時行情
         if raw_date != today:
             continue
 
-        change = (
-            price / previous - 1
-        ) * 100
+        change_pct = round(
+            (last / prev - 1) * 100,
+            4
+        )
 
         out[market] = {
-            "price": price,
-            "value": price,
-            "prev_close": previous,
-            "change_pct": round(change, 4),
-            "date": today,
-            "time": str(row.get("t") or ""),
-            "source": "twse_mis",
-            "live": True,
+            'price': last,
+            'value': last,
+            'prev_close': prev,
+            'change_pct': change_pct,
+            'date': today,
+            'time': str(row.get('t') or ''),
+            'source': 'twse_mis',
+            'live': True
         }
 
     return out
@@ -280,70 +296,67 @@ def fetch_index_quotes():
 
 def previous_index_quotes():
     """
-    只允許沿用今天已取得的指數
-
-    沿用資料會標示 live=False
+    MIS 暫時抓不到時，只沿用今天取得的有效資料
     """
 
     old = load_json(
-        ROOT / "data/heatmap.json",
+        ROOT / 'data/heatmap.json',
         {}
     )
 
-    today = now_tpe().strftime("%Y%m%d")
-
     old_date = str(
-        old.get("updated_at") or ""
-    )[:10].replace("/", "").replace("-", "")
+        old.get('updated_at', '')
+    )[:10].replace('/', '').replace('-', '')
+
+    today = now_tpe().strftime('%Y%m%d')
 
     if old_date != today:
         return {}
 
     previous = (
-        old.get("indices")
-        or old.get("index_quotes")
+        old.get('indices')
+        or old.get('index_quotes')
         or {}
     )
 
     out = {}
 
-    for market, quote in previous.items():
+    for market, q in previous.items():
         if market not in INDEX_CHANNELS:
             continue
 
-        if not isinstance(quote, dict):
+        if not isinstance(q, dict):
             continue
 
-        date = str(
-            quote.get("date") or ""
-        ).replace("-", "")
+        quote_date = str(
+            q.get('date') or ''
+        ).replace('-', '').replace('/', '')
 
-        if date != today:
+        if quote_date != today:
             continue
 
         price = NumberLike(
-            quote.get("price")
-            or quote.get("value")
+            q.get('price') or q.get('value')
         )
 
-        prev_close = NumberLike(
-            quote.get("prev_close")
+        prev = NumberLike(
+            q.get('prev_close')
         )
 
-        if price <= 0 or prev_close <= 0:
+        if price <= 0 or prev <= 0:
             continue
 
         out[market] = {
-            **quote,
-            "price": price,
-            "value": price,
-            "prev_close": prev_close,
-            "change_pct": round(
-                (price / prev_close - 1) * 100,
+            **q,
+            'price': price,
+            'value': price,
+            'prev_close': prev,
+            'change_pct': round(
+                (price / prev - 1) * 100,
                 4
             ),
-            "source": "previous_heatmap",
-            "live": False,
+            'source': 'previous_heatmap',
+            'live': False
         }
 
     return out
@@ -351,34 +364,34 @@ def previous_index_quotes():
 
 def main():
     cfg = load_json(
-        ROOT / "data/sectors.json",
+        ROOT / 'data/sectors.json',
         {}
     )
 
     master = load_json(
-        ROOT / "data/master.json",
+        ROOT / 'data/master.json',
         {}
-    ).get("stocks", {})
+    ).get('stocks', {})
 
     if not master:
         master = fetch_master()
 
         save_json(
-            ROOT / "data/master.json",
+            ROOT / 'data/master.json',
             {
-                "updated_at": now_tpe().isoformat(
-                    timespec="minutes"
+                'updated_at': now_tpe().isoformat(
+                    timespec='minutes'
                 ),
-                "stocks": master,
+                'stocks': master
             }
         )
 
     tdcc_totals = latest_tdcc_totals()
 
     tickers = sorted({
-        str(stock["ticker"])
-        for sector in cfg.get("sectors", [])
-        for stock in sector.get("stocks", [])
+        str(s['ticker'])
+        for sec in cfg.get('sectors', [])
+        for s in sec.get('stocks', [])
     })
 
     quotes = fetch_heatmap_quotes(
@@ -390,97 +403,93 @@ def main():
 
     previous_fallback = 0
 
-    for ticker in tickers:
-        if ticker in quotes:
+    for t in tickers:
+        if t in quotes or t not in old_quotes:
             continue
 
-        if ticker not in old_quotes:
-            continue
-
-        quotes[ticker] = {
-            **old_quotes[ticker],
-            "exchange": master.get(
-                ticker,
-                {}
-            ).get("market", ""),
-            "quote_source": "previous_heatmap",
+        quotes[t] = {
+            **old_quotes[t],
+            'exchange': master.get(
+                t, {}
+            ).get('market', ''),
+            'quote_source': 'previous_heatmap'
         }
 
         previous_fallback += 1
 
-    # 抓取即時大盤與 OTC
+    # 大盤及 OTC 指數
     indices = fetch_index_quotes()
 
-    # 同日有效資料備援
-    for market, quote in previous_index_quotes().items():
-        indices.setdefault(market, quote)
+    # 當日有效資料備援
+    for market, q in previous_index_quotes().items():
+        indices.setdefault(market, q)
 
     sectors = []
 
-    for sector in cfg.get("sectors", []):
+    for sec in cfg.get('sectors', []):
         members = []
         weighted = 0.0
         capsum = 0.0
         missing = []
 
-        for stock in sector.get("stocks", []):
-            ticker = str(stock["ticker"])
+        for s in sec.get('stocks', []):
+            t = str(s['ticker'])
 
-            quote = quotes.get(ticker)
-            info = master.get(ticker, {})
+            q = quotes.get(t)
+            m = master.get(t, {})
 
             name = (
-                stock.get("name")
-                or info.get("name")
-                or ticker
+                s.get('name')
+                or m.get('name')
+                or t
             )
 
             master_shares = int(
-                info.get("shares_issued") or 0
+                m.get('shares_issued') or 0
             )
 
             shares = (
                 master_shares
-                or int(tdcc_totals.get(ticker) or 0)
+                or int(tdcc_totals.get(t) or 0)
             )
 
-            if not quote:
-                missing.append(ticker)
+            if not q:
+                missing.append(t)
 
                 members.append({
-                    "ticker": ticker,
-                    "name": name,
-                    "price": None,
-                    "change_pct": None,
-                    "market_cap": None,
-                    "weight": None,
-                    "shares_source": None,
-                    "quote_source": None,
+                    'ticker': t,
+                    'name': name,
+                    'price': None,
+                    'change_pct': None,
+                    'market_cap': None,
+                    'weight': None,
+                    'shares_source': None,
+                    'quote_source': None
                 })
 
                 continue
 
-            price = quote.get("price")
-            change = quote.get("change_pct")
+            price = q.get('price')
+            change = q.get('change_pct')
 
             if (
                 shares <= 0
                 or NumberLike(price) <= 0
                 or change is None
             ):
-                missing.append(ticker)
+                missing.append(t)
 
                 members.append({
-                    "ticker": ticker,
-                    "name": name,
-                    "price": price,
-                    "change_pct": change,
-                    "market_cap": None,
-                    "weight": None,
-                    "shares_source": None,
-                    "quote_source": quote.get(
-                        "quote_source"
-                    ),
+                    'ticker': t,
+                    'name': name,
+                    'price': price,
+                    'change_pct': change,
+                    'market_cap': None,
+                    'weight': None,
+                    'shares_source': None,
+                    'quote_source': q.get(
+                        'quote_source'
+                    )
                 })
 
                 continue
@@ -491,87 +500,87 @@ def main():
             weighted += float(change) * cap
 
             members.append({
-                "ticker": ticker,
-                "name": name,
-                "price": price,
-                "change_pct": round(
+                'ticker': t,
+                'name': name,
+                'price': price,
+                'change_pct': round(
                     float(change),
                     2
                 ),
-                "market_cap": cap,
-                "weight": None,
-                "shares_source": (
-                    "master"
+                'market_cap': cap,
+                'weight': None,
+                'shares_source': (
+                    'master'
                     if master_shares > 0
-                    else "tdcc"
+                    else 'tdcc'
                 ),
-                "quote_source": quote.get(
-                    "quote_source"
-                ),
+                'quote_source': q.get(
+                    'quote_source'
+                )
             })
 
-        for member in members:
+        for x in members:
             if (
-                member["market_cap"] is not None
-                and capsum > 0
+                x['market_cap'] is not None
+                and capsum
             ):
-                member["weight"] = (
-                    member["market_cap"] / capsum
+                x['weight'] = (
+                    x['market_cap'] / capsum
                 )
 
         sectors.append({
-            "name": sector["name"],
-            "change_pct": (
+            'name': sec['name'],
+            'change_pct': (
                 round(weighted / capsum, 2)
-                if capsum > 0
+                if capsum
                 else None
             ),
-            "complete": len(missing) == 0,
-            "missing": missing,
-            "stocks": members,
+            'complete': len(missing) == 0,
+            'missing': missing,
+            'stocks': members
         })
 
-    result = {
-        "updated_at": now_tpe().strftime(
-            "%Y/%m/%d %H:%M"
-        ),
-        "method": "market_cap_weighted",
-        "source": (
-            "TWSE MIS + TPEx MIS + "
-            "TDCC share fallback"
-        ),
-
-        # app.js 實際讀取這個欄位
-        "indices": indices,
-
-        # 保留舊欄位相容性
-        "index_quotes": indices,
-
-        # 原本熱力圖資料
-        "sectors": sectors,
-    }
-
     save_json(
-        ROOT / "data/heatmap.json",
-        result
+        ROOT / 'data/heatmap.json',
+        {
+            'updated_at': now_tpe().strftime(
+                '%Y/%m/%d %H:%M'
+            ),
+            'method': 'market_cap_weighted',
+            'source': (
+                'TWSE MIS correct-market live quote '
+                '+ MIS retry + previous valid quote '
+                'fallback + TWSE/TPEx master '
+                '+ TDCC share fallback'
+            ),
+
+            # 新版 app.js 使用
+            'indices': indices,
+
+            # 舊版相容
+            'index_quotes': indices,
+
+            # 原本族群資料
+            'sectors': sectors
+        }
     )
 
     print(
-        "heatmap",
+        'heatmap',
         len(sectors),
-        "quotes",
+        'quotes',
         len(quotes),
-        "indices",
+        'indices',
         list(indices),
-        "previous_fallback",
+        'previous_fallback',
         previous_fallback,
-        "missing",
+        'missing',
         sum(
-            len(x["missing"])
+            len(x['missing'])
             for x in sectors
         )
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
