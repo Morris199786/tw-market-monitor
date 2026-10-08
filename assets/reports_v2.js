@@ -1,11 +1,12 @@
 /* =========================================================
-   券商報告 V3.4
+   券商報告 V3.5
    - 依收到日期分組
    - 歷史報告永久保留
    - 公司名稱 / 股票代號搜尋
    - 中文公司名可搜尋外資英文報告（依 ticker 自動對照）
    - 網站已顯示的報告內容全文關鍵字搜尋
    - 英文不區分大小寫
+   - 搜尋命中的文字顯示黃色底色
    - 搜尋結果數量顯示
    - 搜尋框右側清除按鈕
    - Pushover deep link 直達指定報告
@@ -38,6 +39,124 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;");
+  }
+
+  /* =========================================================
+     搜尋關鍵字黃底標示
+     ========================================================= */
+
+  function normalizeSearchText(value) {
+    return String(value ?? "")
+      .normalize("NFKC")
+      .toLocaleLowerCase();
+  }
+
+  function highlightedText(value) {
+    const original = String(value ?? "");
+    const query = normalizeSearchText(
+      currentQuery.trim()
+    );
+
+    if (!query || !original) {
+      return esc(original);
+    }
+
+    const normalized = normalizeSearchText(original);
+
+    /*
+      逐字建立正規化文字與原始字元的對照，
+      避免全形／半形字元正規化後位置不同，
+      導致標示錯誤
+    */
+    const units = Array.from(original);
+
+    const normalizedParts = [];
+    const startMap = [];
+    const endMap = [];
+
+    let originalOffset = 0;
+
+    for (const unit of units) {
+      const start = originalOffset;
+      originalOffset += unit.length;
+
+      const part = normalizeSearchText(unit);
+
+      for (let i = 0; i < part.length; i++) {
+        normalizedParts.push(part[i]);
+        startMap.push(start);
+        endMap.push(originalOffset);
+      }
+    }
+
+    const searchable = normalizedParts.join("");
+
+    if (!searchable.includes(query)) {
+      return esc(original);
+    }
+
+    const ranges = [];
+    let position = 0;
+
+    while (position < searchable.length) {
+      const found = searchable.indexOf(
+        query,
+        position
+      );
+
+      if (found === -1) break;
+
+      const start = startMap[found];
+      const end = endMap[
+        found + query.length - 1
+      ];
+
+      if (
+        start !== undefined &&
+        end !== undefined
+      ) {
+        ranges.push([start, end]);
+      }
+
+      position = found + Math.max(query.length, 1);
+    }
+
+    if (!ranges.length) {
+      return esc(original);
+    }
+
+    /*
+      合併重疊範圍，避免產生不合法的巢狀 mark
+    */
+    const merged = [];
+
+    for (const range of ranges) {
+      const last = merged[merged.length - 1];
+
+      if (last && range[0] <= last[1]) {
+        last[1] = Math.max(last[1], range[1]);
+      } else {
+        merged.push([...range]);
+      }
+    }
+
+    let result = "";
+    let cursor = 0;
+
+    for (const [start, end] of merged) {
+      result += esc(original.slice(cursor, start));
+
+      result +=
+        `<mark class="report-search-highlight">` +
+        esc(original.slice(start, end)) +
+        `</mark>`;
+
+      cursor = end;
+    }
+
+    result += esc(original.slice(cursor));
+
+    return result;
   }
 
   function addStockName(ticker, name) {
@@ -207,12 +326,6 @@
      不讀取原始 PDF
      ========================================================= */
 
-  function normalizeSearchText(value) {
-    return String(value ?? "")
-      .normalize("NFKC")
-      .toLocaleLowerCase();
-  }
-
   function searchText(r) {
     const primaryNames =
       namesForTicker(r.ticker);
@@ -232,20 +345,16 @@
       );
 
     const fields = [
-      // 券商名稱、標題、股票資訊
       r.broker,
       r.title,
       r.name,
       r.ticker,
 
-      // 股票中文名稱索引
       ...primaryNames,
 
-      // 評等及報告說明
       r.rating,
       r.push_reason,
 
-      // 報告摘要
       ...(
         Array.isArray(r.summary)
           ? r.summary
@@ -254,31 +363,26 @@
             : []
       ),
 
-      // 完整摘要
       r.detail,
 
-      // 重點數據／邏輯
       ...(
         Array.isArray(r.key_points)
           ? r.key_points
           : []
       ),
 
-      // 財測調整
       ...(
         Array.isArray(r.forecast_changes)
           ? r.forecast_changes
           : []
       ),
 
-      // 風險
       ...(
         Array.isArray(r.risks)
           ? r.risks
           : []
       ),
 
-      // 報告關注個股
       ...beneficiarySearch
     ];
 
@@ -310,7 +414,7 @@
     if (r.rating) {
       arr.push(`
         <span class="report-chip">
-          ${esc(r.rating)}
+          ${highlightedText(r.rating)}
         </span>
       `);
     }
@@ -329,7 +433,7 @@
         <span
           class="report-chip report-target ${targetClass}"
         >
-          目標價 ${esc(tp)}
+          目標價 ${highlightedText(tp)}
         </span>
       `);
     }
@@ -382,13 +486,13 @@
               )}"
               title="${esc(x.reason || "")}"
             >
-              ${esc(x.name || "")}
+              ${highlightedText(x.name || "")}
 
               ${
                 x.ticker
                   ? `
                     <small>
-                      ${esc(x.ticker)}
+                      ${highlightedText(x.ticker)}
                     </small>
                   `
                   : ""
@@ -416,7 +520,7 @@
 
         <ul>
           ${arr.map(
-            x => `<li>${esc(x)}</li>`
+            x => `<li>${highlightedText(x)}</li>`
           ).join("")}
         </ul>
       </div>
@@ -462,11 +566,11 @@
         <div class="report-v2-top">
           <div>
             <div class="report-broker">
-              ${esc(r.broker || "券商研究")}
+              ${highlightedText(r.broker || "券商研究")}
             </div>
 
             <div class="report-title">
-              ${esc(stockTitle)}
+              ${highlightedText(stockTitle)}
             </div>
           </div>
 
@@ -475,7 +579,7 @@
               r.action
             )}"
           >
-            ${esc(action)}
+            ${highlightedText(action)}
           </span>
         </div>
 
@@ -488,7 +592,7 @@
             ? `
               <ul class="report-summary">
                 ${summary.map(
-                  x => `<li>${esc(x)}</li>`
+                  x => `<li>${highlightedText(x)}</li>`
                 ).join("")}
               </ul>
             `
@@ -512,7 +616,7 @@
                     </div>
 
                     <p>
-                      ${esc(r.detail)}
+                      ${highlightedText(r.detail)}
                     </p>
                   </div>
                 `
@@ -814,7 +918,7 @@
   }
 
   /* -----------------------------
-     搜尋欄樣式
+     搜尋欄與黃底標示樣式
      只作用在券商報告
      ----------------------------- */
 
@@ -897,6 +1001,29 @@
         font-size: 13px;
         font-weight: 650;
         line-height: 1.45;
+      }
+
+      /* 搜尋關鍵字黃色底色 */
+      #reports mark.report-search-highlight {
+        display: inline;
+        background: #ffe66d !important;
+        color: #172033 !important;
+
+        padding: 0 2px;
+        border-radius: 3px;
+
+        font: inherit;
+        font-weight: 800;
+
+        box-decoration-break: clone;
+        -webkit-box-decoration-break: clone;
+      }
+
+      html[data-theme="dark"]
+      #reports
+      mark.report-search-highlight {
+        background: #ffd84d !important;
+        color: #111827 !important;
       }
 
       html[data-theme="dark"]
