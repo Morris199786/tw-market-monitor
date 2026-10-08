@@ -428,7 +428,7 @@ s.textContent=`
 #turnoverMap .turnover-inner{
  display:flex!important;flex-direction:column!important;
  justify-content:center!important;gap:3px!important;
- padding:10px!important;min-height:0!important;
+ padding:8px!important;min-height:0!important;
  width:100%!important;height:100%!important;
  font-size:14px!important;line-height:1.35!important;
 }
@@ -1206,27 +1206,26 @@ return out.map(x=>({
 // A bounded weighted treemap: minimum readable width, variable area retained.
 // Extremely small weights receive a display floor; numbers remain unchanged.
 function readableTiles(items,width){
-  const cols=width<600?2:width<1000?3:4;
   const sorted=[...items].sort((a,b)=>b.value-a.value);
-  const max=Math.max(...sorted.map(x=>x.value),0.05);
-  const weights=sorted.map(x=>Math.max(x.value,max*0.67));
   const rows=[];
-  for(let i=0;i<sorted.length;i+=cols){
-    rows.push({items:sorted.slice(i,i+cols),weights:weights.slice(i,i+cols)})
-  }
+  if(sorted.length)rows.push(sorted.slice(0,2));
+  for(let i=2;i<sorted.length;i+=3)rows.push(sorted.slice(i,i+3));
   let top=0;const tiles=[];
-  rows.forEach(row=>{
-    const total=row.weights.reduce((a,b)=>a+b,0);
-    const height=Math.round(200+50*total/(max*cols));
+  rows.forEach((row,index)=>{
+    const max=Math.max(...row.map(x=>x.value),0.05);
+    // Bound width differences to protect text in the smaller three-column tiles.
+    const weights=row.map(x=>Math.max(x.value,max*(index===0?0.67:0.85)));
+    const total=weights.reduce((a,b)=>a+b,0);
+    const height=index===0?Math.max(170,Math.min(230,width*.42)):Math.max(155,Math.min(195,width*.34));
     let left=0;
-    row.items.forEach((item,i)=>{
-      const w=width*row.weights[i]/total;
+    row.forEach((item,i)=>{
+      const w=width*weights[i]/total;
       tiles.push({...item,x:left/width*100,yPx:top,width:w/width*100,hPx:height});
       left+=w;
     });
     top+=height;
   });
-  return {height:Math.max(top,200),tiles:tiles.map(x=>({...x,y:x.yPx/top*100,height:x.hPx/top*100}))}
+  return {height:Math.max(top,170),tiles:tiles.map(x=>({...x,y:x.yPx/top*100,height:x.hPx/top*100}))}
 }
 
 function mapHeight(w){
@@ -1268,10 +1267,6 @@ return`
 
   <div class="turnover-value">
     成交 ${fmtYi(x.turnover)}
-  </div>
-
-  <div class="turnover-progress">
-    ${label(intra)} ${fmtMetric(x.metricPct,intra)}
   </div>
 
   <div class="turnover-avg">
@@ -1704,7 +1699,7 @@ try{
 
         <p>
           符合條件的資金流出族群依<b>成交倍率由高至低</b>排序；
-          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。方塊大小隨成交倍率調整，為確保文字可讀設有最小顯示面積。
+          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。前兩名使用大方塊，其餘每列三個；同列大小隨成交倍率調整，設有最小顯示面積。成交倍率點選族群查看。
           盤中缺少歷史同時間資料，達全天均額不代表同時間放量；
           判斷較保守。盤中成交額仍為價格乘累積成交量的估值，非實際成交淨流向
         </p>
@@ -1893,7 +1888,7 @@ try{
     for(let pass=0;pass<4;pass++){
       let factor=1;
       map.querySelectorAll(".turnover-inner").forEach(el=>{
-        if(el.clientHeight>0)factor=Math.max(factor,(el.scrollHeight+8)/el.clientHeight);
+        if(el.clientHeight>0 && el.scrollHeight>el.clientHeight+1)factor=Math.max(factor,(el.scrollHeight+4)/el.clientHeight);
       });
       if(factor<=1.01)break;
       map.style.height=`${Math.ceil(map.getBoundingClientRect().height*factor)}px`;
