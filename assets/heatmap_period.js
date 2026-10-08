@@ -4,17 +4,35 @@
   /*
    * heatmap_period.js
    *
-   * 修正：
-   * 1. 大盤、OTC 指數統一由 app.js 顯示
-   * 2. 避免歷史收盤資料覆蓋當日即時行情
-   * 3. 補上 tpex_benchmark 支援
-   * 4. 保留期間、權重按鈕及手機版樣式
+   * 1. 保留熱力圖控制按鈕樣式
+   * 2. 修正大盤 / OTC 指數顯示
+   * 3. 當日使用 heatmap.json 即時資料
+   * 4. 5 / 10 / 20 日使用即時指數與歷史基準價
+   * 5. 不修改族群、個股、權重及排序
+   * 6. 不修改其他檔案或版本參數
    */
 
-  if (window.__heatmapPeriodStyleOnlyLoaded) return;
+  if (window.__heatmapPeriodStyleOnlyLoaded) {
+    return;
+  }
 
   window.__heatmapPeriodStyleOnlyLoaded = true;
   window.__heatmapPeriodManaged = true;
+
+  const STYLE_ID = "heatmap-period-style";
+
+  let detailCache = null;
+  let detailPromise = null;
+  let detailLoadedAt = 0;
+
+  let heatCache = null;
+  let heatPromise = null;
+  let heatLoadedAt = 0;
+
+  let renderToken = 0;
+
+  const DETAIL_TTL = 5 * 60 * 1000;
+  const HEAT_TTL = 60 * 1000;
 
   function valid(value) {
     if (
@@ -30,52 +48,211 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  function last(values) {
-    if (!Array.isArray(values)) return null;
+  function pct(value) {
+    const n = valid(value);
 
-    for (let i = values.length - 1; i >= 0; i--) {
+    if (n === null) {
+      return "—";
+    }
+
+    return (
+      (n > 0 ? "+" : "") +
+      n.toFixed(2) +
+      "%"
+    );
+  }
+
+  function last(values) {
+    if (!Array.isArray(values)) {
+      return null;
+    }
+
+    for (
+      let i = values.length - 1;
+      i >= 0;
+      i--
+    ) {
       const n = valid(values[i]);
 
-      if (n !== null) return n;
+      if (n !== null) {
+        return n;
+      }
     }
 
     return null;
   }
 
-  /*
-   * 修正 app.js 的指數計算函式
-   *
-   * 當日：
-   * 使用 heatmap.json 的即時指數
-   *
-   * 5／10／20 日：
-   * 優先使用最新指數與歷史基準價
-   *
-   * OTC：
-   * 支援 tpex_benchmark
-   *
-   * 不再使用昨日漲跌幅冒充盤中行情
-   */
-
-  window.heatBenchmarkReturn = function (
-    period = "1",
-    market = "twse"
-  ) {
-    period = String(period);
-
-    const live =
-      typeof cache !== "undefined"
-        ? cache.heat?.indices?.[market]
-        : null;
-
-    if (period === "1") {
-      return valid(live?.change_pct);
+  function activePeriod() {
+    if (
+      typeof window.getHeatmapActivePeriod ===
+      "function"
+    ) {
+      return String(
+        window.getHeatmapActivePeriod() || "1"
+      );
     }
 
-    const detail =
-      typeof heatDetailData !== "undefined"
-        ? heatDetailData
-        : null;
+    return "1";
+  }
+
+  function periodLabel(period) {
+    return period === "1"
+      ? "當日"
+      : `近${period}日`;
+  }
+
+  /*
+   * 共用資料讀取
+   *
+   * 優先使用 app.js 的 J()
+   * 避免重複請求
+   */
+
+  async function getJSON(path, force = false) {
+    if (typeof window.J === "function") {
+      return window.J(path, { force });
+    }
+
+    const url =
+      path +
+      (path.includes("?") ? "&" : "?") +
+      "v=" +
+      Date.now();
+
+    const response = await fetch(url, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  async function loadDetail(force = false) {
+    const now = Date.now();
+
+    if (
+      !force &&
+      detailCache &&
+      now - detailLoadedAt < DETAIL_TTL
+    ) {
+      return detailCache;
+    }
+
+    if (detailPromise) {
+      return detailPromise;
+    }
+
+    detailPromise = getJSON(
+      "./data/stock_detail.json",
+      force
+    )
+      .then(data => {
+        if (
+          data &&
+          typeof data === "object" &&
+          Object.keys(data).length
+        ) {
+          detailCache = data;
+          detailLoadedAt = Date.now();
+        }
+
+        return detailCache || {};
+      })
+      .catch(error => {
+        console.warn(
+          "[heatmap benchmark detail]",
+          error
+        );
+
+        return detailCache || {};
+      })
+      .finally(() => {
+        detailPromise = null;
+      });
+
+    return detailPromise;
+  }
+
+  async function loadHeat(force = false) {
+    const now = Date.now();
+
+    if (
+      !force &&
+      heatCache &&
+      now - heatLoadedAt < HEAT_TTL
+    ) {
+      return heatCache;
+    }
+
+    if (heatPromise) {
+      return heatPromise;
+    }
+
+    heatPromise = getJSON(
+      "./data/heatmap.json",
+      force
+    )
+      .then(data => {
+        if (
+          data &&
+          typeof data === "object" &&
+          Object.keys(data).length
+        ) {
+          heatCache = data;
+          heatLoadedAt = Date.now();
+        }
+
+        return heatCache || {};
+      })
+      .catch(error => {
+        console.warn(
+          "[heatmap benchmark live]",
+          error
+        );
+
+        return heatCache || {};
+      })
+      .finally(() => {
+        heatPromise = null;
+      });
+
+    return heatPromise;
+  }
+
+  /*
+   * 指數計算
+   *
+   * 當日：
+   * heatmap.json.indices
+   *
+   * 5 / 10 / 20 日：
+   * 最新指數 / 歷史基準價 - 1
+   *
+   * 若盤中有最新指數，
+   * 但缺少基準價，
+   * 不使用昨日累積報酬率冒充最新數字
+   */
+
+  function benchmarkReturn(
+    period,
+    market,
+    heat,
+    detail
+  ) {
+    const live =
+      heat?.indices?.[market] ||
+      heat?.index_quotes?.[market];
+
+    if (period === "1") {
+      return valid(
+        live?.change_pct
+      );
+    }
 
     const history =
       market === "twse"
@@ -108,8 +285,10 @@
     }
 
     /*
-     * 有即時指數但缺少基準價：
-     * 顯示 —，避免誤用昨日歷史報酬率
+     * 盤中有即時行情，
+     * 但缺少對應基準價
+     *
+     * 不顯示過期數字
      */
 
     if (
@@ -119,12 +298,12 @@
       return null;
     }
 
-    const byPeriod = valid(
+    const historicalChange = valid(
       history?.changes_by_period?.[period]
     );
 
-    if (byPeriod !== null) {
-      return byPeriod;
+    if (historicalChange !== null) {
+      return historicalChange;
     }
 
     return last(
@@ -135,27 +314,130 @@
           : null
       )
     );
-  };
+  }
+
+  function benchmarkChip(
+    label,
+    value
+  ) {
+    const n = valid(value);
+
+    const cls =
+      n === null
+        ? ""
+        : n > 0
+          ? "up"
+          : n < 0
+            ? "down"
+            : "";
+
+    return `
+      <span class="heat-benchmark-chip">
+        ${label}
+        <strong class="${cls}">
+          ${pct(n)}
+        </strong>
+      </span>
+    `;
+  }
 
   /*
-   * 樣式
+   * 大盤與 OTC 顯示
    *
-   * 本檔不再寫入 heatPeriodBenchmark
-   * 避免與 app.js 重複渲染
+   * app.js 仍負責建立控制列
+   *
+   * 本檔在切換期間後，
+   * 使用同一組正確資料更新指數
    */
 
-  function injectStyle() {
+  async function renderBenchmarks() {
+    const host = document.getElementById(
+      "heatPeriodBenchmark"
+    );
+
+    if (!host) {
+      return;
+    }
+
+    const token = ++renderToken;
+    const period = activePeriod();
+
+    const [heat, detail] = await Promise.all([
+      loadHeat(),
+      period === "1"
+        ? Promise.resolve({})
+        : loadDetail()
+    ]);
+
+    /*
+     * 避免使用者快速切換期間時，
+     * 較慢完成的舊請求覆蓋新畫面
+     */
+
+    if (token !== renderToken) {
+      return;
+    }
+
     if (
-      document.getElementById(
-        "heatmap-period-style"
-      )
+      period !== activePeriod()
     ) {
       return;
     }
 
-    const style = document.createElement("style");
+    const twse = benchmarkReturn(
+      period,
+      "twse",
+      heat,
+      detail
+    );
 
-    style.id = "heatmap-period-style";
+    const tpex = benchmarkReturn(
+      period,
+      "tpex",
+      heat,
+      detail
+    );
+
+    const label = periodLabel(period);
+
+    const markup = `
+      ${benchmarkChip(
+        `大盤${label}漲幅`,
+        twse
+      )}
+
+      ${benchmarkChip(
+        `OTC${label}漲幅`,
+        tpex
+      )}
+    `;
+
+    if (host.innerHTML !== markup) {
+      host.innerHTML = markup;
+    }
+
+    host.title =
+      period === "1"
+        ? "當日指數：使用 heatmap.json 即時行情"
+        : "期間指數：優先使用最新指數與歷史基準價計算";
+  }
+
+  /*
+   * 保留原本的控制列樣式
+   */
+
+  function injectStyle() {
+    if (
+      document.getElementById(STYLE_ID)
+    ) {
+      return;
+    }
+
+    const style = document.createElement(
+      "style"
+    );
+
+    style.id = STYLE_ID;
 
     style.textContent = `
 
@@ -273,7 +555,7 @@
         box-sizing: border-box;
       }
 
-      .heat-period-benchmark > span {
+      .heat-benchmark-chip {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -286,28 +568,36 @@
         box-sizing: border-box;
       }
 
-      .heat-period-benchmark > span strong {
+      .heat-benchmark-chip strong {
         font-size: 11px;
         font-weight: 900;
       }
 
-      .heat-period-benchmark .up {
+      .heat-benchmark-chip .up {
         color: #dc2626;
       }
 
-      .heat-period-benchmark .down {
+      .heat-benchmark-chip .down {
         color: #15803d;
       }
 
-      [data-theme="dark"] .heat-period-btn.active,
-      [data-theme="dark"] .heat-weight-btn.active {
+      [data-theme="dark"]
+      .heat-period-btn.active,
+
+      [data-theme="dark"]
+      .heat-weight-btn.active {
         background: #f8fafc;
         color: #0f172a;
       }
 
-      [data-theme="dark"] .heat-period-tabs,
-      [data-theme="dark"] .heat-weight-tabs,
-      [data-theme="dark"] .heat-period-benchmark > span {
+      [data-theme="dark"]
+      .heat-period-tabs,
+
+      [data-theme="dark"]
+      .heat-weight-tabs,
+
+      [data-theme="dark"]
+      .heat-benchmark-chip {
         background: var(--card);
       }
 
@@ -380,11 +670,10 @@
           gap: 6px;
         }
 
-        .heat-period-benchmark > span {
+        .heat-benchmark-chip {
           justify-content: center;
           min-width: 0;
           padding: 6px 7px;
-          margin-left: 0 !important;
         }
 
       }
@@ -402,12 +691,12 @@
           font-size: 9px;
         }
 
-        .heat-period-benchmark > span {
+        .heat-benchmark-chip {
           padding: 5px;
           gap: 4px;
         }
 
-        .heat-period-benchmark > span strong {
+        .heat-benchmark-chip strong {
           font-size: 10px;
         }
 
@@ -427,7 +716,7 @@
           font-size: 10px;
         }
 
-        .heat-period-benchmark > span {
+        .heat-benchmark-chip {
           font-size: 8px;
         }
 
@@ -438,14 +727,94 @@
     document.head.appendChild(style);
   }
 
+  /*
+   * 延後一個畫面週期，
+   * 等 app.js 完成熱力圖渲染
+   */
+
+  function refreshSoon() {
+    requestAnimationFrame(() => {
+      renderBenchmarks();
+    });
+  }
+
+  /*
+   * 啟動
+   */
+
   if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
-      injectStyle,
+      () => {
+        injectStyle();
+        refreshSoon();
+      },
       { once: true }
     );
   } else {
     injectStyle();
+    refreshSoon();
   }
+
+  /*
+   * 切換期間
+   */
+
+  window.addEventListener(
+    "heatmap:period-changed",
+    refreshSoon
+  );
+
+  /*
+   * 切換權重
+   */
+
+  window.addEventListener(
+    "heatmap:weight-changed",
+    refreshSoon
+  );
+
+  /*
+   * 展開族群
+   */
+
+  window.addEventListener(
+    "heatmap:detail-rendered",
+    refreshSoon
+  );
+
+  /*
+   * 即時行情更新
+   */
+
+  window.addEventListener(
+    "heatmap:data-updated",
+    event => {
+      const data = event.detail;
+
+      if (data?.indices && heatCache) {
+        heatCache.indices = data.indices;
+        heatLoadedAt = Date.now();
+      } else {
+        heatLoadedAt = 0;
+      }
+
+      refreshSoon();
+    }
+  );
+
+  /*
+   * 手機切回前景
+   *
+   * 重新檢查資料是否過期
+   */
+
+  window.addEventListener(
+    "focus",
+    () => {
+      heatLoadedAt = 0;
+      refreshSoon();
+    }
+  );
 
 })();
