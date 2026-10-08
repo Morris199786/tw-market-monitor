@@ -422,6 +422,29 @@ s.textContent=`
 }
 
 
+/* Scoped rules beat generic card/mobile layouts without shrinking text. */
+#turnoverMap.turnover-map{display:block!important;position:relative!important}
+#turnoverMap .turnover-box{position:absolute!important;box-sizing:border-box!important}
+#turnoverMap .turnover-inner{
+ display:flex!important;flex-direction:column!important;
+ justify-content:center!important;gap:3px!important;
+ padding:10px!important;min-height:0!important;
+ width:100%!important;height:100%!important;
+ font-size:14px!important;line-height:1.35!important;
+}
+#turnoverMap .turnover-name{
+ display:block!important;-webkit-line-clamp:unset!important;
+ overflow:visible!important;white-space:normal!important;
+ overflow-wrap:anywhere!important;flex-shrink:0!important;
+ font-size:15px!important;line-height:1.35!important;
+}
+#turnoverMap .turnover-value,#turnoverMap .turnover-progress,
+#turnoverMap .turnover-avg,#turnoverMap .turnover-market{
+ font-size:13px!important;line-height:1.35!important;
+ white-space:normal!important;overflow-wrap:anywhere!important;
+ flex-shrink:0!important;margin:0!important
+}
+
 /* =========================================================
    DETAIL
    ========================================================= */
@@ -561,28 +584,14 @@ s.textContent=`
   }
 
   .turnover-map{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    height:auto!important;
-    gap:5px;
-    overflow:visible
+    display:block!important;
+    position:relative!important;
+    overflow:hidden
   }
   .turnover-map .turnover-box{
-    position:static!important;
-    width:auto!important;
-    height:auto!important;
-    min-width:0
-  }
-  .turnover-map .turnover-inner{
-    min-height:150px;
-    justify-content:flex-start;
-    overflow:visible
-  }
-  .turnover-map .turnover-name{
-    display:block;
-    overflow:visible;
-    overflow-wrap:anywhere;
-    flex-shrink:0
+    position:absolute!important;
+    min-width:0;
+    box-sizing:border-box
   }
 
   .turnover-inner{
@@ -1194,6 +1203,32 @@ return out.map(x=>({
 }
 
 
+// A bounded weighted treemap: minimum readable width, variable area retained.
+// Extremely small weights receive a display floor; numbers remain unchanged.
+function readableTiles(items,width){
+  const cols=width<600?2:width<1000?3:4;
+  const sorted=[...items].sort((a,b)=>b.value-a.value);
+  const max=Math.max(...sorted.map(x=>x.value),0.05);
+  const weights=sorted.map(x=>Math.max(x.value,max*0.67));
+  const rows=[];
+  for(let i=0;i<sorted.length;i+=cols){
+    rows.push({items:sorted.slice(i,i+cols),weights:weights.slice(i,i+cols)})
+  }
+  let top=0;const tiles=[];
+  rows.forEach(row=>{
+    const total=row.weights.reduce((a,b)=>a+b,0);
+    const height=Math.round(200+50*total/(max*cols));
+    let left=0;
+    row.items.forEach((item,i)=>{
+      const w=width*row.weights[i]/total;
+      tiles.push({...item,x:left/width*100,yPx:top,width:w/width*100,hPx:height});
+      left+=w;
+    });
+    top+=height;
+  });
+  return {height:Math.max(top,200),tiles:tiles.map(x=>({...x,y:x.yPx/top*100,height:x.hPx/top*100}))}
+}
+
 function mapHeight(w){
 
 return window.innerWidth<=720
@@ -1669,7 +1704,7 @@ try{
 
         <p>
           符合條件的資金流出族群依<b>成交倍率由高至低</b>排序；
-          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。
+          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。方塊大小隨成交倍率調整，為確保文字可讀設有最小顯示面積。
           盤中缺少歷史同時間資料，達全天均額不代表同時間放量；
           判斷較保守。盤中成交額仍為價格乘累積成交量的估值，非實際成交淨流向
         </p>
@@ -1794,8 +1829,8 @@ try{
       grp?.items ||
       [];
 
-    const height=
-      mapHeight(width);
+    const layout=readableTiles(list,width);
+    const height=layout.height;
 
     map.style.height=
       `${height}px`;
@@ -1823,20 +1858,16 @@ try{
 
 
     map.innerHTML=
-      squarify(
-        list,
-        width,
-        height
-      )
+      layout.tiles
       .map(x=>`
 
         <div
           class="turnover-box"
           style="
-            left:${x.x}%;
-            top:${x.y}%;
-            width:${x.width}%;
-            height:${x.height}%
+            left:${x.x}%!important;
+            top:${x.y}%!important;
+            width:${x.width}%!important;
+            height:${x.height}%!important
           "
         >
 
@@ -1855,7 +1886,18 @@ try{
         </div>
 
       `)
-      .join("")
+      .join("");
+
+    // Expand canvas if browser font scaling requires more vertical room.
+    // Preserve relative rectangle areas and readable font sizes.
+    for(let pass=0;pass<4;pass++){
+      let factor=1;
+      map.querySelectorAll(".turnover-inner").forEach(el=>{
+        if(el.clientHeight>0)factor=Math.max(factor,(el.scrollHeight+8)/el.clientHeight);
+      });
+      if(factor<=1.01)break;
+      map.style.height=`${Math.ceil(map.getBoundingClientRect().height*factor)}px`;
+    }
 
   }
 
