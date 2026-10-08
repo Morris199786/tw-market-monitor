@@ -4,6 +4,7 @@ import json
 import hashlib
 import os
 import re
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -57,6 +58,27 @@ def save_json(path: Path, data) -> None:
         json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def commit_claim_before_external_call(reason: str) -> None:
+    """Persist one-shot claim to GitHub BEFORE spending credits or sending Telegram.
+
+    Fail closed: if git push fails, do not perform the external operation.
+    The workflow must use a single concurrency group and checkout main.
+    """
+    subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=ROOT, check=True)
+    subprocess.run(["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"], cwd=ROOT, check=True)
+    # Include ingestion/rating changes so the claim commit can be pushed cleanly.
+    subprocess.run(["git", "add", "data/report_inbox.json", "data/processed_reports.json",
+                    "data/reports.json", "data/report_company_registry.json",
+                    "data/tw_ratings.json", "data/tw_ratings_state.json"], cwd=ROOT, check=True)
+    diff = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=ROOT)
+    if diff.returncode == 0:
+        raise RuntimeError("One-shot claim not changed; refusing external call")
+    if diff.returncode != 1:
+        raise RuntimeError("Could not verify staged claim")
+    subprocess.run(["git", "commit", "-m", "Claim broker report once: " + reason[:90]], cwd=ROOT, check=True)
+    subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, check=True)
 
 
 def response_text(data: dict) -> str:
@@ -463,49 +485,28 @@ def main():
             str(src.get("text") or "").encode()
         ).hexdigest()
 
-        # 已經以目前 audit version 驗證成功且來源未改變：永遠跳過
-        if (
-            old
-            and old.get("audit_version") == VERSION
-            and old.get("validation_status") == "verified"
-            and old.get("source_text_hash") == current_text_hash
-        ):
-            continue
-
-        # 同一份來源、同一 audit version 已經失敗過：
-        # 不再由每 5 分鐘 workflow 自動重試，避免無限燒 API
-        if (
-            src.get("audit_failed_version") == VERSION
-            and src.get("audit_failed_text_hash") == current_text_hash
-        ):
-            continue
-
-        # 新報告只處理 pending_ai。
-        # 舊版留下的 audit_error 若沒有 failure marker，允許最後重試一次；
-        # 若再失敗，會寫入 marker，之後自動跳過。
-        if (
-            not old
-            and src.get("status") not in ("pending_ai", "audit_error")
-        ):
+        # Strict File ID one-shot: never retry completed, failed, or claimed reports.
+        # Audit version changes must NOT trigger another API call.
+        if old or src.get("status") != "pending_ai" or src.get("ai_attempted_at"):
             continue
 
         # 額度用完後，本輪不再碰後續報告
         if quota_exhausted:
             break
 
+        # Commit the claim to GitHub before calling OpenAI.
+        # A failed push aborts the workflow without spending any API credit.
+        src["ai_attempted_at"] = now_tpe()
+        src["status"] = "ai_processing"
+        save_json(INBOX_PATH, inbox)
+        commit_claim_before_external_call("AI " + file_id)
+
         try:
-            if old:
-                report = audit_report(old, src, COMPANIES)
-                old.clear()
-                old.update(report)
-                old.pop("audit_error", None)
-                old.pop("audit_failed_at", None)
-            else:
-                if not OPENAI_API_KEY:
-                    raise RuntimeError("OPENAI_API_KEY is missing")
-                report = analyze_report(src)
-                items.append(report)
-                by_source[file_id] = report
+            if not OPENAI_API_KEY:
+                raise RuntimeError("OPENAI_API_KEY is missing")
+            report = analyze_report(src)
+            items.append(report)
+            by_source[file_id] = report
 
             src["status"] = "done"
             src["audit_version"] = VERSION
@@ -564,12 +565,22 @@ def main():
     for report in items:
         if report.get("validation_status") != "verified":
             continue
-        if not report.get("telegram_sent_at"):
-            if send_telegram(report):
-                report["telegram_sent_at"] = now_tpe()
-                telegram_pushed += 1
-                reports["items"] = items
-                save_json(REPORTS_PATH, reports)
+        # Existing sent records and attempted records are permanently skipped.
+        if report.get("telegram_sent_at") or report.get("telegram_attempted_at"):
+            continue
+        file_id = report.get("source_file_id")
+        if not file_id:
+            continue
+        # Claim the send before the network request. Never retry, even on timeout.
+        report["telegram_attempted_at"] = now_tpe()
+        reports["items"] = items
+        save_json(REPORTS_PATH, reports)
+        commit_claim_before_external_call("Telegram " + file_id)
+        if send_telegram(report):
+            report["telegram_sent_at"] = now_tpe()
+            telegram_pushed += 1
+            reports["items"] = items
+            save_json(REPORTS_PATH, reports)
 
     items.sort(
         key=lambda x: (
@@ -587,8 +598,8 @@ def main():
         "group_date 使用 Drive 收到日期做網站分組；"
         "date 保留報告本身日期。"
         "公司身分與目標價經來源驗證，僅 Telegram 推播；"
-        "同一 audit version 驗證失敗後不會由排程無限重試；"
-        "來源文字或 audit version 改變後才會重新核對。"
+        "每個 Drive File ID 僅嘗試一次 AI 分析；"
+        "Telegram 在發送前持久化一次性 claim，失敗不自動重送。"
     )
 
     inbox["updated_at"] = now_tpe()
