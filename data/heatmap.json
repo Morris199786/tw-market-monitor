@@ -1,51 +1,9 @@
 {
-  "updated_at": "2026/10/08 18:21",
+  "updated_at": "2026/10/09 01:03",
   "method": "market_cap_weighted",
   "source": "TWSE MIS + retry + correct-market quotes + TDCC share fallback",
-  "indices": {
-    "twse": {
-      "price": 49313.44,
-      "value": 49313.44,
-      "prev_close": 49806.37,
-      "change_pct": -0.9897,
-      "date": "20261008",
-      "time": "13:31:00",
-      "source": "twse_mis",
-      "live": true
-    },
-    "tpex": {
-      "price": 426.71,
-      "value": 426.71,
-      "prev_close": 430.46,
-      "change_pct": -0.8712,
-      "date": "20261008",
-      "time": "13:33:00",
-      "source": "twse_mis",
-      "live": true
-    }
-  },
-  "index_quotes": {
-    "twse": {
-      "price": 49313.44,
-      "value": 49313.44,
-      "prev_close": 49806.37,
-      "change_pct": -0.9897,
-      "date": "20261008",
-      "time": "13:31:00",
-      "source": "twse_mis",
-      "live": true
-    },
-    "tpex": {
-      "price": 426.71,
-      "value": 426.71,
-      "prev_close": 430.46,
-      "change_pct": -0.8712,
-      "date": "20261008",
-      "time": "13:33:00",
-      "source": "twse_mis",
-      "live": true
-    }
-  },
+  "indices": {},
+  "index_quotes": {},
   "sectors": [
     {
       "name": "IC 封裝／測試",
@@ -1437,9 +1395,11 @@
     },
     {
       "name": "被動元件",
-      "change_pct": -0.89,
-      "complete": true,
-      "missing": [],
+      "change_pct": -0.84,
+      "complete": false,
+      "missing": [
+        "6173"
+      ],
       "stocks": [
         {
           "ticker": "2327",
@@ -1447,7 +1407,7 @@
           "price": 635.0,
           "change_pct": -1.85,
           "market_cap": 1310086573370.0,
-          "weight": 0.6747208524849011,
+          "weight": 0.6920502664895402,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1457,7 +1417,7 @@
           "price": 130.5,
           "change_pct": 0.77,
           "market_cap": 14182131087.0,
-          "weight": 0.007304081861138765,
+          "weight": 0.007491678639909258,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1467,7 +1427,7 @@
           "price": 243.5,
           "change_pct": 0.0,
           "market_cap": 40113005859.5,
-          "weight": 0.02065900228229409,
+          "weight": 0.02118960453380916,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1477,7 +1437,7 @@
           "price": 134.5,
           "change_pct": 0.0,
           "market_cap": 19466365095.5,
-          "weight": 0.010025568324261134,
+          "weight": 0.010283063291969732,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1487,7 +1447,7 @@
           "price": 420.0,
           "change_pct": -1.87,
           "market_cap": 203786005080.0,
-          "weight": 0.10495387851993278,
+          "weight": 0.10764949583421345,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1497,7 +1457,7 @@
           "price": 877.0,
           "change_pct": 4.53,
           "market_cap": 145485808886.0,
-          "weight": 0.07492810856271093,
+          "weight": 0.07685254918002062,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1507,7 +1467,7 @@
           "price": 174.0,
           "change_pct": 0.0,
           "market_cap": 50036684100.0,
-          "weight": 0.025769895545624245,
+          "weight": 0.026431765098227738,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1517,7 +1477,7 @@
           "price": 226.5,
           "change_pct": 0.67,
           "market_cap": 26912803612.5,
-          "weight": 0.01386063346140125,
+          "weight": 0.01421662758065007,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
@@ -1527,19 +1487,19 @@
           "price": 175.0,
           "change_pct": 9.72,
           "market_cap": 20534647350.0,
-          "weight": 0.010575755104358119,
+          "weight": 0.010847380974434809,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
         {
           "ticker": "6173",
           "name": "信昌電",
-          "price": 284.0,
-          "change_pct": -2.74,
-          "market_cap": 48620800000.0,
-          "weight": 0.02504068684568743,
-          "shares_source": "tdcc",
-          "quote_source": "previous_heatmap"
+          "price": null,
+          "change_pct": null,
+          "market_cap": null,
+          "weight": null,
+          "shares_source": null,
+          "quote_source": null
         },
         {
           "ticker": "6449",
@@ -1547,7 +1507,7 @@
           "price": 271.0,
           "change_pct": 3.63,
           "market_cap": 24898941794.0,
-          "weight": 0.012823454247000312,
+          "weight": 0.013152809634191031,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1557,7 +1517,7 @@
           "price": 132.0,
           "change_pct": 5.6,
           "market_cap": 11678182824.0,
-          "weight": 0.006014498301600749,
+          "weight": 0.006168973638645368,
           "shares_source": "master",
           "quote_source": "mis_trade"
         },
@@ -1567,7 +1527,7 @@
           "price": 138.5,
           "change_pct": 9.92,
           "market_cap": 18545030613.0,
-          "weight": 0.009551062593042892,
+          "weight": 0.009796370437389922,
           "shares_source": "tdcc",
           "quote_source": "mis_trade"
         },
@@ -1577,7 +1537,7 @@
           "price": 146.5,
           "change_pct": -1.35,
           "market_cap": 7325000000.0,
-          "weight": 0.0037725218660462274,
+          "weight": 0.0038694146669986506,
           "shares_source": "master",
           "quote_source": "mis_trade"
         }
