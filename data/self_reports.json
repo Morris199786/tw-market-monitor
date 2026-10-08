@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-08T22:05+08:00",
+  "updated_at": "2026-10-08T22:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -106,7 +106,7 @@
         "publish_time": "15:02:59",
         "subject": "2890 永豐金 115/10/08 15:02:59 永豐金控公告其與子公司115年9月合併自結損益",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -527,21 +527,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 207,
+          "rows": 209,
           "hits": 21
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 207,
+          "rows": 209,
           "hits": 6
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 207,
+          "rows": 209,
           "hits": 6
         },
         {
