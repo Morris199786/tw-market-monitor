@@ -1,12 +1,12 @@
 /* =========================================================
    Heatmap Auto Refresh / 價量切換
-   2026-10-07
+   2026-10-08
 
    量：
-   - 盤中依成交進度；盤後依較5日均
+   - 盤中依累積成交額 / 五日全天均額（不預估）；盤後依較5日均
    - 資金流出＝族群下跌 + 成交動能較5日均放大至少10%
-   - 先抽出資金流出，其餘依成交熱度分 Tier 1 / 2 / 3
-   - 每個 Tier 最多 11 個族群
+   - 先抽出資金流出，其餘依成交熱度動態分 Tier
+   - 每頁最多 11 個族群，含資金流出；不顯示空頁
    ========================================================= */
 (function(){
 "use strict";
@@ -25,13 +25,15 @@ const state={
   resizeTimer:null,
   goldTimer:null,
   selectedSector:null,
-  volumeGroup:0
+  volumeGroup:0,
+  volumeGroupKey:null
 };
 
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 
 function n(v){
+  if(v===null||v===undefined||v==="")return null;
   const x=Number(v);
   return Number.isFinite(x)?x:null
 }
@@ -286,7 +288,7 @@ s.textContent=`
 
 .turnover-group-switch{
   display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important;
   width:100%!important;
   height:auto!important;
   min-height:0!important;
@@ -559,7 +561,28 @@ s.textContent=`
   }
 
   .turnover-map{
-    height:auto
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    height:auto!important;
+    gap:5px;
+    overflow:visible
+  }
+  .turnover-map .turnover-box{
+    position:static!important;
+    width:auto!important;
+    height:auto!important;
+    min-width:0
+  }
+  .turnover-map .turnover-inner{
+    min-height:150px;
+    justify-content:flex-start;
+    overflow:visible
+  }
+  .turnover-map .turnover-name{
+    display:block;
+    overflow:visible;
+    overflow-wrap:anywhere;
+    flex-shrink:0
   }
 
   .turnover-inner{
@@ -865,49 +888,38 @@ return !!d?.estimated
 
 
 function metric(row,intra){
-
-if(intra){
-
-  const r=n(row?.progress_ratio);
-  const p=n(row?.progress_pct);
-
-  if(r!==null){
-
-    return{
-      ratio:r,
-      pct:p!==null?p:(r-1)*100
-    }
-
-  }
-
-  if(p!==null){
-
-    return{
-      ratio:1+p/100,
-      pct:p
-    }
-
-  }
-
+// Recalculate from raw amounts, including old cached JSON with linear estimates.
+const r=flowRatio(row?.turnover,row?.avg5_turnover);
+return {ratio:r,pct:r===null?null:(intra?r*100:(r-1)*100)}
 }
-
-const r=flowRatio(
-  row?.turnover,
-  row?.avg5_turnover
-);
-
-return{
-  ratio:r,
-  pct:r===null?null:(r-1)*100
-}
-
-}
-
 
 function label(intra){
-  return intra?"成交進度":"較5日均"
+  return intra?"達全天均額":"較5日均"
 }
 
+function fmtMetric(v,intra){
+  const x=n(v);
+  return x===null?"—":intra?`${x.toFixed(1)}%`:fmtPct(x)
+}
+
+// Pages are ranked slices, not fixed classification thresholds.
+function buildVolumeGroups(heatItems,outflowItems){
+  const groups=[];
+  const size=11;
+  for(let offset=0;offset<heatItems.length;offset+=size){
+    const page=offset/size+1;
+    groups.push({key:`heat-${page}`,label:`資金熱度 Tier ${page}`,
+      shortLabel:`Tier ${page}`,items:heatItems.slice(offset,offset+size)})
+  }
+  const pages=Math.ceil(outflowItems.length/size);
+  for(let offset=0;offset<outflowItems.length;offset+=size){
+    const page=offset/size+1;
+    const title=pages>1?`資金流出 ${page}/${pages}`:"資金流出";
+    groups.push({key:`outflow-${page}`,label:title,shortLabel:title,
+      items:outflowItems.slice(offset,offset+size)})
+  }
+  return groups
+}
 
 /* =========================================================
    資金流出定義
@@ -919,7 +931,7 @@ function label(intra){
    2. 成交動能 ratio >= 1.10
 
    盤中：
-   使用成交進度 ratio
+   使用累積成交額 / 五日全天均額 ratio（不作時間推估）
 
    盤後：
    使用今日成交額 / 近5日平均成交額
@@ -1224,7 +1236,7 @@ return`
   </div>
 
   <div class="turnover-progress">
-    ${label(intra)} ${fmtPct(x.metricPct)}
+    ${label(intra)} ${fmtMetric(x.metricPct,intra)}
   </div>
 
   <div class="turnover-avg">
@@ -1336,7 +1348,7 @@ d.innerHTML=`
 
     <div class="turnover-detail-meta">
       成交 ${fmtYi(ts.turnover)}
-      ｜${label(intra)} ${fmtPct(smetric.pct)}
+      ｜${label(intra)} ${fmtMetric(smetric.pct,intra)}
       ｜5日均 ${fmtYi(ts.avg5_turnover)}
       ｜今日 ${fmtPct(sec.change_pct,2)}
       ${outflow?"｜資金流出":""}
@@ -1382,7 +1394,7 @@ ${rows.map(r=>`
     </div>
 
     <div class="turnover-stock-flow">
-      ${label(intra)} ${fmtPct(r.mp)}
+      ${label(intra)} ${fmtMetric(r.mp,intra)}
       ｜5日均 ${fmtYi(r.avg)}
     </div>
 
@@ -1558,7 +1570,7 @@ try{
      所有排序都以成交動能為主：
 
      盤中：
-     成交進度倍率
+     累積成交額 / 五日全天均額
 
      盤後：
      今日成交 / 5日均
@@ -1601,39 +1613,20 @@ try{
      每 Tier 最多 11 個
      ======================================================= */
 
-  const groups=[
-    {
-      label:"資金熱度 Tier 1",
-      shortLabel:"Tier 1",
-      items:heatItems.slice(0,11)
-    },
-    {
-      label:"資金熱度 Tier 2",
-      shortLabel:"Tier 2",
-      items:heatItems.slice(11,22)
-    },
-    {
-      label:"資金熱度 Tier 3",
-      shortLabel:"Tier 3",
-      items:heatItems.slice(22)
-    },
-    {
-      label:"資金流出",
-      shortLabel:"資金流出",
-      items:outflowItems
-    }
-  ];
-
-
-  if(
-    state.volumeGroup>=groups.length
-  ){
-    state.volumeGroup=0
+  const groups=buildVolumeGroups(heatItems,outflowItems);
+  // Preserve category/page through refreshes, not its shifting array index.
+  let active=groups.findIndex(x=>x.key===state.volumeGroupKey);
+  if(active<0 && state.volumeGroupKey){
+    const category=state.volumeGroupKey.split("-")[0];
+    const candidates=groups.map((x,i)=>({x,i})).filter(({x})=>x.key.startsWith(category+"-"));
+    if(candidates.length)active=candidates[candidates.length-1].i;
   }
+  state.volumeGroup=active>=0?active:0;
+  state.volumeGroupKey=groups[state.volumeGroup]?.key||null;
 
 
   const sub=intra
-    ?"依成交進度排序族群資金熱度"
+    ?"依目前成交額占五日全天均額排序（不預估全天）"
     :"依成交相對5日均排序族群資金熱度";
 
 
@@ -1662,9 +1655,8 @@ try{
           ${
             intra
               ?`
-                盤中以「成交進度」判斷，
-                依目前交易時間校正後，
-                預估全天成交額達近 5 日平均的
+                盤中以「目前累積成交額 ÷ 近 5 日全天平均成交額」判斷，
+                不依開盤分鐘放大、不預估全天成交額。實際累積達均額的
                 <b>110% 以上</b>
               `
               :`
@@ -1676,8 +1668,10 @@ try{
         </p>
 
         <p>
-          符合條件的資金流出族群，
-          依<b>成交放大幅度由高至低</b>排序
+          符合條件的資金流出族群依<b>成交倍率由高至低</b>排序；
+          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。
+          盤中缺少歷史同時間資料，達全天均額不代表同時間放量；
+          判斷較保守。盤中成交額仍為價格乘累積成交量的估值，非實際成交淨流向
         </p>
 
       </div>
@@ -1890,6 +1884,7 @@ try{
           b.dataset.turnoverGroup
         );
 
+      state.volumeGroupKey=groups[state.volumeGroup]?.key||null;
       state.selectedSector=null;
 
       const d=$(
@@ -2246,3 +2241,4 @@ window.refreshHeatStrength=
   f=>applyGold(!!f);
 
 })();
+
