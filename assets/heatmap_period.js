@@ -269,51 +269,42 @@
       live?.value
     );
 
-    const basePrice = valid(
-      history?.base_prices?.[period]
-    );
-
-    if (
-      livePrice !== null &&
-      livePrice > 0 &&
-      basePrice !== null &&
-      basePrice > 0
-    ) {
-      return (
-        livePrice / basePrice - 1
-      ) * 100;
+    const dateKey = value => {
+      const d=String(value||"").replace(/[^0-9]/g,"");
+      return d.length===8?d:null;
+    };
+    const quoteDate=dateKey(live?.date);
+    const dates=history?.price_dates;
+    const prices=history?.close_prices;
+    const days=Number(period);
+    if(Array.isArray(dates) && Array.isArray(prices) && dates.length===prices.length){
+      const rows=dates.map((d,i)=>({date:dateKey(d),price:valid(prices[i])}));
+      if(livePrice!==null && livePrice>0){
+        if(!quoteDate)return null;
+        const end=rows.findIndex(x=>x.date===quoteDate);
+        if(end>=0){
+          rows.splice(end+1);
+          rows[end].price=livePrice;
+        }else{
+          const tail=rows[rows.length-1];
+          const previous=valid(live?.prev_close);
+          // Only append the next session when the quote's previous close
+          // agrees with the latest stored close; do not bridge stale history.
+          if(!tail || !tail.date || quoteDate<=tail.date || previous===null ||
+             tail.price===null || Math.abs(previous-tail.price)>0.02)return null;
+          rows.push({date:quoteDate,price:livePrice});
+        }
+      }
+      const window=rows.slice(-(days+1));
+      if(window.length!==days+1 || window.some(x=>!x.date || x.price===null || x.price<=0))return null;
+      return (window[days].price/window[0].price-1)*100;
     }
-
-    /*
-     * 盤中有即時行情，
-     * 但缺少對應基準價
-     *
-     * 不顯示過期數字
-     */
-
-    if (
-      livePrice !== null &&
-      livePrice > 0
-    ) {
-      return null;
-    }
-
-    const historicalChange = valid(
-      history?.changes_by_period?.[period]
-    );
-
-    if (historicalChange !== null) {
-      return historicalChange;
-    }
-
-    return last(
-      history?.returns_by_period?.[period] ||
-      (
-        period === "5"
-          ? history?.returns
-          : null
-      )
-    );
+    // Legacy files may be displayed only at their actual historical date.
+    // Never label yesterday's returns as today's live N-session return.
+    if(livePrice!==null && livePrice>0 && quoteDate!==dateKey(detail?.as_of_date))return null;
+    const historicalChange=valid(history?.changes_by_period?.[period]);
+    if(historicalChange!==null)return historicalChange;
+    return last(history?.returns_by_period?.[period] || (period==="5"?history?.returns:null));
   }
 
   function benchmarkChip(
@@ -818,3 +809,4 @@
   );
 
 })();
+
