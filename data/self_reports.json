@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-08T17:05+08:00",
+  "updated_at": "2026-10-08T17:41+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -494,28 +494,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 18,
+      "rows": 19,
       "self_reports": 12,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 136,
-          "hits": 18
+          "rows": 159,
+          "hits": 19
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 137,
+          "rows": 159,
           "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 137,
+          "rows": 159,
           "hits": 4
         },
         {
@@ -537,7 +537,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1225",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -641,8 +641,8 @@
         {
           "mode": "company_rescue",
           "ticker": "2327",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 3,
+          "base": "https://mops.twse.com.tw",
+          "rows": 0,
           "hits": 0,
           "error": ""
         },
@@ -705,7 +705,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2449",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -713,7 +713,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2455",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -729,10 +729,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2614",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 3,
+          "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectTimeout"
         },
         {
           "mode": "company_rescue",
@@ -857,7 +856,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6214",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1011,6 +1010,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "2454 聯發科 115/10/08 16:55:37 聯發科技115年9月份自結合併營收淨額公告"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3036 文曄 115/10/08 17:24:29 本公司115年9月份自結合併營收約新台幣2,159億元"
         }
       ],
       "error": ""
