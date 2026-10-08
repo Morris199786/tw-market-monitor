@@ -356,6 +356,12 @@ def build_stock_series(tickers, market_rows, inst_rows, names, markets):
     return out
 
 
+def benchmark_price_history(dates, values):
+    # Keep missing sessions as None, so windows never silently skip a day.
+    return {"price_dates": list(dates),
+            "close_prices": [values.get(d) for d in dates]}
+
+
 def main():
     market_rows = market_history()
 
@@ -431,6 +437,7 @@ def main():
         "benchmark": {
             "name": "上市加權指數",
             "source": "TWSE FMTQIK",
+            **benchmark_price_history(dates_all, taiex_values),
             "changes_by_period": benchmark_changes(taiex_series),
             "returns": benchmark_periods["5"],
             "returns_by_period": benchmark_periods,
@@ -439,6 +446,7 @@ def main():
         "tpex_benchmark": {
             "name": "櫃買指數",
             "source": "TPEx afterTrading/indexSummary",
+            **benchmark_price_history(dates_all, tpex_values),
             "changes_by_period": benchmark_changes(tpex_series),
             "missing_dates": [d for d in dates_all if d not in tpex_values],
             "returns": tpex_benchmark_periods["5"],
@@ -465,5 +473,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
