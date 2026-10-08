@@ -1561,7 +1561,6 @@ $$("[data-aim]").forEach(b => {
     ai();
   };
 });
-
 /* ----------------------------- 市場熱力圖 ----------------------------- */
 /*
  * 期間：
@@ -1629,7 +1628,17 @@ function heatLastNumber(values) {
     i >= 0;
     i -= 1
   ) {
-    const n = Number(values[i]);
+    const value = values[i];
+
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      continue;
+    }
+
+    const n = Number(value);
 
     if (Number.isFinite(n)) {
       return n;
@@ -1637,6 +1646,22 @@ function heatLastNumber(values) {
   }
 
   return null;
+}
+
+function heatValidNumber(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  const n = Number(value);
+
+  return Number.isFinite(n)
+    ? n
+    : null;
 }
 
 async function loadHeatDetail(
@@ -1655,10 +1680,15 @@ async function loadHeatDetail(
     { force }
   )
     .then(data => {
-      heatDetailData =
-        data || {};
+      if (
+        data &&
+        typeof data === "object" &&
+        Object.keys(data).length
+      ) {
+        heatDetailData = data;
+      }
 
-      return heatDetailData;
+      return heatDetailData || {};
     })
     .finally(() => {
       heatDetailPromise = null;
@@ -1817,12 +1847,9 @@ function heatStockReturn(
   if (!stock) return null;
 
   if (period === "1") {
-    const n =
-      Number(stock.change_pct);
-
-    return Number.isFinite(n)
-      ? n
-      : null;
+    return heatValidNumber(
+      stock.change_pct
+    );
   }
 
   const ticker =
@@ -1880,6 +1907,7 @@ function heatSectorReturn(
           x.ticker &&
           Number.isFinite(x.cap) &&
           x.cap > 0 &&
+          x.value !== null &&
           Number.isFinite(x.value)
       );
 
@@ -1923,62 +1951,81 @@ function heatSectorReturn(
     : null;
 }
 
-/* -------------------- 大盤同期漲跌幅 -------------------- */
+/* -------------------- 大盤／OTC 同期漲跌幅 -------------------- */
+
+/*
+ * 當日：
+ * 優先使用 heatmap.json 的盤中即時指數
+ *
+ * 5 / 10 / 20 日：
+ * 若後端提供對應期間基準價，
+ * 使用最新指數直接計算
+ *
+ * 若沒有基準價：
+ * 使用原本歷史報酬率資料
+ *
+ * 不使用昨天的當日漲跌幅冒充盤中數字
+ */
 
 function heatBenchmarkReturn(
-  period = st.heatPeriod
+  period = st.heatPeriod,
+  market = "twse"
 ) {
+  const live =
+    cache.heat?.indices?.[market];
+
   const benchmark =
     heatDetailData?.benchmark;
 
-  if (!benchmark) {
-    return null;
-  }
+  const history =
+    market === "twse"
+      ? benchmark
+      : (
+          heatDetailData?.otc_benchmark ||
+          heatDetailData?.benchmark_tpex
+        );
 
-  if (period !== "1") {
-    return heatLastNumber(
-      benchmark
-        .returns_by_period?.[
-          period
-        ] ||
-      (
-        period === "5"
-          ? benchmark.returns
-          : null
-      )
+  if (period === "1") {
+    return heatValidNumber(
+      live?.change_pct
     );
   }
 
-  const values =
-    benchmark
-      .returns_by_period?.["5"] ||
-    benchmark.returns ||
-    [];
+  const livePrice =
+    heatValidNumber(
+      live?.price ??
+      live?.index ??
+      live?.value
+    );
 
-  const nums =
-    values
-      .map(Number)
-      .filter(Number.isFinite);
+  const basePrice =
+    heatValidNumber(
+      history?.base_prices?.[period]
+    );
 
-  if (nums.length < 2) {
-    return null;
+  if (
+    livePrice !== null &&
+    livePrice > 0 &&
+    basePrice !== null &&
+    basePrice > 0
+  ) {
+    return (
+      livePrice / basePrice - 1
+    ) * 100;
   }
 
-  const prev =
-    nums[nums.length - 2] /
-    100;
-
-  const curr =
-    nums[nums.length - 1] /
-    100;
-
-  return (
+  const values =
+    history
+      ?.returns_by_period?.[
+        period
+      ] ||
     (
-      (1 + curr) /
-      (1 + prev)
-    ) -
-    1
-  ) * 100;
+      period === "5"
+        ? history?.returns
+        : null
+    );
+
+  return heatLastNumber(values);
 }
 
 /* -------------------- 期間顏色 -------------------- */
@@ -2229,14 +2276,6 @@ function ensureHeatPeriodUi() {
           st.heatWeightMode =
             nextMode;
 
-          /*
-           * 權重切換時：
-           * - 族群漲跌幅重算
-           * - 排名重排
-           * - 顏色重算
-           * - 已展開族群保持展開
-           */
-
           renderHeat(
             cache.heat || {}
           );
@@ -2304,23 +2343,43 @@ function ensureHeatPeriodUi() {
     $("#heatPeriodBenchmark");
 
   if (benchmark) {
-    const value =
-      heatBenchmarkReturn();
+    const twse =
+      heatBenchmarkReturn(
+        st.heatPeriod,
+        "twse"
+      );
+
+    const tpex =
+      heatBenchmarkReturn(
+        st.heatPeriod,
+        "tpex"
+      );
+
+    const color = value =>
+      value === null
+        ? ""
+        : value > 0
+          ? "up"
+          : value < 0
+            ? "down"
+            : "";
 
     benchmark.innerHTML = `
-      大盤${heatPeriodLabel()}漲幅
+      <span>
+        大盤${heatPeriodLabel()}漲幅
 
-      <strong
-        class="${
-          Number(value) > 0
-            ? "up"
-            : Number(value) < 0
-              ? "down"
-              : ""
-        }"
-      >
-        ${pct(value)}
-      </strong>
+        <strong class="${color(twse)}">
+          ${pct(twse)}
+        </strong>
+      </span>
+
+      <span style="margin-left:12px">
+        OTC${heatPeriodLabel()}漲幅
+
+        <strong class="${color(tpex)}">
+          ${pct(tpex)}
+        </strong>
+      </span>
     `;
   }
 }
@@ -2347,6 +2406,7 @@ function heatDetail(
       }))
       .sort((a, b) => {
         const av =
+          a._periodReturn !== null &&
           Number.isFinite(
             Number(
               a._periodReturn
@@ -2358,6 +2418,7 @@ function heatDetail(
             : -999999;
 
         const bv =
+          b._periodReturn !== null &&
           Number.isFinite(
             Number(
               b._periodReturn
@@ -2412,6 +2473,7 @@ function heatDetail(
                 data-ticker="${x.ticker}"
                 data-sector="${sec.name}"
                 data-period-return="${
+                  x._periodReturn !== null &&
                   Number.isFinite(
                     Number(
                       x._periodReturn
@@ -2432,9 +2494,11 @@ function heatDetail(
                 </div>
 
                 <span
-                  class="v ${cl(
-                    x._periodReturn
-                  )}"
+                  class="v ${
+                    x._periodReturn === null
+                      ? ""
+                      : cl(x._periodReturn)
+                  }"
                 >
                   ${pct(
                     x._periodReturn
@@ -2456,6 +2520,14 @@ function renderHeat(
   d,
   options = {}
 ) {
+  if (
+    !d ||
+    !Array.isArray(d.sectors) ||
+    !d.sectors.length
+  ) {
+    return;
+  }
+
   cache.heat = d;
 
   if ($("#heatTime")) {
@@ -2557,6 +2629,7 @@ function renderHeat(
         }
 
         const av =
+          a._periodReturn !== null &&
           Number.isFinite(
             Number(
               a._periodReturn
@@ -2568,6 +2641,7 @@ function renderHeat(
             : -999999;
 
         const bv =
+          b._periodReturn !== null &&
           Number.isFinite(
             Number(
               b._periodReturn
@@ -2585,6 +2659,7 @@ function renderHeat(
     sectors.sort(
       (a, b) => {
         const av =
+          a._periodReturn !== null &&
           Number.isFinite(
             Number(
               a._periodReturn
@@ -2596,6 +2671,7 @@ function renderHeat(
             : -999999;
 
         const bv =
+          b._periodReturn !== null &&
           Number.isFinite(
             Number(
               b._periodReturn
@@ -2645,6 +2721,7 @@ function renderHeat(
           "
           data-sec="${x.name}"
           data-period-return="${
+            x._periodReturn !== null &&
             Number.isFinite(
               Number(
                 x._periodReturn
@@ -2776,7 +2853,12 @@ async function heat(
       loadHeatDetail(force)
     ]);
 
-  renderHeat(d);
+  if (
+    Array.isArray(d?.sectors) &&
+    d.sectors.length
+  ) {
+    renderHeat(d);
+  }
 }
 
 /*
@@ -2801,6 +2883,7 @@ window.renderHeatCurrentPeriod =
     renderHeat(
       cache.heat || {}
     );
+
 /* ----------------------------- 券商報告 ----------------------------- */
 
 async function reports(force = false) {
@@ -2978,6 +3061,123 @@ window.invalidatePage =
       loadedPages.delete(id);
     }
   };
+
+/* ----------------------------- 熱力圖每 5 分鐘更新 ----------------------------- */
+
+/*
+ * 只重新抓 heatmap.json
+ *
+ * 不重複執行其他頁面
+ * 不重新抓全部資料
+ * 不影響其他功能
+ *
+ * 當頁面重新回到前景時，
+ * 如果距離上次更新已超過 5 分鐘，
+ * 才補抓一次
+ */
+
+let heatRefreshing = false;
+let lastHeatRefresh = 0;
+
+const HEAT_REFRESH_INTERVAL =
+  5 * 60 * 1000;
+
+async function refreshHeatmapLive(
+  force = false
+) {
+  if (heatRefreshing) {
+    return;
+  }
+
+  if (document.hidden) {
+    return;
+  }
+
+  const now = Date.now();
+
+  if (
+    !force &&
+    now - lastHeatRefresh <
+      HEAT_REFRESH_INTERVAL
+  ) {
+    return;
+  }
+
+  heatRefreshing = true;
+
+  try {
+    const d = await J(
+      "./data/heatmap.json",
+      { force: true }
+    );
+
+    if (
+      !Array.isArray(d?.sectors) ||
+      !d.sectors.length
+    ) {
+      return;
+    }
+
+    lastHeatRefresh = Date.now();
+
+    cache.heat = d;
+
+    const activePage =
+      document.querySelector(
+        ".page.active"
+      );
+
+    if (
+      activePage?.id === "heat"
+    ) {
+      renderHeat(d);
+    }
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "heatmap:data-updated",
+        {
+          detail: {
+            updatedAt:
+              d.updated_at || null,
+
+            indices:
+              d.indices || null,
+
+            period:
+              st.heatPeriod,
+
+            weightMode:
+              st.heatWeightMode
+          }
+        }
+      )
+    );
+  } catch (error) {
+    console.warn(
+      "[heatmap refresh]",
+      error
+    );
+  } finally {
+    heatRefreshing = false;
+  }
+}
+
+setInterval(
+  () => {
+    refreshHeatmapLive();
+  },
+  HEAT_REFRESH_INTERVAL
+);
+
+document.addEventListener(
+  "visibilitychange",
+  () => {
+    if (!document.hidden) {
+      refreshHeatmapLive();
+    }
+  }
+);
 
 /* ----------------------------- 啟動 ----------------------------- */
 
