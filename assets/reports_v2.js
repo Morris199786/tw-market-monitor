@@ -1,9 +1,11 @@
 /* =========================================================
-   券商報告 V3.3
+   券商報告 V3.4
    - 依收到日期分組
    - 歷史報告永久保留
    - 公司名稱 / 股票代號搜尋
    - 中文公司名可搜尋外資英文報告（依 ticker 自動對照）
+   - 網站已顯示的報告內容全文關鍵字搜尋
+   - 英文不區分大小寫
    - 搜尋結果數量顯示
    - 搜尋框右側清除按鈕
    - Pushover deep link 直達指定報告
@@ -45,15 +47,10 @@
     if (!t || !n) return;
 
     if (!stockNamesByTicker.has(t)) {
-      stockNamesByTicker.set(
-        t,
-        new Set()
-      );
+      stockNamesByTicker.set(t, new Set());
     }
 
-    stockNamesByTicker
-      .get(t)
-      .add(n);
+    stockNamesByTicker.get(t).add(n);
 
     const shortName = n
       .replace(/[-－]KY$/i, "")
@@ -61,9 +58,7 @@
       .trim();
 
     if (shortName) {
-      stockNamesByTicker
-        .get(t)
-        .add(shortName);
+      stockNamesByTicker.get(t).add(shortName);
     }
   }
 
@@ -72,28 +67,17 @@
 
     try {
       const res = await fetch(
-        "./data/master.json?v=" +
-          Date.now(),
-        {
-          cache: "no-store"
-        }
+        "./data/master.json?v=" + Date.now(),
+        { cache: "no-store" }
       );
 
       if (res.ok) {
-        const data =
-          await res.json();
+        const data = await res.json();
+        const stocks = data.stocks || {};
 
-        const stocks =
-          data.stocks || {};
-
-        Object.entries(
-          stocks
-        ).forEach(
+        Object.entries(stocks).forEach(
           ([ticker, row]) => {
-            addStockName(
-              ticker,
-              row?.name
-            );
+            addStockName(ticker, row?.name);
           }
         );
       }
@@ -106,24 +90,16 @@
 
     try {
       const res = await fetch(
-        "./data/sectors.json?v=" +
-          Date.now(),
-        {
-          cache: "no-store"
-        }
+        "./data/sectors.json?v=" + Date.now(),
+        { cache: "no-store" }
       );
 
       if (res.ok) {
-        const data =
-          await res.json();
+        const data = await res.json();
 
-        (
-          data.sectors || []
-        ).forEach(
+        (data.sectors || []).forEach(
           sector => {
-            (
-              sector.stocks || []
-            ).forEach(
+            (sector.stocks || []).forEach(
               row => {
                 addStockName(
                   row?.ticker,
@@ -142,20 +118,11 @@
     }
   }
 
-  function namesForTicker(
-    ticker
-  ) {
-    const t =
-      String(
-        ticker || ""
-      ).trim();
+  function namesForTicker(ticker) {
+    const t = String(ticker || "").trim();
 
     return [
-      ...(
-        stockNamesByTicker
-          .get(t) ||
-        []
-      )
+      ...(stockNamesByTicker.get(t) || [])
     ];
   }
 
@@ -165,16 +132,12 @@
       r.received_date ||
       (
         r.received_at
-          ? String(
-              r.received_at
-            ).slice(0, 10)
+          ? String(r.received_at).slice(0, 10)
           : ""
       ) ||
       (
         r.ai_processed_at
-          ? String(
-              r.ai_processed_at
-            ).slice(0, 10)
+          ? String(r.ai_processed_at).slice(0, 10)
           : ""
       ) ||
       "未分類"
@@ -182,71 +145,42 @@
   }
 
   function dateLabel(day) {
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/
-        .test(day)
-    ) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
       return day;
     }
 
-    const [y, m, d] =
-      day.split("-");
-
+    const [y, m, d] = day.split("-");
     return `${y}/${m}/${d}`;
   }
 
   function taipeiToday() {
-    return new Intl
-      .DateTimeFormat(
-        "sv-SE",
-        {
-          timeZone:
-            "Asia/Taipei",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        }
-      )
-      .format(
-        new Date()
-      );
+    return new Intl.DateTimeFormat(
+      "sv-SE",
+      {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    ).format(new Date());
   }
 
   function actionClass(a) {
-    if (
-      a === "upgrade"
-    ) {
-      return "is-up";
-    }
-
-    if (
-      a === "downgrade"
-    ) {
-      return "is-down";
-    }
-
-    if (
-      a === "initiate"
-    ) {
-      return "is-init";
-    }
-
+    if (a === "upgrade") return "is-up";
+    if (a === "downgrade") return "is-down";
+    if (a === "initiate") return "is-init";
     return "is-neutral";
   }
 
   function targetText(r) {
     if (
-      r.validation_status ===
-      "needs_review"
+      r.validation_status === "needs_review"
     ) {
       return "";
     }
 
-    const oldTp =
-      r.target_price_old;
-
-    const newTp =
-      r.target_price_new;
+    const oldTp = r.target_price_old;
+    const newTp = r.target_price_new;
 
     if (
       oldTp !== null &&
@@ -254,81 +188,117 @@
       newTp !== null &&
       newTp !== undefined
     ) {
-      return (
-        `${oldTp} → ${newTp}`
-      );
+      return `${oldTp} → ${newTp}`;
     }
 
     if (
       newTp !== null &&
       newTp !== undefined
     ) {
-      return String(
-        newTp
-      );
+      return String(newTp);
     }
 
     return "";
   }
 
+  /* =========================================================
+     全文搜尋
+     只搜尋網站上已經顯示的報告內容
+     不讀取原始 PDF
+     ========================================================= */
+
+  function normalizeSearchText(value) {
+    return String(value ?? "")
+      .normalize("NFKC")
+      .toLocaleLowerCase();
+  }
+
   function searchText(r) {
     const primaryNames =
-      namesForTicker(
-        r.ticker
-      );
+      namesForTicker(r.ticker);
 
     const beneficiarySearch =
       (
-        r.beneficiaries ||
-        []
+        Array.isArray(r.beneficiaries)
+          ? r.beneficiaries
+          : []
       ).flatMap(
         x => [
           x.name,
           x.ticker,
           x.reason,
-          ...namesForTicker(
-            x.ticker
-          )
+          ...namesForTicker(x.ticker)
         ]
       );
 
-    return [
+    const fields = [
+      // 券商名稱、標題、股票資訊
       r.broker,
       r.title,
       r.name,
       r.ticker,
 
+      // 股票中文名稱索引
       ...primaryNames,
 
+      // 評等及報告說明
       r.rating,
       r.push_reason,
 
+      // 報告摘要
       ...(
-        r.summary || []
+        Array.isArray(r.summary)
+          ? r.summary
+          : r.summary
+            ? [r.summary]
+            : []
       ),
 
+      // 完整摘要
+      r.detail,
+
+      // 重點數據／邏輯
       ...(
-        r.key_points || []
+        Array.isArray(r.key_points)
+          ? r.key_points
+          : []
       ),
 
+      // 財測調整
       ...(
-        r.forecast_changes ||
-        []
+        Array.isArray(r.forecast_changes)
+          ? r.forecast_changes
+          : []
       ),
 
+      // 風險
+      ...(
+        Array.isArray(r.risks)
+          ? r.risks
+          : []
+      ),
+
+      // 報告關注個股
       ...beneficiarySearch
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+    ];
+
+    return normalizeSearchText(
+      fields
+        .filter(
+          value =>
+            value !== null &&
+            value !== undefined
+        )
+        .map(value => String(value))
+        .join(" ")
+    );
   }
 
   function chips(r) {
     const arr = [];
 
     if (
-      r.validation_status ===
-      "needs_review"
+      r.validation_status === "needs_review"
     ) {
       return `
         <span class="report-chip">
@@ -338,69 +308,51 @@
     }
 
     if (r.rating) {
-      arr.push(
-        `
-        <span
-          class="report-chip"
-        >
+      arr.push(`
+        <span class="report-chip">
           ${esc(r.rating)}
         </span>
-        `
-      );
+      `);
     }
 
-    const tp =
-      targetText(r);
+    const tp = targetText(r);
 
     if (tp) {
       const targetClass =
-        r.action ===
-        "upgrade"
+        r.action === "upgrade"
           ? "report-target-up"
-          : r.action ===
-            "downgrade"
+          : r.action === "downgrade"
           ? "report-target-down"
           : "";
 
-      arr.push(
-        `
+      arr.push(`
         <span
           class="report-chip report-target ${targetClass}"
         >
           目標價 ${esc(tp)}
         </span>
-        `
-      );
+      `);
     }
 
     if (
-      r.report_type ===
-        "sector" ||
-      r.report_type ===
-        "theme"
+      r.report_type === "sector" ||
+      r.report_type === "theme"
     ) {
-      arr.push(
-        `
-        <span
-          class="report-chip"
-        >
+      arr.push(`
+        <span class="report-chip">
           產業研究
         </span>
-        `
-      );
+      `);
     }
 
     if (r.date) {
-      arr.push(
-        `
+      arr.push(`
         <span
           class="report-chip report-original-date"
         >
-          報告日期
-          ${esc(r.date)}
+          報告日期 ${esc(r.date)}
         </span>
-        `
-      );
+      `);
     }
 
     return arr.join("");
@@ -408,73 +360,47 @@
 
   function beneficiaryHtml(r) {
     const rows =
-      Array.isArray(
-        r.beneficiaries
-      )
+      Array.isArray(r.beneficiaries)
         ? r.beneficiaries
         : [];
 
-    if (!rows.length) {
-      return "";
-    }
+    if (!rows.length) return "";
 
     return `
-      <div
-        class="report-beneficiaries"
-      >
-        <div
-          class="report-subtitle"
-        >
+      <div class="report-beneficiaries">
+        <div class="report-subtitle">
           報告關注個股
         </div>
 
-        <div
-          class="report-stock-chips"
-        >
-          ${rows
-            .map(
-              x => `
-                <button
-                  type="button"
-                  class="report-stock-chip"
-                  data-report-stock="${esc(
-                    x.ticker ||
-                    x.name ||
-                    ""
-                  )}"
-                  title="${esc(
-                    x.reason ||
-                    ""
-                  )}"
-                >
-                  ${esc(
-                    x.name || ""
-                  )}
+        <div class="report-stock-chips">
+          ${rows.map(x => `
+            <button
+              type="button"
+              class="report-stock-chip"
+              data-report-stock="${esc(
+                x.ticker || x.name || ""
+              )}"
+              title="${esc(x.reason || "")}"
+            >
+              ${esc(x.name || "")}
 
-                  ${
-                    x.ticker
-                      ? `
-                        <small>
-                          ${esc(
-                            x.ticker
-                          )}
-                        </small>
-                      `
-                      : ""
-                  }
-                </button>
-              `
-            )
-            .join("")}
+              ${
+                x.ticker
+                  ? `
+                    <small>
+                      ${esc(x.ticker)}
+                    </small>
+                  `
+                  : ""
+              }
+            </button>
+          `).join("")}
         </div>
       </div>
     `;
   }
 
-  function listHtml(
-    title,
-    arr
-  ) {
+  function listHtml(title, arr) {
     if (
       !Array.isArray(arr) ||
       !arr.length
@@ -483,22 +409,15 @@
     }
 
     return `
-      <div
-        class="report-detail-block"
-      >
-        <div
-          class="report-subtitle"
-        >
+      <div class="report-detail-block">
+        <div class="report-subtitle">
           ${esc(title)}
         </div>
 
         <ul>
-          ${arr
-            .map(
-              x =>
-                `<li>${esc(x)}</li>`
-            )
-            .join("")}
+          ${arr.map(
+            x => `<li>${esc(x)}</li>`
+          ).join("")}
         </ul>
       </div>
     `;
@@ -506,15 +425,12 @@
 
   function card(r) {
     const action =
-      actionMap[
-        r.action
-      ] ||
+      actionMap[r.action] ||
       r.action ||
       "研究報告";
 
     const stockTitle =
-      r.report_type ===
-      "company"
+      r.report_type === "company"
         ? (
             `${r.name || ""}` +
             (
@@ -529,46 +445,28 @@
           );
 
     const summary =
-      r.validation_status ===
-      "needs_review"
+      r.validation_status === "needs_review"
         ? [
             "此份報告的公司或目標價尚未通過來源核對，請查看原始報告"
           ]
-        : Array.isArray(
-            r.summary
-          )
+        : Array.isArray(r.summary)
         ? r.summary
         : [];
 
     return `
       <article
-        id="report-${esc(
-          r.id || ""
-        )}"
+        id="report-${esc(r.id || "")}"
         class="report-v2-card"
-        data-report-id="${esc(
-          r.id || ""
-        )}"
+        data-report-id="${esc(r.id || "")}"
       >
-        <div
-          class="report-v2-top"
-        >
+        <div class="report-v2-top">
           <div>
-            <div
-              class="report-broker"
-            >
-              ${esc(
-                r.broker ||
-                "券商研究"
-              )}
+            <div class="report-broker">
+              ${esc(r.broker || "券商研究")}
             </div>
 
-            <div
-              class="report-title"
-            >
-              ${esc(
-                stockTitle
-              )}
+            <div class="report-title">
+              ${esc(stockTitle)}
             </div>
           </div>
 
@@ -581,26 +479,17 @@
           </span>
         </div>
 
-        <div
-          class="report-meta"
-        >
+        <div class="report-meta">
           ${chips(r)}
         </div>
 
         ${
           summary.length
             ? `
-              <ul
-                class="report-summary"
-              >
-                ${summary
-                  .map(
-                    x =>
-                      `<li>${esc(
-                        x
-                      )}</li>`
-                  )
-                  .join("")}
+              <ul class="report-summary">
+                ${summary.map(
+                  x => `<li>${esc(x)}</li>`
+                ).join("")}
               </ul>
             `
             : ""
@@ -608,32 +497,22 @@
 
         ${beneficiaryHtml(r)}
 
-        <details
-          class="report-details"
-        >
+        <details class="report-details">
           <summary>
             查看完整摘要
           </summary>
 
-          <div
-            class="report-details-body"
-          >
+          <div class="report-details-body">
             ${
               r.detail
                 ? `
-                  <div
-                    class="report-detail-block"
-                  >
-                    <div
-                      class="report-subtitle"
-                    >
+                  <div class="report-detail-block">
+                    <div class="report-subtitle">
                       完整摘要
                     </div>
 
                     <p>
-                      ${esc(
-                        r.detail
-                      )}
+                      ${esc(r.detail)}
                     </p>
                   </div>
                 `
@@ -660,9 +539,7 @@
                 ? `
                   <a
                     class="report-source-link"
-                    href="${esc(
-                      r.source_url
-                    )}"
+                    href="${esc(r.source_url)}"
                     target="_blank"
                     rel="noopener"
                   >
@@ -679,67 +556,41 @@
 
   function matches(r) {
     const okFilter =
-      currentFilter ===
-        "all" ||
-      r.action ===
-        currentFilter;
+      currentFilter === "all" ||
+      r.action === currentFilter;
 
     const q =
-      currentQuery
-        .trim()
-        .toLowerCase();
+      normalizeSearchText(
+        currentQuery.trim()
+      );
 
     const okSearch =
       !q ||
-      searchText(r)
-        .includes(q);
+      searchText(r).includes(q);
 
-    return (
-      okFilter &&
-      okSearch
-    );
+    return okFilter && okSearch;
   }
 
   function groupedVisibleReports() {
     const visible =
-      allReports.filter(
-        matches
-      );
+      allReports.filter(matches);
 
-    const groups =
-      new Map();
+    const groups = new Map();
 
-    for (
-      const r
-      of visible
-    ) {
-      const day =
-        reportGroupDate(r);
+    for (const r of visible) {
+      const day = reportGroupDate(r);
 
-      if (
-        !groups.has(day)
-      ) {
-        groups.set(
-          day,
-          []
-        );
+      if (!groups.has(day)) {
+        groups.set(day, []);
       }
 
-      groups
-        .get(day)
-        .push(r);
+      groups.get(day).push(r);
     }
 
-    return [
-      ...groups.entries()
-    ].sort(
+    return [...groups.entries()].sort(
       (a, b) =>
-        String(
-          b[0]
-        ).localeCompare(
-          String(
-            a[0]
-          )
+        String(b[0]).localeCompare(
+          String(a[0])
         )
     );
   }
@@ -756,18 +607,13 @@
       $("#reportSearchMeta");
 
     const queryActive =
-      Boolean(
-        currentQuery.trim()
-      );
+      Boolean(currentQuery.trim());
 
     const filterActive =
-      currentFilter !==
-      "all";
+      currentFilter !== "all";
 
     const visibleCount =
-      allReports.filter(
-        matches
-      ).length;
+      allReports.filter(matches).length;
 
     if (clearBtn) {
       clearBtn.style.display =
@@ -794,22 +640,16 @@
     const target =
       $("#reportCardsV3");
 
-    if (!target) {
-      return;
-    }
+    if (!target) return;
 
     updateSearchUi();
 
     const groups =
       groupedVisibleReports();
 
-    if (
-      !groups.length
-    ) {
+    if (!groups.length) {
       target.innerHTML = `
-        <div
-          class="report-v2-empty"
-        >
+        <div class="report-v2-empty">
           找不到符合條件的券商報告
         </div>
       `;
@@ -818,89 +658,59 @@
     }
 
     const searching =
-      Boolean(
-        currentQuery.trim()
-      );
+      Boolean(currentQuery.trim());
 
     target.innerHTML =
-      groups
-        .map(
-          (
-            [day, rows],
-            index
-          ) => `
-            <details
-              class="report-date-group"
-              data-report-day="${esc(
-                day
-              )}"
-              ${
-                searching ||
-                index === 0
-                  ? "open"
-                  : ""
-              }
-            >
-              <summary
-                class="report-date-head"
-              >
-                <span>
-                  <b>
-                    ${esc(
-                      dateLabel(
-                        day
-                      )
-                    )}
-                  </b>
+      groups.map(
+        ([day, rows], index) => `
+          <details
+            class="report-date-group"
+            data-report-day="${esc(day)}"
+            ${
+              searching || index === 0
+                ? "open"
+                : ""
+            }
+          >
+            <summary class="report-date-head">
+              <span>
+                <b>
+                  ${esc(dateLabel(day))}
+                </b>
 
-                  <small>
-                    ${rows.length}
-                    份報告
-                  </small>
-                </span>
+                <small>
+                  ${rows.length} 份報告
+                </small>
+              </span>
 
-                <span
-                  class="report-date-arrow"
-                >
-                  ⌄
-                </span>
-              </summary>
+              <span class="report-date-arrow">
+                ⌄
+              </span>
+            </summary>
 
-              <div
-                class="report-date-body"
-              >
-                ${rows
-                  .map(card)
-                  .join("")}
-              </div>
-            </details>
-          `
-        )
-        .join("");
+            <div class="report-date-body">
+              ${rows.map(card).join("")}
+            </div>
+          </details>
+        `
+      ).join("");
 
-    $$(
-      "[data-report-stock]"
-    ).forEach(
+    $$("[data-report-stock]").forEach(
       btn => {
         btn.addEventListener(
           "click",
           () => {
             const q =
-              btn.dataset
-                .reportStock ||
-              "";
+              btn.dataset.reportStock || "";
 
             const input =
               $("#reportSearch");
 
             if (input) {
-              input.value =
-                q;
+              input.value = q;
             }
 
-            currentQuery =
-              q;
-
+            currentQuery = q;
             renderGroups();
           }
         );
@@ -915,43 +725,30 @@
       );
 
     const requestedPage =
-      params.get(
-        "page"
-      );
+      params.get("page");
 
     const reportId =
-      params.get(
-        "report"
-      );
+      params.get("report");
 
     if (
-      requestedPage ===
-        "reports" &&
-      typeof window.page ===
-        "function"
+      requestedPage === "reports" &&
+      typeof window.page === "function"
     ) {
-      window.page(
-        "reports"
-      );
+      window.page("reports");
     }
 
-    if (!reportId) {
-      return;
-    }
+    if (!reportId) return;
 
     setTimeout(
       () => {
         const el =
-          document
-            .querySelector(
-              `[data-report-id="${CSS.escape(
-                reportId
-              )}"]`
-            );
+          document.querySelector(
+            `[data-report-id="${CSS.escape(
+              reportId
+            )}"]`
+          );
 
-        if (!el) {
-          return;
-        }
+        if (!el) return;
 
         const group =
           el.closest(
@@ -959,8 +756,7 @@
           );
 
         if (group) {
-          group.open =
-            true;
+          group.open = true;
         }
 
         const detail =
@@ -969,8 +765,7 @@
           );
 
         if (detail) {
-          detail.open =
-            true;
+          detail.open = true;
         }
 
         el.classList.add(
@@ -978,18 +773,15 @@
         );
 
         el.scrollIntoView({
-          behavior:
-            "smooth",
-          block:
-            "center"
+          behavior: "smooth",
+          block: "center"
         });
 
         setTimeout(
           () => {
-            el.classList
-              .remove(
-                "report-deep-highlight"
-              );
+            el.classList.remove(
+              "report-deep-highlight"
+            );
           },
           4500
         );
@@ -999,14 +791,11 @@
   }
 
   async function loadReports() {
-    const res =
-      await fetch(
-        "./data/reports.json?v=" +
-          Date.now(),
-        {
-          cache: "no-store"
-        }
-      );
+    const res = await fetch(
+      "./data/reports.json?v=" +
+        Date.now(),
+      { cache: "no-store" }
+    );
 
     if (!res.ok) {
       throw new Error(
@@ -1014,13 +803,10 @@
       );
     }
 
-    const data =
-      await res.json();
+    const data = await res.json();
 
     allReports =
-      Array.isArray(
-        data.items
-      )
+      Array.isArray(data.items)
         ? data.items
         : [];
 
@@ -1033,16 +819,12 @@
      ----------------------------- */
 
   function injectReportSearchStyle() {
-    if (
-      $("#reportSearchFieldStyle")
-    ) {
+    if ($("#reportSearchFieldStyle")) {
       return;
     }
 
     const style =
-      document.createElement(
-        "style"
-      );
+      document.createElement("style");
 
     style.id =
       "reportSearchFieldStyle";
@@ -1132,13 +914,8 @@
 
         #reports .report-search-clear {
           right: 7px;
-
           min-height: 34px;
-
-          padding:
-            6px
-            11px;
-
+          padding: 6px 11px;
           font-size: 12px;
         }
 
@@ -1149,26 +926,19 @@
       }
     `;
 
-    document.head.appendChild(
-      style
-    );
+    document.head.appendChild(style);
   }
 
   async function renderReportsV3() {
-    const box =
-      $("#reportList");
+    const box = $("#reportList");
 
-    if (!box) {
-      return;
-    }
+    if (!box) return;
 
     let data = {};
 
     try {
       await loadStockNameIndex();
-
-      data =
-        await loadReports();
+      data = await loadReports();
     } catch (e) {
       console.error(
         "reports v3 load failed",
@@ -1176,9 +946,7 @@
       );
 
       box.innerHTML = `
-        <div
-          class="report-v2-empty"
-        >
+        <div class="report-v2-empty">
           券商報告資料讀取失敗
         </div>
       `;
@@ -1191,18 +959,10 @@
     );
 
     box.innerHTML = `
-      <div
-        class="report-v2-tools"
-      >
-        <div
-          class="report-search-card"
-        >
-          <div
-            class="report-search-wrap"
-          >
-            <span
-              class="report-search-icon"
-            >
+      <div class="report-v2-tools">
+        <div class="report-search-card">
+          <div class="report-search-wrap">
+            <span class="report-search-icon">
               ⌕
             </span>
 
@@ -1211,8 +971,8 @@
               type="search"
               inputmode="search"
               autocomplete="off"
-              placeholder="搜尋公司名稱或股票代號，例如 貿聯 / 3665"
-              aria-label="搜尋券商報告公司名稱或股票代號"
+              placeholder="搜尋股票、公司或報告內容，例如 CPU / CPO / 毛利率"
+              aria-label="搜尋券商報告股票代號、公司名稱或內容關鍵字"
             >
 
             <button
@@ -1231,9 +991,7 @@
           ></span>
         </div>
 
-        <div
-          class="report-v2-tabs"
-        >
+        <div class="report-v2-tabs">
           <button
             class="report-filter active"
             data-filter="all"
@@ -1278,68 +1036,55 @@
         </div>
       </div>
 
-      <div
-        class="report-history-note"
-      >
+      <div class="report-history-note">
         <span></span>
-
         <span>
           依收到日期永久保留
         </span>
       </div>
 
-      <div
-        id="reportCardsV3"
-      ></div>
+      <div id="reportCardsV3"></div>
     `;
 
     renderGroups();
 
-    $("#reportSearch")
-      ?.addEventListener(
-        "input",
-        e => {
-          currentQuery =
-            e.target.value ||
-            "";
+    $("#reportSearch")?.addEventListener(
+      "input",
+      e => {
+        currentQuery =
+          e.target.value || "";
 
-          renderGroups();
+        renderGroups();
+      }
+    );
+
+    $("#reportSearchClear")?.addEventListener(
+      "click",
+      () => {
+        const input =
+          $("#reportSearch");
+
+        currentQuery = "";
+
+        if (input) {
+          input.value = "";
+          input.focus();
         }
-      );
 
-    $("#reportSearchClear")
-      ?.addEventListener(
-        "click",
-        () => {
-          const input =
-            $("#reportSearch");
+        renderGroups();
+      }
+    );
 
-          currentQuery = "";
-
-          if (input) {
-            input.value = "";
-            input.focus();
-          }
-
-          renderGroups();
-        }
-      );
-
-    $$(
-      ".report-filter"
-    ).forEach(
+    $$(".report-filter").forEach(
       btn => {
         btn.addEventListener(
           "click",
           () => {
-            $$(
-              ".report-filter"
-            ).forEach(
+            $$(".report-filter").forEach(
               x => {
-                x.classList
-                  .remove(
-                    "active"
-                  );
+                x.classList.remove(
+                  "active"
+                );
               }
             );
 
@@ -1348,9 +1093,7 @@
             );
 
             currentFilter =
-              btn.dataset
-                .filter ||
-              "all";
+              btn.dataset.filter || "all";
 
             renderGroups();
           }
@@ -1360,12 +1103,10 @@
 
     setupDeepLink();
 
-    window
-      .__brokerReportsV3 = {
-        data,
-        items:
-          allReports
-      };
+    window.__brokerReportsV3 = {
+      data,
+      items: allReports
+    };
   }
 
   function reorderNavigation() {
@@ -1397,9 +1138,7 @@
             );
 
           if (btn) {
-            nav.appendChild(
-              btn
-            );
+            nav.appendChild(btn);
           }
         }
       );
@@ -1417,9 +1156,7 @@
             );
 
           if (option) {
-            select.appendChild(
-              option
-            );
+            select.appendChild(option);
           }
         }
       );
@@ -1431,32 +1168,21 @@
 
     try {
       if (
-        window
-          .__brokerReportsV3
-          ?.items
+        window.__brokerReportsV3?.items
       ) {
         items =
-          window
-            .__brokerReportsV3
-            .items;
+          window.__brokerReportsV3.items;
       } else {
-        const res =
-          await fetch(
-            "./data/reports.json?v=" +
-              Date.now(),
-            {
-              cache:
-                "no-store"
-            }
-          );
+        const res = await fetch(
+          "./data/reports.json?v=" +
+            Date.now(),
+          { cache: "no-store" }
+        );
 
-        const data =
-          await res.json();
+        const data = await res.json();
 
         items =
-          Array.isArray(
-            data.items
-          )
+          Array.isArray(data.items)
             ? data.items
             : [];
       }
@@ -1467,15 +1193,12 @@
       );
     }
 
-    const today =
-      taipeiToday();
+    const today = taipeiToday();
 
     const count =
       items.filter(
         r =>
-          reportGroupDate(
-            r
-          ) === today
+          reportGroupDate(r) === today
       ).length;
 
     const feature =
@@ -1498,15 +1221,12 @@
       )
     ) {
       const btn =
-        document.createElement(
-          "button"
-        );
+        document.createElement("button");
 
       btn.className =
         "daily-signal-item";
 
-      btn.dataset
-        .pulseTarget =
+      btn.dataset.pulseTarget =
         "reports";
 
       btn.innerHTML = `
@@ -1536,61 +1256,42 @@
             typeof window.page ===
             "function"
           ) {
-            window.page(
-              "reports"
-            );
+            window.page("reports");
           }
         }
       );
 
-      grid.prepend(
-        btn
-      );
+      grid.prepend(btn);
     }
   }
 
   function protectReportRenderer() {
-    const box =
-      $("#reportList");
+    const box = $("#reportList");
 
-    if (!box) {
-      return;
-    }
+    if (!box) return;
 
-    let repairing =
-      false;
+    let repairing = false;
 
     const observer =
       new MutationObserver(
         async () => {
-          if (
-            repairing
-          ) {
-            return;
-          }
+          if (repairing) return;
 
           const legacy =
-            box.querySelector(
-              ".report"
-            );
+            box.querySelector(".report");
 
           const v3 =
             box.querySelector(
               "#reportCardsV3"
             );
 
-          if (
-            legacy &&
-            !v3
-          ) {
-            repairing =
-              true;
+          if (legacy && !v3) {
+            repairing = true;
 
             try {
               await renderReportsV3();
             } finally {
-              repairing =
-                false;
+              repairing = false;
             }
           }
         }
@@ -1599,30 +1300,22 @@
     observer.observe(
       box,
       {
-        childList:
-          true,
-        subtree:
-          true
+        childList: true,
+        subtree: true
       }
     );
   }
 
-  function highlightNotificationTarget(
-    el
-  ) {
-    if (!el) {
-      return;
-    }
+  function highlightNotificationTarget(el) {
+    if (!el) return;
 
     el.classList.add(
       "report-deep-highlight"
     );
 
     el.scrollIntoView({
-      behavior:
-        "smooth",
-      block:
-        "center"
+      behavior: "smooth",
+      block: "center"
     });
 
     setTimeout(
@@ -1647,43 +1340,28 @@
     ].find(
       card => {
         const cardTicker =
-          card
-            .querySelector(
-              ".titleline span"
-            )
-            ?.textContent
-            ?.trim() ||
-          "";
+          card.querySelector(
+            ".titleline span"
+          )?.textContent?.trim() || "";
 
         const eyebrow =
-          card
-            .querySelector(
-              ".eyebrow"
-            )
-            ?.textContent
-            ?.replace(
-              /\s+/g,
-              " "
-            )
-            .trim() ||
-          "";
+          card.querySelector(
+            ".eyebrow"
+          )?.textContent
+            ?.replace(/\s+/g, " ")
+            .trim() || "";
 
         const tickerOk =
           !ticker ||
-          cardTicker ===
-            ticker;
+          cardTicker === ticker;
 
         const dateOk =
           !date ||
-          eyebrow.includes(
-            date
-          );
+          eyebrow.includes(date);
 
         const timeOk =
           !time ||
-          eyebrow.includes(
-            time
-          );
+          eyebrow.includes(time);
 
         return (
           tickerOk &&
@@ -1694,9 +1372,7 @@
     );
   }
 
-  function findRevenueCard(
-    ticker
-  ) {
+  function findRevenueCard(ticker) {
     return [
       ...document.querySelectorAll(
         "#revenueSections .revenue-card"
@@ -1704,13 +1380,9 @@
     ].find(
       card =>
         (
-          card
-            .querySelector(
-              ".ticker"
-            )
-            ?.textContent
-            ?.trim() ||
-          ""
+          card.querySelector(
+            ".ticker"
+          )?.textContent?.trim() || ""
         ) === ticker
     );
   }
@@ -1722,15 +1394,11 @@
       );
 
     const requestedPage =
-      params.get(
-        "page"
-      );
+      params.get("page");
 
     if (
-      requestedPage !==
-        "selfReports" &&
-      requestedPage !==
-        "monthlyRevenue"
+      requestedPage !== "selfReports" &&
+      requestedPage !== "monthlyRevenue"
     ) {
       return;
     }
@@ -1739,80 +1407,59 @@
       typeof window.page ===
       "function"
     ) {
-      window.page(
-        requestedPage
-      );
+      window.page(requestedPage);
     }
 
     const ticker =
-      params.get(
-        "ticker"
-      ) || "";
+      params.get("ticker") || "";
 
     const date =
-      params.get(
-        "date"
-      ) || "";
+      params.get("date") || "";
 
     const time =
-      params.get(
-        "time"
-      ) || "";
+      params.get("time") || "";
 
     let tries = 0;
 
-    const timer =
-      setInterval(
-        () => {
-          tries += 1;
+    const timer = setInterval(
+      () => {
+        tries += 1;
 
-          let target =
-            null;
+        let target = null;
 
-          if (
-            requestedPage ===
-            "selfReports"
-          ) {
-            target =
-              findSelfReportCard(
-                ticker,
-                date,
-                time
-              );
-          }
+        if (
+          requestedPage === "selfReports"
+        ) {
+          target = findSelfReportCard(
+            ticker,
+            date,
+            time
+          );
+        }
 
-          if (
-            requestedPage ===
-            "monthlyRevenue"
-          ) {
-            target =
-              findRevenueCard(
-                ticker
-              );
-          }
+        if (
+          requestedPage === "monthlyRevenue"
+        ) {
+          target =
+            findRevenueCard(ticker);
+        }
 
-          if (target) {
-            clearInterval(
-              timer
-            );
+        if (target) {
+          clearInterval(timer);
 
-            highlightNotificationTarget(
-              target
-            );
+          highlightNotificationTarget(
+            target
+          );
 
-            return;
-          }
+          return;
+        }
 
-          if (
-            tries >= 20
-          ) {
-            clearInterval(
-              timer
-            );
-          }
-        },
-        250
-      );
+        if (tries >= 20) {
+          clearInterval(timer);
+        }
+      },
+      250
+    );
   }
 
   async function boot() {
@@ -1838,7 +1485,6 @@
     setTimeout(
       () => {
         reorderNavigation();
-
         addHomeReportCount();
       },
       2400
@@ -1846,8 +1492,7 @@
   }
 
   if (
-    document.readyState ===
-    "loading"
+    document.readyState === "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
