@@ -1,7 +1,13 @@
 /* =========================================================
    AI 選股績效回測
-   固定持有 / 跌破 MA10 / 跌破 MA20
-   預設：固定持有
+   五種策略：
+   1. 固定持有（預設）
+   2. 跌破 MA10
+   3. 跌破 MA20
+   4. 停損 5%
+   5. 停損 10%
+
+   5日／10日使用相同成熟樣本
    ========================================================= */
 
 (function () {
@@ -17,19 +23,43 @@
     {
       key: "baseline",
       label: "固定持有",
-      description: "固定持有至第 5／10 個交易日收盤"
+      description: "固定持有至第 5／10 個交易日收盤",
+      summaryKey: "baseline_summary",
+      prefix: "baseline_"
     },
     {
       key: "ma10",
       label: "跌破 MA10",
-      description: "收盤跌破 10 日均線提前出場"
+      description: "收盤跌破 10 日均線提前出場",
+      summaryKey: "ma10_summary",
+      prefix: ""
     },
     {
       key: "ma20",
       label: "跌破 MA20",
-      description: "收盤跌破 20 日均線提前出場"
+      description: "收盤跌破 20 日均線提前出場",
+      summaryKey: "ma20_summary",
+      prefix: "ma20_"
+    },
+    {
+      key: "stop5",
+      label: "停損 5%",
+      description: "推薦次日起，收盤跌幅達 5% 即提前出場",
+      summaryKey: "stop5_summary",
+      prefix: "stop5_"
+    },
+    {
+      key: "stop10",
+      label: "停損 10%",
+      description: "推薦次日起，收盤跌幅達 10% 即提前出場",
+      summaryKey: "stop10_summary",
+      prefix: "stop10_"
     }
   ];
+
+  /* =========================================================
+     共用工具
+     ========================================================= */
 
   function fmtPct(v) {
     if (
@@ -74,23 +104,31 @@
     );
   }
 
+  function getStrategyInfo() {
+    return (
+      STRATEGIES.find(
+        s => s.key === selectedStrategy
+      ) || STRATEGIES[0]
+    );
+  }
+
   function getStrategyData(data) {
-    if (selectedStrategy === "baseline") {
-      return data.baseline_summary || {};
-    }
+    const strategy = getStrategyInfo();
 
     if (selectedStrategy === "ma10") {
-      return data.ma10_summary || data.summary || {};
+      return (
+        data.ma10_summary ||
+        data.summary ||
+        {}
+      );
     }
 
-    return data.ma20_summary || {};
+    return data[strategy.summaryKey] || {};
   }
 
-  function getStrategyInfo() {
-    return STRATEGIES.find(
-      s => s.key === selectedStrategy
-    ) || STRATEGIES[0];
-  }
+  /* =========================================================
+     讀取回測資料
+     ========================================================= */
 
   async function loadBacktest() {
     if (cachedData) {
@@ -119,6 +157,7 @@
         cachedData = await response.json();
 
         return cachedData;
+
       } catch (error) {
         console.error(
           "AI backtest load failed",
@@ -126,6 +165,7 @@
         );
 
         return {};
+
       } finally {
         loadingPromise = null;
       }
@@ -135,12 +175,13 @@
   }
 
   /* =========================================================
-     策略切換按鈕
+     五種策略切換按鈕
      ========================================================= */
 
   function strategyButtons() {
     return `
       <div class="ai-bt-strategy-switch">
+
         ${STRATEGIES.map(strategy => `
           <button
             type="button"
@@ -159,6 +200,7 @@
             ${esc(strategy.label)}
           </button>
         `).join("")}
+
       </div>
     `;
   }
@@ -312,13 +354,8 @@
      ========================================================= */
 
   function recordPerformance(record, days) {
-    let prefix = "";
-
-    if (selectedStrategy === "baseline") {
-      prefix = "baseline_";
-    } else if (selectedStrategy === "ma20") {
-      prefix = "ma20_";
-    }
+    const strategy = getStrategyInfo();
+    const prefix = strategy.prefix;
 
     return {
       value: record[
@@ -638,21 +675,29 @@
 
         <br><br>
 
-        三種策略使用相同已滿期樣本
+        五種策略使用相同已滿期樣本
 
         <br><br>
 
         MA10／MA20從推薦次一交易日開始檢查，
-        收盤跌破均線即按當日收盤價模擬出場，
+        收盤跌破均線即按當日收盤價模擬出場
+
+        <br><br>
+
+        停損 5%／10% 同樣從推薦次一交易日開始檢查，
+        收盤跌幅達停損門檻時，按當日收盤價模擬出場
+
+        <br><br>
+
         提前出場的報酬仍須等觀察期滿才納入統計
 
       </div>
 
     `;
 
-    /* ===============================
+    /* =========================================================
        綁定切換按鈕
-       =============================== */
+       ========================================================= */
 
     panel
       .querySelectorAll(
