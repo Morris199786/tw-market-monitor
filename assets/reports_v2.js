@@ -33,6 +33,58 @@
 
   const stockNamesByTicker = new Map();
 
+  // Verified Taiwan issuer names; display-only: never mutate reports, IDs, or URLs
+  const taiwanCompanyNames = [
+    ['MediaTek', '聯發科'], ['Global Unichip', '創意'], ['GUC', '創意'],
+    ['Taiwan Semiconductor Manufacturing Company', '台積電'], ['TSMC', '台積電'],
+    ['United Microelectronics Corporation', '聯電'], ['UMC', '聯電'],
+    ['Vanguard International Semiconductor', '世界先進'], ['VIS', '世界先進'],
+    ['ASE Technology Holding', '日月光投控'], ['ASEH', '日月光投控'],
+    ['Advanced Semiconductor Engineering', '日月光'], ['ASE', '日月光'],
+    ['Siliconware Precision Industries', '矽品'], ['SPIL', '矽品'],
+    ['Shunsin-KY', '訊芯-KY'], ['ShunSin', '訊芯-KY'],
+    ['WinWay', '穎崴'], ['MPI Corporation', '旺矽'], ['MPI', '旺矽'],
+    ['Chroma', '致茂'], ['KYEC', '京元電子'],
+    ['Integrated Service Technology', '宜特'], ['iST', '宜特'],
+    ['FOCI', '上詮'], ['Browave', '波若威'], ['LuxNet', '華星光'],
+    ['VisEra', '采鈺'], ['ProMOS', '茂德'], ['FitTech', '惠特'],
+    ['Unimicron', '欣興'], ['Nan Ya PCB', '南電'], ['Kinsus', '景碩'],
+    ['Elite Material Co., Ltd.', '台光電'], ['Elite Materials', '台光電'],
+    ['Elite Material', '台光電'],
+    ['Alchip', '世芯-KY'], ['Faraday Technology', '智原'],
+    ['Novatek', '聯詠'], ['Realtek', '瑞昱'], ['Nanya Technology', '南亞科'],
+    ['Winbond', '華邦電'], ['Macronix', '旺宏'], ['Phison', '群聯'],
+    ['Largan', '大立光'], ['Wiwynn', '緯穎'], ['Quanta', '廣達'],
+    ['Wistron', '緯創'], ['Inventec', '英業達'], ['Hon Hai', '鴻海']
+  ];
+  const companyNameMap = new Map(taiwanCompanyNames.map(([a, n]) => [a.toLowerCase(), n]));
+  const companyNamePattern = new RegExp(
+    '(' + taiwanCompanyNames.map(([a]) => a)
+      .sort((a, b) => b.length - a.length)
+      .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi'
+  );
+  const localizedTextCache = new Map();
+  function localizeTaiwanCompanies(value) {
+    const text = String(value ?? '');
+    if (localizedTextCache.has(text)) return localizedTextCache.get(text);
+    // Keep links/email verbatim, and match full Latin tokens, not substrings
+    const converted = text.split(/((?:https?:\/\/|www\.)[^\s<>]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,})/g)
+      .map((part, index) => index % 2 ? part : part.replace(companyNamePattern, (match, alias, offset, input) => {
+        if (/[A-Za-z0-9_]/.test(input[offset - 1] || '') || /[A-Za-z0-9_]/.test(input[offset + match.length] || '')) return match;
+        // iST is also a time zone abbreviation; only accept company brand casing
+        if (alias.toLowerCase() === 'ist' && match !== 'iST') return match;
+        const name = companyNameMap.get(alias.toLowerCase());
+        // Existing bilingual captions: avoid "台積電 台積電" or "台積電（台積電）"
+        const after = input.slice(offset + match.length);
+        if (after.trimStart().startsWith(name)) return '';
+        if (after.trimStart().startsWith('(' + name + ')') || after.trimStart().startsWith('（' + name + '）')) return match;
+        return name;
+      })).join('');
+    if (localizedTextCache.size > 4000) localizedTextCache.clear();
+    localizedTextCache.set(text, converted);
+    return converted;
+  }
+
   function esc(s) {
     return String(s ?? "")
       .replaceAll("&", "&amp;")
@@ -52,9 +104,9 @@
   }
 
   function highlightedText(value) {
-    const original = String(value ?? "");
+    const original = localizeTaiwanCompanies(value);
     const query = normalizeSearchText(
-      currentQuery.trim()
+      localizeTaiwanCompanies(currentQuery.trim())
     );
 
     if (!query || !original) {
@@ -393,7 +445,7 @@
             value !== null &&
             value !== undefined
         )
-        .map(value => String(value))
+        .map(value => String(value) + " " + localizeTaiwanCompanies(value))
         .join(" ")
     );
   }
@@ -1629,3 +1681,4 @@
     boot();
   }
 })();
+
