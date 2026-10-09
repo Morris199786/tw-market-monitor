@@ -80,13 +80,25 @@ def find_exit(snapshots, idx, ticker, window):
     return None, None, None
 
 
+
+def find_percent_stop(snapshots, idx, ticker, entry, threshold_pct):
+    """從推薦次交易日起，首次收盤跌幅達門檻時按當日收盤價出場。"""
+    if entry is None:
+        return None, None
+    trigger_price = entry * (1 - threshold_pct / 100)
+    for j in range(idx + 1, min(idx + 10, len(snapshots) - 1) + 1):
+        close = price_at(snapshots, j, ticker)
+        if close is not None and close <= trigger_price:
+            return j, close
+    return None, None
+
 def evaluate_record(rec, snapshots, date_index):
     selection_date = normalize_date(rec.get("selection_date"))
     ticker = str(rec.get("ticker") or "")
     idx = date_index.get(selection_date)
     if idx is None:
         # 缺少推薦日歷史行情時，不保留舊版本計算結果
-        for prefix in ("", "baseline_", "ma20_"):
+        for prefix in ("", "baseline_", "ma20_", "stop5_", "stop10_"):
             for days in (5, 10):
                 rec[f"{prefix}return_{days}d"] = None
                 rec[f"{prefix}status_{days}d"] = "unavailable"
@@ -101,6 +113,15 @@ def evaluate_record(rec, snapshots, date_index):
         rec[f"{tag}_exit_price"] = exit_price
         rec[f"{tag}_exit_value"] = round(exit_ma, 4) if exit_ma is not None else None
         rec[f"{tag}_exit_day"] = exit_idx - idx if exit_idx is not None else None
+
+    stop_exits = {
+        pct: find_percent_stop(snapshots, idx, ticker, entry, pct)
+        for pct in (5, 10)
+    }
+    for pct, (stop_idx, stop_price) in stop_exits.items():
+        rec[f"stop{pct}_exit_date"] = snapshots[stop_idx]["date"] if stop_idx is not None else None
+        rec[f"stop{pct}_exit_price"] = stop_price
+        rec[f"stop{pct}_exit_day"] = stop_idx - idx if stop_idx is not None else None
 
     for days in (5, 10):
         target_idx = idx + days
@@ -127,7 +148,28 @@ def evaluate_record(rec, snapshots, date_index):
             rec[f"{prefix}status_{days}d"] = "complete" if result is not None else "unavailable"
             rec[f"{prefix}end_date_{days}d"] = (snapshots[exit_idx]["date"] if early else
                                                  effective_date or snapshots[target_idx]["date"])
+        # 固定百分比停損：提前觸發僅鎖定成交價，等觀察期滿才納入統計。
+        for pct in (5, 10):
+            prefix = f"stop{pct}_"
+            if not matured:
+                rec[f"{prefix}return_{days}d"] = None
+                rec[f"{prefix}status_{days}d"] = "pending"
+                rec[f"{prefix}end_date_{days}d"] = None
+                continue
+            stop_idx, stop_price = stop_exits[pct]
+            early = stop_idx is not None and stop_idx <= target_idx
+            price = stop_price if early else baseline_price
+            result = pct_return(entry, price)
+            rec[f"{prefix}return_{days}d"] = result
+            rec[f"{prefix}status_{days}d"] = "complete" if result is not None else "unavailable"
+            rec[f"{prefix}end_date_{days}d"] = (
+                snapshots[stop_idx]["date"] if early else
+                effective_date or snapshots[target_idx]["date"]
+            )
     return rec
+
+
+def stats_for(records, days, prefix=""):    return rec
 
 
 def stats_for(records, days, prefix=""):
@@ -203,12 +245,15 @@ def main():
             "return_5d": "推薦後第1日起收盤跌破MA10出場，否則第5個交易日收盤結算；第5日後才計入統計",
             "return_10d": "推薦後第1日起收盤跌破MA10出場，否則第10個交易日收盤結算；第10日後才計入統計",
             "ma20": "與MA10相同規則，改為收盤跌破20日均線出場，分別計算5日及10日績效",
+            "stop5": "推薦次交易日起，首次收盤價低於或等於買進價95%時，以該日收盤價出場；否則持有至第5/10日",
+            "stop10": "推薦次交易日起，首次收盤價低於或等於買進價90%時，以該日收盤價出場；否則持有至第5/10日",
+            "stop_execution": "僅有每日收盤價，採收盤觸發、收盤成交模型；跳空可能使實際損失超過5%或10%，不假設必然成交於門檻價",
             "calendar_basis": "交易日，不是日曆日",
             "baseline": "baseline_return_5d/10d 保留原固定持有策略作比較",
             "notes": [
                 "推薦日即使低於MA10或MA20也保留樣本，從次一交易日才開始檢查",
                 "提前出場立即鎖定賣價，但必須等第5/10個交易日結束才納入對應績效統計",
-                "固定持有、MA10、MA20在各期使用相同成熟樣本，方便公平比較",
+                "固定持有、MA10、MA20、停損5%、停損10%在各期使用相同成熟樣本，方便公平比較",
                 "收盤確認跌破並以同日收盤價成交屬理想化假設，實盤可能有執行落差",
                 "停牌缺價不視為跌破，均線採最近10/20筆有效收盤價",
                 "同一股票在不同選股日視為不同訊號樣本",
@@ -222,11 +267,13 @@ def main():
         "ma10_summary": build_summary(records),
         "ma20_summary": build_summary(records, "ma20_"),
         "baseline_summary": build_summary(records, "baseline_"),
+        "stop5_summary": build_summary(records, "stop5_"),
+        "stop10_summary": build_summary(records, "stop10_"),
         "records": records,
     }
     save_json(BACKTEST_PATH, out)
     print("ai backtest", "selection_date", selection_date, "records", len(records))
-    for label, key in (("Fixed", "baseline_summary"), ("MA10", "summary"), ("MA20", "ma20_summary")):
+    for label, key in (("Fixed", "baseline_summary"), ("MA10", "summary"), ("MA20", "ma20_summary"), ("Stop5%", "stop5_summary"), ("Stop10%", "stop10_summary")):
         print(label, "5d samples", out[key]["all"]["5d"]["samples"],
               "10d samples", out[key]["all"]["10d"]["samples"])
 
