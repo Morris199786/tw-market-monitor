@@ -4,7 +4,6 @@ from datetime import datetime
 
 BACKTEST_PATH = ROOT / "data/ai_backtest.json"
 MARKET_HISTORY_DIR = ROOT / "data/history/market"
-MA_DAYS = 10
 
 
 def normalize_date(value):
@@ -46,23 +45,24 @@ def pct_return(entry, exit_price):
 def price_at(snapshots, idx, ticker):
     if idx < 0 or idx >= len(snapshots):
         return None
-    return valid_price(snapshots[idx]["stocks"].get(ticker, {}).get("price"))
+    stock = snapshots[idx]["stocks"].get(ticker, {})
+    return valid_price(stock.get("price")) if isinstance(stock, dict) else None
 
 
-def ma10_at(snapshots, idx, ticker):
-    """最近10個有效交易收盤價；不把停牌缺價當作跌破訊號。"""
+def ma_at(snapshots, idx, ticker, window):
+    """最近 window 筆有效收盤價；缺價不視為跌破，資料不足不產生訊號。"""
     values = []
     for j in range(idx, -1, -1):
         price = price_at(snapshots, j, ticker)
         if price is not None:
             values.append(price)
-        if len(values) == MA_DAYS:
-            return sum(values) / MA_DAYS
+        if len(values) == window:
+            return sum(values) / window
     return None
 
 
 def latest_price_on_or_before(snapshots, idx, ticker):
-    """到期日停牌時，使用此前最近有效收盤價，不使用未來價格。"""
+    """到期日缺價時，採用當日或之前最近有效收盤價。"""
     for j in range(idx, -1, -1):
         price = price_at(snapshots, j, ticker)
         if price is not None:
@@ -70,65 +70,63 @@ def latest_price_on_or_before(snapshots, idx, ticker):
     return None, None
 
 
+def find_exit(snapshots, idx, ticker, window):
+    """推薦日不檢查，次交易日起最多檢查10個交易日。"""
+    for j in range(idx + 1, min(idx + 10, len(snapshots) - 1) + 1):
+        close = price_at(snapshots, j, ticker)
+        ma = ma_at(snapshots, j, ticker, window)
+        if close is not None and ma is not None and close < ma:
+            return j, close, ma
+    return None, None, None
+
+
 def evaluate_record(rec, snapshots, date_index):
     selection_date = normalize_date(rec.get("selection_date"))
     ticker = str(rec.get("ticker") or "")
     idx = date_index.get(selection_date)
     if idx is None:
+        # 缺少推薦日歷史行情時，不保留舊版本計算結果
+        for prefix in ("", "baseline_", "ma20_"):
+            for days in (5, 10):
+                rec[f"{prefix}return_{days}d"] = None
+                rec[f"{prefix}status_{days}d"] = "unavailable"
         return rec
 
     entry = valid_price(rec.get("entry_price"))
-    # 每次重新計算，避免舊結果與新規則混用
-    exit_idx = None
-    exit_price = None
-    exit_ma10 = None
-    for j in range(idx + 1, min(idx + 10, len(snapshots) - 1) + 1):
-        close = price_at(snapshots, j, ticker)
-        ma10 = ma10_at(snapshots, j, ticker)
-        if close is not None and ma10 is not None and close < ma10:
-            exit_idx, exit_price, exit_ma10 = j, close, ma10
-            break
-
-    rec["ma10_exit_date"] = snapshots[exit_idx]["date"] if exit_idx is not None else None
-    rec["ma10_exit_price"] = exit_price
-    rec["ma10_exit_value"] = round(exit_ma10, 4) if exit_ma10 is not None else None
-    rec["ma10_exit_day"] = exit_idx - idx if exit_idx is not None else None
+    exits = {window: find_exit(snapshots, idx, ticker, window) for window in (10, 20)}
+    for window in (10, 20):
+        exit_idx, exit_price, exit_ma = exits[window]
+        tag = f"ma{window}"
+        rec[f"{tag}_exit_date"] = snapshots[exit_idx]["date"] if exit_idx is not None else None
+        rec[f"{tag}_exit_price"] = exit_price
+        rec[f"{tag}_exit_value"] = round(exit_ma, 4) if exit_ma is not None else None
+        rec[f"{tag}_exit_day"] = exit_idx - idx if exit_idx is not None else None
 
     for days in (5, 10):
-        key = f"return_{days}d"
-        status_key = f"status_{days}d"
-        end_date_key = f"end_date_{days}d"
-        baseline_key = f"baseline_return_{days}d"
-        baseline_status_key = f"baseline_status_{days}d"
         target_idx = idx + days
+        matured = target_idx < len(snapshots)
+        baseline_price, effective_date = (latest_price_on_or_before(snapshots, target_idx, ticker)
+                                          if matured else (None, None))
+        baseline_return = pct_return(entry, baseline_price) if matured else None
+        rec[f"baseline_return_{days}d"] = baseline_return
+        rec[f"baseline_status_{days}d"] = ("pending" if not matured else
+                                           "complete" if baseline_return is not None else "unavailable")
 
-        # 舊策略：固定持有N個交易日，用來與MA10策略比較
-        if target_idx >= len(snapshots):
-            rec[baseline_key] = None
-            rec[baseline_status_key] = "pending"
-        else:
-            baseline_price, _ = latest_price_on_or_before(snapshots, target_idx, ticker)
-            rec[baseline_key] = pct_return(entry, baseline_price)
-            rec[baseline_status_key] = "complete" if rec[baseline_key] is not None else "unavailable"
-
-        # 提前出場後即鎖定實現報酬，5/10日績效皆可提早完成
-        if exit_idx is not None and exit_idx <= target_idx:
-            rec[key] = pct_return(entry, exit_price)
-            rec[status_key] = "complete" if rec[key] is not None else "unavailable"
-            rec[end_date_key] = snapshots[exit_idx]["date"]
-            continue
-
-        if target_idx >= len(snapshots):
-            rec[key] = None
-            rec[status_key] = "pending"
-            rec[end_date_key] = None
-            continue
-
-        price, effective_date = latest_price_on_or_before(snapshots, target_idx, ticker)
-        rec[key] = pct_return(entry, price)
-        rec[status_key] = "complete" if rec[key] is not None else "unavailable"
-        rec[end_date_key] = effective_date or snapshots[target_idx]["date"]
-
+        for window, prefix in ((10, ""), (20, "ma20_")):
+            exit_idx, exit_price, _ = exits[window]
+            # 核心修正：即使提前賣出，未滿第N個交易日仍不能納入N日統計
+            if not matured:
+                rec[f"{prefix}return_{days}d"] = None
+                rec[f"{prefix}status_{days}d"] = "pending"
+                rec[f"{prefix}end_date_{days}d"] = None
+                continue
+            early = exit_idx is not None and exit_idx <= target_idx
+            price = exit_price if early else baseline_price
+            result = pct_return(entry, price)
+            rec[f"{prefix}return_{days}d"] = result
+            rec[f"{prefix}status_{days}d"] = "complete" if result is not None else "unavailable"
+            rec[f"{prefix}end_date_{days}d"] = (snapshots[exit_idx]["date"] if early else
+                                                 effective_date or snapshots[target_idx]["date"])
     return rec
 
 
@@ -202,15 +200,17 @@ def main():
         "updated_at": now_tpe().isoformat(timespec="minutes"),
         "method": {
             "entry": "AI選股基準交易日收盤價",
-            "return_5d": "推薦後第1日起，收盤跌破MA10即按當日收盤價出場；否則第5個交易日收盤結算",
-            "return_10d": "推薦後第1日起，收盤跌破MA10即按當日收盤價出場；否則第10個交易日收盤結算",
+            "return_5d": "推薦後第1日起收盤跌破MA10出場，否則第5個交易日收盤結算；第5日後才計入統計",
+            "return_10d": "推薦後第1日起收盤跌破MA10出場，否則第10個交易日收盤結算；第10日後才計入統計",
+            "ma20": "與MA10相同規則，改為收盤跌破20日均線出場，分別計算5日及10日績效",
             "calendar_basis": "交易日，不是日曆日",
             "baseline": "baseline_return_5d/10d 保留原固定持有策略作比較",
             "notes": [
-                "推薦日即使低於MA10也保留樣本，從次一交易日才開始檢查",
-                "提前出場後立即鎖定5日與10日已實現績效，不必等原期限屆滿",
+                "推薦日即使低於MA10或MA20也保留樣本，從次一交易日才開始檢查",
+                "提前出場立即鎖定賣價，但必須等第5/10個交易日結束才納入對應績效統計",
+                "固定持有、MA10、MA20在各期使用相同成熟樣本，方便公平比較",
                 "收盤確認跌破並以同日收盤價成交屬理想化假設，實盤可能有執行落差",
-                "停牌缺價不視為跌破，均線採最近10筆有效收盤價",
+                "停牌缺價不視為跌破，均線採最近10/20筆有效收盤價",
                 "同一股票在不同選股日視為不同訊號樣本",
             ],
         },
@@ -219,13 +219,16 @@ def main():
         "selection_days": len(dates),
         "record_count": len(records),
         "summary": build_summary(records),
+        "ma10_summary": build_summary(records),
+        "ma20_summary": build_summary(records, "ma20_"),
         "baseline_summary": build_summary(records, "baseline_"),
         "records": records,
     }
     save_json(BACKTEST_PATH, out)
-    print("ai backtest", "selection_date", selection_date, "records", len(records),
-          "5d samples", out["summary"]["all"]["5d"]["samples"],
-          "10d samples", out["summary"]["all"]["10d"]["samples"])
+    print("ai backtest", "selection_date", selection_date, "records", len(records))
+    for label, key in (("Fixed", "baseline_summary"), ("MA10", "summary"), ("MA20", "ma20_summary")):
+        print(label, "5d samples", out[key]["all"]["5d"]["samples"],
+              "10d samples", out[key]["all"]["10d"]["samples"])
 
 
 if __name__ == "__main__":
