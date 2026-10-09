@@ -7,7 +7,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-04-v7-telegram-digest"
+VERSION = "2026-10-09-v8-issuer-releases"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -70,6 +70,9 @@ def period_from_text(s, fallback_date=""):
     if half:
         y=int(half.group(1) or half.group(2)); return f"{y+1911 if y<1911 else y}-Q2"
 
+    m=re.search(r'(?<!\w)([1-4])Q\s*(20\d{2}|\d{2})(?!\w)',s,re.I)
+    if m:
+        year=int(m[2]); return f'{year+2000 if year<100 else year}-Q{m[1]}'
     return ""
 
 def previous(p):
@@ -767,7 +770,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
                 part=remaining[offset:offset+35]
                 text='📅 今日預計開財報｜'+today+'\n'
                 text+='\n'.join(f"• {x['name']} {x['ticker']}｜{x['period']}" for x in part)
-                text+='\n\n依公司公告的財報董事會日期整理，未公告時間者不預設為盤後'
+                text+='\n\n依公司公告的財報董事會或季度法說日期整理，未公告時間者不預設為盤後'
                 if source_incomplete: text+='\n部分來源未完成，以上為已確認名單'
                 try: delivered=tg(text)
                 except Exception as exc:
@@ -783,15 +786,186 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
     for x in reports:
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
-        if key in sent or any(x.get(k) is None for k in ('prev_gross_margin','prev_eps','gross_margin','eps')):
+        if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or any(x.get(k) is None for k in ('prev_gross_margin','prev_eps','gross_margin','eps')):
             continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
+        if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
             text+='\n\nEPS 含累計差額推算值'
         deliver(key,text)
     checkpoint()
+
+
+# Company IR adapters supplement MOPS board announcements. Values are NEVER seeded
+# from news or inferred from a scheduled meeting alone.
+class IRTableParser(HTMLParser):
+    def __init__(self):
+        super().__init__(); self.rows=[]; self.row=None; self.depth=0
+    def handle_starttag(self, tag, attrs):
+        if tag=='tr':
+            if self.row is None: self.row={'text':[], 'links':[]}
+            self.depth+=1
+        if self.row is not None and tag=='a':
+            href=dict(attrs).get('href','')
+            if href: self.row['links'].append(href)
+    def handle_data(self, data):
+        if self.row is not None: self.row['text'].append(data)
+    def handle_endtag(self, tag):
+        if tag=='tr' and self.row is not None:
+            self.depth-=1
+            if self.depth==0:
+                self.row['text']=clean(' '.join(self.row['text']))
+                self.rows.append(self.row); self.row=None
+
+
+def ir_meeting_date(text, year):
+    match=re.search(r'(20\d{2})[/-](\d{1,2})[/-](\d{1,2})',text)
+    if match:
+        try: return datetime(*map(int,match.groups())).date().isoformat()
+        except ValueError: return None
+    match=re.search(r'(\d{1,2}|[一二三四五六七八九十]{1,3})月(\d{1,2}|[一二三四五六七八九十]{1,3})日',text)
+    if not match: return None
+    def integer(s):
+        if s.isdigit(): return int(s)
+        digits={c:i for i,c in enumerate('零一二三四五六七八九')}
+        if '十' in s:
+            a,b=s.split('十'); return (digits.get(a,1)*10)+digits.get(b,0)
+        return digits.get(s,0)
+    try: return datetime(year,integer(match[1]),integer(match[2])).date().isoformat()
+    except ValueError: return None
+
+
+def ir_meeting_clock(text):
+    m=re.search(r'(?:下午|上午)?\s*(\d{1,2})[:：](\d{2})',text)
+    if m:
+        hour,minute=map(int,m.groups())
+        if '下午' in m[0] and hour<12: hour+=12
+        if '上午' in m[0] and hour==12: hour=0
+        if hour<24 and minute<60: return f'{hour:02d}:{minute:02d}:00'
+    # Official Chinese calendar wording, e.g. 下午兩點三十分
+    m=re.search(r'(上午|下午)([一二兩三四五六七八九十]+)點([一二三四五六七八九十]+分|半|整)?',text)
+    if not m: return None
+    def integer(value):
+        value=value.replace('兩','二'); digits={c:i for i,c in enumerate('零一二三四五六七八九')}
+        if '十' in value:
+            a,b=value.split('十'); return digits.get(a,1)*10+digits.get(b,0)
+        return digits.get(value,0)
+    hour=integer(m[2]);minute=30 if m[3]=='半' else integer((m[3] or '').removesuffix('分'))
+    if m[1]=='下午' and hour<12: hour+=12
+    if m[1]=='上午' and hour==12: hour=0
+    return f'{hour:02d}:{minute:02d}:00' if hour<24 and minute<60 else None
+
+
+def ir_quarter_headers(line):
+    # Only explicit single-quarter column headers, never 9M/YTD/annual headings
+    pattern=r'(?<!\w)(?:(20\d{2})\s*[-/]?\s*Q([1-4])|([1-4])Q\s*(20\d{2}|\d{2})|Q([1-4])\s*(20\d{2}))(?!\w)'
+    result=[]
+    for m in re.finditer(pattern,line,re.I):
+        if m[1]: year,q=int(m[1]),int(m[2])
+        elif m[3]: year,q=int(m[4]),int(m[3]); year+=2000 if year<100 else 0
+        else: year,q=int(m[6]),int(m[5])
+        result.append(f'{year}-Q{q}')
+    return result
+
+
+def ir_pdf_metrics(pages):
+    # Fail closed if headers/values cannot be aligned. Reject estimates/outlook.
+    metrics={}
+    if not re.search(r'Largan|大立光','\n'.join(pages),re.I): return {}
+    for page in pages:
+        if re.search(r'forecast|guidance|預估|預測',page,re.I): continue
+        headers=[]
+        for line in page.splitlines():
+            found=ir_quarter_headers(line)
+            if found:
+                headers=[] if re.search(r'forecast|estimate|guidance|預估|預測',line,re.I) else found
+                continue
+            if not headers: continue
+            field=None; values=[]
+            if re.search(r'gross\s*(?:profit\s*)?margin|毛利率',line,re.I):
+                field='gross_margin'
+                values=[num(v) for v in re.findall(r'([+-]?\d+(?:\.\d+)?)\s*%',line)]
+            elif re.search(r'net\s+revenue|gross\s+profit|營業收入|營業毛利',line,re.I):
+                field='revenue' if re.search(r'net\s+revenue|營業收入',line,re.I) else 'gross'
+                tail=re.split(r'net\s+revenue|gross\s+profit|營業收入|營業毛利',line,flags=re.I,maxsplit=1)[-1]
+                tail=re.sub(r'[+-]?[\d,.]+\s*%', '',tail)
+                values=[num(v) for v in re.findall(r'\(?[+-]?\d[\d,]*(?:\.\d+)?\)?',tail)]
+            elif re.search(r'\bEPS\b|earnings\s+per\s+share|每股盈餘',line,re.I) and not re.search(r'diluted|稀釋',line,re.I):
+                field='eps'
+                tail=re.split(r'\bEPS\b|earnings\s+per\s+share|每股盈餘',line,flags=re.I,maxsplit=1)[-1]
+                values=[num(v) for v in re.findall(r'(?<![\w.])\(?[+-]?\d+(?:\.\d+)?\)?(?![\w.%])',tail)]
+            if not field or len(values)!=len(headers) or len(set(headers))!=len(headers): continue
+            for period,value in zip(headers,values):
+                if value is None or (field=='gross_margin' and not -100<=value<=100): continue
+                existing=metrics.setdefault(period,{})
+                if field in existing and abs(existing[field]-value)>0.02:
+                    raise ValueError('conflicting single-quarter PDF values: '+period+'/'+field)
+                existing[field]=value
+    for values in metrics.values():
+        if 'gross_margin' not in values and values.get('revenue',0)>0 and 'gross' in values:
+            values['gross_margin']=values['gross']/values['revenue']*100
+    return {p:{k:v[k] for k in ('eps','gross_margin')} for p,v in metrics.items() if all(k in v for k in ('eps','gross_margin'))}
+
+
+def largan_ir_events(universe, now):
+    """Discover dated releases and PDFs from the issuer; no guessed file IDs/URLs."""
+    if '3008' not in universe: return [],[]
+    from urllib.parse import urljoin, urlparse, unquote
+    from io import BytesIO
+    url='https://www.largan.com.tw/tw/investor/shareholder'
+    upcoming=[]; released=[]
+    try:
+        response=S.get(url,timeout=(10,25)); response.raise_for_status(); response.encoding='utf-8'
+        parser=IRTableParser();parser.feed(response.text)
+        rows=[r for r in parser.rows if re.search(r'法說|conference|results',r['text'],re.I)]
+        if not rows: raise ValueError('IR calendar rows unavailable')
+        today=now.date().isoformat()
+        for row in rows:
+            period=period_from_text(row['text'])
+            if not period: continue
+            date=ir_meeting_date(row['text'],int(period[:4]))
+            if not date: continue
+            if date < (now.date()-timedelta(days=14)).isoformat(): continue
+            event=dict(ticker='3008',name=universe['3008'],period=period,subject=row['text'],source_url=url,release_type='issuer_conference',source_label='公司官方法說資料')
+            if date>=today:
+                upcoming.append({**event,'planned_date':date,'announcement_date':None})
+            if date>today: continue
+            clock=ir_meeting_clock(row['text'])
+            # No assumption about the call time when the calendar does not specify it
+            if date==today and (not clock or now.strftime('%H:%M:%S')<clock): continue
+            candidates=[]
+            for link in row['links']:
+                absolute=urljoin(url,link)
+                if urlparse(absolute).hostname!='www.largan.com.tw': continue
+                if re.search(r'\.pdf(?:\?|$)|tool-download',absolute,re.I) and not re.search(r'audio|video|錄音|影音',unquote(absolute),re.I):
+                    if absolute not in candidates: candidates.append(absolute)
+            if not candidates:
+                SOURCE_ERRORS.append('issuer_ir/3008/'+period+':no_PDF_links'); continue
+            found={};sources=[];conflict=False
+            for link in candidates[:3]:
+                try:
+                    from pypdf import PdfReader
+                    doc=S.get(link,timeout=(10,25)); doc.raise_for_status()
+                    if not doc.content.startswith(b'%PDF') or len(doc.content)>20_000_000: raise ValueError('not a supported PDF')
+                    reader=PdfReader(BytesIO(doc.content))
+                    if len(reader.pages)>60: raise ValueError('PDF exceeds page budget')
+                    values=ir_pdf_metrics([p.extract_text(extraction_mode='layout') or '' for p in reader.pages])
+                    if period in values:
+                        for p,v in values.items():
+                            if p in found and any(abs(found[p][k]-v[k])>0.02 for k in v):
+                                conflict=True;raise ValueError('conflicting PDFs')
+                            found[p]=v
+                        sources.append(link)
+                except Exception as exc:
+                    SOURCE_ERRORS.append('issuer_pdf/3008/'+period+':'+type(exc).__name__)
+            if conflict or period not in found:
+                SOURCE_ERRORS.append('issuer_ir/3008/'+period+':single_quarter_metrics_unavailable');continue
+            released.append({**event,'publish_date':date,'publish_time':clock or '','source_url':sources[0],'released_metrics':found,'official_sources':sources})
+    except Exception as exc:
+        SOURCE_ERRORS.append('issuer_ir/3008:'+type(exc).__name__)
+    return upcoming,released
 
 
 def main():
@@ -804,6 +978,7 @@ def main():
     event_history=load_json(DATA/'quarterly_earnings_events.json',old)
     news=fetch_news()+historical_mops_news()
     by=merge_history(financial_snapshot());upcoming={};events={};calendars={}
+    ir_upcoming,ir_reports=largan_ir_events(uni,now)
     for x in event_history.get('upcoming',[]):
         if x.get('ticker') in uni and x.get('planned_date','')>=today: upcoming[(x['ticker'],x['period'])]=x
     for x in event_history.get('reports',[]):
@@ -826,6 +1001,14 @@ def main():
                 if row:
                     prev=by.get((x['ticker'],period),{})
                     by[(x['ticker'],period)]={**prev,**{k:v for k,v in row.items() if v is not None}}
+    for x in ir_upcoming:
+        upcoming.setdefault((x['ticker'],x['period']),x)
+    for x in ir_reports:
+        key=(x['ticker'],x['period'])
+        if report_visible(x,now,calendars):
+            if key in events:
+                events[key].update(released_metrics=x['released_metrics'],official_sources=x['official_sources'])
+            else: events[key]=x
     # Both current and prior quarter need their preceding YTD period
     periods=set()
     for x in list(upcoming.values())+list(events.values()):
@@ -842,6 +1025,9 @@ def main():
     save_financial_history(by)
     for key,x in events.items():
         cur=single_metrics(by,x['ticker'],x['period']);prevp=previous(x['period']);prev=single_metrics(by,x['ticker'],prevp)
+        verified=x.get('released_metrics',{})
+        if x['period'] in verified: cur={**verified[x['period']], 'eps_basis':'reported_single'}
+        if prevp in verified: prev={**verified[prevp], 'eps_basis':'reported_single'}
         x.update(eps=cur['eps'],gross_margin=cur['gross_margin'],eps_basis=cur.get('eps_basis'),prev_period=prevp,prev_eps=prev['eps'],prev_gross_margin=prev['gross_margin'],prev_eps_basis=prev.get('eps_basis'))
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
         upcoming.pop(key,None)
@@ -857,3 +1043,4 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
