@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-09T17:33+08:00",
+  "updated_at": "2026-10-09T18:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -585,28 +585,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
+      "rows": 1,
       "self_reports": 0,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 10,
+          "rows": 15,
+          "hits": 1
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 15,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 10,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 10,
+          "rows": 15,
           "hits": 0
         },
         {
@@ -641,14 +641,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 10,
+          "rows": 15,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 10,
+          "rows": 15,
           "hits": 0
         },
         {
@@ -1406,7 +1406,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "9105 泰金寶-DR 115/10/09 18:00:11 泰金寶科技股份有限公司2026年09月自結合併營收公告"
+        }
+      ],
       "error": ""
     },
     "twse": {
