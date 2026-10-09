@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 MIN_AVG_TURNOVER_5D = 10_000_000
 TURNOVER_LOOKBACK_DAYS = 5
 ARCHIVE_LOOKBACK_DAYS = 35
+MAX_HOLDER_INCREASE_PPT = 25.0
 
 
 def field(r, names):
@@ -141,7 +142,7 @@ def market_history_snapshots():
         date = normalize_market_date(d.get('date') or p.stem)
         if date and stocks:
             out.append({'date': date, 'stocks': stocks})
-    return out
+    return sorted(out, key=lambda x: x['date'])
 
 
 def market_snapshot_on_or_before(target_date, snapshots):
@@ -150,17 +151,26 @@ def market_snapshot_on_or_before(target_date, snapshots):
     return valid[-1] if valid else None
 
 
-def weekly_price_change_pct(ticker, start_snapshot, end_snapshot):
-    if not start_snapshot or not end_snapshot:
-        return None
-    old = start_snapshot.get('stocks', {}).get(str(ticker), {}).get('price')
-    cur = end_snapshot.get('stocks', {}).get(str(ticker), {}).get('price')
-    try:
-        old = float(old)
-        cur = float(cur)
-    except Exception:
-        return None
-    if old <= 0 or cur <= 0:
+def latest_valid_price_on_or_before(ticker, target_date, snapshots):
+    """For suspended stocks, carry forward their last valid closing price."""
+    target = normalize_market_date(target_date)
+    for snap in reversed(snapshots):
+        if not snap.get('date') or snap['date'] > target:
+            continue
+        value = snap.get('stocks', {}).get(str(ticker), {}).get('price')
+        try:
+            price = float(value)
+        except (TypeError, ValueError):
+            continue
+        if 0 < price < float('inf'):
+            return price
+    return None
+
+
+def weekly_price_change_pct(ticker, start_date, end_date, snapshots):
+    old = latest_valid_price_on_or_before(ticker, start_date, snapshots)
+    cur = latest_valid_price_on_or_before(ticker, end_date, snapshots)
+    if old is None or cur is None:
         return None
     return round((cur / old - 1) * 100, 4)
 
@@ -282,12 +292,13 @@ def main():
             if avg_turnover_5d < MIN_AVG_TURNOVER_5D:
                 liquidity_filtered += 1
                 continue
-            week_change_pct = weekly_price_change_pct(t, price_start, price_end)
+            week_change_pct = weekly_price_change_pct(
+                t, prev.get('date'), date, market_hist)
             for kind in ('400', '1000'):
                 cur = d[f'{kind}_ratio']
                 old = pstocks[t].get(f'{kind}_ratio', 0)
                 delta = cur - old
-                if delta <= 0:
+                if delta <= 0 or delta > MAX_HOLDER_INCREASE_PPT:
                     continue
                 out[mk][kind].append({
                     'ticker': t,
