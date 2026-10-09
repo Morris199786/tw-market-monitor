@@ -4,9 +4,9 @@
 
    量：
    - 盤中依累積成交額 / 五日全天均額（不預估）；盤後依較5日均
-   - 資金流出＝族群下跌 + 成交動能較5日均放大至少10%
-   - 先抽出資金流出，其餘依成交熱度動態分 Tier
-   - 每頁最多 11 個族群，含資金流出；不顯示空頁
+   - 純成交倍率排名；漲跌僅決定顏色
+   - 33個族群依序分為三頁
+   - 每頁最多 11 個族群
    ========================================================= */
 (function(){
 "use strict";
@@ -283,12 +283,12 @@ s.textContent=`
 
 
 /* =========================================================
-   TIER / 資金流出按鈕
+   成交排名分頁按鈕
    ========================================================= */
 
 .turnover-group-switch{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
   width:100%!important;
   height:auto!important;
   min-height:0!important;
@@ -367,15 +367,15 @@ s.textContent=`
     inset 0 0 0 1px rgba(255,255,255,.18)
 }
 
-.turnover-inner.r1{background:#a65d5d}
-.turnover-inner.r2{background:#c84e4e}
-.turnover-inner.r3{background:#dc3b3b}
-.turnover-inner.r4{background:#e52626}
+.turnover-inner.r1{background:#713b40}
+.turnover-inner.r2{background:#a83a42}
+.turnover-inner.r3{background:#cd3038}
+.turnover-inner.r4{background:#ed252b}
 
-.turnover-inner.g1{background:#5b7f6d}
-.turnover-inner.g2{background:#418c68}
-.turnover-inner.g3{background:#29975e}
-.turnover-inner.g4{background:#138348}
+.turnover-inner.g1{background:#294f40}
+.turnover-inner.g2{background:#286a4c}
+.turnover-inner.g3{background:#218153}
+.turnover-inner.g4{background:#119452}
 
 .turnover-inner.gray{background:#687386}
 
@@ -616,7 +616,7 @@ s.textContent=`
   }
 
   .turnover-group-switch{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important
+    grid-template-columns:repeat(3,minmax(0,1fr))!important
   }
 
   .turnover-group-switch button{
@@ -912,64 +912,25 @@ function fmtMetric(v,intra){
 }
 
 // Pages are ranked slices, not fixed classification thresholds.
-function buildVolumeGroups(heatItems,outflowItems){
+function buildVolumeGroups(items){
+  // Price change has no role in ranking or pagination.
+  const ranked=[...items].sort((a,b)=>
+    (b.metricRatio??-Infinity)-(a.metricRatio??-Infinity) ||
+    String(a.name).localeCompare(String(b.name),"zh-Hant"));
   const groups=[];
-  const size=11;
-  for(let offset=0;offset<heatItems.length;offset+=size){
-    const page=offset/size+1;
-    groups.push({key:`heat-${page}`,label:`資金熱度 Tier ${page}`,
-      shortLabel:`Tier ${page}`,items:heatItems.slice(offset,offset+size)})
+  for(let offset=0;offset<ranked.length;offset+=11){
+    const end=Math.min(offset+11,ranked.length);
+    const title=`成交熱度 ${offset+1}–${end}`;
+    groups.push({key:`heat-${offset/11+1}`,label:title,shortLabel:title,items:ranked.slice(offset,end)});
   }
-  const pages=Math.ceil(outflowItems.length/size);
-  for(let offset=0;offset<outflowItems.length;offset+=size){
-    const page=offset/size+1;
-    const title=pages>1?`資金流出 ${page}/${pages}`:"資金流出";
-    groups.push({key:`outflow-${page}`,label:title,shortLabel:title,
-      items:outflowItems.slice(offset,offset+size)})
-  }
-  return groups
+  return groups;
 }
-
-/* =========================================================
-   資金流出定義
-   ========================================================= */
-
-/*
-   資金流出：
-   1. 族群今日漲跌 < 0%
-   2. 成交動能 ratio >= 1.10
-
-   盤中：
-   使用累積成交額 / 五日全天均額 ratio（不作時間推估）
-
-   盤後：
-   使用今日成交額 / 近5日平均成交額
-*/
-
-function isCapitalOutflow(metricRatio,change){
-
-const r=n(metricRatio);
-const c=n(change);
-
-return(
-  r!==null &&
-  c!==null &&
-  r>=1.10 &&
-  c<0
-)
-
-}
-
-
-/* =========================================================
-   COLOR
-   ========================================================= */
 
 function heatColor(v){
 
 v=n(v);
 
-if(v===null)return"gray";
+if(v===null||v===0)return"gray";
 
 const a=Math.abs(v);
 
@@ -1324,11 +1285,6 @@ const smetric=metric(
   intra
 );
 
-const outflow=isCapitalOutflow(
-  smetric.ratio,
-  n(sec.change_pct)
-);
-
 const rows=(sec.stocks||[])
   .map(s=>{
 
@@ -1385,7 +1341,7 @@ d.innerHTML=`
       ｜${label(intra)} ${fmtMetric(smetric.pct,intra)}
       ｜5日均 ${fmtYi(ts.avg5_turnover)}
       ｜今日 ${fmtPct(sec.change_pct,2)}
-      ${outflow?"｜資金流出":""}
+      
     </div>
 
   </div>
@@ -1555,12 +1511,6 @@ try{
         hm.get(s.name)?.change_pct
       );
 
-      const outflow=
-        isCapitalOutflow(
-          m.ratio,
-          change
-        );
-
       return{
         ...s,
 
@@ -1569,7 +1519,7 @@ try{
 
         value:
           m.ratio===null
-            ?0
+            ?.05
             :Math.max(
                 .05,
                 Math.min(
@@ -1578,8 +1528,7 @@ try{
                 )
               ),
 
-        change,
-        outflow
+        change
 
       }
 
@@ -1618,36 +1567,10 @@ try{
 
 
   /* =======================================================
-     先抽出資金流出
+     所有族群統一排序
      ======================================================= */
 
-  const outflowItems=items
-    .filter(x=>x.outflow)
-    .sort(
-      (a,b)=>
-        (b.metricRatio??-Infinity)-
-        (a.metricRatio??-Infinity)
-    );
-
-
-  /*
-     資金流出族群不再重複出現在 Tier
-  */
-
-  const heatItems=items
-    .filter(x=>!x.outflow)
-    .sort(
-      (a,b)=>
-        (b.metricRatio??-Infinity)-
-        (a.metricRatio??-Infinity)
-    );
-
-
-  /* =======================================================
-     每 Tier 最多 11 個
-     ======================================================= */
-
-  const groups=buildVolumeGroups(heatItems,outflowItems);
+  const groups=buildVolumeGroups(items);
   // Preserve category/page through refreshes, not its shifting array index.
   let active=groups.findIndex(x=>x.key===state.volumeGroupKey);
   if(active<0 && state.volumeGroupKey){
@@ -1670,48 +1593,17 @@ try{
      ======================================================= */
 
   const exp=`
-
     <details class="turnover-explain">
-
-      <summary>
-        <span>判讀邏輯</span>
-      </summary>
-
+      <summary><span>判讀邏輯</span></summary>
       <div class="turnover-explain-body">
-
-        <p>
-          <b>資金流出</b>：
-          族群今日下跌，且成交動能較近 5 日平均
-          <b>放大 10% 以上</b>
-        </p>
-
-        <p>
-          ${
-            intra
-              ?`
-                盤中以「目前累積成交額 ÷ 近 5 日全天平均成交額」判斷，
-                不依開盤分鐘放大、不預估全天成交額。實際累積達均額的
-                <b>110% 以上</b>
-              `
-              :`
-                盤後以「今日成交額 ÷ 近 5 日平均成交額」
-                判斷，達
-                <b>110% 以上</b>
-              `
-          }
-        </p>
-
-        <p>
-          符合條件的資金流出族群依<b>成交倍率由高至低</b>排序；
-          Tier 與資金流出各自每 11 個族群自動分頁，空分類不顯示。前兩名使用大方塊，其餘每列三個；同列大小隨成交倍率調整，設有最小顯示面積。方塊直接顯示盤中達成率（累積成交額 ÷ 五日全天均額），盤後顯示較五日均額增減百分比。
-          盤中缺少歷史同時間資料，達全天均額不代表同時間放量；
-          判斷較保守。盤中成交額仍為價格乘累積成交量的估值，非實際成交淨流向
-        </p>
-
+        <p><b>排序只看成交額</b>：所有族群按「成交額 ÷ 前5個交易日平均全天成交額」由高到低排序，漲跌不參與排名、不另分資金流出。此處的量採成交金額，非成交張數。</p>
+        <p><b>盤中達成率</b>＝目前累積成交額 ÷ 5日全天均額 × 100%；不依開盤時間線性放大、不推估全天，也不是與歷史同時間比較。</p>
+        <p><b>盤後較5日均</b>＝（今日成交額 ÷ 5日全天均額 − 1）× 100%。例如1.2倍，盤中顯示120%，盤後顯示+20%；排序相同。</p>
+        <p><b>每頁11個族群</b>：33個族群分為1–11、12–22、23–33三頁，維持前兩個大方塊、其餘每列三個。缺少比較資料顯示「—」並排在最後，不補零。</p>
+        <p><b>顏色只看今日族群漲跌</b>：上漲紅色、下跌綠色、平盤或缺價灰色；依絕對漲跌幅分為小於1%、1–2%、2–3%、3%以上四級，幅度越大越鮮亮。方塊大小依成交倍率調整並保留最小可讀面積。</p>
+        <p>盤中成交額目前為價格乘累積成交量的估值，成交熱度不代表資金淨流入或買賣建議。</p>
       </div>
-
     </details>
-
   `;
 
 
@@ -1841,11 +1733,7 @@ try{
 
         <div class="turnover-status">
 
-          ${
-            state.volumeGroup===3
-              ?"今日目前沒有符合條件的資金流出族群"
-              :"目前沒有族群資料"
-          }
+          目前沒有族群資料
 
         </div>
 
@@ -1906,7 +1794,7 @@ try{
 
 
   /* =======================================================
-     TIER / 資金流出切換
+     成交排名分頁切換
      ======================================================= */
 
   sw.addEventListener(
@@ -2282,5 +2170,6 @@ window.refreshHeatStrength=
   f=>applyGold(!!f);
 
 })();
+
 
 
