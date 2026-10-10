@@ -1269,6 +1269,7 @@
       .appendChild(modal);
 
     const close = () => {
+      window.DailyK?.destroy();
       modal.classList
         .remove("open");
 
@@ -1347,7 +1348,7 @@
       DEFAULT_PERIOD;
 
     activeDetailTab =
-      "trend";
+      "kline";
 
     flowExpanded = false;
 
@@ -1517,6 +1518,7 @@
       return;
     }
 
+    window.DailyK?.destroy();
     body.innerHTML = `
       <div
         class="stock-detail-periods"
@@ -1546,6 +1548,7 @@
       <div
         class="stock-detail-tabs"
       >
+        <button type="button" class="stock-detail-tab ${activeDetailTab === "kline" ? "active" : ""}" data-detail-tab="kline">日 K</button>
         <button
           class="stock-detail-tab ${
             activeDetailTab ===
@@ -1577,7 +1580,7 @@
         class="stock-detail-card"
       >
         ${
-          activeDetailTab ===
+          activeDetailTab === "kline" ? '<div id="dailyKHost"></div>' : activeDetailTab ===
           "trend"
             ? renderTrendPanel(
                 stock
@@ -1631,12 +1634,7 @@
         button.addEventListener(
           "click",
           () => {
-            activeDetailTab =
-              button.dataset
-                .detailTab ===
-              "flow"
-                ? "flow"
-                : "trend";
+            activeDetailTab = ["flow","kline"].includes(button.dataset.detailTab) ? button.dataset.detailTab : "trend";
 
             flowExpanded =
               false;
@@ -1652,6 +1650,10 @@
       "flow"
     ) {
       bindFlowPull(body);
+    }
+    if (activeDetailTab === "kline") {
+      if(window.DailyK) window.DailyK.mount(body.querySelector('#dailyKHost'),activeTicker);
+      else body.querySelector('#dailyKHost').textContent='日 K 元件未載入，請重新整理';
     }
   }
 
@@ -3003,4 +3005,5 @@
     init();
   }
 })();
+
 
