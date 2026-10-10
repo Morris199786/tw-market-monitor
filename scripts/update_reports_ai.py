@@ -453,6 +453,43 @@ def is_quota_error(error_text: str) -> bool:
     )
 
 
+def recover_saved_winway(src):
+    """Local repair of one verified source; no OCR/AI call and no state reset."""
+    if src.get("drive_file_id") != "1ylJQqGf6s3Be0GJsYAQN7v_kP9Tbb2yt":
+        return None
+    if src.get("status") != "audit_error":
+        return None
+    digest = hashlib.sha256(str(src.get("text") or "").encode()).hexdigest()
+    if digest != "03e715be97e9266ef057525a27bf765d033696d85140cc6d62616951bee84178":
+        print("WinWay local repair skipped: source text changed")
+        return None
+    obj = {
+        "report_type": "company", "primary_stock": {"ticker": "6515", "name": "穎崴"},
+        "broker": "", "date": src.get("report_date", ""),
+        "title": "穎崴：留意產品轉換期，維持買進、目標價下調至8,250元",
+        "action": "maintain", "rating": "Buy", "target_price_old": 9000,
+        "target_price_new": 8250,
+        "summary": [
+            "維持買進，目標價由9,000元下調至8,250元，採2027至2028年預估EPS的32倍評價",
+            "9月營收月減27%，第三季營收季增29%，低於報告所列35%至40%的預期",
+            "第四季營收預估由季增個位數，下修為季減中至高個位數",
+            "探針卡部分專案進入出貨週期後段，測試座成長尚不足以完全抵銷放緩",
+            "仍預期2027、2028年營收各年增約70%，維持中長期正向看法"
+        ],
+        "key_points": ["2026年EPS預估由93.40元降至90.14元",
+                       "2027年EPS預估由198.55元降至183.74元",
+                       "2028年EPS預估由364.67元降至331.51元"],
+        "forecast_changes": ["第四季營收展望由季增改為季減", "2026年EPS預估下修約4%"],
+        "risks": ["主要AI XPU的記憶體與散熱問題可能影響客戶採購及追加訂單",
+                  "新專案放量延遲可能對財測造成額外下行風險"],
+        "detail": "報告指出，穎崴部分探針卡專案進入出貨週期後段，測試座業務力道不足以完全抵銷放緩，因此依實際出貨模式下修第四季營收展望。主要XPU客戶的測試座與探針卡可能面臨產品轉換空窗，新專案預計明年放量，其他ASIC及XPU專案則逐步爬坡。報告將近期困難視為時程影響，並未認為底層需求發生根本改變，因此維持買進，但下調EPS預估與目標價。截圖擷取文字未明確列出券商全名，故不自行填入。",
+    }
+    report = audit_report(normalize_report(obj, src), src, COMPANIES)
+    report["ai_model"] = "local-source-repair-no-api"
+    report["repaired_at"] = now_tpe()
+    return report
+
+
 def main():
     global COMPANIES
     COMPANIES = registry(refresh=True)
@@ -484,6 +521,22 @@ def main():
         current_text_hash = hashlib.sha256(
             str(src.get("text") or "").encode()
         ).hexdigest()
+
+        if not old:
+            repaired = recover_saved_winway(src)
+            if repaired:
+                items.append(repaired)
+                by_source[file_id] = repaired
+                src["status"] = "done"
+                src["audit_version"] = VERSION
+                src["local_repaired_at"] = now_tpe()
+                for key in ("ai_error", "audit_failed_version", "audit_failed_text_hash", "audit_failed_at"):
+                    src.pop(key, None)
+                reports["items"] = items
+                save_json(REPORTS_PATH, reports)
+                save_json(INBOX_PATH, inbox)
+                print("Locally repaired WinWay from saved text; AI calls=0")
+                continue
 
         # Strict File ID one-shot: never retry completed, failed, or claimed reports.
         # Audit version changes must NOT trigger another API call.
@@ -619,3 +672,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

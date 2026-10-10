@@ -7,7 +7,7 @@ import urllib.request
 import unicodedata
 from pathlib import Path
 
-VERSION = "2026-10-05-identity-target-v2"
+VERSION = "2026-10-10-identity-target-tp"
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = {
     "2383": {"name": "台光電", "aliases": ["Elite Material", "Elite Materials", "Elite Material Co., Ltd.", "EMC"]},
@@ -181,8 +181,8 @@ def resolve(ticker, name, text, companies):
 
 def _target_matches(page):
     pattern = re.compile(
-        r"(?:\b(?:12[\s-]*(?:month|m)\s+)?target\s+price|\bprice\s+target|\bPO|目標價)"
-        r"\s*(?:上修|下修|調高|調低|調升|調降)?\s*(?:至|為|to)?\s*[:：]?\s*"
+        r"(?:\b(?:12[\s-]*(?:month|m)\s+)?target\s+price|\bprice\s+target|\bPO\b|\bTP\b|目標價)"
+        r"\s*(?:上修|下修|調高|調低|調升|調降|lowered|raised|reduced|increased|revised|cut)?\s*(?:至|為|to)?\s*[:：]?\s*"
         r"(?:(TWD|NT\$|NTD|USD|US\$|KRW)\s*)?"
         r"(\d[\d,]*(?:\.\d+)?[kK]?|n\.?a\.?(?!\w))", re.I)
     return list(pattern.finditer(page))
@@ -375,3 +375,4 @@ def audit_report(report, src, companies):
     r["validation_status"] = "verified"
     r["source_text_hash"] = hashlib.sha256(text.encode()).hexdigest()
     return r
+
