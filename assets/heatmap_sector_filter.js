@@ -22,6 +22,7 @@
   let stockDetailPromise = null;
 
   let activeTicker = "";
+  let detailOrigin = "heatmap";
   let activePeriod = DEFAULT_PERIOD;
   let activeDetailTab = "trend";
 
@@ -1326,7 +1327,8 @@
 
   async function openStockDetail(
     ticker,
-    sectorName = ""
+    sectorName = "",
+    origin = "heatmap"
   ) {
     ticker =
       String(
@@ -1338,19 +1340,17 @@
     }
 
     activeTicker = ticker;
+    detailOrigin = origin;
 
     activeSector =
-      sectorName ||
-      activeSector ||
-      "";
+      sectorName || "";
 
-    activePeriod =
-      DEFAULT_PERIOD;
+    activePeriod = detailOrigin === "chips" ? 20 : DEFAULT_PERIOD;
 
     activeDetailTab =
       "kline";
 
-    flowExpanded = false;
+    flowExpanded = detailOrigin === "chips";
 
     const modal =
       ensureStockDetailModal();
@@ -1471,7 +1471,7 @@
         subtitle.textContent =
           `${
             activeSector ||
-            "市場熱力圖"
+            (detailOrigin === "chips" ? "籌碼日報" : "市場熱力圖")
           }｜資料截至 ${
             data.as_of_date ||
             "—"
@@ -1617,8 +1617,7 @@
             activePeriod =
               period;
 
-            flowExpanded =
-              false;
+            flowExpanded = detailOrigin === "chips";
 
             renderStockDetail();
           }
@@ -1636,8 +1635,7 @@
           () => {
             activeDetailTab = ["flow","kline"].includes(button.dataset.detailTab) ? button.dataset.detailTab : "trend";
 
-            flowExpanded =
-              false;
+            flowExpanded = detailOrigin === "chips";
 
             renderStockDetail();
           }
@@ -1645,10 +1643,14 @@
       }
     );
 
-    if (
-      activeDetailTab ===
-      "flow"
-    ) {
+    if (detailOrigin === "chips") {
+      body.querySelector('.stock-detail-periods').hidden = true;
+      body.querySelector('.stock-detail-periods').style.display = 'none';
+      body.querySelector('[data-detail-tab="trend"]').remove();
+      body.querySelector('[data-detail-tab="flow"]').textContent = '20日法人籌碼';
+      body.querySelector('.stock-detail-tabs').style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+      body.querySelector('#stockFlowPull')?.remove();
+    } else if (activeDetailTab === "flow") {
       bindFlowPull(body);
     }
     if (activeDetailTab === "kline") {
@@ -2424,7 +2426,7 @@
         </strong>
 
         <small>
-          ${complete ? "長條圖看合計｜下方預設近5日明細" : `資料待補：已取得 ${chartRows.length-missingCount}/${activePeriod} 日，不顯示完整期間合計`}
+          ${complete ? "長條圖看合計｜下方可查看每日明細" : `資料待補：已取得 ${chartRows.length-missingCount}/${activePeriod} 日，不顯示完整期間合計`}
         </small>
       </div>
 
@@ -2894,6 +2896,21 @@
   }
 
   function bindStockDetailEvents() {
+    function chipRow(event) {
+      return event.target.closest?.('#buyRows [data-chip-ticker], #sellRows [data-chip-ticker]');
+    }
+    document.addEventListener('click', event => {
+      const row = chipRow(event);
+      if (row) openStockDetail(row.dataset.chipTicker, '', 'chips');
+    });
+    document.addEventListener('keydown', event => {
+      const row = chipRow(event);
+      if (row && ['Enter', ' '].includes(event.key)) {
+        event.preventDefault();
+        openStockDetail(row.dataset.chipTicker, '', 'chips');
+      }
+    });
+
     document.addEventListener(
       "click",
       e => {
@@ -3005,5 +3022,6 @@
     init();
   }
 })();
+
 
 

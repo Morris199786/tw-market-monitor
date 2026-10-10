@@ -434,6 +434,7 @@ async function home(force = false) {
 /* ----------------------------- 籌碼日報 ----------------------------- */
 
 async function flows(force = false) {
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;", "'":"&#39;"}[c]));
   const d = await J(
     "./data/institutional.json",
     { force }
@@ -483,7 +484,7 @@ async function flows(force = false) {
     return arr
       .map(
         (x, i) => `
-          <tr class="${
+          <tr data-chip-ticker="${esc(x.ticker)}" tabindex="0" role="button" aria-label="${esc(x.name || x.ticker)} 日K與20日法人籌碼" style="cursor:pointer" class="${
             x.change_pct < 0
               ? "negative-row"
               : ""
@@ -3301,3 +3302,4 @@ async function init() {
 }
 
 init();
+
