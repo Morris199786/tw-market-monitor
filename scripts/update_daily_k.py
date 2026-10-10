@@ -17,7 +17,7 @@ def write(path, value):
     path.parent.mkdir(parents=True,exist_ok=True)
     temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False,separators=(',',':')),encoding='utf-8');temp.replace(path)
 
-def parse_chart(payload,symbol,now,gaps=None):
+def parse_chart(payload,symbol,now,gaps=None,rejected_dates=None):
     chart=payload.get('chart',{})
     if chart.get('error'): raise ValueError(str(chart['error'])[:160])
     result=chart.get('result') or []
@@ -43,8 +43,9 @@ def parse_chart(payload,symbol,now,gaps=None):
         rows[date.isoformat()]={'time':date.isoformat(),'open':round(o,4),'high':round(h,4),'low':round(l,4),'close':round(c,4),'volume':int(v)}
     bars=[rows[k] for k in sorted(rows)]
     if not bars: raise ValueError('no valid completed candles')
-    # Reject partial broken history, retaining last valid file instead of bridging missing data
-    if rejected: raise ValueError('incomplete OHLCV: '+','.join(rejected[-5:]))
+    # Preserve valid daily bars; never synthesize or interpolate malformed OHLCV.
+    # Report rejected timestamps separately for later audit against official exchange data.
+    if rejected_dates is not None: rejected_dates.extend(rejected)
     return bars
 
 def fetch_one(ticker,meta,now):
@@ -60,10 +61,12 @@ def fetch_one(ticker,meta,now):
             response=requests.get('https://query1.finance.yahoo.com/v8/finance/chart/'+symbol,
                 params={'range':'2y','interval':'1d','events':'splits,div','includeAdjustedClose':'false'},
                 headers={'User-Agent':'Mozilla/5.0'},timeout=(10,35))
-            response.raise_for_status();gaps=[];bars=parse_chart(response.json(),symbol,now,gaps)
+            response.raise_for_status();gaps=[];rejected=[]
+            bars=parse_chart(response.json(),symbol,now,gaps,rejected)
             value={'ticker':ticker,'name':meta['name'],'market':meta['market'],'source':'Yahoo Finance',
                 'price_basis':'Yahoo OHLC/Close（非 Adj Close；來源可能調整拆股）',
-                'volume_unit':'shares','missing_dates':gaps,'updated_at':now.isoformat(timespec='seconds'),
+                'volume_unit':'shares','missing_dates':gaps,'invalid_dates':rejected,
+                'updated_at':now.isoformat(timespec='seconds'),
                 'fetched_on':now.date().isoformat(),'date':bars[-1]['time'],'bars':bars}
             if old.get('date','')>value['date']: raise ValueError('source date regressed')
             write(path,value);return value,'updated'
@@ -94,7 +97,8 @@ def main():
             ok=result in ('updated','cached')
             if ok: success+=1
             else: errors[ticker]=result
-            status[ticker]={'available':bool(value.get('bars')),'refresh_ok':ok,'date':value.get('date'),'bars':len(value.get('bars',[]))}
+            status[ticker]={'available':bool(value.get('bars')),'refresh_ok':ok,'date':value.get('date'),'bars':len(value.get('bars',[])),
+                            'invalid_dates':value.get('invalid_dates',[])}
     write(DEST/'manifest.json',{'updated_at':now.isoformat(timespec='seconds'),'source':'Yahoo Finance','stocks':status,'errors':errors,'success':success,'requested':len(tickers)})
     print(f'daily K: {success}/{len(tickers)} refreshed; {len(errors)} errors')
     if errors: raise RuntimeError('Some daily K sources failed; valid existing data retained; see manifest.json')
