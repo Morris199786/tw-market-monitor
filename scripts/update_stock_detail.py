@@ -291,12 +291,21 @@ def build_sector_series(sectors, market_rows, shares):
 
 
 def all_tracked_tickers(sectors):
-    return sorted({
+    tickers = {
         str(row.get("ticker"))
         for sec in sectors
         for row in sec.get("stocks", [])
         if row.get("ticker")
-    })
+    }
+
+    # Include all stocks visible in the institutional rankings, even outside heatmap sectors
+    rankings = load_json(ROOT / "data/institutional.json", {}).get("periods", {})
+    for period in rankings.values():
+        for market in period.values():
+            for group in market.values():
+                for side in ("buy", "sell"):
+                    tickers.update(str(row.get("ticker", "")) for row in group.get(side, []))
+    return sorted(t for t in tickers if t.isdigit() and len(t) == 4)
 
 
 def build_stock_series(tickers, market_rows, inst_rows, names, markets):
@@ -473,6 +482,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

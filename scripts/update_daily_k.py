@@ -80,6 +80,14 @@ def main():
     sectors=read(ROOT/'data/sectors.json',{}).get('sectors',[])
     master=read(ROOT/'data/master.json',{}).get('stocks',{})
     tickers={str(x.get('ticker','')) for sector in sectors for x in sector.get('stocks',[])}
+
+    # Include all stocks visible in the institutional rankings, even outside heatmap sectors
+    rankings = read(ROOT / "data/institutional.json", {}).get("periods", {})
+    for period in rankings.values():
+        for market in period.values():
+            for group in market.values():
+                for side in ("buy", "sell"):
+                    tickers.update(str(row.get("ticker", "")) for row in group.get(side, []))
     if not tickers: raise RuntimeError('empty heatmap universe')
     universe={}; errors={}
     for ticker in sorted(tickers):
@@ -103,3 +111,4 @@ def main():
     print(f'daily K: {success}/{len(tickers)} refreshed; {len(errors)} errors')
     if errors: raise RuntimeError('Some daily K sources failed; valid existing data retained; see manifest.json')
 if __name__=='__main__': main()
+
