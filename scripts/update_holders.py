@@ -9,6 +9,7 @@ MIN_AVG_TURNOVER_5D = 10_000_000
 TURNOVER_LOOKBACK_DAYS = 5
 ARCHIVE_LOOKBACK_DAYS = 35
 MAX_HOLDER_INCREASE_PPT = 25.0
+HISTORY_DAYS = 62
 
 
 def field(r, names):
@@ -16,18 +17,14 @@ def field(r, names):
 
 
 def normalized_date(value):
-    """TDCC date -> YYYYMMDD; ignore invalid / future dates."""
-    s = str(value or '').strip()
-    digits = re.sub(r'\D', '', s)
-    if len(digits) != 8:
+    s = re.sub(r'\D', '', str(value or '').strip())
+    if len(s) != 8:
         return None
     try:
-        day = datetime.strptime(digits, '%Y%m%d').date()
+        day = datetime.strptime(s, '%Y%m%d').date()
     except ValueError:
         return None
-    if day > now_tpe().date():
-        return None
-    return digits
+    return s if day <= now_tpe().date() else None
 
 
 def normalize_rows(rows):
@@ -40,9 +37,8 @@ def normalize_rows(rows):
         level = iv(field(r, ['持股分級', 'level', 'HoldingLevel']))
         shares = iv(field(r, ['股數', 'shares', 'Shares']))
         pct = n(field(r, ['占集保庫存數比例%', '佔集保庫存數比例%', '占集保庫存數比例 (%)', 'percentage', 'Percentage']))
-        if not date or not level:
-            continue
-        out.append((date, t, level, shares, pct))
+        if date and level:
+            out.append((date, t, level, shares, pct))
     return out
 
 
@@ -64,7 +60,6 @@ def aggregate(rows):
 
 
 def fetch_archive_date(date):
-    """Check a real calendar date, not only Fridays (holiday weeks can close Thursday)."""
     dt = datetime.strptime(date, '%Y%m%d').date()
     url = ('https://raw.githubusercontent.com/'
            'wirelessr/tdcc-opendata-archive/'
@@ -74,25 +69,19 @@ def fetch_archive_date(date):
         if response.status_code != 200:
             return None
         rows = list(csv.DictReader(io.StringIO(response.text.lstrip('\ufeff'))))
-        nr = normalize_rows(rows)
-        # Do not accept a file containing a different observation date.
-        matched = [x for x in nr if x[0] == date]
-        if not matched:
-            return None
-        return {'date': date, 'rows': matched, 'stocks': aggregate(matched)}
+        matched = [x for x in normalize_rows(rows) if x[0] == date]
+        if matched:
+            return {'date': date, 'rows': matched, 'stocks': aggregate(matched)}
     except Exception as exc:
         print('archive date fail', date, exc)
-        return None
+    return None
 
 
 def fetch_latest_archive(reference_date=None):
-    """Find latest archive observation across calendar days (incl. holiday Thursdays)."""
     base = (datetime.strptime(reference_date, '%Y%m%d').date()
             if reference_date else now_tpe().date())
     for back in range(ARCHIVE_LOOKBACK_DAYS + 1):
-        d = base - timedelta(days=back)
-        # TDCC normally publishes weekly; try every day so holidays work too.
-        snap = fetch_archive_date(d.strftime('%Y%m%d'))
+        snap = fetch_archive_date((base - timedelta(days=back)).strftime('%Y%m%d'))
         if snap:
             return snap
     return None
@@ -101,8 +90,7 @@ def fetch_latest_archive(reference_date=None):
 def fetch_archive_before(date):
     dt = datetime.strptime(date, '%Y%m%d').date()
     for back in range(1, 36):
-        d = dt - timedelta(days=back)
-        snap = fetch_archive_date(d.strftime('%Y%m%d'))
+        snap = fetch_archive_date((dt - timedelta(days=back)).strftime('%Y%m%d'))
         if snap:
             return {'date': snap['date'], 'stocks': snap['stocks']}
     return None
@@ -128,15 +116,12 @@ def load_display_names():
 
 def normalize_market_date(value):
     s = str(value or '').strip()
-    if len(s) == 8 and s.isdigit():
-        return f'{s[:4]}-{s[4:6]}-{s[6:8]}'
-    return s
+    return f'{s[:4]}-{s[4:6]}-{s[6:8]}' if len(s) == 8 and s.isdigit() else s
 
 
 def market_history_snapshots():
     out = []
-    files = sorted((ROOT / 'data/history/market').glob('*.json'))
-    for p in files:
+    for p in sorted((ROOT / 'data/history/market').glob('*.json')):
         d = load_json(p, {})
         stocks = d.get('stocks', {})
         date = normalize_market_date(d.get('date') or p.stem)
@@ -152,7 +137,6 @@ def market_snapshot_on_or_before(target_date, snapshots):
 
 
 def latest_valid_price_on_or_before(ticker, target_date, snapshots):
-    """For suspended stocks, carry forward their last valid closing price."""
     target = normalize_market_date(target_date)
     for snap in reversed(snapshots):
         if not snap.get('date') or snap['date'] > target:
@@ -176,26 +160,81 @@ def weekly_price_change_pct(ticker, start_date, end_date, snapshots):
 
 
 def average_turnover_on_or_before(ticker, end_date, snapshots, days=5):
-    """Average turnover over last N available trading snapshots, requiring all N."""
     target = normalize_market_date(end_date)
     values = []
     for snap in reversed(snapshots):
         if not snap.get('date') or snap['date'] > target:
             continue
         row = snap.get('stocks', {}).get(str(ticker), {})
-        turnover = row.get('turnover')
         try:
-            turnover = float(turnover)
-        except Exception:
+            turnover = float(row.get('turnover'))
+        except (TypeError, ValueError):
             continue
         if turnover < 0:
             continue
         values.append(turnover)
         if len(values) >= days:
             break
-    if len(values) < days:
-        return None
-    return sum(values) / days
+    return sum(values) / days if len(values) >= days else None
+
+
+def holder_history_snapshots(latest_date):
+    """Keep source snapshots; backfill missing weekly observations within 62 days."""
+    base = datetime.strptime(latest_date, '%Y%m%d').date()
+    cutoff = (base - timedelta(days=HISTORY_DAYS)).strftime('%Y%m%d')
+    directory = ROOT / 'data/history/holders'
+    snapshots = {}
+    for p in sorted(directory.glob('*.json')):
+        data = load_json(p, {})
+        day = normalized_date(data.get('date') or p.stem)
+        if day and cutoff <= day <= latest_date and data.get('stocks'):
+            snapshots[day] = data
+
+    # One observation per calendar week. Probe Thu/Fri/Sat for holiday weeks.
+    # Do not make requests for weeks that already have a local snapshot.
+    cursor = base
+    checked_weeks = set()
+    while cursor >= base - timedelta(days=HISTORY_DAYS):
+        monday = cursor - timedelta(days=cursor.weekday())
+        key = monday.strftime('%Y%m%d')
+        cursor = monday - timedelta(days=1)
+        if key in checked_weeks:
+            continue
+        checked_weeks.add(key)
+        if any(monday <= datetime.strptime(day, '%Y%m%d').date() < monday + timedelta(days=7)
+               for day in snapshots):
+            continue
+        for weekday in (4, 3, 5, 2):
+            day = monday + timedelta(days=weekday)
+            if day > base or day < base - timedelta(days=HISTORY_DAYS):
+                continue
+            snap = fetch_archive_date(day.strftime('%Y%m%d'))
+            if snap:
+                value = {'date': snap['date'], 'stocks': snap['stocks']}
+                save_json(directory / f"{snap['date']}.json", value)
+                snapshots[snap['date']] = value
+                break
+    return [snapshots[day] for day in sorted(snapshots)]
+
+
+def make_holder_history(snapshots, tickers):
+    """Actual weekly ratios only; no interpolation or delta reconstruction."""
+    result = {}
+    for ticker in sorted(tickers):
+        points = []
+        for snap in snapshots:
+            row = snap.get('stocks', {}).get(ticker)
+            if not row or not row.get('total'):
+                continue
+            r400 = row.get('400_ratio')
+            r1000 = row.get('1000_ratio')
+            if r400 is None or r1000 is None:
+                continue
+            points.append({'date': snap['date'], '400': round(float(r400), 5),
+                           '1000': round(float(r1000), 5)})
+        if points:
+            result[ticker] = points
+    return result
 
 
 def main():
@@ -221,28 +260,21 @@ def main():
     latest = aggregate(rows)
     if not latest:
         raise RuntimeError(f'Empty TDCC holdings snapshot: {date}')
-
-    # Never overwrite newer output with an older snapshot if upstream regresses.
     existing = load_json(ROOT / 'data/holders.json', {})
     existing_date = normalized_date(existing.get('date'))
     if existing_date and existing_date > date:
         print('Keeping newer existing holders.json:', existing_date, '> selected', date)
         return
 
-    save_json(ROOT / f'data/history/holders/{date}.json',
-              {'date': date, 'stocks': latest})
-    files = sorted((ROOT / 'data/history/holders').glob('*.json'))
-    historical = []
-    for p in files:
-        d = load_json(p, {})
-        dd = normalized_date(d.get('date') or p.stem)
-        if dd and dd < date and d.get('stocks'):
-            historical.append((dd, d))
-    prev = max(historical, key=lambda x: x[0])[1] if historical else None
+    save_json(ROOT / f'data/history/holders/{date}.json', {'date': date, 'stocks': latest})
+    snapshots = holder_history_snapshots(date)
+    older = [x for x in snapshots if x['date'] < date]
+    prev = older[-1] if older else None
     if not prev:
         prev = fetch_archive_before(date)
         if prev:
             save_json(ROOT / f"data/history/holders/{prev['date']}.json", prev)
+            snapshots.insert(0, prev)
     print('previous date:', prev.get('date') if prev else 'none')
 
     master = load_json(ROOT / 'data/master.json', {}).get('stocks', {})
@@ -251,10 +283,8 @@ def main():
         raise RuntimeError(f'tech stock universe looks incomplete: {len(tech)}')
     display_names = load_display_names()
     market_hist = market_history_snapshots()
-    price_start = (market_snapshot_on_or_before(prev.get('date'), market_hist)
-                   if prev else None)
-    price_end = (market_snapshot_on_or_before(date, market_hist)
-                 if prev else None)
+    price_start = (market_snapshot_on_or_before(prev.get('date'), market_hist) if prev else None)
+    price_end = (market_snapshot_on_or_before(date, market_hist) if prev else None)
     out = {
         'date': date,
         'previous_date': prev.get('date') if prev else None,
@@ -284,16 +314,14 @@ def main():
             mk = master[t]['market']
             if mk not in ('twse', 'tpex'):
                 continue
-            avg_turnover_5d = average_turnover_on_or_before(
-                t, date, market_hist, TURNOVER_LOOKBACK_DAYS)
+            avg_turnover_5d = average_turnover_on_or_before(t, date, market_hist, TURNOVER_LOOKBACK_DAYS)
             if avg_turnover_5d is None:
                 liquidity_data_missing += 1
                 continue
             if avg_turnover_5d < MIN_AVG_TURNOVER_5D:
                 liquidity_filtered += 1
                 continue
-            week_change_pct = weekly_price_change_pct(
-                t, prev.get('date'), date, market_hist)
+            week_change_pct = weekly_price_change_pct(t, prev.get('date'), date, market_hist)
             for kind in ('400', '1000'):
                 cur = d[f'{kind}_ratio']
                 old = pstocks[t].get(f'{kind}_ratio', 0)
@@ -317,16 +345,22 @@ def main():
                 for i, x in enumerate(arr):
                     x['score'] = round(100 * (len(arr) - i) / max(1, len(arr)), 1)
                 out[mk][kind] = arr
+
+    # Only serialize chart data for ranked stocks to keep holders.json compact.
+    ranked_tickers = {str(x['ticker']) for mk in ('twse', 'tpex')
+                      for kind in ('400', '1000') for x in out[mk][kind]}
+    out['holder_history'] = make_holder_history(snapshots, ranked_tickers)
+    out['holder_history_window_days'] = HISTORY_DAYS
+    out['holder_history_dates'] = [x['date'] for x in snapshots]
     save_json(ROOT / 'data/holders.json', out)
     print('holders', date, 'source', source, 'previous', out['previous_date'],
           'weekly-price', out['price_change_start_date'], '->',
           out['price_change_end_date'], 'universe', len(tech),
           'liquidity-filtered', out.get('liquidity_filtered_count', 0),
           'liquidity-missing', out.get('liquidity_data_missing_count', 0),
-          'twse400', len(out['twse']['400']),
-          'twse1000', len(out['twse']['1000']),
-          'tpex400', len(out['tpex']['400']),
-          'tpex1000', len(out['tpex']['1000']))
+          'twse400', len(out['twse']['400']), 'twse1000', len(out['twse']['1000']),
+          'tpex400', len(out['tpex']['400']), 'tpex1000', len(out['tpex']['1000']),
+          'history-weeks', len(snapshots), 'chart-stocks', len(out['holder_history']))
 
 
 if __name__ == '__main__':
