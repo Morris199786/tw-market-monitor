@@ -3,6 +3,7 @@
   'use strict';
 
   const periods = [5, 10, 20, 60, 120, 240];
+
   const colors = [
     '#ffd54a',
     '#f574dd',
@@ -13,13 +14,20 @@
   ];
 
   const volumePeriods = [5, 20, 60];
+
   const volumeColors = [
     '#ffd54a',
     '#f574dd',
     '#55e4e8'
   ];
 
+  const CHART_HEIGHT = 350;
+  const INITIAL_BARS = 65;
+  const LONG_PRESS_MS = 350;
+  const MOVE_THRESHOLD = 8;
+
   let active = null;
+
   const cache = new Map();
 
   function movingAverage(bars, n, gaps = []) {
@@ -29,9 +37,8 @@
     return bars.map((b, i) => {
       if (
         i &&
-        gaps.some(d =>
-          d > bars[i - 1].time &&
-          d < b.time
+        gaps.some(
+          d => d > bars[i - 1].time && d < b.time
         )
       ) {
         sum = 0;
@@ -69,6 +76,7 @@
         b.high >= Math.max(b.open, b.close);
 
       if (ok) last = b.time;
+
       return ok;
     });
   }
@@ -84,6 +92,7 @@
     if (document.getElementById('dailyKStyle')) return;
 
     const el = document.createElement('style');
+
     el.id = 'dailyKStyle';
 
     el.textContent = `
@@ -234,9 +243,8 @@
       #dailyKHost .dk-tools {
         display: grid;
         grid-template-columns:
-          1.5fr 1.2fr
-          repeat(5, minmax(0, 0.65fr));
-        gap: 3px;
+          repeat(4, minmax(0, 1fr));
+        gap: 4px;
         margin: 5px 0 2px;
       }
 
@@ -252,9 +260,8 @@
         cursor: pointer;
       }
 
-      #dailyKHost button[aria-pressed="true"] {
+      #dailyKHost button:active {
         background: #315b88;
-        border-color: #8ac4ff;
       }
 
       #dailyKHost canvas {
@@ -262,7 +269,15 @@
         width: 100%;
         height: 350px;
         touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
         outline: none;
+        cursor: grab;
+      }
+
+      #dailyKHost canvas:active {
+        cursor: grabbing;
       }
 
       #dailyKHost canvas:focus-visible {
@@ -322,7 +337,7 @@
         }
 
         #dailyKHost button {
-          font-size: 10px;
+          font-size: 11px;
           padding: 3px 2px;
         }
       }
@@ -375,6 +390,7 @@
 
   function renderQuote(host, ticker, metadata, bars) {
     const latest = bars[bars.length - 1];
+
     const previous =
       bars.length > 1 ? bars[bars.length - 2] : null;
 
@@ -422,6 +438,7 @@
 
     const setText = (selector, value) => {
       const element = header.querySelector(selector);
+
       if (element) element.textContent = value;
     };
 
@@ -538,14 +555,12 @@
   }
 
   function create(host, ticker, bars, metadata, token) {
+    const gaps = metadata.missing_dates || [];
+
     const ma = Object.fromEntries(
       periods.map(n => [
         n,
-        movingAverage(
-          bars,
-          n,
-          metadata.missing_dates || []
-        )
+        movingAverage(bars, n, gaps)
       ])
     );
 
@@ -557,32 +572,30 @@
     const vma = Object.fromEntries(
       volumePeriods.map(n => [
         n,
-        movingAverage(
-          volumeBars,
-          n,
-          metadata.missing_dates || []
-        )
+        movingAverage(volumeBars, n, gaps)
       ])
     );
 
     const enabled = new Set(periods);
 
-    let count = Math.min(65, bars.length);
+    let count = Math.min(INITIAL_BARS, bars.length);
     let end = bars.length;
+
     let selected = bars.length - 1;
     let crossY = null;
-    let mode = 'inspect';
     let inspecting = false;
 
     let size = {
       w: 400,
-      h: 350
+      h: CHART_HEIGHT
     };
 
     let frame = 0;
+
     const pointers = new Map();
 
-    let drag = null;
+    let gesture = null;
+    let longPressTimer = null;
     let pinch = null;
 
     host.innerHTML = `
@@ -651,38 +664,26 @@
       </div>
 
       <div class="dk-tools">
-        <button data-tool="inspect" aria-pressed="true">
-          十字線
-        </button>
-
-        <button data-tool="pan" aria-pressed="false">
-          平移
-        </button>
-
         <button data-tool="in" aria-label="放大日K">
-          ＋
+          ＋ 放大
         </button>
 
         <button data-tool="out" aria-label="縮小日K">
-          －
-        </button>
-
-        <button data-tool="left" aria-label="較早行情">
-          ◀
-        </button>
-
-        <button data-tool="right" aria-label="較新行情">
-          ▶
+          － 縮小
         </button>
 
         <button data-tool="reset">
           最新
         </button>
+
+        <button data-tool="clear">
+          清除查價
+        </button>
       </div>
 
       <canvas
         tabindex="0"
-        aria-label="日K及成交量，十字查價、縮放、平移"
+        aria-label="日K及成交量，左右滑動平移，長按十字查價，雙指縮放"
       ></canvas>
 
       <div class="dk-note"></div>
@@ -702,8 +703,10 @@
     const ctx = canvas.getContext('2d');
 
     function bounds() {
+      const minCount = Math.min(10, bars.length);
+
       count = Math.max(
-        Math.min(10, bars.length),
+        minCount,
         Math.min(bars.length, Math.round(count))
       );
 
@@ -714,6 +717,8 @@
     }
 
     function schedule() {
+      if (token.dead) return;
+
       if (!frame) {
         frame = requestAnimationFrame(() => {
           frame = 0;
@@ -879,6 +884,7 @@
       );
 
       ctx.save();
+
       ctx.beginPath();
 
       ctx.rect(
@@ -1027,10 +1033,11 @@
         ctx.beginPath();
         ctx.moveTo(x, top);
         ctx.lineTo(x, vbottom);
+
         ctx.moveTo(left, cy);
         ctx.lineTo(right, cy);
-        ctx.stroke();
 
+        ctx.stroke();
         ctx.setLineDash([]);
 
         const label =
@@ -1107,23 +1114,59 @@
     }
 
     function zoom(factor, anchor = 0.5) {
-      const old = count;
-      const start = end - count;
-      const pivot = start + old * anchor;
+      bounds();
+
+      const oldCount = count;
+      const oldStart = end - count;
+
+      const a = Math.max(0, Math.min(1, anchor));
+
+      const pivot = oldStart + oldCount * a;
 
       count = Math.max(
         Math.min(10, bars.length),
         Math.min(
           bars.length,
-          Math.round(old * factor)
+          Math.round(oldCount * factor)
         )
       );
 
       end = Math.round(
-        pivot + count * (1 - anchor)
+        pivot + count * (1 - a)
       );
 
       bounds();
+
+      if (inspecting) {
+        const start = end - count;
+
+        if (selected < start || selected >= end) {
+          inspecting = false;
+          crossY = null;
+        }
+      }
+
+      schedule();
+    }
+
+    function panByPixels(deltaX, originEnd, originCount) {
+      const plotWidth = Math.max(1, size.w - 61);
+      const pixelsPerBar = plotWidth / originCount;
+
+      /*
+       * 手指往右：看更早的行情，end 減少
+       * 手指往左：看更新的行情，end 增加
+       *
+       * 固定使用拖動開始時的比例，避免跳動
+       */
+      const barsMoved = Math.round(
+        deltaX / pixelsPerBar
+      );
+
+      end = originEnd - barsMoved;
+
+      bounds();
+
       schedule();
     }
 
@@ -1137,6 +1180,8 @@
     };
 
     function inspect(p) {
+      bounds();
+
       const g = geometry();
 
       selected = Math.max(
@@ -1154,127 +1199,332 @@
       schedule();
     }
 
+    function clearLongPress() {
+      if (longPressTimer != null) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    }
+
+    function clearInspect() {
+      inspecting = false;
+      crossY = null;
+
+      schedule();
+    }
+
+    function startLongPress(pointerId) {
+      clearLongPress();
+
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+
+        if (
+          token.dead ||
+          !gesture ||
+          pointers.size !== 1 ||
+          gesture.pointerId !== pointerId ||
+          gesture.moved
+        ) {
+          return;
+        }
+
+        gesture.type = 'inspect';
+
+        const p = pointers.get(pointerId);
+
+        if (p) inspect(p);
+
+      }, LONG_PRESS_MS);
+    }
+
+    function pointerDistance(a, b) {
+      return Math.hypot(
+        a.x - b.x,
+        a.y - b.y
+      );
+    }
+
+    function beginPinch() {
+      clearLongPress();
+
+      if (pointers.size < 2) return;
+
+      const points = [...pointers.values()];
+
+      const distance = pointerDistance(
+        points[0],
+        points[1]
+      );
+
+      const midpointX =
+        (points[0].x + points[1].x) / 2;
+
+      const g = geometry();
+
+      const anchor = Math.max(
+        0,
+        Math.min(
+          1,
+          (midpointX - g.left) /
+          Math.max(1, g.right - g.left)
+        )
+      );
+
+      pinch = {
+        distance: Math.max(1, distance),
+        count,
+        end,
+        anchor,
+        pivot: (end - count) + count * anchor
+      };
+
+      gesture = null;
+
+      clearInspect();
+    }
+
+    function updatePinch() {
+      if (!pinch || pointers.size < 2) return;
+
+      const points = [...pointers.values()];
+
+      const distance = pointerDistance(
+        points[0],
+        points[1]
+      );
+
+      if (distance <= 1) return;
+
+      const minCount = Math.min(10, bars.length);
+
+      count = Math.max(
+        minCount,
+        Math.min(
+          bars.length,
+          Math.round(
+            pinch.count *
+            pinch.distance /
+            distance
+          )
+        )
+      );
+
+      end = Math.round(
+        pinch.pivot +
+        count * (1 - pinch.anchor)
+      );
+
+      bounds();
+
+      schedule();
+    }
+
     canvas.onpointerdown = e => {
+      if (token.dead) return;
+
       e.preventDefault();
-      canvas.setPointerCapture(e.pointerId);
+
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch (_) {}
 
       const p = local(e);
+
       pointers.set(e.pointerId, p);
 
-      if (pointers.size === 1) {
-        drag = {
-          x: p.x,
-          end
-        };
-
-        if (mode === 'inspect') {
-          inspect(p);
-        }
+      if (pointers.size >= 2) {
+        beginPinch();
+        return;
       }
 
-      if (pointers.size === 2) {
-        const a = [...pointers.values()];
+      if (e.pointerType === 'mouse' && e.button !== 0) {
+        return;
+      }
 
-        pinch = {
-          distance: Math.hypot(
-            a[0].x - a[1].x,
-            a[0].y - a[1].y
-          ),
-          count,
-          end
-        };
+      gesture = {
+        pointerId: e.pointerId,
+        startX: p.x,
+        startY: p.y,
+        originEnd: end,
+        originCount: count,
+        type: 'pending',
+        moved: false
+      };
+
+      /*
+       * 手機：長按查價
+       * 滑動：直接平移
+       */
+      if (e.pointerType !== 'mouse') {
+        startLongPress(e.pointerId);
       }
     };
 
     canvas.onpointermove = e => {
+      if (token.dead) return;
+
       const p = local(e);
 
-      if (pointers.has(e.pointerId)) {
+      const hasPointer = pointers.has(e.pointerId);
+
+      if (hasPointer) {
         pointers.set(e.pointerId, p);
       }
 
+      if (pointers.size >= 2) {
+        updatePinch();
+        return;
+      }
+
+      /*
+       * 桌面滑鼠未按下時：
+       * 保留滑鼠移動查價的便利性
+       */
       if (
-        pointers.size >= 2 &&
-        pinch
+        !hasPointer &&
+        e.pointerType === 'mouse'
       ) {
-        const a = [...pointers.values()];
+        inspect(p);
+        return;
+      }
 
-        const distance = Math.hypot(
-          a[0].x - a[1].x,
-          a[0].y - a[1].y
+      if (
+        !gesture ||
+        gesture.pointerId !== e.pointerId
+      ) {
+        return;
+      }
+
+      const dx = p.x - gesture.startX;
+      const dy = p.y - gesture.startY;
+
+      if (gesture.type === 'inspect') {
+        inspect(p);
+        return;
+      }
+
+      if (
+        gesture.type === 'pending' &&
+        Math.hypot(dx, dy) >= MOVE_THRESHOLD
+      ) {
+        gesture.moved = true;
+        gesture.type = 'pan';
+
+        clearLongPress();
+
+        /*
+         * 開始平移時移除舊十字線，
+         * 避免十字線停在畫面中央
+         */
+        inspecting = false;
+        crossY = null;
+      }
+
+      if (gesture.type === 'pan') {
+        panByPixels(
+          dx,
+          gesture.originEnd,
+          gesture.originCount
         );
+      }
+    };
 
-        if (distance > 8) {
-          count = pinch.count;
-          end = pinch.end;
+    function releasePointer(e) {
+      clearLongPress();
 
-          zoom(
-            pinch.distance / distance,
-            (a[0].x + a[1].x) /
-            2 / size.w
-          );
+      const p = pointers.get(e.pointerId);
+
+      pointers.delete(e.pointerId);
+
+      if (pinch) {
+        if (pointers.size < 2) {
+          pinch = null;
+        }
+
+        if (pointers.size === 1) {
+          const [id, remaining] =
+            [...pointers.entries()][0];
+
+          gesture = {
+            pointerId: id,
+            startX: remaining.x,
+            startY: remaining.y,
+            originEnd: end,
+            originCount: count,
+            type: 'pending',
+            moved: false
+          };
         }
 
         return;
       }
 
       if (
-        pointers.size === 1 &&
-        mode === 'pan' &&
-        drag
+        gesture &&
+        gesture.pointerId === e.pointerId
       ) {
-        end =
-          drag.end -
-          Math.round(
-            (p.x - drag.x) /
-            geometry().step
-          );
+        /*
+         * 單擊 K 線：
+         * 顯示該根 K 棒的查價資料
+         *
+         * 長按查價後放開：
+         * 保留十字線
+         *
+         * 平移後放開：
+         * 保留目前圖表位置
+         */
+        if (
+          gesture.type === 'pending' &&
+          p &&
+          e.type !== 'pointercancel'
+        ) {
+          inspect(p);
+        }
 
-        bounds();
-        crossY = null;
-        inspecting = false;
-
-        schedule();
-
-      } else if (
-        mode === 'inspect' &&
-        (
-          pointers.size === 1 ||
-          e.pointerType === 'mouse'
-        )
-      ) {
-        inspect(p);
+        gesture = null;
       }
+
+      schedule();
+    }
+
+    canvas.onpointerup = releasePointer;
+    canvas.onpointercancel = releasePointer;
+
+    /*
+     * 防止 iPhone Safari 長按時
+     * 出現系統選取選單
+     */
+    const preventContextMenu = e => {
+      e.preventDefault();
     };
 
-    const release = e => {
-      pointers.delete(e.pointerId);
+    canvas.addEventListener(
+      'contextmenu',
+      preventContextMenu
+    );
 
-      pinch = null;
-      drag = null;
-
-      if (pointers.size === 1) {
-        const p = [...pointers.values()][0];
-
-        drag = {
-          x: p.x,
-          end
-        };
-      }
-    };
-
-    canvas.onpointerup = release;
-    canvas.onpointercancel = release;
-
+    /*
+     * 桌面滑鼠滾輪縮放
+     */
     const wheel = e => {
       e.preventDefault();
 
+      const g = geometry();
+      const p = local(e);
+
+      const anchor = Math.max(
+        0,
+        Math.min(
+          1,
+          (p.x - g.left) /
+          Math.max(1, g.right - g.left)
+        )
+      );
+
       zoom(
         e.deltaY > 0 ? 1.15 : 1 / 1.15,
-        Math.max(
-          0,
-          Math.min(1, local(e).x / size.w)
-        )
+        anchor
       );
     };
 
@@ -1284,9 +1534,14 @@
       { passive: false }
     );
 
+    /*
+     * 鍵盤操作：
+     * 左右方向鍵移動查價位置
+     * ＋／－縮放
+     */
     canvas.onkeydown = e => {
       if (
-        [
+        ![
           'ArrowLeft',
           'ArrowRight',
           '+',
@@ -1294,93 +1549,96 @@
           '='
         ].includes(e.key)
       ) {
-        e.preventDefault();
-
-        if (
-          e.key === '+' ||
-          e.key === '='
-        ) {
-          zoom(0.8);
-
-        } else if (e.key === '-') {
-          zoom(1.25);
-
-        } else {
-          selected = Math.max(
-            0,
-            Math.min(
-              bars.length - 1,
-              selected +
-              (e.key === 'ArrowLeft' ? -1 : 1)
-            )
-          );
-
-          if (selected < end - count) {
-            end = selected + count;
-          }
-
-          if (selected >= end) {
-            end = selected + 1;
-          }
-
-          crossY = null;
-          inspecting = true;
-
-          schedule();
-        }
+        return;
       }
+
+      e.preventDefault();
+
+      if (
+        e.key === '+' ||
+        e.key === '='
+      ) {
+        zoom(0.8);
+        return;
+      }
+
+      if (e.key === '-') {
+        zoom(1.25);
+        return;
+      }
+
+      selected = Math.max(
+        0,
+        Math.min(
+          bars.length - 1,
+          selected +
+          (e.key === 'ArrowLeft' ? -1 : 1)
+        )
+      );
+
+      if (selected < end - count) {
+        end = selected + count;
+      }
+
+      if (selected >= end) {
+        end = selected + 1;
+      }
+
+      bounds();
+
+      crossY = null;
+      inspecting = true;
+
+      schedule();
     };
 
+    /*
+     * 按鈕：
+     * 不再有十字線／平移模式切換
+     */
     host.querySelectorAll(
       '[data-tool]'
     ).forEach(button => {
       button.onclick = () => {
         const t = button.dataset.tool;
 
-        if (
-          t === 'inspect' ||
-          t === 'pan'
-        ) {
-          mode = t;
-
-          host.querySelectorAll(
-            '[aria-pressed]'
-          ).forEach(x => {
-            x.setAttribute(
-              'aria-pressed',
-              String(x.dataset.tool === t)
-            );
-          });
-
-        } else if (t === 'in') {
+        if (t === 'in') {
           zoom(0.8);
+          return;
+        }
 
-        } else if (t === 'out') {
+        if (t === 'out') {
           zoom(1.25);
+          return;
+        }
 
-        } else {
-          if (t === 'reset') {
-            count = Math.min(65, bars.length);
-            end = bars.length;
-            selected = bars.length - 1;
-            inspecting = false;
+        if (t === 'reset') {
+          count = Math.min(
+            INITIAL_BARS,
+            bars.length
+          );
 
-          } else {
-            end +=
-              (t === 'left' ? -1 : 1) *
-              Math.max(1, Math.round(count * 0.5));
+          end = bars.length;
+          selected = bars.length - 1;
 
-            inspecting = false;
-          }
-
-          bounds();
+          inspecting = false;
           crossY = null;
 
+          bounds();
           schedule();
+
+          return;
+        }
+
+        if (t === 'clear') {
+          clearInspect();
         }
       };
     });
 
+    /*
+     * 均線開關
+     */
     host.querySelectorAll(
       '[data-ma]'
     ).forEach(button => {
@@ -1397,16 +1655,29 @@
       };
     });
 
+    /*
+     * Canvas 尺寸
+     */
     const resize = new ResizeObserver(() => {
+      if (token.dead) return;
+
       size = {
-        w: Math.max(220, canvas.clientWidth),
-        h: 350
+        w: Math.max(
+          220,
+          canvas.clientWidth
+        ),
+        h: CHART_HEIGHT
       };
 
       const dpr = window.devicePixelRatio || 1;
 
-      canvas.width = Math.round(size.w * dpr);
-      canvas.height = Math.round(size.h * dpr);
+      canvas.width = Math.round(
+        size.w * dpr
+      );
+
+      canvas.height = Math.round(
+        size.h * dpr
+      );
 
       ctx.setTransform(
         dpr,
@@ -1422,17 +1693,42 @@
 
     resize.observe(canvas);
 
+    /*
+     * 關閉個股視窗時，
+     * 清除計時器、事件與繪圖排程
+     */
     token.cleanup = () => {
       token.dead = true;
+
+      clearLongPress();
 
       resize.disconnect();
 
       if (frame) {
         cancelAnimationFrame(frame);
+        frame = 0;
       }
 
-      canvas.removeEventListener('wheel', wheel);
+      canvas.removeEventListener(
+        'wheel',
+        wheel
+      );
+
+      canvas.removeEventListener(
+        'contextmenu',
+        preventContextMenu
+      );
+
+      canvas.onpointerdown = null;
+      canvas.onpointermove = null;
+      canvas.onpointerup = null;
+      canvas.onpointercancel = null;
+      canvas.onkeydown = null;
+
       pointers.clear();
+
+      gesture = null;
+      pinch = null;
     };
   }
 
