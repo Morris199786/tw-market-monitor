@@ -433,6 +433,13 @@ async function home(force = false) {
 
 /* ----------------------------- 籌碼日報 ----------------------------- */
 
+/*
+ * 新增：
+ * 1. 買超／賣超排行榜個股可以點擊
+ * 2. 共用熱力圖個股視窗
+ * 3. 不影響其他排行榜的 stock() 顯示方式
+ */
+
 async function flows(force = false) {
   const d = await J(
     "./data/institutional.json",
@@ -489,7 +496,31 @@ async function flows(force = false) {
               : ""
           }">
             <td>
-              ${stock(x, i + 1)}
+              <button
+                type="button"
+                class="flow-stock-open"
+                data-flow-ticker="${String(x.ticker || "").replace(/[&<>"']/g, c => ({
+                  "&": "&amp;",
+                  "<": "&lt;",
+                  ">": "&gt;",
+                  '"': "&quot;",
+                  "'": "&#39;"
+                }[c]))}"
+                aria-label="查看個股日 K 與籌碼"
+                style="
+                  display:block;
+                  width:100%;
+                  border:0;
+                  padding:0;
+                  background:transparent;
+                  color:inherit;
+                  text-align:left;
+                  font:inherit;
+                  cursor:pointer
+                "
+              >
+                ${stock(x, i + 1)}
+              </button>
 
               <div class="mobile-meta">
                 ${Math.round(
@@ -537,6 +568,33 @@ async function flows(force = false) {
       rows(g.sell);
   }
 }
+
+/*
+ * 使用事件委派：
+ * flows() 每次重新渲染排行榜，
+ * 都不需要重複註冊事件
+ */
+document.addEventListener("click", event => {
+  const button = event.target.closest?.(
+    "#buyRows .flow-stock-open, #sellRows .flow-stock-open"
+  );
+
+  if (!button) return;
+
+  const ticker = String(
+    button.dataset.flowTicker || ""
+  ).trim();
+
+  if (!ticker) return;
+
+  if (typeof window.openStockDetail === "function") {
+    window.openStockDetail(ticker, "", "flows");
+  } else {
+    console.error(
+      "[籌碼日報] 個股視窗元件尚未載入"
+    );
+  }
+});
 
 $$("[data-period]").forEach(b => {
   b.onclick = () => {
@@ -906,6 +964,7 @@ $$("[data-turn]").forEach(b => {
   };
 });
 
+/* ----------------------------- 大戶籌碼 ----------------------------- */
 /* ----------------------------- 大戶籌碼 ----------------------------- */
 
 /* 大戶近兩個月週資料；沿用 holders.json 的實際集保快照 */
@@ -1618,30 +1677,37 @@ async function ai(force = false) {
                         `
                         : ""
                     }
+
+                    ${
+                      x.raw
+                        .turnover_ratio_5d !==
+                      undefined
+                        ? `
+                          <div>
+                            5日成交熱度：
+                            ${Number(
+                              x.raw
+                                .turnover_ratio_5d ||
+                                0
+                            ).toFixed(2)}x
+                          </div>
+                        `
+                        : ""
+                    }
                   </div>
                 `
                 : ""
             }
-
-            <div
-              style="
-                margin-top:10px;
-                font-size:10px;
-                line-height:1.6;
-                color:var(--muted)
-              "
-            >
-              分數僅代表同市場追蹤股的相對強弱，不代表未來上漲機率
-            </div>
           </div>
         </div>
       `
     )
     .join("");
 
-  $$(".aicard").forEach(card => {
-    card.onclick = () =>
-      card.classList.toggle("open");
+  box.querySelectorAll(".aicard").forEach(card => {
+    card.addEventListener("click", () => {
+      card.classList.toggle("expanded");
+    });
   });
 }
 
@@ -1657,6 +1723,8 @@ $$("[data-aim]").forEach(b => {
     ai();
   };
 });
+
+/* ----------------------------- 月營收 ----------------------------- */
 /* ----------------------------- 市場熱力圖 ----------------------------- */
 /*
  * 期間：
@@ -1971,7 +2039,6 @@ function heatStockReturn(
 
   return heatLastNumber(values);
 }
-
 /* -------------------- 族群期間漲跌幅 -------------------- */
 
 function heatSectorReturn(
@@ -2013,32 +2080,20 @@ function heatSectorReturn(
 
   const weights =
     weightMode === "capped"
-      ? heatCappedWeights(
-          usable
-        )
-      : heatMarketWeights(
-          usable
-        );
+      ? heatCappedWeights(usable)
+      : heatMarketWeights(usable);
 
   let total = 0;
   let used = 0;
 
   usable.forEach(x => {
-    const w =
-      Number(
-        weights.get(x.ticker)
-      );
+    const w = Number(weights.get(x.ticker));
 
-    if (
-      !Number.isFinite(w) ||
-      w <= 0
-    ) {
+    if (!Number.isFinite(w) || w <= 0) {
       return;
     }
 
-    total +=
-      x.value * w;
-
+    total += x.value * w;
     used += w;
   });
 
@@ -2048,20 +2103,6 @@ function heatSectorReturn(
 }
 
 /* -------------------- 大盤／OTC 同期漲跌幅 -------------------- */
-
-/*
- * 當日：
- * 優先使用 heatmap.json 的盤中即時指數
- *
- * 5 / 10 / 20 日：
- * 若後端提供對應期間基準價，
- * 使用最新指數直接計算
- *
- * 若沒有基準價：
- * 使用原本歷史報酬率資料
- *
- * 不使用昨天的當日漲跌幅冒充盤中數字
- */
 
 function heatBenchmarkReturn(
   period = st.heatPeriod,
@@ -2111,10 +2152,7 @@ function heatBenchmarkReturn(
   }
 
   const values =
-    history
-      ?.returns_by_period?.[
-        period
-      ] ||
+    history?.returns_by_period?.[period] ||
     (
       period === "5"
         ? history?.returns
@@ -2151,9 +2189,7 @@ function heatPeriodClass(
   if (
     value === null ||
     value === undefined ||
-    !Number.isFinite(
-      Number(value)
-    )
+    !Number.isFinite(Number(value))
   ) {
     return "gray";
   }
@@ -2162,9 +2198,7 @@ function heatPeriodClass(
   const a = Math.abs(n);
 
   const t =
-    heatPeriodThresholds(
-      period
-    );
+    heatPeriodThresholds(period);
 
   const level =
     a >= t[3]
@@ -2183,25 +2217,17 @@ function heatPeriodClass(
 /* -------------------- 熱力圖控制列 -------------------- */
 
 function ensureHeatPeriodUi() {
-  const grid =
-    $("#heatGrid");
+  const grid = $("#heatGrid");
 
   if (!grid) return;
 
-  let wrap =
-    $("#heatPeriodWrap");
+  let wrap = $("#heatPeriodWrap");
 
   if (!wrap) {
-    wrap =
-      document.createElement(
-        "div"
-      );
+    wrap = document.createElement("div");
 
-    wrap.id =
-      "heatPeriodWrap";
-
-    wrap.className =
-      "heat-period-wrap";
+    wrap.id = "heatPeriodWrap";
+    wrap.className = "heat-period-wrap";
 
     wrap.innerHTML = `
       <div class="heat-control-row">
@@ -2249,9 +2275,7 @@ function ensureHeatPeriodUi() {
       </div>
 
       <div class="heat-period-meta">
-        <span
-          id="heatWeightDescription"
-        ></span>
+        <span id="heatWeightDescription"></span>
 
         <span
           id="heatPeriodBenchmark"
@@ -2279,25 +2303,19 @@ function ensureHeatPeriodUi() {
         if (periodButton) {
           const next =
             String(
-              periodButton
-                .dataset
-                .heatPeriod ||
+              periodButton.dataset.heatPeriod ||
               "1"
             );
 
           if (
             !HEAT_PERIODS.some(
-              ([key]) =>
-                key === next
+              ([key]) => key === next
             )
           ) {
             return;
           }
 
-          if (
-            next ===
-            st.heatPeriod
-          ) {
+          if (next === st.heatPeriod) {
             return;
           }
 
@@ -2307,28 +2325,19 @@ function ensureHeatPeriodUi() {
             next !== "1" &&
             !heatDetailData
           ) {
-            await loadHeatDetail(
-              false
-            );
+            await loadHeatDetail(false);
           }
 
-          renderHeat(
-            cache.heat || {}
-          );
+          renderHeat(cache.heat || {});
 
           window.dispatchEvent(
             new CustomEvent(
               "heatmap:period-changed",
               {
                 detail: {
-                  period:
-                    st.heatPeriod,
-
-                  label:
-                    heatPeriodLabel(),
-
-                  weightMode:
-                    st.heatWeightMode
+                  period: st.heatPeriod,
+                  label: heatPeriodLabel(),
+                  weightMode: st.heatWeightMode
                 }
               }
             )
@@ -2347,48 +2356,34 @@ function ensureHeatPeriodUi() {
         if (weightButton) {
           const nextMode =
             String(
-              weightButton
-                .dataset
-                .heatWeight ||
+              weightButton.dataset.heatWeight ||
               "market"
             );
 
           if (
             !HEAT_WEIGHT_MODES.some(
-              ([key]) =>
-                key === nextMode
+              ([key]) => key === nextMode
             )
           ) {
             return;
           }
 
-          if (
-            nextMode ===
-            st.heatWeightMode
-          ) {
+          if (nextMode === st.heatWeightMode) {
             return;
           }
 
-          st.heatWeightMode =
-            nextMode;
+          st.heatWeightMode = nextMode;
 
-          renderHeat(
-            cache.heat || {}
-          );
+          renderHeat(cache.heat || {});
 
           window.dispatchEvent(
             new CustomEvent(
               "heatmap:weight-changed",
               {
                 detail: {
-                  period:
-                    st.heatPeriod,
-
-                  weightMode:
-                    st.heatWeightMode,
-
-                  label:
-                    heatWeightModeLabel()
+                  period: st.heatPeriod,
+                  weightMode: st.heatWeightMode,
+                  label: heatWeightModeLabel()
                 }
               }
             )
@@ -2399,27 +2394,21 @@ function ensureHeatPeriodUi() {
   }
 
   wrap
-    .querySelectorAll(
-      "[data-heat-period]"
-    )
+    .querySelectorAll("[data-heat-period]")
     .forEach(button => {
       button.classList.toggle(
         "active",
-        button.dataset
-          .heatPeriod ===
+        button.dataset.heatPeriod ===
           st.heatPeriod
       );
     });
 
   wrap
-    .querySelectorAll(
-      "[data-heat-weight]"
-    )
+    .querySelectorAll("[data-heat-weight]")
     .forEach(button => {
       button.classList.toggle(
         "active",
-        button.dataset
-          .heatWeight ===
+        button.dataset.heatWeight ===
           st.heatWeightMode
       );
     });
@@ -2429,8 +2418,7 @@ function ensureHeatPeriodUi() {
 
   if (description) {
     description.textContent =
-      st.heatWeightMode ===
-      "capped"
+      st.heatWeightMode === "capped"
         ? "權重上限｜依族群家數限制單一個股最高權重"
         : "市值加權｜完全依公司實際市值占比計算";
   }
@@ -2479,826 +2467,3 @@ function ensureHeatPeriodUi() {
     `;
   }
 }
-
-/* -------------------- 展開族群個股 -------------------- */
-
-function heatDetail(
-  sec,
-  sectorValue
-) {
-  const period =
-    st.heatPeriod;
-
-  const stocks =
-    [...(sec.stocks || [])]
-      .map(stock => ({
-        ...stock,
-
-        _periodReturn:
-          heatStockReturn(
-            stock,
-            period
-          )
-      }))
-      .sort((a, b) => {
-        const av =
-          a._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              a._periodReturn
-            )
-          )
-            ? Number(
-                a._periodReturn
-              )
-            : -999999;
-
-        const bv =
-          b._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              b._periodReturn
-            )
-          )
-            ? Number(
-                b._periodReturn
-              )
-            : -999999;
-
-        return bv - av;
-      });
-
-  return `
-    <div
-      class="heat-detail"
-      data-sector="${sec.name}"
-    >
-      <div class="heat-detail-head">
-
-        <b>
-          ${sec.name}
-
-          <span
-            class="${cl(
-              sectorValue
-            )}"
-          >
-            ${pct(
-              sectorValue
-            )}
-          </span>
-        </b>
-
-        <span>
-          ${stocks.length} 檔｜
-          依${heatPeriodLabel(
-            period
-          )}漲跌幅排序｜
-          ${heatWeightModeLabel()}
-        </span>
-
-      </div>
-
-      <div class="heat-stock-list">
-
-        ${stocks
-          .map(
-            x => `
-              <div
-                class="heat-stock"
-                data-ticker="${x.ticker}"
-                data-sector="${sec.name}"
-                data-period-return="${
-                  x._periodReturn !== null &&
-                  Number.isFinite(
-                    Number(
-                      x._periodReturn
-                    )
-                  )
-                    ? x._periodReturn
-                    : ""
-                }"
-              >
-                <div>
-                  <span class="n">
-                    ${displayName(x)}
-                  </span>
-
-                  <span class="t">
-                    ${x.ticker}
-                  </span>
-                </div>
-
-                <span
-                  class="v ${
-                    x._periodReturn === null
-                      ? ""
-                      : cl(x._periodReturn)
-                  }"
-                >
-                  ${pct(
-                    x._periodReturn
-                  )}
-                </span>
-              </div>
-            `
-          )
-          .join("")}
-
-      </div>
-    </div>
-  `;
-}
-
-/* -------------------- 熱力圖 render -------------------- */
-
-function renderHeat(
-  d,
-  options = {}
-) {
-  if (
-    !d ||
-    !Array.isArray(d.sectors) ||
-    !d.sectors.length
-  ) {
-    return;
-  }
-
-  cache.heat = d;
-
-  if ($("#heatTime")) {
-    $("#heatTime").textContent =
-      d.updated_at ||
-      "尚無資料";
-  }
-
-  const box =
-    $("#heatGrid");
-
-  if (!box) return;
-
-  ensureHeatPeriodUi();
-
-  const mobileHeat =
-    window.matchMedia(
-      "(max-width: 720px)"
-    ).matches;
-
-  box.style.gridAutoRows =
-    mobileHeat &&
-    st.openSector
-      ? "auto"
-      : "";
-
-  /*
-   * 先記錄目前畫面上的族群順序
-   *
-   * 點擊展開/收合時使用
-   * 避免族群位置跳動
-   */
-
-  const currentOrder =
-    [
-      ...box.querySelectorAll(
-        "button.heat[data-sec]"
-      )
-    ]
-      .map(
-        button =>
-          button.dataset.sec
-      )
-      .filter(Boolean);
-
-  let sectors =
-    [...(d.sectors || [])]
-      .map(sec => ({
-        ...sec,
-
-        _periodReturn:
-          heatSectorReturn(
-            sec,
-            st.heatPeriod,
-            st.heatWeightMode
-          )
-      }));
-
-  /*
-   * 只有展開/收合時 preserveOrder
-   *
-   * 切換：
-   * - 當日 / 5日 / 10日 / 20日
-   * - 市值加權 / 權重上限
-   *
-   * 都會依新的族群漲跌幅重新排序
-   */
-
-  if (
-    options.preserveOrder &&
-    currentOrder.length
-  ) {
-    const orderMap =
-      new Map(
-        currentOrder.map(
-          (name, index) => [
-            name,
-            index
-          ]
-        )
-      );
-
-    sectors.sort(
-      (a, b) => {
-        const ai =
-          orderMap.has(a.name)
-            ? orderMap.get(a.name)
-            : Number
-                .MAX_SAFE_INTEGER;
-
-        const bi =
-          orderMap.has(b.name)
-            ? orderMap.get(b.name)
-            : Number
-                .MAX_SAFE_INTEGER;
-
-        if (ai !== bi) {
-          return ai - bi;
-        }
-
-        const av =
-          a._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              a._periodReturn
-            )
-          )
-            ? Number(
-                a._periodReturn
-              )
-            : -999999;
-
-        const bv =
-          b._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              b._periodReturn
-            )
-          )
-            ? Number(
-                b._periodReturn
-              )
-            : -999999;
-
-        return bv - av;
-      }
-    );
-  } else {
-    sectors.sort(
-      (a, b) => {
-        const av =
-          a._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              a._periodReturn
-            )
-          )
-            ? Number(
-                a._periodReturn
-              )
-            : -999999;
-
-        const bv =
-          b._periodReturn !== null &&
-          Number.isFinite(
-            Number(
-              b._periodReturn
-            )
-          )
-            ? Number(
-                b._periodReturn
-              )
-            : -999999;
-
-        return bv - av;
-      }
-    );
-  }
-
-  if (!sectors.length) {
-    box.innerHTML = `
-      <div class="empty">
-        目前沒有熱力圖資料
-      </div>
-    `;
-
-    return;
-  }
-
-  let html = "";
-
-  sectors.forEach(
-    (x, i) => {
-      html += `
-        <button
-          class="
-            heat
-            ${
-              i === 1
-                ? "s5 tall"
-                : i === 11
-                  ? "s6 tall"
-                  : i % 3 === 0
-                    ? "s4"
-                    : "s3"
-            }
-            ${heatPeriodClass(
-              x._periodReturn,
-              st.heatPeriod
-            )}
-          "
-          data-sec="${x.name}"
-          data-period-return="${
-            x._periodReturn !== null &&
-            Number.isFinite(
-              Number(
-                x._periodReturn
-              )
-            )
-              ? x._periodReturn
-              : ""
-          }"
-          style="min-height:100px"
-        >
-          <b>
-            ${x.name}
-          </b>
-
-          <strong>
-            ${pct(
-              x._periodReturn
-            )}
-          </strong>
-
-          <small>
-            ${
-              x.complete
-                ? `${
-                    x.stocks
-                      ?.length || 0
-                  }檔`
-                : `${
-                    x.stocks
-                      ?.length || 0
-                  }檔 · 市值待補${
-                    x.missing
-                      ?.length || 0
-                  }`
-            }
-          </small>
-        </button>
-      `;
-
-      if (
-        st.openSector ===
-        x.name
-      ) {
-        html += heatDetail(
-          x,
-          x._periodReturn
-        );
-      }
-    }
-  );
-
-  box.innerHTML = html;
-
-  /*
-   * 點族群只展開/收合
-   * 不重新改變族群順序
-   */
-
-  box
-    .querySelectorAll(
-      "button.heat[data-sec]"
-    )
-    .forEach(button => {
-      button.onclick = () => {
-        st.openSector =
-          st.openSector ===
-          button.dataset.sec
-            ? null
-            : button.dataset.sec;
-
-        renderHeat(
-          cache.heat || d,
-          {
-            preserveOrder: true
-          }
-        );
-
-        window.dispatchEvent(
-          new CustomEvent(
-            "heatmap:detail-rendered",
-            {
-              detail: {
-                period:
-                  st.heatPeriod,
-
-                weightMode:
-                  st.heatWeightMode,
-
-                sector:
-                  st.openSector
-              }
-            }
-          )
-        );
-      };
-    });
-
-  const oldSection =
-    $("#heatTitle")
-      ?.closest(".section");
-
-  if (oldSection) {
-    oldSection.style.display =
-      "none";
-  }
-
-  const oldTable =
-    $("#heatRows")
-      ?.closest(".card");
-
-  if (oldTable) {
-    oldTable.style.display =
-      "none";
-  }
-}
-
-/* -------------------- 熱力圖資料載入 -------------------- */
-
-async function heat(
-  force = false
-) {
-  const [d] =
-    await Promise.all([
-      J(
-        "./data/heatmap.json",
-        { force }
-      ),
-
-      loadHeatDetail(force)
-    ]);
-
-  if (
-    Array.isArray(d?.sectors) &&
-    d.sectors.length
-  ) {
-    renderHeat(d);
-  }
-}
-
-/*
- * 給其他 heatmap module 使用
- */
-
-window.getHeatmapActivePeriod =
-  () =>
-    String(
-      st.heatPeriod || "1"
-    );
-
-window.getHeatmapWeightMode =
-  () =>
-    String(
-      st.heatWeightMode ||
-      "market"
-    );
-
-window.renderHeatCurrentPeriod =
-  () =>
-    renderHeat(
-      cache.heat || {}
-    );
-
-/* ----------------------------- 券商報告 ----------------------------- */
-
-async function reports(force = false) {
-  const d = await J(
-    "./data/reports.json",
-    { force }
-  );
-
-  const map = {
-    upgrade: "上調",
-    downgrade: "下調",
-    initiate: "初評",
-    maintain: "維持"
-  };
-
-  const box = $("#reportList");
-
-  if (!box) return;
-
-  if (!(d.items || []).length) {
-    box.innerHTML = `
-      <div class="report">
-        <div class="rmain">
-          <div class="rtitle">
-            尚無券商報告
-          </div>
-
-          <div class="rmeta">
-            收到 PDF 或連結後即會整理至此
-          </div>
-        </div>
-      </div>
-    `;
-
-    return;
-  }
-
-  box.innerHTML = d.items
-    .map(
-      r => `
-        <div class="report">
-
-          <div class="broker">
-            ${r.broker || ""}
-          </div>
-
-          <div class="rmain">
-
-            <div class="rtitle">
-              ${r.broker || ""}
-              ${map[r.action] || r.action || ""}
-              ${r.name || ""}
-              ${r.ticker || ""}
-            </div>
-
-            <div class="rmeta">
-              ${r.summary || ""}
-              ${
-                r.date
-                  ? ` · ${r.date}`
-                  : ""
-              }
-            </div>
-
-          </div>
-
-          <div class="tp">
-            ${
-              r.target_price
-                ? `目標價 ${r.target_price}`
-                : ""
-            }
-          </div>
-
-        </div>
-      `
-    )
-    .join("");
-}
-
-/* ----------------------------- Lazy Load ----------------------------- */
-
-const pageLoaders = {
-  home,
-  flows,
-  volume,
-  turnover,
-  holders,
-  ai,
-  heat,
-  reports
-};
-
-const loadedPages =
-  new Set();
-
-const loadingPages =
-  new Map();
-
-async function loadPageOnce(id) {
-  const fn =
-    pageLoaders[id];
-
-  if (
-    !fn ||
-    loadedPages.has(id)
-  ) {
-    return;
-  }
-
-  if (
-    loadingPages.has(id)
-  ) {
-    return loadingPages.get(id);
-  }
-
-  const promise =
-    Promise.resolve()
-      .then(() => fn())
-      .then(() => {
-        loadedPages.add(id);
-      })
-      .catch(err => {
-        console.error(
-          "[lazy page]",
-          id,
-          err
-        );
-      })
-      .finally(() => {
-        loadingPages.delete(id);
-      });
-
-  loadingPages.set(
-    id,
-    promise
-  );
-
-  return promise;
-}
-
-function loadCurrentPage() {
-  const active =
-    document.querySelector(
-      ".page.active"
-    );
-
-  if (active) {
-    loadPageOnce(
-      active.id
-    );
-  }
-}
-
-const originalPage = page;
-
-page = function (id) {
-  originalPage(id);
-
-  requestAnimationFrame(
-    () => loadPageOnce(id)
-  );
-};
-
-window.markPageLoaded =
-  function (id) {
-    if (id) {
-      loadedPages.add(id);
-    }
-  };
-
-window.invalidatePage =
-  function (id) {
-    if (id) {
-      loadedPages.delete(id);
-    }
-  };
-
-/* ----------------------------- 熱力圖每 5 分鐘更新 ----------------------------- */
-
-/*
- * 只重新抓 heatmap.json
- *
- * 不重複執行其他頁面
- * 不重新抓全部資料
- * 不影響其他功能
- *
- * 當頁面重新回到前景時，
- * 如果距離上次更新已超過 5 分鐘，
- * 才補抓一次
- */
-
-let heatRefreshing = false;
-let lastHeatRefresh = 0;
-
-const HEAT_REFRESH_INTERVAL =
-  5 * 60 * 1000;
-
-async function refreshHeatmapLive(
-  force = false
-) {
-  if (heatRefreshing) {
-    return;
-  }
-
-  if (document.hidden) {
-    return;
-  }
-
-  const now = Date.now();
-
-  if (
-    !force &&
-    now - lastHeatRefresh <
-      HEAT_REFRESH_INTERVAL
-  ) {
-    return;
-  }
-
-  heatRefreshing = true;
-
-  try {
-    const d = await J(
-      "./data/heatmap.json",
-      { force: true }
-    );
-
-    if (
-      !Array.isArray(d?.sectors) ||
-      !d.sectors.length
-    ) {
-      return;
-    }
-
-    lastHeatRefresh = Date.now();
-
-    cache.heat = d;
-
-    const activePage =
-      document.querySelector(
-        ".page.active"
-      );
-
-    if (
-      activePage?.id === "heat"
-    ) {
-      renderHeat(d);
-    }
-
-    window.dispatchEvent(
-      new CustomEvent(
-        "heatmap:data-updated",
-        {
-          detail: {
-            updatedAt:
-              d.updated_at || null,
-
-            indices:
-              d.indices || null,
-
-            period:
-              st.heatPeriod,
-
-            weightMode:
-              st.heatWeightMode
-          }
-        }
-      )
-    );
-  } catch (error) {
-    console.warn(
-      "[heatmap refresh]",
-      error
-    );
-  } finally {
-    heatRefreshing = false;
-  }
-}
-
-setInterval(
-  () => {
-    refreshHeatmapLive();
-  },
-  HEAT_REFRESH_INTERVAL
-);
-
-document.addEventListener(
-  "visibilitychange",
-  () => {
-    if (!document.hidden) {
-      refreshHeatmapLive();
-    }
-  }
-);
-
-/* ----------------------------- 啟動 ----------------------------- */
-
-async function init() {
-  setupTheme();
-  setupToTop();
-
-  /*
-   * 先載入目前頁面
-   * 不再等待 sectors.json
-   * 避免整個網站首屏卡住
-   */
-  loadCurrentPage();
-
-  /*
-   * 股票簡稱背景載入
-   */
-  loadShortNames()
-    .catch(err => {
-      console.warn(
-        "[short names]",
-        err
-      );
-    });
-}
-
-init();
-
