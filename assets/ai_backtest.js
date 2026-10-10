@@ -1,169 +1,124 @@
-/* =========================================================
-   AI 選股績效回測
-   五種策略：
-   1. 固定持有（預設）
-   2. 跌破 MA10
-   3. 跌破 MA20
-   4. 停損 5%
-   5. 停損 10%
-
-   5日／10日使用相同成熟樣本
-   ========================================================= */
-
+/* AI 選股績效回測：五種策略 + 同期加權／OTC 指數 */
 (function () {
-  "use strict";
+  'use strict';
 
-  const $bt = s => document.querySelector(s);
+  const $ = s => document.querySelector(s);
 
-  let selectedStrategy = "baseline";
+  let selectedStrategy = 'baseline';
   let cachedData = null;
   let loadingPromise = null;
 
   const STRATEGIES = [
     {
-      key: "baseline",
-      label: "固定持有",
-      description: "固定持有至第 5／10 個交易日收盤",
-      summaryKey: "baseline_summary",
-      prefix: "baseline_"
+      key: 'baseline',
+      label: '固定持有',
+      description: '固定持有至第 5／10 個交易日收盤',
+      summaryKey: 'baseline_summary',
+      prefix: 'baseline_'
     },
     {
-      key: "ma10",
-      label: "跌破 MA10",
-      description: "收盤跌破 10 日均線提前出場",
-      summaryKey: "ma10_summary",
-      prefix: ""
+      key: 'ma10',
+      label: '跌破 MA10',
+      description: '收盤跌破 10 日均線提前出場',
+      summaryKey: 'ma10_summary',
+      prefix: ''
     },
     {
-      key: "ma20",
-      label: "跌破 MA20",
-      description: "收盤跌破 20 日均線提前出場",
-      summaryKey: "ma20_summary",
-      prefix: "ma20_"
+      key: 'ma20',
+      label: '跌破 MA20',
+      description: '收盤跌破 20 日均線提前出場',
+      summaryKey: 'ma20_summary',
+      prefix: 'ma20_'
     },
     {
-      key: "stop5",
-      label: "停損 5%",
-      description: "推薦次日起，收盤跌幅達 5% 即提前出場",
-      summaryKey: "stop5_summary",
-      prefix: "stop5_"
+      key: 'stop5',
+      label: '停損 5%',
+      description: '推薦次日起，收盤跌幅達 5% 即提前出場',
+      summaryKey: 'stop5_summary',
+      prefix: 'stop5_'
     },
     {
-      key: "stop10",
-      label: "停損 10%",
-      description: "推薦次日起，收盤跌幅達 10% 即提前出場",
-      summaryKey: "stop10_summary",
-      prefix: "stop10_"
+      key: 'stop10',
+      label: '停損 10%',
+      description: '推薦次日起，收盤跌幅達 10% 即提前出場',
+      summaryKey: 'stop10_summary',
+      prefix: 'stop10_'
     }
   ];
 
-  /* =========================================================
-     共用工具
-     ========================================================= */
-
-  function fmtPct(v) {
-    if (
-      v === null ||
-      v === undefined ||
-      !Number.isFinite(Number(v))
-    ) {
-      return "—";
-    }
-
-    const n = Number(v);
-
-    return (
-      (n > 0 ? "+" : "") +
-      n.toFixed(2) +
-      "%"
-    );
-  }
-
-  function tone(v) {
-    if (
-      v === null ||
-      v === undefined ||
-      !Number.isFinite(Number(v))
-    ) {
-      return "";
-    }
-
-    return Number(v) >= 0 ? "up" : "down";
-  }
-
-  function esc(value) {
-    return String(value ?? "").replace(
+  const esc = v =>
+    String(v ?? '').replace(
       /[&<>"']/g,
       c => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
       }[c])
     );
-  }
 
-  function getStrategyInfo() {
-    return (
-      STRATEGIES.find(
-        s => s.key === selectedStrategy
-      ) || STRATEGIES[0]
-    );
-  }
+  const finite = v =>
+    v !== null &&
+    v !== undefined &&
+    v !== '' &&
+    Number.isFinite(Number(v));
 
-  function getStrategyData(data) {
-    const strategy = getStrategyInfo();
+  const fmtPct = v =>
+    finite(v)
+      ? (Number(v) > 0 ? '+' : '') +
+        Number(v).toFixed(2) +
+        '%'
+      : '—';
 
-    if (selectedStrategy === "ma10") {
-      return (
-        data.ma10_summary ||
-        data.summary ||
-        {}
-      );
-    }
+  const tone = v =>
+    finite(v)
+      ? Number(v) >= 0
+        ? 'up'
+        : 'down'
+      : '';
 
-    return data[strategy.summaryKey] || {};
-  }
+  const info = () =>
+    STRATEGIES.find(
+      s => s.key === selectedStrategy
+    ) || STRATEGIES[0];
 
-  /* =========================================================
+  const strategyData = data =>
+    data[info().summaryKey] ||
+    (selectedStrategy === 'ma10'
+      ? data.summary
+      : {}) ||
+    {};
+
+  /* ========================================
      讀取回測資料
-     ========================================================= */
+     ======================================== */
 
   async function loadBacktest() {
-    if (cachedData) {
-      return cachedData;
-    }
-
-    if (loadingPromise) {
-      return loadingPromise;
-    }
+    if (cachedData) return cachedData;
+    if (loadingPromise) return loadingPromise;
 
     loadingPromise = (async () => {
       try {
         const response = await fetch(
-          "./data/ai_backtest.json?v=" + Date.now(),
-          {
-            cache: "no-store"
-          }
+          './data/ai_backtest.json?v=' + Date.now(),
+          { cache: 'no-store' }
         );
 
         if (!response.ok) {
           throw new Error(
-            "HTTP " + response.status
+            'HTTP ' + response.status
           );
         }
 
         cachedData = await response.json();
-
         return cachedData;
 
-      } catch (error) {
+      } catch (e) {
         console.error(
-          "AI backtest load failed",
-          error
+          'AI backtest load failed',
+          e
         );
-
         return {};
 
       } finally {
@@ -174,42 +129,104 @@
     return loadingPromise;
   }
 
-  /* =========================================================
-     五種策略切換按鈕
-     ========================================================= */
+  /* ========================================
+     五種策略切換
+     ======================================== */
 
   function strategyButtons() {
     return `
       <div class="ai-bt-strategy-switch">
-
-        ${STRATEGIES.map(strategy => `
+        ${STRATEGIES.map(s => `
           <button
             type="button"
             class="ai-bt-strategy-btn ${
-              selectedStrategy === strategy.key
-                ? "active"
-                : ""
+              selectedStrategy === s.key
+                ? 'active'
+                : ''
             }"
-            data-ai-bt-strategy="${strategy.key}"
+            data-ai-bt-strategy="${s.key}"
             aria-pressed="${
-              selectedStrategy === strategy.key
-                ? "true"
-                : "false"
+              selectedStrategy === s.key
             }"
           >
-            ${esc(strategy.label)}
+            ${esc(s.label)}
           </button>
-        `).join("")}
+        `).join('')}
+      </div>
+    `;
+  }
+
+  /* ========================================
+     加權指數／OTC 同期平均漲跌幅
+
+     與 AI 選股使用相同成熟樣本
+     不是直接計算回測起日至今漲跌幅
+     ======================================== */
+
+  function benchmarkRows(data, days, stockSamples) {
+    const period =
+      data?.benchmark_summary?.[`${days}d`] || {};
+
+    return `
+      <div class="ai-bt-benchmarks">
+
+        ${
+          [
+            [
+              'twse',
+              '加權指數同期平均漲跌幅'
+            ],
+            [
+              'tpex',
+              'OTC 同期平均漲跌幅'
+            ]
+          ].map(([market, label]) => {
+
+            const row = period[market] || {};
+
+            const count = Number(
+              row.samples || 0
+            );
+
+            const complete =
+              stockSamples > 0 &&
+              count === stockSamples &&
+              finite(row.avg_return);
+
+            return `
+              <div class="ai-bt-benchmark-row">
+
+                <span>
+                  ${label}
+                </span>
+
+                <b class="${
+                  complete
+                    ? tone(row.avg_return)
+                    : ''
+                }">
+                  ${
+                    complete
+                      ? fmtPct(row.avg_return)
+                      : '—'
+                  }
+                </b>
+
+              </div>
+            `;
+
+          }).join('')
+        }
 
       </div>
     `;
   }
 
-  /* =========================================================
-     績效卡片
-     ========================================================= */
+  /* ========================================
+     5 日／10 日績效卡片
+     ======================================== */
 
-  function statCard(title, stat) {
+  function statCard(title, stat, benchmark, days) {
     const samples = Number(
       stat?.samples || 0
     );
@@ -224,9 +241,9 @@
         ${
           samples
             ? `
-              <strong class="${tone(
-                stat.avg_return
-              )}">
+              <strong class="${
+                tone(stat.avg_return)
+              }">
                 ${fmtPct(stat.avg_return)}
               </strong>
 
@@ -243,12 +260,10 @@
 
                 <span>
                   中位數
-                  <b class="${tone(
-                    stat.median_return
-                  )}">
-                    ${fmtPct(
-                      stat.median_return
-                    )}
+                  <b class="${
+                    tone(stat.median_return)
+                  }">
+                    ${fmtPct(stat.median_return)}
                   </b>
                 </span>
 
@@ -266,13 +281,21 @@
             `
         }
 
+        ${
+          benchmarkRows(
+            benchmark,
+            days,
+            samples
+          )
+        }
+
       </div>
     `;
   }
 
-  /* =========================================================
-     Top 5 / 10 / 20
-     ========================================================= */
+  /* ========================================
+     Top 5／10／20
+     ======================================== */
 
   function bucketRow(label, data) {
     return `
@@ -280,29 +303,33 @@
 
         <b>${esc(label)}</b>
 
-        <span class="${tone(
-          data?.["5d"]?.avg_return
-        )}">
-          ${fmtPct(
-            data?.["5d"]?.avg_return
-          )}
+        <span class="${
+          tone(data?.['5d']?.avg_return)
+        }">
+          ${
+            fmtPct(
+              data?.['5d']?.avg_return
+            )
+          }
         </span>
 
-        <span class="${tone(
-          data?.["10d"]?.avg_return
-        )}">
-          ${fmtPct(
-            data?.["10d"]?.avg_return
-          )}
+        <span class="${
+          tone(data?.['10d']?.avg_return)
+        }">
+          ${
+            fmtPct(
+              data?.['10d']?.avg_return
+            )
+          }
         </span>
 
       </div>
     `;
   }
 
-  /* =========================================================
+  /* ========================================
      最近三個選股日
-     ========================================================= */
+     ======================================== */
 
   function latestRecords(records) {
     const dates = [
@@ -322,40 +349,24 @@
           r.selection_date
         )
       )
-      .sort((a, b) => {
-        if (
-          a.selection_date !==
-          b.selection_date
-        ) {
-          return String(
-            b.selection_date
-          ).localeCompare(
-            String(a.selection_date)
-          );
-        }
-
-        if (a.market !== b.market) {
-          return String(
-            a.market
-          ).localeCompare(
-            String(b.market)
-          );
-        }
-
-        return (
-          Number(a.rank || 999) -
-          Number(b.rank || 999)
-        );
-      });
+      .sort((a, b) =>
+        String(b.selection_date).localeCompare(
+          String(a.selection_date)
+        ) ||
+        String(a.market).localeCompare(
+          String(b.market)
+        ) ||
+        Number(a.rank || 999) -
+        Number(b.rank || 999)
+      );
   }
 
-  /* =========================================================
-     根據策略取得個股績效
-     ========================================================= */
+  /* ========================================
+     個股策略績效
+     ======================================== */
 
   function recordPerformance(record, days) {
-    const strategy = getStrategyInfo();
-    const prefix = strategy.prefix;
+    const prefix = info().prefix;
 
     return {
       value: record[
@@ -369,16 +380,16 @@
 
   function recordRow(record) {
     const market =
-      record.market === "twse"
-        ? "上市"
-        : "上櫃";
+      record.market === 'twse'
+        ? '上市'
+        : '上櫃';
 
-    const perf5 = recordPerformance(
+    const p5 = recordPerformance(
       record,
       5
     );
 
-    const perf10 = recordPerformance(
+    const p10 = recordPerformance(
       record,
       10
     );
@@ -398,7 +409,7 @@
             ${esc(
               record.name ||
               record.ticker ||
-              "—"
+              '—'
             )}
           </b>
 
@@ -411,11 +422,11 @@
         <div>
           <small>5日</small>
 
-          <b class="${tone(perf5.value)}">
+          <b class="${tone(p5.value)}">
             ${
-              perf5.status === "complete"
-                ? fmtPct(perf5.value)
-                : "進行中"
+              p5.status === 'complete'
+                ? fmtPct(p5.value)
+                : '進行中'
             }
           </b>
         </div>
@@ -423,11 +434,11 @@
         <div>
           <small>10日</small>
 
-          <b class="${tone(perf10.value)}">
+          <b class="${tone(p10.value)}">
             ${
-              perf10.status === "complete"
-                ? fmtPct(perf10.value)
-                : "進行中"
+              p10.status === 'complete'
+                ? fmtPct(p10.value)
+                : '進行中'
             }
           </b>
         </div>
@@ -436,29 +447,24 @@
     `;
   }
 
-  /* =========================================================
+  /* ========================================
      主畫面
-     ========================================================= */
+     ======================================== */
 
   async function render() {
-    const aiCards = $bt("#aiCards");
+    const aiCards = $('#aiCards');
 
-    if (!aiCards) {
-      return;
-    }
+    if (!aiCards) return;
 
-    let panel = $bt(
-      "#aiBacktestPanel"
-    );
+    let panel = $('#aiBacktestPanel');
 
     if (!panel) {
       panel = document.createElement(
-        "section"
+        'section'
       );
 
-      panel.id = "aiBacktestPanel";
-      panel.className =
-        "ai-backtest-panel";
+      panel.id = 'aiBacktestPanel';
+      panel.className = 'ai-backtest-panel';
 
       aiCards.parentNode.insertBefore(
         panel,
@@ -468,17 +474,11 @@
 
     const data = await loadBacktest();
 
-    const strategyData =
-      getStrategyData(data);
-
-    const strategyInfo =
-      getStrategyInfo();
-
     const summary =
-      strategyData.all || {};
+      strategyData(data).all || {};
 
     const buckets =
-      strategyData.rank_buckets || {};
+      strategyData(data).rank_buckets || {};
 
     const records = latestRecords(
       data.records || []
@@ -516,16 +516,16 @@
           text-align: center;
           cursor: pointer;
           transition:
-            background 0.15s,
-            border-color 0.15s,
-            color 0.15s;
+            background .15s,
+            border-color .15s,
+            color .15s;
         }
 
         #aiBacktestPanel
         .ai-bt-strategy-btn.active {
           background: #2563eb;
           border-color: #2563eb;
-          color: #ffffff;
+          color: #fff;
         }
 
         #aiBacktestPanel
@@ -543,7 +543,54 @@
           line-height: 1.5;
         }
 
+        #aiBacktestPanel
+        .ai-bt-benchmarks {
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid
+            var(--line, #dce3ec);
+          display: grid;
+          gap: 8px;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-benchmark-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          font-size: 12px;
+          line-height: 1.45;
+          color:
+            var(--muted, #64748b);
+        }
+
+        #aiBacktestPanel
+        .ai-bt-benchmark-row span {
+          min-width: 0;
+          flex: 1;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-benchmark-row b {
+          white-space: nowrap;
+          font-size: 13px;
+          color:
+            var(--text, #334155);
+        }
+
+        #aiBacktestPanel
+        .ai-bt-benchmark-row b.up {
+          color: #dc2626;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-benchmark-row b.down {
+          color: #059669;
+        }
+
         @media (max-width: 400px) {
+
           #aiBacktestPanel
           .ai-bt-strategy-switch {
             gap: 6px;
@@ -554,6 +601,17 @@
             padding: 11px 3px;
             font-size: 12px;
           }
+
+          #aiBacktestPanel
+          .ai-bt-benchmark-row {
+            font-size: 11px;
+          }
+
+          #aiBacktestPanel
+          .ai-bt-benchmark-row b {
+            font-size: 12px;
+          }
+
         }
 
       </style>
@@ -573,10 +631,10 @@
           <p>
             ${
               data.start_date
-                ? `自 ${esc(
-                    data.start_date
-                  )} 起累積`
-                : "尚未開始累積"
+                ? '自 ' +
+                  esc(data.start_date) +
+                  ' 起累積'
+                : '尚未開始累積'
             }
             ｜以選股基準日收盤價計算
           </p>
@@ -592,20 +650,28 @@
       ${strategyButtons()}
 
       <div class="ai-bt-strategy-desc">
-        ${esc(strategyInfo.description)}
+        ${esc(info().description)}
       </div>
 
       <div class="ai-bt-stats">
 
-        ${statCard(
-          "5日績效",
-          summary["5d"]
-        )}
+        ${
+          statCard(
+            '5日績效',
+            summary['5d'],
+            data,
+            5
+          )
+        }
 
-        ${statCard(
-          "10日績效",
-          summary["10d"]
-        )}
+        ${
+          statCard(
+            '10日績效',
+            summary['10d'],
+            data,
+            10
+          )
+        }
 
       </div>
 
@@ -623,20 +689,26 @@
 
         </div>
 
-        ${bucketRow(
-          "Top 5",
-          buckets.top5
-        )}
+        ${
+          bucketRow(
+            'Top 5',
+            buckets.top5
+          )
+        }
 
-        ${bucketRow(
-          "Top 10",
-          buckets.top10
-        )}
+        ${
+          bucketRow(
+            'Top 10',
+            buckets.top10
+          )
+        }
 
-        ${bucketRow(
-          "Top 20",
-          buckets.top20
-        )}
+        ${
+          bucketRow(
+            'Top 20',
+            buckets.top20
+          )
+        }
 
       </div>
 
@@ -656,7 +728,7 @@
             records.length
               ? records
                   .map(recordRow)
-                  .join("")
+                  .join('')
               : `
                 <div class="empty">
                   第一次執行更新後會開始累積回測紀錄
@@ -679,37 +751,39 @@
 
         <br><br>
 
+        加權指數與 OTC 同期平均漲跌幅：
+        逐筆依推薦日收盤至第5／10個交易日收盤計算，
+        並依相同成熟選股訊號權重平均；
+        官方指數資料未齊全時顯示 —
+
+        <br><br>
+
         MA10／MA20從推薦次一交易日開始檢查，
         收盤跌破均線即按當日收盤價模擬出場
 
         <br><br>
 
         停損 5%／10% 同樣從推薦次一交易日開始檢查，
-        收盤跌幅達停損門檻時，按當日收盤價模擬出場
+        收盤跌幅達停損門檻時按當日收盤價模擬出場
 
         <br><br>
 
         提前出場的報酬仍須等觀察期滿才納入統計
 
       </div>
-
     `;
-
-    /* =========================================================
-       綁定切換按鈕
-       ========================================================= */
 
     panel
       .querySelectorAll(
-        "[data-ai-bt-strategy]"
+        '[data-ai-bt-strategy]'
       )
       .forEach(button => {
+
         button.addEventListener(
-          "click",
+          'click',
           () => {
             const next =
-              button.dataset
-                .aiBtStrategy;
+              button.dataset.aiBtStrategy;
 
             if (
               !next ||
@@ -719,32 +793,25 @@
             }
 
             selectedStrategy = next;
-
             render();
           }
         );
+
       });
   }
 
-  /* =========================================================
+  /* ========================================
      初始化
-     ========================================================= */
+     ======================================== */
 
-  if (
-    document.readyState === "loading"
-  ) {
+  if (document.readyState === 'loading') {
     document.addEventListener(
-      "DOMContentLoaded",
+      'DOMContentLoaded',
       render
     );
   } else {
     render();
   }
-
-  /*
-    app.js 的 AI 區塊可能非同步產生
-    補一次確保回測面板顯示
-  */
 
   setTimeout(render, 1200);
 
