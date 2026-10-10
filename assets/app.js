@@ -908,6 +908,98 @@ $$("[data-turn]").forEach(b => {
 
 /* ----------------------------- 大戶籌碼 ----------------------------- */
 
+/* 大戶近兩個月週資料；沿用 holders.json 的實際集保快照 */
+function holderEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function holderHistoryPoints(data, ticker, threshold) {
+  const stamp = d => /^\d{8}$/.test(d) ? Date.UTC(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8)) : NaN;
+  const latest=stamp(String(data.date || ''));
+  const raw=Array.isArray(data.holder_history?.[ticker]) ? data.holder_history[ticker] : [];
+  const byDate=new Map(raw.map(p=>[String(p.date),p]));
+  const dates=[...new Set([...(data.holder_history_dates || []),...byDate.keys()].map(String))]
+    .filter(d=>Number.isFinite(stamp(d)) && stamp(d)<=latest && stamp(d)>=latest-62*86400000).sort();
+  return dates.map(date=>{
+    const rawValue=byDate.get(date)?.[threshold];
+    const value=rawValue === null || rawValue === undefined || rawValue === '' ? null : Number(rawValue);
+    return {date,time:stamp(date),value:Number.isFinite(value) && value>=0 && value<=100 ? value : null};
+  });
+}
+function holderChartStyle() {
+  if(document.getElementById('holderChartStyle')) return;
+  const style=document.createElement('style');style.id='holderChartStyle';
+  style.textContent=`
+    #holderRows .holder-open{border:0;background:transparent;color:inherit;padding:0;text-align:left;cursor:pointer;font:inherit;max-width:100%}
+    #holderRows .holder-open:focus-visible{outline:2px solid #278bc7;outline-offset:5px;border-radius:8px}
+    #holderRows .holder-open b{text-decoration:underline;text-decoration-color:#a6b8c8;text-underline-offset:5px}
+    #holderChartDialog{--hc-bg:#fff;--hc-text:#182332;--hc-muted:#64748b;--hc-line:#dbe3eb;--hc-blue:#176faf;background:var(--hc-bg);color:var(--hc-text);border:1px solid var(--hc-line);border-radius:22px;width:min(690px,calc(100vw - 24px));max-width:690px;max-height:90dvh;padding:0;box-sizing:border-box;overscroll-behavior:contain;box-shadow:0 22px 80px #0005}
+    #holderChartDialog::backdrop{background:#07101db3}
+    [data-theme="dark"] #holderChartDialog{--hc-bg:#152031;--hc-text:#ecf3fb;--hc-muted:#a4b5c9;--hc-line:#35465b;--hc-blue:#68c5ff}
+    #holderChartDialog *{box-sizing:border-box}
+    #holderChartDialog .hc-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 20px;border-bottom:1px solid var(--hc-line)}
+    #holderChartDialog h2{font-size:22px;margin:0;color:var(--hc-text)}
+    #holderChartDialog .hc-close{font:inherit;font-size:24px;min-width:44px;height:44px;border:1px solid var(--hc-line);border-radius:50%;color:var(--hc-text);background:var(--hc-bg);cursor:pointer}
+    #holderChartDialog .hc-body{padding:18px 20px}
+    #holderChartDialog .hc-tabs{display:flex;gap:8px;margin:14px 0}
+    #holderChartDialog .hc-tabs button{flex:1;font:inherit;font-size:15px;padding:11px 6px;border-radius:12px;border:1px solid var(--hc-line);background:var(--hc-bg);color:var(--hc-text);cursor:pointer}
+    #holderChartDialog .hc-tabs button[aria-pressed="true"]{background:var(--hc-blue);color:var(--hc-bg);font-weight:700}
+    #holderChartDialog .hc-note{font-size:13px;color:var(--hc-muted);line-height:1.7;margin:6px 0}
+    #holderChartDialog .hc-latest{font-size:30px;font-weight:750;color:var(--hc-blue);margin:12px 0 0}
+    #holderChartDialog svg{display:block;width:100%;height:auto;overflow:visible;color:var(--hc-muted);touch-action:pan-y}
+    #holderChartDialog .hc-inspect{padding:10px;border:1px solid var(--hc-line);border-radius:10px;font-size:14px;text-align:center;margin:8px 0}
+    #holderChartDialog input[type="range"]{display:block;width:100%;margin:14px 0;accent-color:var(--hc-blue)}
+    #holderChartDialog .hc-table-wrap{max-height:300px;overflow:auto;margin-top:16px}
+    #holderChartDialog table{display:table;width:100%;border-collapse:collapse;font-size:14px;min-width:0;background:transparent}
+    #holderChartDialog thead{display:table-header-group} #holderChartDialog tbody{display:table-row-group}
+    #holderChartDialog tr{display:table-row;background:transparent}
+    #holderChartDialog th,#holderChartDialog td{display:table-cell;padding:12px 5px;text-align:right;border:0;border-bottom:1px solid var(--hc-line);color:var(--hc-text);white-space:nowrap}
+    #holderChartDialog td::before{display:none!important}
+    #holderChartDialog th:first-child,#holderChartDialog td:first-child{text-align:left}
+    #holderChartDialog th{position:sticky;top:0;background:var(--hc-bg);color:var(--hc-muted)}
+    #holderChartDialog .hc-up{color:#d93646} #holderChartDialog .hc-down{color:#14895c}
+    [data-theme="dark"] #holderChartDialog .hc-up{color:#ff7883} [data-theme="dark"] #holderChartDialog .hc-down{color:#54d59b}
+    @media(max-width:480px){#holderChartDialog .hc-body{padding:12px}#holderChartDialog .hc-head{padding:14px}#holderChartDialog h2{font-size:20px}}
+  `;document.head.appendChild(style);
+}
+function openHolderChart(data, stockRow, initialThreshold) {
+  holderChartStyle();
+  let dialog=document.getElementById('holderChartDialog');
+  if(!dialog){dialog=document.createElement('dialog');dialog.id='holderChartDialog';document.body.appendChild(dialog);}
+  const origin=document.activeElement;
+  dialog.setAttribute('aria-labelledby','holderChartTitle');
+  dialog.innerHTML=`<div class="hc-head"><h2 id="holderChartTitle">${holderEscape(displayName(stockRow))} <small>${holderEscape(stockRow.ticker)}</small></h2><button class="hc-close" aria-label="關閉大戶走勢">×</button></div><div class="hc-body"><div class="hc-note">近兩個月大戶持股比例｜集保週資料</div><div class="hc-tabs"><button data-hc="400">400 張以上</button><button data-hc="1000">千張以上</button></div><div id="holderChartContent"></div></div>`;
+  dialog.querySelector('.hc-close').onclick=()=>dialog.close();
+  dialog.onclose=()=>origin?.focus();
+  dialog.onclick=e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}};
+  const formatDate=d=>`${d.slice(0,4)}/${d.slice(4,6)}/${d.slice(6,8)}`;
+  const delta=(a,b)=>a?.value!=null && b?.value!=null && a.time-b.time<=10*86400000 ? a.value-b.value : null;
+  const changeHtml=v=>v==null?'—':`<span class="${v>0?'hc-up':v<0?'hc-down':''}">${v>0?'+':''}${v.toFixed(2)} ppt</span>`;
+  const render=threshold=>{
+    dialog.querySelectorAll('[data-hc]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.hc===threshold)));
+    const points=holderHistoryPoints(data,String(stockRow.ticker),threshold);
+    const valid=points.filter(p=>p.value!=null);
+    const content=dialog.querySelector('#holderChartContent');
+    if(!valid.length){content.innerHTML='<p class="hc-note">此個股目前沒有可用的近兩個月持股資料，無法繪圖</p>';return;}
+    const first=valid[0],last=valid[valid.length-1], tail=points[points.length-1];
+    const low=Math.min(...valid.map(p=>p.value)),high=Math.max(...valid.map(p=>p.value));
+    const pad=Math.max(1,(high-low)*.15),min=Math.max(0,low-pad),max=Math.min(100,high+pad);
+    const x=p=>46+(p.time-points[0].time)/Math.max(86400000,points[points.length-1].time-points[0].time)*360;
+    const y=p=>210-(p.value-min)/(max-min)*180;
+    const segments=[];let segment=[];
+    points.forEach((p,i)=>{if(p.value==null || (i && p.time-points[i-1].time>10*86400000)){if(segment.length)segments.push(segment);segment=[];}if(p.value!=null)segment.push(p);});
+    if(segment.length)segments.push(segment);
+    const paths=segments.map(s=>{const line=s.map((p,i)=>`${i?'L':'M'}${x(p).toFixed(2)},${y(p).toFixed(2)}`).join(' ');return `<path d="${line} L${x(s[s.length-1])},210 L${x(s[0])},210 Z" fill="var(--hc-blue)" opacity=".15"/><path d="${line}" fill="none" stroke="var(--hc-blue)" stroke-width="2.5"/>`;}).join('');
+    const grid=Array.from({length:5},(_,i)=>{const value=min+(max-min)*i/4,py=210-i*45;return `<line x1="46" y1="${py}" x2="406" y2="${py}" stroke="var(--hc-line)"/><text x="40" y="${py+4}" text-anchor="end" fill="currentColor" font-size="12">${value.toFixed(1)}</text>`;}).join('');
+    const ticks=points.map((p,i)=>`<text x="${x(p)}" y="230" transform="rotate(-45 ${x(p)} 230)" text-anchor="end" fill="currentColor" font-size="12">${p.date.slice(4,6)}/${p.date.slice(6)}</text>`).join('');
+    content.innerHTML=`<div class="hc-latest">${last.value.toFixed(2)}%</div><div class="hc-note">${formatDate(last.date)}｜${threshold==='400'?'400 張':'千張'}以上持股比例</div><div class="hc-note">${formatDate(first.date)}～${formatDate(last.date)} 共 ${valid.length} 期｜期間增減 ${changeHtml(last.value-first.value)}</div>${tail.value==null?'<p class="hc-note">最新一期資料缺漏，上方顯示最後可用一期</p>':''}<svg viewBox="0 0 430 275" role="img" aria-label="近兩個月大戶持股比例折線圖，詳細數值見下方表格"><text x="46" y="17" fill="currentColor" font-size="12">持股比例 %</text>${grid}${paths}${points.map((p,i)=>p.value==null?'':`<circle cx="${x(p)}" cy="${y(p)}" r="4" fill="var(--hc-blue)"><title>${formatDate(p.date)} ${p.value.toFixed(2)}%</title></circle>`).join('')}${ticks}<circle id="holderChartMarker" r="6" fill="var(--hc-bg)" stroke="var(--hc-blue)" stroke-width="3"/></svg><div class="hc-inspect" aria-live="polite"></div><label class="hc-note" for="holderChartRange">滑動查看各期資料</label><input id="holderChartRange" type="range" min="0" max="${points.length-1}" value="${points.length-1}" step="1" ${points.length===1?'disabled':''}><div class="hc-table-wrap"><table><thead><tr><th scope="col">日期</th><th scope="col">持股比例</th><th scope="col">較前期增減</th></tr></thead><tbody>${points.map((p,i)=>`<tr><td>${formatDate(p.date)}</td><td>${p.value==null?'缺資料':p.value.toFixed(2)+'%'}</td><td>${changeHtml(delta(p,points[i-1]))}</td></tr>`).reverse().join('')}</tbody></table></div><p class="hc-note">每個點代表一個實際集保資料日，非每日資料<br>增減以百分點（ppt）表示；缺漏不補零，間隔超過 10 天不連線</p>`;
+    const inspect=index=>{const p=points[index],marker=content.querySelector('#holderChartMarker');marker.style.display=p.value==null?'none':'';if(p.value!=null){marker.setAttribute('cx',x(p));marker.setAttribute('cy',y(p));}content.querySelector('.hc-inspect').innerHTML=`${formatDate(p.date)}　${p.value==null?'缺資料':p.value.toFixed(2)+'%'}　${changeHtml(delta(p,points[index-1]))}`;};
+    const slider=content.querySelector('input');slider.oninput=()=>inspect(Number(slider.value));inspect(points.length-1);
+  };
+  dialog.querySelectorAll('[data-hc]').forEach(b=>b.onclick=()=>render(b.dataset.hc));
+  render(initialThreshold==='1000'?'1000':'400');
+  if(!dialog.open)dialog.showModal();
+}
+
 async function holders(force = false) {
   const d = await J(
     "./data/holders.json",
@@ -955,7 +1047,7 @@ async function holders(force = false) {
             : ""
         }">
           <td>
-            ${stock(x, i + 1)}
+            <button class="holder-open" data-holder-index="${i}" type="button" aria-label="查看 ${holderEscape(displayName(x))} 近兩個月大戶走勢">${stock(x, i + 1)}</button>
 
             <div class="mobile-meta">
               大戶比
@@ -994,6 +1086,10 @@ async function holders(force = false) {
       `
     )
     .join("");
+  holderChartStyle();
+  rows.querySelectorAll('[data-holder-index]').forEach(button=>{
+    button.onclick=event=>{event.stopPropagation();openHolderChart(d,arr[Number(button.dataset.holderIndex)],st.hk);};
+  });
 }
 
 $$("[data-hm]").forEach(b => {
@@ -3205,3 +3301,4 @@ async function init() {
 }
 
 init();
+
