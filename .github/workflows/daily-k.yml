@@ -2,11 +2,11 @@ name: Daily K charts
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 10 * * 1-5'
+    - cron: '0 11 * * 1-5'
 permissions:
   contents: write
 concurrency:
-  group: daily-k
+  group: tw-market-data-writer
   cancel-in-progress: false
 jobs:
   update:
@@ -37,3 +37,4 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+
