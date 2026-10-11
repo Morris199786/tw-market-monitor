@@ -1,0 +1,46 @@
+name: Broker branch charts
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: '股票代號，逗號分隔；留空更新全部熱力圖個股'
+        required: false
+        default: ''
+        type: string
+  schedule:
+    - cron: '30 11 * * 1-5'
+permissions:
+  contents: write
+concurrency:
+  group: broker-branch-data
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Update 60-session broker rankings and daily lots
+        env:
+          BRANCH_TICKERS: ${{ inputs.tickers || '' }}
+        run: python scripts/update_broker_branches.py --tickers "$BRANCH_TICKERS"
+      - name: Save available branch data and source status
+        if: ${{ !cancelled() }}
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ ! -d data/broker_branches ]; then exit 0; fi
+          git add data/broker_branches
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: 60-session broker branch charts'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
