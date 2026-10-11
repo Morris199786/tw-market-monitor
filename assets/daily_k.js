@@ -21,7 +21,8 @@
     '#55e4e8'
   ];
 
-  const CHART_HEIGHT = 350;
+  const CHART_HEIGHT = 500;
+  const BASE_CHART_HEIGHT = 350;
   const INITIAL_BARS = 65;
   const LONG_PRESS_MS = 350;
   const MOVE_THRESHOLD = 8;
@@ -29,6 +30,7 @@
   let active = null;
 
   const cache = new Map();
+  const branchCache = new Map();
 
   function movingAverage(bars, n, gaps = []) {
     let sum = 0;
@@ -267,7 +269,7 @@
       #dailyKHost canvas {
         display: block;
         width: 100%;
-        height: 350px;
+        height: 500px;
         touch-action: none;
         user-select: none;
         -webkit-user-select: none;
@@ -317,7 +319,7 @@
         }
 
         #dailyKHost canvas {
-          height: 350px;
+          height: 500px;
         }
 
         #dailyKHost .dk-stock-header {
@@ -577,6 +579,10 @@
     );
 
     const enabled = new Set(periods);
+    const branchAbort = new AbortController();
+    let branchData = null;
+    let branch = null;
+    let branchDays = new Map();
 
     let count = Math.min(INITIAL_BARS, bars.length);
     let end = bars.length;
@@ -681,9 +687,20 @@
         </button>
       </div>
 
+      <div class="dk-branch-controls" style="padding:8px 0">
+        <label style="display:block;font-size:13px;margin-bottom:5px">
+          近60日分點買賣超（張）
+          <select class="dk-branch-select" aria-label="選擇近60日前五大買超或賣超分點"
+            style="display:block;width:100%;max-width:100%;margin-top:5px;padding:9px;background:#192638;color:#fff;border:1px solid #526079;border-radius:8px;font-size:14px" disabled>
+            <option>載入分點資料…</option>
+          </select>
+        </label>
+        <div class="dk-branch-status" style="font-size:12px;color:#b2bfd1;line-height:1.5"></div>
+        <div class="dk-branch-readout" style="font-size:13px;line-height:1.5;min-height:40px" aria-live="off"></div>
+      </div>
       <canvas
         tabindex="0"
-        aria-label="日K及成交量，左右滑動平移，長按十字查價，雙指縮放"
+        aria-label="日K、成交量及分點買賣超，左右滑動平移，長按十字查價，雙指縮放"
       ></canvas>
 
       <div class="dk-note"></div>
@@ -750,9 +767,13 @@
       const right = size.w - 54;
       const top = 10;
 
-      const bottom = Math.round(size.h * 0.68);
+      const bottom = Math.round(BASE_CHART_HEIGHT * 0.68);
       const vtop = bottom + 27;
-      const vbottom = size.h - 23;
+      const vbottom = BASE_CHART_HEIGHT - 23;
+      const btop = BASE_CHART_HEIGHT + 19;
+      const bbottom = size.h - 23;
+      const branchMax = Math.max(1, ...bars.slice(end - count, end)
+        .map(b => Math.abs(branchDays.get(b.time)?.net || 0)));
 
       const start = end - count;
       const visible = bars.slice(start, end);
@@ -811,6 +832,7 @@
         hi,
         step: (right - left) / count,
         maxVol,
+        btop, bbottom, branchMax,
         tick
       };
     }
@@ -995,6 +1017,35 @@
 
       ctx.restore();
 
+      // Shared x-axis: branch bars use exactly the same dates and zoom as candles.
+      const zeroY = (g.btop + g.bbottom) / 2;
+      const by = v => zeroY - v / g.branchMax * (g.bbottom - g.btop) / 2;
+      ctx.strokeStyle = '#526079';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(left, zeroY); ctx.lineTo(right, zeroY); ctx.stroke();
+      ctx.fillStyle = '#b2bfd1'; ctx.textAlign = 'left';
+      ctx.fillText('分點買賣超（張）｜紅買超／綠賣超', left, g.btop - 12);
+      ctx.fillText(fmt(g.branchMax, 0), right + 3, g.btop + 4);
+      ctx.fillText('0', right + 3, zeroY);
+      ctx.fillText(fmt(-g.branchMax, 0), right + 3, g.bbottom - 4);
+      if (branch) {
+        for (let i = start; i < end; i++) {
+          const row = branchDays.get(bars[i].time);
+          if (!row) {
+            if (branchData && bars[i].time >= branchData.start && bars[i].time <= branchData.date) {
+              // A gray mark means no source row, NOT a zero-trade bar.
+              ctx.fillStyle = '#8592a5';
+              ctx.fillRect(px(i) - 1, g.bbottom - 3, 2, 3);
+            }
+            continue;
+          }
+          ctx.fillStyle = row.net > 0 ? '#ff4865' : row.net < 0 ? '#36c587' : '#a8b5c8';
+          const bw = Math.max(1, Math.min(18, step * 0.7));
+          ctx.fillRect(px(i) - bw / 2, Math.min(zeroY, by(row.net)), bw,
+            Math.max(1, Math.abs(by(row.net) - zeroY)));
+        }
+      }
+
       ctx.fillStyle = '#b2bfd1';
       ctx.textAlign = 'center';
 
@@ -1024,7 +1075,7 @@
         const cy =
           crossY == null
             ? py(b.close)
-            : Math.max(top, Math.min(vbottom, crossY));
+            : Math.max(top, Math.min(g.bbottom, crossY));
 
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
@@ -1032,7 +1083,7 @@
 
         ctx.beginPath();
         ctx.moveTo(x, top);
-        ctx.lineTo(x, vbottom);
+        ctx.lineTo(x, g.bbottom);
 
         ctx.moveTo(left, cy);
         ctx.lineTo(right, cy);
@@ -1049,7 +1100,9 @@
                 (hi - lo),
                 0
               )
-            : cy >= vtop
+            : cy >= g.btop
+              ? fmt((zeroY - cy) * 2 / (g.bbottom - g.btop) * g.branchMax, 0)
+            : cy >= vtop && cy <= vbottom
               ? fmt(
                   (vbottom - cy) /
                   (vbottom - vtop) *
@@ -1091,6 +1144,15 @@
       }
 
       const b = bars[selected];
+      const day = inspecting ? b.time : (branchData?.date || b.time);
+      const flow = branchDays.get(day);
+      const readout = host.querySelector('.dk-branch-readout');
+      readout.textContent = branch
+        ? `${day}｜${branch.name}｜` + (flow
+          ? `買進 ${fmt(flow.buy, 0)}｜賣出 ${fmt(flow.sell, 0)}｜買賣超 ${flow.net > 0 ? '+' : ''}${fmt(flow.net, 0)} 張`
+          : (day < branchData.start || day > branchData.date ? '不在分點資料區間' : '來源未提供當日明細'))
+        : '分點資料未就緒；K線與成交量仍可使用';
+      readout.style.color = flow ? (flow.net > 0 ? '#ff667d' : flow.net < 0 ? '#48d59a' : '#d3dfef') : '#b2bfd1';
 
       if (inspecting) {
         info.classList.add('visible');
@@ -1693,6 +1755,64 @@
 
     resize.observe(canvas);
 
+    const branchSelect = host.querySelector('.dk-branch-select');
+    const branchStatus = host.querySelector('.dk-branch-status');
+    function chooseBranch() {
+      branch = branchData.branches.find(b => b.id === branchSelect.value) || null;
+      branchDays = new Map((branch?.days || []).map(d => [d.time, d]));
+      const dateWarning = branchData.date !== bars.at(-1).time
+        ? `｜K線截至 ${bars.at(-1).time}，分點日期不同` : '';
+      branchStatus.textContent = `${branchData.start}～${branchData.date}｜富邦 / MoneyDJ${dateWarning}` +
+        (branch ? `｜每日明細 ${branch.days.length} 筆` : '') +
+        '｜灰點為來源缺列，非0張；每日取整加總可能與區間排行略有差異';
+      schedule();
+    }
+    branchSelect.onchange = chooseBranch;
+    async function loadBranches() {
+      try {
+        const cached = branchCache.get(ticker);
+        let data = cached && Date.now() - cached.at < 300000 ? cached.data : null;
+        if (!data) {
+          const response = await fetch('./data/broker_branches/' + encodeURIComponent(ticker) + '.json',
+            {cache: 'no-cache', signal: branchAbort.signal});
+          if (!response.ok) throw new Error('尚未建立分點資料，請執行 Broker branch charts');
+          data = await response.json();
+        }
+        if (token.dead || !host.isConnected) return;
+        if (String(data.ticker) !== String(ticker) || data.period !== 60 || !Array.isArray(data.branches) ||
+            !/^\d{4}-\d{2}-\d{2}$/.test(data.start) || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+          throw new Error('分點資料格式或股票代號不符');
+        }
+        const usable = data.branches.filter(b => b.status === 'ok' && Array.isArray(b.days) && b.days.length &&
+          b.days.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d.time) && d.time >= data.start && d.time <= data.date &&
+            ['buy', 'sell', 'net'].every(k => Number.isFinite(d[k]))) &&
+          new Set(b.days.map(d => d.time)).size === b.days.length);
+        if (!usable.length) throw new Error('分點明細尚未取得，請查看 Broker branch charts 執行紀錄');
+        branchCache.set(ticker, {at: Date.now(), data});
+        branchData = data;
+        branchSelect.replaceChildren();
+        for (const [side, label] of [['buy', '近60日前五大買超'], ['sell', '近60日前五大賣超']]) {
+          const group = document.createElement('optgroup'); group.label = label;
+          for (const b of data.branches.filter(b => b.side === side)) {
+            const option = document.createElement('option'); option.value = b.id;
+            option.disabled = !usable.includes(b);
+            option.textContent = `${b.rank}. ${b.name}（${b.net_lots > 0 ? '+' : ''}${fmt(b.net_lots, 0)}張）` +
+              (option.disabled ? '－明細待補' : '');
+            group.append(option);
+          }
+          branchSelect.append(group);
+        }
+        branchSelect.disabled = false;
+        branchSelect.value = usable[0].id;
+        chooseBranch();
+      } catch (e) {
+        if (token.dead || e.name === 'AbortError') return;
+        branchSelect.options[0].textContent = '分點資料暫不可用';
+        branchStatus.textContent = e.message;
+      }
+    }
+    loadBranches();
+
     /*
      * 關閉個股視窗時，
      * 清除計時器、事件與繪圖排程
@@ -1701,6 +1821,8 @@
       token.dead = true;
 
       clearLongPress();
+      branchAbort.abort();
+      branchSelect.onchange = null;
 
       resize.disconnect();
 
@@ -1739,3 +1861,4 @@
     validBars
   };
 })();
+
