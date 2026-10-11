@@ -22,7 +22,6 @@
   ];
 
   const CHART_HEIGHT = 500;
-  const BASE_CHART_HEIGHT = 350;
   const INITIAL_BARS = 65;
   const LONG_PRESS_MS = 350;
   const MOVE_THRESHOLD = 8;
@@ -341,6 +340,46 @@
         #dailyKHost button {
           font-size: 11px;
           padding: 3px 2px;
+        }
+      }
+
+      /* Compact daily-K screen; keep browser safe areas and an accessible scroll fallback. */
+      .stock-detail-sheet:has(#dailyKHost) {
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px));
+      }
+      .stock-detail-sheet:has(#dailyKHost) .stock-detail-head {
+        padding: 5px 10px; gap: 6px;
+      }
+      .stock-detail-sheet:has(#dailyKHost) .stock-detail-title strong {
+        font-size: 15px; color: var(--ink, #111827);
+      }
+      .stock-detail-sheet:has(#dailyKHost) .stock-detail-title small {font-size:10px;margin:0}
+      .stock-detail-sheet:has(#dailyKHost) .stock-detail-close {width:32px;height:32px}
+      #stockDetailBody:has(#dailyKHost) {padding:4px 5px calc(4px + env(safe-area-inset-bottom, 0px))}
+      #stockDetailBody:has(#dailyKHost) .stock-detail-tabs {margin-bottom:4px;gap:4px}
+      #stockDetailBody:has(#dailyKHost) .stock-detail-tab {min-height:32px;border-radius:8px}
+      #stockDetailBody:has(#dailyKHost) .stock-detail-card {padding:2px;border-radius:10px}
+      #dailyKHost .dk-stock-header {padding:5px 7px;margin-bottom:2px}
+      #dailyKHost .dk-stock-name {font-size:15px}
+      #dailyKHost .dk-latest-price {font-size:23px}
+      #dailyKHost .dk-price-change {font-size:13px}
+      #dailyKHost .dk-quote-grid {margin-top:3px;padding-top:3px;gap:1px 5px}
+      #dailyKHost .dk-quote-date, #dailyKHost > .dk-note {display:none}
+      #dailyKHost .dk-info {display:block;min-height:32px;margin:0;padding:1px 3px;line-height:15px}
+      #dailyKHost .dk-ma {margin:2px 0}
+      #dailyKHost .dk-tools {margin:2px 0}
+      #dailyKHost button {min-height:28px;padding:2px}
+      #dailyKHost .dk-branch-controls {padding:2px 0!important}
+      #dailyKHost .dk-branch-controls label {font-size:0!important;margin:0!important}
+      #dailyKHost .dk-branch-select {margin:0!important;padding:5px 7px!important;font-size:14px!important;height:34px}
+      #dailyKHost .dk-branch-readout {min-height:20px!important;font-size:12px!important;line-height:20px!important}
+      #dailyKHost .dk-branch-status:empty {display:none}
+      @media(max-width:699px) {
+        .stock-detail-modal:has(#dailyKHost) {padding:env(safe-area-inset-top, 0px) 0 0;align-items:flex-end}
+        .stock-detail-sheet:has(#dailyKHost) {
+          height:calc(100dvh - env(safe-area-inset-top, 0px));
+          max-height:calc(100dvh - env(safe-area-inset-top, 0px));
+          border-radius:12px 12px 0 0;
         }
       }
     `;
@@ -767,10 +806,10 @@
       const right = size.w - 54;
       const top = 10;
 
-      const bottom = Math.round(BASE_CHART_HEIGHT * 0.68);
-      const vtop = bottom + 27;
-      const vbottom = BASE_CHART_HEIGHT - 23;
-      const btop = BASE_CHART_HEIGHT + 19;
+      const bottom = Math.round(size.h * 0.56);
+      const vtop = bottom + 20;
+      const vbottom = Math.round(size.h * 0.76) - 8;
+      const btop = vbottom + 24;
       const bbottom = size.h - 23;
       const branchMax = Math.max(1, ...bars.slice(end - count, end)
         .map(b => Math.abs(branchDays.get(b.time)?.net || 0)));
@@ -1148,8 +1187,8 @@
       const flow = branchDays.get(day);
       const readout = host.querySelector('.dk-branch-readout');
       readout.textContent = branch
-        ? `${day}｜${branch.name}｜` + (flow
-          ? `買進 ${fmt(flow.buy, 0)}｜賣出 ${fmt(flow.sell, 0)}｜買賣超 ${flow.net > 0 ? '+' : ''}${fmt(flow.net, 0)} 張`
+        ? `${day}｜` + (flow
+          ? `買賣超 ${flow.net > 0 ? '+' : ''}${fmt(flow.net, 0)} 張`
           : (day < branchData.start || day > branchData.date ? '不在分點資料區間' : '來源未提供當日明細'))
         : '分點資料未就緒；K線與成交量仍可使用';
       readout.style.color = flow ? (flow.net > 0 ? '#ff667d' : flow.net < 0 ? '#48d59a' : '#d3dfef') : '#b2bfd1';
@@ -1166,6 +1205,7 @@
           `量 ${fmt(b.volume / 1000, 0)} 張`;
       } else {
         info.classList.remove('visible');
+        info.textContent = `${bars.at(-1).time}｜開 ${fmt(bars.at(-1).open)} 高 ${fmt(bars.at(-1).high)} 低 ${fmt(bars.at(-1).low)} 收 ${fmt(bars.at(-1).close)}`;
       }
 
       periods.forEach(n => {
@@ -1720,40 +1760,34 @@
     /*
      * Canvas 尺寸
      */
-    const resize = new ResizeObserver(() => {
+    function fitCanvas() {
       if (token.dead) return;
-
-      size = {
-        w: Math.max(
-          220,
-          canvas.clientWidth
-        ),
-        h: CHART_HEIGHT
-      };
-
+      const sheet = host.closest('.stock-detail-sheet');
+      const viewportHeight = window.visualViewport?.height || window.innerHeight || 800;
+      let height = CHART_HEIGHT;
+      if (sheet && window.innerWidth < 700) {
+        const sheetTop = sheet.getBoundingClientRect().top;
+        const offset = canvas.getBoundingClientRect().top - sheetTop + sheet.scrollTop;
+        const body = host.closest('.stock-detail-body');
+        const bottomPad = body ? parseFloat(getComputedStyle(body).paddingBottom) || 0 : 8;
+        height = Math.max(240, Math.min(600, Math.floor(Math.min(sheet.clientHeight, viewportHeight - sheetTop) - offset - bottomPad - 8)));
+      }
+      const width = Math.max(220, canvas.clientWidth);
       const dpr = window.devicePixelRatio || 1;
-
-      canvas.width = Math.round(
-        size.w * dpr
-      );
-
-      canvas.height = Math.round(
-        size.h * dpr
-      );
-
-      ctx.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0
-      );
-
+      if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+        size = {w:width, h:height};
+        canvas.style.height = height + 'px';
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+      }
       schedule();
-    });
-
-    resize.observe(canvas);
+    }
+    const resize = new ResizeObserver(fitCanvas);
+    resize.observe(host);
+    window.addEventListener('resize', fitCanvas);
+    window.visualViewport?.addEventListener('resize', fitCanvas);
+    fitCanvas();
 
     const branchSelect = host.querySelector('.dk-branch-select');
     const branchStatus = host.querySelector('.dk-branch-status');
@@ -1762,9 +1796,10 @@
       branchDays = new Map((branch?.days || []).map(d => [d.time, d]));
       const dateWarning = branchData.date !== bars.at(-1).time
         ? `｜K線截至 ${bars.at(-1).time}，分點日期不同` : '';
-      branchStatus.textContent = `${branchData.start}～${branchData.date}｜富邦 / MoneyDJ${dateWarning}` +
-        (branch ? `｜每日明細 ${branch.days.length} 筆` : '') +
-        '｜灰點為來源缺列，非0張；每日取整加總可能與區間排行略有差異';
+      branchStatus.textContent = dateWarning ? `分點截至 ${branchData.date}｜K線截至 ${bars.at(-1).time}` : '';
+      // Source notes remain available on demand without consuming vertical space.
+      branchSelect.title = `${branchData.start}～${branchData.date}｜富邦 / MoneyDJ｜缺列不補零`;
+      fitCanvas();
       schedule();
     }
     branchSelect.onchange = chooseBranch;
@@ -1809,6 +1844,7 @@
         if (token.dead || e.name === 'AbortError') return;
         branchSelect.options[0].textContent = '分點資料暫不可用';
         branchStatus.textContent = e.message;
+        fitCanvas();
       }
     }
     loadBranches();
@@ -1825,6 +1861,8 @@
       branchSelect.onchange = null;
 
       resize.disconnect();
+      window.removeEventListener('resize', fitCanvas);
+      window.visualViewport?.removeEventListener('resize', fitCanvas);
 
       if (frame) {
         cancelAnimationFrame(frame);
@@ -1861,4 +1899,5 @@
     validBars
   };
 })();
+
 
