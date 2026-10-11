@@ -11,8 +11,9 @@ import math
 import re
 import time
 import urllib.parse
-import urllib.request
-from datetime import date, datetime
+import threading
+import requests
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -20,6 +21,17 @@ ROOT = Path(__file__).resolve().parents[1]
 DEST = ROOT / 'data/broker_branches'
 BASE = 'https://fubon-ebrokerdj.fbs.com.tw'
 VERSION = 1
+# Shared ceiling across ranking + detail requests; never 12 requests per stock.
+HTTP_LIMIT = threading.BoundedSemaphore(12)
+HTTP_LOCAL = threading.local()
+METRICS_LOCK = threading.Lock()
+METRICS = {'requests': 0, 'cached': 0, 'incremental': 0, 'full': 0}
+
+
+def metric(key):
+    with METRICS_LOCK:
+        METRICS[key] += 1
+
 
 
 def read(path, default):
@@ -58,20 +70,30 @@ def iso(value):
 
 
 def fetch(url):
+    if not hasattr(HTTP_LOCAL, 'session'):
+        session = requests.Session()
+        session.headers.update({'User-Agent': 'Mozilla/5.0', 'Referer': BASE + '/', 'Accept': 'text/html'})
+        session.mount('https://', requests.adapters.HTTPAdapter(pool_connections=2, pool_maxsize=1))
+        HTTP_LOCAL.session = session
     error = None
     for attempt in range(2):
+        delay = 1
         try:
-            request = urllib.request.Request(url, headers={
-                'User-Agent': 'Mozilla/5.0', 'Referer': BASE + '/', 'Accept': 'text/html'})
-            with urllib.request.urlopen(request, timeout=25) as response:
-                page = response.read().decode('cp950', errors='replace')
+            with HTTP_LIMIT:
+                metric('requests')
+                response = HTTP_LOCAL.session.get(url, timeout=(8, 20))
+                if response.status_code == 429:
+                    retry = response.headers.get('Retry-After', '5')
+                    delay = min(30, max(5, int(retry))) if retry.isdigit() else 5
+                response.raise_for_status()
+                page = response.content.decode('cp950', errors='replace')
             if '<table' not in page.lower():
                 raise ValueError('source returned no table')
             return page
         except Exception as exc:
             error = exc
             if attempt == 0:
-                time.sleep(2)
+                time.sleep(delay)
     raise RuntimeError(str(error)[:180])
 
 
@@ -136,7 +158,52 @@ def parse_daily(page, ticker, branch, start, end):
     return [result[k] for k in sorted(result)]
 
 
-def update_one(ticker):
+def detail_days(ticker, branch, start, end):
+    query = urllib.parse.urlencode({'A': ticker, 'BHID': branch['broker'], 'b': branch['branch'],
+                                   'C': '0', 'D': start, 'E': end, 'ver': 'V3'})
+    page = fetch(BASE + '/z/zc/zco/zco0/zco0.djhtm?' + query)
+    return parse_daily(page, ticker, branch, start, end)
+
+
+def delta_check(days, branch):
+    delta = round(sum(d['net'] for d in days) - branch['net_lots'], 4)
+    if not days or len(days) > 60 or abs(delta) > max(60, len(days) * 2):
+        raise ValueError('daily sum disagrees with 60-session ranking')
+    return delta
+
+
+def refresh_branch(ticker, branch, prior, old, start, end):
+    """Merge verified old history with a recent overlap; fallback if reconciliation fails."""
+    try:
+        incremental = (old.get('schema') == VERSION and prior.get('status') == 'ok'
+                       and bool(prior.get('days')) and old.get('start', '9999') <= start
+                       and start <= old.get('date', '') < end
+                       and (date.fromisoformat(end) - date.fromisoformat(old['date'])).days <= 14)
+        if incremental:
+            # Re-fetch recent overlap to handle late source corrections. No assumed zero rows.
+            since = max(start, (date.fromisoformat(old['date']) - timedelta(days=3)).isoformat())
+            try:
+                recent = detail_days(ticker, branch, since, end)
+                history = {d['time']: d for d in prior['days'] if start <= d['time'] < since}
+                history.update({d['time']: d for d in recent})
+                days = [history[k] for k in sorted(history)]
+                delta = delta_check(days, branch)
+                metric('incremental')
+                branch.update(days=days, status='ok', sum_delta=delta)
+                return branch
+            except Exception:
+                # An empty or inconsistent short-range response cannot erase history.
+                pass
+        days = detail_days(ticker, branch, start, end)
+        delta = delta_check(days, branch)
+        metric('full')
+        branch.update(days=days, status='ok', sum_delta=delta)
+    except Exception as exc:
+        branch.update(days=[], status='error', error=str(exc))
+    return branch
+
+
+def update_one(ticker, detail_pool):
     path = DEST / (ticker + '.json')
     old = read(path, {})
     now = datetime.now(ZoneInfo('Asia/Taipei')).isoformat(timespec='seconds')
@@ -147,28 +214,19 @@ def update_one(ticker):
             raise ValueError('source date regressed')
     except Exception as exc:
         return ticker, {'ok': False, 'date': old.get('date'), 'error': str(exc)}
-    same_window = (old.get('schema') == VERSION and old.get('start') == start and old.get('date') == end)
-    cached = {b['id']: b for b in old.get('branches', [])} if same_window else {}
-    errors = {}
+    same_window = old.get('schema') == VERSION and old.get('start') == start and old.get('date') == end
+    cached = {b['id']: b for b in old.get('branches', [])}
+    tasks = []
     for branch in ranked:
         prior = cached.get(branch['id'], {})
-        if prior.get('status') == 'ok' and prior.get('net_lots') == branch['net_lots']:
+        if same_window and prior.get('status') == 'ok' and prior.get('net_lots') == branch['net_lots']:
             branch.update({k: prior[k] for k in ('days', 'status', 'sum_delta')})
-            continue
-        try:
-            query = urllib.parse.urlencode({'A': ticker, 'BHID': branch['broker'], 'b': branch['branch'],
-                                           'C': '0', 'D': start, 'E': end, 'ver': 'V3'})
-            page = fetch(BASE + '/z/zc/zco/zco0/zco0.djhtm?' + query)
-            days = parse_daily(page, ticker, branch, start, end)
-            delta = round(sum(d['net'] for d in days) - branch['net_lots'], 4)
-            # Protect against a silently truncated 20-day response; allow source lot rounding.
-            if abs(delta) > max(60, len(days) * 2):
-                raise ValueError('daily sum disagrees with 60-session ranking')
-            branch.update(days=days, status='ok', sum_delta=delta)
-        except Exception as exc:
-            branch.update(days=[], status='error', error=str(exc))
-            errors[branch['id']] = str(exc)
-        time.sleep(0.25)
+            metric('cached')
+        else:
+            tasks.append(detail_pool.submit(refresh_branch, ticker, branch, prior, old, start, end))
+    for future in concurrent.futures.as_completed(tasks):
+        future.result()
+    errors = {b['id']: b['error'] for b in ranked if b.get('status') != 'ok'}
     value = {'schema': VERSION, 'ticker': ticker, 'start': start, 'date': end,
              'updated_at': now, 'source': '富邦 eBroker / MoneyDJ', 'source_url': url,
              'unit': 'lots', 'period': 60, 'branches': ranked, 'errors': errors}
@@ -189,17 +247,25 @@ def main():
         raise ValueError('empty or invalid ticker universe')
     manifest = read(DEST / 'manifest.json', {'stocks': {}})
     failures = 0
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
-        for ticker, status in pool.map(update_one, sorted(tickers)):
+    started = time.monotonic()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=12) as details, \
+            concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        futures = {pool.submit(update_one, ticker, details): ticker for ticker in sorted(tickers)}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                ticker, status = future.result()
+            except Exception as exc:
+                ticker, status = futures[future], {'ok': False, 'error': str(exc)[:180]}
             manifest['stocks'][ticker] = status
             failures += not status['ok']
             manifest['updated_at'] = datetime.now(ZoneInfo('Asia/Taipei')).isoformat(timespec='seconds')
             write(DEST / 'manifest.json', manifest)
             print(ticker, json.dumps(status, ensure_ascii=False), flush=True)
-    print(f'{len(tickers) - failures}/{len(tickers)} stocks refreshed')
+    print(f'{len(tickers) - failures}/{len(tickers)} stocks refreshed in {time.monotonic() - started:.1f}s; {METRICS}')
     if failures:
         raise SystemExit('Partial source failures; saved valid data. Rerun to retry failed branches.')
 
 
 if __name__ == '__main__':
     main()
+
