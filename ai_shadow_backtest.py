@@ -16,7 +16,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -289,6 +289,10 @@ def main():
                 # neutral-centered so the addition changes ranking, not the score scale.
                 row['score_C_LIQUIDITY'] = (row['score_C']
                     + .10 * (row['daily_turnover_rank'] - 50))
+                # Pre-specified market-adaptive shadow: TWSE uses C, TPEx uses C_FLOW_QUALITY.
+                # Exchange is fixed for the entire market/day pool; no future outcomes used.
+                row['score_C_MARKET_ADAPTIVE'] = (row['score_C'] if exchange == 'twse'
+                    else row['score_C_FLOW_QUALITY'])
 
             paired = len(baseline) >= 20
             coverage.append({'date': day, 'market': exchange, 'status': 'evaluated',
@@ -426,7 +430,7 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
@@ -435,7 +439,9 @@ def main():
                          'C_vs_C_SECTOR': overlap('C', 'C_SECTOR'),
                          'C_vs_C_VOLUME_GUARD': overlap('C', 'C_VOLUME_GUARD'),
                          'C_vs_C_FLOW_QUALITY': overlap('C', 'C_FLOW_QUALITY'),
-                         'C_vs_C_LIQUIDITY': overlap('C', 'C_LIQUIDITY')},
+                         'C_vs_C_LIQUIDITY': overlap('C', 'C_LIQUIDITY'),
+                         'C_vs_C_MARKET_ADAPTIVE': overlap('C', 'C_MARKET_ADAPTIVE'),
+                         'C_FLOW_QUALITY_vs_C_MARKET_ADAPTIVE': overlap('C_FLOW_QUALITY', 'C_MARKET_ADAPTIVE')},
     }
     # Factor audit: descriptive comparisons only. Never affect selection or scoring.
     # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
@@ -484,7 +490,7 @@ def main():
     }
     # Side-by-side matched date/market comparisons for new experiments vs C and V1.
     diagnostics['experiment_comparison'] = {}
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE'):
         diagnostics['experiment_comparison'][strategy] = {}
         for market in (*MARKETS, 'all'):
             diagnostics['experiment_comparison'][strategy][market] = {}
@@ -502,7 +508,7 @@ def main():
     diagnostics['experiment_date_wins_vs_C'] = {
         s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
             for top in (5, 10, 20)}
-        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')
     }
     # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
     # This is additive only: scoring, evaluation, summaries and production stay unchanged.
@@ -546,7 +552,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE'):
         for market in MARKETS:
             print(strategy, market, 'paired fixed 5d top5:',
                   paired_summary[strategy][market]['top5']['baseline_5d'])
