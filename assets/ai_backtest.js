@@ -8,6 +8,9 @@
   let cachedData = null;
   let loadingPromise = null;
 
+  // 回測面板預設收合
+  let backtestExpanded = false;
+
   const STRATEGIES = [
     {
       key: 'baseline',
@@ -158,9 +161,6 @@
 
   /* ========================================
      加權指數／OTC 同期平均漲跌幅
-
-     與 AI 選股使用相同成熟樣本
-     不是直接計算回測起日至今漲跌幅
      ======================================== */
 
   function benchmarkRows(data, days, stockSamples) {
@@ -484,9 +484,139 @@
       data.records || []
     );
 
+    // 保留使用者目前的展開／收合狀態
+    const oldCollapse =
+      panel.querySelector('.ai-bt-collapse');
+
+    if (oldCollapse) {
+      backtestExpanded = oldCollapse.open;
+    }
+
     panel.innerHTML = `
 
       <style>
+
+        /* ====================================
+           績效回測收合區塊
+           ==================================== */
+
+        #aiBacktestPanel {
+          min-width: 0;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse {
+          width: 100%;
+          min-width: 0;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-summary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          cursor: pointer;
+          list-style: none;
+          padding: 4px 0;
+          user-select: none;
+          -webkit-user-select: none;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-summary::-webkit-details-marker {
+          display: none;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-summary::marker {
+          content: '';
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-title {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+          flex: 1;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-kicker {
+          color: var(--muted, #8793a6);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-name {
+          color: var(--text, #243247);
+          font-size: 20px;
+          font-weight: 750;
+          line-height: 1.35;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-subtitle {
+          color: var(--muted, #64748b);
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-badge {
+          border: 1px solid var(--line, #dce3ec);
+          border-radius: 999px;
+          padding: 6px 10px;
+          color: var(--muted, #64748b);
+          font-size: 12px;
+          white-space: nowrap;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-arrow {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+          color: var(--text, #243247);
+          font-size: 20px;
+          font-weight: 700;
+          transition: transform .2s ease;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse[open]
+        .ai-bt-collapse-arrow {
+          transform: rotate(180deg);
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-summary:focus-visible {
+          outline: 2px solid #60a5fa;
+          outline-offset: 4px;
+          border-radius: 8px;
+        }
+
+        #aiBacktestPanel
+        .ai-bt-collapse-content {
+          padding-top: 14px;
+        }
+
+        /* ====================================
+           五種策略按鈕
+           ==================================== */
 
         #aiBacktestPanel
         .ai-bt-strategy-switch {
@@ -543,6 +673,10 @@
           line-height: 1.5;
         }
 
+        /* ====================================
+           同期指數比較
+           ==================================== */
+
         #aiBacktestPanel
         .ai-bt-benchmarks {
           margin-top: 14px;
@@ -589,7 +723,33 @@
           color: #059669;
         }
 
+        /* ====================================
+           手機版
+           ==================================== */
+
         @media (max-width: 400px) {
+
+          #aiBacktestPanel
+          .ai-bt-collapse-name {
+            font-size: 18px;
+          }
+
+          #aiBacktestPanel
+          .ai-bt-collapse-kicker {
+            font-size: 10px;
+            letter-spacing: 1px;
+          }
+
+          #aiBacktestPanel
+          .ai-bt-collapse-subtitle {
+            font-size: 11px;
+          }
+
+          #aiBacktestPanel
+          .ai-bt-collapse-badge {
+            font-size: 11px;
+            padding: 5px 8px;
+          }
 
           #aiBacktestPanel
           .ai-bt-strategy-switch {
@@ -614,164 +774,214 @@
 
         }
 
+        @media (prefers-reduced-motion: reduce) {
+          #aiBacktestPanel
+          .ai-bt-collapse-arrow {
+            transition: none;
+          }
+        }
+
       </style>
 
-      <div class="ai-bt-head">
+      <!-- ==================================
+           整個績效回測收合容器
+           ================================== -->
 
-        <div>
+      <details
+        class="ai-bt-collapse"
+        ${backtestExpanded ? 'open' : ''}
+      >
 
-          <span class="kicker">
-            PERFORMANCE BACKTEST
+        <summary class="ai-bt-collapse-summary">
+
+          <span class="ai-bt-collapse-title">
+
+            <span class="ai-bt-collapse-kicker">
+              PERFORMANCE BACKTEST
+            </span>
+
+            <span class="ai-bt-collapse-name">
+              AI 選股績效回測
+            </span>
+
+            <span class="ai-bt-collapse-subtitle">
+              ${
+                data.start_date
+                  ? '自 ' +
+                    esc(data.start_date) +
+                    ' 起累積'
+                  : '尚未開始累積'
+              }
+              ｜以選股基準日收盤價計算
+            </span>
+
           </span>
 
-          <h2>
-            AI 選股績效回測
-          </h2>
+          <span class="ai-bt-collapse-right">
 
-          <p>
-            ${
-              data.start_date
-                ? '自 ' +
-                  esc(data.start_date) +
-                  ' 起累積'
-                : '尚未開始累積'
-            }
-            ｜以選股基準日收盤價計算
-          </p>
+            <span class="ai-bt-collapse-badge">
+              交易日制
+            </span>
 
-        </div>
+            <span
+              class="ai-bt-collapse-arrow"
+              aria-hidden="true"
+            >
+              ⌄
+            </span>
 
-        <span class="badge">
-          交易日制
-        </span>
-
-      </div>
-
-      ${strategyButtons()}
-
-      <div class="ai-bt-strategy-desc">
-        ${esc(info().description)}
-      </div>
-
-      <div class="ai-bt-stats">
-
-        ${
-          statCard(
-            '5日績效',
-            summary['5d'],
-            data,
-            5
-          )
-        }
-
-        ${
-          statCard(
-            '10日績效',
-            summary['10d'],
-            data,
-            10
-          )
-        }
-
-      </div>
-
-      <div class="ai-bt-rank-card">
-
-        <div class="ai-bt-rank-head">
-
-          <b>
-            排名分組平均績效
-          </b>
-
-          <span>
-            5日 / 10日
           </span>
 
-        </div>
-
-        ${
-          bucketRow(
-            'Top 5',
-            buckets.top5
-          )
-        }
-
-        ${
-          bucketRow(
-            'Top 10',
-            buckets.top10
-          )
-        }
-
-        ${
-          bucketRow(
-            'Top 20',
-            buckets.top20
-          )
-        }
-
-      </div>
-
-      <details class="ai-bt-history">
-
-        <summary>
-          最近選股紀錄
-
-          <span>
-            查看明細 ▾
-          </span>
         </summary>
 
-        <div class="ai-bt-history-body">
+        <div class="ai-bt-collapse-content">
 
-          ${
-            records.length
-              ? records
-                  .map(recordRow)
-                  .join('')
-              : `
-                <div class="empty">
-                  第一次執行更新後會開始累積回測紀錄
-                </div>
-              `
-          }
+          ${strategyButtons()}
+
+          <div class="ai-bt-strategy-desc">
+            ${esc(info().description)}
+          </div>
+
+          <div class="ai-bt-stats">
+
+            ${
+              statCard(
+                '5日績效',
+                summary['5d'],
+                data,
+                5
+              )
+            }
+
+            ${
+              statCard(
+                '10日績效',
+                summary['10d'],
+                data,
+                10
+              )
+            }
+
+          </div>
+
+          <div class="ai-bt-rank-card">
+
+            <div class="ai-bt-rank-head">
+
+              <b>
+                排名分組平均績效
+              </b>
+
+              <span>
+                5日 / 10日
+              </span>
+
+            </div>
+
+            ${
+              bucketRow(
+                'Top 5',
+                buckets.top5
+              )
+            }
+
+            ${
+              bucketRow(
+                'Top 10',
+                buckets.top10
+              )
+            }
+
+            ${
+              bucketRow(
+                'Top 20',
+                buckets.top20
+              )
+            }
+
+          </div>
+
+          <details class="ai-bt-history">
+
+            <summary>
+              最近選股紀錄
+
+              <span>
+                查看明細 ▾
+              </span>
+            </summary>
+
+            <div class="ai-bt-history-body">
+
+              ${
+                records.length
+                  ? records
+                      .map(recordRow)
+                      .join('')
+                  : `
+                    <div class="empty">
+                      第一次執行更新後會開始累積回測紀錄
+                    </div>
+                  `
+              }
+
+            </div>
+
+          </details>
+
+          <div class="ai-bt-note">
+
+            5日／10日皆指推薦後第5／10個交易日，
+            不含週末及休市日
+
+            <br><br>
+
+            五種策略使用相同已滿期樣本
+
+            <br><br>
+
+            加權指數與 OTC 同期平均漲跌幅：
+            逐筆依推薦日收盤至第5／10個交易日收盤計算，
+            並依相同成熟選股訊號權重平均；
+            官方指數資料未齊全時顯示 —
+
+            <br><br>
+
+            MA10／MA20從推薦次一交易日開始檢查，
+            收盤跌破均線即按當日收盤價模擬出場
+
+            <br><br>
+
+            停損 5%／10% 同樣從推薦次一交易日開始檢查，
+            收盤跌幅達停損門檻時按當日收盤價模擬出場
+
+            <br><br>
+
+            提前出場的報酬仍須等觀察期滿才納入統計
+
+          </div>
 
         </div>
 
       </details>
-
-      <div class="ai-bt-note">
-
-        5日／10日皆指推薦後第5／10個交易日，
-        不含週末及休市日
-
-        <br><br>
-
-        五種策略使用相同已滿期樣本
-
-        <br><br>
-
-        加權指數與 OTC 同期平均漲跌幅：
-        逐筆依推薦日收盤至第5／10個交易日收盤計算，
-        並依相同成熟選股訊號權重平均；
-        官方指數資料未齊全時顯示 —
-
-        <br><br>
-
-        MA10／MA20從推薦次一交易日開始檢查，
-        收盤跌破均線即按當日收盤價模擬出場
-
-        <br><br>
-
-        停損 5%／10% 同樣從推薦次一交易日開始檢查，
-        收盤跌幅達停損門檻時按當日收盤價模擬出場
-
-        <br><br>
-
-        提前出場的報酬仍須等觀察期滿才納入統計
-
-      </div>
     `;
+
+    /* ======================================
+       記錄收合狀態
+       ====================================== */
+
+    const collapse =
+      panel.querySelector('.ai-bt-collapse');
+
+    if (collapse) {
+      collapse.addEventListener('toggle', () => {
+        backtestExpanded = collapse.open;
+      });
+    }
+
+    /* ======================================
+       策略切換
+       ====================================== */
 
     panel
       .querySelectorAll(
@@ -792,7 +1002,12 @@
               return;
             }
 
+            // 切換策略時保持展開
+            backtestExpanded =
+              collapse ? collapse.open : true;
+
             selectedStrategy = next;
+
             render();
           }
         );
