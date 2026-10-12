@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Independent V3 stock re-selection experiment; does not write production files.
-Run at repository root: python ai_shadow_backtest.py
-Historical daily prices and institutional flows are point-in-time; sector whitelist is
-current (not historical) and holder history is unavailable, so this is a PROXY test,
-NOT an exact reproduction of the production 966-stock V1 universe/model.
+"""Read-only V3 shadow backtest. Keep ai-shadow-test.yml unchanged.
+Signals use selection-day close and institutional data: close execution is NOT
+realistically guaranteed. Current sector membership creates survivorship bias.
 """
 import csv
 import json
@@ -13,166 +11,195 @@ from pathlib import Path
 from statistics import mean, median
 
 ROOT = Path(__file__).resolve().parent
-MARKET = ROOT / 'data/history/market'
-INST = ROOT / 'data/history/institutional'
-SECTORS = ROOT / 'data/sectors.json'
-BACKTEST = ROOT / 'data/ai_backtest.json'
 OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 
 
-def read(path):
+def load(path):
     try:
         return json.loads(path.read_text(encoding='utf-8'))
     except (OSError, ValueError):
         return {}
 
 
-def val(x):
+def num(value):
     try:
-        v = float(x)
-        return v if math.isfinite(v) else None
-    except (TypeError, ValueError):
+        x = float(value)
+        return x if math.isfinite(x) else None
+    except (ValueError, TypeError):
         return None
 
 
-def pct(a, b):
-    return 100 * (b / a - 1) if a and b and a > 0 else None
+def ret(a, b):
+    return 100 * (b / a - 1) if a is not None and b is not None and a > 0 else None
 
 
-def rank_percentile(items, key):
-    good = sorted([(val(x.get(key)), x['ticker']) for x in items if val(x.get(key)) is not None])
-    n = len(good)
-    ranks = {ticker: 100 * i / max(1, n - 1) for i, (_, ticker) in enumerate(good)}
-    for x in items:
-        x[key + '_rank'] = ranks.get(x['ticker'], 0)
+def percentile(pool, field):
+    values = sorted((r[field], r['ticker']) for r in pool if r.get(field) is not None)
+    ranks = {t: 100 * i / max(1, len(values) - 1) for i, (_, t) in enumerate(values)}
+    for row in pool:
+        row[field + '_rank'] = ranks.get(row['ticker'], 0)
 
 
-def summary(rows):
-    values = [x['return'] for x in rows if x.get('return') is not None]
-    return {'samples': len(values), 'avg_return': round(mean(values), 4) if values else None,
-            'median_return': round(median(values), 4) if values else None,
-            'win_rate': round(100 * sum(x > 0 for x in values) / len(values), 2) if values else None}
+def stats(values):
+    a = [v for v in values if v is not None]
+    return {'samples': len(a), 'avg_return': round(mean(a), 4) if a else None,
+            'median_return': round(median(a), 4) if a else None,
+            'win_rate': round(100 * sum(v > 0 for v in a) / len(a), 2) if a else None,
+            'worst_return': round(min(a), 4) if a else None}
 
 
 def main():
-    sector_data = read(SECTORS)
-    sector_items = sector_data.get('sectors', []) if isinstance(sector_data, dict) else []
-    universe = {str(s.get('ticker')) for sec in sector_items for s in sec.get('stocks', []) if isinstance(s, dict) and s.get('ticker')}
+    sectors = load(ROOT / 'data/sectors.json').get('sectors', [])
+    universe = {str(s['ticker']) for sec in sectors for s in sec.get('stocks', [])
+                if isinstance(s, dict) and s.get('ticker')}
     if not universe:
-        raise SystemExit('No sectors found: expected data/sectors.json; refusing misleading test')
-    market = {p.stem: read(p).get('stocks', {}) for p in MARKET.glob('*.json')}
-    market = {k: v for k, v in market.items() if isinstance(v, dict) and v}
+        raise SystemExit('ERROR: sector universe missing')
+    market = {}
+    for path in (ROOT / 'data/history/market').glob('*.json'):
+        stocks = load(path).get('stocks', {})
+        if stocks:
+            market[path.stem] = stocks
     dates = sorted(market)
-    institutional = {}
-    for p in INST.glob('*.json'):
-        d = read(p)
-        institutional[p.stem] = {**d.get('twse', {}), **d.get('tpex', {})}
-    old = read(BACKTEST)
-    records = old.get('records', [])
-    old_by_date_market = defaultdict(list)
-    for r in records:
-        if r.get('market') in ('twse', 'tpex') and r.get('status_5d') == 'complete':
-            old_by_date_market[(r.get('selection_date'), r['market'])].append(r)
-    if not old_by_date_market:
-        raise SystemExit('No mature baseline dates in ai_backtest.json')
-    day_index = {d: i for i, d in enumerate(dates)}
-    # Only complete 5-day horizons; no future leakage in signal computation.
-    all_results = []
-    picks = []
-    coverage = []
-    for date, market_name in sorted(old_by_date_market):
-        i = day_index.get(date)
-        if i is None or i < 20 or i + 5 >= len(dates):
-            coverage.append({'date': date, 'market': market_name, 'reason': 'insufficient 20-day history or future prices'})
+    idx = {d: i for i, d in enumerate(dates)}
+    inst = {}
+    for path in (ROOT / 'data/history/institutional').glob('*.json'):
+        data = load(path)
+        inst[path.stem] = {**data.get('twse', {}), **data.get('tpex', {})}
+    old = defaultdict(list)
+    for record in load(ROOT / 'data/ai_backtest.json').get('records', []):
+        if record.get('market') in ('twse', 'tpex') and record.get('status_5d') == 'complete':
+            old[(record.get('selection_date'), record['market'])].append(record)
+    if not old:
+        raise SystemExit('ERROR: no mature V1 baseline')
+    picks, daily, skipped = [], [], []
+    strategies = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS')
+    for (day, exchange), original in sorted(old.items()):
+        i = idx.get(day, -1)
+        if i < 20 or i + 5 >= len(dates):
+            skipped.append({'date': day, 'market': exchange, 'reason': 'insufficient history/future'})
             continue
-        hist = dates[:i + 1]
-        five = hist[-5:]
-        today = market[date]
+        hist = dates[i-20:i+1]
+        future = market[dates[i+5]]
+        today = market[day]
+        five_days = dates[i-4:i+1]
         pool = []
         for ticker in universe:
-            now = today.get(ticker, {})
-            if not isinstance(now, dict) or now.get('market') != market_name:
+            stock = today.get(ticker, {})
+            if stock.get('market') != exchange:
                 continue
-            closes = [val(market[d].get(ticker, {}).get('price')) for d in hist[-21:]]
-            if len(closes) != 21 or any(p is None or p <= 0 for p in closes):
+            closes = [num(market[d].get(ticker, {}).get('price')) for d in hist]
+            if any(v is None or v <= 0 for v in closes):
                 continue
-            volume = [val(market[d].get(ticker, {}).get('volume')) for d in hist[-6:]]
-            if any(v is None for v in volume) or mean(volume[:-1]) <= 0:
+            volumes = [num(market[d].get(ticker, {}).get('volume')) for d in dates[i-5:i+1]]
+            if any(v is None for v in volumes) or mean(volumes[:-1]) <= 0:
                 continue
-            current = closes[-1]
-            r5, r10, r20 = (pct(closes[-1-n], current) for n in (5, 10, 20))
-            # Avoid treating missing institutional days as zeros.
-            inst_days = [institutional.get(d) for d in five]
-            if any(x is None or ticker not in x for x in inst_days):
+            if any(d not in inst or ticker not in inst[d] for d in five_days):
                 continue
-            flows = [x[ticker] for x in inst_days]
-            turnover = sum(val(market[d].get(ticker, {}).get('turnover')) or 0 for d in five)
+            turnover = sum(num(market[d].get(ticker, {}).get('turnover')) or 0 for d in five_days)
             if turnover <= 0:
                 continue
-            net = sum(sum(val(f.get(k)) or 0 for k in ('foreign', 'trust', 'dealer')) * closes[-1 - (4 - j)] for j, f in enumerate(flows))
+            flow = 0
+            for j, d in enumerate(five_days):
+                entry = inst[d][ticker]
+                shares = sum(num(entry.get(k)) or 0 for k in ('foreign', 'trust', 'dealer'))
+                flow += shares * closes[-5+j]
+            price = closes[-1]
+            r5, r10, r20 = (ret(closes[-1-n], price) for n in (5, 10, 20))
             ma10, ma20 = mean(closes[-10:]), mean(closes[-20:])
-            volume_ratio = volume[-1] / mean(volume[:-1])
-            # Explicitly no current-day or future information beyond selection-day close.
-            pool.append({'ticker': ticker, 'name': now.get('name', ''), 'market': market_name,
-                         'date': date, 'entry': current, 'r5': r5, 'r10': r10, 'r20': r20,
-                         'flow': net / turnover * 100, 'volume_ratio': volume_ratio,
-                         'breakout': (current / max(closes[-21:-1]) - 1) * 100,
-                         'trend': 1 if current > ma10 > ma20 else 0,
-                         'overheat': max(0, r5 - 15) * 1.5 + max(0, (current / ma20 - 1) * 100 - 18),
-                         'return': pct(current, val(market[dates[i + 5]].get(ticker, {}).get('price')))})
+            volume_ratio = volumes[-1] / mean(volumes[:-1])
+            # Volume confirmation: reward controlled 1.2x-2.5x expansion;
+            # avoid rewarding extremely speculative volume spikes.
+            volume_confirm = max(0, 100 - abs(volume_ratio - 1.7) * 65)
+            heat = max(0, r5 - 15) * 1.5 + max(0, ret(ma20, price) - 18)
+            # Smooth penalty begins at 10% five-day gain and 13% above MA20.
+            heat_smooth = (max(0, r5 - 10) ** 1.2) * .7 + max(0, ret(ma20, price) - 13) * 1.1
+            pool.append({'ticker': ticker, 'name': stock.get('name', ''), 'market': exchange,
+                         'r5': r5, 'r10': r10, 'r20': r20, 'flow': flow / turnover * 100,
+                         'breakout': ret(max(closes[:-1]), price), 'volume_ratio': volume_ratio,
+                         'volume_confirm': volume_confirm, 'trend': int(price > ma10 > ma20),
+                         'overheat': heat, 'heat_smooth': heat_smooth,
+                         'return': ret(price, num(future.get(ticker, {}).get('price')))})
         if len(pool) < 20:
-            coverage.append({'date': date, 'market': market_name, 'reason': 'fewer than 20 valid sector-universe candidates', 'count': len(pool)})
+            skipped.append({'date': day, 'market': exchange, 'reason': 'fewer than 20 eligible stocks', 'pool_size': len(pool)})
             continue
-        for key in ('flow', 'r5', 'r10', 'r20', 'volume_ratio', 'breakout'):
-            rank_percentile(pool, key)
+        for key in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm'):
+            percentile(pool, key)
+        # RS uses relative stock return versus median of same-market candidates,
+        # not a future index return. Its percentile ranking is identical to r5_rank
+        # within each market, so we deliberately test a different 20-day RS horizon.
+        market_r20 = median(r['r20'] for r in pool)
         for row in pool:
-            row['score_A'] = .45 * row['flow_rank'] + .25 * row['breakout_rank'] + .20 * row['r10_rank'] + 10 * row['trend'] - row['overheat']
-            row['score_B'] = .55 * row['flow_rank'] + .20 * row['r5_rank'] + .15 * row['volume_ratio_rank'] + .10 * row['r20_rank'] - 2 * row['overheat']
-            row['score_C'] = .35 * row['flow_rank'] + .25 * row['r5_rank'] + .20 * row['breakout_rank'] + .10 * row['r10_rank'] + 10 * row['trend'] - 1.5 * row['overheat']
-        baseline = sorted(old_by_date_market[(date, market_name)], key=lambda x: int(x.get('rank') or 999))
-        for strategy in ('V1', 'A', 'B', 'C'):
+            row['rs20'] = row['r20'] - market_r20
+        percentile(pool, 'rs20')
+        for row in pool:
+            f, b, m10, m5 = (row[k+'_rank'] for k in ('flow', 'breakout', 'r10', 'r5'))
+            trend = 10 * row['trend']
+            row['score_A'] = .45*f + .25*b + .20*m10 + trend - row['overheat']
+            row['score_B'] = .55*f + .20*m5 + .15*row['volume_ratio_rank'] + .10*row['r20_rank'] - 2*row['overheat']
+            row['score_C'] = .35*f + .25*m5 + .20*b + .10*m10 + trend - 1.5*row['overheat']
+            # Controlled ablation: modify ONE factor at a time from A.
+            row['score_A_RS'] = .40*f + .25*b + .20*m10 + .05*row['rs20_rank'] + trend - row['overheat']
+            row['score_A_VOLUME'] = .40*f + .25*b + .20*m10 + .05*row['volume_confirm_rank'] + trend - row['overheat']
+            row['score_A_HEAT'] = .45*f + .25*b + .20*m10 + trend - row['heat_smooth']
+            row['score_A_PLUS'] = (.35*f + .20*b + .15*m10 + .10*row['rs20_rank']
+                                   + .10*row['volume_confirm_rank'] + trend - row['heat_smooth'])
+        original.sort(key=lambda r: int(r.get('rank') or 999))
+        for strategy in strategies:
             if strategy == 'V1':
-                selected = [{'ticker': r['ticker'], 'name': r.get('name', ''), 'return': val(r.get('baseline_return_5d'))} for r in baseline]
+                chosen = [{'ticker': r['ticker'], 'name': r.get('name', ''),
+                           'return': num(r.get('baseline_return_5d'))} for r in original[:20]]
             else:
-                selected = sorted(pool, key=lambda x: (-x['score_' + strategy], x['ticker']))[:20]
-            for pos, x in enumerate(selected, 1):
-                picks.append({'date': date, 'market': market_name, 'strategy': strategy, 'rank': pos,
-                              'ticker': x['ticker'], 'name': x.get('name', ''), 'return_5d': x.get('return')})
-            for k in (5, 10, 20):
-                ss = selected[:k]
-                all_results.append({'date': date, 'market': market_name, 'strategy': strategy,
-                                    'top': k, 'pool_size': len(pool), **summary(ss)})
-    if not all_results:
-        raise SystemExit('No valid historical dates. Need >=21 earlier daily snapshots and 5 future days. No results written.')
-    grouped = defaultdict(list)
-    for p in picks:
-        grouped[(p['strategy'], p['market'], p['rank'] <= 5 and 5 or p['rank'] <= 10 and 10 or 20)].append(p)
-    report = {}
-    for strategy in ('V1', 'A', 'B', 'C'):
-        report[strategy] = {}
-        for mk in ('twse', 'tpex', 'all'):
-            report[strategy][mk] = {}
+                chosen = sorted(pool, key=lambda r: (-r['score_'+strategy], r['ticker']))[:20]
+            for rank, row in enumerate(chosen, 1):
+                picks.append({'date': day, 'market': exchange, 'strategy': strategy,
+                              'rank': rank, 'ticker': row['ticker'], 'name': row['name'],
+                              'return_5d': row['return']})
             for top in (5, 10, 20):
-                subset = [p for p in picks if p['strategy'] == strategy and (mk == 'all' or p['market'] == mk) and p['rank'] <= top]
-                report[strategy][mk][f'top{top}'] = summary([{'return': p['return_5d']} for p in subset])
+                daily.append({'date': day, 'market': exchange, 'strategy': strategy,
+                              'top': top, 'pool_size': len(pool),
+                              **stats([r['return'] for r in chosen[:top]])})
+    if not picks:
+        raise SystemExit('ERROR: no eligible dates; outputs not written')
+    report = {}
+    for strategy in strategies:
+        report[strategy] = {}
+        for exchange in ('twse', 'tpex', 'all'):
+            report[strategy][exchange] = {}
+            for top in (5, 10, 20):
+                rows = [r for r in picks if r['strategy'] == strategy
+                        and (exchange == 'all' or r['market'] == exchange) and r['rank'] <= top]
+                report[strategy][exchange]['top'+str(top)] = stats([r['return_5d'] for r in rows])
+    # Day-level performance shows whether a strategy depends on one extraordinary date.
+    daily_spread = {}
+    for strategy in strategies:
+        daily_spread[strategy] = {}
+        for exchange in ('twse', 'tpex', 'all'):
+            vals = [r['avg_return'] for r in daily if r['strategy'] == strategy and r['top'] == 20
+                    and (exchange == 'all' or r['market'] == exchange) and r['avg_return'] is not None]
+            daily_spread[strategy][exchange] = stats(vals)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({'method': 'point-in-time sector-universe proxy; NOT full original technology universe',
-                              'limitations': ['Uses current sectors.json constituents (survivorship bias)',
-                                              'Historical holder changes unavailable; V1 is the recorded original, V3 is a proxy model',
-                                              'Sector whitelist is smaller than original technology universe',
-                                              'Only 5-day mature returns; no transaction fees/slippage',
-                                              'Selection at same-day close assumes executable close and published same-day institutional data'],
-                              'summary': report, 'daily': all_results, 'skipped': coverage,
-                              'selection_days': len(set(x['date'] for x in picks))}, ensure_ascii=False, indent=2), encoding='utf-8')
-    with CSV.open('w', encoding='utf-8-sig', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'return_5d'])
-        writer.writeheader(); writer.writerows(picks)
-    print('AI V3 proxy backtest completed; NO production files changed')
-    print('Days:', len(set(x['date'] for x in picks)), 'picks:', len(picks), 'skipped:', len(coverage))
-    for strategy in report:
-        print(strategy, 'overall top20:', report[strategy]['all']['top20'])
-    print('Output:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
+    OUT.write_text(json.dumps({
+        'method': 'V3-A factor ablation; same formulas for TWSE and TPEx; historical sector proxy',
+        'strategies': list(strategies), 'summary': report, 'daily': daily,
+        'daily_top20_distribution': daily_spread, 'skipped': skipped,
+        'selection_days': len(set(p['date'] for p in picks)),
+        'limitations': ['Current sectors.json membership causes survivorship bias',
+                        'No historical TDCC large-holder factors',
+                        'Selection-day closing price and same-day institutional flows are not executable point-in-time signals; potential look-ahead bias',
+                        'Five-day returns overlap across selection dates',
+                        'No fees, slippage or sample-out-of-time validation',
+                        'RS20 is relative to the current same-market eligible candidate median']
+    }, ensure_ascii=False, indent=2), encoding='utf-8')
+    with CSV.open('w', newline='', encoding='utf-8-sig') as file:
+        writer = csv.DictWriter(file, fieldnames=['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'return_5d'])
+        writer.writeheader()
+        writer.writerows(picks)
+    print('V3 shadow factor-ablation complete; production files unchanged')
+    print('Selection days:', len(set(p['date'] for p in picks)), 'picks:', len(picks), 'skipped:', len(skipped))
+    for strategy in strategies:
+        print(strategy, 'Top20:', report[strategy]['all']['top20'])
+    print('Results:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
 
 
 if __name__ == '__main__':
