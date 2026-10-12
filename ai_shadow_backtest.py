@@ -8,6 +8,7 @@ import json
 import math
 import re
 from collections import defaultdict
+from datetime import date, timedelta
 from pathlib import Path
 from statistics import mean, median
 
@@ -16,7 +17,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -156,6 +157,22 @@ def main():
     for path in (ROOT / 'data/history/institutional').glob('*.json'):
         d = load(path)
         inst[path.stem] = {**d.get('twse', {}), **d.get('tpex', {})}
+    # Historical TDCC snapshots: require a conservative 3-calendar-day publication
+    # lag, preventing the use of a weekly snapshot before it could be known.
+    holder_snapshots = []
+    for path in sorted((ROOT / 'data/history/holders').glob('*.json')):
+        data = load(path).get('stocks', {})
+        if isinstance(data, dict) and data:
+            try:
+                available = (date.fromisoformat(path.stem) + timedelta(days=3)).isoformat()
+            except ValueError:
+                continue
+            holder_snapshots.append((available, path.stem, data))
+    holder_availability = {}
+    for d in dates:
+        known = [h for h in holder_snapshots if h[0] <= d]
+        holder_availability[d] = known[-2:] if len(known) >= 2 else []
+    holder_coverage = defaultdict(int)
     original = defaultdict(list)
     for row in load(ROOT / 'data/ai_backtest.json').get('records', []):
         if row.get('market') in MARKETS:
@@ -241,6 +258,20 @@ def main():
             if len(pool) < 20:
                 coverage.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 priced candidates'})
                 continue
+            known_holders = holder_availability[day]
+            for row in pool:
+                holder_delta = None
+                if known_holders:
+                    old = known_holders[0][2].get(row['ticker'])
+                    new = known_holders[1][2].get(row['ticker'])
+                    if isinstance(old, dict) and isinstance(new, dict):
+                        vals = [number(new.get(f'{k}_ratio')) for k in ('400', '1000')]
+                        prev = [number(old.get(f'{k}_ratio')) for k in ('400', '1000')]
+                        if all(v is not None for v in vals + prev):
+                            holder_delta = mean([a-b for a,b in zip(vals,prev)])
+                row['holder_delta'] = holder_delta
+                holder_coverage['available' if holder_delta is not None else 'missing'] += 1
+            percentile(pool, 'holder_delta')
             for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel', 'daily_turnover'):
                 percentile(pool, field)
             r20_median = median([r['r20'] for r in pool if r['r20'] is not None]) if any(r['r20'] is not None for r in pool) else 0
@@ -302,6 +333,24 @@ def main():
                 row['score_C_QUALITY_BALANCED'] = (row['score_C_FLOW_QUALITY']
                     + liquidity_bonus - mild_volume_penalty)
 
+                # All experimental formulas are identical across TWSE and TPEx.
+                # Replace a portion of 5d momentum with historical TDCC change.
+                # Missing TDCC data has neutral effect; never use future snapshots.
+                holder_rank = row['holder_delta_rank'] if row['holder_delta'] is not None else 50
+                holder_centered = holder_rank - row['r5_rank']
+                for weight, label in ((.05, 'BAL_HOLDER_05'), (.10, 'BAL_HOLDER_10'), (.15, 'BAL_HOLDER_15')):
+                    row['score_' + label] = row['score_C_QUALITY_BALANCED'] + weight * holder_centered
+                base = row['score_BAL_HOLDER_10']
+                # Shift 5pp of 10d momentum toward 5d momentum: test recency.
+                row['score_BAL_HOLDER_10_MOM'] = base + .05 * (row['r5_rank'] - row['r10_rank'])
+                # Soften original C overheat penalty by 25%.
+                row['score_BAL_HOLDER_10_HEAT'] = base + .375 * row['overheat']
+                # Begin volume penalty at 4x rather than 3x (same cap and slope).
+                alternate_volume_penalty = min(6.0, 2.0 * max(0.0, (row['volume_ratio'] or 0.0) - 4.0))
+                row['score_BAL_HOLDER_10_VOL'] = base + mild_volume_penalty - alternate_volume_penalty
+                # Shift 5pp from aggregate flow strength to recent acceleration.
+                row['score_BAL_HOLDER_10_FLOW'] = base + .05 * (row['flow_accel_rank'] - row['flow_rank'])
+
             paired = len(baseline) >= 20
             coverage.append({'date': day, 'market': exchange, 'status': 'evaluated',
                              'v1_available': paired, 'pool_size': len(pool),
@@ -337,7 +386,7 @@ def main():
                             'r5', 'r10', 'r20', 'flow', 'flow_rank', 'flow_accel',
                             'breakout', 'breakout_rank', 'r5_rank', 'r10_rank',
                             'trend', 'overheat', 'ma20_gap_pct', 'volume_ratio',
-                            'daily_turnover', 'daily_volume', 'score_C')}
+                            'daily_turnover', 'daily_volume', 'holder_delta', 'holder_delta_rank', 'score_C')}
                     picks.append(record)
                     evaluated.append(record)
                 for top in (5, 10, 20):
@@ -438,7 +487,7 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
@@ -452,7 +501,7 @@ def main():
                          'C_FLOW_QUALITY_vs_C_MARKET_ADAPTIVE': overlap('C_FLOW_QUALITY', 'C_MARKET_ADAPTIVE'),
                          'C_FLOW_QUALITY_vs_C_QUALITY_LIQUIDITY': overlap('C_FLOW_QUALITY', 'C_QUALITY_LIQUIDITY'),
                          'C_FLOW_QUALITY_vs_C_QUALITY_VOLUME': overlap('C_FLOW_QUALITY', 'C_QUALITY_VOLUME'),
-                         'C_FLOW_QUALITY_vs_C_QUALITY_BALANCED': overlap('C_FLOW_QUALITY', 'C_QUALITY_BALANCED')},
+                         'C_FLOW_QUALITY_vs_C_QUALITY_BALANCED': overlap('C_FLOW_QUALITY', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW')},
     }
     # Factor audit: descriptive comparisons only. Never affect selection or scoring.
     # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
@@ -501,7 +550,7 @@ def main():
     }
     # Side-by-side matched date/market comparisons for new experiments vs C and V1.
     diagnostics['experiment_comparison'] = {}
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW'):
         diagnostics['experiment_comparison'][strategy] = {}
         for market in (*MARKETS, 'all'):
             diagnostics['experiment_comparison'][strategy][market] = {}
@@ -519,7 +568,7 @@ def main():
     diagnostics['experiment_date_wins_vs_C'] = {
         s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
             for top in (5, 10, 20)}
-        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW')
     }
     # Balanced-market selection: the weaker exchange matters, not just pooled return.
     diagnostics['unified_market_balance'] = {}
@@ -555,12 +604,12 @@ def main():
         'current_master_universe_size': len(universe),
         'strategies': list(STRATEGIES), 'summary': summary, 'paired_summary': paired_summary,
         'daily': daily_results, 'daily_picks': daily_picks, 'diagnostics': diagnostics, 'coverage': coverage,
-        'selection_days': len(set(r['date'] for r in picks)),
+        'selection_days': len(set(r['date'] for r in picks)), 'holder_factor_coverage': dict(holder_coverage),
         'limitations': ['Historical universe membership not archived: current master/config/sectors used for past dates (survivorship bias)',
                         'V1 dates without saved selections cannot be reconstructed; paired_summary uses only recorded V1 dates',
                         '20 prior daily prices needed for momentum, missing factors rank as zero',
                         'Same-day close execution with same-day institutional data is not realistically guaranteed',
-                        'V3 has no TDCC holder factor because its strategies do not use it; universe still matches V1 definition',
+                        'TDCC holder experiments use snapshots with a conservative 3-calendar-day lag; actual publication timestamps not archived; missing TDCC values are neutral',
                         'Overlapping returns; no transaction costs or slippage',
                         'C_FLOW uses the latest five market dates, not five separately validated healthy institutional dates',
                         'C_SECTOR uses current sectors.json membership, not archived historical sector membership; sectors with fewer than 3 priced members are excluded',
@@ -580,7 +629,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW'):
         for market in MARKETS:
             print(strategy, market, 'paired fixed 5d top5:',
                   paired_summary[strategy][market]['top5']['baseline_5d'])
