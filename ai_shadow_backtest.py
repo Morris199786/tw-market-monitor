@@ -16,7 +16,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -136,6 +136,15 @@ def main():
     universe = tech_universe(master)
     if len(universe) < 500:
         raise SystemExit(f'ERROR: V1 technology universe not found or too small: {len(universe)}')
+    sectors_raw = load(ROOT / 'data/sectors.json').get('sectors', [])
+    ticker_sectors = defaultdict(list)
+    for sec in sectors_raw:
+        label = str(sec.get('name') or sec.get('id') or '').strip()
+        if not label:
+            continue
+        for item in sec.get('stocks', []):
+            if isinstance(item, dict) and item.get('ticker') is not None:
+                ticker_sectors[str(item['ticker'])].append(label)
     snapshots = []
     for path in sorted((ROOT / 'data/history/market').glob('*.json')):
         stocks = load(path).get('stocks', {})
@@ -192,6 +201,7 @@ def main():
                 turnover = 0.0
                 flow = 0.0
                 healthy = True
+                daily_flow_ratios = []
                 for j, d in enumerate(five):
                     row = inst.get(d, {}).get(ticker)
                     daily = snapshots[index[d]][1].get(ticker, {})
@@ -201,24 +211,52 @@ def main():
                         healthy = False
                         break
                     turnover += t
-                    flow += sum(number(row.get(k)) or 0 for k in ('foreign', 'trust', 'dealer')) * p
+                    net_amount = sum(number(row.get(k)) or 0 for k in ('foreign', 'trust', 'dealer')) * p
+                    flow += net_amount
+                    daily_flow_ratios.append(net_amount / t * 100 if t > 0 else None)
                 flow_metric = flow / turnover * 100 if healthy and turnover > 0 else None
+                # Flow acceleration compares recent 2 days with prior 3, normalized by turnover.
+                flow_accel = (mean(daily_flow_ratios[-2:]) - mean(daily_flow_ratios[:3])
+                              if healthy and len(daily_flow_ratios) == 5
+                              and all(v is not None for v in daily_flow_ratios) else None)
+                # Slope checks use only prices known at selection close.
+                ma10_prev5 = (mean(close[-15:-5]) if all(v is not None and v > 0 for v in close[-15:-5]) else None)
+                ma20_prev1 = (mean(close[-21:-1]) if all(v is not None and v > 0 for v in close[-21:-1]) else None)
+                trend_slope = (int(ma10 is not None and ma20 is not None
+                                   and ma10_prev5 is not None and ma20_prev1 is not None
+                                   and price > ma10 > ma20 and ma10 > ma10_prev5
+                                   and ma20 > ma20_prev1))
                 heat = (max(0, r5 - 15) * 1.5 + max(0, percent(ma20, price) - 18)) if r5 is not None and ma20 else 0
                 heat_smooth = (max(0, r5 - 10) ** 1.2 * .7 + max(0, percent(ma20, price) - 13) * 1.1) if r5 is not None and ma20 else 0
                 pool.append({'ticker': ticker, 'name': q.get('name', ''), 'entry': price,
                              'r5': r5, 'r10': r10, 'r20': r20, 'flow': flow_metric,
                              'breakout': breakout, 'volume_ratio': ratio, 'volume_confirm': volume_confirm,
                              'trend': int(ma10 is not None and ma20 is not None and price > ma10 > ma20),
-                             'overheat': heat, 'heat_smooth': heat_smooth})
+                             'overheat': heat, 'heat_smooth': heat_smooth,
+                             'flow_accel': flow_accel, 'trend_slope': trend_slope,
+                             'sectors': ticker_sectors.get(ticker, [])})
             if len(pool) < 20:
                 coverage.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 priced candidates'})
                 continue
-            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm'):
+            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel'):
                 percentile(pool, field)
             r20_median = median([r['r20'] for r in pool if r['r20'] is not None]) if any(r['r20'] is not None for r in pool) else 0
             for row in pool:
                 row['rs20'] = row['r20'] - r20_median if row['r20'] is not None else None
             percentile(pool, 'rs20')
+            # Sector strength: equally-weighted 5-day return of members in this
+            # day's eligible pool. Multiple sector membership uses strongest sector.
+            sector_returns = defaultdict(list)
+            for item in pool:
+                if item['r5'] is not None:
+                    for sector in item['sectors']:
+                        sector_returns[sector].append(item['r5'])
+            sector_strength = {s: mean(vals) for s, vals in sector_returns.items() if len(vals) >= 3}
+            sector_rank = {s: v for s, v in sector_strength.items()}
+            for row in pool:
+                row['sector_strength'] = (max((sector_rank[s] for s in row['sectors'] if s in sector_rank),
+                                              default=None))
+            percentile(pool, 'sector_strength')
             for row in pool:
                 f, b, r10, r5 = (row[k + '_rank'] for k in ('flow', 'breakout', 'r10', 'r5'))
                 trend = 10 * row['trend']
@@ -229,6 +267,12 @@ def main():
                 row['score_A_VOLUME'] = .40*f + .25*b + .20*r10 + .05*row['volume_confirm_rank'] + trend - row['overheat']
                 row['score_A_HEAT'] = .45*f + .25*b + .20*r10 + trend - row['heat_smooth']
                 row['score_A_PLUS'] = .35*f + .20*b + .15*r10 + .10*row['rs20_rank'] + .10*row['volume_confirm_rank'] + trend - row['heat_smooth']
+                # One-factor-at-a-time experiments relative to C. Keep original C untouched.
+                # Center percentile additions around 50 to avoid inflating scores.
+                row['score_C_FLOW'] = row['score_C'] + .10 * (row['flow_accel_rank'] - 50)
+                row['score_C_TREND'] = row['score_C'] + 10 * (row['trend_slope'] - row['trend'])
+                row['score_C_SECTOR'] = row['score_C'] + (.10 * (row['sector_strength_rank'] - 50)
+                                                             if row['sector_strength'] is not None else 0)
             paired = len(baseline) >= 20
             coverage.append({'date': day, 'market': exchange, 'status': 'evaluated',
                              'v1_available': paired, 'pool_size': len(pool),
@@ -309,7 +353,10 @@ def main():
                         '20 prior daily prices needed for momentum, missing factors rank as zero',
                         'Same-day close execution with same-day institutional data is not realistically guaranteed',
                         'V3 has no TDCC holder factor because its strategies do not use it; universe still matches V1 definition',
-                        'Overlapping returns; no transaction costs or slippage']
+                        'Overlapping returns; no transaction costs or slippage',
+                        'C_FLOW uses the latest five market dates, not five separately validated healthy institutional dates',
+                        'C_SECTOR uses current sectors.json membership, not archived historical sector membership; sectors with fewer than 3 priced members are excluded',
+                        'C_TREND checks MA10 against five trading days ago and MA20 against one trading day ago']
     }, ensure_ascii=False, indent=2), encoding='utf-8')
     fields = ['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'score', 'entry_price', 'paired_with_v1']
     fields += [f'{tag}_{days}d' for days in (5, 10) for tag in ('baseline', 'ma10', 'ma20', 'stop5', 'stop10')]
