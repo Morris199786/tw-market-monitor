@@ -256,6 +256,8 @@ def main():
                                 returns[f'{tag}_{days}d'] = number(source.get(k)) if source.get(f'{key}status_{days}d') == 'complete' else None
                     record = {'date': day, 'market': exchange, 'strategy': strategy, 'rank': rank,
                               'ticker': row['ticker'], 'name': row['name'], 'entry_price': entry,
+                              'score': (number(row.get('score_' + strategy)) if strategy != 'V1'
+                                        else number(row['record'].get('score'))),
                               'paired_with_v1': paired, **returns}
                     picks.append(record)
                     evaluated.append(record)
@@ -285,13 +287,22 @@ def main():
                         for tag in ('baseline', 'ma10', 'ma20', 'stop5', 'stop10'):
                             block[f'{tag}_{days}d'] = stats([r[f'{tag}_{days}d'] for r in subset])
                     destination[strategy][market_name][f'top{top}'] = block
+    # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
+    # This is additive only: scoring, evaluation, summaries and production stay unchanged.
+    daily_picks = {}
+    for r in picks:
+        daily_picks.setdefault(r['date'], {}).setdefault(r['market'], {}).setdefault(r['strategy'], []).append({
+            'rank': r['rank'], 'ticker': r['ticker'], 'name': r['name'],
+            'score': round(r['score'], 4) if r['score'] is not None else None,
+            'entry_price': r['entry_price'], 'paired_with_v1': r['paired_with_v1'],
+        })
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         'method': 'V1 same tech-universe rule, recorded V1 selection dates, same close-entry and V1 exit accounting',
         'universe_definition': 'scripts/tech_universe.py equivalent: master industry + sectors + supply-chain whitelist - exclusions',
         'current_master_universe_size': len(universe),
         'strategies': list(STRATEGIES), 'summary': summary, 'paired_summary': paired_summary,
-        'daily': daily_results, 'coverage': coverage,
+        'daily': daily_results, 'daily_picks': daily_picks, 'coverage': coverage,
         'selection_days': len(set(r['date'] for r in picks)),
         'limitations': ['Historical universe membership not archived: current master/config/sectors used for past dates (survivorship bias)',
                         'V1 dates without saved selections cannot be reconstructed; paired_summary uses only recorded V1 dates',
@@ -300,7 +311,7 @@ def main():
                         'V3 has no TDCC holder factor because its strategies do not use it; universe still matches V1 definition',
                         'Overlapping returns; no transaction costs or slippage']
     }, ensure_ascii=False, indent=2), encoding='utf-8')
-    fields = ['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'entry_price', 'paired_with_v1']
+    fields = ['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'score', 'entry_price', 'paired_with_v1']
     fields += [f'{tag}_{days}d' for days in (5, 10) for tag in ('baseline', 'ma10', 'ma20', 'stop5', 'stop10')]
     with CSV.open('w', newline='', encoding='utf-8-sig') as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction='ignore')
