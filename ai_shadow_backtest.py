@@ -331,6 +331,86 @@ def main():
                         for tag in ('baseline', 'ma10', 'ma20', 'stop5', 'stop10'):
                             block[f'{tag}_{days}d'] = stats([r[f'{tag}_{days}d'] for r in subset])
                     destination[strategy][market_name][f'top{top}'] = block
+    # Diagnostics use only matched V1 dates and completed returns; never alter picks or scores.
+    # Per-date units are (selection date, exchange) to avoid silently mixing markets.
+    def diagnostic_pair(challenger, baseline='V1', top=20):
+        matched = defaultdict(dict)
+        for block in daily_results:
+            if block['top'] == top and block['paired_with_v1'] and block['strategy'] in (baseline, challenger):
+                matched[(block['date'], block['market'])][block['strategy']] = block
+        comparisons = {}
+        for horizon in (5, 10):
+            comparisons[f'{horizon}d'] = {}
+            for tag in ('baseline', 'ma10', 'ma20', 'stop5', 'stop10'):
+                key = f'{tag}_{horizon}d'
+                entries = []
+                for (date, market), pair in sorted(matched.items()):
+                    if len(pair) != 2:
+                        continue
+                    b = pair[baseline][key]
+                    c = pair[challenger][key]
+                    if not b['samples'] or not c['samples']:
+                        continue
+                    entries.append({'date': date, 'market': market,
+                                    'v1_avg_return': b['avg_return'],
+                                    'challenger_avg_return': c['avg_return'],
+                                    'difference_pp': round(c['avg_return'] - b['avg_return'], 4),
+                                    'v1_samples': b['samples'], 'challenger_samples': c['samples']})
+                wins = sum(e['difference_pp'] > 0 for e in entries)
+                ties = sum(e['difference_pp'] == 0 for e in entries)
+                comparisons[f'{horizon}d'][tag] = {
+                    'units': len(entries), 'challenger_wins': wins, 'ties': ties,
+                    'v1_wins': len(entries) - wins - ties,
+                    'challenger_win_rate_pct': round(100 * wins / len(entries), 2) if entries else None,
+                    'per_date_market': entries,
+                }
+        return comparisons
+
+    def concentration(strategy, horizon=5, tag='baseline', top=20):
+        key = f'{tag}_{horizon}d'
+        records = [r for r in picks if r['strategy'] == strategy and r['rank'] <= top
+                   and r['paired_with_v1'] and r.get(key) is not None]
+        records.sort(key=lambda r: r[key], reverse=True)
+        n = len(records)
+        cut = max(1, math.ceil(n * .20)) if n else 0
+        positive_sum = sum(max(0, r[key]) for r in records)
+        top_positive_sum = sum(max(0, r[key]) for r in records[:cut])
+        remainder = records[cut:]
+        return {'samples': n, 'top20pct_count': cut,
+                'top20pct_share_of_positive_returns_pct': round(100 * top_positive_sum / positive_sum, 2) if positive_sum else None,
+                'mean_excluding_top20pct': round(mean(r[key] for r in remainder), 4) if remainder else None,
+                'top5_winners': [{'date': r['date'], 'market': r['market'], 'ticker': r['ticker'],
+                                  'name': r['name'], 'return_pct': round(r[key], 4)} for r in records[:5]]}
+
+    def overlap(a, b, top=20):
+        groups = defaultdict(set)
+        for r in picks:
+            if r['strategy'] in (a, b) and r['rank'] <= top and r['paired_with_v1']:
+                groups[(r['date'], r['market'], r['strategy'])].add(r['ticker'])
+        entries = []
+        for date, market in sorted({(d, m) for d, m, _ in groups}):
+            left = groups.get((date, market, a), set())
+            right = groups.get((date, market, b), set())
+            if len(left) != top or len(right) != top:
+                continue
+            common = left & right
+            entries.append({'date': date, 'market': market, 'overlap_count': len(common),
+                            'overlap_pct': round(100 * len(common) / top, 2),
+                            'only_' + a: sorted(left - right), 'only_' + b: sorted(right - left)})
+        return {'units': len(entries),
+                'average_overlap_pct': round(mean(e['overlap_pct'] for e in entries), 2) if entries else None,
+                'per_date_market': entries}
+
+    diagnostics = {
+        'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR')},
+        'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
+                                 for s in ('V1', 'C', 'C_FLOW')},
+        'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
+                         'V1_vs_C_FLOW': overlap('V1', 'C_FLOW'),
+                         'C_vs_C_TREND': overlap('C', 'C_TREND'),
+                         'C_vs_C_SECTOR': overlap('C', 'C_SECTOR')},
+    }
     # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
     # This is additive only: scoring, evaluation, summaries and production stay unchanged.
     daily_picks = {}
@@ -346,7 +426,7 @@ def main():
         'universe_definition': 'scripts/tech_universe.py equivalent: master industry + sectors + supply-chain whitelist - exclusions',
         'current_master_universe_size': len(universe),
         'strategies': list(STRATEGIES), 'summary': summary, 'paired_summary': paired_summary,
-        'daily': daily_results, 'daily_picks': daily_picks, 'coverage': coverage,
+        'daily': daily_results, 'daily_picks': daily_picks, 'diagnostics': diagnostics, 'coverage': coverage,
         'selection_days': len(set(r['date'] for r in picks)),
         'limitations': ['Historical universe membership not archived: current master/config/sectors used for past dates (survivorship bias)',
                         'V1 dates without saved selections cannot be reconstructed; paired_summary uses only recorded V1 dates',
@@ -369,6 +449,9 @@ def main():
           'picks:', len(picks), 'evaluated dates:', sum(r['status'] == 'evaluated' for r in coverage))
     for strategy in STRATEGIES:
         print(strategy, 'paired fixed 5d top20:', paired_summary[strategy]['all']['top20']['baseline_5d'])
+    d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
+    print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
+    print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
     print('Outputs:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
 
 
