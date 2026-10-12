@@ -452,9 +452,10 @@ function reportItem(x) {
       <div><small>上一季毛利率 · ${esc(x.prev_period)}</small><b>${pct(x.prev_gross_margin)}</b></div>
     </div>
     ${x.data_status === "pending_financial_data" ? '<p class="earnings-note">已公布財報，部分數值待官方資料補齊；「—」不代表 0</p>' : ''}
+    ${x.release_type === "quarterly_preliminary" ? '<p class="earnings-note">公司官方季度初步業績（自結／未核閱），非正式核閱財報</p>' : ''}
     ${estimated ? '<p class="earnings-note">EPS 含累計差額推算值，若股本或加權平均股數改變，可能與公告單季 EPS 不同</p>' : ''}
     <details class="earnings-source"><summary>公告內容與資料來源</summary><p>${esc(x.subject)}</p>
-    ${/^https:\/\/(?:mops|mopsov)\.twse\.com\.tw\//.test(x.source_url || '') ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">公開資訊觀測站 ↗</a>` : ''}</details>
+    ${/^https:\/\/(?:(?:mops|mopsov)\.twse\.com\.tw|www\.largan\.com\.tw)\//.test(x.source_url || '') ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_label || "官方資料來源")} ↗</a>` : ''}</details>
   </article>`;
 }
 
@@ -473,7 +474,7 @@ function reportHTML(arr) {
       <div class="earnings-empty">
         ${
           filter === "all"
-            ? "目前沒有新的財報公告"
+            ? "目前尚未取得可顯示的季度財報公告"
             : "這個日期範圍目前沒有財報"
         }
       </div>
@@ -1247,4 +1248,5 @@ window.refreshQuarterlyReports =
   };
 
 })();
+
 
