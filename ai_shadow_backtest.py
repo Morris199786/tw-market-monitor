@@ -16,7 +16,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -293,6 +293,14 @@ def main():
                 # Exchange is fixed for the entire market/day pool; no future outcomes used.
                 row['score_C_MARKET_ADAPTIVE'] = (row['score_C'] if exchange == 'twse'
                     else row['score_C_FLOW_QUALITY'])
+                # Unified formulas: exactly the same scoring for TWSE and TPEx.
+                # Keep C_FLOW_QUALITY unchanged; compare incremental contributions.
+                liquidity_bonus = .05 * (row['daily_turnover_rank'] - 50)
+                mild_volume_penalty = min(6.0, 2.0 * max(0.0, (row['volume_ratio'] or 0.0) - 3.0))
+                row['score_C_QUALITY_LIQUIDITY'] = row['score_C_FLOW_QUALITY'] + liquidity_bonus
+                row['score_C_QUALITY_VOLUME'] = row['score_C_FLOW_QUALITY'] - mild_volume_penalty
+                row['score_C_QUALITY_BALANCED'] = (row['score_C_FLOW_QUALITY']
+                    + liquidity_bonus - mild_volume_penalty)
 
             paired = len(baseline) >= 20
             coverage.append({'date': day, 'market': exchange, 'status': 'evaluated',
@@ -430,7 +438,7 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
@@ -441,7 +449,10 @@ def main():
                          'C_vs_C_FLOW_QUALITY': overlap('C', 'C_FLOW_QUALITY'),
                          'C_vs_C_LIQUIDITY': overlap('C', 'C_LIQUIDITY'),
                          'C_vs_C_MARKET_ADAPTIVE': overlap('C', 'C_MARKET_ADAPTIVE'),
-                         'C_FLOW_QUALITY_vs_C_MARKET_ADAPTIVE': overlap('C_FLOW_QUALITY', 'C_MARKET_ADAPTIVE')},
+                         'C_FLOW_QUALITY_vs_C_MARKET_ADAPTIVE': overlap('C_FLOW_QUALITY', 'C_MARKET_ADAPTIVE'),
+                         'C_FLOW_QUALITY_vs_C_QUALITY_LIQUIDITY': overlap('C_FLOW_QUALITY', 'C_QUALITY_LIQUIDITY'),
+                         'C_FLOW_QUALITY_vs_C_QUALITY_VOLUME': overlap('C_FLOW_QUALITY', 'C_QUALITY_VOLUME'),
+                         'C_FLOW_QUALITY_vs_C_QUALITY_BALANCED': overlap('C_FLOW_QUALITY', 'C_QUALITY_BALANCED')},
     }
     # Factor audit: descriptive comparisons only. Never affect selection or scoring.
     # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
@@ -490,7 +501,7 @@ def main():
     }
     # Side-by-side matched date/market comparisons for new experiments vs C and V1.
     diagnostics['experiment_comparison'] = {}
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED'):
         diagnostics['experiment_comparison'][strategy] = {}
         for market in (*MARKETS, 'all'):
             diagnostics['experiment_comparison'][strategy][market] = {}
@@ -508,8 +519,25 @@ def main():
     diagnostics['experiment_date_wins_vs_C'] = {
         s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
             for top in (5, 10, 20)}
-        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE')
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED')
     }
+    # Balanced-market selection: the weaker exchange matters, not just pooled return.
+    diagnostics['unified_market_balance'] = {}
+    for strategy in STRATEGIES:
+        diagnostics['unified_market_balance'][strategy] = {}
+        for top in (5, 10, 20):
+            markets = {market: paired_summary[strategy][market][f'top{top}']['baseline_5d']
+                       for market in MARKETS}
+            avgs = [markets[m]['avg_return'] for m in MARKETS]
+            diagnostics['unified_market_balance'][strategy][f'top{top}'] = {
+                'by_market': markets,
+                'worst_market_avg_return': round(min(avgs), 4) if all(x is not None for x in avgs) else None,
+                'both_markets_positive': all(x is not None and x > 0 for x in avgs),
+                'min_market_win_rate': min(markets[m]['win_rate'] for m in MARKETS)
+                    if all(markets[m]['win_rate'] is not None for m in MARKETS) else None,
+            }
+    diagnostics['unified_market_balance_note'] = (
+        'These are in-sample diagnostics, not independent validation; no market-specific score switching.')
     # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
     # This is additive only: scoring, evaluation, summaries and production stay unchanged.
     daily_picks = {}
@@ -552,7 +580,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED'):
         for market in MARKETS:
             print(strategy, market, 'paired fixed 5d top5:',
                   paired_summary[strategy][market]['top5']['baseline_5d'])
