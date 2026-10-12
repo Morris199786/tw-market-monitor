@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-12T17:34+08:00",
+  "updated_at": "2026-10-12T18:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 110,
+    "candidate_count": 111,
     "parsed_count": 51,
-    "parse_failed_count": 52,
+    "parse_failed_count": 53,
     "parse_failed": [
+      {
+        "ticker": "2237",
+        "name": "華德動能-創",
+        "publish_date": "2026-10-12",
+        "publish_time": "17:45:21",
+        "subject": "2237 華德動能-創 115/10/12 17:45:21 公告本公司115年9月自結損益",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "2897",
         "name": "王道銀行",
@@ -16,8 +29,8 @@
         "subject": "2897 王道銀行 115/10/12 17:27:37 公告本行2026年度9月份自結損益及每股淨值",
         "source": "mops_ajax",
         "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
-        "eps_parse_status": "unrecognized_layout",
-        "eps_parse_reason": "eps_label_not_found",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
         "quarter_eps": null
       },
@@ -689,29 +702,29 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 17,
-      "self_reports": 11,
+      "rows": 18,
+      "self_reports": 12,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 133,
-          "hits": 17
+          "rows": 163,
+          "hits": 18
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 133,
-          "hits": 8
+          "rows": 163,
+          "hits": 9
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 133,
-          "hits": 8
+          "rows": 163,
+          "hits": 9
         },
         {
           "mode": "openapi_rescue_pool",
@@ -741,7 +754,7 @@
           "mode": "company_rescue",
           "ticker": "2317",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
