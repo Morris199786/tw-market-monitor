@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-12T13:31+08:00",
+  "updated_at": "2026-10-12T14:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 102,
+    "candidate_count": 103,
     "parsed_count": 48,
-    "parse_failed_count": 47,
+    "parse_failed_count": 48,
     "parse_failed": [
+      {
+        "ticker": "1301",
+        "name": "台塑",
+        "publish_date": "2026-10-12",
+        "publish_time": "13:32:35",
+        "subject": "1301 台塑 115/10/12 13:32:35 公告本公司2026年第3季自結合併損益",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "6505",
         "name": "台塑化",
@@ -624,29 +637,29 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 3,
-      "self_reports": 3,
+      "rows": 5,
+      "self_reports": 4,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 17,
-          "hits": 3
+          "rows": 27,
+          "hits": 5
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 17,
-          "hits": 3
+          "rows": 27,
+          "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 17,
-          "hits": 3
+          "rows": 27,
+          "hits": 4
         },
         {
           "mode": "openapi_rescue_pool",
@@ -703,7 +716,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3032 偉訓 115/10/12 13:36:05 公告本公司115年09月份自結合併營業收入"
+        }
+      ],
       "error": ""
     },
     "twse": {
