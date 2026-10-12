@@ -95,7 +95,7 @@ def merge_bars(old, incoming, rejected_dates):
     return [merged[d] for d in sorted(merged)]
 
 
-VERSION = '2026-10-13-official-close'
+VERSION = '2026-10-13-official-retry'
 
 
 def official_rows(rows, market, now):
@@ -128,9 +128,22 @@ def fetch_official(now):
     endpoints={'twse':'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',
                'tpex':'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes'}
     def get(market,url):
-        r=requests.get(url,headers={'User-Agent':'Mozilla/5.0'},timeout=(10,25))
-        r.raise_for_status()
-        return official_rows(r.json(),market,now)
+        last_error=None
+        for attempt in range(4):
+            try:
+                # Retry the entire response, including body download / JSON parsing.
+                # The TPEx response is large; a successful HTTP status alone is insufficient.
+                with requests.get(url,headers={'User-Agent':'Mozilla/5.0',
+                    'Accept':'application/json','Accept-Encoding':'identity',
+                    'Connection':'close'},timeout=(10,45)) as r:
+                    r.raise_for_status()
+                    rows=r.json()
+                return official_rows(rows,market,now)
+            except (requests.RequestException,ValueError,TypeError,KeyError) as exc:
+                last_error=exc
+                print(f'official {market} attempt {attempt+1}/4: {type(exc).__name__}',flush=True)
+                if attempt<3: time.sleep(min(2**attempt,4))
+        raise RuntimeError(f'{market} download failed after 4 attempts: {last_error}')
     with ThreadPoolExecutor(max_workers=2) as pool:
         jobs={pool.submit(get,m,u):m for m,u in endpoints.items()}
         for job in as_completed(jobs):
@@ -255,4 +268,5 @@ def main():
         raise RuntimeError('No daily K data available for any stock')
 
 if __name__=='__main__': main()
+
 
