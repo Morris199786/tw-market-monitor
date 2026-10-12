@@ -17,7 +17,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -210,8 +210,15 @@ def main():
                 r5 = percent(close[-6], price) if close[-6] else None
                 r10 = percent(close[-11], price) if close[-11] else None
                 r20 = percent(close[0], price) if close[0] else None
+                # Three-session slope of 5MA/10MA, using only selection-day and past closes.
+                # Percentage change of the MA (not the stock price); missing values stay neutral.
+                ma5_now = mean(close[-5:]) if all(v is not None and v > 0 for v in close[-5:]) else None
+                ma5_old = mean(close[-8:-3]) if all(v is not None and v > 0 for v in close[-8:-3]) else None
+                ma10_old = mean(close[-13:-3]) if all(v is not None and v > 0 for v in close[-13:-3]) else None
                 ma10 = mean(close[-10:]) if all(v is not None and v > 0 for v in close[-10:]) else None
                 ma20 = mean(close[-20:]) if all(v is not None and v > 0 for v in close[-20:]) else None
+                ma5_slope = percent(ma5_old, ma5_now) if ma5_old and ma5_now else None
+                ma10_slope = percent(ma10_old, ma10) if ma10_old and ma10 else None
                 breakout = percent(max(close[:-1]), price) if all(v is not None and v > 0 for v in close[:-1]) else None
                 ratio = vol[-1] / mean(vol[:-1]) if all(v is not None for v in vol) and mean(vol[:-1]) > 0 else None
                 volume_confirm = max(0, 100 - abs(ratio - 1.7) * 65) if ratio is not None else None
@@ -262,6 +269,7 @@ def main():
                              'overheat': heat, 'heat_smooth': heat_smooth,
                              'flow_accel': flow_accel, 'flow_positive_days': flow_positive_days,
                              'flow_stability': flow_stability, 'trend_slope': trend_slope,
+                             'ma5_slope': ma5_slope, 'ma10_slope': ma10_slope,
                              'ma20_gap_pct': percent(ma20, price) if ma20 else None,
                              'daily_turnover': number(q.get('turnover')),
                              'daily_volume': number(q.get('volume')),
@@ -283,7 +291,7 @@ def main():
                 row['holder_delta'] = holder_delta
                 holder_coverage['available' if holder_delta is not None else 'missing'] += 1
             percentile(pool, 'holder_delta')
-            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel', 'daily_turnover', 'flow_positive_days', 'flow_stability'):
+            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel', 'daily_turnover', 'flow_positive_days', 'flow_stability', 'ma5_slope', 'ma10_slope'):
                 percentile(pool, field)
             r20_median = median([r['r20'] for r in pool if r['r20'] is not None]) if any(r['r20'] is not None for r in pool) else 0
             for row in pool:
@@ -343,6 +351,17 @@ def main():
                 row['score_C_QUALITY_VOLUME'] = row['score_C_FLOW_QUALITY'] - mild_volume_penalty
                 row['score_C_QUALITY_BALANCED'] = (row['score_C_FLOW_QUALITY']
                     + liquidity_bonus - mild_volume_penalty)
+
+                # MA slope experiments: retain original BALANCED as a control.
+                # Binary: +3 for each positive 3-session MA slope (0..6 points).
+                row['score_BAL_MA_SLOPE'] = row['score_C_QUALITY_BALANCED'] + (
+                    3.0 * int(row['ma5_slope'] is not None and row['ma5_slope'] > 0)
+                    + 3.0 * int(row['ma10_slope'] is not None and row['ma10_slope'] > 0))
+                # Ranked: modestly reward stronger upward slopes, penalize downward ones.
+                # 5MA/10MA equally weighted, neutral when historical data unavailable.
+                row['score_BAL_MA_SLOPE_RANK'] = row['score_C_QUALITY_BALANCED'] + (
+                    .05 * (row['ma5_slope_rank'] - 50) if row['ma5_slope'] is not None else 0) + (
+                    .05 * (row['ma10_slope_rank'] - 50) if row['ma10_slope'] is not None else 0)
 
                 # All experimental formulas are identical across TWSE and TPEx.
                 # Replace a portion of 5d momentum with historical TDCC change.
@@ -518,7 +537,7 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
@@ -583,7 +602,7 @@ def main():
     }
     # Side-by-side matched date/market comparisons for new experiments vs C and V1.
     diagnostics['experiment_comparison'] = {}
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK'):
         diagnostics['experiment_comparison'][strategy] = {}
         for market in (*MARKETS, 'all'):
             diagnostics['experiment_comparison'][strategy][market] = {}
@@ -601,7 +620,7 @@ def main():
     diagnostics['experiment_date_wins_vs_C'] = {
         s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
             for top in (5, 10, 20)}
-        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG')
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')
     }
     # Balanced-market selection: the weaker exchange matters, not just pooled return.
     diagnostics['unified_market_balance'] = {}
@@ -662,7 +681,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK'):
         for market in MARKETS:
             print(strategy, market, 'paired fixed 5d top5:',
                   paired_summary[strategy][market]['top5']['baseline_5d'])
