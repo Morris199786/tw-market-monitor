@@ -7,7 +7,7 @@ import json
 import math
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
@@ -95,11 +95,80 @@ def merge_bars(old, incoming, rejected_dates):
     return [merged[d] for d in sorted(merged)]
 
 
-def fetch_one(ticker, meta, now):
+VERSION = '2026-10-13-official-close'
+
+
+def official_rows(rows, market, now):
+    out = {}
+    keys = (('Code','OpeningPrice','HighestPrice','LowestPrice','ClosingPrice','TradeVolume')
+            if market == 'twse' else
+            ('SecuritiesCompanyCode','Open','High','Low','Close','TradingShares'))
+    for row in rows:
+        try:
+            date = str(row['Date']).replace('/','').replace('-','')
+            if len(date)==7: date=str(int(date[:3])+1911)+date[3:]
+            day=datetime.strptime(date,'%Y%m%d').date()
+            if day>now.date() or (day==now.date() and now.hour<14): continue
+            ticker=str(row[keys[0]]).strip()
+            if len(ticker)!=4 or not ticker.isdigit(): continue
+            bar={'time':day.isoformat()}
+            for key,field in zip(('open','high','low','close','volume'),keys[1:]):
+                bar[key]=float(str(row[field]).replace(',','').strip())
+            if not valid_bar(bar): continue
+            bar['volume']=int(bar['volume'])
+            bar['source']='TWSE' if market=='twse' else 'TPEx'
+            if ticker not in out or bar['time']>out[ticker]['time']: out[ticker]=bar
+        except (KeyError,ValueError,TypeError): continue
+    if not out: raise ValueError('official OHLCV schema/date unavailable')
+    return out
+
+
+def fetch_official(now):
+    quotes,errors={},{}
+    endpoints={'twse':'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL',
+               'tpex':'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_daily_close_quotes'}
+    def get(market,url):
+        r=requests.get(url,headers={'User-Agent':'Mozilla/5.0'},timeout=(10,25))
+        r.raise_for_status()
+        return official_rows(r.json(),market,now)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        jobs={pool.submit(get,m,u):m for m,u in endpoints.items()}
+        for job in as_completed(jobs):
+            market=jobs[job]
+            try: quotes[market]=job.result()
+            except Exception as exc: errors[market]=str(exc)[:180]
+    return quotes,errors
+
+
+def save_candles(ticker,meta,now,bars,gaps=None,rejected=None):
+    value={'ticker':ticker,'name':meta['name'],'market':meta['market'],
+           'source':'Yahoo Finance history + TWSE/TPEx official close',
+           'price_basis':'OHLC/Close（非 Adj Close）','volume_unit':'shares',
+           'missing_dates':gaps or [],'invalid_dates':rejected or [],
+           'updated_at':now.isoformat(timespec='seconds'),
+           'fetched_on':now.date().isoformat(),'date':bars[-1]['time'],
+           'version':VERSION,'bars':bars}
+    write(DEST/(ticker+'.json'),value)
+    return value
+
+
+def fetch_one(ticker, meta, now, official=None):
     symbol = ticker + ('.TW' if meta['market']=='twse' else '.TWO')
     path = DEST/(ticker+'.json')
     old = read(path,{})
-    if old.get('fetched_on') == now.date().isoformat() and old.get('bars'):
+    validated=[r for r in old.get('bars',[]) if isinstance(r,dict) and r.get('time') and valid_bar(r)]
+    # Existing history only needs one official all-market quote per day, not 327 Yahoo calls.
+    if official and len(validated)>=240:
+        last=max(r['time'] for r in validated)
+        gap=(datetime.fromisoformat(official['time'])-datetime.fromisoformat(last)).days
+        if 0<=gap<=4 and not any((datetime.fromisoformat(last)+timedelta(days=i)).weekday()<5 for i in range(1,gap)):
+            bars=merge_bars(old,[official],[])
+            fixed=official['time']
+            value=save_candles(ticker,meta,now,bars,
+                [d for d in old.get('missing_dates',[]) if d!=fixed],
+                [d for d in old.get('invalid_dates',[]) if d!=fixed])
+            return value,'updated',{'host':official['source']}
+    if old.get('version')==VERSION and old.get('fetched_on') == now.date().isoformat() and old.get('bars'):
         try:
             fetched = datetime.fromisoformat(old['updated_at'])
             if fetched.hour>=14 or now.hour<14: return old,'cached',{}
@@ -117,6 +186,11 @@ def fetch_one(ticker, meta, now):
                 response.raise_for_status()
                 gaps,rejected,raw = [],[],{}
                 incoming = parse_chart(response.json(),symbol,now,gaps,rejected,raw)
+                if official:
+                    incoming=merge_bars({'bars':incoming},[official],[])
+                    gaps=[d for d in gaps if d!=official['time']]
+                    rejected=[d for d in rejected if d!=official['time']]
+                    raw.pop(official['time'],None)
                 bars = merge_bars(old,incoming,rejected)
                 latest_source = incoming[-1]['time']
                 latest_saved = old.get('date','')
@@ -126,12 +200,7 @@ def fetch_one(ticker, meta, now):
                                   'rejected_recent':raw,'rejected_dates':rejected[-10:]}
                     # Different endpoint might have a fresher valid candle.
                     break
-                value = {'ticker':ticker,'name':meta['name'],'market':meta['market'],
-                         'source':'Yahoo Finance','price_basis':'Yahoo OHLC/Close（非 Adj Close；來源可能調整拆股）',
-                         'volume_unit':'shares','missing_dates':gaps,'invalid_dates':rejected,
-                         'updated_at':now.isoformat(timespec='seconds'),
-                         'fetched_on':now.date().isoformat(),'date':bars[-1]['time'],'bars':bars}
-                write(path,value)
+                value=save_candles(ticker,meta,now,bars,gaps,rejected)
                 return value,'updated',{'host':host,'rejected_recent':raw}
             except Exception as exc:
                 error = f'{type(exc).__name__}: {exc}'[:180]
@@ -158,9 +227,10 @@ def main():
             errors[ticker] = 'missing valid market identity'
             continue
         universe[ticker] = meta
+    official,official_errors=fetch_official(now)
     status,success,diagnostics = {},0,{}
     with ThreadPoolExecutor(max_workers=4) as pool:
-        tasks = {pool.submit(fetch_one,t,m,now):t for t,m in universe.items()}
+        tasks = {pool.submit(fetch_one,t,m,now,official.get(m['market'],{}).get(t)):t for t,m in universe.items()}
         for future in as_completed(tasks):
             ticker = tasks[future]
             try: value,result,detail = future.result()
@@ -175,11 +245,14 @@ def main():
                             'date':value.get('date'),'bars':len(value.get('bars',[])),
                             'invalid_dates':value.get('invalid_dates',[])}
     write(DEST/'manifest.json',{'updated_at':now.isoformat(timespec='seconds'),
-        'source':'Yahoo Finance','stocks':status,'errors':errors,
+        'source':'Yahoo Finance + TWSE/TPEx','version':VERSION,'official_errors':official_errors,'stocks':status,'errors':errors,
         'diagnostics':diagnostics,'success':success,'requested':len(tickers)})
     print(f'daily K: {success}/{len(tickers)} refreshed; {len(errors)} errors')
     if errors: print('WARNING: source errors recorded in manifest.json; existing data preserved')
+    if errors:
+        raise RuntimeError(f'{len(errors)} stocks failed refresh; valid candles saved; inspect manifest.json')
     if not any(s['available'] for s in status.values()):
         raise RuntimeError('No daily K data available for any stock')
 
 if __name__=='__main__': main()
+
