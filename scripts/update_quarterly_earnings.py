@@ -7,7 +7,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-09-v8-issuer-releases"
+VERSION = "2026-10-12-v9-quarter-results"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -249,23 +249,57 @@ def is_preview_subject(s):
 
 def is_report_subject(s):
     s = re.sub(r"\s+", "", clean(s))
-    if is_preview_subject(s) or re.search(r"代.*子公司|更正|重編|差異|預測|會計師|無法|未通過|淨值|簽證|會計政策",s): return False
-    if re.search(r'公告.*(?:合併|個體|個別)財務報告',s): return True
+    if is_preview_subject(s) or re.search(r"代.*子公司|更正|重編|差異|預測|無法|未通過|會計政策|預計|預告|召開|召集", s):
+        return False
+    # Monthly revenue/self reports and a scheduled call alone are not quarterly releases.
+    formal = bool(re.search(r"財務(?:報告|報表)", s) and re.search(r"公告|通過|決議", s))
+    quarterly = bool(period_from_text(s) and re.search(r"(?:合併)?(?:損益|財務業績|財務結果|營運結果|營運成果|財報|財務報告|財務報表)", s))
+    return formal or quarterly
 
-    return (
-        (
-            "財務報告" in s
-            or "財務報表" in s
-        )
-        and any(
-            k in s
-            for k in (
-                "通過",
-                "決議",
-                "提報董事會通過",
-            )
-        )
-    )
+
+def is_result_candidate(subject):
+    # Some issuers disclose results under '今日法人說明會摘要', with quarter in body.
+    return is_report_subject(subject) or bool(re.search(r'(?:今日)?(?:法人說明會|法說會).*(?:摘要|結果|財務資訊)', clean(subject)))
+
+
+def is_quarterly_release(subject, text):
+    if is_report_subject(subject): return True
+    return (is_result_candidate(subject) and bool(period_from_text(text))
+            and bool(re.search(r'合併.*(?:財務|損益)|每股.*(?:盈餘|純益)|EPS', text, re.I))
+            and not bool(re.search(r'預計|預告|受邀', subject)))
+
+
+def direct_quarter_metrics(text, period):
+    """Only explicit single-quarter values; never segment margin or YTD EPS."""
+    text = unicodedata.normalize('NFKC', clean(text))
+    y, q = int(period[:4]), int(period[-1])
+    quarter = rf"(?:{y}|{y-1911})\s*年(?:度)?\s*第?\s*(?:{q}|{'一二三四'[q-1]})\s*季"
+    result = {}
+    # A year/quarter immediately preceding EPS prevents subsidiary contribution EPS
+    # and '前三季累計' being mistaken for this quarter.
+    for label, key in [(r'(?:基本)?每股(?:稅後)?(?:盈餘|純益)|EPS', 'eps'), (r'(?:合併)?毛利率', 'gross_margin')]:
+        pattern = quarter + r"(?:自結|合併|單季|本公司|之|的|\s)*" + r"(?:" + label + r")\s*[:：為達約]?\s*(?:新[臺台]幣)?\s*([+-]?[\d,]+(?:\.\d+)?)"
+        values = {num(m.group(1)) for m in re.finditer(pattern, text, re.I)}
+        values.discard(None)
+        if len(values) == 1: result[key] = values.pop()
+    return result
+
+
+def cached_official_announcements(now):
+    """Read-only recovery from the existing official announcement cache."""
+    from urllib.parse import urlparse
+    out = []
+    for row in load_json(DATA/'self_reports_history.json', {}).get('items', []):
+        date = row.get('publish_date', '')
+        if not (now.date()-timedelta(days=14)).isoformat() <= date <= now.date().isoformat(): continue
+        url = row.get('source_url', '')
+        if urlparse(url).hostname not in ('mops.twse.com.tw', 'mopsov.twse.com.tw'): continue
+        if not is_report_subject(row.get('subject', '')): continue
+        out.append(dict(ticker=row['ticker'], name=row.get('name', ''), date=date,
+                        time=row.get('publish_time', ''), subject=row['subject'],
+                        raw={'說明':row.get('detail', '')}, source_url=url))
+    return out
+
 
 def financial_snapshot():
     rows = []
@@ -478,7 +512,7 @@ def single_metrics(by, t, p):
 
 def f(v, s=""):
     return (
-        "—"
+        "待官方公布"
         if v is None
         else f"{float(v):.2f}{s}"
     )
@@ -590,7 +624,7 @@ def daily_mops_news():
                 m=re.match(r'(\d{4})\s+(.+?)\s+(\d{2,3}/\d{1,2}/\d{1,2})\s+(\d{2}:\d{2}:\d{2})\s+(.+)',row['text'])
                 if not m: continue
                 ticker,name,day,clock,subject=m.groups()
-                if not (is_preview_subject(subject) or is_report_subject(subject)): continue
+                if not (is_preview_subject(subject) or is_result_candidate(subject)): continue
                 date=roc_date(day); params=extract_detail_params(row['attrs'],ticker,date,clock)
                 if not params.get('seq_no'): continue
                 payload=dict(firstin='true',TYPEK='all',step='1',COMPANY_ID=ticker,SPOKE_DATE=date.replace('-',''),SPOKE_TIME=clock.replace(':',''),SEQ_NO=params['seq_no'])
@@ -618,7 +652,7 @@ def historical_mops_news():
     today=now_tpe().date()
     try: start=datetime.strptime(state.get('through',''),'%Y-%m-%d').date()-timedelta(days=3)
     except ValueError: start=today-timedelta(days=45)
-    start=max(start,today-timedelta(days=90))
+    start=max(min(start,today-timedelta(days=14)),today-timedelta(days=90))
     out=[]; successful=True; cursor=start; started=time.monotonic()
     while cursor<=today:
         if time.monotonic()-started > 180:
@@ -630,7 +664,7 @@ def historical_mops_news():
             try:
                 payload={'firstin':'1','step':'1','off':'1','TYPEK':'all','year':str(cursor.year-1911),
                          'month':str(cursor.month),'b_date':str(cursor.day),'e_date':str(end.day),
-                         'keyword4':'財務','co_id':'','queryName':'co_id'}
+                         'keyword4':'','co_id':'','queryName':'co_id'}
                 r=S.post(base+'/mops/web/ajax_t05st01',data=payload,headers=mops_headers(),timeout=(10,35))
                 r.raise_for_status();r.encoding='utf-8'
                 page=r.text
@@ -649,8 +683,8 @@ def historical_mops_news():
                     date=datetime(*parts).date().isoformat()
                     if not cursor.isoformat()<=date<=end.isoformat(): continue
                     dated+=1
-                    if not (is_preview_subject(title) or is_report_subject(title)): continue
-                    if is_report_subject(title) and date < (today-timedelta(days=14)).isoformat(): continue
+                    if not (is_preview_subject(title) or is_result_candidate(title)): continue
+                    if is_result_candidate(title) and date < (today-timedelta(days=14)).isoformat(): continue
                     known=extract_planned_date(title,date)
                     if is_preview_subject(title) and known and known < today.isoformat(): continue
                     params=extract_detail_params(row['attrs'],t,date,clock)
@@ -786,11 +820,13 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
     for x in reports:
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
-        if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or any(x.get(k) is None for k in ('prev_gross_margin','prev_eps','gross_margin','eps')):
+        if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
             continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
+        if x.get('release_type')=='quarterly_preliminary': text+='\n公司公布之季度初步業績（自結／未核閱）'
+        if x.get('source_url'): text+='\n'+x['source_url']
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
             text+='\n\nEPS 含累計差額推算值'
@@ -918,7 +954,14 @@ def largan_ir_events(universe, now):
     upcoming=[]; released=[]
     try:
         response=S.get(url,timeout=(10,25)); response.raise_for_status(); response.encoding='utf-8'
-        parser=IRTableParser();parser.feed(response.text)
+        page=response.text
+        # The initial shareholder page is not the conference list; use its own AJAX endpoint.
+        if 'investor/shareholder/ajax/data1' in page:
+            response=S.get(url+'/ajax/data1',params={'class_id':'1','year':str(now.year)},
+                           headers={'Referer':url,'X-Requested-With':'XMLHttpRequest'},timeout=(10,25))
+            response.raise_for_status()
+            page=response.json().get('html','')
+        parser=IRTableParser();parser.feed(page)
         rows=[r for r in parser.rows if re.search(r'法說|conference|results',r['text'],re.I)]
         if not rows: raise ValueError('IR calendar rows unavailable')
         today=now.date().isoformat()
@@ -976,7 +1019,7 @@ def main():
     old=load_json(OUT,{'upcoming':[],'reports':[]})
     # Persist all future events, independent of this week's view
     event_history=load_json(DATA/'quarterly_earnings_events.json',old)
-    news=fetch_news()+historical_mops_news()
+    news=fetch_news()+historical_mops_news()+daily_mops_news()+cached_official_announcements(now)
     by=merge_history(financial_snapshot());upcoming={};events={};calendars={}
     ir_upcoming,ir_reports=largan_ir_events(uni,now)
     for x in event_history.get('upcoming',[]):
@@ -986,17 +1029,27 @@ def main():
     for x in news:
         if not x.get('date') or x['ticker'] not in uni: continue
         text=announcement_text(x);subject=x['subject']
+        if not x.get('source_url'):
+            x['source_url']='https://mops.twse.com.tw/mops/web/t05st01?'+urlencode({'co_id':x['ticker'],'year':str(int(x['date'][:4])-1911)})
         if is_preview_subject(subject):
             date=extract_planned_date(text,x['date']);period=period_from_text(subject)
             if not period: period=period_from_text(text)
             if date and period and date>=today:
                 upcoming[(x['ticker'],period)]=dict(ticker=x['ticker'],name=uni.get(x['ticker']) or x['name'],period=period,planned_date=date,announcement_date=x['date'],subject=subject,source_url=x.get('source_url',''))
-        elif is_report_subject(subject):
+        elif is_quarterly_release(subject,text):
             period=period_from_text(subject) or period_from_text(text)
             if not period: continue
             event=dict(ticker=x['ticker'],name=uni.get(x['ticker']) or x['name'],period=period,publish_date=x['date'],publish_time=x.get('time',''),subject=subject,source_url=x.get('source_url',''))
             if report_visible(event,now,calendars):
-                events[(x['ticker'],period)]=event
+                values=direct_quarter_metrics(text,period)
+                if values: event['released_metrics']={period:values}
+                event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
+                event['source_label']='公開資訊觀測站'
+                existing=events.get((x['ticker'],period),{})
+                merged={**existing.get('released_metrics',{})}
+                for p,v in event.get('released_metrics',{}).items(): merged[p]={**merged.get(p,{}),**v}
+                event['released_metrics']=merged
+                events[(x['ticker'],period)]={**existing,**event}
                 row=event_cumulative(x,period)
                 if row:
                     prev=by.get((x['ticker'],period),{})
@@ -1026,8 +1079,12 @@ def main():
     for key,x in events.items():
         cur=single_metrics(by,x['ticker'],x['period']);prevp=previous(x['period']);prev=single_metrics(by,x['ticker'],prevp)
         verified=x.get('released_metrics',{})
-        if x['period'] in verified: cur={**verified[x['period']], 'eps_basis':'reported_single'}
-        if prevp in verified: prev={**verified[prevp], 'eps_basis':'reported_single'}
+        if x['period'] in verified:
+            cur.update({k:v for k,v in verified[x['period']].items() if v is not None})
+            if verified[x['period']].get('eps') is not None: cur['eps_basis']='reported_single'
+        if prevp in verified:
+            prev.update({k:v for k,v in verified[prevp].items() if v is not None})
+            if verified[prevp].get('eps') is not None: prev['eps_basis']='reported_single'
         x.update(eps=cur['eps'],gross_margin=cur['gross_margin'],eps_basis=cur.get('eps_basis'),prev_period=prevp,prev_eps=prev['eps'],prev_gross_margin=prev['gross_margin'],prev_eps_basis=prev.get('eps_basis'))
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
         upcoming.pop(key,None)
@@ -1043,4 +1100,5 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
