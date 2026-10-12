@@ -16,7 +16,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -241,7 +241,7 @@ def main():
             if len(pool) < 20:
                 coverage.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 priced candidates'})
                 continue
-            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel'):
+            for field in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm', 'flow_accel', 'daily_turnover'):
                 percentile(pool, field)
             r20_median = median([r['r20'] for r in pool if r['r20'] is not None]) if any(r['r20'] is not None for r in pool) else 0
             for row in pool:
@@ -276,6 +276,20 @@ def main():
                 row['score_C_TREND'] = row['score_C'] + 10 * (row['trend_slope'] - row['trend'])
                 row['score_C_SECTOR'] = row['score_C'] + (.10 * (row['sector_strength_rank'] - 50)
                                                              if row['sector_strength'] is not None else 0)
+                # New independent shadow experiments; original 11 strategies unchanged.
+                # Volume guard: penalize extreme volume spikes above 3x five-day average.
+                # Cap penalty at 12 score points; never alter C baseline.
+                row['score_C_VOLUME_GUARD'] = row['score_C'] - min(
+                    12.0, 4.0 * max(0.0, (row['volume_ratio'] or 0.0) - 3.0))
+                # Flow quality: shift 10 percentage points from total flow strength
+                # to recent institutional-flow acceleration (both market percentiles).
+                row['score_C_FLOW_QUALITY'] = (row['score_C']
+                    - .10 * row['flow_rank'] + .10 * row['flow_accel_rank'])
+                # Liquidity: modest preference for higher same-day turnover;
+                # neutral-centered so the addition changes ranking, not the score scale.
+                row['score_C_LIQUIDITY'] = (row['score_C']
+                    + .10 * (row['daily_turnover_rank'] - 50))
+
             paired = len(baseline) >= 20
             coverage.append({'date': day, 'market': exchange, 'status': 'evaluated',
                              'v1_available': paired, 'pool_size': len(pool),
@@ -412,13 +426,16 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
                          'V1_vs_C_FLOW': overlap('V1', 'C_FLOW'),
                          'C_vs_C_TREND': overlap('C', 'C_TREND'),
-                         'C_vs_C_SECTOR': overlap('C', 'C_SECTOR')},
+                         'C_vs_C_SECTOR': overlap('C', 'C_SECTOR'),
+                         'C_vs_C_VOLUME_GUARD': overlap('C', 'C_VOLUME_GUARD'),
+                         'C_vs_C_FLOW_QUALITY': overlap('C', 'C_FLOW_QUALITY'),
+                         'C_vs_C_LIQUIDITY': overlap('C', 'C_LIQUIDITY')},
     }
     # Factor audit: descriptive comparisons only. Never affect selection or scoring.
     # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
@@ -465,6 +482,28 @@ def main():
                         'Turnover and volume units follow market snapshot source',
                         'No future data used for selection-day factors'],
     }
+    # Side-by-side matched date/market comparisons for new experiments vs C and V1.
+    diagnostics['experiment_comparison'] = {}
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY'):
+        diagnostics['experiment_comparison'][strategy] = {}
+        for market in (*MARKETS, 'all'):
+            diagnostics['experiment_comparison'][strategy][market] = {}
+            for top in (5, 10, 20):
+                entries = {}
+                for st in ('V1', 'C', strategy):
+                    rows = [r for r in picks if r['strategy'] == st
+                            and r['paired_with_v1'] and r['rank'] <= top
+                            and (market == 'all' or r['market'] == market)
+                            and r['baseline_5d'] is not None]
+                    entries[st] = stats([r['baseline_5d'] for r in rows])
+                diagnostics['experiment_comparison'][strategy][market][f'top{top}'] = entries
+    # Each market/date is one unit; avoid interpreting overlapping stock picks
+    # as independent evidence of strategy improvement.
+    diagnostics['experiment_date_wins_vs_C'] = {
+        s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
+            for top in (5, 10, 20)}
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY')
+    }
     # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
     # This is additive only: scoring, evaluation, summaries and production stay unchanged.
     daily_picks = {}
@@ -507,6 +546,10 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY'):
+        for market in MARKETS:
+            print(strategy, market, 'paired fixed 5d top5:',
+                  paired_summary[strategy][market]['top5']['baseline_5d'])
     print('Factor audit C mature rows:', sum(x['return_5d'] is not None for x in factor_rows))
     print('Outputs:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
 
