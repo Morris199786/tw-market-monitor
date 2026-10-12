@@ -1,0 +1,34 @@
+name: AI Shadow Backtest
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run AI shadow backtest
+        run: python ai_shadow_backtest.py
+
+      - name: Upload test results
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-shadow-backtest-results
+          path: |
+            data/ai_shadow_test.json
+            data/ai_shadow_test.csv
+          retention-days: 7
