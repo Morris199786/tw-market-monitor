@@ -234,6 +234,9 @@ def main():
                              'trend': int(ma10 is not None and ma20 is not None and price > ma10 > ma20),
                              'overheat': heat, 'heat_smooth': heat_smooth,
                              'flow_accel': flow_accel, 'trend_slope': trend_slope,
+                             'ma20_gap_pct': percent(ma20, price) if ma20 else None,
+                             'daily_turnover': number(q.get('turnover')),
+                             'daily_volume': number(q.get('volume')),
                              'sectors': ticker_sectors.get(ticker, [])})
             if len(pool) < 20:
                 coverage.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 priced candidates'})
@@ -303,6 +306,12 @@ def main():
                               'score': (number(row.get('score_' + strategy)) if strategy != 'V1'
                                         else number(row['record'].get('score'))),
                               'paired_with_v1': paired, **returns}
+                    if strategy != 'V1':
+                        record['factors'] = {key: row.get(key) for key in (
+                            'r5', 'r10', 'r20', 'flow', 'flow_rank', 'flow_accel',
+                            'breakout', 'breakout_rank', 'r5_rank', 'r10_rank',
+                            'trend', 'overheat', 'ma20_gap_pct', 'volume_ratio',
+                            'daily_turnover', 'daily_volume', 'score_C')}
                     picks.append(record)
                     evaluated.append(record)
                 for top in (5, 10, 20):
@@ -411,6 +420,51 @@ def main():
                          'C_vs_C_TREND': overlap('C', 'C_TREND'),
                          'C_vs_C_SECTOR': overlap('C', 'C_SECTOR')},
     }
+    # Factor audit: descriptive comparisons only. Never affect selection or scoring.
+    # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
+    factor_rows = []
+    for r in picks:
+        if r['strategy'] != 'C' or not r['paired_with_v1']:
+            continue
+        f = r.get('factors', {})
+        factor_rows.append({
+            'date': r['date'], 'market': r['market'], 'rank': r['rank'],
+            'ticker': r['ticker'], 'name': r['name'], 'score': r['score'],
+            'return_5d': r.get('baseline_5d'), 'return_10d': r.get('baseline_10d'),
+            **f,
+        })
+    factor_fields = ('r5', 'r10', 'r20', 'flow', 'flow_rank', 'flow_accel',
+                     'breakout', 'breakout_rank', 'ma20_gap_pct', 'volume_ratio',
+                     'daily_turnover', 'daily_volume', 'overheat', 'trend', 'score')
+    factor_groups = {}
+    for market in MARKETS:
+        factor_groups[market] = {}
+        for bucket, low, high in (('top5', 1, 5), ('rank6_10', 6, 10),
+                                  ('rank11_20', 11, 20), ('top20', 1, 20)):
+            group = [r for r in factor_rows if r['market'] == market and low <= r['rank'] <= high
+                     and r['return_5d'] is not None]
+            winning = [r for r in group if r['return_5d'] > 0]
+            losing = [r for r in group if r['return_5d'] <= 0]
+            def factors_avg(rows):
+                return {k: round(mean(vals), 4) if (vals := [v for x in rows
+                        if (v := number(x.get(k))) is not None]) else None
+                        for k in factor_fields}
+            factor_groups[market][bucket] = {
+                'performance_5d': stats([r['return_5d'] for r in group]),
+                'factor_mean': factors_avg(group),
+                'winner_factor_mean': factors_avg(winning),
+                'nonwinner_factor_mean': factors_avg(losing),
+                'mature_selection_dates': sorted(set(r['date'] for r in group)),
+            }
+    diagnostics['factor_audit'] = {
+        'method': 'V3-C only; V1-matched selection dates; mature fixed 5d returns; factor values at selection close',
+        'by_market_rank_bucket': factor_groups,
+        'per_pick': factor_rows,
+        'limitations': ['Descriptive association, not proof of causal effect',
+                        'Overlapping holdings and repeated tickers are not independent samples',
+                        'Turnover and volume units follow market snapshot source',
+                        'No future data used for selection-day factors'],
+    }
     # Preserve every day's ranked picks, including pending dates, in the JSON artifact.
     # This is additive only: scoring, evaluation, summaries and production stay unchanged.
     daily_picks = {}
@@ -419,6 +473,7 @@ def main():
             'rank': r['rank'], 'ticker': r['ticker'], 'name': r['name'],
             'score': round(r['score'], 4) if r['score'] is not None else None,
             'entry_price': r['entry_price'], 'paired_with_v1': r['paired_with_v1'],
+            'factors': r.get('factors'),
         })
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
@@ -452,6 +507,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
+    print('Factor audit C mature rows:', sum(x['return_5d'] is not None for x in factor_rows))
     print('Outputs:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
 
 
