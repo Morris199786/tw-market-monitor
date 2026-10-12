@@ -17,7 +17,7 @@ OUT = ROOT / 'data/ai_shadow_test.json'
 CSV = ROOT / 'data/ai_shadow_test.csv'
 START = '2026-09-24'
 MARKETS = ('twse', 'tpex')
-STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')
+STRATEGIES = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK', 'BAL_HOLDER_VOL_MA_SLOPE', 'BAL_HOLDER_VOL_MA_RANK')
 DEFAULT_CODES = {'24', '25', '26', '27', '28', '29', '30', '31', '32'}
 
 
@@ -378,6 +378,12 @@ def main():
                 # Begin volume penalty at 4x rather than 3x (same cap and slope).
                 alternate_volume_penalty = min(6.0, 2.0 * max(0.0, (row['volume_ratio'] or 0.0) - 4.0))
                 row['score_BAL_HOLDER_10_VOL'] = base + mild_volume_penalty - alternate_volume_penalty
+                # Combination experiments: keep existing strategies unchanged.
+                # Test whether MA-slope bonus complements holder 10% + relaxed volume guard.
+                row['score_BAL_HOLDER_VOL_MA_SLOPE'] = row['score_BAL_HOLDER_10_VOL'] + (
+                    row['score_BAL_MA_SLOPE'] - row['score_C_QUALITY_BALANCED'])
+                row['score_BAL_HOLDER_VOL_MA_RANK'] = row['score_BAL_HOLDER_10_VOL'] + (
+                    row['score_BAL_MA_SLOPE_RANK'] - row['score_C_QUALITY_BALANCED'])
                 # Shift 5pp from aggregate flow strength to recent acceleration.
                 row['score_BAL_HOLDER_10_FLOW'] = base + .05 * (row['flow_accel_rank'] - row['flow_rank'])
 
@@ -537,7 +543,7 @@ def main():
 
     diagnostics = {
         'method': 'Matched V1 dates, same exchange, top20; only mature returns; each date-market is one comparison unit',
-        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')},
+        'date_comparisons': {s: diagnostic_pair(s) for s in ('C', 'C_FLOW', 'C_TREND', 'C_SECTOR', 'C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK', 'BAL_HOLDER_VOL_MA_SLOPE', 'BAL_HOLDER_VOL_MA_RANK')},
         'return_concentration': {s: {f'{h}d': concentration(s, h) for h in (5, 10)}
                                  for s in ('V1', 'C', 'C_FLOW')},
         'pick_overlap': {'C_vs_C_FLOW': overlap('C', 'C_FLOW'),
@@ -602,7 +608,7 @@ def main():
     }
     # Side-by-side matched date/market comparisons for new experiments vs C and V1.
     diagnostics['experiment_comparison'] = {}
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK', 'BAL_HOLDER_VOL_MA_SLOPE', 'BAL_HOLDER_VOL_MA_RANK'):
         diagnostics['experiment_comparison'][strategy] = {}
         for market in (*MARKETS, 'all'):
             diagnostics['experiment_comparison'][strategy][market] = {}
@@ -620,7 +626,7 @@ def main():
     diagnostics['experiment_date_wins_vs_C'] = {
         s: {f'top{top}': diagnostic_pair(s, baseline='C', top=top)['5d']['baseline']
             for top in (5, 10, 20)}
-        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK')
+        for s in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK', 'BAL_HOLDER_VOL_MA_SLOPE', 'BAL_HOLDER_VOL_MA_RANK')
     }
     # Balanced-market selection: the weaker exchange matters, not just pooled return.
     diagnostics['unified_market_balance'] = {}
@@ -681,7 +687,7 @@ def main():
     d = diagnostics['date_comparisons']['C_FLOW']['5d']['baseline']
     print('C_FLOW vs V1 paired 5d date-market wins:', d['challenger_wins'], '/', d['units'])
     print('C vs C_FLOW average top20 overlap:', diagnostics['pick_overlap']['C_vs_C_FLOW']['average_overlap_pct'])
-    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK'):
+    for strategy in ('C_VOLUME_GUARD', 'C_FLOW_QUALITY', 'C_LIQUIDITY', 'C_MARKET_ADAPTIVE', 'C_QUALITY_LIQUIDITY', 'C_QUALITY_VOLUME', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW', 'BAL_FLOW_PERSIST', 'BAL_FLOW_STABLE', 'BAL_FLOW_PERSIST_ACCEL', 'BAL_HOLDER_NEG', 'BAL_HOLDER_NEG_STRONG', 'BAL_MA_SLOPE', 'BAL_MA_SLOPE_RANK', 'BAL_HOLDER_VOL_MA_SLOPE', 'BAL_HOLDER_VOL_MA_RANK'):
         for market in MARKETS:
             print(strategy, market, 'paired fixed 5d top5:',
                   paired_summary[strategy][market]['top5']['baseline_5d'])
