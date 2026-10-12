@@ -501,7 +501,9 @@ def main():
                          'C_FLOW_QUALITY_vs_C_MARKET_ADAPTIVE': overlap('C_FLOW_QUALITY', 'C_MARKET_ADAPTIVE'),
                          'C_FLOW_QUALITY_vs_C_QUALITY_LIQUIDITY': overlap('C_FLOW_QUALITY', 'C_QUALITY_LIQUIDITY'),
                          'C_FLOW_QUALITY_vs_C_QUALITY_VOLUME': overlap('C_FLOW_QUALITY', 'C_QUALITY_VOLUME'),
-                         'C_FLOW_QUALITY_vs_C_QUALITY_BALANCED': overlap('C_FLOW_QUALITY', 'C_QUALITY_BALANCED', 'BAL_HOLDER_05', 'BAL_HOLDER_10', 'BAL_HOLDER_15', 'BAL_HOLDER_10_MOM', 'BAL_HOLDER_10_HEAT', 'BAL_HOLDER_10_VOL', 'BAL_HOLDER_10_FLOW')},
+                         'C_FLOW_QUALITY_vs_C_QUALITY_BALANCED': overlap('C_FLOW_QUALITY', 'C_QUALITY_BALANCED'),
+                         **{f'C_QUALITY_BALANCED_vs_{strategy}': overlap('C_QUALITY_BALANCED', strategy)
+                            for strategy in STRATEGIES if strategy.startswith('BAL_HOLDER_')}},
     }
     # Factor audit: descriptive comparisons only. Never affect selection or scoring.
     # Store each ranked C pick and outcomes, then summarize by exchange and rank bucket.
