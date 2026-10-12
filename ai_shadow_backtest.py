@@ -67,17 +67,29 @@ def main():
         data = load(path)
         inst[path.stem] = {**data.get('twse', {}), **data.get('tpex', {})}
     old = defaultdict(list)
-    for record in load(ROOT / 'data/ai_backtest.json').get('records', []):
-        if record.get('market') in ('twse', 'tpex') and record.get('status_5d') == 'complete':
+    backtest = load(ROOT / 'data/ai_backtest.json')
+    for record in backtest.get('records', []):
+        if record.get('market') in ('twse', 'tpex'):
             old[(record.get('selection_date'), record['market'])].append(record)
+    start_date = backtest.get('start_date') or (min(k[0] for k in old) if old else '2026-09-24')
     if not old:
-        raise SystemExit('ERROR: no mature V1 baseline')
+        raise SystemExit('ERROR: no original selection records')
+    # IMPORTANT: historical dates, not the subset of mature original V1 dates.
+    # Every market snapshot since start_date is considered for each exchange.
+    candidate_dates = [d for d in dates if d >= start_date]
+    audit = []
+    matched = set()
     picks, daily, skipped = [], [], []
     strategies = ('V1', 'A', 'B', 'C', 'A_RS', 'A_VOLUME', 'A_HEAT', 'A_PLUS')
-    for (day, exchange), original in sorted(old.items()):
+    for day in candidate_dates:
+      for exchange in ('twse', 'tpex'):
+        original = old.get((day, exchange), [])
         i = idx.get(day, -1)
-        if i < 20 or i + 5 >= len(dates):
-            skipped.append({'date': day, 'market': exchange, 'reason': 'insufficient history/future'})
+        if i < 20:
+            audit.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 prior trading days'})
+            skipped.append(audit[-1]); continue
+        if i + 5 >= len(dates):
+            audit.append({'date': day, 'market': exchange, 'status': 'pending', 'reason': 'five future market trading days not yet available'})
             continue
         hist = dates[i-20:i+1]
         future = market[dates[i+5]]
@@ -121,8 +133,8 @@ def main():
                          'overheat': heat, 'heat_smooth': heat_smooth,
                          'return': ret(price, num(future.get(ticker, {}).get('price')))})
         if len(pool) < 20:
-            skipped.append({'date': day, 'market': exchange, 'reason': 'fewer than 20 eligible stocks', 'pool_size': len(pool)})
-            continue
+            audit.append({'date': day, 'market': exchange, 'status': 'skipped', 'reason': 'fewer than 20 eligible stocks', 'pool_size': len(pool)})
+            skipped.append(audit[-1]); continue
         for key in ('flow', 'r5', 'r10', 'r20', 'breakout', 'volume_ratio', 'volume_confirm'):
             percentile(pool, key)
         # RS uses relative stock return versus median of same-market candidates,
@@ -145,7 +157,19 @@ def main():
             row['score_A_PLUS'] = (.35*f + .20*b + .15*m10 + .10*row['rs20_rank']
                                    + .10*row['volume_confirm_rank'] + trend - row['heat_smooth'])
         original.sort(key=lambda r: int(r.get('rank') or 999))
+        # V1 only exists on original selection dates. Never invent V1 holdings
+        # for 9/25, 9/28, or any other date without original records.
+        v1_valid = len(original) >= 20 and all(
+            r.get('baseline_status_5d') == 'complete' and num(r.get('baseline_return_5d')) is not None
+            for r in original[:20])
+        if v1_valid:
+            matched.add((day, exchange))
+        audit.append({'date': day, 'market': exchange, 'status': 'complete',
+                      'pool_size': len(pool), 'v1_available': v1_valid,
+                      'v1_original_records': len(original), 'end_date_5d': dates[i+5]})
         for strategy in strategies:
+            if strategy == 'V1' and not v1_valid:
+                continue
             if strategy == 'V1':
                 chosen = [{'ticker': r['ticker'], 'name': r.get('name', ''),
                            'return': num(r.get('baseline_return_5d'))} for r in original[:20]]
@@ -170,6 +194,19 @@ def main():
                 rows = [r for r in picks if r['strategy'] == strategy
                         and (exchange == 'all' or r['market'] == exchange) and r['rank'] <= top]
                 report[strategy][exchange]['top'+str(top)] = stats([r['return_5d'] for r in rows])
+    # Matched-date comparison: compare V3 and V1 ONLY where the original V1
+    # selection was recorded and its return is mature, for both exchanges.
+    matched_report = {}
+    for strategy in strategies:
+        matched_report[strategy] = {}
+        for exchange in ('twse', 'tpex', 'all'):
+            matched_report[strategy][exchange] = {}
+            for top in (5, 10, 20):
+                vals = [r['return_5d'] for r in picks
+                        if r['strategy'] == strategy and r['rank'] <= top
+                        and (r['date'], r['market']) in matched
+                        and (exchange == 'all' or r['market'] == exchange)]
+                matched_report[strategy][exchange]['top'+str(top)] = stats(vals)
     # Day-level performance shows whether a strategy depends on one extraordinary date.
     daily_spread = {}
     for strategy in strategies:
@@ -181,15 +218,24 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps({
         'method': 'V3-A factor ablation; same formulas for TWSE and TPEx; historical sector proxy',
-        'strategies': list(strategies), 'summary': report, 'daily': daily,
+        'strategies': list(strategies), 'summary': report,
+        'matched_v1_comparison': matched_report,
+        'matched_v1_date_markets': len(matched),
+        'audit_by_date_market': audit,
+        'eligible_market_snapshot_dates': candidate_dates,
+        'daily': daily,
         'daily_top20_distribution': daily_spread, 'skipped': skipped,
         'selection_days': len(set(p['date'] for p in picks)),
+        'complete_date_markets': sum(x['status'] == 'complete' for x in audit),
+        'pending_date_markets': sum(x['status'] == 'pending' for x in audit),
+        'skipped_date_markets': sum(x['status'] == 'skipped' for x in audit),
         'limitations': ['Current sectors.json membership causes survivorship bias',
                         'No historical TDCC large-holder factors',
                         'Selection-day closing price and same-day institutional flows are not executable point-in-time signals; potential look-ahead bias',
                         'Five-day returns overlap across selection dates',
                         'No fees, slippage or sample-out-of-time validation',
-                        'RS20 is relative to the current same-market eligible candidate median']
+                        'RS20 is relative to the current same-market eligible candidate median',
+                        'V3 full-history summary may cover more dates than V1; use matched_v1_comparison for fair comparison']
     }, ensure_ascii=False, indent=2), encoding='utf-8')
     with CSV.open('w', newline='', encoding='utf-8-sig') as file:
         writer = csv.DictWriter(file, fieldnames=['date', 'market', 'strategy', 'rank', 'ticker', 'name', 'return_5d'])
@@ -197,6 +243,12 @@ def main():
         writer.writerows(picks)
     print('V3 shadow factor-ablation complete; production files unchanged')
     print('Selection days:', len(set(p['date'] for p in picks)), 'picks:', len(picks), 'skipped:', len(skipped))
+    print('Complete/pending/skipped date-markets:',
+          sum(x['status'] == 'complete' for x in audit),
+          sum(x['status'] == 'pending' for x in audit),
+          sum(x['status'] == 'skipped' for x in audit))
+    print('Matched V1 date-markets:', len(matched))
+    print('Date audit:', json.dumps(audit, ensure_ascii=False))
     for strategy in strategies:
         print(strategy, 'Top20:', report[strategy]['all']['top20'])
     print('Results:', OUT.relative_to(ROOT), CSV.relative_to(ROOT))
