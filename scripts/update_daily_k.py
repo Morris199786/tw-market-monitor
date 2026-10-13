@@ -95,7 +95,7 @@ def merge_bars(old, incoming, rejected_dates):
     return [merged[d] for d in sorted(merged)]
 
 
-VERSION = '2026-10-13-dated-close'
+VERSION = '2026-10-13-no-quote-status'
 TARGET_DATE = ''
 
 
@@ -278,6 +278,28 @@ def fetch_one(ticker, meta, now, official=None):
     return old,error or 'source unavailable',diagnostic
 
 
+def fetch_with_market_status(ticker, meta, now, official, official_errors):
+    """No quote is not a new candle. Never infer this from a failed market feed."""
+    market = meta['market']
+    quotes = official.get(market, {})
+    quote = quotes.get(ticker)
+    current = {t: bar for t, bar in quotes.items()
+               if bar.get('time', '') >= TARGET_DATE and valid_bar(bar)}
+    # Require a populated, current official market snapshot. An absent quote
+    # may mean suspension/no trade; it must not be labelled a confirmed suspension.
+    if (TARGET_DATE and market not in official_errors and len(current) >= 100
+            and ticker not in current):
+        old = read(DEST/(ticker+'.json'), {})
+        bars = old.get('bars', [])
+        if bars and all(valid_bar(bar) for bar in bars):
+            value = dict(old)
+            value['date'] = max(bar['time'] for bar in bars)
+            return value, 'no_official_quote', {
+                'reason': 'No valid quote in current official market snapshot; historical candles retained',
+                'market_date': TARGET_DATE}
+    return fetch_one(ticker, meta, now, quote)
+
+
 def main():
     now = datetime.now(TZ)
     sectors = read(ROOT/'data/sectors.json',{}).get('sectors',[])
@@ -298,9 +320,9 @@ def main():
             continue
         universe[ticker] = meta
     official,official_errors=fetch_official(now)
-    status,success,diagnostics = {},0,{}
+    status,success,diagnostics,warnings = {},0,{},{}
     with ThreadPoolExecutor(max_workers=4) as pool:
-        tasks = {pool.submit(fetch_one,t,m,now,official.get(m['market'],{}).get(t)):t for t,m in universe.items()}
+        tasks = {pool.submit(fetch_with_market_status,t,m,now,official,official_errors):t for t,m in universe.items()}
         for future in as_completed(tasks):
             ticker = tasks[future]
             try: value,result,detail = future.result()
@@ -308,16 +330,21 @@ def main():
                 value,result,detail = {},f'{type(exc).__name__}: {exc}'[:180],{}
             ok = result in ('updated','cached')
             if ok: success+=1
+            elif result == 'no_official_quote': warnings[ticker]=detail
             else: errors[ticker]=result
             if detail.get('rejected_recent'):
                 diagnostics[ticker]=detail
             status[ticker]={'available':bool(value.get('bars')),'refresh_ok':ok,
+                            'status':result if ok or result == 'no_official_quote' else 'error',
                             'date':value.get('date'),'bars':len(value.get('bars',[])),
                             'invalid_dates':value.get('invalid_dates',[])}
     write(DEST/'manifest.json',{'updated_at':now.isoformat(timespec='seconds'),
         'source':'Yahoo Finance + TWSE/TPEx','version':VERSION,'target_date':TARGET_DATE,'official_errors':official_errors,'stocks':status,'errors':errors,
-        'diagnostics':diagnostics,'success':success,'requested':len(tickers)})
-    print(f'daily K: {success}/{len(tickers)} refreshed; {len(errors)} errors')
+        'diagnostics':diagnostics,'warnings':warnings,'no_official_quote':len(warnings),
+        'success':success,'requested':len(tickers)})
+    print(f'daily K: {success}/{len(tickers)} refreshed; {len(warnings)} without official quote; {len(errors)} errors')
+    for ticker, detail in warnings.items():
+        print(f"WARNING: {ticker}: {detail['reason']} ({detail['market_date']})")
     if errors: print('WARNING: source errors recorded in manifest.json; existing data preserved')
     if errors:
         raise RuntimeError(f'{len(errors)} stocks failed refresh; valid candles saved; inspect manifest.json')
