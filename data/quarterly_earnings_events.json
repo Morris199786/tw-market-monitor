@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-12-v9-quarter-results",
-  "updated_at": "2026-10-13T14:38+08:00",
+  "updated_at": "2026-10-13T15:08+08:00",
   "upcoming": [
     {
       "ticker": "3169",
@@ -81,8 +81,10 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "detail/6734/2026-09-30",
-      "detail/5321/2026-09-30",
+      "announcement_scan/2026-09-29~2026-09-30:ValueError:announcement schema unavailable",
+      "detail/1303/2026-10-12",
+      "daily_mops:ConnectTimeout",
+      "daily_mops:ConnectTimeout",
       "issuer_ir/3008/2026-Q3:single_quarter_metrics_unavailable"
     ],
     "historical_errors": [
@@ -90,7 +92,7 @@
       "tpex/2026-Q3: ValueError"
     ],
     "coverage": {
-      "2026-09-29~2026-09-30": "ok",
+      "2026-09-29~2026-09-30": "failed",
       "2026-10-01~2026-10-13": "ok"
     },
     "calendar_errors": []
