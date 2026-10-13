@@ -1,23 +1,18 @@
 /* =========================================================
    市場熱力圖：族群下拉 + 細分類 + 個股資訊
-
-   個股視窗：
-   - 日 K
-   - 5 / 10 / 20 日相對走勢
-   - 5 / 10 / 20 日法人籌碼
+   個股視窗：5 / 10 / 20 日共用期間
 
    籌碼：
    - 長條圖依 5 / 10 / 20 日切換
    - 長條圖下方固定顯示近 5 日明細
    - 顯示更多後可看最多 20 日
-   - 手機支援上下滑動
+   - 手機支援上下滑動查看更早資料
 
-   修正：
-   - 手機走勢圖恢復正常高度
-   - SVG 不再拉伸變形
-   - 日期與百分比座標正常顯示
-   - 修正個股名稱白字問題
-   - 保留日 K 與籌碼功能
+   本版僅小幅優化：
+   - 走勢圖高度 300 → 320
+   - 座標與日期字體 10 → 11
+   - 圖例字體 10 → 11
+   - 修正淺色模式個股標題顏色
    ========================================================= */
 
 (() => {
@@ -40,7 +35,6 @@
 
   let flowExpanded = false;
   let flowTouchStartY = null;
-  let detailRequestId = 0;
 
   const $ = (selector, root = document) =>
     root.querySelector(selector);
@@ -58,11 +52,7 @@
   }
 
   function num(value) {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
+    if (value === null || value === undefined || value === "") {
       return null;
     }
 
@@ -72,36 +62,37 @@
 
   function fmtPct(value) {
     const n = num(value);
-
     if (n === null) return "—";
-
     return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
   }
 
   function fmtLots(value) {
+    if (value === null || value === undefined) return "待補";
+
     const n = num(value);
+    if (n === null) return "—";
 
-    if (n === null) return "待補";
+    const rounded = Math.round(n);
 
-    return `${n > 0 ? "+" : ""}${Math.round(n).toLocaleString("zh-TW")}`;
+    return `${rounded > 0 ? "+" : ""}${rounded.toLocaleString("zh-TW", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
   }
 
   function valueClass(value) {
     const n = num(value);
-
     if (n === null) return "";
     if (n > 0) return "is-up";
     if (n < 0) return "is-down";
-
     return "";
   }
 
   function latestValue(arr) {
     if (!Array.isArray(arr)) return null;
 
-    for (let i = arr.length - 1; i >= 0; i--) {
+    for (let i = arr.length - 1; i >= 0; i -= 1) {
       const n = num(arr[i]);
-
       if (n !== null) return n;
     }
 
@@ -109,18 +100,17 @@
   }
 
   async function fetchJson(url) {
-    const separator = url.includes("?") ? "&" : "?";
+    const sep = url.includes("?") ? "&" : "?";
 
-    const response = await fetch(
-      `${url}${separator}v=${Date.now()}`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${url}${sep}v=${Date.now()}`, {
+      cache: "no-store"
+    });
 
-    if (!response.ok) {
-      throw new Error(`${url} ${response.status}`);
+    if (!res.ok) {
+      throw new Error(`${url} ${res.status}`);
     }
 
-    return response.json();
+    return res.json();
   }
 
   async function loadSectorConfig() {
@@ -138,7 +128,6 @@
 
   async function loadStockDetail() {
     if (stockDetailData) return stockDetailData;
-
     if (stockDetailPromise) return stockDetailPromise;
 
     stockDetailPromise = fetchJson("./data/stock_detail.json")
@@ -161,7 +150,7 @@
 
   function sectorByName(name) {
     return sectorList().find(
-      sector => String(sector?.name || "") === String(name || "")
+      sec => String(sec?.name || "") === String(name || "")
     ) || null;
   }
 
@@ -171,10 +160,9 @@
 
   function directHeatButtons() {
     const grid = heatGrid();
+    if (!grid) return [];
 
-    return grid
-      ? $$(".heat-stock", grid)
-      : [];
+    return $$(".heat-stock", grid);
   }
 
   function tickerFromRow(row) {
@@ -184,23 +172,28 @@
       row.dataset?.ticker,
       row.getAttribute("data-ticker"),
       row.querySelector("[data-ticker]")?.getAttribute("data-ticker"),
-      row.querySelector(".ticker")?.textContent,
-      row.textContent
+      row.querySelector(".ticker")?.textContent
     ];
 
     for (const candidate of candidates) {
-      const match = String(candidate || "").match(/\b\d{4,6}\b/);
+      const text = String(candidate || "").trim();
+      const match = text.match(/\b\d{4,6}\b/);
 
       if (match) return match[0];
     }
 
-    return "";
+    const text = String(row.textContent || "");
+    const match = text.match(/\b\d{4,6}\b/);
+
+    return match ? match[0] : "";
   }
 
   function sectorFromRow(row) {
+    if (!row) return activeSector || "";
+
     return (
-      row?.dataset?.sector ||
-      row?.getAttribute("data-sector") ||
+      row.dataset?.sector ||
+      row.getAttribute("data-sector") ||
       activeSector ||
       ""
     );
@@ -216,6 +209,7 @@
       wrap = document.createElement("div");
       wrap.id = "heatSectorControls";
       wrap.className = "heat-sector-controls";
+
       grid.parentNode?.insertBefore(wrap, grid);
     }
 
@@ -228,9 +222,9 @@
 
       select.innerHTML = `
         <option value="">全部族群</option>
-        ${sectorList().map(sector => `
-          <option value="${escapeHtml(sector.name || "")}">
-            ${escapeHtml(sector.name || "")}
+        ${sectorList().map(sec => `
+          <option value="${escapeHtml(sec.name || "")}">
+            ${escapeHtml(sec.name || "")}
           </option>
         `).join("")}
       `;
@@ -238,6 +232,7 @@
       select.addEventListener("change", () => {
         activeSector = select.value || "";
         activeSubgroup = "";
+
         renderSubgroupSelect();
         applySectorFilter();
       });
@@ -265,10 +260,10 @@
 
     if (!activeSector) return;
 
-    const sector = sectorByName(activeSector);
+    const sec = sectorByName(activeSector);
 
-    const subgroups = Array.isArray(sector?.subgroups)
-      ? sector.subgroups
+    const subgroups = Array.isArray(sec?.subgroups)
+      ? sec.subgroups
       : [];
 
     if (!subgroups.length) return;
@@ -300,8 +295,8 @@
 
   function applySectorFilter() {
     /*
-     * 族群展開、收合仍交給原本熱力圖 UI
-     * 不直接隱藏 .heat-stock，避免其他族群消失
+     * 保留原本熱力圖的族群展開與收合
+     * 不對整個 #heatGrid 的個股設定 hidden
      */
     decorateHeatStocks();
   }
@@ -320,13 +315,14 @@
     });
   }
 
+  function updateStaticLabels() {
+    decorateHeatStocks();
+  }
+
   function observeHeatmap() {
     const grid = heatGrid();
 
-    if (
-      !grid ||
-      grid.dataset.sectorObserverReady === "1"
-    ) {
+    if (!grid || grid.dataset.sectorObserverReady === "1") {
       return;
     }
 
@@ -334,6 +330,7 @@
 
     const observer = new MutationObserver(() => {
       decorateHeatStocks();
+      applySectorFilter();
     });
 
     observer.observe(grid, {
@@ -390,12 +387,12 @@
       }
 
       .stock-detail-sheet{
-        width:min(800px,100%);
-        max-height:92dvh;
+        width:min(760px,100%);
+        max-height:92vh;
         overflow:auto;
         overscroll-behavior:contain;
         -webkit-overflow-scrolling:touch;
-        border-radius:22px 22px 0 0;
+        border-radius:24px 24px 0 0;
         background:var(--bg,#f8fafc);
         color:var(--ink,#111827);
         box-shadow:0 -20px 60px rgba(15,23,42,.25)
@@ -409,10 +406,11 @@
         align-items:center;
         justify-content:space-between;
         gap:12px;
-        padding:13px 16px 11px;
+        padding:14px 16px 10px;
         border-bottom:1px solid var(--line,#e5e7eb);
         background:var(--bg,#f8fafc);
-        color:var(--ink,#111827)
+        color:var(--ink,#111827);
+        backdrop-filter:blur(14px)
       }
 
       .stock-detail-title{
@@ -431,7 +429,7 @@
 
       .stock-detail-title small{
         display:block;
-        margin-top:3px;
+        margin-top:2px;
         color:var(--muted,#64748b)!important;
         font-size:11px;
         font-weight:700
@@ -450,7 +448,7 @@
       }
 
       .stock-detail-body{
-        padding:13px 13px 26px
+        padding:14px 14px 28px
       }
 
       .stock-detail-periods{
@@ -484,7 +482,7 @@
         display:grid;
         grid-template-columns:repeat(3,1fr);
         gap:6px;
-        margin-bottom:12px
+        margin-bottom:14px
       }
 
       .stock-detail-tab{
@@ -504,17 +502,17 @@
       }
 
       .stock-detail-card{
-        padding:13px;
+        padding:14px;
         border:1px solid var(--line,#e5e7eb);
-        border-radius:17px;
+        border-radius:18px;
         background:var(--card,#fff)
       }
 
       .stock-detail-section-title{
         display:flex;
         justify-content:space-between;
-        align-items:center;
-        gap:10px;
+        align-items:flex-start;
+        gap:12px;
         margin-bottom:12px
       }
 
@@ -524,22 +522,23 @@
 
       .stock-detail-section-title small{
         color:var(--muted,#64748b);
-        font-size:11px;
+        font-size:10px;
+        font-weight:750;
         text-align:right
       }
 
       .stock-detail-kpis{
         display:grid;
-        grid-template-columns:repeat(3,minmax(0,1fr));
-        gap:7px;
-        margin-bottom:12px
+        grid-template-columns:repeat(3,1fr);
+        gap:8px;
+        margin-bottom:14px
       }
 
       .stock-detail-kpi{
         min-width:0;
-        padding:10px 9px;
+        padding:11px 10px;
         border:1px solid var(--line,#e5e7eb);
-        border-radius:13px;
+        border-radius:14px;
         background:var(--soft,#f8fafc)
       }
 
@@ -547,7 +546,7 @@
         display:block;
         margin-bottom:5px;
         color:var(--muted,#64748b);
-        font-size:10px;
+        font-size:9px;
         font-weight:800
       }
 
@@ -571,46 +570,23 @@
         height:auto
       }
 
-      /*
-       * 走勢圖：
-       * 手機約 280px
-       * 桌面依容器寬度等比例縮放
-       */
-      .stock-detail-trend-chart{
-        width:100%;
-        max-width:100%;
-        height:auto!important;
-        min-height:0!important;
-        max-height:none!important;
-        margin:0 auto;
-        overflow:hidden
-      }
-
-      .stock-detail-trend-chart svg{
-        display:block!important;
-        width:100%!important;
-        height:auto!important;
-        min-height:0!important;
-        max-height:380px!important;
-        aspect-ratio:680 / 330!important;
-        overflow:visible
-      }
-
-      .stock-detail-trend-chart svg text{
-        font-size:12px!important;
-        font-weight:500!important;
-        letter-spacing:0!important
+      .stock-detail-note{
+        margin:0 0 8px;
+        color:var(--muted,#64748b);
+        font-size:10px;
+        font-weight:700;
+        line-height:1.5
       }
 
       .stock-detail-legend{
         display:flex;
-        justify-content:center;
         align-items:center;
+        justify-content:center;
         flex-wrap:wrap;
-        gap:12px;
-        margin-top:10px;
+        gap:15px;
+        margin-top:9px;
         color:var(--muted,#64748b);
-        font-size:12px;
+        font-size:11px;
         font-weight:750
       }
 
@@ -622,8 +598,8 @@
 
       .stock-detail-dot{
         display:inline-block;
-        width:9px;
-        height:9px;
+        width:8px;
+        height:8px;
         border-radius:50%
       }
 
@@ -639,14 +615,6 @@
         background:#64748b
       }
 
-      .stock-detail-note{
-        margin:0 0 8px;
-        color:var(--muted,#64748b);
-        font-size:10px;
-        font-weight:700;
-        line-height:1.5
-      }
-
       .stock-flow-summary{
         display:flex;
         justify-content:space-between;
@@ -656,7 +624,11 @@
         padding:13px 14px;
         border:1px solid var(--line,#e5e7eb);
         border-radius:15px;
-        background:var(--soft,#f8fafc)
+        background:linear-gradient(
+          180deg,
+          var(--card,#fff),
+          var(--soft,#f8fafc)
+        )
       }
 
       .stock-flow-summary span{
@@ -670,6 +642,14 @@
         font-variant-numeric:tabular-nums
       }
 
+      .stock-flow-stage{
+        position:relative
+      }
+
+      .stock-flow-chart-wrap{
+        transition:opacity .18s ease,transform .18s ease
+      }
+
       .stock-flow-table-caption{
         margin:12px 2px 7px;
         color:var(--muted,#64748b);
@@ -678,6 +658,8 @@
       }
 
       .stock-flow-table-wrap{
+        display:block;
+        margin-top:2px;
         overflow:hidden;
         border:1px solid var(--line,#e5e7eb);
         border-radius:16px;
@@ -698,13 +680,15 @@
 
       .stock-flow-table{
         width:100%;
+        min-width:0;
         table-layout:fixed;
-        border-collapse:collapse
+        border-collapse:separate;
+        border-spacing:0
       }
 
       .stock-flow-table th,
       .stock-flow-table td{
-        padding:11px 3px;
+        padding:12px 4px;
         border-bottom:1px solid var(--line,#e5e7eb);
         text-align:center;
         white-space:nowrap;
@@ -719,17 +703,49 @@
         background:var(--soft,#f8fafc);
         color:var(--muted,#64748b);
         font-size:10px;
-        font-weight:900
+        font-weight:900;
+        letter-spacing:.02em
       }
 
-      .stock-flow-table th:first-child,
-      .stock-flow-table td:first-child{
+      .stock-flow-table th:nth-child(1),
+      .stock-flow-table td:nth-child(1){
+        width:16%;
         text-align:left;
-        padding-left:9px
+        padding-left:12px
+      }
+
+      .stock-flow-table th:nth-child(2),
+      .stock-flow-table td:nth-child(2){
+        width:21%
+      }
+
+      .stock-flow-table th:nth-child(3),
+      .stock-flow-table td:nth-child(3){
+        width:18%
+      }
+
+      .stock-flow-table th:nth-child(4),
+      .stock-flow-table td:nth-child(4){
+        width:21%
+      }
+
+      .stock-flow-table th:nth-child(5),
+      .stock-flow-table td:nth-child(5){
+        width:24%;
+        padding-right:8px;
+        font-weight:900
       }
 
       .stock-flow-table tbody tr:last-child td{
         border-bottom:0
+      }
+
+      .stock-flow-table tbody tr:nth-child(even){
+        background:color-mix(
+          in srgb,
+          var(--soft,#f8fafc) 55%,
+          transparent
+        )
       }
 
       .stock-flow-pull{
@@ -737,15 +753,34 @@
         align-items:center;
         justify-content:center;
         width:100%;
-        min-height:44px;
-        margin-top:8px;
+        min-height:46px;
+        margin:8px 0 0;
         border:0;
         background:transparent;
         color:var(--ink,#111827);
-        font-size:11px;
-        font-weight:800;
         cursor:pointer;
         touch-action:pan-y
+      }
+
+      .stock-flow-pull-icon{
+        display:block;
+        width:16px;
+        height:16px;
+        border-left:4px solid currentColor;
+        border-top:4px solid currentColor;
+        transform:rotate(45deg);
+        border-radius:2px
+      }
+
+      .stock-flow-stage.expanded .stock-flow-pull-icon{
+        transform:rotate(225deg)
+      }
+
+      .stock-flow-pull-label{
+        margin-left:12px;
+        color:var(--muted,#64748b);
+        font-size:10px;
+        font-weight:800
       }
 
       .stock-detail-loading,
@@ -757,29 +792,12 @@
         font-weight:750
       }
 
-      .stock-detail-modal .is-up{
+      .is-up{
         color:#dc2626!important
       }
 
-      .stock-detail-modal .is-down{
+      .is-down{
         color:#168357!important
-      }
-
-      /*
-       * 深色模式
-       */
-      html[data-theme="dark"] .stock-detail-sheet,
-      html[data-theme="dark"] .stock-detail-head{
-        background:#171b22;
-        color:#f1f5f9
-      }
-
-      html[data-theme="dark"] .stock-detail-title strong{
-        color:#f1f5f9!important
-      }
-
-      html[data-theme="dark"] .stock-detail-title small{
-        color:#94a3b8!important
       }
 
       @media(min-width:700px){
@@ -790,20 +808,17 @@
 
         .stock-detail-sheet{
           border-radius:24px;
-          max-height:88dvh
+          max-height:88vh
         }
       }
 
-      /*
-       * 手機版
-       */
       @media(max-width:520px){
         .stock-detail-body{
-          padding:11px 9px calc(22px + env(safe-area-inset-bottom))
+          padding:12px 10px calc(24px + env(safe-area-inset-bottom))
         }
 
         .stock-detail-card{
-          padding:11px 8px
+          padding:12px 9px
         }
 
         .stock-detail-kpis{
@@ -811,7 +826,7 @@
         }
 
         .stock-detail-kpi{
-          padding:9px 6px
+          padding:10px 7px
         }
 
         .stock-detail-kpi strong{
@@ -819,36 +834,23 @@
         }
 
         .stock-detail-section-title{
-          gap:6px
-        }
-
-        .stock-detail-section-title strong{
-          font-size:13px
-        }
-
-        .stock-detail-section-title small{
-          font-size:10px
-        }
-
-        .stock-detail-trend-chart svg{
-          width:100%!important;
-          height:auto!important;
-          max-height:300px!important
-        }
-
-        .stock-detail-trend-chart svg text{
-          font-size:12px!important
-        }
-
-        .stock-detail-legend{
-          gap:9px;
-          font-size:11px
+          gap:7px
         }
 
         .stock-flow-table th,
         .stock-flow-table td{
-          padding:10px 2px;
+          padding:11px 2px;
           font-size:10px
+        }
+
+        .stock-flow-table th:nth-child(1),
+        .stock-flow-table td:nth-child(1){
+          padding-left:7px
+        }
+
+        .stock-flow-table th:nth-child(5),
+        .stock-flow-table td:nth-child(5){
+          padding-right:5px
         }
 
         .stock-flow-stage.expanded .stock-flow-table-scroll{
@@ -860,11 +862,9 @@
 
   function ensureStockDetailModal() {
     let modal = $("#stockDetailModal");
-
     if (modal) return modal;
 
     modal = document.createElement("div");
-
     modal.id = "stockDetailModal";
     modal.className = "stock-detail-modal";
     modal.setAttribute("aria-hidden", "true");
@@ -913,19 +913,17 @@
       activePeriod = DEFAULT_PERIOD;
       activeDetailTab = "trend";
       flowExpanded = false;
-
-      detailRequestId += 1;
     };
 
     $("#stockDetailClose", modal)?.addEventListener("click", close);
 
-    modal.addEventListener("click", event => {
-      if (event.target === modal) close();
+    modal.addEventListener("click", e => {
+      if (e.target === modal) close();
     });
 
-    document.addEventListener("keydown", event => {
+    document.addEventListener("keydown", e => {
       if (
-        event.key === "Escape" &&
+        e.key === "Escape" &&
         modal.classList.contains("open")
       ) {
         close();
@@ -941,18 +939,15 @@
     origin = "heatmap"
   ) {
     ticker = String(ticker || "").trim();
-
     if (!ticker) return;
 
     activeTicker = ticker;
     detailOrigin = origin;
     activeSector = sectorName || "";
 
-    activePeriod = origin === "chips" ? 20 : DEFAULT_PERIOD;
+    activePeriod = detailOrigin === "chips" ? 20 : DEFAULT_PERIOD;
     activeDetailTab = "kline";
-    flowExpanded = origin === "chips";
-
-    const requestId = ++detailRequestId;
+    flowExpanded = detailOrigin === "chips";
 
     const modal = ensureStockDetailModal();
 
@@ -962,62 +957,67 @@
     document.documentElement.style.overflow = "hidden";
 
     const body = $("#stockDetailBody");
+    const title = $("#stockDetailTitle");
+    const subtitle = $("#stockDetailSubtitle");
 
-    $("#stockDetailTitle").textContent = ticker;
-    $("#stockDetailSubtitle").textContent = activeSector;
+    if (title) title.textContent = ticker;
+    if (subtitle) subtitle.textContent = activeSector || "";
 
-    body.innerHTML = `
-      <div class="stock-detail-loading">
-        載入個股資料中…
-      </div>
-    `;
+    if (body) {
+      body.innerHTML = `
+        <div class="stock-detail-loading">
+          載入個股資料中…
+        </div>
+      `;
+    }
 
     try {
       const data = await loadStockDetail();
 
-      if (
-        requestId !== detailRequestId ||
-        activeTicker !== ticker
-      ) {
-        return;
-      }
+      if (activeTicker !== ticker) return;
 
       const stock = data?.stocks?.[ticker];
 
       if (!stock) {
-        body.innerHTML = `
-          <div class="stock-detail-empty">
-            目前沒有 ${escapeHtml(ticker)} 的個股詳細資料
-          </div>
-        `;
+        if (body) {
+          body.innerHTML = `
+            <div class="stock-detail-empty">
+              目前沒有 ${escapeHtml(ticker)} 的個股詳細資料
+            </div>
+          `;
+        }
         return;
       }
 
-      if (!data?.sectors?.[activeSector]) {
-        const candidates = [
-          stock.primary_sector,
-          ...(Array.isArray(stock.sectors) ? stock.sectors : [])
-        ];
+      if (!activeSector || !data?.sectors?.[activeSector]) {
+        const candidates = Array.isArray(stock.sectors)
+          ? stock.sectors
+          : [];
 
-        activeSector =
-          candidates.find(name => data?.sectors?.[name]) ||
-          activeSector;
+        const fallbackSector =
+          stock.primary_sector && data?.sectors?.[stock.primary_sector]
+            ? stock.primary_sector
+            : candidates.find(name => data?.sectors?.[name]);
+
+        if (fallbackSector) activeSector = fallbackSector;
       }
 
-      $("#stockDetailTitle").textContent =
-        `${stock.name || ticker} ${ticker}`;
+      if (title) {
+        title.textContent = `${stock.name || ticker} ${ticker}`;
+      }
 
-      $("#stockDetailSubtitle").textContent =
-        `${
+      if (subtitle) {
+        subtitle.textContent = `${
           activeSector ||
-          (origin === "chips" ? "籌碼日報" : "市場熱力圖")
+          (detailOrigin === "chips" ? "籌碼日報" : "市場熱力圖")
         }｜資料截至 ${data.as_of_date || "—"}`;
+      }
 
       renderStockDetail();
     } catch (error) {
       console.error("[stock detail]", error);
 
-      if (requestId === detailRequestId) {
+      if (body) {
         body.innerHTML = `
           <div class="stock-detail-empty">
             個股資料載入失敗
@@ -1027,68 +1027,18 @@
     }
   }
 
-  function periodValues(object, period) {
-    const values = object?.returns_by_period?.[String(period)];
-
-    if (Array.isArray(values)) return values;
-
-    if (
-      period === 5 &&
-      Array.isArray(object?.returns)
-    ) {
-      return object.returns;
-    }
-
-    return [];
-  }
-
-  function periodLabels(period) {
-    const labels =
-      stockDetailData?.date_labels_by_period?.[String(period)];
-
-    if (Array.isArray(labels)) return labels;
-
-    if (
-      period === 5 &&
-      Array.isArray(stockDetailData?.date_labels)
-    ) {
-      return stockDetailData.date_labels;
-    }
-
-    return [];
-  }
-
   function renderStockDetail() {
     const body = $("#stockDetailBody");
 
-    if (
-      !body ||
-      !stockDetailData ||
-      !activeTicker
-    ) {
-      return;
-    }
+    if (!body || !stockDetailData || !activeTicker) return;
 
     const stock = stockDetailData?.stocks?.[activeTicker];
-
     if (!stock) return;
 
     window.DailyK?.destroy();
 
-    const isChips = detailOrigin === "chips";
-
-    if (
-      isChips &&
-      activeDetailTab === "trend"
-    ) {
-      activeDetailTab = "flow";
-    }
-
     body.innerHTML = `
-      <div
-        class="stock-detail-periods"
-        ${isChips ? 'hidden style="display:none"' : ""}
-      >
+      <div class="stock-detail-periods">
         ${PERIODS.map(period => `
           <button
             class="stock-detail-period ${
@@ -1102,14 +1052,7 @@
         `).join("")}
       </div>
 
-      <div
-        class="stock-detail-tabs"
-        ${
-          isChips
-            ? 'style="grid-template-columns:repeat(2,minmax(0,1fr))"'
-            : ""
-        }
-      >
+      <div class="stock-detail-tabs">
         <button
           type="button"
           class="stock-detail-tab ${
@@ -1120,30 +1063,24 @@
           日 K
         </button>
 
-        ${
-          isChips
-            ? ""
-            : `
-              <button
-                type="button"
-                class="stock-detail-tab ${
-                  activeDetailTab === "trend" ? "active" : ""
-                }"
-                data-detail-tab="trend"
-              >
-                走勢
-              </button>
-            `
-        }
+        <button
+          class="stock-detail-tab ${
+            activeDetailTab === "trend" ? "active" : ""
+          }"
+          type="button"
+          data-detail-tab="trend"
+        >
+          走勢
+        </button>
 
         <button
-          type="button"
           class="stock-detail-tab ${
             activeDetailTab === "flow" ? "active" : ""
           }"
+          type="button"
           data-detail-tab="flow"
         >
-          ${isChips ? "20日法人籌碼" : "籌碼"}
+          籌碼
         </button>
       </div>
 
@@ -1160,12 +1097,11 @@
 
     $$(".stock-detail-period", body).forEach(button => {
       button.addEventListener("click", () => {
-        const selected = Number(button.dataset.period);
+        const period = Number(button.dataset.period);
+        if (!PERIODS.includes(period)) return;
 
-        if (!PERIODS.includes(selected)) return;
-
-        activePeriod = selected;
-        flowExpanded = isChips;
+        activePeriod = period;
+        flowExpanded = detailOrigin === "chips";
 
         renderStockDetail();
       });
@@ -1173,15 +1109,40 @@
 
     $$(".stock-detail-tab", body).forEach(button => {
       button.addEventListener("click", () => {
-        activeDetailTab = button.dataset.detailTab;
-        flowExpanded = isChips;
+        activeDetailTab = ["flow", "kline"].includes(button.dataset.detailTab)
+          ? button.dataset.detailTab
+          : "trend";
+
+        flowExpanded = detailOrigin === "chips";
 
         renderStockDetail();
       });
     });
 
+    if (detailOrigin === "chips") {
+      const periods = body.querySelector(".stock-detail-periods");
+      if (periods) {
+        periods.hidden = true;
+        periods.style.display = "none";
+      }
+
+      body.querySelector('[data-detail-tab="trend"]')?.remove();
+
+      const flowTab = body.querySelector('[data-detail-tab="flow"]');
+      if (flowTab) flowTab.textContent = "20日法人籌碼";
+
+      const tabs = body.querySelector(".stock-detail-tabs");
+      if (tabs) {
+        tabs.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+      }
+
+      body.querySelector("#stockFlowPull")?.remove();
+    } else if (activeDetailTab === "flow") {
+      bindFlowPull(body);
+    }
+
     if (activeDetailTab === "kline") {
-      const host = $("#dailyKHost", body);
+      const host = body.querySelector("#dailyKHost");
 
       if (window.DailyK) {
         window.DailyK.mount(host, activeTicker);
@@ -1189,33 +1150,69 @@
         host.textContent = "日 K 元件未載入，請重新整理";
       }
     }
+  }
+
+  function periodValues(object, period) {
+    const byPeriod = object?.returns_by_period;
 
     if (
-      activeDetailTab === "flow" &&
-      !isChips
+      byPeriod &&
+      Array.isArray(byPeriod[String(period)])
     ) {
-      bindFlowPull(body);
+      return byPeriod[String(period)];
     }
+
+    if (period === 5 && Array.isArray(object?.returns)) {
+      return object.returns;
+    }
+
+    return [];
+  }
+
+  function periodLabels(period) {
+    const byPeriod = stockDetailData?.date_labels_by_period;
+
+    if (
+      byPeriod &&
+      Array.isArray(byPeriod[String(period)])
+    ) {
+      return byPeriod[String(period)];
+    }
+
+    if (
+      period === 5 &&
+      Array.isArray(stockDetailData?.date_labels)
+    ) {
+      return stockDetailData.date_labels;
+    }
+
+    return [];
   }
 
   function renderTrendPanel(stock) {
-    if (!stockDetailData?.sectors?.[activeSector]) {
-      const candidates = [
-        stock.primary_sector,
-        ...(Array.isArray(stock.sectors) ? stock.sectors : [])
-      ];
+    if (
+      stock &&
+      (!activeSector || !stockDetailData?.sectors?.[activeSector])
+    ) {
+      const candidates = Array.isArray(stock.sectors)
+        ? stock.sectors
+        : [];
 
-      activeSector =
-        candidates.find(name => stockDetailData?.sectors?.[name]) ||
-        activeSector;
+      const fallbackSector =
+        stock.primary_sector &&
+        stockDetailData?.sectors?.[stock.primary_sector]
+          ? stock.primary_sector
+          : candidates.find(name => stockDetailData?.sectors?.[name]);
+
+      if (fallbackSector) activeSector = fallbackSector;
     }
 
     const sector = stockDetailData?.sectors?.[activeSector] || {};
-    const benchmark = stockDetailData?.benchmark || {};
+    const bench = stockDetailData?.benchmark || {};
 
     const stockValues = periodValues(stock, activePeriod);
     const sectorValues = periodValues(sector, activePeriod);
-    const benchValues = periodValues(benchmark, activePeriod);
+    const benchValues = periodValues(bench, activePeriod);
 
     const labels = periodLabels(activePeriod);
 
@@ -1262,7 +1259,7 @@
         </div>
       </div>
 
-      <div class="stock-detail-chart stock-detail-trend-chart">
+      <div class="stock-detail-chart">
         ${lineChartSvg(labels, [
           { values: stockValues, color: "#2563eb" },
           { values: sectorValues, color: "#f59e0b" },
@@ -1283,7 +1280,7 @@
 
         <span>
           <i class="stock-detail-dot index"></i>
-          ${escapeHtml(benchmark.name || "上市加權指數")}
+          ${escapeHtml(bench.name || "上市加權指數")}
         </span>
       </div>
     `;
@@ -1291,19 +1288,24 @@
 
   function lineChartSvg(labels, series) {
     const width = 680;
-    const height = 330;
+    const height = 320;
 
     const pad = {
-      left: 58,
+      left: 52,
       right: 22,
       top: 22,
-      bottom: 48
+      bottom: 44
     };
 
     const values = series
-      .flatMap(item => item.values || [])
-      .map(num)
-      .filter(value => value !== null);
+      .flatMap(s => s.values || [])
+      .filter(
+        v =>
+          v !== null &&
+          v !== undefined &&
+          !Number.isNaN(Number(v))
+      )
+      .map(Number);
 
     if (!values.length || !labels.length) {
       return `
@@ -1323,76 +1325,79 @@
 
     const span = max - min;
 
-    max += span * 0.12;
-    min -= span * 0.12;
+    max += span * 0.14;
+    min -= span * 0.14;
 
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
 
-    const xAt = index =>
+    const xAt = i =>
       pad.left +
       (
         labels.length <= 1
           ? plotW / 2
-          : index / (labels.length - 1) * plotW
+          : (i / (labels.length - 1)) * plotW
       );
 
-    const yAt = value =>
+    const yAt = v =>
       pad.top +
-      (max - Number(value)) / (max - min) * plotH;
+      ((max - Number(v)) / (max - min)) * plotH;
 
-    const grid = Array.from({ length: 5 }, (_, index) => {
-      const value = max - (max - min) * index / 4;
+    const ticks = Array.from(
+      { length: 5 },
+      (_, i) => max - ((max - min) * i / 4)
+    );
 
-      return `
-        <g>
-          <line
-            x1="${pad.left}"
-            x2="${width - pad.right}"
-            y1="${yAt(value)}"
-            y2="${yAt(value)}"
-            stroke="currentColor"
-            opacity=".12"
-          />
+    const grid = ticks.map(v => `
+      <g>
+        <line
+          x1="${pad.left}"
+          x2="${width - pad.right}"
+          y1="${yAt(v)}"
+          y2="${yAt(v)}"
+          stroke="currentColor"
+          opacity=".10"
+        />
 
-          <text
-            x="${pad.left - 9}"
-            y="${yAt(value) + 4}"
-            text-anchor="end"
-            fill="currentColor"
-            opacity=".7"
-            font-size="12"
-          >
-            ${value.toFixed(1)}%
-          </text>
-        </g>
-      `;
-    }).join("");
+        <text
+          x="${pad.left - 8}"
+          y="${yAt(v) + 4}"
+          text-anchor="end"
+          fill="currentColor"
+          opacity=".60"
+          font-size="11"
+        >
+          ${v.toFixed(1)}%
+        </text>
+      </g>
+    `).join("");
 
-    const paths = series.map(item => {
-      let path = "";
+    const paths = series.map(s => {
+      let d = "";
       let drawing = false;
 
-      (item.values || []).forEach((value, index) => {
-        const n = num(value);
-
-        if (n === null) {
+      (s.values || []).forEach((v, i) => {
+        if (
+          v === null ||
+          v === undefined ||
+          Number.isNaN(Number(v))
+        ) {
           drawing = false;
           return;
         }
 
-        path += `${
-          drawing ? " L" : "M"
-        } ${xAt(index).toFixed(1)} ${yAt(n).toFixed(1)}`;
+        d += `${drawing ? " L" : "M"} ${
+          xAt(i).toFixed(1)
+        } ${yAt(v).toFixed(1)}`;
 
         drawing = true;
       });
 
       return `
         <path
-          d="${path}"
+          d="${d}"
           fill="none"
-          stroke="${item.color}"
+          stroke="${s.color}"
           stroke-width="3"
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -1400,57 +1405,37 @@
       `;
     }).join("");
 
-    const maxLabels =
-      activePeriod >= 20
-        ? 6
-        : activePeriod >= 10
-          ? 5
-          : labels.length;
+    const maxLabels = activePeriod >= 20 ? 6 : 5;
 
     const step = Math.max(
       1,
-      Math.ceil(
-        (labels.length - 1) /
-        Math.max(1, maxLabels - 1)
-      )
+      Math.ceil(labels.length / maxLabels)
     );
 
-    const indices = labels
-      .map((_, index) => index)
-      .filter(index =>
-        index === 0 ||
-        index === labels.length - 1 ||
-        index % step === 0
-      );
+    const xLabels = labels.map((label, i) => {
+      if (
+        i !== 0 &&
+        i !== labels.length - 1 &&
+        i % step !== 0
+      ) {
+        return "";
+      }
 
-    if (
-      indices.length > 2 &&
-      indices[indices.length - 1] -
-      indices[indices.length - 2] < step * 0.7
-    ) {
-      indices.splice(indices.length - 2, 1);
-    }
+      return `
+        <text
+          x="${xAt(i)}"
+          y="${height - 15}"
+          text-anchor="middle"
+          fill="currentColor"
+          opacity=".60"
+          font-size="11"
+        >
+          ${escapeHtml(label)}
+        </text>
+      `;
+    }).join("");
 
-    const dateLabels = indices.map(index => `
-      <text
-        x="${xAt(index)}"
-        y="${height - 17}"
-        text-anchor="${
-          index === 0
-            ? "start"
-            : index === labels.length - 1
-              ? "end"
-              : "middle"
-        }"
-        fill="currentColor"
-        opacity=".75"
-        font-size="12"
-      >
-        ${escapeHtml(labels[index])}
-      </text>
-    `).join("");
-
-    const zeroLine =
+    const zero =
       min <= 0 && max >= 0
         ? `
           <line
@@ -1459,7 +1444,7 @@
             y1="${yAt(0)}"
             y2="${yAt(0)}"
             stroke="currentColor"
-            opacity=".3"
+            opacity=".28"
             stroke-dasharray="4 4"
           />
         `
@@ -1469,26 +1454,27 @@
       <svg
         viewBox="0 0 ${width} ${height}"
         preserveAspectRatio="xMidYMid meet"
-        role="img"
         aria-label="近${activePeriod}日相對走勢"
       >
         ${grid}
-        ${zeroLine}
+        ${zero}
         ${paths}
-        ${dateLabels}
+        ${xLabels}
       </svg>
     `;
   }
 
   function allFlowRows(stock) {
-    return (
-      Array.isArray(stock?.institutional)
-        ? stock.institutional
-        : []
-    ).slice(-20);
+    const rows = Array.isArray(stock?.institutional)
+      ? stock.institutional
+      : [];
+
+    return rows.slice(-20);
   }
 
   function flowTableHtml(rows) {
+    const newestFirst = [...rows].reverse();
+
     return `
       <table class="stock-flow-table">
         <thead>
@@ -1502,7 +1488,7 @@
         </thead>
 
         <tbody>
-          ${[...rows].reverse().map(row => `
+          ${newestFirst.map(row => `
             <tr>
               <td>${escapeHtml(row.date_label || "—")}</td>
 
@@ -1542,14 +1528,15 @@
     const chartRows = allRows.slice(-activePeriod);
     const recent5 = allRows.slice(-5);
 
-    const availableRows = chartRows.filter(row =>
-      row.available !== false &&
-      num(row.total_lots) !== null
-    );
+    const missingCount = chartRows.filter(
+      row =>
+        row.available === false ||
+        num(row.total_lots) === null
+    ).length;
 
     const complete =
       chartRows.length === activePeriod &&
-      availableRows.length === activePeriod;
+      missingCount === 0;
 
     const total = complete
       ? chartRows.reduce(
@@ -1558,9 +1545,7 @@
         )
       : null;
 
-    const tableRows = flowExpanded
-      ? allRows
-      : recent5;
+    const tableRows = flowExpanded ? allRows : recent5;
 
     return `
       <div class="stock-detail-section-title">
@@ -1570,7 +1555,9 @@
           ${
             complete
               ? "長條圖看合計｜下方可查看每日明細"
-              : `資料待補：已取得 ${availableRows.length}/${activePeriod} 日`
+              : `資料待補：已取得 ${
+                  chartRows.length - missingCount
+                }/${activePeriod} 日，不顯示完整期間合計`
           }
         </small>
       </div>
@@ -1587,12 +1574,14 @@
         class="stock-flow-stage ${flowExpanded ? "expanded" : ""}"
         id="stockFlowStage"
       >
-        <div class="stock-detail-note">
-          長條圖顯示三大法人合計買賣超｜單位：張
-        </div>
+        <div class="stock-flow-chart-wrap">
+          <div class="stock-detail-note">
+            長條圖僅顯示外資＋投信＋自營商「合計」買賣超｜單位：張
+          </div>
 
-        <div class="stock-detail-chart">
-          ${flowBarChartSvg(chartRows)}
+          <div class="stock-detail-chart">
+            ${flowBarChartSvg(chartRows)}
+          </div>
         </div>
 
         <div class="stock-flow-table-caption">
@@ -1610,19 +1599,24 @@
         </div>
 
         ${
-          allRows.length > 5 && detailOrigin !== "chips"
+          allRows.length > 5
             ? `
               <button
                 class="stock-flow-pull"
                 id="stockFlowPull"
                 type="button"
-                aria-expanded="${flowExpanded}"
-              >
-                ${
+                aria-expanded="${flowExpanded ? "true" : "false"}"
+                aria-label="${
                   flowExpanded
-                    ? "⌄　收回近5日"
-                    : "⌃　顯示更多"
-                }
+                    ? "收回近5日籌碼"
+                    : "顯示更多籌碼"
+                }"
+              >
+                <span class="stock-flow-pull-icon"></span>
+
+                <span class="stock-flow-pull-label">
+                  ${flowExpanded ? "收回近5日" : "顯示更多"}
+                </span>
               </button>
             `
             : ""
@@ -1632,30 +1626,46 @@
   }
 
   function bindFlowPull(body) {
-    const pull = $("#stockFlowPull", body);
+    const stage = body.querySelector("#stockFlowStage");
+    const pull = body.querySelector("#stockFlowPull");
 
-    if (!pull) return;
+    if (!stage || !pull) return;
+
+    const applyState = () => {
+      stage.classList.toggle("expanded", flowExpanded);
+
+      pull.setAttribute(
+        "aria-expanded",
+        flowExpanded ? "true" : "false"
+      );
+
+      pull.setAttribute(
+        "aria-label",
+        flowExpanded ? "收回近5日籌碼" : "顯示更多籌碼"
+      );
+
+      renderStockDetail();
+    };
 
     pull.addEventListener("click", () => {
       flowExpanded = !flowExpanded;
-      renderStockDetail();
+      applyState();
     });
 
     pull.addEventListener(
       "touchstart",
-      event => {
-        flowTouchStartY =
-          event.touches?.[0]?.clientY ?? null;
+      e => {
+        flowTouchStartY = e.touches?.[0]?.clientY ?? null;
       },
       { passive: true }
     );
 
     pull.addEventListener(
       "touchend",
-      event => {
+      e => {
         if (flowTouchStartY === null) return;
 
-        const endY = event.changedTouches?.[0]?.clientY;
+        const endY = e.changedTouches?.[0]?.clientY;
 
         if (endY === undefined) {
           flowTouchStartY = null;
@@ -1666,10 +1676,10 @@
 
         if (delta < -24 && !flowExpanded) {
           flowExpanded = true;
-          renderStockDetail();
+          applyState();
         } else if (delta > 24 && flowExpanded) {
           flowExpanded = false;
-          renderStockDetail();
+          applyState();
         }
 
         flowTouchStartY = null;
@@ -1689,13 +1699,11 @@
       bottom: 44
     };
 
-    const values = rows.map(row =>
-      num(row.total_lots) ?? 0
-    );
+    const vals = rows.map(x => Number(x.total_lots || 0));
 
     const maxAbs = Math.max(
       1,
-      ...values.map(value => Math.abs(value))
+      ...vals.map(v => Math.abs(v))
     );
 
     const plotW = width - pad.left - pad.right;
@@ -1703,14 +1711,13 @@
 
     const zeroY = pad.top + plotH / 2;
 
-    const yAt = value =>
+    const yAt = v =>
       zeroY -
-      Number(value) / maxAbs *
-      (plotH / 2 - 8);
+      (Number(v) / maxAbs) * (plotH / 2 - 8);
 
     const slot = plotW / Math.max(1, rows.length);
 
-    const barWidth = Math.max(
+    const barW = Math.max(
       6,
       Math.min(44, slot * 0.56)
     );
@@ -1727,47 +1734,41 @@
       Math.ceil(rows.length / Math.max(1, maxLabels))
     );
 
-    const bars = rows.map((row, index) => {
-      const value = num(row.total_lots);
-
+    const bars = rows.map((row, i) => {
       if (
         row.available === false ||
-        value === null
+        num(row.total_lots) === null
       ) {
         return "";
       }
 
+      const v = Number(row.total_lots || 0);
+
       const x =
         pad.left +
-        slot * index +
-        (slot - barWidth) / 2;
+        slot * i +
+        (slot - barW) / 2;
 
-      const y =
-        value >= 0
-          ? yAt(value)
-          : zeroY;
+      const y = v >= 0 ? yAt(v) : zeroY;
 
-      const barHeight = Math.max(
+      const h = Math.max(
         1.5,
-        Math.abs(yAt(value) - zeroY)
+        Math.abs(yAt(v) - zeroY)
       );
 
-      const color =
-        value >= 0
-          ? "#dc2626"
-          : "#168357";
+      const color = v >= 0 ? "#dc2626" : "#168357";
 
       const showLabel =
-        index === 0 ||
-        index === rows.length - 1 ||
-        index % labelStep === 0;
+        i === 0 ||
+        i === rows.length - 1 ||
+        i % labelStep === 0;
 
       return `
         <rect
           x="${x}"
           y="${y}"
-          width="${barWidth}"
-          height="${barHeight}"
+          width="${barW}"
+          height="${h}"
           rx="4"
           fill="${color}"
         />
@@ -1776,7 +1777,7 @@
           showLabel
             ? `
               <text
-                x="${x + barWidth / 2}"
+                x="${x + barW / 2}"
                 y="${height - 15}"
                 text-anchor="middle"
                 font-size="10"
@@ -1843,36 +1844,21 @@
       const row = chipRow(event);
 
       if (row) {
-        openStockDetail(
-          row.dataset.chipTicker,
-          "",
-          "chips"
-        );
+        openStockDetail(row.dataset.chipTicker, "", "chips");
       }
     });
 
     document.addEventListener("keydown", event => {
       const row = chipRow(event);
 
-      if (
-        row &&
-        ["Enter", " "].includes(event.key)
-      ) {
+      if (row && ["Enter", " "].includes(event.key)) {
         event.preventDefault();
-
-        openStockDetail(
-          row.dataset.chipTicker,
-          "",
-          "chips"
-        );
+        openStockDetail(row.dataset.chipTicker, "", "chips");
       }
     });
 
-    document.addEventListener("click", event => {
-      const row = event.target.closest?.(
-        "#heatGrid .heat-stock"
-      );
-
+    document.addEventListener("click", e => {
+      const row = e.target.closest?.("#heatGrid .heat-stock");
       if (!row) return;
 
       openStockDetail(
@@ -1881,21 +1867,13 @@
       );
     });
 
-    document.addEventListener("keydown", event => {
-      if (
-        event.key !== "Enter" &&
-        event.key !== " "
-      ) {
-        return;
-      }
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
 
-      const row = event.target.closest?.(
-        "#heatGrid .heat-stock"
-      );
-
+      const row = e.target.closest?.("#heatGrid .heat-stock");
       if (!row) return;
 
-      event.preventDefault();
+      e.preventDefault();
 
       openStockDetail(
         tickerFromRow(row),
@@ -1912,22 +1890,25 @@
     await loadSectorConfig();
 
     ensureControls();
-    decorateHeatStocks();
+    updateStaticLabels();
     observeHeatmap();
 
     let tries = 0;
 
-    const timer = setInterval(() => {
+    const wait = setInterval(() => {
       tries += 1;
 
       ensureControls();
+      updateStaticLabels();
       decorateHeatStocks();
 
-      if (
-        directHeatButtons().length ||
-        tries > 30
-      ) {
-        clearInterval(timer);
+      if (directHeatButtons().length) {
+        applySectorFilter();
+        clearInterval(wait);
+      }
+
+      if (tries > 30) {
+        clearInterval(wait);
       }
     }, 150);
   }
