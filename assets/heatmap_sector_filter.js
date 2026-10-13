@@ -6,13 +6,18 @@
    - 5 / 10 / 20 日相對走勢
    - 5 / 10 / 20 日法人籌碼
 
-   2026-10-13
+   籌碼：
+   - 長條圖依 5 / 10 / 20 日切換
+   - 長條圖下方固定顯示近 5 日明細
+   - 顯示更多後可看最多 20 日
+   - 手機支援上下滑動
+
    修正：
-   - 手機走勢圖不再過度放大
-   - SVG 保持比例
-   - 日期與百分比座標不變形
-   - 修正個股名稱顏色
-   - 保留原有日 K、籌碼功能
+   - 手機走勢圖恢復正常高度
+   - SVG 不再拉伸變形
+   - 日期與百分比座標正常顯示
+   - 修正個股名稱白字問題
+   - 保留日 K 與籌碼功能
    ========================================================= */
 
 (() => {
@@ -338,10 +343,13 @@
   }
 
   function injectStockDetailStyles() {
-    if ($("#stockDetailStyles")) return;
+    let style = $("#stockDetailStyles");
 
-    const style = document.createElement("style");
-    style.id = "stockDetailStyles";
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "stockDetailStyles";
+      document.head.appendChild(style);
+    }
 
     style.textContent = `
       .heat-sector-controls{
@@ -564,20 +572,34 @@
       }
 
       /*
-       * 走勢圖修正版
-       * 不使用 preserveAspectRatio="none"
-       * 避免日期、座標被拉長
+       * 走勢圖：
+       * 手機約 280px
+       * 桌面依容器寬度等比例縮放
        */
       .stock-detail-trend-chart{
         width:100%;
-        margin:0 auto
+        max-width:100%;
+        height:auto!important;
+        min-height:0!important;
+        max-height:none!important;
+        margin:0 auto;
+        overflow:hidden
       }
 
       .stock-detail-trend-chart svg{
-        display:block;
-        width:100%;
-        height:auto;
-        max-height:380px
+        display:block!important;
+        width:100%!important;
+        height:auto!important;
+        min-height:0!important;
+        max-height:380px!important;
+        aspect-ratio:680 / 330!important;
+        overflow:visible
+      }
+
+      .stock-detail-trend-chart svg text{
+        font-size:12px!important;
+        font-weight:500!important;
+        letter-spacing:0!important
       }
 
       .stock-detail-legend{
@@ -722,7 +744,8 @@
         color:var(--ink,#111827);
         font-size:11px;
         font-weight:800;
-        cursor:pointer
+        cursor:pointer;
+        touch-action:pan-y
       }
 
       .stock-detail-loading,
@@ -742,6 +765,9 @@
         color:#168357!important
       }
 
+      /*
+       * 深色模式
+       */
       html[data-theme="dark"] .stock-detail-sheet,
       html[data-theme="dark"] .stock-detail-head{
         background:#171b22;
@@ -768,6 +794,9 @@
         }
       }
 
+      /*
+       * 手機版
+       */
       @media(max-width:520px){
         .stock-detail-body{
           padding:11px 9px calc(22px + env(safe-area-inset-bottom))
@@ -802,7 +831,13 @@
         }
 
         .stock-detail-trend-chart svg{
-          max-height:300px
+          width:100%!important;
+          height:auto!important;
+          max-height:300px!important
+        }
+
+        .stock-detail-trend-chart svg text{
+          font-size:12px!important
         }
 
         .stock-detail-legend{
@@ -821,8 +856,6 @@
         }
       }
     `;
-
-    document.head.appendChild(style);
   }
 
   function ensureStockDetailModal() {
