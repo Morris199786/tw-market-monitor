@@ -8,6 +8,8 @@ on:
 
   workflow_run:
     workflows:
+      - Daily K charts
+      - Broker branch charts
       - Market monitor
       - Repair institutional history
       - Daily close update
@@ -58,3 +60,4 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
