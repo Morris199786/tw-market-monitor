@@ -1642,7 +1642,7 @@
           text-anchor="end"
           fill="currentColor"
           opacity=".65"
-          font-size="12"
+          font-size="13"
         >
           ${v.toFixed(1)}%
         </text>
@@ -1717,7 +1717,7 @@
             text-anchor="middle"
             fill="currentColor"
             opacity=".70"
-            font-size="12"
+            font-size="13"
           >
             ${escapeHtml(label)}
           </text>
