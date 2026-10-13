@@ -1,0 +1,68 @@
+name: B Volume Backtest
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: b-volume-backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    name: Compare B, B1 and B2
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run B volume backtest
+        run: python test_b_volume_variants.py
+
+      - name: Validate results
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("data/b_volume_comparison.json")
+
+          if not path.exists():
+              raise SystemExit("ERROR: Backtest JSON not generated")
+
+          data = json.loads(path.read_text(encoding="utf-8"))
+
+          if not data:
+              raise SystemExit("ERROR: Empty backtest results")
+
+          print("B volume backtest completed")
+          print("Result file:", path)
+          PY
+
+      - name: Commit backtest results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            data/b_volume_comparison.json \
+            data/b_volume_comparison.csv
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update B volume backtest comparison"
+            git push
+          fi
