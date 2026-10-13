@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-12-v9-quarter-results",
-  "updated_at": "2026-10-13T15:08+08:00",
+  "updated_at": "2026-10-13T15:35+08:00",
   "upcoming": [
     {
       "ticker": "3169",
@@ -35,9 +35,9 @@
       "name": "南亞科",
       "period": "2026-Q3",
       "publish_date": "2026-10-12",
-      "publish_time": "16:43:01",
+      "publish_time": "164301",
       "subject": "公告本公司今日法人說明會摘要",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2408&SPOKE_DATE=20261012&SPOKE_TIME=164301&SEQ_NO=1&skey=2408202610121",
+      "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2408&year=115",
       "expires_at": "2026-10-13T18:00:00+08:00",
       "retention_status": "exchange_calendar",
       "release_type": "financial_report",
@@ -81,19 +81,18 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "announcement_scan/2026-09-29~2026-09-30:ValueError:announcement schema unavailable",
-      "detail/1303/2026-10-12",
-      "daily_mops:ConnectTimeout",
-      "daily_mops:ConnectTimeout",
+      "detail/5301/2026-09-29",
+      "announcement_scan/2026-10-01~2026-10-13:ValueError:announcement schema unavailable",
+      "daily_mops:ReadTimeout",
       "issuer_ir/3008/2026-Q3:single_quarter_metrics_unavailable"
     ],
     "historical_errors": [
-      "twse/2026-Q3: ValueError",
+      "twse/2026-Q3: ConnectTimeout",
       "tpex/2026-Q3: ValueError"
     ],
     "coverage": {
-      "2026-09-29~2026-09-30": "failed",
-      "2026-10-01~2026-10-13": "ok"
+      "2026-09-29~2026-09-30": "ok",
+      "2026-10-01~2026-10-13": "failed"
     },
     "calendar_errors": []
   },
