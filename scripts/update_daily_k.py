@@ -95,7 +95,8 @@ def merge_bars(old, incoming, rejected_dates):
     return [merged[d] for d in sorted(merged)]
 
 
-VERSION = '2026-10-13-official-retry'
+VERSION = '2026-10-13-dated-close'
+TARGET_DATE = ''
 
 
 def official_rows(rows, market, now):
@@ -121,6 +122,43 @@ def official_rows(rows, market, now):
         except (KeyError,ValueError,TypeError): continue
     if not out: raise ValueError('official OHLCV schema/date unavailable')
     return out
+
+
+def dated_rows(payload, market, day, now):
+    """Validate response date and named columns before accepting OHLCV."""
+    date=str(payload.get('date','')).replace('/','').replace('-','')
+    if len(date)==7: date=str(int(date[:3])+1911)+date[3:]
+    if date!=day.replace('-',''): raise ValueError('dated response does not match requested day')
+    aliases=[('證券代號','代號','股票代號'),('開盤價','開盤'),('最高價','最高'),
+             ('最低價','最低'),('收盤價','收盤'),('成交股數',)]
+    keys=(('Code','OpeningPrice','HighestPrice','LowestPrice','ClosingPrice','TradeVolume')
+          if market=='twse' else ('SecuritiesCompanyCode','Open','High','Low','Close','TradingShares'))
+    normalized=[]
+    for table in payload.get('tables',[]):
+        fields=table.get('fields',[])
+        cols=[next((fields.index(a) for a in names if a in fields),None) for names in aliases]
+        if any(c is None for c in cols): continue
+        for row in table.get('data',[]):
+            if max(cols)>=len(row): continue
+            normalized.append({'Date':date,**{k:row[c] for k,c in zip(keys,cols)}})
+    return official_rows(normalized,market,now)
+
+
+def fetch_dated(market,day,now):
+    url=('https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX' if market=='twse'
+         else 'https://www.tpex.org.tw/www/zh-tw/afterTrading/dailyQuotes')
+    params=({'date':day.replace('-',''),'type':'ALLBUT0999','response':'json'} if market=='twse'
+            else {'date':day.replace('-','/'),'id':'','response':'json'})
+    last=None
+    for attempt in range(3):
+        try:
+            with requests.get(url,params=params,headers={'User-Agent':'Mozilla/5.0','Accept-Encoding':'identity'},timeout=(10,35)) as r:
+                r.raise_for_status();payload=r.json()
+            return dated_rows(payload,market,day,now)
+        except (requests.RequestException,ValueError,TypeError,KeyError) as exc:
+            last=exc
+            if attempt<2: time.sleep(2)
+    raise ValueError(f'dated {market}/{day}: {last}')
 
 
 def fetch_official(now):
@@ -150,6 +188,25 @@ def fetch_official(now):
             market=jobs[job]
             try: quotes[market]=job.result()
             except Exception as exc: errors[market]=str(exc)[:180]
+    global TARGET_DATE
+    latest=max((b['time'] for stocks in quotes.values() for b in stocks.values()),default='')
+    hint=read(ROOT/'data/market_latest.json',{}).get('date','')
+    try:
+        h=datetime.strptime(hint,'%Y-%m-%d').date()
+        if h>now.date() or (h==now.date() and now.hour<14): hint=''
+    except (ValueError,TypeError): hint=''
+    TARGET_DATE=max(latest,hint)
+    if now.weekday()<5 and now.hour>=14:
+        day=now.date().isoformat()
+        pending=[m for m in endpoints if max((b['time'] for b in quotes.get(m,{}).values()),default='')<day]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            jobs={pool.submit(fetch_dated,m,day,now):m for m in pending}
+            for job in as_completed(jobs):
+                m=jobs[job]
+                try:
+                    quotes.setdefault(m,{}).update(job.result());errors.pop(m,None)
+                    TARGET_DATE=max(TARGET_DATE,day)
+                except Exception as exc: errors[m]=str(exc)[:180]
     return quotes,errors
 
 
@@ -171,7 +228,7 @@ def fetch_one(ticker, meta, now, official=None):
     old = read(path,{})
     validated=[r for r in old.get('bars',[]) if isinstance(r,dict) and r.get('time') and valid_bar(r)]
     # Existing history only needs one official all-market quote per day, not 327 Yahoo calls.
-    if official and len(validated)>=240:
+    if official and official['time'] >= TARGET_DATE and len(validated)>=240:
         last=max(r['time'] for r in validated)
         gap=(datetime.fromisoformat(official['time'])-datetime.fromisoformat(last)).days
         if 0<=gap<=4 and not any((datetime.fromisoformat(last)+timedelta(days=i)).weekday()<5 for i in range(1,gap)):
@@ -181,7 +238,7 @@ def fetch_one(ticker, meta, now, official=None):
                 [d for d in old.get('missing_dates',[]) if d!=fixed],
                 [d for d in old.get('invalid_dates',[]) if d!=fixed])
             return value,'updated',{'host':official['source']}
-    if old.get('version')==VERSION and old.get('fetched_on') == now.date().isoformat() and old.get('bars'):
+    if old.get('date','')>=TARGET_DATE and old.get('version')==VERSION and old.get('fetched_on') == now.date().isoformat() and old.get('bars'):
         try:
             fetched = datetime.fromisoformat(old['updated_at'])
             if fetched.hour>=14 or now.hour<14: return old,'cached',{}
@@ -207,8 +264,8 @@ def fetch_one(ticker, meta, now, official=None):
                 bars = merge_bars(old,incoming,rejected)
                 latest_source = incoming[-1]['time']
                 latest_saved = old.get('date','')
-                if latest_saved and latest_source < latest_saved:
-                    error = f'stale source: latest {latest_source}, saved {latest_saved}; rejected={rejected[-5:]}'
+                if latest_source < max(latest_saved,TARGET_DATE):
+                    error = f'stale source: latest {latest_source}, saved {latest_saved}, required {TARGET_DATE}; rejected={rejected[-5:]}'
                     diagnostic = {'host':host,'source_date':latest_source,
                                   'rejected_recent':raw,'rejected_dates':rejected[-10:]}
                     # Different endpoint might have a fresher valid candle.
@@ -258,7 +315,7 @@ def main():
                             'date':value.get('date'),'bars':len(value.get('bars',[])),
                             'invalid_dates':value.get('invalid_dates',[])}
     write(DEST/'manifest.json',{'updated_at':now.isoformat(timespec='seconds'),
-        'source':'Yahoo Finance + TWSE/TPEx','version':VERSION,'official_errors':official_errors,'stocks':status,'errors':errors,
+        'source':'Yahoo Finance + TWSE/TPEx','version':VERSION,'target_date':TARGET_DATE,'official_errors':official_errors,'stocks':status,'errors':errors,
         'diagnostics':diagnostics,'success':success,'requested':len(tickers)})
     print(f'daily K: {success}/{len(tickers)} refreshed; {len(errors)} errors')
     if errors: print('WARNING: source errors recorded in manifest.json; existing data preserved')
@@ -268,5 +325,6 @@ def main():
         raise RuntimeError('No daily K data available for any stock')
 
 if __name__=='__main__': main()
+
 
 
