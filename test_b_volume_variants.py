@@ -35,10 +35,10 @@ def patch_source(src):
     if src.count(main_anchor) != 1:
         raise RuntimeError('Cannot find shadow main()')
     setup = '''def main():
-    # Date-indexed historical OHLC, from the repository's existing daily_k files.
+    # Date-indexed historical OHLC, from isolated AI backtest K-bar files.
     # Only historical dates matching the selection day are used.
     daily_k = {}
-    for kpath in (ROOT / 'data/daily_k').glob('*.json'):
+    for kpath in (ROOT / 'data/ai_backtest_k').glob('*.json'):
         kd = load(kpath)
         ticker_k = str(kd.get('ticker') or kpath.stem)
         bars = kd.get('bars', [])
@@ -188,8 +188,10 @@ def patch_source(src):
     return src
 
 
-def next_open_test(daily_picks, strategies):
-    """Fixed 5/10-session holds, signal close -> next session open.
+def next_open_test(daily_picks, strategies, exit_mode="fixed"):
+    if exit_mode not in ("fixed", "ma10"):
+        raise ValueError("Unknown exit mode")
+    """5/10-session maximum holds, signal close -> next session open.
     Missing OHLC is unavailable, never replaced by a same-day close.
     Costs are explicit simulation assumptions, configurable by environment.
     """
@@ -207,7 +209,7 @@ def next_open_test(daily_picks, strategies):
     dates = sorted(snapshots)
     ix = {d: i for i, d in enumerate(dates)}
     bars = {}
-    for p in (ROOT / 'data/daily_k').glob('*.json'):
+    for p in (ROOT / 'data/ai_backtest_k').glob('*.json'):
         obj = json.loads(p.read_text())
         bars[str(obj.get('ticker') or p.stem)] = {
             str(b.get('time') or b.get('date')): b for b in obj.get('bars', [])}
@@ -228,6 +230,30 @@ def next_open_test(daily_picks, strategies):
             return o,h,l,c
         except (KeyError,TypeError,ValueError):
             return None
+
+    def ma10_exit(ticker, entry_index, final_index):
+        """MA10 signal at session close, execute at next session open.
+        Returns (exit_day, exit_price, reason), or None if history is insufficient.
+        """
+        for j in range(entry_index, final_index):
+            current_day = dates[j]
+            current = valid_bar(ticker, current_day)
+            if current is None:
+                return None
+            # Historical moving average includes today's close, never future prices.
+            if j < 9:
+                return None
+            lookback = [valid_bar(ticker, dates[k]) for k in range(j-9, j+1)]
+            if any(bar is None for bar in lookback):
+                return None
+            ma10 = sum(bar[3] for bar in lookback) / 10
+            if current[3] < ma10:
+                following_day = dates[j+1]
+                following = valid_bar(ticker, following_day)
+                if following is None:
+                    return None
+                return following_day, following[0], 'ma10_next_open'
+        return dates[final_index], None, 'horizon_close'
 
     records = []
     for day, markets in sorted(daily_picks.items()):
@@ -253,7 +279,21 @@ def next_open_test(daily_picks, strategies):
                             r['status'] = 'one_price_session_unverified'
                             continue
                         entry, end = first[0], last[3]
-                        r.update(status='complete', entry_price=entry, exit_price=end,
+                        reason = 'horizon_close'
+                        if exit_mode == 'ma10':
+                            signal_exit = ma10_exit(r['ticker'], i+1, i+horizon)
+                            if signal_exit is None:
+                                r['status'] = 'missing_ma10_history_or_ohlc'
+                                continue
+                            actual_exit_day, triggered_price, reason = signal_exit
+                            if triggered_price is not None:
+                                exit_bar = valid_bar(r['ticker'], actual_exit_day)
+                                if exit_bar is None or exit_bar[1] == exit_bar[2]:
+                                    r['status'] = 'unverified_ma10_exit'
+                                    continue
+                                end = triggered_price
+                                r['exit_date'] = actual_exit_day
+                        r.update(exit_reason=reason, status='complete', entry_price=entry, exit_price=end,
                                  gross_return=100*(end/entry-1),
                                  net_return=100*(end*(1-slip)*(1-commission-tax)/
                                                  (entry*(1+slip)*(1+commission))-1))
@@ -294,12 +334,12 @@ def next_open_test(daily_picks, strategies):
             comparisons[st][f'{h}d'] = dict(units=len(units),
                 avg_difference_pp=mean(u['difference_pp'] for u in units) if units else None,
                 per_date_market=units)
-    return dict(method='Next trading session open to 5th/10th session close, fixed holding only',
+    return dict(method=('Next open to fixed 5th/10th session close' if exit_mode == 'fixed' else 'Next open; MA10 close trigger next open; fallback 5th/10th session close'),
                 assumptions=dict(commission_bps_each_side=commission*10000,
                                  sell_tax_bps=tax*10000,slippage_bps_each_side=slip*10000),
                 summary=summary, paired_comparisons=comparisons, records=records,
                 limitations=['Current universe creates survivorship bias',
-                    'Incomplete daily_k coverage can bias unpaired summaries; inspect coverage',
+                    'Incomplete AI backtest K coverage can bias unpaired summaries; inspect coverage',
                     'One-price sessions excluded, other execution capacity not verified',
                     'Overlapping signals are not independent trades or a portfolio equity curve',
                     'No out-of-sample claim; prospective signals must be frozen separately',
@@ -355,13 +395,15 @@ def main():
                 'B_COMBINED_GATE': 'Combined; require complete five-day institutional fields, positive net flow, bullish trend, valid candle and price/volume factors; at most 20',
             },
             'notes': [
-                'B/B1/B2 formulas unchanged; B3/B4 use same-date historical OHLC from data/daily_k',
+                'B/B1/B2 formulas unchanged; B3/B4 use same-date historical OHLC from data/ai_backtest_k',
                 'B4 uses signed foreign+trust+dealer from historical institutional records',
                 'Low candle coverage is exploratory only; missing candles retain B penalty, and gated universe differs',
-                'Reconstructed universe and same-close entry can introduce bias; costs excluded',
+                'MA10 uses only historical daily closes through signal date; requires complete validated bars',
+                'Legacy shadow summary uses same-close entry without costs; use next_open_test or ma10_next_open_test for cost-adjusted results',
             ],
         }
         result['next_open_test'] = next_open_test(result['daily_picks'], strategies)
+        result['ma10_next_open_test'] = next_open_test(result['daily_picks'], strategies, exit_mode='ma10')
         result['validation_status'] = ('insufficient_coverage_for_strategy_decision'
             if coverage < .70 or not any(
                 b['units'] for v in result['next_open_test']['paired_comparisons'].values()
@@ -374,9 +416,10 @@ def main():
             for strategy in strategies:
                 for market, block in (summary[strategy] or {}).items():
                     writer.writerow([strategy, market, 'all', json.dumps(block, ensure_ascii=False)])
-            for strategy in strategies:
-                for market, block in result['next_open_test']['summary'][strategy].items():
-                    writer.writerow([strategy, market, 'next_open_after_costs', json.dumps(block, ensure_ascii=False)])
+            for mode, field in [('next_open_after_costs', 'next_open_test'), ('ma10_next_open_after_costs', 'ma10_next_open_test')]:
+                for strategy in strategies:
+                    for market, block in result[field]['summary'][strategy].items():
+                        writer.writerow([strategy, market, mode, json.dumps(block, ensure_ascii=False)])
         print('VALIDATION:', result['validation_status'])
         print('SUCCESS:', OUTPUT, CSV)
         for strategy in strategies:
