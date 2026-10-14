@@ -309,8 +309,9 @@ def main():
     for period in rankings.values():
         for market in period.values():
             for group in market.values():
-                for side in ('buy','sell'):
-                    tickers.update(str(row.get('ticker','')) for row in group.get(side,[]))
+                for ranking in (group, group.get('market_cap_ranking', {})):
+                    for side in ('buy','sell'):
+                        tickers.update(str(row.get('ticker','')) for row in ranking.get(side,[]))
     if not tickers: raise RuntimeError('empty heatmap universe')
     universe,errors = {},{}
     for ticker in sorted(tickers):
@@ -352,6 +353,7 @@ def main():
         raise RuntimeError('No daily K data available for any stock')
 
 if __name__=='__main__': main()
+
 
 
 

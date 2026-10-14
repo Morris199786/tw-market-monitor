@@ -1,4 +1,5 @@
 from sources import *
+import math
 
 PERIODS = [("1d", 1), ("3d", 3), ("5d", 5)]
 MARKETS = ("twse", "tpex")
@@ -190,7 +191,7 @@ def maintain_history_for_market(market, market_snapshots):
     return result
 
 
-def build_period(history, market, kind, days, names):
+def build_period(history, market, kind, days, names, master=None):
     use = history[-days:]
     sums = {}
     if len(use) != days or any(not healthy(h.get(market, {})) for h in use):
@@ -253,7 +254,7 @@ def build_period(history, market, kind, days, names):
 
     latest = use[-1] if use else {}
 
-    for x in buy + sell:
+    for x in arr:
         q = latest.get(
             "closes",
             {}
@@ -265,9 +266,39 @@ def build_period(history, market, kind, days, names):
         x["change_pct"] = q.get("change_pct")
         x["price"] = q.get("price")
 
+    # Rank the entire eligible universe, not the absolute-amount TOP20.
+    ratio_rows = []
+    missing_market_cap = 0
+    for x in arr:
+        meta = (master or {}).get(x["ticker"], {})
+        if (meta.get("market") != market or len(x["ticker"]) != 4
+                or not x["ticker"].isdigit() or x["ticker"].startswith("0")):
+            continue
+        try:
+            market_cap = float(meta.get("shares_issued") or 0) * float(x.get("price") or 0)
+            if not math.isfinite(market_cap) or market_cap <= 0:
+                raise ValueError("invalid market cap")
+        except (TypeError, ValueError, OverflowError):
+            missing_market_cap += 1
+            continue
+        row = dict(x)
+        row["market_cap"] = market_cap
+        row["market_cap_pct"] = x["amount"] / market_cap * 100
+        ratio_rows.append(row)
+    market_cap_ranking = {
+        "buy": sorted((x for x in ratio_rows if x["amount"] > 0),
+                      key=lambda x: (-x["market_cap_pct"], -x["amount"], x["ticker"]))[:20],
+        "sell": sorted((x for x in ratio_rows if x["amount"] < 0),
+                       key=lambda x: (x["market_cap_pct"], x["amount"], x["ticker"]))[:20],
+        "missing_market_cap": missing_market_cap,
+        "eligible_count": len(ratio_rows),
+        "market_cap_date": latest.get("date"),
+    }
+
     return {
         "buy": buy,
         "sell": sell,
+        "market_cap_ranking": market_cap_ranking,
         "complete": len(use) >= days,
         "days_used": len(use),
         "dates_used": [
@@ -351,6 +382,7 @@ def main():
     )
 
     names = load_display_names()
+    master = load_json(ROOT / "data/master.json", {}).get("stocks", {})
     histories = {}
 
     for market in MARKETS:
@@ -395,7 +427,8 @@ def main():
                         market,
                         kind,
                         days,
-                        names
+                        names,
+                        master
                     )
                 )
 
@@ -423,4 +456,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
