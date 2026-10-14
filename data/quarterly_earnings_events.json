@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-12-v9-quarter-results",
-  "updated_at": "2026-10-14T18:07+08:00",
+  "updated_at": "2026-10-14T17:36+08:00",
   "upcoming": [
     {
       "ticker": "3169",
@@ -41,18 +41,64 @@
       "prev_gross_margin": 33.85071460521135
     }
   ],
-  "reports": [],
+  "reports": [
+    {
+      "ticker": "5443",
+      "name": "均豪",
+      "period": "2026-Q3",
+      "publish_date": "2026-10-13",
+      "publish_time": "16:44:40",
+      "subject": "5443 均豪 115/10/13 16:44:40 公告本公司115年第3季自結合併損益",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5443&SPOKE_DATE=20261013&SPOKE_TIME=164440&SEQ_NO=1&skey=5443202610131",
+      "expires_at": "2026-10-14T18:00:00+08:00",
+      "retention_status": "exchange_calendar",
+      "release_type": "quarterly_preliminary",
+      "source_label": "公開資訊觀測站",
+      "released_metrics": {},
+      "eps": null,
+      "gross_margin": null,
+      "eps_basis": null,
+      "prev_period": "2026-Q2",
+      "prev_eps": 1.08,
+      "prev_gross_margin": 35.37921473538096,
+      "prev_eps_basis": "cumulative_difference",
+      "data_status": "pending_financial_data"
+    },
+    {
+      "ticker": "6640",
+      "name": "均華",
+      "period": "2026-Q3",
+      "publish_date": "2026-10-13",
+      "publish_time": "15:34:56",
+      "subject": "6640 均華 115/10/13 15:34:56 公告本公司115年第3季自結合併損益",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6640&SPOKE_DATE=20261013&SPOKE_TIME=153456&SEQ_NO=2&skey=6640202610132",
+      "expires_at": "2026-10-14T18:00:00+08:00",
+      "retention_status": "exchange_calendar",
+      "release_type": "quarterly_preliminary",
+      "source_label": "公開資訊觀測站",
+      "released_metrics": {},
+      "eps": null,
+      "gross_margin": null,
+      "eps_basis": null,
+      "prev_period": "2026-Q2",
+      "prev_eps": 4.33,
+      "prev_gross_margin": 41.35339169555564,
+      "prev_eps_basis": "cumulative_difference",
+      "data_status": "pending_financial_data"
+    }
+  ],
   "diagnostics": {
     "source_errors": [
-      "detail/4117/2026-09-30",
-      "announcement_scan/2026-10-01~2026-10-14:ValueError:announcement schema unavailable",
-      "daily_mops:ConnectionError",
+      "detail/8472/2026-09-30",
       "issuer_ir/3008/2026-Q3:single_quarter_metrics_unavailable"
     ],
-    "historical_errors": [],
+    "historical_errors": [
+      "twse/2026-Q3: ValueError",
+      "tpex/2026-Q3: ValueError"
+    ],
     "coverage": {
       "2026-09-30~2026-09-30": "ok",
-      "2026-10-01~2026-10-14": "failed"
+      "2026-10-01~2026-10-14": "ok"
     },
     "calendar_errors": []
   },
