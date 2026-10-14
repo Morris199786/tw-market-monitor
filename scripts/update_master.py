@@ -160,6 +160,29 @@ def main():
             f"old={len(old_tpex)}"
         )
 
+    # Never overwrite a previously valid share count with a zero from a
+    # temporarily incomplete provider response.
+    recovered = {"twse": 0, "tpex": 0}
+    for ticker, row in result.items():
+        previous = old_stocks.get(ticker, {})
+        if (row.get("market") == previous.get("market")
+                and iv(row.get("shares_issued")) <= 0
+                and iv(previous.get("shares_issued")) > 0):
+            row["shares_issued"] = iv(previous["shares_issued"])
+            recovered[row["market"]] += 1
+
+    valid_shares = {
+        market: sum(iv(row.get("shares_issued")) > 0
+                    for row in market_slice(result, market).values())
+        for market in ("twse", "tpex")
+    }
+    print("master valid issued shares", valid_shares, "recovered", recovered)
+    if valid_shares["twse"] < 500 or valid_shares["tpex"] < 400:
+        raise RuntimeError(
+            "Master share counts incomplete; refusing to overwrite good data: "
+            f"{valid_shares}"
+        )
+
     final_twse = market_slice(
         result,
         "twse"

@@ -697,62 +697,52 @@ def fetch_master():
                 )
             ).strip()
 
-            shares = iv(
-                pick(
-                    r,
-                    [
-                        "已發行普通股數或TDR原發行股數",
-                        "已發行普通股數",
-                        "普通股股數",
-                        "發行股數",
-                        "IssuedShares",
-                        "SharesIssued"
-                    ],
-                    0
-                )
-            )
+            # Source fields differ between TWSE and TPEx. Match only
+            # share-count / paid-in-capital fields (not authorized capital).
+            def matching_field(aliases):
+                for alias in aliases:
+                    for key, value in r.items():
+                        label = re.sub(r"[\s（）()_-]", "", str(key)).lower()
+                        needle = re.sub(r"[\s（）()_-]", "", alias).lower()
+                        if needle in label and value not in (None, "", "--"):
+                            return str(key), value
+                return "", None
 
-            cap = n(
-                pick(
-                    r,
-                    [
-                        "實收資本額",
-                        "PaidInCapital",
-                        "PaidinCapital"
-                    ],
-                    0
-                )
-            )
+            share_key, share_raw = matching_field([
+                "已發行普通股數或TDR原發行股數", "已發行普通股數",
+                "普通股股數", "已發行股數", "發行股數",
+                "IssuedShares", "SharesIssued", "發行在外股數"
+            ])
+            shares = iv(share_raw)
+            if "千股" in share_key or "仟股" in share_key:
+                shares *= 1000
 
-            par_raw = str(
-                pick(
-                    r,
-                    [
-                        "普通股每股面額",
-                        "每股面額",
-                        "ParValue"
-                    ],
-                    "10"
-                )
-            )
+            cap_key, cap_raw = matching_field([
+                "實收資本額", "實收股本", "實收資本", "PaidInCapital",
+                "PaidinCapital", "Paid-inCapital"
+            ])
+            cap = n(cap_raw)
+            if "千元" in cap_key or "仟元" in cap_key:
+                cap *= 1000
+            elif "百萬元" in cap_key:
+                cap *= 1000000
 
-            m = re.search(
-                r"([\d.]+)",
-                par_raw.replace(",", "")
-            )
+            par_key, par_raw = matching_field([
+                "普通股每股面額", "每股面額", "ParValue"
+            ])
+            par_text = str(par_raw) if par_raw is not None else "10"
+            # Do not mistake a currency code / prefix for the par value.
+            par_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", par_text.replace(",", ""))
+            par = float(par_match.group(1)) if par_match else 10.0
 
-            par = (
-                float(m.group(1))
-                if m
-                else 10.0
-            )
+            if shares <= 0 and cap > 0 and par > 0:
+                shares = int(round(cap / par))
 
-            if (
-                shares <= 0
-                and cap > 0
-                and par > 0
-            ):
-                shares = int(cap / par)
+            if shares <= 0 and market == "tpex":
+                # Expose unexpected schema changes in the workflow log.
+                if not getattr(fetch_master, "_logged_tpex_fields", False):
+                    print("TPEx missing capital/share fields; example keys:", list(r.keys()))
+                    fetch_master._logged_tpex_fields = True
 
             out[t] = {
                 "ticker": t,

@@ -334,6 +334,16 @@ def validate_output(out):
                         f"expected={days}"
                     )
 
+                ratio = g.get("market_cap_ranking") or {}
+                if (int(ratio.get("eligible_count") or 0) < 50
+                        or (not ratio.get("buy") and not ratio.get("sell"))):
+                    errors.append(
+                        f"{period} {market} {kind}: "
+                        f"market-cap ranking incomplete; "
+                        f"eligible={ratio.get('eligible_count')} "
+                        f"missing={ratio.get('missing_market_cap')}"
+                    )
+
                 if (
                     len(g.get("buy", [])) == 0
                     and len(g.get("sell", [])) == 0
@@ -432,10 +442,7 @@ def main():
                     )
                 )
 
-    try:
-        validate_output(out)
-    except RuntimeError as exc:
-        out["warning"] = str(exc)
+    validate_output(out)
 
     save_json(
         ROOT / "data/institutional.json",
