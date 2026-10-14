@@ -1,0 +1,36 @@
+name: AI K Backfill and Next Open Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ai-k-backfill
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt
+      - name: Backfill isolated AI candles
+        run: python scripts/backfill_ai_k.py
+      - name: Audit next-open strategy without changing production results
+        run: python scripts/audit_ai_next_open.py
+      - name: Commit isolated research data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/ai_backtest_k data/ai_next_open_audit.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: isolated AI OHLCV and next-open audit'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
