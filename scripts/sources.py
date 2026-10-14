@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import html
+import csv
+import io
 import json
 import math
 import re
@@ -711,7 +713,7 @@ def fetch_master():
             share_key, share_raw = matching_field([
                 "已發行普通股數或TDR原發行股數", "已發行普通股數",
                 "普通股股數", "已發行股數", "發行股數",
-                "IssuedShares", "SharesIssued", "發行在外股數"
+                "IssuedShares", "SharesIssued", "IssueShares", "發行在外股數"
             ])
             shares = iv(share_raw)
             if "千股" in share_key or "仟股" in share_key:
@@ -719,7 +721,7 @@ def fetch_master():
 
             cap_key, cap_raw = matching_field([
                 "實收資本額", "實收股本", "實收資本", "PaidInCapital",
-                "PaidinCapital", "Paid-inCapital"
+                "PaidinCapital", "Paid-inCapital", "Paidin.Capital.NTDollars"
             ])
             cap = n(cap_raw)
             if "千元" in cap_key or "仟元" in cap_key:
@@ -728,7 +730,7 @@ def fetch_master():
                 cap *= 1000000
 
             par_key, par_raw = matching_field([
-                "普通股每股面額", "每股面額", "ParValue"
+                "普通股每股面額", "每股面額", "ParValue", "ParValueOfCommonStock"
             ])
             par_text = str(par_raw) if par_raw is not None else "10"
             # Do not mistake a currency code / prefix for the par value.
@@ -751,6 +753,45 @@ def fetch_master():
                 "industry": industry,
                 "shares_issued": shares
             }
+
+    # TPEx OpenAPI uses English field names, and some versions omit a
+    # recognizable share/capital key. Official MOPS CSV provides Chinese
+    # headers and is used only to repair invalid TPEx share counts.
+    tpex_valid = sum(
+        row.get("market") == "tpex" and iv(row.get("shares_issued")) > 0
+        for row in out.values()
+    )
+    if tpex_valid < 400:
+        try:
+            url = "https://mopsfin.twse.com.tw/opendata/t187ap03_O.csv"
+            response = S.get(url, timeout=45)
+            response.raise_for_status()
+            response.encoding = "utf-8-sig"
+            records = list(csv.DictReader(io.StringIO(response.text)))
+            fixed = 0
+            for row in records:
+                ticker = str(row.get("公司代號") or "").strip()
+                if not ordinary_ticker(ticker):
+                    continue
+                if ticker not in out or out[ticker].get("market") != "tpex":
+                    continue
+                if iv(out[ticker].get("shares_issued")) > 0:
+                    continue
+                shares = iv(row.get("已發行普通股數或TDR原股發行股數"))
+                if shares <= 0:
+                    cap = n(row.get("實收資本額"))
+                    par_text = str(row.get("普通股每股面額") or "10")
+                    par_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", par_text)
+                    par = float(par_match.group(1)) if par_match else 10.0
+                    if cap > 0 and par > 0:
+                        shares = int(round(cap / par))
+                if shares > 0:
+                    out[ticker]["shares_issued"] = shares
+                    fixed += 1
+            print("TPEx official MOPS CSV share recovery", fixed,
+                  "rows", len(records))
+        except Exception as exc:
+            print("TPEx official MOPS CSV fallback failed", repr(exc))
 
     return out
 
