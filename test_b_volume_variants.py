@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""B/B1/B2/B3/B4 historical comparison. Run using existing B Volume Backtest workflow.
+"""B strategy ablation comparison with explicit next-open execution. Run using existing B Volume Backtest workflow.
 Only writes data/b_volume_comparison.{json,csv}; never modifies production code.
 """
 import ast
@@ -15,7 +15,7 @@ TMP = ROOT / '_temp_b_volume_shadow.py'
 OUTPUT = ROOT / 'data/b_volume_comparison.json'
 CSV = ROOT / 'data/b_volume_comparison.csv'
 BASE = 'BAL_MA_SLOPE_RANK_HEAT25_30'
-VARIANTS = ('B_VOL_5D_15', 'B_VOL_5D_20D', 'B_CANDLE_VOLUME', 'B_CANDLE_VOLUME_FLOW')
+VARIANTS = ('B_VOL_5D_15', 'B_VOL_5D_20D', 'B_CANDLE_VOLUME', 'B_CANDLE_VOLUME_FLOW', 'B_FLOW_PERSIST', 'B_LESS_MOMENTUM', 'B_COMBINED', 'B_COMBINED_GATE')
 
 
 def patch_source(src):
@@ -99,7 +99,7 @@ def patch_source(src):
                 if valid and vr5 is not None and vr20 is not None:
                     b_volume_diagnostics['valid_volume_ratios'] += 1
                     loc = (cl - lo) / (hi - lo)
-                    positive_day = cl > op and number(snapshots[i][1].get(row['ticker'], {}).get('change_pct')) > 0
+                    positive_day = cl > op and (number(snapshots[i][1].get(row['ticker'], {}).get('change_pct')) or 0) > 0
                     if loc >= .80 and positive_day:
                         factor = 0.0
                     elif loc >= .60 and cl > op:
@@ -135,6 +135,40 @@ def patch_source(src):
                         b_volume_diagnostics['b4_penalty_changed'] += 1
                 row['score_B_CANDLE_VOLUME_FLOW'] = base_b + mild_volume_penalty - penalty_b4
 
+                # Reconstruct flow state from five historical days; missing parts are not zero.
+                ratios = []
+                for fd in five:
+                    ir = inst.get(fd, {}).get(row['ticker'], {})
+                    quote = snapshots[index[fd]][1].get(row['ticker'], {})
+                    parts = [number(ir.get(k)) for k in ('foreign', 'trust', 'dealer')]
+                    px, amount = number(quote.get('price')), number(quote.get('turnover'))
+                    if all(v is not None for v in parts) and px and amount and amount > 0:
+                        ratios.append(sum(parts) * px / amount * 100)
+                flow_ok = len(ratios) == 5
+                if flow_ok:
+                    recent, previous = mean(ratios[-2:]), mean(ratios[:3])
+                    accel = recent - previous
+                    state = (1.0 if recent > 0 and previous > 0 and accel > 0 else
+                             .75 if recent > 0 and previous <= 0 else
+                             .25 if recent <= 0 and accel > 0 else 0.0)
+                    # Replace old 10 points by 5 acceleration-state + 5 persistence points.
+                    new_flow = .05 * row['flow_accel_rank'] * state + sum(v > 0 for v in ratios)
+                    delta_flow = new_flow - .10 * row['flow_accel_rank']
+                else:
+                    delta_flow = -.10 * row['flow_accel_rank']
+                row['score_B_FLOW_PERSIST'] = base_b + delta_flow
+                # Transfer 10 momentum points to persistence, no market-cap factor added.
+                delta_momentum = (-.05 * row['r5_rank'] - .05 * row['r10_rank']
+                                  + (2 * sum(v > 0 for v in ratios) if flow_ok else 0))
+                row['score_B_LESS_MOMENTUM'] = base_b + delta_momentum
+                row['score_B_COMBINED'] = (base_b + mild_volume_penalty - penalty_b3
+                                           + delta_flow + delta_momentum)
+                row['score_B_COMBINED_GATE'] = row['score_B_COMBINED']
+                row['b_eligible'] = (flow_ok and row['flow'] is not None and row['flow'] > 0
+                                    and row['trend'] and valid
+                                    and all(row.get(k) is not None for k in
+                                            ('r5', 'r10', 'breakout', 'volume_ratio')))
+
 '''
     src = src.replace(anchor, inject + anchor, 1)
     src = src.replace("OUT = ROOT / 'data/ai_shadow_test.json'",
@@ -146,8 +180,130 @@ def patch_source(src):
     if src.count(marker) != 1:
         raise RuntimeError('Shadow output schema changed')
     src = src.replace(marker, marker + " 'b_volume_diagnostics': b_volume_diagnostics,", 1)
+    chosen_anchor = "chosen = sorted(pool, key=lambda r: (-r['score_' + strategy], r['ticker']))[:20]"
+    if src.count(chosen_anchor) != 1:
+        raise RuntimeError('Shadow selection point changed')
+    src = src.replace(chosen_anchor, "chosen = sorted([r for r in pool if strategy != 'B_COMBINED_GATE' or r['b_eligible']], key=lambda r: (-r['score_' + strategy], r['ticker']))[:20]")
     compile(src, str(TMP), 'exec')
     return src
+
+
+def next_open_test(daily_picks, strategies):
+    """Fixed 5/10-session holds, signal close -> next session open.
+    Missing OHLC is unavailable, never replaced by a same-day close.
+    Costs are explicit simulation assumptions, configurable by environment.
+    """
+    import math
+    import os
+    from statistics import mean, median
+    commission = float(os.environ.get('B_COMMISSION_BPS', '14.25')) / 10000
+    tax = float(os.environ.get('B_SELL_TAX_BPS', '30')) / 10000
+    slip = float(os.environ.get('B_SLIPPAGE_BPS', '10')) / 10000
+    if not all(math.isfinite(v) and 0 <= v < .1 for v in (commission, tax, slip)):
+        raise ValueError('Invalid cost assumptions')
+    snapshots = {}
+    for p in sorted((ROOT / 'data/history/market').glob('*.json')):
+        snapshots[p.stem] = json.loads(p.read_text()).get('stocks', {})
+    dates = sorted(snapshots)
+    ix = {d: i for i, d in enumerate(dates)}
+    bars = {}
+    for p in (ROOT / 'data/daily_k').glob('*.json'):
+        obj = json.loads(p.read_text())
+        bars[str(obj.get('ticker') or p.stem)] = {
+            str(b.get('time') or b.get('date')): b for b in obj.get('bars', [])}
+
+    def valid_bar(ticker, day):
+        b = bars.get(ticker, {}).get(day)
+        if not b:
+            return None
+        try:
+            o,h,l,c,v = [float(b[k]) for k in ('open','high','low','close','volume')]
+            reference = float(snapshots[day][ticker]['price'])
+            if not all(math.isfinite(x) for x in (o,h,l,c,v,reference)):
+                return None
+            if not (0 < l <= min(o,c) <= max(o,c) <= h and v > 0):
+                return None
+            if abs(c-reference) > max(.01, reference*.001):
+                return None
+            return o,h,l,c
+        except (KeyError,TypeError,ValueError):
+            return None
+
+    records = []
+    for day, markets in sorted(daily_picks.items()):
+        i = ix[day]
+        for market, variants in markets.items():
+            for strategy in strategies:
+                for pick in variants.get(strategy, []):
+                    for horizon in (5,10):
+                        r = dict(selection_date=day, market=market, strategy=strategy,
+                                 ticker=pick['ticker'], rank=pick['rank'], horizon=horizon,
+                                 status='pending', net_return=None, gross_return=None)
+                        records.append(r)
+                        if i+horizon >= len(dates):
+                            continue
+                        entry_day, exit_day = dates[i+1], dates[i+horizon]
+                        r.update(entry_date=entry_day, exit_date=exit_day)
+                        first, last = valid_bar(r['ticker'], entry_day), valid_bar(r['ticker'], exit_day)
+                        if not first or not last:
+                            r['status'] = 'missing_or_mismatched_ohlc'
+                            continue
+                        # Conservative: a one-price session is not assumed executable.
+                        if first[1] == first[2] or last[1] == last[2]:
+                            r['status'] = 'one_price_session_unverified'
+                            continue
+                        entry, end = first[0], last[3]
+                        r.update(status='complete', entry_price=entry, exit_price=end,
+                                 gross_return=100*(end/entry-1),
+                                 net_return=100*(end*(1-slip)*(1-commission-tax)/
+                                                 (entry*(1+slip)*(1+commission))-1))
+    def stats(rows):
+        done = [r for r in rows if r['status']=='complete']
+        vals = [r['net_return'] for r in done]
+        mature = [r for r in rows if r['status']!='pending']
+        return dict(signals=len(rows), mature_signals=len(mature), samples=len(vals),
+                    coverage_pct=round(100*len(vals)/len(mature),2) if mature else None,
+                    avg_return=round(mean(vals),4) if vals else None,
+                    median_return=round(median(vals),4) if vals else None,
+                    win_rate=round(100*sum(v>0 for v in vals)/len(vals),2) if vals else None,
+                    worst_trade=round(min(vals),4) if vals else None)
+    summary = {}
+    for st in strategies:
+        summary[st] = {m: {f'top{n}_{h}d': stats([r for r in records if
+            r['strategy']==st and (m=='all' or r['market']==m) and
+            r['rank']<=n and r['horizon']==h]) for n in (5,10,20) for h in (5,10)}
+            for m in ('twse','tpex','all')}
+    # Strict paired comparisons: include a day/market only if BOTH lists have
+    # complete fills. Do not compare cherry-picked available stocks to missing ones.
+    comparisons = {}
+    for st in strategies:
+        if st == BASE:
+            continue
+        comparisons[st] = {}
+        for h in (5,10):
+            groups = {}
+            for r in records:
+                if r['horizon']==h and r['strategy'] in (BASE,st):
+                    groups.setdefault((r['selection_date'],r['market']),{}).setdefault(r['strategy'],[]).append(r)
+            units = []
+            for (day,m), pair in sorted(groups.items()):
+                if set(pair)!={BASE,st} or any(any(r['status']!='complete' for r in v) for v in pair.values()):
+                    continue
+                b,c = (mean(r['net_return'] for r in pair[k]) for k in (BASE,st))
+                units.append(dict(date=day,market=m,base=b,variant=c,difference_pp=c-b))
+            comparisons[st][f'{h}d'] = dict(units=len(units),
+                avg_difference_pp=mean(u['difference_pp'] for u in units) if units else None,
+                per_date_market=units)
+    return dict(method='Next trading session open to 5th/10th session close, fixed holding only',
+                assumptions=dict(commission_bps_each_side=commission*10000,
+                                 sell_tax_bps=tax*10000,slippage_bps_each_side=slip*10000),
+                summary=summary, paired_comparisons=comparisons, records=records,
+                limitations=['Current universe creates survivorship bias',
+                    'Incomplete daily_k coverage can bias unpaired summaries; inspect coverage',
+                    'One-price sessions excluded, other execution capacity not verified',
+                    'Overlapping signals are not independent trades or a portfolio equity curve',
+                    'No out-of-sample claim; prospective signals must be frozen separately',
+                    'Legacy summary uses same-close entry and no costs; never mix with next_open_test'])
 
 
 def main():
@@ -167,7 +323,7 @@ def main():
         print('CANDLE / INSTITUTION DIAGNOSTICS:', json.dumps(diag, ensure_ascii=False), flush=True)
         print(f'Candle coverage: {valid}/{total} = {coverage:.1%}', flush=True)
         if coverage < .70:
-            raise RuntimeError(f'Insufficient valid daily K coverage ({coverage:.1%} < 70%)')
+            print(f'WARNING: candle coverage {coverage:.1%}; missing candles keep original B volume penalty')
         if not diag.get('b3_penalty_changed'):
             raise RuntimeError('B3 never changed any penalty; refusing misleading backtest')
         if not diag.get('institution_available'):
@@ -180,7 +336,7 @@ def main():
             if not value:
                 raise RuntimeError(f'Missing backtest summary for {strategy}')
         result = {
-            'description': 'Original B vs B1/B2/B3/B4, with verified daily_k OHLC',
+            'description': 'B baseline vs volume, flow persistence, momentum reweighting and gated variants',
             'source': 'ai_shadow_backtest.py',
             'strategies': list(strategies),
             'selection_days': raw.get('selection_days'),
@@ -191,13 +347,25 @@ def main():
                 day: {market: {k: values.get(k, []) for k in strategies}
                       for market, values in markets.items()}
                 for day, markets in raw.get('daily_picks', {}).items()},
+            'variant_rules': {
+                BASE: 'Unchanged production B baseline',
+                'B_FLOW_PERSIST': 'Replace original 10 acceleration points with 5 state-gated acceleration + 5 buy-day persistence points',
+                'B_LESS_MOMENTUM': 'Reduce r5 and r10 weights by 5 points each; add up to 10 points for five buy days',
+                'B_COMBINED': 'Candle volume + flow persistence + reduced momentum',
+                'B_COMBINED_GATE': 'Combined; require complete five-day institutional fields, positive net flow, bullish trend, valid candle and price/volume factors; at most 20',
+            },
             'notes': [
                 'B/B1/B2 formulas unchanged; B3/B4 use same-date historical OHLC from data/daily_k',
                 'B4 uses signed foreign+trust+dealer from historical institutional records',
-                'Insufficient candle coverage or inactive variants cause a hard failure',
+                'Low candle coverage is exploratory only; missing candles retain B penalty, and gated universe differs',
                 'Reconstructed universe and same-close entry can introduce bias; costs excluded',
             ],
         }
+        result['next_open_test'] = next_open_test(result['daily_picks'], strategies)
+        result['validation_status'] = ('insufficient_coverage_for_strategy_decision'
+            if coverage < .70 or not any(
+                b['units'] for v in result['next_open_test']['paired_comparisons'].values()
+                for b in v.values()) else 'exploratory_in_sample_only')
         OUTPUT.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
         with CSV.open('w', encoding='utf-8-sig', newline='') as f:
@@ -206,6 +374,10 @@ def main():
             for strategy in strategies:
                 for market, block in (summary[strategy] or {}).items():
                     writer.writerow([strategy, market, 'all', json.dumps(block, ensure_ascii=False)])
+            for strategy in strategies:
+                for market, block in result['next_open_test']['summary'][strategy].items():
+                    writer.writerow([strategy, market, 'next_open_after_costs', json.dumps(block, ensure_ascii=False)])
+        print('VALIDATION:', result['validation_status'])
         print('SUCCESS:', OUTPUT, CSV)
         for strategy in strategies:
             block = (summary[strategy] or {}).get('all', {})
