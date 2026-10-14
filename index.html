@@ -111,7 +111,7 @@
 </div><span id="selfReportSearchMeta" style="font-size:13px;opacity:.72;white-space:nowrap"></span></div>
 <div id="selfStatus" class="status"></div><div id="selfReportCards" class="grid three"></div>
 </section>
-<section id="flows" class="page"><div class="hero"><div><div class="kicker">INSTITUTIONAL FLOW</div><h1>籌碼日報</h1><p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p></div><span id="flowDate" class="badge"></span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-period="1d">當天</button><button class="tab" data-period="3d">近三日</button><button class="tab" data-period="5d">近五日</button></div><div class="tabs"><button class="tab active" data-inst="foreign">外資</button><button class="tab" data-inst="trust">投信</button><button class="tab" data-inst="dealer">自營商</button><button class="tab" data-inst="total">三大法人合計</button></div><div class="tabs"><button class="tab active" data-market="twse">上市</button><button class="tab" data-market="tpex">上櫃</button></div></div><div id="flowStatus" class="status"></div><div class="grid two"><div class="card tablewrap"><table><thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="buyRows"></tbody></table></div><div class="card tablewrap"><table><thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="sellRows"></tbody></table></div></div></section>
+<section id="flows" class="page"><div class="hero"><div><div class="kicker">INSTITUTIONAL FLOW</div><h1>籌碼日報</h1><p>多日金額＝逐日淨買賣超股數 × 當日收盤價後加總</p></div><span id="flowDate" class="badge"></span></div><div class="toolbar"><div class="tabs" aria-label="籌碼排行方式"><button class="tab active" data-flow-rank="amount" aria-pressed="true">絕對金額</button><button class="tab" data-flow-rank="market_cap" aria-pressed="false">占市值比例</button></div><div class="tabs"><button class="tab active" data-period="1d">當天</button><button class="tab" data-period="3d">近三日</button><button class="tab" data-period="5d">近五日</button></div><div class="tabs"><button class="tab active" data-inst="foreign">外資</button><button class="tab" data-inst="trust">投信</button><button class="tab" data-inst="dealer">自營商</button><button class="tab" data-inst="total">三大法人合計</button></div><div class="tabs"><button class="tab active" data-market="twse">上市</button><button class="tab" data-market="tpex">上櫃</button></div></div><div id="flowStatus" class="status"></div><p id="flowRankNote" class="muted" hidden></p><div class="grid two"><div class="card tablewrap"><table><thead><tr><th>買超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="buyRows"></tbody></table></div><div class="card tablewrap"><table><thead><tr><th>賣超 TOP20</th><th>估算金額</th><th>張數</th><th>漲跌</th></tr></thead><tbody id="sellRows"></tbody></table></div></div></section>
 <section id="volume" class="page"><div class="hero"><div><div class="kicker">VOLUME SURGE</div><h1>科技股突然放量</h1><p>今日成交量 ÷ 前五個交易日平均量</p></div><span id="volDate" class="badge"></span></div><div class="toolbar"><button id="advanced" class="tab">進階篩選 ＋</button></div><div id="volStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead><tbody id="volRows"></tbody></table></div></section>
 <section id="turnover" class="page"><div class="hero"><div><div class="kicker">TURNOVER</div><h1>成交金額 TOP30</h1><p>採官方每日行情實際成交金額</p></div><span id="turnDate" class="badge"></span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-turn="twse">上市</button><button class="tab" data-turn="tpex">上櫃</button></div></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead><tbody id="turnRows"></tbody></table></div></section>
 <section id="marginLending" class="page"><div class="hero"><div><div class="kicker">MARGIN / SECURITIES LENDING</div><h1>融資／借券賣出異動</h1><p>融資與借券賣出｜先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p></div><div class="badges"><span class="badge">盤後更新</span><span id="mlDate" class="badge"></span></div></div><div class="toolbar"><div class="tabs"><button class="tab active" data-ml-kind="margin">融資增加</button><button class="tab" data-ml-kind="borrow">借券賣出增加</button></div><div class="tabs"><button class="tab active" data-ml-market="twse">上市</button><button class="tab" data-ml-market="tpex">上櫃</button></div></div><div id="mlStatus" class="status"></div><div id="mlLogic"></div><div id="mlCards" class="grid three"></div></section>
@@ -139,7 +139,7 @@
 </section>
 </main>
 
-<script src="./assets/app.js?v=20261010-chips-detail"></script>
+<script src="./assets/app.js?v=20261014-market-cap-rank"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20261004-market-monitor-nav2"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
@@ -242,6 +242,7 @@
 </script>
 </body>
 </html>
+
 
 
 
