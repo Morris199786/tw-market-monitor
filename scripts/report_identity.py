@@ -181,8 +181,8 @@ def resolve(ticker, name, text, companies):
 
 def _target_matches(page):
     pattern = re.compile(
-        r"(?:\b(?:12[\s-]*(?:month|m)\s+)?target\s+price|\bprice\s+target|\bPO\b|\bTP\b|目標價)"
-        r"\s*(?:上修|下修|調高|調低|調升|調降|lowered|raised|reduced|increased|revised|cut)?\s*(?:至|為|to)?\s*[:：]?\s*"
+        r"(?:\b(?:12[\s-]*(?:month|m)\s+)?target\s+price|\bprice\s+target|\bPO\b|\bTP\b|目標(?:股)?價)"
+        r"\s*(?:上調|下調|上修|下修|調高|調低|調升|調降|lowered|raised|reduced|increased|revised|cut)?\s*(?:至|為|to)?\s*[:：]?\s*"
         r"(?:(TWD|NT\$|NTD|USD|US\$|KRW)\s*)?"
         r"(\d[\d,]*(?:\.\d+)?[kK]?|n\.?a\.?(?!\w))", re.I)
     return list(pattern.finditer(page))
@@ -221,11 +221,11 @@ def _valid_taiwan_currency(page, match, value, currency):
         return True
     if currency in ("TWD", "NT$", "NTD"):
         return True
-    if "目標價" not in (match.group(0) or ""):
+    if not re.search(r"目標(?:股)?價", match.group(0) or ""):
         return False
     if re.match(r"\s*元", page[match.end():]):
         return True
-    values = re.findall(r"目標價[^\n\d]{0,15}(\d[\d,]*(?:\.\d+)?)\s*元", page)
+    values = re.findall(r"目標(?:股)?價[^\n\d]{0,15}(\d[\d,]*(?:\.\d+)?)\s*元", page)
     return any(float(v.replace(",", "")) == value for v in values)
 
 
@@ -347,7 +347,7 @@ def audit_report(report, src, companies):
             normalized = unicodedata.normalize("NFKC", text)
             if old not in (None, ""):
                 amount = re.escape(f"{float(old):g}").replace("\\.", "[.]")
-                old_ok = re.search(r"(?:目標價|target|TP)[^\n]{0,80}(?<![\d.])" + amount + r"(?![\d.])",
+                old_ok = re.search(r"(?:目標(?:股)?價|target|TP)[^\n]{0,80}(?<![\d.])" + amount + r"(?![\d.])",
                                    normalized.replace(",", ""), re.I)
                 if not old_ok:
                     old = None

@@ -490,6 +490,49 @@ def recover_saved_winway(src):
     return report
 
 
+def recover_saved_ase(src):
+    """Repair the verified Fubon ASE report from saved text, without API retries."""
+    if (src.get('drive_file_id') != '1TUBTgTSSqvOFlG24JTqHYkJfRzZrZNxS'
+            or src.get('status') != 'audit_error'):
+        return None
+    digest = hashlib.sha256(str(src.get('text') or '').encode()).hexdigest()
+    if digest != '7e4c0a4374fe73fdefeb97c6b6440750c3faa6c100c5ead017e64a9a014acf28':
+        print('ASE local repair skipped: source text changed')
+        return None
+    obj = {
+        'report_type': 'company', 'primary_stock': {'ticker':'3711','name':'日月光投控'},
+        'broker':'富邦投顧', 'date':'2026-10-14',
+        'title':'日月光投控：LEAP成長動能增強，CPO測試帶來上行機會',
+        'action':'maintain', 'rating':'Buy', 'target_price_old':750, 'target_price_new':820,
+        'summary':[
+            '維持買進，目標價由750元上調至820元，以2027年預估EPS的22倍評價',
+            '第三季營收2,442億元，季增27.8%、年增44.8%，高於富邦原估及市場共識4.6%',
+            '2026、2027年EPS預估分別上調21.2%、25.2%，至21.96元及36.65元',
+            '預估2027年LEAP營收達84.1億美元、年增103%，高於報告所列市場預期75億美元',
+            'LEAP模型尚未納入潛在CPO測試機會，光引擎、光電最終測試與系統層級測試提供額外上行空間',
+        ],
+        'key_points':[
+            '第三季ATM營收1,515億元，季增20.1%，受台積電oS委外及測試業務成長帶動',
+            '第三季毛利率、營業利益率、EPS預估分別為22%、13%、6.71元',
+            '第四季營收、EPS預估分別為2,607億元、7.56元',
+            '2027年WoS產量預估由75萬片增至147萬片，平均售價維持3,500美元',
+            '報告預期2027年先進封裝產能全年滿載',
+            '2027年營業利益率預估由15.2%上調至16.3%',
+        ],
+        'forecast_changes':[
+            '2026年營收預估上調2.2%至8,696億元；2027年上調0.7%至1兆965億元',
+            '2026年EPS由18.13元上調至21.96元；2027年由29.26元上調至36.65元',
+            '2026、2027年毛利率預估分別由20.9%、24.2%上調至21.6%、25.3%',
+        ],
+        'risks':['關稅及經濟不確定性為報告列示的主要風險'],
+        'detail':'富邦投顧認為日月光投控第三季營收優於預期，後續獲利上修主要由ATM產品組合改善、毛利率提升與2027年LEAP產能增加帶動，因此維持買進並將目標價由750元上調至820元。報告預估2026及2027年EPS為21.96元與36.65元，分別高於市場共識16.8%及25.5%。LEAP營收預估由2026年的41.4億美元增加至2027年的84.1億美元，受台積電委外、FoCoS與AI測試成長支持。富邦預期先進封裝2027年全年滿載，且目前模型尚未計入潛在CPO測試需求，因此將其視為基礎財測以外的上行機會。第三季毛利率仍是近期的重要驗證項目，關稅與經濟不確定性為主要風險。',
+    }
+    report = audit_report(normalize_report(obj, src), src, COMPANIES)
+    report['ai_model'] = 'local-source-repair-no-api'
+    report['repaired_at'] = now_tpe()
+    return report
+
+
 def main():
     global COMPANIES
     COMPANIES = registry(refresh=True)
@@ -523,7 +566,7 @@ def main():
         ).hexdigest()
 
         if not old:
-            repaired = recover_saved_winway(src)
+            repaired = recover_saved_winway(src) or recover_saved_ase(src)
             if repaired:
                 items.append(repaired)
                 by_source[file_id] = repaired
@@ -535,7 +578,7 @@ def main():
                 reports["items"] = items
                 save_json(REPORTS_PATH, reports)
                 save_json(INBOX_PATH, inbox)
-                print("Locally repaired WinWay from saved text; AI calls=0")
+                print("Locally repaired", file_id, "from saved text; AI calls=0")
                 continue
 
         # Strict File ID one-shot: never retry completed, failed, or claimed reports.
