@@ -1,6 +1,6 @@
 /* =========================================================
    券商報告 V3.5
-   - 依收到日期分組
+   - 依報告發布日期分組
    - 歷史報告永久保留
    - 公司名稱 / 股票代號搜尋
    - 中文公司名可搜尋外資英文報告（依 ticker 自動對照）
@@ -298,30 +298,32 @@
   }
 
   function reportGroupDate(r) {
-    return (
-      r.group_date ||
-      r.received_date ||
-      (
-        r.received_at
-          ? String(r.received_at).slice(0, 10)
-          : ""
-      ) ||
-      (
-        r.ai_processed_at
-          ? String(r.ai_processed_at).slice(0, 10)
-          : ""
-      ) ||
-      "未分類"
-    );
+    // Publication date only. Never substitute upload/processing timestamps.
+    const raw = String(r.date || "").trim();
+    const full = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:$|[T\s])/)
+      || raw.match(/^(\d{4})(\d{2})(\d{2})$/);
+    if (full) {
+      const [, y, m, d] = full;
+      const check = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)));
+      if (check.getUTCFullYear() === Number(y)
+          && check.getUTCMonth() === Number(m) - 1
+          && check.getUTCDate() === Number(d)) {
+        return y + "-" + m.padStart(2, "0") + "-" + d.padStart(2, "0");
+      }
+    }
+    const month = raw.match(/^(\d{4})[-/](\d{1,2})$/);
+    if (month && Number(month[2]) >= 1 && Number(month[2]) <= 12) {
+      return month[1] + "-" + month[2].padStart(2, "0");
+    }
+    return "日期未確認";
   }
 
   function dateLabel(day) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
-      return day;
+    if (/^\d{4}-\d{2}$/.test(day)) {
+      return day.replace("-", "/") + "（未註明日）";
     }
-
-    const [y, m, d] = day.split("-");
-    return `${y}/${m}/${d}`;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
+    return day.replaceAll("-", "/");
   }
 
   function taipeiToday() {
@@ -744,10 +746,11 @@
     }
 
     return [...groups.entries()].sort(
-      (a, b) =>
-        String(b[0]).localeCompare(
-          String(a[0])
-        )
+      (a, b) => {
+        if (a[0] === "日期未確認") return b[0] === a[0] ? 0 : 1;
+        if (b[0] === "日期未確認") return -1;
+        return String(b[0]).localeCompare(String(a[0]));
+      }
     );
   }
 
@@ -1218,7 +1221,7 @@
       <div class="report-history-note">
         <span></span>
         <span>
-          依收到日期永久保留
+          依報告發布日期分組・歷史報告永久保留
         </span>
       </div>
 
@@ -1387,7 +1390,7 @@
 
     if (feature) {
       feature.textContent =
-        `今日 ${count} 份`;
+        `今日發布 ${count} 份`;
     }
 
     const grid =
@@ -1681,4 +1684,3 @@
     boot();
   }
 })();
-
