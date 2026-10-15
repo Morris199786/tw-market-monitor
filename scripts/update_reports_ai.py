@@ -60,6 +60,53 @@ def save_json(path: Path, data) -> None:
     )
 
 
+REPORT_STATE_PATHS = (
+    "data/report_inbox.json", "data/processed_reports.json",
+    "data/reports.json", "data/report_company_registry.json",
+    "data/tw_ratings.json", "data/tw_ratings_state.json",
+)
+
+
+def push_report_commits(max_attempts: int = 5) -> None:
+    """Retry Git publication only; never replay AI/OCR/Telegram operations.
+
+    Rebase unrelated market updates. If remote report state changed, stop before
+    any external call: in-memory claims must not overwrite another writer.
+    """
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=ROOT, check=True,
+            capture_output=True, text=True, timeout=90,
+        ).stdout.strip()
+
+    for attempt in range(1, max_attempts + 1):
+        git("fetch", "origin", "main")
+        base = git("merge-base", "HEAD", "origin/main")
+        changed = git("diff", "--name-only", base, "origin/main", "--",
+                      *REPORT_STATE_PATHS)
+        if changed:
+            raise RuntimeError(
+                "Remote report state changed; refusing to overwrite claims or "
+                "perform external calls: " + changed.replace("\n", ", ")
+            )
+        try:
+            git("rebase", "origin/main")
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            subprocess.run(["git", "rebase", "--abort"], cwd=ROOT,
+                           capture_output=True, timeout=90)
+            raise
+        try:
+            git("push", "origin", "HEAD:main")
+            print(f"Report state published (attempt {attempt}/{max_attempts})")
+            return
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            if attempt == max_attempts:
+                raise RuntimeError(
+                    "Report state could not be published; external call blocked"
+                ) from exc
+            print(f"Report push failed; syncing before retry {attempt + 1}")
+
+
 def commit_claim_before_external_call(reason: str) -> None:
     """Persist one-shot claim to GitHub BEFORE spending credits or sending Telegram.
 
@@ -78,7 +125,7 @@ def commit_claim_before_external_call(reason: str) -> None:
     if diff.returncode != 1:
         raise RuntimeError("Could not verify staged claim")
     subprocess.run(["git", "commit", "-m", "Claim broker report once: " + reason[:90]], cwd=ROOT, check=True)
-    subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, check=True)
+    push_report_commits()
 
 
 def response_text(data: dict) -> str:
