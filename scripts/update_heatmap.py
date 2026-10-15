@@ -217,7 +217,9 @@ def main():
                 'shares_source': 'master' if master_shares > 0 else 'tdcc',
                 'quote_source': quote.get('quote_source')
             })
+        member_tags = {str(row['ticker']): row.get('tags', []) for row in sector.get('stocks', [])}
         for member in members:
+            member['tags'] = member_tags.get(member['ticker'], [])
             if member['market_cap'] is not None and capsum:
                 member['weight'] = member['market_cap'] / capsum
         sectors.append({
