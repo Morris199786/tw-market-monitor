@@ -580,6 +580,58 @@ def recover_saved_ase(src):
     return report
 
 
+def recover_saved_ccl(src):
+    """Repair only this verified saved PDF; no AI/OCR request or claim reset."""
+    if (src.get("drive_file_id") != "1MhlNmbXCSPx4V3lqs4r-UoKURv4B3xO9"
+            or src.get("status") != "audit_error"):
+        return None
+    digest = hashlib.sha256(str(src.get("text") or "").encode()).hexdigest()
+    if digest != "a6eca6c1b25aa8533d63599898a84f8b770a6230327eb480ee44b13f5dfe4ddc":
+        print("CCL local repair skipped: source text changed")
+        return None
+    obj = {
+        "report_type": "sector", "primary_stock": {},
+        "broker": "ToAlpha", "date": "2026-10-15",
+        "title": "高階 CCL 樹脂系統之爭：PTFE vs 碳氫樹脂（HC）",
+        "action": "sector", "rating": "",
+        "target_price_old": None, "target_price_new": None,
+        "summary": [
+            "ToAlpha認為PTFE與碳氫樹脂將分層並存：PTFE用於最高階互連板的關鍵訊號層，其他高速板材仍以碳氫系為主",
+            "高階玻纖布、HVLP銅箔與鑽針的供給瓶頸，是報告認為較不依賴樹脂路線勝負的受益環節",
+            "基本PTFE混壓情境下，台光電營收較碳氫系情境減少約29至64億元，推算淨利差額約占2027年市場共識淨利1%至2%",
+            "若正交背板亦採PTFE混壓，台光電營收差額擴至約183至321億元，推算淨利差額約占2027年共識6%至10%",
+            "報告認為CCL報價調整的影響大於基本PTFE情境；全文屬產業研究，未提供個股評等或目標價"
+        ],
+        "key_points": [
+            "報告假設NVL576世代交換器板CCL價值約3至5億美元，屬情境推算而非確定訂單",
+            "若台虹取得兩成第二供應份額，報告推算營收約13億元、約近12個月營收12%，仍取決於認證及材料路線",
+            "CCL報價上調10%的對照情境，台光電淨利敏感度約為2027年共識淨利的11%至32%",
+            "南亞同時具玻纖布、銅箔與CCL布局，兼有PTFE經驗及碳氫配方",
+            "觀察2026年第四季至2027年第一季材料及供應商定案，以及PTFE混壓良率與高溫壓合產能",
+            "展示或合作名單不代表確定量產訂單；市場共識數字亦非ToAlpha自行提出的財測"
+        ],
+        "beneficiaries": [
+            {"ticker":"8358", "name":"金居", "reason":"報告列為HVLP銅箔供應鏈，各樹脂情境均可能受益"},
+            {"ticker":"8021", "name":"尖點", "reason":"高縱深比與塗層鑽針需求，PTFE加工耗損可能提高用量"},
+            {"ticker":"8039", "name":"台虹", "reason":"PTFE路線下的潛在第二供應商，營收貢獻取決於份額及量產"},
+            {"ticker":"1303", "name":"南亞", "reason":"兼具上游材料與CCL布局，可參與PTFE及碳氫兩條路線"}
+        ],
+        "forecast_changes": [],
+        "risks": [
+            "PTFE滲透及背板混壓進展超出假設，可能擴大台系CCL高階份額壓力",
+            "無布化可能減少玻纖布需求；CPO導入可能降低部分板材規格",
+            "擴產快於需求可能造成價格循環反轉",
+            "輝達產品時程、架構、供應商認證與量產良率均可能改變情境結果",
+            "市場共識與市占、單價、板材價值等假設變動，均會改變估算比例"
+        ],
+        "detail": "這是ToAlpha於2026年10月15日發布的純產業研究，討論高階CCL補強材、銅箔及樹脂升級。報告預期碳氫系與PTFE分層並存，並以台系CCL廠角度區分樂觀、基本及悲觀情境。文中台光電營收差額與淨利敏感度，係依市場共識及自訂假設推算，不是實際損失或已確定財測下修。台虹等PTFE供應鏈的機會亦取決於認證、第二供應份額和量產。報告另指出台燿的ASIC滲透與擴產、聯茂的產品報價及高階產能、南亞跨材料布局各有不同驅動因素，不能以單一樹脂路線概括。長期需追蹤無布化、CPO、供需及價格循環。全文未提出個股評等、目標價或買賣建議。"
+    }
+    report = audit_report(normalize_report(obj, src), src, COMPANIES)
+    report["ai_model"] = "local-source-repair-no-api"
+    report["repaired_at"] = now_tpe()
+    return report
+
+
 def main():
     global COMPANIES
     COMPANIES = registry(refresh=True)
@@ -613,7 +665,7 @@ def main():
         ).hexdigest()
 
         if not old:
-            repaired = recover_saved_winway(src) or recover_saved_ase(src)
+            repaired = recover_saved_winway(src) or recover_saved_ase(src) or recover_saved_ccl(src)
             if repaired:
                 items.append(repaired)
                 by_source[file_id] = repaired
