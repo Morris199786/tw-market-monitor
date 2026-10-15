@@ -271,12 +271,32 @@ def normalize_report(obj: dict, src: dict) -> dict:
     }
 
 
-def analyze_report(src: dict) -> dict:
+def prepare_report_text(src):
+    """Keep all words, rows and pages; compact layout gaps only when oversized."""
     text = str(src.get("text") or "")
-    # Keep pdftotext -layout column spacing, newlines and page boundaries.
-    # Collapsing spaces here destroys table relationships before the single API call.
+    if len(text) > 240000:
+        # A tab retains an explicit column separator without hundreds of spaces.
+        text = re.sub(r"[ \t]{2,}", "\t", text)
     if len(text) > 240000:
         raise ValueError("Report exceeds safe input limit; no silent truncation")
+    return text
+
+
+def is_verified_kgi_preflight_failure(src):
+    """One known local-only rejection, before requests.post; never retry API errors."""
+    return (
+        src.get("drive_file_id") == "1-TibDNTiixhAPfEZlCBZHWS9ZlSSy93P"
+        and src.get("status") == "audit_error"
+        and src.get("ai_error") == "Report exceeds safe input limit; no silent truncation"
+        and src.get("ai_attempted_at") == "2026-10-16T07:25+08:00"
+        and not src.get("kgi_first_api_claimed_at")
+        and hashlib.sha256(str(src.get("text") or "").encode()).hexdigest()
+        == "33cb87ff1a95c4c8d18f9a17d744fdfb84573f070e679f64e0a7676f195c0002"
+    )
+
+
+def analyze_report(src: dict) -> dict:
+    text = prepare_report_text(src)
 
     system = """你是台股券商研究報告整理器。
 只可以根據使用者提供的報告文字整理，不得補充外部資料、不得自行推測未寫明的評等或目標價。
@@ -689,12 +709,28 @@ def main():
 
         # Strict File ID one-shot: never retry completed, failed, or claimed reports.
         # Audit version changes must NOT trigger another API call.
-        if old or src.get("status") != "pending_ai" or src.get("ai_attempted_at"):
+        kgi_first_api = is_verified_kgi_preflight_failure(src)
+        if old or (not kgi_first_api and (
+                src.get("status") != "pending_ai" or src.get("ai_attempted_at"))):
             continue
 
         # 額度用完後，本輪不再碰後續報告
         if quota_exhausted:
             break
+
+        # Local validation happens before the durable API claim; no input truncation.
+        try:
+            prepare_report_text(src)
+        except ValueError as exc:
+            src["status"] = "audit_error"
+            src["ai_error"] = str(exc)
+            save_json(INBOX_PATH, inbox)
+            print("Local input check failed; API calls=0:", file_id)
+            continue
+
+        if kgi_first_api:
+            src["preflight_rejected_at"] = src["ai_attempted_at"]
+            src["kgi_first_api_claimed_at"] = now_tpe()
 
         # Commit the claim to GitHub before calling OpenAI.
         # A failed push aborts the workflow without spending any API credit.
