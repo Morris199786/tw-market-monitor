@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-15T17:06+08:00",
+  "updated_at": "2026-10-15T17:33+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1066,28 +1066,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 12,
+      "rows": 13,
       "self_reports": 10,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 101,
-          "hits": 12
+          "rows": 124,
+          "hits": 13
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 101,
+          "rows": 124,
           "hits": 5
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 101,
+          "rows": 124,
           "hits": 5
         },
         {
@@ -1190,7 +1190,7 @@
           "mode": "company_rescue",
           "ticker": "2317",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -1254,7 +1254,7 @@
           "mode": "company_rescue",
           "ticker": "2880",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1310,7 +1310,7 @@
           "mode": "company_rescue",
           "ticker": "3037",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1382,7 +1382,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -1406,14 +1406,14 @@
           "mode": "company_rescue",
           "ticker": "5880",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "6605",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1507,6 +1507,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "4738 大同精化 115/10/15 15:43:05 公告本公司115年9月份自結合併財務報告之負債比率、流動 比率、速動比率、未來三個月資金狀況及銀行融資額度使用情形"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3664 安瑞-KY 115/10/15 17:02:55 公告本公司115年09月份自結報表之負債比率、流動 比率、速動比率、現金餘額及銀行融資情形、應收款項、預 估未來三個月現金收支"
         }
       ],
       "error": ""
