@@ -7,10 +7,10 @@ permissions:
   contents: write
   id-token: write
 
-# Share the market-data writer lock to prevent heatmap/report push races.
-# Keep the pre-run sync so queued runs read the latest processed state.
+# Serialize report runs only; heatmap updates must not replace pending reports.
+# Git publication retries safely rebase unrelated market updates.
 concurrency:
-  group: tw-market-data-writer
+  group: broker-reports-drive
   cancel-in-progress: false
 
 jobs:
