@@ -7,10 +7,10 @@ permissions:
   contents: write
   id-token: write
 
-# Critical: never allow two broker-report runs to overlap.
-# A queued run starts only after the previous run has finished AND pushed its state.
+# Share the market-data writer lock to prevent heatmap/report push races.
+# Keep the pre-run sync so queued runs read the latest processed state.
 concurrency:
-  group: broker-reports-drive
+  group: tw-market-data-writer
   cancel-in-progress: false
 
 jobs:
@@ -99,9 +99,10 @@ jobs:
 
           git commit -m "Update broker reports"
 
-          # Concurrency + pre-run hard sync means main should not have moved because
-          # of this workflow. If another workflow changed main, rebase once BEFORE
-          # push; never rerun AI/Telegram as a retry mechanism.
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          # Retry publication only, never rerun paid calls or notifications.
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "scripts")
+          from update_reports_ai import push_report_commits
+          push_report_commits()
+          PY
