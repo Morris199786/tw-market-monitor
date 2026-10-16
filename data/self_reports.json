@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-16T14:36+08:00",
+  "updated_at": "2026-10-16T15:05+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 153,
+    "candidate_count": 154,
     "parsed_count": 64,
-    "parse_failed_count": 82,
+    "parse_failed_count": 83,
     "parse_failed": [
+      {
+        "ticker": "7747",
+        "name": "昕奇雲端",
+        "publish_date": "2026-10-16",
+        "publish_time": "14:36:00",
+        "subject": "7747 昕奇雲端 115/10/16 14:36:00 公告本公司115年第3季合併報表自結數",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "2402",
         "name": "毅嘉",
@@ -1079,28 +1092,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 1,
+      "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 18,
+          "rows": 31,
+          "hits": 1
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 31,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 18,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 18,
+          "rows": 31,
           "hits": 0
         },
         {
@@ -1135,14 +1148,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 18,
+          "rows": 31,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 18,
+          "rows": 31,
           "hits": 0
         },
         {
@@ -1424,7 +1437,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2887",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1433,14 +1446,14 @@
           "mode": "company_rescue",
           "ticker": "2891",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "2892",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1448,7 +1461,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2908",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1456,7 +1469,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3003",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1608,7 +1621,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6278",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1624,7 +1637,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6515",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
