@@ -49,3 +49,24 @@
   #marketMonitor .mm-tools label{font-size:14px}
   #marketMonitor .status{font-size:12px}
 }
+
+/* US monthly monitor, scoped away from existing Taiwan table. */
+#marketMonitor [hidden] { display: none !important; }
+#marketMonitor .mm-market-tabs { display: flex; gap: 10px; margin: 0 0 20px; }
+#marketMonitor .mm-market-tabs button { min-width: 100px; font-weight: 700; }
+#marketMonitor .mm-market-tabs button[aria-pressed="true"] { background: #245ce8; color: #fff; border-color: #245ce8; }
+#marketMonitor .mm-us-note, #marketMonitor .mm-us-method { line-height: 1.7; color: var(--muted, #778293); }
+#marketMonitor .mm-us-month { padding: 20px; margin: 14px 0; }
+#marketMonitor .mm-us-month h2 { font-size: 20px; margin: 0 0 16px; }
+#marketMonitor .mm-us-month dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 14px; margin: 0; }
+#marketMonitor .mm-us-month dt { font-size: 14px; color: var(--muted, #778293); margin-bottom: 6px; }
+#marketMonitor .mm-us-month dd { font-size: 22px; font-weight: 700; margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+#marketMonitor .mm-us-month dd small { display: block; font-size: 12px; font-weight: 400; margin-top: 3px; }
+#marketMonitor .mm-us-history .mm-us-month dd { font-size: 18px; }
+#marketMonitor .mm-us-method { margin: 20px 0; }
+#marketMonitor .mm-us-method summary { cursor: pointer; }
+@media (max-width: 700px) {
+  #marketMonitor .mm-us-month { padding: 16px; }
+  #marketMonitor .mm-us-month dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
+  #marketMonitor .mm-us-month dd { font-size: 21px; }
+}
