@@ -235,8 +235,6 @@ def normalize_report(obj: dict, src: dict) -> dict:
                 "name": str(x.get("name") or "").strip(),
                 "reason": str(x.get("reason") or "").strip(),
             })
-            if len(beneficiaries) >= 20:
-                break
     received_at, group_date = received_info(src)
     push_reason = str(obj.get("push_reason") or "").strip()
     if not push_reason:
@@ -316,7 +314,7 @@ def analyze_report(src: dict) -> dict:
 10. beneficiaries 只列報告明確提到的受惠/首選/推薦關注個股，不能自己增加；reason 寫明受益機制與報告所列成立條件，不得將潛在供應商寫成已取得訂單
 11. risks 只有報告提到或報告文字可直接支持的風險，不可自己想像
 12. forecast_changes 只有明確上修/下修或財測調整才列
-13. detail 用約 500~900 個中文字深入整理；短報告可更短，不得為湊字數重複或補充外部資訊。依「結論、依據、假設與情境、公司影響、風險與觀察」順序分段，以純文字小標與換行呈現。只保留原文有支持的段落，缺少內容就省略，不要編造。摘要供快速閱讀，detail 應補充因果與條件，不要只是重複摘要
+13. detail 依報告實際主題分段，以具體主題作純文字小標，不套用空泛固定標題。一般報告約500~900字；多主題長篇產業報告可約900~1500字，依內容需要取捨，短報告更短。各段連結結論、原因、原文依據、公司影響與成立條件，不重複羅列summary/key_points的數字。只有解釋論點必須時才重述數字，不得為湊字數加入外部資訊
 14. broker、日期、標題盡量從報告本身辨識；辨識不到可留空
 15. 公司名稱與代號必須依下方已驗證公司對照表，禁止自行翻譯公司中文名稱；只有英文名稱但能唯一對應也可填代號，不得把 ISU Petasys 認成台灣公司
 16. 產業報告若明確提供台灣個股評等或目標價，須在 summary 優先交代；未提供時不得強行填入。評等維持與目標價變動須分開描述，不可把目標價上調當成評等上調；n.a. 為 null，不是現價
@@ -327,6 +325,10 @@ def analyze_report(src: dict) -> dict:
 20. 表格文字保留了空格、欄位與換頁。辨認公司、年度、情境欄頭後才引用數字，不要跨欄或跨公司拼接；若欄列對應不確定，省略該數值並在相關段落說明無法確認，不可猜測
 21. 台灣公司使用已驗證的中文名稱，國外公司保留原文名稱。公司在不同情境可能受益或受壓，應分別說明；不能將條件式受益一概寫成推薦買進
 22. 不額外搜尋或加入原文沒有的推論、計算、投資建議與追蹤指標。JSON 字串中的換行必須使用合法跳脫，禁止尾逗號、註解或未加雙引號的欄位名稱
+
+23. 輸出前在同一次分析內檢查全文主題覆蓋：依目次、章節與結論確認主要需求驅動、競爭格局/市占變化、供應鏈轉移、財測調整及風險有無遺漏。只涵蓋原文實際存在的主題，不可只整理前幾頁；歷史報告彙整與免責聲明不得當成本期新觀點
+24. beneficiaries 完整列出本期正文或投資建議明確點名的受惠/首選公司，不限前8家；按代號去重。summary/detail提到的明確受惠公司應與beneficiaries一致，不能漏掉名單尾端。單純營收表列示、同業比較或歷史推薦不算本期推薦；不同情境的受益理由要保留條件
+25. 完成前檢查摘要、重點、完整解析的分工：summary講核心結論，key_points提供關鍵證據，detail解釋原因與各主題連結，beneficiaries逐家公司交代原因；避免同組數字在三處重複堆砌。上述檢查在本次回覆內完成，不要求額外API呼叫
 
 固定 JSON 欄位：
 {
@@ -659,6 +661,52 @@ def recover_saved_ccl(src):
     return report
 
 
+def repair_saved_kgi_coverage(report, src):
+    """Source-locked editorial repair; preserve AI/send claims and never call API."""
+    if (src.get("drive_file_id") != "1-TibDNTiixhAPfEZlCBZHWS9ZlSSy93P"
+            or report.get("source_file_id") != src.get("drive_file_id")
+            or report.get("validation_status") != "verified"
+            or report.get("coverage_repair_version") == "kgi-20261015-coverage-1"
+            or hashlib.sha256(str(src.get("text") or "").encode()).hexdigest()
+            != "33cb87ff1a95c4c8d18f9a17d744fdfb84573f070e679f64e0a7676f195c0002"):
+        return False
+    names = [("2383", "台光電", "報告列為AI伺服器受惠供應商，CCL規格升級與客戶、機種多元帶動營收，亦受惠ASIC需求擴張"),
+             ("3037", "欣興", "報告列為AI伺服器受惠供應商，載板規格升級及ASIC伺服器擴張提供動能"),
+             ("2345", "智邦", "報告在ASIC成長段落明確列為受惠業者，相關需求涵蓋交換器與OCS等供應鏈"),
+             ("3665", "貿聯-KY", "報告在ASIC成長段落明確列為受惠業者，並指出客戶與機種多元支撐營收；相關需求涵蓋高速連接與電源等供應鏈")]
+    members = report.setdefault("beneficiaries", [])
+    existing = {str(x.get("ticker")) for x in members}
+    for ticker, name, reason in names:
+        if ticker not in existing:
+            members.append({"ticker":ticker, "name":name, "reason":reason})
+            existing.add(ticker)
+    report["summary"] = [
+        "凱基上調伺服器、下修PC與智慧型手機需求預估，電子硬體景氣呈現AI強、消費性產品弱的分化",
+        "VR、Trainium 3與TPU v8等新平台進入放量，GPU與ASIC方案擴張推動組裝、液冷、電源與板材規格升級",
+        "報告預期2027年ASIC晶片出貨強勁成長，Nvidia雖維持主要供應商地位，晶片市占可能降至50%以下；AMD市占仍低於10%",
+        "T3供應鏈調整使部分零組件短期遞延，報告視為短期現象；客戶與機種較多元的廠商營收相對強勁",
+        "本期投資建議點名緯穎、緯創、鴻海、奇鋐、富世達、健策、台達電、金像電、台光電與欣興；ASIC段落另列智邦、貿聯-KY為受惠業者"
+    ]
+    report["detail"] = """GPU／ASIC新平台與競爭格局
+凱基的主軸不只是AI伺服器總量增加，而是新平台與晶片組合改變。報告預期VR、Trainium 3及TPU v8進入放量，第四季另有MI455與T3液冷方案帶動營收。AWS與Google受惠於平價、客製化推論需求，ASIC供貨擴張；Nvidia仍是主要晶片供應商，但2027年市占可能降至50%以下，AMD雖成長，2026至2027年市占仍低於10%。這些是凱基預估，不能當成已實現市占；晶片顆數、伺服器台數與機櫃數亦為不同口徑。
+
+供應鏈規格升級與短期遞延
+報告指出，需求擴張與規格升級帶動液冷、電源、AEC、CCL／PCB／載板，以及交換器與OCS等環節。投資建議點名的組裝廠為緯穎、緯創與鴻海，零組件供應商包括奇鋐、富世達、健策、台達電、金像電、台光電及欣興，ASIC段落另列智邦與貿聯-KY。這些公司並非全都供應相同產品，不能將整組供應鏈需求逐項套到每家公司。
+T3供應鏈調整造成部分零組件九月營收不如預期，凱基視為短期現象，預期第四季恢復季增。相較之下，客戶及機種較多元的奇鋐、富世達、台光電、貿聯-KY與欣興等營收較強。台達電亦受T3調整及泰國淹水出貨阻礙影響，因此不能把產業需求強直接等同每家廠商當期出貨都強。
+
+代理型AI帶動通用伺服器
+原文另強調通用伺服器需求。代理型AI需要CPU進行自主工作的協調與調度，結合推論需求、CSP資本支出及CPU下單動能，凱基預期2027年通用伺服器成長仍強，並有望優於2026年。這條成長來源與GPU／ASIC加速器不同，但記憶體、CPU及其他零組件供應仍可能限制實際交付。
+
+PC與手機：成本上升壓抑需求
+消費性IT產品面臨相反的壓力。記憶體與CPU成本上升推高終端售價，凱基因此下修PC及智慧型手機出貨預估。筆電ODM雖有季底拉貨，仍未改變第三季出貨年減與季減的疲弱趨勢，第四季也預期缺乏旺季效應。iPhone新機拉貨墊高九至十月營收，但報告認為助益可能短暫，不能把新機備貨高峰當成終端需求全面復甦。
+
+預估成立條件與風險
+伺服器展望以CSP及neocloud持續投入AI基礎建設、新平台量產、組裝良率與生產效率改善為基礎。原文明列的風險是CSP資本支出放緩、零組件供應吃緊及AI出貨遞延。應區分需求與實際交付：即使需求存在，平台轉換或供應鏈調整仍會影響營收認列時點。各年度出貨預估與調整列於重點及財測欄，不代表已確認訂單。"""
+    report["coverage_repair_version"] = "kgi-20261015-coverage-1"
+    report["coverage_repaired_at"] = now_tpe()
+    return True
+
+
 def main():
     global COMPANIES
     COMPANIES = registry(refresh=True)
@@ -687,6 +735,10 @@ def main():
             continue
 
         old = by_source.get(file_id)
+        if old and repair_saved_kgi_coverage(old, src):
+            reports["items"] = items
+            save_json(REPORTS_PATH, reports)
+            print("Locally improved KGI coverage; AI calls=0; send claims preserved")
         current_text_hash = hashlib.sha256(
             str(src.get("text") or "").encode()
         ).hexdigest()
