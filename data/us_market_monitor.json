@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "checked_at": "2026-10-16T17:46:44+08:00",
+  "checked_at": "2026-10-16T18:01:47+08:00",
   "source_updated_at": {
-    "FINRA": "2026-10-16T17:46:44+08:00",
+    "FINRA": "2026-10-16T18:01:47+08:00",
     "FRED": "2026-10-16T17:46:44+08:00"
   },
   "as_of_month": "2026-08",
@@ -10,7 +10,9 @@
     "FINRA": "https://www.finra.org/sites/default/files/2021-03/margin-statistics.xlsx",
     "FRED": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500&cosd=2023-01-01"
   },
-  "errors": [],
+  "errors": [
+    "FRED: TimeoutError: The read operation timed out"
+  ],
   "rows": [
     {
       "month": "2024-01",

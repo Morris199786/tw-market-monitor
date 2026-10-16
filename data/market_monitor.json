@@ -17,17 +17,26 @@
       "missing_signals": 0
     },
     "2026": {
-      "sessions": 189,
-      "missing_data": 0,
-      "missing_signals": 0
+      "sessions": 190,
+      "missing_data": 1,
+      "missing_signals": 1
     }
   },
   "calendar_complete": true,
-  "complete": true,
-  "pending": [],
-  "updated_at": "2026-10-15T22:59+08:00",
-  "as_of_date": "2026-10-15",
-  "errors": [],
+  "complete": false,
+  "pending": [
+    {
+      "date": "2026-10-16",
+      "fields": [
+        "margin"
+      ]
+    }
+  ],
+  "updated_at": "2026-10-16T18:03+08:00",
+  "as_of_date": "2026-10-16",
+  "errors": [
+    "2026-10-16 margin：ValueError: 很抱歉，沒有符合條件的資料"
+  ],
   "raw": [
     {
       "date": "2023-11-01",
@@ -5383,6 +5392,11 @@
       "foreign": -3025.55484058,
       "margin": 646415015000.0,
       "margin_previous": 651556359000.0
+    },
+    {
+      "date": "2026-10-16",
+      "index": 47111.26,
+      "foreign": -461.47162837
     }
   ],
   "rows": [
@@ -15831,6 +15845,19 @@
       "foreign_light": "red",
       "margin_light": "red",
       "intersection": "red"
+    },
+    {
+      "date": "2026-10-16",
+      "index": 47111.26,
+      "foreign": -461.47162837,
+      "relative": null,
+      "z": -1.4453058484572727,
+      "p10": 0.9014698507553001,
+      "relative5": null,
+      "relative20": null,
+      "foreign_light": "red",
+      "margin_light": null,
+      "intersection": null
     }
   ],
   "scope": "上市全市場；外資及陸資不含外資自營商；融資金額餘額；加權指數",
