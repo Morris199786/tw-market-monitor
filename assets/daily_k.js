@@ -627,7 +627,6 @@
     let end = bars.length;
 
     let selected = bars.length - 1;
-    let crossY = null;
     let inspecting = false;
 
     let size = {
@@ -1111,10 +1110,8 @@
         const b = bars[selected];
         const x = px(selected);
 
-        const cy =
-          crossY == null
-            ? py(b.close)
-            : Math.max(top, Math.min(g.bbottom, crossY));
+        // Snap the crosshair to the selected candle's close on every redraw.
+        const cy = py(b.close);
 
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
@@ -1130,25 +1127,7 @@
         ctx.stroke();
         ctx.setLineDash([]);
 
-        const label =
-          cy <= bottom
-            ? fmt(
-                hi -
-                (cy - top) /
-                (bottom - top) *
-                (hi - lo),
-                0
-              )
-            : cy >= g.btop
-              ? fmt((zeroY - cy) * 2 / (g.bbottom - g.btop) * g.branchMax, 0)
-            : cy >= vtop && cy <= vbottom
-              ? fmt(
-                  (vbottom - cy) /
-                  (vbottom - vtop) *
-                  g.maxVol,
-                  0
-                )
-              : '';
+        const label = priceFmt(b.close);
 
         if (label) {
           ctx.font = '11px system-ui';
@@ -1244,7 +1223,6 @@
 
         if (selected < start || selected >= end) {
           inspecting = false;
-          crossY = null;
         }
       }
 
@@ -1295,7 +1273,6 @@
         )
       );
 
-      crossY = p.y;
       inspecting = true;
 
       schedule();
@@ -1310,7 +1287,6 @@
 
     function clearInspect() {
       inspecting = false;
-      crossY = null;
 
       schedule();
     }
@@ -1520,7 +1496,6 @@
          * 避免十字線停在畫面中央
          */
         inspecting = false;
-        crossY = null;
       }
 
       if (gesture.type === 'pan') {
@@ -1688,7 +1663,6 @@
 
       bounds();
 
-      crossY = null;
       inspecting = true;
 
       schedule();
@@ -1724,7 +1698,6 @@
           selected = bars.length - 1;
 
           inspecting = false;
-          crossY = null;
 
           bounds();
           schedule();
