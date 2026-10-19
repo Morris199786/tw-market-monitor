@@ -451,8 +451,9 @@
       .setProperty(
         "font-size",
         `${(
-          base *
-          scale
+          el.id === "reportSearch"
+            ? Math.max(16, base * scale)
+            : base * scale
         ).toFixed(
           2
         )}px`,

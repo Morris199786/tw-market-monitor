@@ -27,6 +27,26 @@
     none: "研究報告"
   };
 
+  // Display/filter classification only; never changes stored rating or paid-call state.
+  function reportAction(r) {
+    if (r.action === "initiate") return "initiate";
+    if (r.validation_status === "needs_review") return r.action || "none";
+    const price = value => {
+      if (value == null || String(value).trim() === "") return null;
+      const n = Number(String(value).replace(/,/g, ""));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const oldPrice = price(r.target_price_old);
+    const newPrice = price(r.target_price_new);
+    if (oldPrice !== null && newPrice !== null) {
+      if (newPrice > oldPrice) return "upgrade";
+      if (newPrice < oldPrice) return "downgrade";
+    } else if (["upgrade", "downgrade"].includes(r.target_price_action)) {
+      return r.target_price_action;
+    }
+    return r.action || "none";
+  }
+
   let allReports = [];
   let currentFilter = "all";
   let currentQuery = "";
@@ -477,9 +497,9 @@
 
     if (tp) {
       const targetClass =
-        r.action === "upgrade"
+        reportAction(r) === "upgrade"
           ? "report-target-up"
-          : r.action === "downgrade"
+          : reportAction(r) === "downgrade"
           ? "report-target-down"
           : "";
 
@@ -583,8 +603,8 @@
 
   function card(r) {
     const action =
-      actionMap[r.action] ||
-      r.action ||
+      actionMap[reportAction(r)] ||
+      reportAction(r) ||
       "研究報告";
 
     const stockTitle =
@@ -630,7 +650,7 @@
 
           <span
             class="report-action ${actionClass(
-              r.action
+              reportAction(r)
             )}"
           >
             ${highlightedText(action)}
@@ -715,7 +735,7 @@
   function matches(r) {
     const okFilter =
       currentFilter === "all" ||
-      r.action === currentFilter;
+      reportAction(r) === currentFilter;
 
     const q =
       normalizeSearchText(
@@ -1004,6 +1024,7 @@
         width: 100%;
         box-sizing: border-box;
         padding-right: 82px !important;
+        font-size: 16px !important;
       }
 
       #reports .report-search-clear {
