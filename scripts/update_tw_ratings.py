@@ -498,23 +498,32 @@ def main():
     elif not DATA_PATH.exists():
         save_json(DATA_PATH, {"updated_at": now_tpe(), "date": "", "items": []})
 
-    # 只推本次新辨識出來的上下調，同一筆不重複
+    # One notification for all new rating changes in this update.
+    from report_digest import send_digest, rating_entry
+    attempted = set(state.get("telegram_attempted_ids", []))
+    pending = {}
     for item in newly_found_items:
-        key = (
-            item.get("notification_key")
-            or notification_key(item)
-        )
-
-        if key in telegram_sent:
-            continue
-
-        if send_telegram(item):
-            telegram_sent.add(key)
+        key = item.get("notification_key") or notification_key(item)
+        if key not in telegram_sent and key not in attempted:
+            pending[key] = item
 
     state["updated_at"] = now_tpe()
     state["processed_file_ids"] = list(processed)[-3000:]
     state["telegram_ids"] = list(telegram_sent)[-5000:]
     save_json(STATE_PATH, state)
+    if pending and TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        # Use the existing persistent claim mechanism; never retry a timed-out send.
+        from update_reports_ai import commit_claim_before_external_call
+        attempted.update(pending)
+        state["telegram_attempted_ids"] = sorted(attempted)
+        save_json(STATE_PATH, state)
+        commit_claim_before_external_call("Telegram ratings digest")
+        if send_digest(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "台股評等",
+                       [rating_entry(item) for item in pending.values()],
+                       SITE_URL + "?page=reports&mode=ratings"):
+            telegram_sent.update(pending)
+            state["telegram_ids"] = list(telegram_sent)[-5000:]
+            save_json(STATE_PATH, state)
 
 
 if __name__ == "__main__":

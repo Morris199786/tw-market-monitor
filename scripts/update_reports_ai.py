@@ -852,24 +852,28 @@ def main():
     pushed = 0
     telegram_pushed = 0
 
-    for report in items:
-        if report.get("validation_status") != "verified":
-            continue
-        # Existing sent records and attempted records are permanently skipped.
-        if report.get("telegram_sent_at") or report.get("telegram_attempted_at"):
-            continue
-        file_id = report.get("source_file_id")
-        if not file_id:
-            continue
-        # Claim the send before the network request. Never retry, even on timeout.
-        report["telegram_attempted_at"] = now_tpe()
+    from report_digest import send_digest
+    pending_notifications = [
+        report for report in items
+        if report.get("validation_status") == "verified"
+        and not report.get("telegram_sent_at")
+        and not report.get("telegram_attempted_at")
+        and report.get("source_file_id")
+    ]
+    if pending_notifications and TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        # Persist every member's claim before a single network operation.
+        for report in pending_notifications:
+            report["telegram_attempted_at"] = now_tpe()
         reports["items"] = items
         save_json(REPORTS_PATH, reports)
-        commit_claim_before_external_call("Telegram " + file_id)
-        if send_telegram(report):
-            report["telegram_sent_at"] = now_tpe()
-            telegram_pushed += 1
-            reports["items"] = items
+        commit_claim_before_external_call("Telegram report digest")
+        entries = [build_push(report)[1] for report in pending_notifications]
+        if send_digest(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+                       f"券商報告彙整｜新增 {len(entries)} 份", entries,
+                       SITE_URL + "?page=reports"):
+            for report in pending_notifications:
+                report["telegram_sent_at"] = now_tpe()
+            telegram_pushed = 1
             save_json(REPORTS_PATH, reports)
 
     items.sort(
