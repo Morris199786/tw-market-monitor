@@ -1,0 +1,21 @@
+name: Self Report Event Study
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Study historical self-report triggers
+        run: python scripts/self_report_event_study.py --attention-start 2026-09-01 --start 2026-09-29 --asof "$(TZ=Asia/Taipei date +%F)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: self-report-event-study
+          path: self_report_event_study/
+          retention-days: 30
