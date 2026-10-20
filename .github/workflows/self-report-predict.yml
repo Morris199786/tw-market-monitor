@@ -1,0 +1,85 @@
+name: Self Report Prediction
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "歷史資料起始日期"
+        required: true
+        default: "2026-09-01"
+        type: string
+
+      asof_date:
+        description: "預測截止日期（使用當日已知資料預測下一交易日）"
+        required: true
+        default: "2026-10-19"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-report-prediction
+  cancel-in-progress: false
+
+jobs:
+  predict:
+    name: Backtest and Predict
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Check required files
+        run: |
+          test -f self_report_predict.py || {
+            echo "ERROR: Missing self_report_predict.py"
+            exit 1
+          }
+
+          test -f data/self_reports.json || {
+            echo "ERROR: Missing data/self_reports.json"
+            exit 1
+          }
+
+      - name: Run prediction and backtest
+        run: |
+          python self_report_predict.py \
+            --backtest \
+            --start "${{ inputs.start_date }}" \
+            --asof "${{ inputs.asof_date }}" \
+            --reports data/self_reports.json \
+            --out self_report_model
+
+      - name: Show backtest summary
+        if: success()
+        run: |
+          echo "========== BACKTEST SUMMARY =========="
+          cat self_report_model/backtest_summary.csv
+
+          echo ""
+          echo "========== PREDICTIONS =========="
+          cat self_report_model/predictions.json
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-prediction-results
+          path: |
+            self_report_model/
+          retention-days: 30
+          if-no-files-found: warn
