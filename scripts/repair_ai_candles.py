@@ -24,10 +24,14 @@ def main():
             data = load_json(p, {}).get('stocks', {})
             if data:
                 snapshots.append((p.stem, data))
-    if len(snapshots) < 40 or snapshots[-1][0] != day:
-        print('AI candle repair skipped: current 40-day market history not ready')
+    # Match update_ai.py: at least 10 market dates ending on the current day.
+    # Historical candle repair must not be skipped merely because fewer than
+    # 40 market snapshots have been committed.
+    if len(snapshots) < 10 or snapshots[-1][0] != day:
+        print(f'AI candle repair skipped: market history has {len(snapshots)} dates; latest={snapshots[-1][0] if snapshots else None}, expected={day}', flush=True)
         return
     dates = {d for d, _ in snapshots[-40:]}
+    print(f'AI candle repair using {len(dates)} market dates ({min(dates)} through {max(dates)})', flush=True)
     universe = tech_tickers(master)
     candidates = {t: m for t, m in master.items()
                   if t in universe and ordinary_ticker(t)
