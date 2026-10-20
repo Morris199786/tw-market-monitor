@@ -353,8 +353,10 @@ def offline_replay(args, out, now):
             if not (args.backtest_start <= raw['date'] <= (args.asof or '9999-12-31')):
                 continue
             row = dict(raw)
-            for key in ('label', 'recent', 'gap', 'reason6', 'n1', 'n3', 'n5', 'n10', 'n20', 'reason6_flag'):
-                row[key] = int(row[key])
+            for key in ('label', 'recent', 'gap', 'reason6', 'n1', 'n3', 'n5', 'n10', 'n20'):
+                row[key] = int(row.get(key) or 0)
+            # Archived CSVs may omit this derived column.
+            row['reason6_flag'] = int(row.get('reason6_flag') or (row['reason6'] > 0))
             row['days_since_report'] = int(row['days_since_report']) if row.get('days_since_report') else None
             row['market_pattern'] = bucket(row)
             row['notice_intensity'] = 'high' if row['n5'] >= 3 else 'mid' if row['n5'] == 2 else 'low'
