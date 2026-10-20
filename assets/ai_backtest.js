@@ -22,28 +22,28 @@
     {
       key: 'ma10',
       label: '跌破 MA10',
-      description: '收盤跌破 10 日均線提前出場',
+      description: '收盤跌破 10 日均線，次交易日開盤出場',
       summaryKey: 'ma10_summary',
       prefix: ''
     },
     {
       key: 'ma20',
       label: '跌破 MA20',
-      description: '收盤跌破 20 日均線提前出場',
+      description: '收盤跌破 20 日均線，次交易日開盤出場',
       summaryKey: 'ma20_summary',
       prefix: 'ma20_'
     },
     {
       key: 'stop5',
       label: '停損 5%',
-      description: '推薦次日起，收盤跌幅達 5% 即提前出場',
+      description: '推薦次日起，收盤跌幅達 5%，次交易日開盤出場',
       summaryKey: 'stop5_summary',
       prefix: 'stop5_'
     },
     {
       key: 'stop10',
       label: '停損 10%',
-      description: '推薦次日起，收盤跌幅達 10% 即提前出場',
+      description: '推薦次日起，收盤跌幅達 10%，次交易日開盤出場',
       summaryKey: 'stop10_summary',
       prefix: 'stop10_'
     }
@@ -426,7 +426,7 @@
             ${
               p5.status === 'complete'
                 ? fmtPct(p5.value)
-                : '進行中'
+                : p5.status === 'unavailable' ? '資料不足' : '進行中'
             }
           </b>
         </div>
@@ -438,7 +438,7 @@
             ${
               p10.status === 'complete'
                 ? fmtPct(p10.value)
-                : '進行中'
+                : p10.status === 'unavailable' ? '資料不足' : '進行中'
             }
           </b>
         </div>
@@ -812,7 +812,7 @@
                     ' 起累積'
                   : '尚未開始累積'
               }
-              ｜以選股基準日收盤價計算
+              ｜次交易日開盤進場，已扣交易成本
             </span>
 
           </span>
@@ -936,24 +936,22 @@
 
             <br><br>
 
-            五種策略使用相同已滿期樣本
+            新策略只累積實際保存訊號；各出場方式只計入滿期且資料完整的樣本。買賣各0.1425%手續費、賣出0.3%稅、買賣各0.1%滑價；未還原除權息
 
             <br><br>
 
             加權指數與 OTC 同期平均漲跌幅：
-            逐筆依推薦日收盤至第5／10個交易日收盤計算，
-            並依相同成熟選股訊號權重平均；
-            官方指數資料未齊全時顯示 —
+            新策略尚未接入同進場時點的指數比較，暫顯示 —，不沿用舊策略比較值
 
             <br><br>
 
             MA10／MA20從推薦次一交易日開始檢查，
-            收盤跌破均線即按當日收盤價模擬出場
+            收盤跌破均線後按次一交易日開盤價模擬出場
 
             <br><br>
 
             停損 5%／10% 同樣從推薦次一交易日開始檢查，
-            收盤跌幅達停損門檻時按當日收盤價模擬出場
+            收盤跌幅達停損門檻後按次一交易日開盤價模擬出場，跳空可能超過停損幅度
 
             <br><br>
 
