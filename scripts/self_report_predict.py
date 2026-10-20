@@ -16,12 +16,12 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-walkforward-market-pattern-v5'
+VERSION = '2026-10-20-monthly-eps-exclusion-v7'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
-    'twse': '前日注意交易；分開評估20日首次、重複注意、注意原因及公告冷卻期',
-    'tpex': '前日注意交易；分開評估5日1次、2次、3次以上及公告冷卻期',
+    'twse': '前日注意；優先20日首次注意，重複注意僅依歷史機率挑選',
+    'tpex': '前日注意；優先近5日剛好3次，4次以上降低優先序',
 }
 
 def read(path):
@@ -152,10 +152,7 @@ def bucket(row):
 def eligible(row):
     if row['n1'] == 0:
         return False
-    if row['days_since_report'] is not None and row['days_since_report'] <= 5:
-        return False
-    # Unlike v4, don't discard all repeated TWSE attention cases or first TPEx notices.
-    # Probability + chronological calibration decides whether to include them.
+    # Only active attention candidates; no day-based cooldown as a model signal.
     return True
 
 def make_rows(cutoff, target, cal, notices, events, master):
@@ -176,12 +173,14 @@ def make_rows(cutoff, target, cal, notices, events, master):
             continue
         hist = sorted(by_ticker[ticker], key=lambda x: x['date'])
         history = prior[ticker]
-        if any(x['month'] == previous_month(target) for x in history):
+        # Hard exclusion for BOTH markets: once the latest target-month EPS/self-report
+        # has been announced by cutoff, the company cannot announce it again.
+        # This uses only filings known as of cutoff, never future labels.
+        target_month = previous_month(target)
+        if any(x['month'] == target_month for x in history):
             continue
         last_report = max((x['date'] for x in history), default=None)
         report_gap = (dt.date.fromisoformat(cutoff) - dt.date.fromisoformat(last_report)).days if last_report else None
-        if any(x['month'] is None and x['date'] >= (dt.date.fromisoformat(cutoff) - dt.timedelta(days=5)).isoformat() for x in history):
-            continue
         counts = {f'n{n}': sum(x['date'] in ds for x in hist) for n, ds in windows.items()}
         if not counts['n20'] and not any(x['kind'] == 'voluntary' for x in history):
             continue
@@ -202,12 +201,12 @@ def make_rows(cutoff, target, cal, notices, events, master):
 class Model:
     # All statistics computed only from days strictly preceding prediction day.
     LEVELS = (('market',), ('market', 'market_pattern'),
-              ('market', 'market_pattern', 'reason6_flag'),
-              ('market', 'market_pattern', 'cooldown'),
-              ('market', 'notice_intensity', 'reason6_flag'))
+              ('market', 'market_pattern', 'recent'),
+              ('market', 'market_pattern', 'reason6_flag'))
     PRIOR_WEIGHT = 24
     def __init__(self, rows):
-        self.base = (sum(r['label'] for r in rows) + 1) / (len(rows) + 20)
+        eligible_rows = [r for r in rows if r['rule_eligible']]
+        self.base = (sum(r['label'] for r in eligible_rows) + 1) / (len(eligible_rows) + 20)
         self.stats = []
         for keys in self.LEVELS:
             groups = collections.defaultdict(lambda: [0, 0])
@@ -230,8 +229,13 @@ class Model:
         return p, support
 
 def choose(rows, threshold=MIN_PROBABILITY):
+    def priority(r):
+        # The market-specific event frequencies were discovered retrospectively;
+        # probability remains primary, and these are conservative tie-breaks.
+        pattern = (r['n20'] == 1) if r['market'] == 'twse' else (r['n5'] == 3)
+        return (-r['probability'], -int(pattern), -r['cell_samples'], r['ticker'])
     return sorted((r for r in rows if r['rule_eligible'] and r['probability'] >= threshold),
-                  key=lambda r: (-r['probability'], -r['cell_samples'], r['ticker']))[:CAP]
+                  key=priority)[:CAP]
 
 def metrics(predictions, actual):
     n = len(predictions); hits = sum(x['label'] for x in predictions)
@@ -321,14 +325,14 @@ def main():
             reasons = [f'最近注意交易距今{row["gap"]}交易日',
                        f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次、近20日注意{row["n20"]}次',
                        MARKET_RULES.get(row['market'], '未知市場'),
-                       '無歷史自結' if row['days_since_report'] is None else f'距前次自結{row["days_since_report"]}天']
+                       f'預測月份{previous_month(provisional)}尚未公告EPS／自結']
             clean = {k: v for k, v in row.items() if k not in ('label', 'date')}
             clean.update(probability=p, score=round(p*100, 2), cell_samples=support, reasons=reasons)
             forecast.append(clean)
         forecast = choose(forecast)
     warnings = [
-        '新模型將上市重複注意及上櫃首次注意納入候選，再依歷史條件機率篩選',
-        '每日0至10檔，不強制補滿；最低估計機率15%',
+        '上市及上櫃一致：已公告預測月份EPS／自結者在評分前排除；不以任意天數作為冷卻期',
+        '每日0至10檔，不強制補滿；最低估計機率15%；上市20日首次與上櫃5日剛好3次優先',
         '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
         '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
     ]
@@ -342,7 +346,7 @@ def main():
                    market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
                asof=cutoff, prediction_day=target, prediction_window='下一交易日',
-               count=len(forecast), model='market-pattern-hierarchical-walkforward',
+               count=len(forecast), model='monthly-eps-excluded-market-pattern-walkforward',
                threshold=MIN_PROBABILITY, items=forecast, candidates=forecast,
                source_status=status, evaluation=summary, warnings=warnings)
     write(out / 'predictions.json', obj)
