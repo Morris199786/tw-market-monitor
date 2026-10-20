@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-attention-only-v11'
+VERSION = '2026-10-20-attention-only-v12-extended'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
@@ -439,6 +439,63 @@ def offline_replay(args, out, now):
                     f'已公告目標月份排除：{excluded} 筆\n')
 
 
+
+def extend_archive(args):
+    """Build 9/30--10/19 features using current repository reports and one cached
+    notice download. Preserve immutable earlier feature snapshots; replay offline.
+    """
+    old_scores, old_events = args.offline_scores, args.offline_events
+    if not old_scores or not old_events or not old_scores.is_file() or not old_events.is_file():
+        raise FileNotFoundError('Historical archive CSV files are required')
+    end = args.asof or '2026-10-19'
+    start_new = '2026-09-30'
+    if end < start_new:
+        raise ValueError('Extension end must be >= 2026-09-30')
+    # A month of lookback ensures n20 and the latest notice streak are computed
+    # using only information available before each prediction date.
+    notices, source_status = attention('2026-09-01', end, args.attention_cache,
+                                       ('twse', 'tpex'))
+    master = read(args.root / 'data/master.json')['stocks']
+    current_events, rejected = reports(args.root / args.reports, master, ('twse', 'tpex'))
+    old_event_rows = []
+    with old_events.open(encoding='utf-8-sig', newline='') as f:
+        old_event_rows = list(csv.DictReader(f))
+    all_events = {}
+    for e in old_event_rows + current_events:
+        if e.get('date', '') <= end and e.get('kind') in ('attention', 'voluntary'):
+            key = (e['date'], e['ticker'], e.get('month'), e['kind'])
+            all_events[key] = e
+    events = sorted(all_events.values(), key=lambda e: (e['date'], e['ticker']))
+    cal = calendar(args.root, '2026-09-01', end, notices)
+    days_new = [d for d in cal if start_new <= d <= end]
+    if not days_new or days_new[-1] != end:
+        raise ValueError('Trading calendar does not reach requested end; cannot claim full coverage')
+    new_rows = []
+    for day in days_new:
+        i = cal.index(day)
+        if i == 0:
+            raise ValueError('Missing previous trading session for '+day)
+        new_rows.extend(make_rows(cal[i-1], day, cal, notices, events, master))
+    old_rows = []
+    with old_scores.open(encoding='utf-8-sig', newline='') as f:
+        old_rows = [r for r in csv.DictReader(f) if r.get('date', '') < start_new]
+    if not old_rows:
+        raise ValueError('Historical scores before 9/30 missing')
+    if not any(e['date'] >= start_new and e['kind'] == 'attention' for e in events):
+        raise ValueError('No post-9/29 attention-triggered reports; repository data may be incomplete')
+    tmp = args.root / args.out / 'merged_input'
+    tmp.mkdir(parents=True, exist_ok=True)
+    csvout(tmp / 'walk_forward_scores.csv', old_rows + new_rows)
+    csvout(tmp / 'event_audit.csv', events)
+    write(tmp / 'extension_status.json', dict(old_rows=len(old_rows), new_rows=len(new_rows),
+          new_days=days_new, historical_events=len(old_event_rows),
+          merged_events=len(events), rejected_current=len(rejected), attention=source_status))
+    args.offline_scores = tmp / 'walk_forward_scores.csv'
+    args.offline_events = tmp / 'event_audit.csv'
+    print('Extension ready: '+str(len(days_new))+' new trading days, '
+          +str(len(new_rows))+' new candidate rows', flush=True)
+    offline_replay(args, args.root / args.out, dt.datetime.now(TZ))
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, default=ROOT)
@@ -451,6 +508,7 @@ def main():
     parser.add_argument('--attention-cache', type=Path)
     parser.add_argument('--offline-scores', type=Path, help='Archived walk_forward_scores.csv: do not fetch anything')
     parser.add_argument('--offline-events', type=Path, help='Archived event_audit.csv')
+    parser.add_argument('--extend-archive', action='store_true', help='Append 9/30--10/19 using repository filings and cached notices, then offline replay')
     parser.add_argument('--markets', choices=['both', 'twse', 'tpex'], default='both')
     parser.add_argument('--prediction-date', default='')
     args = parser.parse_args()
@@ -461,6 +519,9 @@ def main():
     markets = ('twse', 'tpex') if args.markets == 'both' else (args.markets,)
     out = args.root / args.out
     out.mkdir(parents=True, exist_ok=True)
+    if args.extend_archive:
+        extend_archive(args)
+        return
     if args.offline_scores:
         offline_replay(args, out, now)
         return
