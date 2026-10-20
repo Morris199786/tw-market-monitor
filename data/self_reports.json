@@ -1,7 +1,7 @@
 {
-  "updated_at": "2026-10-20T15:34+08:00",
+  "updated_at": "2026-10-20T16:07+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-20-v31-attention-partial-eps-visible",
+  "filter_version": "2026-10-20-v32-durable-telegram-dedup",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
     "candidate_count": 171,
@@ -1209,28 +1209,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 5,
+      "rows": 6,
       "self_reports": 4,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 65,
-          "hits": 5
+          "rows": 78,
+          "hits": 6
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 65,
+          "rows": 78,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 65,
+          "rows": 78,
           "hits": 1
         },
         {
@@ -1252,7 +1252,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1216",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1268,7 +1268,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1437",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1285,7 +1285,7 @@
           "mode": "company_rescue",
           "ticker": "1504",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1301,7 +1301,7 @@
           "mode": "company_rescue",
           "ticker": "1626",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1397,7 +1397,7 @@
           "mode": "company_rescue",
           "ticker": "2881",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1444,7 +1444,7 @@
         {
           "mode": "company_rescue",
           "ticker": "4540",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1573,6 +1573,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "5701 劍湖山 115/10/20 14:50:01 公告本公司115年09月份自結合併 財務報告之負債比率、流動比率及速 動比率。"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "6707 富基電通 115/10/20 15:38:46 公告本公司115年9月份自結合併財務報表之負債比率、流動 比率及速動比率"
         }
       ],
       "error": ""
