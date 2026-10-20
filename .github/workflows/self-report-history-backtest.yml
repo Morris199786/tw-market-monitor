@@ -25,8 +25,10 @@ jobs:
           run-id: 39398945984
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: self_report_historical
-      - name: Verify historical archive is present
+      - name: Verify offline historical archive is present
         run: |
+          test -s self_report_historical/model/walk_forward_scores.csv
+          test -s self_report_historical/model/event_audit.csv
           test -s self_report_historical/self_reports_history.json
           python - <<'PY'
           import json
@@ -35,9 +37,9 @@ jobs:
           assert d.get('items'), 'Historical events missing'
           print('Reused',len(d['items']),'archived MOPS records')
           PY
-      - name: Market-separated chronological backtest (no historical MOPS downloads)
+      - name: Offline chronological backtest (zero HTTP requests)
         run: |
-          python scripts/self_report_predict.py --backtest --start 2026-06-01 --asof 2026-09-29 --backtest-start 2026-07-01 --reports self_report_historical/self_reports_history.json --out self_report_historical/model
+          python scripts/self_report_predict.py --backtest --asof 2026-09-29 --backtest-start 2026-07-01 --offline-scores self_report_historical/model/walk_forward_scores.csv --offline-events self_report_historical/model/event_audit.csv --out self_report_historical/model
       - name: Upload historical results
         if: always()
         uses: actions/upload-artifact@v4
