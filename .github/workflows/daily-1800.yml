@@ -2,13 +2,8 @@ name: Daily close update
 
 on:
   schedule:
-    # 台灣 18:00 = UTC 10:00
     - cron: "0 10 * * *"
-
-    # 台灣 18:20 = UTC 10:20
-    # 補跑一次，避免官方資料 18:00 尚未完全更新
     - cron: "20 10 * * *"
-
   workflow_dispatch:
 
 permissions:
@@ -21,82 +16,60 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Sync latest main
         run: |
           git fetch origin main
           git checkout main
           git reset --hard origin/main
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Run daily update
+        id: daily
+        continue-on-error: true
         run: python scripts/update_all.py
-
-      - name: Commit updated data
+      - name: Commit updated data even if AI selection failed
         run: |
           set -e
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          echo "Saving generated data..."
-
           rm -rf /tmp/generated-data
           mkdir -p /tmp/generated-data
-
           cp -a data/. /tmp/generated-data/
-
           success=false
-
           for i in 1 2 3 4 5; do
-            echo "======================================"
-            echo "Push attempt $i/5"
-            echo "======================================"
-
             git fetch origin main
             git reset --hard origin/main
-
             rm -rf data
             mkdir -p data
-
             cp -a /tmp/generated-data/. data/
-
             git add data
-
             if git diff --cached --quiet; then
               echo "No data changes"
               success=true
               break
             fi
-
             git commit -m "data: daily close update"
-
             if git push origin HEAD:main; then
-              echo "Push successful"
               success=true
               break
             fi
-
-            echo "Remote changed during push."
-            echo "Retrying with latest main..."
-
             sleep 3
           done
-
           if [ "$success" != "true" ]; then
-            echo "Push failed after 5 attempts"
+            echo "::error::Could not push daily data after five attempts"
             exit 1
           fi
+      - name: Report partial update failure
+        if: steps.daily.outcome == 'failure'
+        run: |
+          echo "::error::One or more update scripts failed. Successful data was committed; inspect Run daily update for details."
+          exit 1
