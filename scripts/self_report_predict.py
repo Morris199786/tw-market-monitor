@@ -513,7 +513,7 @@ def main():
     parser.add_argument('--prediction-date', default='')
     args = parser.parse_args()
     now = dt.datetime.now(TZ)
-    latest_complete = (now.date() - dt.timedelta(days=1)).isoformat()
+    latest_complete = (now.date() if now.hour >= 20 else now.date() - dt.timedelta(days=1)).isoformat()
     requested = args.asof or latest_complete
     end = min(requested, latest_complete)
     markets = ('twse', 'tpex') if args.markets == 'both' else (args.markets,)
