@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="./assets/tw_ratings.css?v=20260930-v1">
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
 <link rel="stylesheet" href="./assets/earnings_tracker.css?v=20261002-v1">
+<link rel="stylesheet" href="./assets/self_report_forecast.css?v=20261020-v1">
 
 <style>
   #selfReportSearchInput{
@@ -125,7 +126,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="heat" class="page"><div class="hero"><div><div class="kicker">SECTOR HEATMAP</div><h1>市場熱力圖</h1><p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p></div><div class="badges"><span class="badge live">盤中每 5 分鐘</span><span id="heatTime" class="badge"></span></div></div><div id="heatGrid" class="heatgrid"></div></section>
 <section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>券商報告</h1><p>券商研究報告與台股評等／目標價調整</p></div><span class="badge">每 15 分鐘檢查</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">券商報告</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div></section>
 <section id="selfReports" class="page">
-<div class="hero"><div><div class="kicker">EARNINGS TRACKER</div><h1>財報追蹤</h1><p>自結公布｜即將開財報｜季度財報</p></div><div class="badges"><span id="selfWeekBadge" class="badge"></span></div></div>
+<div class="hero"><div><div class="kicker">EARNINGS TRACKER</div><h1>財報追蹤</h1><p>自結公布｜盤後可能公布自結｜即將開財報｜季度財報</p></div><div class="badges"><span id="selfWeekBadge" class="badge"></span></div></div>
 <div id="selfWeekTabs" class="week-strip"></div>
 <div class="card self-report-search-card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px">
 <div class="self-report-search-wrap" style="position:relative;flex:1 1 260px;min-width:0">
@@ -178,6 +179,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/heatmap_auto_refresh.js?v=20261008-capital-direction-v1"></script>
 <script src="./assets/refresh_controller.js?v=20261002-performance-v1"></script>
 <script src="./assets/earnings_tracker.js?v=20261002-v1"></script>
+<script src="./assets/self_report_forecast.js?v=20261020-v1"></script>
 <script>
 (function () {
   const params = new URLSearchParams(window.location.search);
