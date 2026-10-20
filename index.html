@@ -67,6 +67,29 @@
 </style>
 
 <link rel="stylesheet" href="./assets/market_monitor.css?v=20261013-margin-change">
+<style id="site-dark-palette-20261020">
+/* 深色模式統一為參考網站的石墨灰色系；淺色模式不受影響 */
+html[data-theme="dark"]{
+  --bg:#171a1f;--card:#22272e;--ink:#e5e8ec;--muted:#b4bbc5;
+  --line:#343c45;--nav:#15191e;--soft:#292f37;
+  --shadow:0 4px 16px rgba(0,0,0,.16)
+}
+html[data-theme="dark"] header{background:#171b20!important}
+html[data-theme="dark"] .nav.active,html[data-theme="dark"] .nav:hover{background:#303944!important}
+html[data-theme="dark"] .icon-btn,html[data-theme="dark"] #mobileNav{background:#292f37!important;border-color:#414a55!important}
+html[data-theme="dark"] .tab.active,html[data-theme="dark"] .heat-weight-btn.active{background:#384452!important;border-color:#546374!important;color:#f4f6f8!important}
+html[data-theme="dark"] .card,html[data-theme="dark"] .criteria,html[data-theme="dark"] .badge{background:var(--card);border-color:var(--line)}
+html[data-theme="dark"] .heat-sector-table .heat-table-cell.up{background:rgba(191,76,78,.43)!important;color:#f0dfe0!important}
+html[data-theme="dark"] .heat-sector-table .heat-table-cell.down{background:rgba(23,137,100,.46)!important;color:#d7eee5!important}
+html[data-theme="dark"] #heatGrid .heat-sector-table th{background:#292f37!important}
+html[data-theme="dark"] #heatGrid .heat-sector-table td:first-child{background:#22272e!important}
+html[data-theme="dark"] #heatGrid .heat-sector-table tbody tr:nth-child(even):not(.heat-table-detail):not(.heat-otc-benchmark) td:first-child{background:#262c33!important}
+html[data-theme="dark"] #heatGrid .heat-sector-table tr.heat-otc-benchmark td{background:#303944!important}
+html[data-theme="dark"] .mobile-page-nav-menu{background:#22272e!important;border-color:#414a55!important}
+html[data-theme="dark"] .mobile-page-nav-item{color:#e5e8ec!important}
+html[data-theme="dark"] .mobile-page-nav-item.active{background:#303c4b!important;color:#c6d9f4!important}
+html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!important;border-color:#343c45!important;color:#d5dbe2!important}
+</style>
 </head>
 <body>
 <header><div class="head">
@@ -139,7 +162,7 @@
 </section>
 </main>
 
-<script src="./assets/app.js?v=20261020-yesterday-dailyk-fix"></script>
+<script src="./assets/app.js?v=20261020-otc-sort-theme-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20261014-visible-viewport"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
