@@ -1,26 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""自結預測：以 9/29 事件研究規律為基礎，上市與上櫃分別估計。
+"""自結預測：依 2026/09/29 起的事件研究，上市/上櫃分流與有證據才推薦
 
-僅使用預測截止日前已知資料；逐日 walk-forward 驗證；不發送通知、不修改正式自結資料。
-標準函式庫即可執行，沿用既有 self-report-predict.yml 與輸出檔名。
+不修改自結抓取與 Telegram；不使用付費 API；維持既有 yml 與輸出格式
 """
 import argparse
 import collections
 import csv
 import datetime as dt
 import json
+import os
 import re
 import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-VERSION = '2026-10-20-event-rules-market-v2'
+VERSION = '2026-10-20-event-rules-selective-v3'
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-CAP = 10
-# 固定的最低機率門檻：不在每個回測日反覆尋找最佳分數/門檻
+CAP = 10  # 上限，絕不是每天固定推薦 10 檔
 MIN_PROBABILITY = 0.15
+# 事前依事件研究訂定「資格」而非反覆挑選回測最優門檻
+# 上市：當日注意交易是主要訊號，密集出現並未提高公告率
+# 上櫃：當日注意交易 + 五日累積 >=3 次是觀察到的較強訊號
+MARKET_RULES = {
+    'twse': '當日注意交易且近3日僅1次（排除密集反覆注意交易）',
+    'tpex': '當日注意交易且近5日累積至少3次',
+}
 
 
 def read(path):
@@ -37,6 +43,7 @@ def write(path, value):
 
 def csvout(path, rows):
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         path.write_text('', encoding='utf-8')
         return
@@ -76,13 +83,18 @@ def parse_notices(obj, market, start, end):
         if not isinstance(row, list) or len(row) <= max(ti, ni, ri, di):
             continue
         ticker = str(row[ti]).strip()
-        date = notice_date(row[di])
-        if not re.fullmatch(r'[1-9]\d{3}', ticker) or not date or not start <= date <= end:
+        day = notice_date(row[di])
+        if not re.fullmatch(r'[1-9]\d{3}', ticker) or not day or not start <= day <= end:
             continue
-        found[(date, ticker)] = dict(date=date, ticker=ticker, name=str(row[ni]),
-                                     market=market, reason=str(row[ri]))
+        key = (day, ticker)
+        reason = str(row[ri])
+        if key in found:
+            # 同日同股有多條注意理由時保留全部理由，但僅計一次注意交易
+            found[key]['reason'] += ' ' + reason
+        else:
+            found[key] = dict(date=day, ticker=ticker, name=str(row[ni]), market=market, reason=reason)
     if not found:
-        raise ValueError(f'{market}: 官方注意交易資料為空或解析失敗，不產生部分市場預測')
+        raise ValueError(f'{market}: 官方注意交易資料為空或解析失敗，停止產生預測')
     return sorted(found.values(), key=lambda x: (x['date'], x['ticker']))
 
 
@@ -126,18 +138,16 @@ def reports(path, master, markets):
         elif not (attention_event or voluntary):
             excluded = '公告種類需人工確認'
         elif voluntary and not month:
-            excluded = '自主公告未確認單月期間（可能是季度自結）'
+            excluded = '自主公告未確認單月期間'
         elif not re.fullmatch(r'20\d\d-\d\d-\d\d', day):
             excluded = '日期無效'
         if excluded:
             audit.append(dict(date=day, ticker=ticker, reason=excluded, subject=subject))
             continue
-        # 缺上一季 EPS 仍算自結事件；同股票同月份的更正只算第一次。
         key = (ticker, month or day)
         item = dict(date=day, ticker=ticker, month=month, market=market,
                     kind='attention' if attention_event else 'voluntary',
-                    name=x.get('name', ''), monthly_eps=x.get('monthly_eps'),
-                    quarter_eps=x.get('quarter_eps'))
+                    name=x.get('name', ''), monthly_eps=x.get('monthly_eps'), quarter_eps=x.get('quarter_eps'))
         if key not in events or day < events[key]['date']:
             events[key] = item
     return sorted(events.values(), key=lambda x: (x['date'], x['ticker'])), audit
@@ -160,15 +170,22 @@ def previous_month(day):
 
 
 def market_bucket(row):
-    """研究發現：上市重視最近一次觸發；上櫃須再區分近5日注意交易密集度。
-
-    僅定義可解釋的類別，不在此硬塞人為加分；公布機率由過去資料估計。
-    """
     if row['market'] == 'tpex':
-        n5 = row['n5']
-        return '5d>=3' if n5 >= 3 else '5d=2' if n5 == 2 else '5d<=1'
-    # 上市仍保留近3日密集度作為檢查項，但不把高頻當成必然加分。
-    return '3d>=2' if row['n3'] >= 2 else '3d<=1'
+        return '5d>=3' if row['n5'] >= 3 else '5d=2' if row['n5'] == 2 else '5d<=1'
+    return '3d>=2' if row['n3'] >= 2 else '3d=1' if row['n3'] == 1 else '3d=0'
+
+
+def eligible(row):
+    """規則先於回測固定；未達規律條件即不推薦，不硬湊10檔。"""
+    if row['n1'] == 0:
+        return False
+    if row['days_since_report'] is not None and row['days_since_report'] <= 5:
+        return False
+    if row['market'] == 'twse':
+        return row['n3'] == 1
+    if row['market'] == 'tpex':
+        return row['n5'] >= 3
+    return False
 
 
 def make_rows(cutoff, target, cal, notices, events, master):
@@ -190,9 +207,7 @@ def make_rows(cutoff, target, cal, notices, events, master):
             continue
         hist = sorted(by_ticker[ticker], key=lambda x: x['date'])
         history = prior[ticker]
-        target_month = previous_month(target)
-        # 同一月份已公布者不再推薦；若月份未知，短期內保守排除，避免重複推薦。
-        if any(x['month'] == target_month for x in history):
+        if any(x['month'] == previous_month(target) for x in history):
             continue
         last_report = max((x['date'] for x in history), default=None)
         report_gap = (dt.date.fromisoformat(cutoff) - dt.date.fromisoformat(last_report)).days if last_report else None
@@ -203,7 +218,6 @@ def make_rows(cutoff, target, cal, notices, events, master):
             continue
         gap = sum(d > hist[-1]['date'] for d in past) if hist else 99
         recent = 0 if gap == 0 else 1 if gap <= 2 else 2 if gap <= 5 else 3
-        # 注意：這裡是距「自結公告」的天數，不能誤用最近一次注意交易日。
         cooldown = '0-5' if report_gap is not None and report_gap <= 5 else '6-10' if report_gap is not None and report_gap <= 10 else '11+' if report_gap is not None else 'never'
         reason6 = sum(bool(x['date'] in windows[10] and re.search(r'第\s*[六6]\s*款', x['reason'])) for x in hist)
         row = dict(date=target, cutoff=cutoff, ticker=ticker,
@@ -211,20 +225,16 @@ def make_rows(cutoff, target, cal, notices, events, master):
                    label=int(ticker in labels), recent=recent, gap=gap, cooldown=cooldown,
                    days_since_report=report_gap, reason6=reason6, **counts)
         row['market_pattern'] = market_bucket(row)
+        row['rule_eligible'] = eligible(row)
         out.append(row)
     return out
 
 
 class Model:
-    """依上市/上櫃的不同研究規律分層，並向較大樣本平滑。
-
-    固定分組：市場 → 最近注意交易 → 市場專屬密集度 → 公告冷卻期。
-    每一層都只用訓練日期已經結束的公告，無當日答案洩漏。
-    """
+    """市場分流的平滑條件率估計；不使用同日答案或個股代碼作特徵。"""
     LEVELS = (('market',), ('market', 'recent'),
               ('market', 'recent', 'market_pattern'),
               ('market', 'recent', 'market_pattern', 'cooldown'))
-    # 固定保守先驗，避免少量樣本產生 0% 或 100% 的極端估計
     PRIOR_WEIGHT = 30
 
     def __init__(self, rows):
@@ -249,7 +259,8 @@ class Model:
 
 
 def choose(rows, threshold=MIN_PROBABILITY):
-    return sorted((r for r in rows if r['probability'] >= threshold),
+    """0～10檔，絕不因名額未滿而補入不符合條件的股票。"""
+    return sorted((r for r in rows if r['rule_eligible'] and r['probability'] >= threshold),
                   key=lambda r: (-r['probability'], -r['n1'], r['ticker']))[:CAP]
 
 
@@ -274,13 +285,13 @@ def evaluate(day_rows, events):
                 p, support = model.predict(r)
                 scored.append(dict(r, probability=p, cell_samples=support))
             picks = choose(scored)
-            # 保留上一版 Reason 7 規則作固定對照，不再優化舊規則。
             baseline = sorted((r for r in rows if 2*r['n3']+r['n10']+r['reason6'] >= 7),
                               key=lambda r: (-(2*r['n3']+r['n10']+r['reason6']), r['ticker']))[:CAP]
             baseline_all.extend(baseline)
             actual_codes = {e['ticker'] for e in events if e['date'] == day}
             predicted_codes = {r['ticker'] for r in picks}
             daily.append(dict(date=day, threshold=MIN_PROBABILITY, **metrics(picks, len(actual_codes)),
+                              eligible_candidates=sum(r['rule_eligible'] for r in rows),
                               tickers=' '.join(r['ticker'] for r in picks),
                               hit_tickers=' '.join(sorted(predicted_codes & actual_codes)),
                               missed_tickers=' '.join(sorted(actual_codes - predicted_codes)),
@@ -294,7 +305,8 @@ def evaluate(day_rows, events):
     summary = dict(model=metrics(picks_all, actual), baseline_same_dates=metrics(baseline_all, actual),
                    evaluated_days=len(daily), warmup_days=len(day_rows)-len(daily),
                    first_evaluated_date=daily[0]['date'] if daily else None,
-                   last_evaluated_date=daily[-1]['date'] if daily else None)
+                   last_evaluated_date=daily[-1]['date'] if daily else None,
+                   daily_pick_counts=[dict(date=x['date'], count=x['predictions']) for x in daily])
     for market in ('twse', 'tpex'):
         count = sum(len({e['ticker'] for e in events if e['date'] == day and e['market'] == market}) for day in evaluated_days)
         summary[market] = metrics([r for r in picks_all if r['market'] == market], count)
@@ -347,20 +359,19 @@ def main():
             p, support = model.predict(row)
             reasons = [f'最近注意交易距今{row["gap"]}交易日',
                        f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次',
-                       '上櫃：採近5日密集度分組' if row['market'] == 'tpex' else '上市：採最近觸發與近3日分組',
+                       MARKET_RULES.get(row['market'], '未知市場'),
                        '無歷史自結' if row['days_since_report'] is None else f'距前次自結{row["days_since_report"]}天']
             row = {k: v for k, v in row.items() if k not in ('label', 'date')}
             row.update(probability=p, score=round(p*100, 2), cell_samples=support, reasons=reasons)
             forecast.append(row)
         forecast = choose(forecast)
 
-    warnings = ['規律來自2026/9/29起短期事件研究；機率尚未經獨立長期校準',
-                '上市與上櫃使用不同密集度分組；不任意對第六款加分',
-                '固定15%門檻，每日最多10檔，不為回測命中率反覆調整門檻',
-                '冷卻期使用前次自結公告日，非前次注意交易日',
-                '回測採逐日先訓練後預測；同股票同月份自結更正不重複計算',
-                '歷史自結可能漏收，未知月份自結可能影響事件排除',
-                '無法保證命中率或召回率高於舊模型']
+    warnings = ['規律來自2026/9/29起短期事件研究，上市/上櫃交叉條件尚待獨立驗證',
+                '上市：當日注意且近3日僅1次；上櫃：當日注意且近5日>=3次',
+                '最低估計機率15%，但必須先符合市場規律；每日0至10檔，不補滿',
+                '估計機率未經獨立長期校準，嚴格篩選可能提高精確率但降低召回率',
+                '同月份已公布與近期未知月份公告排除；冷卻期使用自結公告日',
+                '不調整第六款加分；不使用未來公告或當日標籤']
     if not target:
         warnings.append('下一交易日尚未由正式交易日曆確認，日期暫不標示')
     summary.update(version=VERSION, source_status=status, asof=cutoff,
@@ -368,12 +379,10 @@ def main():
                    scope=a.markets, warnings=warnings, future_threshold=MIN_PROBABILITY,
                    model_ready=enough, training_events=sum(r['label'] for r in training),
                    event_count=sum(a.backtest_start <= e['date'] <= end for e in events),
-                   market_rules={'twse': '最近注意交易日＋近3日密集度',
-                                 'tpex': '最近注意交易日＋近5日密集度',
-                                 'both': '已公布同月份排除、未知月份近5天排除'})
+                   market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
                asof=cutoff, prediction_day=target, prediction_window='下一交易日',
-               count=len(forecast), model='event-rules-market-separated', threshold=MIN_PROBABILITY,
+               count=len(forecast), model='event-rules-selective-market-separated', threshold=MIN_PROBABILITY,
                items=forecast, candidates=forecast, source_status=status,
                evaluation=summary, warnings=warnings)
     write(out/'predictions.json', obj)
@@ -386,7 +395,6 @@ def main():
     csvout(out/'predictions.csv', forecast)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     print('Next-session picks:', ' '.join(x['ticker'] for x in forecast) or 'none')
-    import os
     summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary_path:
         def percent(x):
@@ -394,7 +402,7 @@ def main():
         m = summary['model']
         b = summary['baseline_same_dates']
         with open(summary_path, 'a', encoding='utf-8') as stream:
-            stream.write(f'## 自結預測驗證｜上市與上櫃分流\n\n資料截至 {cutoff}，每日合計最多10檔\n\n')
+            stream.write(f'## 自結預測驗證｜上市與上櫃分流｜嚴格候選\n\n資料截至 {cutoff}，每日符合條件才推薦（0至10檔）\n\n')
             stream.write('|模型|命中/推薦|命中率|召回率|F1|\n|---|---:|---:|---:|---:|\n')
             for name, v in [('規律分流（逐日樣本外）', m), ('舊研究規則（同日期）', b)]:
                 stream.write(f'|{name}|{v["hits"]}/{v["predictions"]}|{percent(v["precision"])}|{percent(v["recall"])}|{percent(v["f1"])}|\n')
@@ -402,7 +410,8 @@ def main():
             for market, label in [('twse', '上市'), ('tpex', '上櫃')]:
                 v = summary[market]
                 stream.write(f'|{label}|{v["hits"]}/{v["predictions"]}|{percent(v["precision"])}|{percent(v["recall"])}|\n')
-            stream.write('\n注意：' + '；'.join(warnings) + '\n\n下一開市日名單：' +
+            stream.write('\n每日推薦數：' + '、'.join(x['date'] + ':' + str(x['count']) for x in summary['daily_pick_counts']))
+            stream.write('\n\n注意：' + '；'.join(warnings) + '\n\n下一開市日名單：' +
                          ('、'.join(x['name'] + ' ' + x['ticker'] for x in forecast) or '無符合門檻') + '\n')
 
 
