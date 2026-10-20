@@ -19,3 +19,13 @@
 .sr-forecast-scroll th,.sr-forecast-scroll td{padding:10px 6px;border-bottom:1px solid var(--line)}
 .sr-forecast-note{margin-top:12px}.sr-forecast-note b{color:var(--ink)}
 @media(max-width:700px){.earnings-mode-tabs{gap:5px!important}.earnings-mode-tabs .earnings-mode{padding:9px 3px!important;font-size:12px!important}.sr-forecast-head{flex-wrap:wrap}.sr-forecast-head h2{font-size:19px}}
+
+/* 預測區塊不是網站 header：避免 sticky、固定定位及深色遮罩 */
+#srForecastPanel, #srForecastPanel .sr-forecast-head{position:static!important;top:auto!important;z-index:auto!important;transform:none!important}
+#srForecastPanel .sr-forecast-head{background:transparent!important;box-shadow:none!important;border:0!important;padding:0!important;min-height:0!important}
+#srForecastTab:not(.active){background:var(--card)!important;color:var(--muted)!important}
+#srForecastPanel[hidden]{display:none!important}
+
+/* 入選理由只保留一項關鍵注意次數，縮減卡片高度 */
+.sr-forecast-pick .sr-forecast-key{margin:5px 0 0!important;font-size:12px!important;line-height:1.35!important;color:var(--muted)!important}
+.sr-forecast-pick{padding:12px 15px!important;margin:8px 0!important}
