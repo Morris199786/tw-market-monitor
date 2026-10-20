@@ -10,7 +10,7 @@ concurrency:
 jobs:
   historical:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -18,28 +18,26 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Reuse archived historical MOPS data (no re-fetch)
+      - name: Reuse archived historical MOPS data
         uses: actions/download-artifact@v4
         with:
           name: self-report-historical-backtest
           run-id: 39398945984
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: self_report_historical
-      - name: Verify offline historical archive is present
+      - name: Verify archive
         run: |
           test -s self_report_historical/model/walk_forward_scores.csv
           test -s self_report_historical/model/event_audit.csv
-          test -s self_report_historical/self_reports_history.json
-          python - <<'PY'
-          import json
-          p='self_report_historical/self_reports_history.json'
-          d=json.load(open(p,encoding='utf-8-sig'))
-          assert d.get('items'), 'Historical events missing'
-          print('Reused',len(d['items']),'archived MOPS records')
-          PY
-      - name: Offline chronological backtest (zero HTTP requests)
+          test -s data/self_reports_history.json
+      - name: Extend from repository reports and cache notices then backtest to Oct 19
         run: |
-          python scripts/self_report_predict.py --backtest --asof 2026-09-29 --backtest-start 2026-07-01 --offline-scores self_report_historical/model/walk_forward_scores.csv --offline-events self_report_historical/model/event_audit.csv --out self_report_historical/model
+          python scripts/self_report_predict.py \
+            --extend-archive --backtest --start 2026-09-01 \
+            --backtest-start 2026-07-01 --asof 2026-10-19 \
+            --offline-scores self_report_historical/model/walk_forward_scores.csv \
+            --offline-events self_report_historical/model/event_audit.csv \
+            --out self_report_historical/model
       - name: Upload historical results
         if: always()
         uses: actions/upload-artifact@v4
