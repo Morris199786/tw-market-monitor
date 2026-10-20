@@ -29,3 +29,12 @@
 /* 入選理由只保留一項關鍵注意次數，縮減卡片高度 */
 .sr-forecast-pick .sr-forecast-key{margin:5px 0 0!important;font-size:12px!important;line-height:1.35!important;color:var(--muted)!important}
 .sr-forecast-pick{padding:12px 15px!important;margin:8px 0!important}
+
+/* 回測表格：五欄在手機螢幕內完整呈現，無須橫向滑動 */
+#srForecastPanel .sr-forecast-scroll{width:100%;max-width:100%;overflow-x:visible!important}
+#srForecastPanel .sr-forecast-scroll table{width:100%!important;min-width:0!important;table-layout:fixed!important;font-size:12px!important}
+#srForecastPanel .sr-forecast-scroll th,#srForecastPanel .sr-forecast-scroll td{padding:9px 2px!important;white-space:nowrap!important;overflow:visible!important;font-variant-numeric:tabular-nums}
+#srForecastPanel .sr-forecast-scroll th:first-child{width:16%!important}
+#srForecastPanel .sr-forecast-scroll th:nth-child(2),#srForecastPanel .sr-forecast-scroll th:nth-child(3){width:15%!important}
+#srForecastPanel .sr-forecast-scroll th:nth-child(4),#srForecastPanel .sr-forecast-scroll th:nth-child(5){width:27%!important}
+@media(max-width:390px){#srForecastPanel .sr-forecast-scroll table{font-size:11px!important}#srForecastPanel .sr-forecast-history{padding:10px!important}}
