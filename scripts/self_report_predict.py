@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-market-separated-v10'
+VERSION = '2026-10-20-attention-only-v11'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
@@ -230,7 +230,7 @@ def make_rows(cutoff, target, cal, notices, events, master):
         if x['date'] <= cutoff:
             prior[x['ticker']].append(x)
     pool = set(by_ticker) | {t for t, items in prior.items() if any(x['kind'] == 'voluntary' for x in items)}
-    labels = {x['ticker'] for x in events if x['date'] == target}
+    labels = {x['ticker'] for x in events if x['date'] == target and x['kind'] == 'attention'}
     out = []
     for ticker in sorted(pool):
         if ticker not in master:
@@ -324,7 +324,7 @@ def evaluate(day_rows, events):
             baseline = sorted((r for r in rows if r['rule_eligible'] and (r['n20'] == 1 if r['market'] == 'twse' else r['n5'] >= 3)),
                               key=lambda r: (-r['n5'], r['ticker']))[:CAP]
             baseline_all.extend(baseline)
-            actual_codes = {e['ticker'] for e in events if e['date'] == day}
+            actual_codes = {e['ticker'] for e in events if e['date'] == day and e.get('kind') == 'attention'}
             predicted_codes = {r['ticker'] for r in picks}
             daily.append(dict(date=day, threshold=MIN_PROBABILITY, **metrics(picks, len(actual_codes)),
                               eligible_candidates=sum(r['rule_eligible'] for r in rows),
@@ -334,14 +334,14 @@ def evaluate(day_rows, events):
                               baseline_hits=sum(r['label'] for r in baseline), baseline_predictions=len(baseline)))
             picks_all.extend(picks); scores_all.extend(scored); evaluated_days.add(day)
         training.extend(rows)
-    actual = sum(len({e['ticker'] for e in events if e['date'] == day}) for day in evaluated_days)
+    actual = sum(len({e['ticker'] for e in events if e['date'] == day and e.get('kind') == 'attention'}) for day in evaluated_days)
     summary = dict(model=metrics(picks_all, actual), baseline_same_dates=metrics(baseline_all, actual),
                    evaluated_days=len(daily), warmup_days=len(day_rows)-len(daily),
                    first_evaluated_date=daily[0]['date'] if daily else None,
                    last_evaluated_date=daily[-1]['date'] if daily else None,
                    daily_pick_counts=[dict(date=x['date'], count=x['predictions']) for x in daily])
     for market in ('twse', 'tpex'):
-        count = sum(len({e['ticker'] for e in events if e['date'] == day and e['market'] == market}) for day in evaluated_days)
+        count = sum(len({e['ticker'] for e in events if e['date'] == day and e['market'] == market and e.get('kind') == 'attention'}) for day in evaluated_days)
         summary[market] = metrics([r for r in picks_all if r['market'] == market], count)
     return summary, daily, picks_all, training, scores_all
 
@@ -399,14 +399,24 @@ def offline_replay(args, out, now):
             else:
                 kept.append(r)
         days[day] = kept
+    # Old snapshots labelled voluntary reports as positive. Rebuild labels from
+    # actual attention-triggered filings, never trust archived model labels.
+    attention_keys = {(e['date'], e['ticker']) for e in events if e.get('kind') == 'attention'}
+    relabelled = 0
+    for day, rows in days.items():
+        for row in rows:
+            label = int((day, row['ticker']) in attention_keys)
+            relabelled += row['label'] != label
+            row['label'] = label
     summary, daily, picks, training, scores = evaluate(days, events)
     summary.update(version=VERSION, source_status={'offline': True, 'network_requests': 0,
-                   'snapshot': str(source), 'excluded_announced_month': excluded},
+                   'snapshot': str(source), 'excluded_announced_month': excluded, 'relabelled_historical_rows': relabelled},
                    asof=max(days), scope=args.markets, future_threshold=MIN_PROBABILITY,
                    historical_snapshot_start=min(days),
                    warnings=['完全離線：使用前次回測保存的每日候選特徵，未下載MOPS或注意交易資料',
                              '歷史特徵檔僅包含前次已評估日期；本次重新暖機，因此回測日期可能少於舊版',
                              '這是既有候選特徵的離線重評分，不能補回舊版沒有保存的候選股票',
+                             '只有因注意交易公告自結算命中與召回分母；自主公告僅用於已公告月份排除',
                              '上市20日注意1至3次且近3日不連續3次；上櫃5日恰好3次；共用每日上限10檔',
                              '上市與上櫃：截至預測前日已公告目標月份EPS／自結者直接排除'])
     write(out / 'backtest_summary.json', summary)
@@ -489,6 +499,7 @@ def main():
         '上市及上櫃一致：已公告預測月份EPS／自結者在評分前排除；不以任意天數作為冷卻期',
         '每日0至10檔，不強制補滿；最低估計機率15%；上市20日首次與上櫃5日剛好3次優先',
         '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
+        '只有注意交易觸發的自結計入命中及召回率；自主公告不計入',
         '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
     ]
     if not target:
@@ -497,7 +508,7 @@ def main():
                    requested_asof=requested, incomplete_current_day_excluded=requested > latest_complete,
                    scope=args.markets, warnings=warnings, future_threshold=MIN_PROBABILITY,
                    model_ready=enough, training_events=sum(r['label'] for r in training),
-                   event_count=sum(args.backtest_start <= e['date'] <= end for e in events),
+                   event_count=sum(args.backtest_start <= e['date'] <= end and e['kind'] == 'attention' for e in events),
                    market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
                asof=cutoff, prediction_day=target, prediction_window='下一交易日',
