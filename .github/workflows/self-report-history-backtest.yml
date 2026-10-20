@@ -3,13 +3,14 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: self-report-history-backtest
   cancel-in-progress: false
 jobs:
   historical:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,15 +18,30 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Fetch July through September MOPS self reports into isolated file
-        run: python scripts/self_report_history_backfill.py --start 2026-07-01 --end 2026-09-28 --out self_report_historical
-      - name: Fixed rules retrospective test (not independent out-of-sample)
+      - name: Reuse archived historical MOPS data (no re-fetch)
+        uses: actions/download-artifact@v4
+        with:
+          name: self-report-historical-backtest
+          run-id: 39398945984
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: self_report_historical
+      - name: Verify historical archive is present
+        run: |
+          test -s self_report_historical/self_reports_history.json
+          python - <<'PY'
+          import json
+          p='self_report_historical/self_reports_history.json'
+          d=json.load(open(p,encoding='utf-8-sig'))
+          assert d.get('items'), 'Historical events missing'
+          print('Reused',len(d['items']),'archived MOPS records')
+          PY
+      - name: Market-separated chronological backtest (no historical MOPS downloads)
         run: |
           python scripts/self_report_predict.py --backtest --start 2026-06-01 --asof 2026-09-29 --backtest-start 2026-07-01 --reports self_report_historical/self_reports_history.json --out self_report_historical/model
       - name: Upload historical results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: self-report-historical-backtest
+          name: self-report-historical-backtest-updated
           path: self_report_historical/
           retention-days: 30
