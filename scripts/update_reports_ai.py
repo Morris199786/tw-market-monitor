@@ -257,7 +257,7 @@ def normalize_report(obj: dict, src: dict) -> dict:
         "rating": str(obj.get("rating") or "").strip(),
         "target_price_old": obj.get("target_price_old"),
         "target_price_new": obj.get("target_price_new"),
-        "push_reason": push_reason[:80],
+        "push_reason": push_reason[:80],  # 保留原始解析內容；推播端另做20字與無效摘要檢查
         "summary": clean_list(obj.get("summary"), 5),
         "key_points": clean_list(obj.get("key_points"), 8),
         "beneficiaries": beneficiaries,
@@ -318,7 +318,7 @@ def analyze_report(src: dict) -> dict:
 14. broker、日期、標題盡量從報告本身辨識；辨識不到可留空
 15. 公司名稱與代號必須依下方已驗證公司對照表，禁止自行翻譯公司中文名稱；只有英文名稱但能唯一對應也可填代號，不得把 ISU Petasys 認成台灣公司
 16. 產業報告若明確提供台灣個股評等或目標價，須在 summary 優先交代；未提供時不得強行填入。評等維持與目標價變動須分開描述，不可把目標價上調當成評等上調；n.a. 為 null，不是現價
-17. push_reason 是給手機推播看的極短原因，限 15~35 個中文字，直接說明評等/目標價改變的主因；若是產業報告則寫最重要的產業變化，不要寫「報告認為」
+17. push_reason 是手機推播用的一句話重點，最多20字（含標點），說明報告明確提出的評等／目標價調整主因，產業報告則寫最重要的產業變化。不得重複股票名稱、代號、評等、目標價；找不到真正原因請填空字串，不得編造。
 
 18. 數字須附原文可辨識的年度或季度、幣別、單位與比較基準；百分比說明分母，區分百分比與百分點。營收差額與淨利影響不得混用，不能把情境差額當成已發生損失
 19. 清楚區分已公布事實、報告作者預估、市場共識與假設情境；情境須說明前提與相對基準。不可把市場共識寫成作者財測，也不可把推算寫成確定訂單或獲利
@@ -406,16 +406,43 @@ def target_price_line(report: dict) -> str:
     return ""
 
 
+def short_push_reason(report: dict) -> str:
+    """從已保存的解析內容取一句真實重點，不額外呼叫 AI。"""
+    candidates = [report.get("push_reason")]
+    candidates.extend(report.get("summary") or [])
+    candidates.extend(report.get("key_points") or [])
+    name = str(report.get("name") or "").strip()
+    ticker = str(report.get("ticker") or "").strip()
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        reason = re.sub(r"\s+", "", candidate.strip())
+        reason = re.sub(r"^(?:原因|重點|摘要|投資重點)[：:]", "", reason)
+        if name:
+            reason = reason.replace(name, "")
+        if ticker:
+            reason = reason.replace(ticker, "")
+        reason = reason.strip("｜|：:，,。;；-— ")
+        # 排除只有評等、目標價、股票名稱的假摘要。
+        if not reason or re.search(r"(?:目標價|目標價格|目標股價|評等|買進|賣出|中立|維持Buy|NT\$)", reason, re.I):
+            continue
+        if re.fullmatch(r"[\d,.%％$NT元→↑↓+\- ]+", reason, re.I):
+            continue
+        # 不截斷造成語意不完整的句子；優先取20字內的完整短句。
+        first = re.split(r"[。；;！!？?]", reason, maxsplit=1)[0].strip("，,、 ")
+        if 4 <= len(first) <= 20:
+            return first
+        for fragment in re.split(r"[，,、]", first):
+            fragment = fragment.strip()
+            if 4 <= len(fragment) <= 20 and not re.search(r"(?:目標價|評等)", fragment):
+                return fragment
+    return ""
+
+
 def build_push(report: dict):
     broker = report.get("broker") or "券商"
     action = action_zh(report.get("action") or "none")
-    reason = (
-        report.get("push_reason")
-        or (report.get("summary") or [""])[0]
-        or ""
-    ).strip()
-    if len(reason) > 72:
-        reason = reason[:72] + "…"
+    reason = short_push_reason(report)
 
     if report.get("report_type") == "company":
         name = report.get("name") or ""
@@ -427,7 +454,7 @@ def build_push(report: dict):
         if tp:
             lines.append(tp)
         if reason:
-            lines.append(f"原因：{reason}")
+            lines.append(f"重點：{reason}")
         message = "\n".join(lines)
     else:
         title = "券商報告"
@@ -435,7 +462,7 @@ def build_push(report: dict):
         lines = [first]
         if report.get("recommendation_headlines"):
             lines.extend(report["recommendation_headlines"][:8])
-        elif reason:
+        if reason:
             lines.append(f"重點：{reason}")
         message = "\n".join(lines)
 
