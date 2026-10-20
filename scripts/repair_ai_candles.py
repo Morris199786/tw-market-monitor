@@ -1,148 +1,169 @@
-"""Share heatmap daily_k with AI; repair missing/mismatched real OHLCV.
+"""Repair shared heatmap/AI daily K using independently verified real OHLCV.
 
-Uses update_daily_k's Yahoo parsing, validation, official market OHLCV and
-save_candles. Never creates a synthetic candle or writes ai_setup_k.
+Only data/daily_k is written. Official bars are accepted only when their close
+agrees with the market snapshot; Yahoo is used for gaps, not to overwrite bars.
 """
 from __future__ import annotations
+
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 import sys
-from pathlib import Path
+import time
+
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from sources import load_json, save_json, ordinary_ticker
 from tech_universe import tech_tickers
-from update_daily_k import (DEST, read, valid_bar, parse_chart, merge_bars,
-                            save_candles, fetch_official, fetch_dated)
+from update_daily_k import DEST, read, valid_bar, parse_chart, save_candles, fetch_dated
 from ai_setup_strategy import number
 
 
-def load_shared(ticker):
-    obj = read(DEST / (ticker + '.json'), {})
-    return obj, {b['time']: b for b in obj.get('bars', []) if isinstance(b, dict)
-                 and b.get('time') and valid_bar(b)}
+def close_matches(bar, price):
+    price = number(price)
+    return price is not None and abs(float(bar['close']) - price) <= max(.01, price * .0001)
 
 
-def problems(bars, snapshots):
-    missing, mismatched = [], []
-    for day, stocks in snapshots:
-        if day not in bars:
-            missing.append(day)
-        else:
-            price = number(stocks.get('price'))
-            if price is not None and abs(bars[day]['close'] - price) > max(.01, price * .0001):
-                mismatched.append(day)
-    return missing, mismatched
+def load_bars(ticker):
+    obj = read(DEST / f'{ticker}.json', {})
+    return obj, {b['time']: b for b in obj.get('bars', [])
+                 if isinstance(b, dict) and b.get('time') and valid_bar(b)}
 
 
-def yahoo_history(ticker, market, now):
+def check(bars, quotes):
+    missing, mismatch = [], []
+    for date, quote in quotes.items():
+        if date not in bars:
+            missing.append(date)
+        elif not close_matches(bars[date], quote.get('price')):
+            mismatch.append(date)
+    return missing, mismatch
+
+
+def yahoo_bars(ticker, market, now):
     symbol = ticker + ('.TW' if market == 'twse' else '.TWO')
-    last_error = 'no valid response'
+    error = ''
     for host in ('query1.finance.yahoo.com', 'query2.finance.yahoo.com'):
+        for attempt in range(2):
+            try:
+                with requests.get(f'https://{host}/v8/finance/chart/{symbol}',
+                    params={'range':'2y','interval':'1d','events':'splits,div',
+                            'includeAdjustedClose':'false'},
+                    headers={'User-Agent':'Mozilla/5.0','Accept-Encoding':'identity'},
+                    timeout=(10,40)) as response:
+                    response.raise_for_status()
+                    return parse_chart(response.json(), symbol, now), ''
+            except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
+                error = f'{type(exc).__name__}: {exc}'[:160]
+                if attempt == 0: time.sleep(1)
+    return [], error
+
+
+def official_bars(market, date, now):
+    error = ''
+    for attempt in range(3):
         try:
-            with requests.get('https://' + host + '/v8/finance/chart/' + symbol,
-                              params={'range':'2y','interval':'1d','events':'splits,div',
-                                      'includeAdjustedClose':'false'},
-                              headers={'User-Agent':'Mozilla/5.0'}, timeout=(10,35)) as r:
-                r.raise_for_status()
-                return parse_chart(r.json(), symbol, now), ''
-        except (requests.RequestException, ValueError, TypeError, KeyError) as exc:
-            last_error = f'{type(exc).__name__}: {exc}'[:180]
-    return [], last_error
+            return fetch_dated(market, date, now), ''
+        except Exception as exc:
+            error = f'{type(exc).__name__}: {exc}'[:160]
+            if attempt < 2: time.sleep(2 ** attempt)
+    return {}, error
 
 
 def main():
     now = datetime.now(ZoneInfo('Asia/Taipei'))
-    master = load_json(ROOT / 'data/master.json', {}).get('stocks', {})
-    day = load_json(ROOT / 'data/market_latest.json', {}).get('date')
-    history = []
-    for path in sorted((ROOT / 'data/history/market').glob('*.json')):
+    master = load_json(ROOT/'data/master.json', {}).get('stocks', {})
+    day = load_json(ROOT/'data/market_latest.json', {}).get('date')
+    snapshots = []
+    for path in sorted((ROOT/'data/history/market').glob('*.json')):
         if day and path.stem <= day:
             stocks = load_json(path, {}).get('stocks', {})
-            if stocks:
-                history.append((path.stem, stocks))
-    if len(history) < 10 or history[-1][0] != day:
-        raise RuntimeError('AI candle repair: market snapshots not current')
-    window = history[-40:]
+            if stocks: snapshots.append((path.stem, stocks))
+    if len(snapshots) < 10 or snapshots[-1][0] != day:
+        raise RuntimeError('AI shared K repair requires current market snapshots')
+    window = snapshots[-40:]
     universe = tech_tickers(master)
-    candidates = {t:m for t,m in master.items() if t in universe and ordinary_ticker(t)
-                  and m.get('market') in ('twse','tpex') and t in history[-1][1]}
-    pending = []
+    candidates = {t:m for t,m in master.items() if t in universe
+                  and ordinary_ticker(t) and m.get('market') in ('twse','tpex')
+                  and t in window[-1][1]}
+    pending = {}
     for ticker, meta in candidates.items():
-        _, bars = load_shared(ticker)
-        checks = [(d, s[ticker]) for d,s in window if ticker in s]
-        missing, mismatch = problems(bars, checks)
+        obj, bars = load_bars(ticker)
+        quotes = {d:s[ticker] for d,s in window if ticker in s}
+        missing, mismatch = check(bars, quotes)
         if missing or mismatch:
-            pending.append((ticker,meta,missing,mismatch))
-    print(f'AI shared daily K: {len(candidates)} candidates; {len(pending)} require repair',flush=True)
+            pending[ticker] = (meta, obj, bars, quotes, missing, mismatch)
+    print(f'AI shared daily K: {len(candidates)} candidates, {len(pending)} need repair', flush=True)
 
-    # Only download Yahoo for stocks needing repair. Shared chart and AI candles
-    # are identical: all repairs are saved to data/daily_k.
-    fetched = {}
+    yahoo = {}
     with ThreadPoolExecutor(max_workers=5) as pool:
-        tasks = {pool.submit(yahoo_history,t,m['market'],now):t for t,m,_,_ in pending}
-        for future in as_completed(tasks):
-            ticker=tasks[future]
-            fetched[ticker]=future.result()
+        jobs = {pool.submit(yahoo_bars, t, x[0]['market'], now):t for t,x in pending.items()}
+        for future in as_completed(jobs):
+            ticker = jobs[future]
+            try: yahoo[ticker] = future.result()
+            except Exception as exc: yahoo[ticker] = ([], str(exc)[:160])
 
-    # Request verified historical official candles once per (market, date),
-    # not once per stock. This corrects Yahoo price-basis discrepancies.
-    dates_by_market = defaultdict(set)
-    for ticker,meta,missing,mismatch in pending:
+    # Query official data only for dates still inconsistent after checking Yahoo.
+    # The official source is downloaded once per market/date and reused by stocks.
+    required = defaultdict(set)
+    for ticker, (meta, _, bars, quotes, missing, mismatch) in pending.items():
+        ybars = {b['time']:b for b in yahoo[ticker][0] if valid_bar(b)}
         for date in missing + mismatch:
-            dates_by_market[meta['market']].add(date)
-    official_history = {}
-    official_errors = {}
-    # Historical official endpoints are requested only for dates with issues.
-    # Limit requests to the current 40-date window; never invent OHLCV.
-    jobs = [(market,date) for market, dates in dates_by_market.items() for date in sorted(dates)]
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        futures={pool.submit(fetch_dated,m,d,now):(m,d) for m,d in jobs}
-        for future in as_completed(futures):
-            market,date=futures[future]
-            try: official_history[(market,date)]=future.result()
-            except Exception as exc: official_errors[f'{market}:{date}']=str(exc)[:140]
+            if date in ybars and close_matches(ybars[date], quotes[date].get('price')):
+                continue
+            required[meta['market']].add(date)
+    official = {}
+    errors = {}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        jobs = {pool.submit(official_bars, market, date, now):(market,date)
+                for market, dates in required.items() for date in sorted(dates)}
+        for future in as_completed(jobs):
+            market,date = jobs[future]
+            rows,error = future.result()
+            official[(market,date)] = rows
+            if error: errors[f'{market}:{date}'] = error
 
-    summary = {'twse':Counter(), 'tpex':Counter()}
-    details={}
-    for ticker,meta,_,_ in pending:
-        market=meta['market']; obj,old=load_shared(ticker)
-        merged=dict(old)
-        incoming,error=fetched[ticker]
-        # Yahoo supplies missing bars only. Existing chart candles are not
-        # overwritten by an unverified price adjustment.
-        for bar in incoming:
-            date=bar['time']
-            if date <= day and date not in merged and valid_bar(bar):
-                merged[date]=bar
-        for date in dates_by_market[market]:
-            bar=official_history.get((market,date),{}).get(ticker)
-            if bar and valid_bar(bar) and bar['time']==date:
-                merged[date]=bar
-        checks=[(d,s[ticker]) for d,s in window if ticker in s]
-        missing,mismatch=problems(merged,checks)
-        summary[market]['repaired']+=int(merged!=old)
-        summary[market]['missing']+=int(bool(missing))
-        summary[market]['mismatch']+=int(bool(mismatch))
-        if merged!=old:
-            bars=[merged[d] for d in sorted(merged) if d<=day]
-            save_candles(ticker,meta,now,bars,
-                         [d for d in obj.get('missing_dates',[]) if d not in merged],
-                         [d for d in obj.get('invalid_dates',[]) if d not in merged])
-        if missing or mismatch or error:
-            details[ticker]={'market':market,'missing':missing,'price_mismatch':mismatch,
-                             'yahoo_error':error}
-    report={'date':day,'candidates':len(candidates),'pending':len(pending),
-            'markets':{k:dict(v) for k,v in summary.items()},
-            'official_source_errors':official_errors,'unresolved':details}
+    stats = {'twse':Counter(), 'tpex':Counter()}
+    unresolved = {}
+    for ticker, (meta, obj, old, quotes, missing, mismatch) in pending.items():
+        market = meta['market']
+        merged = dict(old)
+        yrows,error = yahoo[ticker]
+        ybars = {b['time']:b for b in yrows if valid_bar(b)}
+        for date in missing + mismatch:
+            quote_price = quotes[date].get('price')
+            official_bar = official.get((market,date), {}).get(ticker)
+            yahoo_bar = ybars.get(date)
+            # Official OHLCV is preferred; never overwrite with an unverified
+            # price basis, even if Yahoo disagrees with the official snapshot.
+            if official_bar and valid_bar(official_bar) and close_matches(official_bar,quote_price):
+                merged[date] = official_bar
+            elif yahoo_bar and close_matches(yahoo_bar,quote_price):
+                merged[date] = yahoo_bar
+        new_missing,new_mismatch = check(merged,quotes)
+        if merged != old:
+            save_candles(ticker,meta,now,[merged[d] for d in sorted(merged) if d<=day],
+                [d for d in obj.get('missing_dates',[]) if d not in merged],
+                [d for d in obj.get('invalid_dates',[]) if d not in merged])
+            stats[market]['changed'] += 1
+        if not new_missing and not new_mismatch:
+            stats[market]['fully_repaired'] += 1
+        stats[market]['missing'] += bool(new_missing)
+        stats[market]['mismatch'] += bool(new_mismatch)
+        if new_missing or new_mismatch:
+            unresolved[ticker] = {'market':market,'missing':new_missing,
+                'price_mismatch':new_mismatch,'yahoo_error':error}
+    report = {'date':day,'candidates':len(candidates),'pending':len(pending),
+        'markets':{m:dict(v) for m,v in stats.items()},
+        'official_source_errors':errors,'unresolved':unresolved}
     save_json(ROOT/'data/ai_candle_repair_diagnostics.json',report)
     for market in ('twse','tpex'):
-        print(f'AI shared K {market}: {dict(summary[market])}',flush=True)
-    print(f'AI shared K: unresolved={sum(bool(v["missing"] or v["price_mismatch"]) for v in details.values())}; official errors={len(official_errors)}',flush=True)
+        print(f'AI shared K {market}: {dict(stats[market])}',flush=True)
+    print(f'AI shared K unresolved={len(unresolved)} official_errors={len(errors)}',flush=True)
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
