@@ -11,12 +11,14 @@ import json
 import os
 import re
 import urllib.request
+import http.client
+import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-monthly-eps-exclusion-v7'
+VERSION = '2026-10-20-offline-snapshot-v9'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
@@ -79,22 +81,75 @@ def parse_notices(obj, market, start, end):
         raise RuntimeError(f'{market}: official attention records unavailable')
     return list(result.values())
 
-def attention(start, end, cache=None, markets=('twse', 'tpex')):
-    urls = {
-        'twse': f'https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate={start.replace("-", "")}&endDate={end.replace("-", "")}',
-        'tpex': f'https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate={start.replace("-", "/")}&endDate={end.replace("-", "/")}&response=json',
-    }
-    result, status = [], {}
-    for market in markets:
-        if cache:
-            obj = read(Path(cache) / f'{market}.json')
-        else:
-            request = urllib.request.Request(urls[market], headers={'User-Agent': 'Mozilla/5.0'})
+def fetch_json_retry(url, attempts=5):
+    """Read the complete HTTP body, retrying truncated TWSE/TPEx responses."""
+    last = None
+    for attempt in range(attempts):
+        try:
+            request = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json',
+                'Accept-Encoding': 'identity', 'Connection': 'close',
+            })
             with urllib.request.urlopen(request, timeout=45) as response:
-                obj = json.load(response)
-        rows = parse_notices(obj, market, start, end)
+                payload = response.read()
+            return json.loads(payload.decode('utf-8-sig'))
+        except (http.client.IncompleteRead, OSError, TimeoutError,
+                UnicodeDecodeError, json.JSONDecodeError) as exc:
+            last = exc
+            print(f'Attention download attempt {attempt+1}/{attempts} failed: {type(exc).__name__}: {exc}', flush=True)
+            if attempt < attempts - 1:
+                time.sleep(min(2 ** attempt, 8))
+    raise RuntimeError(f'Official attention download failed after {attempts} attempts: {url}') from last
+
+
+def attention(start, end, cache=None, markets=('twse', 'tpex')):
+    def url_for(market, a, b):
+        if market == 'twse':
+            return f'https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate={a.replace("-", "")}&endDate={b.replace("-", "")}'
+        return f'https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate={a.replace("-", "/")}&endDate={b.replace("-", "/")}&response=json'
+
+    result, status = [], {}
+    cache_dir = Path(cache) if cache else ROOT / '.cache' / 'self_report_attention'
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    for market in markets:
+        cache_file = cache_dir / f'{market}_{start}_{end}.json'
+        source = url_for(market, start, end)
+        from_cache = False
+        if cache_file.is_file():
+            try:
+                cached = read(cache_file)
+                rows = cached['rows']
+                if cached.get('market') != market or cached.get('start') != start or cached.get('end') != end or not rows:
+                    raise ValueError('invalid attention cache')
+                from_cache = True
+            except (OSError, ValueError, KeyError, TypeError):
+                cache_file.unlink(missing_ok=True)
+                from_cache = False
+        if not from_cache:
+            try:
+                rows = parse_notices(fetch_json_retry(source), market, start, end)
+            except (RuntimeError, ValueError, KeyError) as exc:
+                # Some official endpoints close long responses early. Smaller
+                # date windows avoid truncation without silently losing records.
+                print(f'{market}: full-range request failed; retrying in 14-day chunks: {exc}', flush=True)
+                rows = []
+                current = dt.date.fromisoformat(start)
+                finish = dt.date.fromisoformat(end)
+                while current <= finish:
+                    chunk_end = min(current + dt.timedelta(days=13), finish)
+                    a, b = current.isoformat(), chunk_end.isoformat()
+                    try:
+                        rows.extend(parse_notices(fetch_json_retry(url_for(market, a, b)), market, a, b))
+                    except RuntimeError as e:
+                        if 'official attention records unavailable' not in str(e):
+                            raise
+                    current = chunk_end + dt.timedelta(days=1)
+                if not rows:
+                    raise RuntimeError(f'{market}: no attention data in historical range')
+            rows = list({(x['date'], x['ticker']): x for x in rows}.values())
+            write(cache_file, {'market': market, 'start': start, 'end': end, 'rows': rows})
         result.extend(rows)
-        status[market] = dict(ok=True, rows=len(rows), source=urls[market], offline=bool(cache))
+        status[market] = dict(ok=True, rows=len(rows), source=source, offline=from_cache)
     return result, status
 
 def reports(path, master, markets):
@@ -279,6 +334,87 @@ def evaluate(day_rows, events):
         summary[market] = metrics([r for r in picks_all if r['market'] == market], count)
     return summary, daily, picks_all, training, scores_all
 
+
+def offline_replay(args, out, now):
+    """Backtest strictly from archived daily feature snapshots; zero HTTP requests.
+
+    These historical snapshots were generated by V5. Replay starts with the
+    first archived scoring date and therefore needs a new chronological warmup.
+    """
+    source = args.offline_scores
+    if not source.is_file():
+        raise FileNotFoundError(f'Offline historical features missing: {source}')
+    events_file = args.offline_events
+    if not events_file or not events_file.is_file():
+        raise FileNotFoundError(f'Offline historical event audit missing: {events_file}')
+    days = collections.defaultdict(list)
+    with source.open(encoding='utf-8-sig', newline='') as f:
+        for raw in csv.DictReader(f):
+            if not (args.backtest_start <= raw['date'] <= (args.asof or '9999-12-31')):
+                continue
+            row = dict(raw)
+            for key in ('label', 'recent', 'gap', 'reason6', 'n1', 'n3', 'n5', 'n10', 'n20', 'reason6_flag'):
+                row[key] = int(row[key])
+            row['days_since_report'] = int(row['days_since_report']) if row.get('days_since_report') else None
+            row['market_pattern'] = bucket(row)
+            row['notice_intensity'] = 'high' if row['n5'] >= 3 else 'mid' if row['n5'] == 2 else 'low'
+            row['rule_eligible'] = eligible(row)
+            # Never use old model probabilities in the new model.
+            row.pop('probability', None)
+            row.pop('cell_samples', None)
+            days[row['date']].append(row)
+    events = []
+    with events_file.open(encoding='utf-8-sig', newline='') as f:
+        for row in csv.DictReader(f):
+            if row['date'] <= (args.asof or '9999-12-31'):
+                events.append(row)
+    if not days:
+        raise ValueError('No historical feature rows found in requested range')
+    # Source snapshots already excluded companies that had announced target-month
+    # EPS as of each cutoff. Verify this invariant again using event audit.
+    prior_by_ticker = collections.defaultdict(list)
+    for e in events:
+        prior_by_ticker[e['ticker']].append(e)
+    excluded = 0
+    for day, rows in list(days.items()):
+        kept = []
+        for r in rows:
+            known = any(e['date'] <= r['cutoff'] and e.get('month') == previous_month(day)
+                        for e in prior_by_ticker[r['ticker']])
+            if known:
+                excluded += 1
+            else:
+                kept.append(r)
+        days[day] = kept
+    summary, daily, picks, training, scores = evaluate(days, events)
+    summary.update(version=VERSION, source_status={'offline': True, 'network_requests': 0,
+                   'snapshot': str(source), 'excluded_announced_month': excluded},
+                   asof=max(days), scope=args.markets, future_threshold=MIN_PROBABILITY,
+                   historical_snapshot_start=min(days),
+                   warnings=['完全離線：使用前次回測保存的每日候選特徵，未下載MOPS或注意交易資料',
+                             '歷史特徵檔僅包含前次已評估日期；本次重新暖機，因此回測日期可能少於舊版',
+                             '這是既有候選特徵的離線重評分，不能補回舊版沒有保存的候選股票',
+                             '上市與上櫃：截至預測前日已公告目標月份EPS／自結者直接排除'])
+    write(out / 'backtest_summary.json', summary)
+    csvout(out / 'backtest_daily.csv', daily)
+    csvout(out / 'backtest_picks.csv', picks)
+    csvout(out / 'walk_forward_scores.csv', scores)
+    write(out / 'predictions.json', {'version': VERSION, 'count': 0, 'items': [],
+           'prediction_day': None, 'note': '離線歷史回測不產生即時預測', 'evaluation': summary})
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary_path:
+        with open(summary_path, 'a', encoding='utf-8') as f:
+            f.write('\n## 完全離線自結回測（0 次網路請求）\n\n')
+            f.write('| 市場 | 推薦 | 命中 | 命中率 | 召回率 |\n|---|---:|---:|---:|---:|\n')
+            for k, name in [('twse','上市'),('tpex','上櫃'),('model','合計')]:
+                m=summary[k]
+                f.write(f'| {name} | {m["predictions"]} | {m["hits"]} | '
+                        f'{m["precision"]:.1%} | {m["recall"]:.1%} |\n')
+            f.write(f'\n評估交易日：{summary["evaluated_days"]}；'
+                    f'已公告目標月份排除：{excluded} 筆\n')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, default=ROOT)
@@ -289,6 +425,8 @@ def main():
     parser.add_argument('--out', default='self_report_model')
     parser.add_argument('--backtest', action='store_true')
     parser.add_argument('--attention-cache', type=Path)
+    parser.add_argument('--offline-scores', type=Path, help='Archived walk_forward_scores.csv: do not fetch anything')
+    parser.add_argument('--offline-events', type=Path, help='Archived event_audit.csv')
     parser.add_argument('--markets', choices=['both', 'twse', 'tpex'], default='both')
     parser.add_argument('--prediction-date', default='')
     args = parser.parse_args()
@@ -299,6 +437,9 @@ def main():
     markets = ('twse', 'tpex') if args.markets == 'both' else (args.markets,)
     out = args.root / args.out
     out.mkdir(parents=True, exist_ok=True)
+    if args.offline_scores:
+        offline_replay(args, out, now)
+        return
     notices, status = attention(args.start, end, args.attention_cache, markets)
     master = read(args.root / 'data/master.json')['stocks']
     events, rejected = reports(args.root / args.reports, master, markets)
