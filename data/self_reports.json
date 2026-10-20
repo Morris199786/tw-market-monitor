@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-19T22:32+08:00",
+  "updated_at": "2026-10-20T08:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1196,28 +1196,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 11,
-      "self_reports": 8,
+      "rows": 0,
+      "self_reports": 0,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 144,
-          "hits": 11
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 144,
+          "rows": 8,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 144,
+          "rows": 8,
+          "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 8,
           "hits": 0
         },
         {
@@ -1252,14 +1252,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 144,
+          "rows": 8,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 144,
+          "rows": 8,
           "hits": 0
         },
         {
@@ -1295,8 +1295,8 @@
           "sources": [
             {
               "market": "twse",
-              "rows": 4,
-              "ticker_pool": 3
+              "rows": 53,
+              "ticker_pool": 39
             },
             {
               "market": "tpex",
@@ -1304,7 +1304,63 @@
               "ticker_pool": 0
             }
           ],
-          "tickers": 3
+          "tickers": 39
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1216",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1225",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1437",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1457",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1504",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1623",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "1626",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -1316,7 +1372,215 @@
         },
         {
           "mode": "company_rescue",
-          "ticker": "3701",
+          "ticker": "2231",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2301",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2316",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2323",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2385",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2415",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2466",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2467",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2609",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2801",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2881",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2883",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2885",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "2891",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "3266",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4137",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4540",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4766",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "4958",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "5203",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "5215",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "5546",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6239",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6467",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6658",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6715",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "6923",
           "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
@@ -1331,35 +1595,43 @@
           "error": ""
         },
         {
+          "mode": "company_rescue",
+          "ticker": "7610",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "9930",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
+          "mode": "company_rescue",
+          "ticker": "9955",
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 0,
+          "hits": 0,
+          "error": ""
+        },
+        {
           "mode": "company_rescue_summary",
-          "targets": 3,
+          "targets": 39,
           "rescued": 0,
           "rescued_tickers": []
         }
       ],
-      "rejected": [
-        {
-          "keyword": "daily_broad",
-          "reason": "candidate_row_rejected",
-          "text": "4117 普生 115/10/19 07:48:06 公告本公司115年09月份自結合併財務報告之負債比率、流動 比率及速動比率"
-        },
-        {
-          "keyword": "daily_broad",
-          "reason": "candidate_row_rejected",
-          "text": "5271 紘通 115/10/19 15:25:51 公告115年09月份自結財務報告之負債比率、流動比率 及速動比率、預估未來三個月現金收支情形及銀行可使用 融資額度情形"
-        },
-        {
-          "keyword": "daily_broad",
-          "reason": "candidate_row_rejected",
-          "text": "3095 及成 115/10/19 15:50:08 公告本公司115年9月份自結合併財務報表之流動比率、速動 比率及負債比率"
-        }
-      ],
+      "rejected": [],
       "error": ""
     },
     "twse": {
       "ok": true,
-      "rows": 4,
-      "self_reports": 0,
+      "rows": 53,
+      "self_reports": 2,
       "error": ""
     },
     "tpex": {
