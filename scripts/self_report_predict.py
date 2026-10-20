@@ -18,12 +18,12 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-offline-snapshot-v9'
+VERSION = '2026-10-20-market-separated-v10'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
-    'twse': '前日注意；優先20日首次注意，重複注意僅依歷史機率挑選',
-    'tpex': '前日注意；優先近5日剛好3次，4次以上降低優先序',
+    'twse': '前日注意；近20交易日注意1至3次，近3交易日注意不得達3次',
+    'tpex': '前日注意；近5交易日注意剛好3次',
 }
 
 def read(path):
@@ -205,10 +205,19 @@ def bucket(row):
     return '5d=1' if row['n5'] == 1 else '5d=2' if row['n5'] == 2 else '5d>=3'
 
 def eligible(row):
-    if row['n1'] == 0:
+    """Market-specific rules derived from the archived daily candidate records.
+
+    Listed: first, second or third notice in 20 sessions; three consecutive
+    notices in 3 sessions are excluded. OTC: exactly three notices in 5 sessions.
+    """
+    if int(row.get('n1') or 0) != 1:
         return False
-    # Only active attention candidates; no day-based cooldown as a model signal.
-    return True
+    if row['market'] == 'twse':
+        return int(row['n20']) in (1, 2, 3) and int(row['n3']) <= 2
+    if row['market'] == 'tpex':
+        return int(row['n5']) == 3
+    return False
+
 
 def make_rows(cutoff, target, cal, notices, events, master):
     past = [d for d in cal if d <= cutoff]
@@ -285,12 +294,14 @@ class Model:
 
 def choose(rows, threshold=MIN_PROBABILITY):
     def priority(r):
-        # The market-specific event frequencies were discovered retrospectively;
-        # probability remains primary, and these are conservative tie-breaks.
-        pattern = (r['n20'] == 1) if r['market'] == 'twse' else (r['n5'] == 3)
-        return (-r['probability'], -int(pattern), -r['cell_samples'], r['ticker'])
-    return sorted((r for r in rows if r['rule_eligible'] and r['probability'] >= threshold),
-                  key=priority)[:CAP]
+        if r['market'] == 'tpex':
+            return 4
+        return {1: 3, 3: 2, 2: 1}.get(int(r['n20']), 0)
+    # The market-specific structural rule takes precedence over the previous
+    # V9 pooled-probability ranking. Never pad the list to ten.
+    return sorted((r for r in rows if r['rule_eligible']),
+                  key=lambda r: (-priority(r), -r['probability'], r['ticker']))[:CAP]
+
 
 def metrics(predictions, actual):
     n = len(predictions); hits = sum(x['label'] for x in predictions)
@@ -396,6 +407,7 @@ def offline_replay(args, out, now):
                    warnings=['完全離線：使用前次回測保存的每日候選特徵，未下載MOPS或注意交易資料',
                              '歷史特徵檔僅包含前次已評估日期；本次重新暖機，因此回測日期可能少於舊版',
                              '這是既有候選特徵的離線重評分，不能補回舊版沒有保存的候選股票',
+                             '上市20日注意1至3次且近3日不連續3次；上櫃5日恰好3次；共用每日上限10檔',
                              '上市與上櫃：截至預測前日已公告目標月份EPS／自結者直接排除'])
     write(out / 'backtest_summary.json', summary)
     csvout(out / 'backtest_daily.csv', daily)
