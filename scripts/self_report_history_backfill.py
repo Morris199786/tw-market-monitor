@@ -14,7 +14,7 @@ import update_self_reports as src
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--start', default='2026-09-01')
+    ap.add_argument('--start', default='2026-07-01')
     ap.add_argument('--end', default='2026-09-28')
     ap.add_argument('--out', default='self_report_historical')
     args = ap.parse_args()
@@ -72,6 +72,10 @@ def main():
     (out / 'self_reports_history.json').write_text(json.dumps({'items': items, 'monitor_start_date': args.start, 'source': 'isolated_historical_backfill'}, ensure_ascii=False, indent=2), encoding='utf-8')
     (out / 'coverage.json').write_text(json.dumps(coverage, ensure_ascii=False, indent=2), encoding='utf-8')
     failed = [x['date'] for x in coverage if not x['query_ok']]
+    suspicious = [x['date'] for x in coverage if x.get('query_ok') and not x.get('skipped') and x.get('raw_rows', 0) < 30]
+    (out / 'coverage_warnings.json').write_text(json.dumps({'failed_days': failed, 'low_row_days': suspicious, 'note': 'Query success is not proof of full announcement coverage; manually audit low-row days.'}, ensure_ascii=False, indent=2), encoding='utf-8')
+    if suspicious:
+        print('WARNING: unusually low MOPS row count:', suspicious, flush=True)
     if failed:
         print('INCOMPLETE historical coverage:', failed)
         sys.exit(2)
