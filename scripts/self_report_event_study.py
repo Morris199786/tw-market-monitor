@@ -23,12 +23,35 @@ def get(url):
             time.sleep(k+1)
 
 def attention(start,end):
-    a=start.replace('-','');b=end.replace('-','')
-    urls=[('上市',f'https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate={a}&endDate={b}'),('上櫃',f'https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate={start.replace("-","%2F")}&endDate={end.replace("-","%2F")}&response=json')]
-    result=[];diagnostics=[]
-    for market,url in urls:
-        z=get(url); tables=z.get('tables') or []
-        rows=z.get('data',[]) if market=='上市' else (tables[0].get('data',[]) if tables else [])
+    a=start.replace('-',''); b=end.replace('-','')
+    # TPEx can return HTTP 403 to GitHub-hosted runners. Try alternate official
+    # endpoints, then clearly mark TPEx as unavailable rather than fabricating data.
+    sources=[
+        ('上市',[
+            f'https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate={a}&endDate={b}',
+        ]),
+        ('上櫃',[
+            f'https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate={start.replace("-","/")}&endDate={end.replace("-","/")}&response=json',
+            f'https://www.tpex.org.tw/web/bulletin/attention_information/attention_information.php?l=zh-tw&sd={start.replace("-","/")}&ed={end.replace("-","/")}&o=json',
+        ]),
+    ]
+    result=[]; diagnostics=[]
+    for market,urls in sources:
+        z=None; errors=[]; used=None
+        for url in urls:
+            try:
+                z=get(url); used=url; break
+            except (requests.RequestException,ValueError) as exc:
+                errors.append(f'{type(exc).__name__}: {str(exc)[:180]}')
+        if z is None:
+            diagnostics.append(dict(market=market,status='unavailable',source_rows=0,parsed_rows=0,errors=errors))
+            print(f'WARNING: {market} official attention data unavailable; market excluded from denominators: {errors}',flush=True)
+            continue
+        tables=z.get('tables') or []
+        if market=='上市':
+            rows=z.get('data',[])
+        else:
+            rows=z.get('data') or (tables[0].get('data',[]) if tables else [])
         valid=0
         for row in rows:
             if not isinstance(row,list) or len(row)<6 or not re.fullmatch(r'\d{4}',str(row[1])):continue
@@ -38,8 +61,8 @@ def attention(start,end):
             if start<=date<=end:
                 valid+=1
                 result.append(dict(date=date,ticker=str(row[1]),name=str(row[2]),market=market,reason=str(row[4])))
-        diagnostics.append(dict(market=market,source_rows=len(rows),parsed_rows=valid))
-    if not result:raise RuntimeError('No official attention events; refusing empty analysis')
+        diagnostics.append(dict(market=market,status='ok' if valid else 'empty_or_unparsed',source_rows=len(rows),parsed_rows=valid,source=used))
+    if not result:raise RuntimeError('All official attention sources failed or returned no parsable records; cannot study')
     return result,diagnostics
 
 def read_reports(path):
@@ -73,7 +96,7 @@ def features(ticker,cutoff,calendar,by_ticker):
     d3=last(3);d5=last(5);d10=last(10);d20=last(20)
     kinds=lambda xs,k:sum(bool(re.search('第'+k+'款',x['reason'])) for x in xs)
     recent=hist[-1]['date']
-    return dict(n1=len(last(1)),n3=len(d3),n5=len(d5),n10=len(d10),n20=len(d20),r1_10=kinds(d10,'一'),r4_10=kinds(d10,'四'),r6_10=kinds(d10,'六'),gap=days.index(cutoff)-days.index(recent),recent_reason=hist[-1]['reason'],market=hist[-1]['market'],name=hist[-1]['name'])
+    return dict(n1=len(last(1)),n3=len(d3),n5=len(d5),n10=len(d10),n20=len(d20),r1_10=kinds(d10,'一'),r4_10=kinds(d10,'四'),r6_10=kinds(d10,'六'),gap=(days.index(cutoff)-days.index(recent)) if cutoff in days and recent in days else (dt.date.fromisoformat(cutoff)-dt.date.fromisoformat(recent)).days,recent_reason=hist[-1]['reason'],market=hist[-1]['market'],name=hist[-1]['name'])
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--attention-start',default='2026-09-01');p.add_argument('--start',default='2026-09-29');p.add_argument('--asof',default=dt.date.today().isoformat());p.add_argument('--history',default='data/self_reports_history.json');p.add_argument('--out',default='self_report_event_study');a=p.parse_args()
@@ -82,7 +105,16 @@ def main():
     by_ticker=collections.defaultdict(list)
     for x in notices:by_ticker[x['ticker']].append(x)
     for xs in by_ticker.values():xs.sort(key=lambda x:x['date'])
-    calendar=sorted({x['date'] for x in notices});by_report=collections.defaultdict(list)
+    # Use the complete weekday calendar, not only dates with attention notices.
+    # Otherwise cutoff can be absent on a quiet day and days.index(cutoff) crashes.
+    cal_start=dt.date.fromisoformat(a.attention_start)
+    cal_end=dt.date.fromisoformat(a.asof)
+    calendar=[]
+    cal_day=cal_start
+    while cal_day<=cal_end:
+        if cal_day.weekday()<5:calendar.append(cal_day.isoformat())
+        cal_day+=dt.timedelta(days=1)
+    by_report=collections.defaultdict(list)
     for x in reports:by_report[x['date']].append(x)
     # Full event calendar, not just dates with attention notices: prevents missing quiet report days.
     start=dt.date.fromisoformat(a.start);end=dt.date.fromisoformat(a.asof)
@@ -146,7 +178,7 @@ def main():
         match=index.get((x['date'],x['ticker']))
         events.append(dict(**x,found_in_risk_set=bool(match),prior_n1=match['n1'] if match else None,prior_n3=match['n3'] if match else None,prior_n5=match['n5'] if match else None,prior_n10=match['n10'] if match else None,prior_r6=match['r6_10'] if match else None,prior_gap=match['gap'] if match else None))
     save(out/'actual_events.csv',events,['date','ticker','name','kind','month','monthly_eps','quarter_eps','found_in_risk_set','prior_n1','prior_n3','prior_n5','prior_n10','prior_r6','prior_gap','subject'])
-    report={'asof':a.asof,'study_start':a.start,'attention_start':a.attention_start,'official_source_status':source_info,'attention_records':len(notices),'historical_self_report_events':len(reports),'study_events':len(events),'risk_set_rows':len(rows),'caveats':['This is descriptive event research, not a predictive model or optimized backtest.','Trading dates use weekdays, not exchange holiday calendars; verify holiday periods.','Attention event dates and reason fields depend on official feed layout.','Historical self-report history may miss real announcements; missing labels bias conditional rates downward.','Prior attention events before attention-start are not available; earliest windows are left-truncated.','Only prior-known data enter candidate features; event labels come from target date.','One-day rate denominator is candidate-stock/day exposures, not unique tickers.']}
+    report={'asof':a.asof,'study_start':a.start,'attention_start':a.attention_start,'official_source_status':source_info,'complete_market_coverage':all(x['status']=='ok' for x in source_info),'attention_records':len(notices),'historical_self_report_events':len(reports),'study_events':len(events),'risk_set_rows':len(rows),'caveats':['This is descriptive event research, not a predictive model or optimized backtest.','Trading dates use weekdays, not exchange holiday calendars; verify holiday periods.','Attention event dates and reason fields depend on official feed layout.','Historical self-report history may miss real announcements; missing labels bias conditional rates downward.','Prior attention events before attention-start are not available; earliest windows are left-truncated.','Only prior-known data enter candidate features; event labels come from target date.','One-day rate denominator is candidate-stock/day exposures, not unique tickers.','If an official market source is unavailable, that market is excluded; results must not be interpreted as full-market rates.']}
     (out/'research_metadata.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
