@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Self-report next-session prediction, market-separated, walk-forward evaluated.
-TWSE: same-day attention, first attention in 20 sessions (predeclared research rule).
-TPEx: same-day attention, >=3 attention sessions in 5 sessions.
-Does not send notifications, mutate the report collector, or use paid APIs.
+"""Self-report forecast: time-ordered, market-specific candidate calibration.
+No API credits, Telegram, or live self-report collector changes.
 """
 import argparse
 import collections
@@ -16,25 +14,25 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-VERSION = '2026-10-20-event-rules-twse-20d-v4'
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
+VERSION = '2026-10-20-walkforward-market-pattern-v5'
 CAP = 10
-MIN_PROBABILITY = 0.15
+MIN_PROBABILITY = .15
 MARKET_RULES = {
-    'twse': '前一交易日注意交易，近20交易日僅出現1次（48筆／17筆次日公告，事件研究35.42%）',
-    'tpex': '前一交易日注意交易，近5交易日累積至少3次',
+    'twse': '前日注意交易；分開評估20日首次、重複注意、注意原因及公告冷卻期',
+    'tpex': '前日注意交易；分開評估5日1次、2次、3次以上及公告冷卻期',
 }
 
 def read(path):
     return json.loads(Path(path).read_text(encoding='utf-8-sig'))
 
-def write(path, obj):
+def write(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + '.tmp')
-    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding='utf-8')
-    tmp.replace(path)
+    temp = path.with_suffix(path.suffix + '.tmp')
+    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
+    temp.replace(path)
 
 def csvout(path, rows):
     path = Path(path)
@@ -42,46 +40,44 @@ def csvout(path, rows):
     if not rows:
         path.write_text('', encoding='utf-8')
         return
-    with path.open('w', encoding='utf-8-sig', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0]), extrasaction='ignore')
+    keys = list(dict.fromkeys(k for r in rows for k in r))
+    with path.open('w', newline='', encoding='utf-8-sig') as stream:
+        writer = csv.DictWriter(stream, fieldnames=keys, extrasaction='ignore')
         writer.writeheader()
         writer.writerows(rows)
 
 def notice_date(value):
-    match = re.search(r'(\d{2,4})[./-](\d{1,2})[./-](\d{1,2})', str(value))
-    if not match:
+    m = re.search(r'(\d{2,4})[./-](\d{1,2})[./-](\d{1,2})', str(value))
+    if not m:
         return None
-    year = int(match[1])
-    if year < 1911:
-        year += 1911
+    year = int(m[1]); year += 1911 if year < 1911 else 0
     try:
-        return dt.date(year, int(match[2]), int(match[3])).isoformat()
+        return dt.date(year, int(m[2]), int(m[3])).isoformat()
     except ValueError:
         return None
 
 def parse_notices(obj, market, start, end):
     table = (obj.get('tables') or [{}])[0]
     fields = obj.get('fields') or table.get('fields') or []
-    rows = obj.get('data') or table.get('data') or []
+    data = obj.get('data') or table.get('data') or []
     def col(pattern, fallback):
-        return next((i for i, field in enumerate(fields) if re.search(pattern, str(field))), fallback)
-    ti, ni = col('證券代號|股票代號', 1), col('證券名稱|股票名稱', 2)
-    ri, di = col('注意交易資訊|注意原因', 4), col('日期', 5)
-    found = {}
-    for row in rows:
+        return next((i for i, name in enumerate(fields) if re.search(pattern, str(name))), fallback)
+    ti, ni, ri, di = col('證券代號|股票代號', 1), col('證券名稱|股票名稱', 2), col('注意交易資訊|注意原因', 4), col('日期', 5)
+    result = {}
+    for row in data:
         if not isinstance(row, list) or len(row) <= max(ti, ni, ri, di):
             continue
         ticker, day = str(row[ti]).strip(), notice_date(row[di])
         if not re.fullmatch(r'[1-9]\d{3}', ticker) or not day or not start <= day <= end:
             continue
         key = (day, ticker)
-        if key in found:
-            found[key]['reason'] += ' ' + str(row[ri])
+        if key in result:
+            result[key]['reason'] += ' ' + str(row[ri])
         else:
-            found[key] = dict(date=day, ticker=ticker, name=str(row[ni]), market=market, reason=str(row[ri]))
-    if not found:
-        raise ValueError(f'{market}: official attention data empty/unparsed; refusing forecast')
-    return sorted(found.values(), key=lambda x: (x['date'], x['ticker']))
+            result[key] = dict(date=day, ticker=ticker, name=str(row[ni]), market=market, reason=str(row[ri]))
+    if not result:
+        raise RuntimeError(f'{market}: official attention records unavailable')
+    return list(result.values())
 
 def attention(start, end, cache=None, markets=('twse', 'tpex')):
     urls = {
@@ -91,10 +87,10 @@ def attention(start, end, cache=None, markets=('twse', 'tpex')):
     result, status = [], {}
     for market in markets:
         if cache:
-            obj = read(Path(cache) / (market + '.json'))
+            obj = read(Path(cache) / f'{market}.json')
         else:
-            req = urllib.request.Request(urls[market], headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=45) as response:
+            request = urllib.request.Request(urls[market], headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(request, timeout=45) as response:
                 obj = json.load(response)
         rows = parse_notices(obj, market, start, end)
         result.extend(rows)
@@ -107,8 +103,7 @@ def reports(path, master, markets):
     events, audit = {}, []
     for x in raw:
         ticker, day = str(x.get('ticker', '')), str(x.get('publish_date', ''))
-        subject = str(x.get('subject') or '')
-        reason = x.get('match_reason')
+        subject, reason = str(x.get('subject') or ''), x.get('match_reason')
         market = master.get(ticker, {}).get('market')
         month = x.get('monthly_period')
         month = month if re.fullmatch(r'20\d\d-(0[1-9]|1[0-2])', str(month or '')) else None
@@ -141,7 +136,7 @@ def calendar(root, start, end, notices):
     days = {x['date'] for x in obj.get('raw', []) if x.get('index') is not None}
     days.update(p.stem for p in (root / 'data/history/market').glob('????-??-??.json'))
     days.update(x['date'] for x in notices)
-    days = sorted(d for d in days if start <= d <= end)
+    days = sorted(x for x in days if start <= x <= end)
     if len(days) < 20:
         raise ValueError('交易日曆不足20日')
     return days
@@ -149,22 +144,19 @@ def calendar(root, start, end, notices):
 def previous_month(day):
     return (dt.date.fromisoformat(day).replace(day=1) - dt.timedelta(days=1)).strftime('%Y-%m')
 
-def market_bucket(row):
-    if row['market'] == 'tpex':
-        return '5d>=3' if row['n5'] >= 3 else '5d=2' if row['n5'] == 2 else '5d<=1'
-    # The TWSE bucket must reflect the NEW 20-day rule, not the old 3-day rule.
-    return '20d=1' if row['n20'] == 1 else '20d=2' if row['n20'] == 2 else '20d>=3'
+def bucket(row):
+    if row['market'] == 'twse':
+        return '20d=1' if row['n20'] == 1 else '20d=2' if row['n20'] == 2 else '20d>=3'
+    return '5d=1' if row['n5'] == 1 else '5d=2' if row['n5'] == 2 else '5d>=3'
 
 def eligible(row):
     if row['n1'] == 0:
         return False
     if row['days_since_report'] is not None and row['days_since_report'] <= 5:
         return False
-    if row['market'] == 'twse':
-        return row['n20'] == 1
-    if row['market'] == 'tpex':
-        return row['n5'] >= 3
-    return False
+    # Unlike v4, don't discard all repeated TWSE attention cases or first TPEx notices.
+    # Probability + chronological calibration decides whether to include them.
+    return True
 
 def make_rows(cutoff, target, cal, notices, events, master):
     past = [d for d in cal if d <= cutoff]
@@ -176,13 +168,14 @@ def make_rows(cutoff, target, cal, notices, events, master):
     for x in events:
         if x['date'] <= cutoff:
             prior[x['ticker']].append(x)
-    pool = set(by_ticker) | {c for c, xs in prior.items() if any(x['kind'] == 'voluntary' for x in xs)}
+    pool = set(by_ticker) | {t for t, items in prior.items() if any(x['kind'] == 'voluntary' for x in items)}
     labels = {x['ticker'] for x in events if x['date'] == target}
     out = []
     for ticker in sorted(pool):
         if ticker not in master:
             continue
-        hist, history = sorted(by_ticker[ticker], key=lambda x: x['date']), prior[ticker]
+        hist = sorted(by_ticker[ticker], key=lambda x: x['date'])
+        history = prior[ticker]
         if any(x['month'] == previous_month(target) for x in history):
             continue
         last_report = max((x['date'] for x in history), default=None)
@@ -199,41 +192,49 @@ def make_rows(cutoff, target, cal, notices, events, master):
         row = dict(date=target, cutoff=cutoff, ticker=ticker, name=master[ticker].get('name', ticker),
                    market=master[ticker]['market'], label=int(ticker in labels), recent=recent,
                    gap=gap, cooldown=cooldown, days_since_report=report_gap, reason6=reason6, **counts)
-        row['market_pattern'] = market_bucket(row)
+        row['market_pattern'] = bucket(row)
         row['rule_eligible'] = eligible(row)
+        row['reason6_flag'] = int(reason6 > 0)
+        row['notice_intensity'] = 'high' if counts['n5'] >= 3 else 'mid' if counts['n5'] == 2 else 'low'
         out.append(row)
     return out
 
 class Model:
-    LEVELS = (('market',), ('market', 'recent'), ('market', 'recent', 'market_pattern'),
-              ('market', 'recent', 'market_pattern', 'cooldown'))
-    PRIOR_WEIGHT = 30
+    # All statistics computed only from days strictly preceding prediction day.
+    LEVELS = (('market',), ('market', 'market_pattern'),
+              ('market', 'market_pattern', 'reason6_flag'),
+              ('market', 'market_pattern', 'cooldown'),
+              ('market', 'notice_intensity', 'reason6_flag'))
+    PRIOR_WEIGHT = 24
     def __init__(self, rows):
         self.base = (sum(r['label'] for r in rows) + 1) / (len(rows) + 20)
         self.stats = []
         for keys in self.LEVELS:
-            group = collections.defaultdict(lambda: [0, 0])
+            groups = collections.defaultdict(lambda: [0, 0])
             for row in rows:
-                cell = group[tuple(row[k] for k in keys)]
-                cell[0] += row['label']
-                cell[1] += 1
-            self.stats.append(group)
+                if not row['rule_eligible']:
+                    continue
+                cell = groups[tuple(row[k] for k in keys)]
+                cell[0] += row['label']; cell[1] += 1
+            self.stats.append(groups)
     def predict(self, row):
-        p, support = self.base, 0
-        for keys, group in zip(self.LEVELS, self.stats):
-            hits, n = group.get(tuple(row[k] for k in keys), (0, 0))
+        p = self.base
+        support = 0
+        for keys, groups in zip(self.LEVELS, self.stats):
+            hits, n = groups.get(tuple(row[k] for k in keys), (0, 0))
             if n:
-                p = (hits + self.PRIOR_WEIGHT * p) / (n + self.PRIOR_WEIGHT)
-            support = n
+                estimate = (hits + self.PRIOR_WEIGHT * p) / (n + self.PRIOR_WEIGHT)
+                # Don't let a tiny last-level group override a larger reliable parent.
+                p = (p + estimate) / 2 if n < 12 else estimate
+                support = max(support, n)
         return p, support
 
 def choose(rows, threshold=MIN_PROBABILITY):
     return sorted((r for r in rows if r['rule_eligible'] and r['probability'] >= threshold),
-                  key=lambda r: (-r['probability'], -r['n1'], r['ticker']))[:CAP]
+                  key=lambda r: (-r['probability'], -r['cell_samples'], r['ticker']))[:CAP]
 
 def metrics(predictions, actual):
-    n = len(predictions)
-    hits = sum(x['label'] for x in predictions)
+    n = len(predictions); hits = sum(x['label'] for x in predictions)
     return dict(hits=hits, predictions=n, actual=actual,
                 precision=hits/n if n else None, recall=hits/actual if actual else None,
                 f1=2*hits/(n+actual) if n+actual else None)
@@ -250,8 +251,8 @@ def evaluate(day_rows, events):
                 p, support = model.predict(row)
                 scored.append(dict(row, probability=p, cell_samples=support))
             picks = choose(scored)
-            baseline = sorted((r for r in rows if 2*r['n3']+r['n10']+r['reason6'] >= 7),
-                              key=lambda r: (-(2*r['n3']+r['n10']+r['reason6']), r['ticker']))[:CAP]
+            baseline = sorted((r for r in rows if r['rule_eligible'] and (r['n20'] == 1 if r['market'] == 'twse' else r['n5'] >= 3)),
+                              key=lambda r: (-r['n5'], r['ticker']))[:CAP]
             baseline_all.extend(baseline)
             actual_codes = {e['ticker'] for e in events if e['date'] == day}
             predicted_codes = {r['ticker'] for r in picks}
@@ -261,9 +262,7 @@ def evaluate(day_rows, events):
                               hit_tickers=' '.join(sorted(predicted_codes & actual_codes)),
                               missed_tickers=' '.join(sorted(actual_codes - predicted_codes)),
                               baseline_hits=sum(r['label'] for r in baseline), baseline_predictions=len(baseline)))
-            picks_all.extend(picks)
-            scores_all.extend(scored)
-            evaluated_days.add(day)
+            picks_all.extend(picks); scores_all.extend(scored); evaluated_days.add(day)
         training.extend(rows)
     actual = sum(len({e['ticker'] for e in events if e['date'] == day}) for day in evaluated_days)
     summary = dict(model=metrics(picks_all, actual), baseline_same_dates=metrics(baseline_all, actual),
@@ -328,11 +327,10 @@ def main():
             forecast.append(clean)
         forecast = choose(forecast)
     warnings = [
-        '上市20日首次注意條件來自同一期間事件研究，48樣本17公告不是獨立回測成績',
-        '上市改為前一日注意且近20日僅1次；上櫃仍為前一日注意且近5日>=3次',
-        '15%最低模型估計機率，每日0至10檔，不補滿',
-        '上市20日規則需以新期間樣本做前瞻驗證，不能把35.42%當作正式模型命中率',
-        '回測使用逐日已知特徵；不使用當日標籤作為預測特徵',
+        '新模型將上市重複注意及上櫃首次注意納入候選，再依歷史條件機率篩選',
+        '每日0至10檔，不強制補滿；最低估計機率15%',
+        '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
+        '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
     ]
     if not target:
         warnings.append('下一交易日尚未由正式交易日曆確認，日期暫不標示')
@@ -344,7 +342,7 @@ def main():
                    market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
                asof=cutoff, prediction_day=target, prediction_window='下一交易日',
-               count=len(forecast), model='event-rules-selective-market-separated',
+               count=len(forecast), model='market-pattern-hierarchical-walkforward',
                threshold=MIN_PROBABILITY, items=forecast, candidates=forecast,
                source_status=status, evaluation=summary, warnings=warnings)
     write(out / 'predictions.json', obj)
@@ -361,15 +359,15 @@ def main():
     if summary_path:
         def percent(value):
             return '—' if value is None else f'{value:.1%}'
-        with open(summary_path, 'a', encoding='utf-8') as f:
-            f.write('\n## 自結預測驗證｜上市與上櫃分流\n\n')
-            f.write(f'資料截至 {cutoff}；每日符合條件才推薦（0至10檔）\n\n')
-            f.write('| 市場 | 推薦 | 命中 | Precision | Recall |\n|---|---:|---:|---:|---:|\n')
+        with open(summary_path, 'a', encoding='utf-8') as stream:
+            stream.write('\n## 自結預測驗證｜上市與上櫃分流\n\n')
+            stream.write(f'資料截至 {cutoff}；每日符合條件才推薦（0至10檔）\n\n')
+            stream.write('| 市場 | 推薦 | 命中 | Precision | Recall |\n|---|---:|---:|---:|---:|\n')
             for market, name in [('twse', '上市'), ('tpex', '上櫃'), ('model', '合計')]:
                 m = summary[market]
-                f.write(f'| {name} | {m["predictions"]} | {m["hits"]} | {percent(m["precision"])} | {percent(m["recall"])} |\n')
-            f.write('\n**上市條件已改為近20交易日首次注意；35.42%是事件研究條件率，不是此版模型回測率**\n')
-            f.write('\n下一交易日候選：' + (', '.join(x['ticker'] for x in forecast) or '無') + '\n')
+                stream.write(f'| {name} | {m["predictions"]} | {m["hits"]} | {percent(m["precision"])} | {percent(m["recall"])} |\n')
+            stream.write('\n新模型放寬候選但以條件機率控制推薦；請以實際回測數字判斷是否升版\n')
+            stream.write('\n下一交易日候選：' + (', '.join(x['ticker'] for x in forecast) or '無') + '\n')
 
 if __name__ == '__main__':
     main()
