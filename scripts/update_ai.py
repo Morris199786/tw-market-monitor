@@ -1,238 +1,122 @@
-"""Production AI selector: exact BAL_MA_SLOPE_RANK_HEAT25_30 shadow scoring.
-Keeps website JSON structure and historical shadow backtest independent.
-"""
-from sources import *
+"""Daily accumulation/setup selector; existing site schema, no paid API calls."""
+from sources import ROOT, load_json, save_json, now_tpe, ordinary_ticker
 from tech_universe import tech_tickers
-from statistics import mean
-import math
-
-LABELS = {
-    'flow': '近五日法人資金流入', 'flow_accel': '法人買盤加速度',
-    'r5': '五日漲幅', 'breakout': '突破20日高點', 'r10': '十日漲幅',
-    'trend': '多頭排列', 'liquidity': '成交金額',
-    'ma5_slope': '5MA斜率', 'ma10_slope': '10MA斜率',
-    'volume_guard': '異常爆量', 'overheat': '股價過熱',
-}
-STRATEGY = 'BAL_MA_SLOPE_RANK_HEAT25_30'
+from ai_setup_strategy import STRATEGY, NAME, WEIGHTS, MIN_SCORE, features, score, number, self_eps_signal
+from update_daily_k import valid_bar, fetch_official
+import argparse
+from collections import Counter
 
 
-def num(x):
-    try:
-        v = float(str(x).replace(',', ''))
-        return v if math.isfinite(v) else None
-    except (ValueError, TypeError):
-        return None
-
-
-def pct(a, b):
-    return 100 * (b / a - 1) if a is not None and b is not None and a > 0 else None
-
-
-def percentile(pool, field):
-    values = sorted((r[field], r['ticker']) for r in pool if r.get(field) is not None)
-    ranks = {t: 100 * i / max(1, len(values) - 1) for i, (_, t) in enumerate(values)}
-    for r in pool:
-        r[field + '_rank'] = ranks.get(r['ticker'], 0)
-
-
-def load_snapshots(latest_date):
-    result = []
-    for p in sorted((ROOT / 'data/history/market').glob('*.json')):
-        if latest_date and p.stem > str(latest_date):
-            continue
-        d = load_json(p, {})
-        if isinstance(d.get('stocks'), dict) and d['stocks']:
-            result.append((p.stem, d['stocks']))
-    return result
-
-
-def get_pool(exchange, candidates, snapshots, inst):
-    today = snapshots[-1][1]
-    pool = []
-    for ticker, master_row in candidates.items():
-        if master_row.get('market') != exchange or ticker not in today:
-            continue
-        q = today[ticker]
-        price = num(q.get('price'))
-        if price is None or price <= 0:
-            continue
-        close = [num(s[1].get(ticker, {}).get('price')) for s in snapshots[-21:]]
-        vol = [num(s[1].get(ticker, {}).get('volume')) for s in snapshots[-6:]]
-        r5, r10 = pct(close[-6], price), pct(close[-11], price)
-        ma5 = mean(close[-5:]) if all(v is not None and v > 0 for v in close[-5:]) else None
-        ma5_old = mean(close[-8:-3]) if all(v is not None and v > 0 for v in close[-8:-3]) else None
-        ma10 = mean(close[-10:]) if all(v is not None and v > 0 for v in close[-10:]) else None
-        ma10_old = mean(close[-13:-3]) if all(v is not None and v > 0 for v in close[-13:-3]) else None
-        ma20 = mean(close[-20:]) if all(v is not None and v > 0 for v in close[-20:]) else None
-        breakout = pct(max(close[:-1]), price) if all(v is not None and v > 0 for v in close[:-1]) else None
-        ratio = vol[-1] / mean(vol[:-1]) if all(v is not None for v in vol) and mean(vol[:-1]) > 0 else None
-
-        flow_sum, turnover_sum, daily_ratios = 0., 0., []
-        healthy = True
-        for day, stocks in snapshots[-5:]:
-            daily = stocks.get(ticker, {})
-            row = inst.get(day, {}).get(ticker)
-            p, turnover = num(daily.get('price')), num(daily.get('turnover'))
-            if not isinstance(row, dict) or p is None or turnover is None:
-                healthy = False
-                break
-            net_amount = sum(num(row.get(k)) or 0 for k in ('foreign', 'trust', 'dealer')) * p
-            flow_sum += net_amount
-            turnover_sum += turnover
-            daily_ratios.append(net_amount / turnover * 100 if turnover > 0 else None)
-        flow = flow_sum / turnover_sum * 100 if healthy and turnover_sum > 0 else None
-        accel = (mean(daily_ratios[-2:]) - mean(daily_ratios[:3])
-                 if healthy and len(daily_ratios) == 5 and all(v is not None for v in daily_ratios)
-                 else None)
-        pool.append({
-            'ticker': ticker, 'name': master_row.get('name', ''), 'entry': price,
-            'r5': r5, 'r10': r10, 'flow': flow, 'flow_accel': accel,
-            'breakout': breakout, 'volume_ratio': ratio,
-            'daily_turnover': num(q.get('turnover')),
-            'ma5_slope': pct(ma5_old, ma5), 'ma10_slope': pct(ma10_old, ma10),
-            'ma20_gap_pct': pct(ma20, price),
-            'trend': int(ma10 is not None and ma20 is not None and price > ma10 > ma20),
-            'change_pct': q.get('change_pct'),
-        })
-    if len(pool) < 20:
-        raise RuntimeError(f'AI {exchange} fewer than 20 candidates')
-    for field in ('flow', 'flow_accel', 'r5', 'r10', 'breakout', 'daily_turnover', 'ma5_slope', 'ma10_slope'):
-        percentile(pool, field)
-    for r in pool:
-        heat = (1.5 * max(0, r['r5'] - 25) + max(0, r['ma20_gap_pct'] - 30)
-                if r['r5'] is not None and r['ma20_gap_pct'] is not None else 0.)
-        volume_penalty = min(6., 2. * max(0., (r['volume_ratio'] or 0.) - 3.))
-        r['contributions'] = {
-            'flow': .25 * r['flow_rank'],
-            'flow_accel': .10 * r['flow_accel_rank'],
-            'r5': .25 * r['r5_rank'],
-            'breakout': .20 * r['breakout_rank'],
-            'r10': .10 * r['r10_rank'],
-            'trend': 10. * r['trend'],
-            'liquidity': .05 * (r['daily_turnover_rank'] - 50),
-            'ma5_slope': (.05 * (r['ma5_slope_rank'] - 50) if r['ma5_slope'] is not None else 0.),
-            'ma10_slope': (.05 * (r['ma10_slope_rank'] - 50) if r['ma10_slope'] is not None else 0.),
-            'volume_guard': -volume_penalty,
-            'overheat': -1.5 * heat,
-        }
-        r['score'] = sum(r['contributions'].values())
-    return sorted(pool, key=lambda r: (-r['score'], r['ticker']))
+def load_candles(ticker):
+    merged={}
+    # Prefer the chart's official-corrected candles over the research backfill.
+    for folder in ('ai_backtest_k','ai_setup_k','daily_k'):
+        data=load_json(ROOT/f'data/{folder}/{ticker}.json',{})
+        if str(data.get('ticker'))!=str(ticker): continue
+        for b in data.get('bars',[]):
+            if valid_bar(b): merged[b['time']]=b
+    return merged
 
 
 def main():
-    master = load_json(ROOT / 'data/master.json', {}).get('stocks', {})
-    market_data = load_json(ROOT / 'data/market_latest.json', {})
-    market = market_data.get('stocks', {})
-    latest_date = market_data.get('date')
-    tech = tech_tickers(master)
-    candidates = {
-        str(t): m for t, m in master.items()
-        if str(t) in tech and ordinary_ticker(t)
-        and m.get('market') in ('twse', 'tpex') and str(t) in market
-    }
-    if len(candidates) < 100:
-        raise RuntimeError('AI technology universe incomplete')
-    snapshots = load_snapshots(latest_date)
-    if len(snapshots) < 21 or snapshots[-1][0] != str(latest_date):
-        raise RuntimeError(f'AI requires 21 market snapshots ending {latest_date}')
-    inst = {}
-    for path in (ROOT / 'data/history/institutional').glob('*.json'):
-        d = load_json(path, {})
-        inst[path.stem] = {**d.get('twse', {}), **d.get('tpex', {})}
-    if any(day not in inst for day, _ in snapshots[-5:]):
-        raise RuntimeError('AI requires institutional data for five latest trading dates')
+    ap=argparse.ArgumentParser();ap.add_argument('--offline',action='store_true');args=ap.parse_args()
+    master=load_json(ROOT/'data/master.json',{}).get('stocks',{})
+    latest=load_json(ROOT/'data/market_latest.json',{});day=latest.get('date')
+    snapshots=[]
+    for p in sorted((ROOT/'data/history/market').glob('*.json')):
+        if p.stem<=day:
+            d=load_json(p,{}).get('stocks',{})
+            if d: snapshots.append((p.stem,d))
+    if len(snapshots)<10 or snapshots[-1][0]!=day:
+        raise RuntimeError('AI requires 10 complete market dates ending '+str(day))
+    dates=[d for d,_ in snapshots[-40:]]
+    institutions={}
+    for d in dates[-10:]:
+        x=load_json(ROOT/f'data/history/institutional/{d}.json',{})
+        if not x: raise RuntimeError('Missing institutional date '+d)
+        institutions[d]={**x.get('twse',{}),**x.get('tpex',{})}
+    universe=tech_tickers(master)
+    candidates={t:m for t,m in master.items() if t in universe and ordinary_ticker(t)
+                and m.get('market') in ('twse','tpex') and t in snapshots[-1][1]}
+    candles={t:load_candles(t) for t in candidates}
+    needs=any(day not in v for v in candles.values())
+    official,errors=fetch_official(now_tpe()) if needs and not args.offline else ({},{})
+    disclosures=load_json(ROOT/'data/self_reports_history.json',{}).get('items',[])
+    pools={'twse':[],'tpex':[]};excluded={};valid_counts=Counter()
+    for t,m in candidates.items():
+        bydate=candles[t]
+        fresh=official.get(m['market'],{}).get(t)
+        if fresh and fresh['time']==day and valid_bar(fresh): bydate[day]=fresh
+        # Cache only validated data; never overwrite another feature's candle files.
+        if day in bydate:
+            save_json(ROOT/f'data/ai_setup_k/{t}.json',{'ticker':t,'bars':[bydate[d] for d in sorted(bydate) if d<=day][-260:]})
+        if any(d not in bydate for d in dates): excluded[t]='日K缺漏或日期未同步';continue
+        bars=[bydate[d] for d in sorted(bydate) if d<=day][-40:]
+        if len(bars)<40: excluded[t]='日K不足40日';continue
+        quotes=[s.get(t,{}) for _,s in snapshots[-10:]]
+        # Check the entire feature window against official close snapshots.
+        matching=True
+        for d,s in snapshots[-40:]:
+            b=bydate[d]
+            price=number(s.get(t,{}).get('price'))
+            if price is None or abs(b['close']-price)>max(.01,price*.0001): matching=False;break
+        if not matching: excluded[t]='日K與市場收盤價不一致';continue
+        valid_counts[m['market']]+=1
+        flows=[institutions[d].get(t,{}) for d in dates[-10:]]
+        f,why=features(bars,flows,quotes,number(m.get('shares_issued')))
+        if why: excluded[t]=why;continue
+        f.update(ticker=t,name=m.get('name',t),change_pct=snapshots[-1][1][t].get('change_pct'))
+        f['self_eps']=self_eps_signal(t,disclosures,day,[d for d,_ in snapshots])
+        pools[m['market']].append(f)
+    # Fail rather than publish an apparently successful empty result from a data outage.
+    for mk in pools:
+        total=sum(m['market']==mk for m in candidates.values())
+        if total and valid_counts[mk]<max(10,.5*total):
+            save_json(ROOT/'data/ai_setup_diagnostics.json',{'date':day,'coverage':dict(valid_counts),'excluded':excluded,'source_errors':errors})
+            raise RuntimeError(f'AI {mk} current OHLC coverage {valid_counts[mk]}/{total} below 50%; previous picks preserved. Run AI K Backfill if needed.')
+    details=[
+        '正式策略：籌碼改善＋整理型態；不以5日漲幅、10日漲幅、突破20日高點加分',
+        '全台股科技普通股，上市上櫃分開評分；至少55分、每市場最多20檔，不足不湊數',
+        '籌碼45分：近5日預估淨買超占最新市值15分、占成交額10分、5日買超天數每一天2分、近5日對前5日流入率改善10分；正值以合格同市場股票的百分位評分，同值同分',
+        '預估淨買超金額＝每日三大法人淨買賣超股數×當日收盤價；市值＝最新收盤價×已發行股數；缺法人資料不補零',
+        '量縮收斂：近5日平均高低差≤前10日80%、均量≤85%、低點不再降低，20MA五日降幅不超過1%；12至20分',
+        '量縮回測：20MA五日降幅不超過0.5%、當日低點接近前一日20MA半個ATR內、收回均線且收盤位置≥60%、回檔量縮；14至20分',
+        '二次測底：前30至16日與前10至3日各取低點，兩底差≤1個ATR、第二底量小於第一底、現收盤高於第二底最高且法人流入率改善；16分；型態只取一種最高分',
+        'K線承接15分：收盤在區間上半部最多10分；支撐附近下影線占40%且收盤位置≥60%可得10分；收盤高於開盤與前收且收盤位置≥70%再加5分，總計最多15分',
+        '均線止跌10分：10MA與20MA各看五日變化，-1%至+1%線性給0至5分，超過+1%不再增加；支撐距離10分，距支撐≤2%滿分，至10%遞減為0分',
+        '不合格：5日淨買超非正、近3日無買超、尚無整理型態、收盤跌破前10日低點、距型態支撐超過10%、近5日均成交額不足2千萬、日K或法人資料不完整',
+        '爆量：今日量比前20日均量≥2且收盤位置<40%扣5分；≥3且位置<25%並低於前收扣10分；放量跌破支撐扣15分，當日取最重一條；前4日至少2次放量弱收再扣5，最多20分',
+        '爆量且收盤在上方80%、高於開盤與前收，免當日爆量扣分，但不豁免過熱；漲跌停無高低差的收盤位置以50%處理',
+        '過熱：5日漲幅超過10%每多1百分點扣1分；20MA正乖離超過2個ATR每多1個ATR扣5分，兩項各上限15分、取較重者；ATR為14日真實波幅平均；爆量與過熱合計最多扣30分',
+        '自結EPS額外分：最新單月EPS×3＞前季單季EPS×1.3加5分；≤前季扣5分；其間0分。前季非正或缺漏不計分。只用公告中明列、且緊接自結月份所在季度之前一季的單季EPS；不拿累計EPS替代，不用無公告時間的季報倒填；公告後20交易日內有效，同公司僅最新月份一筆',
+        '自結只採選股當日18:00前可用公告，次交易日進場；單月乘三是獲利速度比較，不是季EPS預測',
+        '選股是規則評分，不是上漲機率；績效改由本版實際留存訊號累積，次一交易日開盤進場，與舊放寬B分開'
+    ]
+    out={'updated_at':now_tpe().isoformat(timespec='minutes'),'date':day,'mode':'trade_day','complete':not errors,
+         'universe':'全台股科技普通股','universe_count':{mk:sum(m['market']==mk for m in candidates.values()) for mk in pools},
+         'logic':{'version':STRATEGY,'strategy':STRATEGY,'strategy_name':NAME,'details':details,'lookback_days':40,
+                  'institutional_dates':dates[-10:],'top_n_each_market':20,'minimum_score':MIN_SCORE,
+                  'markets_ranked_separately':True,'score_is_probability':False,
+                  'factors':[{'key':k,'label':k,'weight':v/100,'weight_pct':v} for k,v in WEIGHTS.items()]},
+         'coverage':dict(valid_counts),'excluded_counts':dict(Counter(excluded.values()))}
+    for mk,rows in pools.items():
+        ranked=score(rows)
+        out[mk]=[]
+        for r in ranked[:20]:
+            contrib=r['contributions']
+            out[mk].append({'ticker':r['ticker'],'name':r['name'],'score':round(r['score'],2),'change_pct':r['change_pct'],
+                'tags':[r['tag'],f"5日買超{r['buy_days']}天",f"距支撐{r['risk_pct']:.1f}%"],
+                'reason':f"{r['tag']}｜買超占市值{r['cap_flow']:.2f}%｜過熱扣{r['heat_penalty']:.1f}分｜自結EPS {r['self_eps']['points']:+d}分",
+                'factor_scores':{k:round(100*max(0,v)/WEIGHTS[k],1) for k,v in contrib.items() if k in WEIGHTS},
+                'contributions':{k:round(v,2) for k,v in contrib.items()},
+                'raw':{k:v for k,v in r.items() if k not in ('contributions','tags','name')}})
+    save_json(ROOT/'data/ai_setup_diagnostics.json',{'date':day,'excluded':excluded,'source_errors':errors,'coverage':dict(valid_counts)})
+    old=load_json(ROOT/'data/ai_picks.json',{})
+    if old and old.get('logic',{}).get('strategy')!=STRATEGY:
+        archive=ROOT/'data/ai_archive/legacy_picks.json'
+        if not archive.exists(): save_json(archive,old)
+    save_json(ROOT/'data/ai_picks.json',out)
+    save_json(ROOT/f'data/history/ai_setup/{day}.json',out)
+    print(STRATEGY,day,'selected',len(out['twse']),len(out['tpex']),'coverage',dict(valid_counts))
 
-    display_names = {str(t): str(m.get('name') or '') for t, m in master.items()}
-    for sector in load_json(ROOT / 'data/sectors.json', {}).get('sectors', []):
-        for stock in sector.get('stocks', []):
-            t, name = str(stock.get('ticker') or ''), str(stock.get('name') or '')
-            if t and name:
-                display_names[t] = name
-    out = {
-        'updated_at': now_tpe().isoformat(timespec='minutes'),
-        'mode': 'trade_day', 'complete': True, 'universe': '全台股科技普通股',
-        'universe_count': {
-            mk: sum(m.get('market') == mk for m in candidates.values())
-            for mk in ('twse', 'tpex')
-        },
-        'logic': {
-            'version': '2026-10-13-BAL_MA_SLOPE_RANK_HEAT25_30',
-            'strategy': STRATEGY, 'mode': 'trade_day',
-            'universe': '全台股科技普通股', 'lookback_days': 20,
-            'institutional_dates': [day for day, _ in snapshots[-5:]],
-            'factors': [
-                {'key': k, 'label': LABELS[k], 'weight': w, 'weight_pct': w * 100}
-                for k, w in (('flow', .25), ('flow_accel', .10), ('r5', .25),
-                             ('breakout', .20), ('r10', .10), ('trend', .10))
-            ],
-            'details': [
-                '目前正式選股策略：放寬B（BAL_MA_SLOPE_RANK_HEAT25_30），與後台36套策略的獨立回測並行',
-                '股票池：全台股科技普通股，上市、上櫃分別以同市場百分位排名，各選分數最高20檔；沒有要求所有因子都為正值',
-                '近5日法人資金流入率（25分）：外資＋投信＋自營商每日淨買賣超股數×當日收盤價，五日加總後除以五日成交金額，再換算同市場百分位',
-                '法人買盤加速度（10分）：最近2日平均法人流入率－前3日平均法人流入率，再換算百分位',
-                '五日股價漲幅（25分）：近5個交易日報酬的同市場百分位',
-                '突破前20日高點（20分）：收盤價相對前20日最高收盤價的突破程度，再換算百分位；未突破仍可入選',
-                '十日股價漲幅（10分）：近10個交易日報酬的同市場百分位',
-                '多頭均線排列（10分）：今日收盤價 > 10MA > 20MA 加10分，否則0分',
-                '成交金額：0.05×（成交金額百分位－50），介於－2.5至＋2.5分',
-                '5MA與10MA斜率：各比較今日均線與3個交易日前均線，分別以0.05×（斜率百分位－50）加減分，各最多±2.5分',
-                '異常爆量扣分：－min(6, 2×max(0, 今日成交量／前5日均量－3))，最多扣6分',
-                '放寬B過熱扣分：五日漲幅超過25%後，每多1個百分點扣2.25分；20MA正乖離超過30%後，每多1個百分點扣1.5分；兩者累加',
-                '最終分數＝上述基本因子與加減分總和；分數可高於100或低於0，並非未來上漲機率',
-                '出場回測（5%停損、10%停損、10MA停損）不參與當日選股評分；後台繼續保留所有策略獨立比較',
-            ],
-            'top_n_each_market': 20, 'markets_ranked_separately': True,
-            'score_is_probability': False,
-        },
-        'twse': [], 'tpex': [],
-    }
-    for mk in ('twse', 'tpex'):
-        pool = get_pool(mk, candidates, snapshots, inst)
-        for r in pool[:20]:
-            contrib = r['contributions']
-            reason = '｜'.join(
-                f'{LABELS[k]}貢獻{v:.1f}分'
-                for k, v in sorted(contrib.items(), key=lambda x: -x[1])[:3] if v > 0
-            )
-            tags = []
-            if r['trend']:
-                tags.append('多頭排列')
-            if r['ma5_slope'] is not None and r['ma5_slope'] > 0:
-                tags.append('5MA向上')
-            if r['ma10_slope'] is not None and r['ma10_slope'] > 0:
-                tags.append('10MA向上')
-            if r['flow'] is not None and r['flow'] > 0:
-                tags.append('法人買超')
-            out[mk].append({
-                'ticker': r['ticker'], 'name': display_names.get(r['ticker']) or r['name'],
-                'score': round(r['score'], 1), 'change_pct': r['change_pct'],
-                'tags': tags, 'reason': reason or '無明顯正向因子',
-                'factor_scores': {
-                    LABELS['flow']: round(r['flow_rank'], 1),
-                    LABELS['flow_accel']: round(r['flow_accel_rank'], 1),
-                    LABELS['r5']: round(r['r5_rank'], 1),
-                    LABELS['breakout']: round(r['breakout_rank'], 1),
-                    LABELS['r10']: round(r['r10_rank'], 1),
-                    LABELS['trend']: 100 if r['trend'] else 0,
-                    LABELS['liquidity']: round(r['daily_turnover_rank'], 1),
-                    LABELS['ma5_slope']: round(r['ma5_slope_rank'], 1),
-                    LABELS['ma10_slope']: round(r['ma10_slope_rank'], 1),
-                    LABELS['volume_guard']: 0,
-                    LABELS['overheat']: 0,
-                },
-                'contributions': {LABELS[k]: round(v, 2) for k, v in contrib.items()},
-                'raw': {
-                    'flow_pct': r['flow'], 'flow_accel': r['flow_accel'],
-                    'r5': r['r5'], 'r10': r['r10'], 'breakout': r['breakout'],
-                    'ma5_slope': r['ma5_slope'], 'ma10_slope': r['ma10_slope'],
-                    'ma20_gap_pct': r['ma20_gap_pct'],
-                    'volume_ratio_5d': r['volume_ratio'],
-                    'turnover_today': r['daily_turnover'],
-                },
-            })
-    save_json(ROOT / 'data/ai_picks.json', out)
-    print('AI', STRATEGY, latest_date, len(out['twse']), len(out['tpex']))
-
-
-if __name__ == '__main__':
-    main()
+if __name__=='__main__': main()
