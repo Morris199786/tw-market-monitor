@@ -1,41 +1,102 @@
 name: Self Report Prediction
+
 on:
   workflow_dispatch:
     inputs:
       start_date:
         description: 注意交易歷史起始日
         required: true
-        default: '2026-09-01'
+        default: '2026-07-01'
         type: string
       asof_date:
-        description: 截止日期，留空使用昨日；當日尚未完成會自動排除
+        description: 注意交易資料截止日（台灣時間，留空自動選擇最近完整交易日）
         required: false
         default: ''
         type: string
+      prediction_date:
+        description: 預測目標交易日（留空以截止日後下一個平日估計，遇休市請手動指定）
+        required: false
+        default: ''
+        type: string
+
 permissions:
-  contents: read
+  contents: write
+
 concurrency:
   group: self-report-prediction
   cancel-in-progress: false
+
 jobs:
   predict:
-    name: Backtest and Predict
+    name: Backtest, Predict and Publish
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Run chronological prediction and backtest
+      - name: Resolve manual dates (Taipei time)
+        id: dates
+        env:
+          INPUT_ASOF: ${{ inputs.asof_date }}
+          INPUT_TARGET: ${{ inputs.prediction_date }}
+        run: |
+          python - <<'PY'
+          import datetime as dt, os
+          from zoneinfo import ZoneInfo
+          now=dt.datetime.now(ZoneInfo('Asia/Taipei'))
+          cutoff=os.environ['INPUT_ASOF'].strip()
+          if not cutoff:
+              # After 20:00 Taipei time, today's notices may be checked.
+              # Never silently claim an earlier day is current.
+              cutoff=(now.date() if now.hour>=20 else now.date()-dt.timedelta(days=1)).isoformat()
+          day=dt.date.fromisoformat(cutoff)
+          if day>now.date(): raise SystemExit('asof_date cannot be in the future')
+          if day==now.date() and now.hour<20: raise SystemExit('Today is not complete before 20:00 Taipei time')
+          target=os.environ['INPUT_TARGET'].strip()
+          if not target:
+              d=day+dt.timedelta(days=1)
+              while d.weekday()>=5: d+=dt.timedelta(days=1)
+              target=d.isoformat()
+          if dt.date.fromisoformat(target)<=day: raise SystemExit('prediction_date must follow asof_date')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'asof={cutoff}\ntarget={target}\n')
+          print(f'Attention asof={cutoff}; forecast target={target} (verify exchange holiday manually)')
+          PY
+      - name: Run attention-only prediction and backtest
         env:
           START_DATE: ${{ inputs.start_date }}
-          ASOF_DATE: ${{ inputs.asof_date }}
+          ASOF_DATE: ${{ steps.dates.outputs.asof }}
+          TARGET_DATE: ${{ steps.dates.outputs.target }}
         run: |
           python scripts/self_report_predict.py --backtest \
-            --start "$START_DATE" --asof "$ASOF_DATE" \
+            --start "$START_DATE" --backtest-start 2026-07-01 \
+            --asof "$ASOF_DATE" --prediction-date "$TARGET_DATE" \
             --reports data/self_reports_history.json --out self_report_model
-      - name: Upload results
+      - name: Export website JSON
+        run: |
+          python scripts/self_report_forecast_export.py \
+            --predictions self_report_model/predictions.json \
+            --summary self_report_model/backtest_summary.json \
+            --output data/self_report_forecast.json
+          python -m json.tool data/self_report_forecast.json > /dev/null
+      - name: Commit forecast to website data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/self_report_forecast.json
+          if git diff --cached --quiet; then
+            echo 'No changes in forecast JSON'
+          else
+            git commit -m 'data: update self-report forecast and backtest (manual)'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Upload detailed model results
         if: always()
         uses: actions/upload-artifact@v4
         with:
