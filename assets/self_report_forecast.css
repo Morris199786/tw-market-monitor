@@ -1,0 +1,21 @@
+/* 自結預測：手機／平板／桌機 */
+.earnings-mode-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.earnings-mode-tabs .earnings-mode{white-space:normal;line-height:1.3;min-height:50px}
+.sr-forecast{margin:12px 0 24px}
+.sr-forecast[hidden]{display:none!important}
+.sr-forecast-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:12px 0 16px}
+.sr-forecast-head h2{margin:0 0 7px;font-size:21px;color:var(--ink)}
+.sr-forecast-head p{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+#srForecastDate{border-radius:999px;background:var(--card);border:1px solid var(--line);padding:8px 10px;white-space:nowrap;font-size:12px;color:var(--muted)}
+.sr-forecast-pick{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px;margin:10px 0}
+.sr-forecast-pick>div{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sr-forecast-pick span{color:var(--muted);font-size:12px}.sr-forecast-pick strong{font-size:17px;color:var(--ink)}
+.sr-forecast-pick small{font-size:12px;color:var(--muted)}.sr-forecast-pick b{margin-left:auto;font-size:17px;color:var(--ink)}
+.sr-forecast-pick p{margin:9px 0 0;color:var(--muted);font-size:13px;line-height:1.6}
+.sr-forecast-history{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px}
+.sr-forecast-history summary{cursor:pointer;font-weight:800;color:var(--ink)}.sr-forecast-history summary small{font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}
+.sr-forecast-history p{font-size:13px;line-height:1.8;color:var(--muted)}
+.sr-forecast-scroll{overflow-x:auto}.sr-forecast-scroll table{width:100%;border-collapse:collapse;min-width:380px;font-size:13px;text-align:center}
+.sr-forecast-scroll th,.sr-forecast-scroll td{padding:10px 6px;border-bottom:1px solid var(--line)}
+.sr-forecast-note{margin-top:12px}.sr-forecast-note b{color:var(--ink)}
+@media(max-width:700px){.earnings-mode-tabs{gap:5px!important}.earnings-mode-tabs .earnings-mode{padding:9px 3px!important;font-size:12px!important}.sr-forecast-head{flex-wrap:wrap}.sr-forecast-head h2{font-size:19px}}
