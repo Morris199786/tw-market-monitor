@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 import requests
 
-VERSION='2026-10-20-event-study-v2-data-quality'
+VERSION='2026-10-20-event-study-v3-market-cross-analysis'
 S=requests.Session(); S.headers.update({'User-Agent':'Mozilla/5.0 (research; event-study)'})
 
 def get(url):
@@ -212,7 +212,95 @@ def main():
         match=index.get((x['date'],x['ticker']))
         events.append(dict(**x,found_in_risk_set=bool(match),prior_n1=match['n1'] if match else None,prior_n3=match['n3'] if match else None,prior_n5=match['n5'] if match else None,prior_n10=match['n10'] if match else None,prior_r6=match['r6_10'] if match else None,prior_gap=match['gap'] if match else None))
     save(out/'actual_events.csv',events,['date','ticker','name','kind','month','monthly_eps','quarter_eps','found_in_risk_set','prior_n1','prior_n3','prior_n5','prior_n10','prior_r6','prior_gap','subject'])
-    report={'version':VERSION,'excluded_non_self_report':len(rejected),'asof':a.asof,'study_start':a.start,'attention_start':a.attention_start,'official_source_status':source_info,'complete_market_coverage':all(x['status']=='ok' for x in source_info),'attention_records':len(notices),'historical_self_report_events':len(reports),'study_events':len(events),'risk_set_rows':len(rows),'caveats':['This is descriptive event research, not a predictive model or optimized backtest.','Trading dates use weekdays, not exchange holiday calendars; verify holiday periods.','Attention event dates and reason fields depend on official feed layout.','Historical self-report history may miss real announcements; missing labels bias conditional rates downward.','Prior attention events before attention-start are not available; earliest windows are left-truncated.','Only prior-known data enter candidate features; event labels come from target date.','One-day rate denominator is candidate-stock/day exposures, not unique tickers.','If an official market source is unavailable, that market is excluded; results must not be interpreted as full-market rates.','Self-report events with ambiguous subjects are excluded and exported for manual audit.','A parsed announcement may be published after market hours; the study does not yet reconstruct exact intraday information availability.']}
+    # Market-specific, mutually exclusive cross-sections: all features are known at cutoff.
+    # Not a threshold sweep: fixed categorical bins to describe observed patterns.
+    def count_bin(v):
+        if v==0:return '0'
+        if v==1:return '1'
+        if v==2:return '2'
+        if v==3:return '3'
+        return '4+'
+    def recent_bin(x):
+        if x['n1']>=1:return '當日注意'
+        if x['gap']<=2:return '距今1-2日'
+        return '距今3日以上'
+    def cooldown_bin(x):
+        d=x['days_since_report']
+        if d is None:return '從未公布'
+        if d<=5:return '公布後0-5日'
+        if d<=10:return '公布後6-10日'
+        return '公布後11日以上'
+    for x in rows:
+        x['recent_group']=recent_bin(x)
+        x['n3_group']=count_bin(x['n3'])
+        x['n5_group']=count_bin(x['n5'])
+        x['r6_group']='有第六款' if x['r6_10'] else '無第六款'
+        x['cooldown_group']=cooldown_bin(x)
+    save(out/'risk_set.csv',rows,list(rows[0]))
+    cross=[]
+    def summarize_cross(group_by,labels,market,group):
+        buckets=collections.defaultdict(list)
+        for x in group:
+            buckets[tuple(x[k] for k in group_by)].append(x)
+        for key,subset in sorted(buckets.items()):
+            n=len(subset);hits=sum(x['label_attention'] for x in subset)
+            days_count=len({x['target_date'] for x in subset})
+            stocks_count=len({x['ticker'] for x in subset})
+            # Wilson 95% interval, to avoid overinterpreting tiny subgroups.
+            import math
+            z=1.96; rate=hits/n
+            denom=1+z*z/n
+            mid=(rate+z*z/(2*n))/denom
+            half=z*math.sqrt(rate*(1-rate)/n+z*z/(4*n*n))/denom
+            cross.append(dict(market=market,analysis=labels,group='｜'.join(map(str,key)),samples=n,
+                              distinct_stocks=stocks_count,distinct_days=days_count,
+                              hits=hits,rate=round(rate,5),wilson_low=round(max(0,mid-half),5),
+                              wilson_high=round(min(1,mid+half),5),
+                              enough_samples=int(n>=30 and days_count>=5)))
+    plans=[
+        (['recent_group','n3_group'],'最近注意 × 前3日次數'),
+        (['recent_group','n5_group'],'最近注意 × 前5日次數'),
+        (['recent_group','r6_group'],'最近注意 × 第六款'),
+        (['recent_group','cooldown_group'],'最近注意 × 自結冷卻期'),
+        (['recent_group','n5_group','r6_group'],'最近注意 × 前5日次數 × 第六款'),
+        (['recent_group','n5_group','cooldown_group'],'最近注意 × 前5日次數 × 冷卻期'),
+    ]
+    for market in ('上市','上櫃'):
+        group=[x for x in rows if x['market']==market]
+        for keys,label in plans:summarize_cross(keys,label,market,group)
+    save(out/'market_cross_rates.csv',cross,list(cross[0]))
+
+    # Daily stability of fixed, interpretable conditions; report zero-hit days too.
+    daily_stability=[]
+    fixed_rules={
+        '當日注意':lambda x:x['n1']>=1,
+        '當日注意且前3日>=2次':lambda x:x['n1']>=1 and x['n3']>=2,
+        '當日注意且前5日>=3次':lambda x:x['n1']>=1 and x['n5']>=3,
+        '當日注意且前5日>=4次':lambda x:x['n1']>=1 and x['n5']>=4,
+        '當日注意且前5日>=3次且無5日內自結':lambda x:x['n1']>=1 and x['n5']>=3 and (x['days_since_report'] is None or x['days_since_report']>5),
+    }
+    for market in ('上市','上櫃'):
+        for day in days[1:]:
+            g=[x for x in rows if x['market']==market and x['target_date']==day]
+            for name,rule in fixed_rules.items():
+                subset=[x for x in g if rule(x)]
+                n=len(subset);hits=sum(x['label_attention'] for x in subset)
+                daily_stability.append(dict(market=market,target_date=day,condition=name,
+                    samples=n,hits=hits,rate=round(hits/n,5) if n else None,
+                    hit_tickers=' '.join(sorted(x['ticker'] for x in subset if x['label_attention'])),
+                    candidate_tickers=' '.join(sorted(x['ticker'] for x in subset))))
+    save(out/'daily_stability.csv',daily_stability,list(daily_stability[0]))
+
+    # Contrast event capture vs events outside the attention-based risk set.
+    coverage=[]
+    for market in ('上市','上櫃'):
+        known={x['ticker'] for x in notices if x['market']==market}
+        event_rows=[x for x in events if x['kind']=='attention_trading' and x['ticker'] in known]
+        coverage.append(dict(market=market,matched_events=len(event_rows),
+                             matched_risk_set=sum(bool(x['found_in_risk_set']) for x in event_rows),
+                             unmatched_events=sum(not x['found_in_risk_set'] for x in event_rows)))
+    save(out/'event_coverage.csv',coverage,list(coverage[0]))
+    report={'version':VERSION,'cross_rate_rows':len(cross),'daily_stability_rows':len(daily_stability),'market_event_coverage':coverage,'excluded_non_self_report':len(rejected),'asof':a.asof,'study_start':a.start,'attention_start':a.attention_start,'official_source_status':source_info,'complete_market_coverage':all(x['status']=='ok' for x in source_info),'attention_records':len(notices),'historical_self_report_events':len(reports),'study_events':len(events),'risk_set_rows':len(rows),'caveats':['This is descriptive event research, not a predictive model or optimized backtest.','Trading dates use weekdays, not exchange holiday calendars; verify holiday periods.','Attention event dates and reason fields depend on official feed layout.','Historical self-report history may miss real announcements; missing labels bias conditional rates downward.','Prior attention events before attention-start are not available; earliest windows are left-truncated.','Only prior-known data enter candidate features; event labels come from target date.','One-day rate denominator is candidate-stock/day exposures, not unique tickers.','If an official market source is unavailable, that market is excluded; results must not be interpreted as full-market rates.','Self-report events with ambiguous subjects are excluded and exported for manual audit.','A parsed announcement may be published after market hours; the study does not yet reconstruct exact intraday information availability.','Cross-analysis rows with fewer than 30 stock-days or fewer than 5 distinct days are exploratory only.','Rates describe stock-day exposures, which are correlated within ticker and should not be interpreted as independent trials.','The risk set includes only stocks with recent attention; event coverage must be audited before claiming population recall.']}
     (out/'research_metadata.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(report,ensure_ascii=False,indent=2))
 
