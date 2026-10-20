@@ -1,0 +1,32 @@
+name: ETF 00981A Holdings
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 10 * * 1-5' # UTC 10:30 = Taipei 18:30
+permissions:
+  contents: write
+concurrency:
+  group: etf-00981a
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch dated ETF holdings
+        run: python scripts/update_etf_00981a.py
+      - name: Commit new snapshots only
+        run: |
+          if git diff --quiet -- data/etf_00981a.json && [ -f data/etf_00981a.json ]; then
+            echo 'No new holdings data'; exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add data/etf_00981a.json
+          git diff --cached --quiet || (git commit -m 'Update 00981A holdings' && git push)
