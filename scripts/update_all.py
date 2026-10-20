@@ -10,6 +10,7 @@ TASKS = [
     'update_close.py',
     'update_institutional.py',
     'update_stock_detail.py',
+    'repair_ai_candles.py',
     'update_ai.py',
     'update_ai_backtest.py',
     'update_heatmap.py',
