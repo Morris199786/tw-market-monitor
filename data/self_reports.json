@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-20T14:33+08:00",
+  "updated_at": "2026-10-20T14:53+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-10-07-v30-safe-revenue-prefilter-timing",
+  "filter_version": "2026-10-20-v31-attention-partial-eps-visible",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 170,
-    "parsed_count": 70,
+    "candidate_count": 171,
+    "parsed_count": 71,
     "parse_failed_count": 93,
     "parse_failed": [
+      {
+        "ticker": "6716",
+        "name": "應廣",
+        "publish_date": "2026-10-20",
+        "publish_time": "14:50:01",
+        "subject": "6716 應廣 115/10/20 14:50:01 本公司有價證券近期多次達公佈注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "9802",
         "name": "鈺齊-KY",
@@ -71,19 +84,6 @@
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
-        "quarter_eps": null
-      },
-      {
-        "ticker": "3230",
-        "name": "錦明",
-        "publish_date": "2026-10-19",
-        "publish_time": "15:24:01",
-        "subject": "3230 錦明 115/10/19 15:24:01 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解",
-        "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectTimeout",
-        "eps_parse_status": "partial",
-        "eps_parse_reason": "only_one_eps_section_parsed",
-        "monthly_eps": -0.18,
         "quarter_eps": null
       },
       {
@@ -1222,28 +1222,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 3,
-      "self_reports": 3,
+      "rows": 5,
+      "self_reports": 4,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 40,
-          "hits": 3
+          "rows": 49,
+          "hits": 5
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 40,
+          "rows": 49,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 40,
+          "rows": 49,
           "hits": 1
         },
         {
@@ -1569,7 +1569,7 @@
         {
           "mode": "company_rescue",
           "ticker": "9955",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1581,7 +1581,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "5701 劍湖山 115/10/20 14:50:01 公告本公司115年09月份自結合併 財務報告之負債比率、流動比率及速 動比率。"
+        }
+      ],
       "error": ""
     },
     "twse": {
@@ -1621,6 +1627,30 @@
       "quarter_eps_yoy_text": "2040%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": ""
+    },
+    {
+      "market": "",
+      "ticker": "3230",
+      "name": "錦明",
+      "publish_date": "2026-10-19",
+      "publish_time": "15:24:01",
+      "subject": "3230 錦明 115/10/19 15:24:01 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 3230 錦明 公司提供 序號 1 發言日期 115/10/19 發言時間 15:24:01 發言人 李顯章 發言人職稱 顧問 發言人電話 03-3573689 主旨 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解 符合條款 第 53 款 事實發生日 115/10/19 說明 1.事實發生日:115/10/19 2.發生緣由:依財團法人中華民國證券櫃檯買賣中心通知辦理。 3.財務業務資訊: (1)單月 最近一月單月 去年同月 與去年同期增減% (115/09) (114/09) --------------------------------------------------------------------- 營業收入(百萬元) 41 34 20.59% 稅前淨利(百萬元) (15) (19) 21.05% 歸屬母公司業主淨利(百萬元) (15) (20) 25.00% 每股盈餘(元) (0.18) (0.23) 21.74% (2)單季 最近一季單季 去年同期 與去年同期增減% (115第2季) (114第2季) ----------------------------------------------------------------------- 營業收入(百萬元) 103 91 13.19% 稅前淨利(百萬元) (49) (49) - 歸屬母公司業主淨利(百萬元) (49) (48) (2.08%) 每股盈餘(元) (0.58) (0.56) (3.57%) (3)最近四季累計 (114年第3季至115年第2季) ---------------------------------------------------------- 營業收入(百萬元) 398 稅前淨利(百萬元) (164) 歸屬母公司業主淨利(百萬元) (163) 每股盈餘(元) (1.92) (4)公司每股面額:10元。 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）: (1)115/10/12 說明本公司總經理裁定羈押一事 (2)115/10/14 公告本公司受邀參加玉山證券舉辦之法人說明會 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事:無。 6.其他應敘明事項: (1)以上115年9月及去年同期比較數之財務資料係本公司採IFRS會計 準則編製之合併自結數，未經會計師查核(閱)，僅供投資人參考。 (2)最近一季115年第2季係指單季數字，非為最近財務報告中之累計數字， 且係本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 (3)最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數，業經 會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3230&SPOKE_DATE=20261019&SPOKE_TIME=152401&SEQ_NO=1&skey=3230202610191",
+      "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectTimeout",
+      "match_reason": "attention_trading",
+      "eps": -0.18,
+      "monthly_eps": -0.18,
+      "monthly_eps_yoy": 21.74,
+      "monthly_period": "2026-09",
+      "quarter_eps": null,
+      "quarter_eps_yoy": null,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "21.74%",
+      "quarter_eps_yoy_text": null,
+      "eps_parse_status": "partial",
+      "eps_parse_reason": "only_one_eps_section_parsed"
     },
     {
       "market": "",
