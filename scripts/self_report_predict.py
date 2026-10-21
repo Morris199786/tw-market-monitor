@@ -18,11 +18,11 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-20-attention-only-v12-extended'
+VERSION = '2026-10-21-listed-clause-probability-v15'
 CAP = 10
 MIN_PROBABILITY = .15
 MARKET_RULES = {
-    'twse': '前日注意；近20交易日注意1至3次，近3交易日注意不得達3次',
+    'twse': '近20日注意交易與款項機率評分；不以次數或前日注意硬性排除',
     'tpex': '前日注意；近5交易日注意剛好3次',
 }
 
@@ -205,18 +205,34 @@ def bucket(row):
     return '5d=1' if row['n5'] == 1 else '5d=2' if row['n5'] == 2 else '5d>=3'
 
 def eligible(row):
-    """Market-specific rules derived from the archived daily candidate records.
-
-    Listed: first, second or third notice in 20 sessions; three consecutive
-    notices in 3 sessions are excluded. OTC: exactly three notices in 5 sessions.
-    """
-    if int(row.get('n1') or 0) != 1:
-        return False
+    """Listed candidates use probability ranking; OTC structural rules unchanged."""
     if row['market'] == 'twse':
-        return int(row['n20']) in (1, 2, 3) and int(row['n3']) <= 2
+        return int(row.get('n20') or 0) >= 1
     if row['market'] == 'tpex':
-        return int(row['n5']) == 3
+        return int(row.get('n1') or 0) == 1 and int(row.get('n5') or 0) == 3
     return False
+
+CLAUSE_RE = re.compile(r'第\s*(十[一二]?|[一二三四五六七八九]|1[012]|[1-9])\s*款')
+CLAUSE_NUM = dict(zip('一二三四五六七八九', range(1, 10)), **{'十': 10, '十一': 11, '十二': 12})
+
+def notice_clauses(reason):
+    return {int(v) if v.isdigit() else CLAUSE_NUM[v]
+            for v in CLAUSE_RE.findall(str(reason or ''))}
+
+def clause_features(hist, windows):
+    recent = [x for x in hist if x['date'] in windows[20]]
+    last = notice_clauses(recent[-1].get('reason')) if recent else set()
+    out = {}
+    all_clauses = set()
+    for n in range(1, 13):
+        out[f'clause_{n}_20d'] = sum(n in notice_clauses(x.get('reason')) for x in recent)
+        out[f'clause_{n}_last'] = int(n in last)
+    for x in recent:
+        all_clauses.update(notice_clauses(x.get('reason')))
+    out['clause_last_known'] = int(bool(last))
+    out['clause_last_count'] = len(last)
+    out['clause_distinct_20d'] = len(all_clauses)
+    return out
 
 
 def make_rows(cutoff, target, cal, notices, events, master):
@@ -254,8 +270,9 @@ def make_rows(cutoff, target, cal, notices, events, master):
         reason6 = sum(bool(x['date'] in windows[10] and re.search(r'第\s*[六6]\s*款', x['reason'])) for x in hist)
         row = dict(date=target, cutoff=cutoff, ticker=ticker, name=master[ticker].get('name', ticker),
                    market=master[ticker]['market'], label=int(ticker in labels), recent=recent,
-                   gap=gap, cooldown=cooldown, days_since_report=report_gap, reason6=reason6, **counts)
+                   gap=gap, cooldown=cooldown, days_since_report=report_gap, reason6=reason6, **counts, **clause_features(hist, windows))
         row['market_pattern'] = bucket(row)
+        row['clause_data_available'] = 1
         row['rule_eligible'] = eligible(row)
         row['reason6_flag'] = int(reason6 > 0)
         row['notice_intensity'] = 'high' if counts['n5'] >= 3 else 'mid' if counts['n5'] == 2 else 'low'
@@ -263,44 +280,87 @@ def make_rows(cutoff, target, cal, notices, events, master):
     return out
 
 class Model:
-    # All statistics computed only from days strictly preceding prediction day.
-    LEVELS = (('market',), ('market', 'market_pattern'),
-              ('market', 'market_pattern', 'recent'),
-              ('market', 'market_pattern', 'reason6_flag'))
-    PRIOR_WEIGHT = 24
+    """Separate listed/OTC empirical probabilities; strictly past-only training.
+
+    Smoothed evidence from the notice count, short streak, clause 6, prior
+    reporting and notice intensity. Small groups shrink to their own market.
+    """
+    PRIOR_WEIGHT = 18
+    TWSE_FEATURES = ('n1', 'n20_bucket', 'clause_last_known', 'clause_last_count',
+                     'clause_distinct_20d') + tuple(f'clause_{n}_last' for n in range(1, 13))
+    FEATURES = ('market_pattern', 'notice_intensity', 'reason6_flag',
+                'cooldown', 'n3', 'n5')
+
     def __init__(self, rows):
-        eligible_rows = [r for r in rows if r['rule_eligible']]
-        self.base = (sum(r['label'] for r in eligible_rows) + 1) / (len(eligible_rows) + 20)
-        self.stats = []
-        for keys in self.LEVELS:
-            groups = collections.defaultdict(lambda: [0, 0])
-            for row in rows:
-                if not row['rule_eligible']:
-                    continue
-                cell = groups[tuple(row[k] for k in keys)]
-                cell[0] += row['label']; cell[1] += 1
-            self.stats.append(groups)
+        self.market_stats = collections.defaultdict(lambda: [0, 0])
+        self.feature_stats = collections.defaultdict(lambda: [0, 0])
+        for r in rows:
+            if not r['rule_eligible']:
+                continue
+            market = r['market']
+            self.market_stats[market][0] += r['label']
+            self.market_stats[market][1] += 1
+            for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and r.get('clause_data_available') else ())):
+                value = self.value(r, feature)
+                cell = self.feature_stats[(market, feature, value)]
+                cell[0] += r['label']
+                cell[1] += 1
+
+    @staticmethod
+    def value(r, feature):
+        if feature == 'n20_bucket':
+            n = int(r.get('n20') or 0)
+            return 0 if n == 0 else 1 if n == 1 else 2 if n <= 3 else 3 if n <= 5 else 4
+        if feature.startswith('clause_') or feature == 'n1':
+            return min(int(r.get(feature) or 0), 3)
+        if feature in ('n3', 'n5'):
+            return min(int(r.get(feature) or 0), 3)
+        return r.get(feature)
+
     def predict(self, row):
-        p = self.base
-        support = 0
-        for keys, groups in zip(self.LEVELS, self.stats):
-            hits, n = groups.get(tuple(row[k] for k in keys), (0, 0))
-            if n:
-                estimate = (hits + self.PRIOR_WEIGHT * p) / (n + self.PRIOR_WEIGHT)
-                # Don't let a tiny last-level group override a larger reliable parent.
-                p = (p + estimate) / 2 if n < 12 else estimate
-                support = max(support, n)
-        return p, support
+        market = row['market']
+        hits, total = self.market_stats[market]
+        base = (hits + 1) / (total + 2) if total else .10
+        # Add independent feature evidence on log-odds scale, capped to avoid
+        # tiny historical buckets creating overconfident probabilities.
+        import math
+        base = max(.005, min(.995, base))
+        logit = math.log(base / (1 - base))
+        support = total
+        for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and row.get('clause_data_available') else ())):
+            h, n = self.feature_stats[(market, feature, self.value(row, feature))]
+            if n < 8:
+                continue
+            p = (h + self.PRIOR_WEIGHT * base) / (n + self.PRIOR_WEIGHT)
+            p = max(.005, min(.995, p))
+            weight = min(.30, n / (n + 80) * .45)
+            logit += weight * (math.log(p / (1 - p)) - math.log(base / (1 - base)))
+            support = max(support, n)
+        probability = 1 / (1 + math.exp(-max(-12, min(12, logit))))
+        return probability, support
+
 
 def choose(rows, threshold=MIN_PROBABILITY):
-    def priority(r):
-        if r['market'] == 'tpex':
-            return 4
-        return {1: 3, 3: 2, 2: 1}.get(int(r['n20']), 0)
-    # The market-specific structural rule takes precedence over the previous
-    # V9 pooled-probability ranking. Never pad the list to ten.
-    return sorted((r for r in rows if r['rule_eligible']),
-                  key=lambda r: (-priority(r), -r['probability'], r['ticker']))[:CAP]
+    """Daily 0-10: protect listed slots, then rank by empirical probability.
+
+    No artificial 10-stock padding. A small listed reserve prevents OTC
+    names from occupying every slot when listed candidates exist.
+    """
+    eligible_rows = [r for r in rows if r['rule_eligible']]
+    listed = sorted((r for r in eligible_rows if r['market'] == 'twse'),
+                    key=lambda r: (-r['probability'], -r.get('cell_samples', 0), r['ticker']))
+    otc = sorted((r for r in eligible_rows if r['market'] == 'tpex'),
+                 key=lambda r: (-r['probability'], r['ticker']))
+    # Listed candidates need at least 8 supporting historical examples.
+    # A separate minimum keeps the broadened candidate pool from blindly
+    # adding every newly noticed stock.
+    listed = [r for r in listed if r['probability'] >= .10 and r.get('cell_samples', 0) >= 8]
+    otc = [r for r in otc if r['probability'] >= .10]
+    selected = listed[:4] + otc[:4]
+    used = {(r['market'], r['ticker']) for r in selected}
+    remaining = sorted((r for r in listed[4:] + otc[4:] if (r['market'], r['ticker']) not in used),
+                       key=lambda r: (-r['probability'], r['ticker']))
+    return (selected + remaining)[:CAP]
 
 
 def metrics(predictions, actual):
@@ -371,6 +431,7 @@ def offline_replay(args, out, now):
             row['days_since_report'] = int(row['days_since_report']) if row.get('days_since_report') else None
             row['market_pattern'] = bucket(row)
             row['notice_intensity'] = 'high' if row['n5'] >= 3 else 'mid' if row['n5'] == 2 else 'low'
+            row['clause_data_available'] = int('clause_last_known' in row and str(row.get('clause_last_known')) != '')
             row['rule_eligible'] = eligible(row)
             # Never use old model probabilities in the new model.
             row.pop('probability', None)
@@ -417,7 +478,7 @@ def offline_replay(args, out, now):
                              '歷史特徵檔僅包含前次已評估日期；本次重新暖機，因此回測日期可能少於舊版',
                              '這是既有候選特徵的離線重評分，不能補回舊版沒有保存的候選股票',
                              '只有因注意交易公告自結算命中與召回分母；自主公告僅用於已公告月份排除',
-                             '上市20日注意1至3次且近3日不連續3次；上櫃5日恰好3次；共用每日上限10檔',
+                             '上市近20日注意候選改機率排序；歷史快照未保存款項，不能用本次離線回測驗證款項增益；上櫃5日恰好3次',
                              '上市與上櫃：截至預測前日已公告目標月份EPS／自結者直接排除'])
     write(out / 'backtest_summary.json', summary)
     csvout(out / 'backtest_daily.csv', daily)
@@ -434,7 +495,7 @@ def offline_replay(args, out, now):
             for k, name in [('twse','上市'),('tpex','上櫃'),('model','合計')]:
                 m=summary[k]
                 f.write(f'| {name} | {m["predictions"]} | {m["hits"]} | '
-                        f'{m["precision"]:.1%} | {m["recall"]:.1%} |\n')
+                        f'{"—" if m["precision"] is None else format(m["precision"], ".1%")} | {"—" if m["recall"] is None else format(m["recall"], ".1%")} |\n')
             f.write(f'\n評估交易日：{summary["evaluated_days"]}；'
                     f'已公告目標月份排除：{excluded} 筆\n')
 
@@ -558,7 +619,7 @@ def main():
         forecast = choose(forecast)
     warnings = [
         '上市及上櫃一致：已公告預測月份EPS／自結者在評分前排除；不以任意天數作為冷卻期',
-        '每日0至10檔，不強制補滿；最低估計機率15%；上市20日首次與上櫃5日剛好3次優先',
+        '每日0至10檔，不強制補滿；上市與上櫃分別校準、各優先保留最多4檔，再依機率補足',
         '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
         '只有注意交易觸發的自結計入命中及召回率；自主公告不計入',
         '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
