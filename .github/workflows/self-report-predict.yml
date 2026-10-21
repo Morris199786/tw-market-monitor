@@ -39,8 +39,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install V17 dependencies
-        run: python -m pip install numpy scikit-learn
       - name: Resolve manual dates (Taipei time)
         id: dates
         env:
@@ -69,6 +67,8 @@ jobs:
               f.write(f'asof={cutoff}\ntarget={target}\n')
           print(f'Attention asof={cutoff}; forecast target={target} (verify exchange holiday manually)')
           PY
+      - name: Install V17 dependencies
+        run: python -m pip install numpy scikit-learn
       - name: Run attention-only prediction and backtest
         env:
           START_DATE: ${{ inputs.start_date }}
@@ -76,7 +76,7 @@ jobs:
           TARGET_DATE: ${{ steps.dates.outputs.target }}
         run: |
           python scripts/self_report_predict.py --backtest \
-            --start "$START_DATE" --backtest-start 2026-07-01 \
+            --start "$START_DATE" --backtest-start 2026-07-23 \
             --asof "$ASOF_DATE" --prediction-date "$TARGET_DATE" \
             --reports data/self_reports_history.json --out self_report_model
       - name: Export website JSON
