@@ -1,0 +1,30 @@
+name: V17 May June Private Backtest
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install numpy==2.1.3 scikit-learn==1.6.1 scipy==1.14.1
+      - name: Validate historical raw inputs before scoring
+        run: |
+          test -s data/self_report_v17_historical/attention_2026_h1.json || { echo 'Missing verified H1 attention history'; exit 1; }
+          test -s data/self_report_v17_historical/events_2026_h1.csv || { echo 'Missing verified H1 MOPS actuals'; exit 1; }
+          test -s data/self_report_v17_historical/trading_calendar_2026_h1.json || { echo 'Missing verified H1 trading calendar'; exit 1; }
+      - name: Private walk-forward evaluation
+        run: |
+          python scripts/self_report_v17_may_june_backtest.py \
+            --notices data/self_report_v17_historical/attention_2026_h1.json \
+            --events data/self_report_v17_historical/events_2026_h1.csv \
+            --calendar data/self_report_v17_historical/trading_calendar_2026_h1.json
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: v17-may-june-private-backtest
+          path: private_backtest_may_june/
