@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-21-v17-twse-logistic-tpex-legacy'
+VERSION = '2026-10-21-v17-replay-fix1'
 CAP = 10
 MIN_PROBABILITY = .10
 MARKET_RULES = {
@@ -409,12 +409,12 @@ def metrics(predictions, actual):
                 precision=hits/n if n else None, recall=hits/actual if actual else None,
                 f1=2*hits/(n+actual) if n+actual else None)
 
-def evaluate(day_rows, events):
+def evaluate(day_rows, events, evaluation_start="2026-07-23"):
     training, daily, picks_all, scores_all, baseline_all = [], [], [], [], []
     evaluated_days = set()
     for day, rows in sorted(day_rows.items()):
         enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
-        if enough:
+        if enough and day >= evaluation_start:
             scored = score_v17(rows, training)
             picks = choose(scored)
             baseline = sorted((r for r in rows if r['rule_eligible'] and (r['n20'] == 1 if r['market'] == 'twse' else r['n5'] >= 3)),
@@ -457,7 +457,7 @@ def offline_replay(args, out, now):
     days = collections.defaultdict(list)
     with source.open(encoding='utf-8-sig', newline='') as f:
         for raw in csv.DictReader(f):
-            if not (args.backtest_start <= raw['date'] <= (args.asof or '9999-12-31')):
+            if not (args.start <= raw['date'] <= (args.asof or '9999-12-31')):
                 continue
             row = dict(raw)
             for key in ('label', 'recent', 'gap', 'reason6', 'n1', 'n3', 'n5', 'n10', 'n20'):
@@ -505,7 +505,7 @@ def offline_replay(args, out, now):
             label = int((day, row['ticker']) in attention_keys)
             relabelled += row['label'] != label
             row['label'] = label
-    summary, daily, picks, training, scores = evaluate(days, events)
+    summary, daily, picks, training, scores = evaluate(days, events, args.backtest_start)
     summary.update(version=VERSION, source_status={'offline': True, 'network_requests': 0,
                    'snapshot': str(source), 'excluded_announced_month': excluded, 'relabelled_historical_rows': relabelled},
                    asof=max(days), scope=args.markets, future_threshold=MIN_PROBABILITY,
@@ -596,8 +596,8 @@ def extend_archive(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', type=Path, default=ROOT)
-    parser.add_argument('--start', default='2026-09-01')
-    parser.add_argument('--backtest-start', default='2026-09-29')
+    parser.add_argument('--start', default='2026-07-01')
+    parser.add_argument('--backtest-start', default='2026-07-23')
     parser.add_argument('--asof', default='')
     parser.add_argument('--reports', default='data/self_reports_history.json')
     parser.add_argument('--out', default='self_report_model')
@@ -628,7 +628,7 @@ def main():
     events = [x for x in events if x['date'] <= end]
     cal = calendar(args.root, args.start, end, notices)
     cutoff = cal[-1]
-    days = [d for d in cal if args.backtest_start <= d <= end]
+    days = [d for d in cal if args.start < d <= end]
     rows = {d: make_rows(cal[cal.index(d)-1], d, cal, notices, events, master)
             for d in days if cal.index(d) > 0}
     summary, daily, picks, training, scores = evaluate(rows, events)
@@ -639,7 +639,7 @@ def main():
         raise ValueError('prediction-date must follow cutoff')
     provisional = target or (dt.date.fromisoformat(cutoff) + dt.timedelta(days=1)).isoformat()
     candidates = make_rows(cutoff, provisional, cal, notices, events, master)
-    enough = len(rows) >= 5 and sum(r['label'] for r in training) >= 15
+    enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
     forecast = []
     if enough and (target or provisional[:7] == cutoff[:7]):
         for row in score_v17(candidates, training):
@@ -661,7 +661,7 @@ def main():
     ]
     if not target:
         warnings.append('下一交易日尚未由正式交易日曆確認，日期暫不標示')
-    summary.update(version=VERSION, source_status=status, asof=cutoff,
+    summary.update(version=VERSION, backtest_kind='retrospective_walk_forward_not_independent', source_status=status, asof=cutoff,
                    requested_asof=requested, incomplete_current_day_excluded=requested > latest_complete,
                    scope=args.markets, warnings=warnings, future_threshold=MIN_PROBABILITY,
                    model_ready=enough, training_events=sum(r['label'] for r in training),
