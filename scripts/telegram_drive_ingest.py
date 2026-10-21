@@ -61,7 +61,18 @@ def upload_pdf(file_bytes, filename, unique_id):
         params={'uploadType': 'multipart', 'fields': 'id,name', 'supportsAllDrives': 'true'},
         headers={**drive_headers(), 'Content-Type': body.content_type},
         data=body, timeout=180)
-    response.raise_for_status()
+    if not response.ok:
+        try:
+            error = response.json().get('error', {})
+            reasons = [item.get('reason', '') for item in error.get('errors', [])]
+            reason = ', '.join(filter(None, reasons)) or error.get('status', 'unknown')
+            message = str(error.get('message', ''))[:350]
+        except (ValueError, TypeError, AttributeError):
+            reason, message = 'unknown', 'Non-JSON Google Drive error response'
+        raise RuntimeError(
+            f'Google Drive upload failed: HTTP {response.status_code}; '
+            f'reason={reason}; message={message}'
+        )
     return response.json()
 
 
