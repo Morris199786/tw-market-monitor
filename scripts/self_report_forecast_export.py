@@ -75,12 +75,12 @@ def run(args):
         settled=[v['metrics'][market] for v in ledger['settlements'].values()]
         totals={k:sum(v[k] for v in settled) for k in ('predictions','hits','actual')}
         forward[market]=dict(**stats(totals['predictions'],totals['hits'],totals['actual']),settled_days=len(settled))
-    combined={m:stats(hist_stats[m]['predictions']+forward[m]['predictions'],hist_stats[m]['hits']+forward[m]['hits'],hist_stats[m]['actual']+forward[m]['actual']) for m in ('twse','tpex')}
+    combined={m:forward[m].copy() for m in ('twse','tpex')}
     with open(args.daily,encoding='utf-8-sig',newline='') as f:daily=list(csv.DictReader(f))
     payload=dict(updated_at=dt.datetime.now(TZ).isoformat(timespec='seconds'),prediction_date=day,asof=asof,picks=picks,
-        model_version=pred.get('version'),backtest=dict(start=hist['first_evaluated_date'],end=max([hist['last_evaluated_date']]+list(ledger['settlements'])),**combined),
-        backtest_detail=dict(kind='historical_replay_plus_verified_forward',historical_end=hist['last_evaluated_date'],historical=hist_stats,forward=forward,daily=daily,
-            warning='7～10月為歷史研究回測；未來日期只計入已驗證全市場公告的預測，不完整日期保持待核對。'),
+        model_version=pred.get('version'),backtest=dict(start='2026-10-21',end=max(ledger['settlements'],default=None),**combined),
+        backtest_detail=dict(kind='prospective_only',historical_end=hist['last_evaluated_date'],historical=hist_stats,forward=forward,daily=daily,
+            warning='網站只計算2026-10-21起正式預測；未通過全市場公告完整性核對的日期不結算。'),
         forward_forecasts=ledger['forecasts'],forward_settlements=ledger['settlements'],
         pending_dates=sorted(set(ledger['forecasts'])-set(ledger['settlements'])),source_status=pred.get('source_status',{}))
     atomic_write(args.ledger,ledger);atomic_write(args.output,payload)
