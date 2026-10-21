@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Publish prospective-only V17 results; never rewrite a stored prediction."""
+"""Publish recomputed forecasts. Repeated runs are allowed; settled history is protected."""
 import argparse
-import csv
 import datetime as dt
 import json
 import os
 import tempfile
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo('Asia/Taipei')
@@ -46,28 +45,43 @@ def run(args):
     day = args.target_date or (prediction or {}).get('prediction_day')
     if not day or day < START:
         raise ValueError('Missing/invalid target date: ' + str(day))
-    if day in forecasts:
-        # Existing date is immutable. Do NOT retrain and do NOT overwrite it.
-        rec = forecasts[day]
-        print('REUSE_IMMUTABLE_FORECAST', day, 'asof', rec['asof'])
-    else:
-        if not isinstance(prediction, dict) or prediction.get('prediction_day') != day:
-            raise ValueError('Missing new prediction for ' + day)
-        asof = prediction.get('asof')
-        if not asof or asof >= day:
-            raise ValueError('Invalid cutoff')
-        picks = [dict(ticker=str(p['ticker']), name=str(p.get('name', '')),
-                      market=p['market'], probability=p.get('probability'),
-                      reasons=p.get('reasons', [])) for p in prediction.get('items', [])
-                 if p.get('market') in ('twse', 'tpex')]
-        counts = Counter(p['market'] for p in picks)
-        if any(n > 10 for n in counts.values()):
-            raise ValueError('More than 10 picks in one market')
-        if len({(p['market'], p['ticker']) for p in picks}) != len(picks):
-            raise ValueError('Duplicate pick')
-        rec = dict(asof=asof, model_version=prediction['version'], picks=picks)
+    # No date-based skip: a real freshly computed prediction is mandatory.
+    if not isinstance(prediction, dict) or prediction.get('prediction_day') != day:
+        raise ValueError('Missing fresh prediction for ' + day)
+    asof = prediction.get('asof')
+    if not asof or asof >= day:
+        raise ValueError('Invalid cutoff')
+    picks = [dict(ticker=str(p['ticker']), name=str(p.get('name', '')),
+                  market=p['market'], probability=p.get('probability'),
+                  reasons=p.get('reasons', [])) for p in prediction.get('items', [])
+             if p.get('market') in ('twse', 'tpex')]
+    counts = Counter(p['market'] for p in picks)
+    if any(n > 10 for n in counts.values()):
+        raise ValueError('More than 10 picks in one market')
+    if len({(p['market'], p['ticker']) for p in picks}) != len(picks):
+        raise ValueError('Duplicate pick')
+    rec = dict(asof=asof, model_version=prediction['version'], picks=picks)
+    old = forecasts.get(day)
+    if day in settlements:
+        # Always recompute and verify, but never rewrite a scored historical prediction.
+        if old is None:
+            raise ValueError('Settled day has no original forecast: '+day)
+        print('HISTORICAL_SETTLED_PRESERVED', day,
+              'fresh_model', rec['model_version'], 'stored_model', old['model_version'])
+        rec = old
+    elif old is None:
         forecasts[day] = rec
         print('SAVE_NEW_FORECAST', day, 'picks', len(picks))
+    elif old != rec:
+        # Keep an audit trail for model/data revisions without creating a new date.
+        revisions = ledger.setdefault('revisions', {}).setdefault(day, [])
+        if not revisions or revisions[-1] != old:
+            revisions.append(old)
+        forecasts[day] = rec
+        print('UPDATE_FORECAST', day, 'old_model', old.get('model_version'),
+              'new_model', rec['model_version'], 'picks', len(picks))
+    else:
+        print('RECOMPUTED_IDENTICAL_FORECAST', day, 'picks', len(picks))
 
     verified = load(args.verified_actuals, {'days': {}})
     if not isinstance(verified, dict) or not isinstance(verified.get('days'), dict):
@@ -110,7 +124,7 @@ def run(args):
                                         daily=[dict(date=d, **settlements[d]['metrics']) for d in settled_dates]),
                    pending_dates=sorted(d for d in forecasts if d >= START and d not in settlements),
                    forward_forecasts=forecasts, forward_settlements=settlements,
-                   source_status=(prediction or {}).get('source_status', {}))
+                   source_status=prediction.get('source_status', {}))
     save(args.ledger, ledger)
     save(args.output, payload)
     print('PUBLISHED', day, 'settled_days', len(settled_dates), 'pending', len(payload['pending_dates']))
@@ -119,8 +133,8 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--predictions', default='self_report_live/predictions.json')
     p.add_argument('--target-date', default='')
-    p.add_argument('--summary', default='')  # legacy workflow compatibility
-    p.add_argument('--daily', default='')    # legacy workflow compatibility
+    p.add_argument('--summary', default='')
+    p.add_argument('--daily', default='')
     p.add_argument('--ledger', default='data/self_report_v17_forecast_ledger.json')
     p.add_argument('--verified-actuals', default='data/self_report_v17_actuals_verified.json')
     p.add_argument('--output', default='data/self_report_forecast.json')
