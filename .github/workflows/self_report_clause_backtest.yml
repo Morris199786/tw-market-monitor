@@ -1,0 +1,108 @@
+name: Self-report clause research backtest
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-report-clause-research
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check archived inputs
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          base=Path('research/self_report')
+          for name in ['walk_forward_scores.csv','event_audit.csv']:
+              p=base/name
+              assert p.exists() and p.stat().st_size>1000, f'Input missing/empty: {p}'
+              with p.open(encoding='utf-8-sig',newline='') as f:
+                  rows=sum(1 for _ in csv.DictReader(f))
+              assert rows>100, f'Too few rows in {p}: {rows}'
+              print(name, p.stat().st_size, 'bytes', rows, 'rows')
+          PY
+      - name: Backfill official TWSE notice clauses
+        working-directory: research/self_report
+        run: |
+          python backfill_clauses.py \
+            --start 2026-06-01 --end 2026-09-30 \
+            --scores walk_forward_scores.csv \
+            --output clause_enriched_scores.csv
+      - name: Validate clause coverage
+        working-directory: research/self_report
+        run: |
+          python - <<'PY'
+          import csv, json
+          with open('walk_forward_scores.csv',encoding='utf-8-sig') as f: old=list(csv.DictReader(f))
+          with open('clause_enriched_scores.csv',encoding='utf-8-sig') as f: new=list(csv.DictReader(f))
+          assert len(old)==len(new), 'Candidate rows changed during backfill'
+          assert all((a['date'],a['ticker'])==(b['date'],b['ticker']) for a,b in zip(old,new)), 'Candidate order changed'
+          listed=[r for r in new if r['market']=='twse']
+          known=sum(int(r['clause_last_known']) for r in listed)
+          print('TWSE candidates:',len(listed),'with known latest clause:',known)
+          assert known>=100, 'Insufficient clause coverage; do not interpret backtest'
+          with open('twse_notice_clauses.json',encoding='utf-8') as f: notices=json.load(f)
+          assert len(notices)>=500, 'Unexpectedly few TWSE notices'
+          print('Official stock-date notices:',len(notices))
+          PY
+      - name: Run baseline and clause model on identical archived dates
+        working-directory: research/self_report
+        run: |
+          python self_report_predict.py --root ../.. \
+            --offline-scores "$(pwd)/walk_forward_scores.csv" \
+            --offline-events "$(pwd)/event_audit.csv" \
+            --backtest-start 2026-07-08 --asof 2026-09-29 \
+            --out research/self_report/results/baseline
+          python self_report_predict.py --root ../.. \
+            --offline-scores "$(pwd)/clause_enriched_scores.csv" \
+            --offline-events "$(pwd)/event_audit.csv" \
+            --backtest-start 2026-07-08 --asof 2026-09-29 \
+            --out research/self_report/results/clause_model
+      - name: Compare model performance
+        working-directory: research/self_report
+        run: |
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          root=Path('results')
+          output={}
+          for name in ('baseline','clause_model'):
+              p=root/name/'backtest_picks.csv'
+              with p.open(encoding='utf-8-sig',newline='') as f: picks=list(csv.DictReader(f))
+              output[name]={}
+              for market in ('twse','tpex'):
+                  rows=[r for r in picks if r['market']==market]
+                  hits=sum(int(r.get('label') or 0) for r in rows)
+                  output[name][market]={'picks':len(rows),'hits':hits,'precision':round(hits/len(rows),4) if rows else None}
+          (root/'comparison.json').write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(output,ensure_ascii=False,indent=2))
+          with open('twse_notice_clauses.json',encoding='utf-8') as f: notices=json.load(f)
+          from self_report_predict import notice_clauses
+          from collections import Counter
+          print('Official clause occurrences:',dict(sorted(Counter(k for n in notices for k in notice_clauses(n['reason'])).items())))
+          PY
+      - name: Upload all research outputs (no production changes)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-clause-backtest
+          path: |
+            research/self_report/clause_enriched_scores.csv
+            research/self_report/twse_notice_clauses.json
+            research/self_report/results/
+          if-no-files-found: warn
+          retention-days: 30
