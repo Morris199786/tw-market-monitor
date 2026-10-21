@@ -7,7 +7,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-12-v9-quarter-results"
+VERSION = "2026-10-21-v10-flexible-quarter-table"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -267,6 +267,63 @@ def is_quarterly_release(subject, text):
     return (is_result_candidate(subject) and bool(period_from_text(text))
             and bool(re.search(r'合併.*(?:財務|損益)|每股.*(?:盈餘|純益)|EPS', text, re.I))
             and not bool(re.search(r'預計|預告|受邀', subject)))
+
+
+def announcement_period_metrics(text, period):
+    """Read period-labelled MOPS financial rows, without relying on fixed wording.
+
+    Only a clearly labelled current-quarter column may supply direct EPS or
+    gross margin. Cumulative-only releases continue through event_cumulative.
+    """
+    raw=unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    flat=clean(raw).replace('－','-').replace('–','-').replace('—','-').replace('～','-')
+    year,quarter=int(period[:4]),int(period[-1])
+    first,last=3*quarter-2,3*quarter
+    yy=rf'(?:{year}|{year-1911})'
+    single_headers=[
+        rf'{yy}\s*年?\s*{first}\s*[-~至/]\s*{last}\s*月',
+        rf'{yy}\s*年(?:度)?\s*第?{quarter}\s*季\s*(?:單季|當季)',
+    ]
+    # A quarter mentioned only in the title is NOT evidence that the figures
+    # are single-quarter; require a period-labelled financial table header.
+    if not any(re.search(p,flat,re.I) for p in single_headers): return {}
+    # Detect the order of period columns. A current quarter must precede the
+    # next cumulative column, or appear alone. Reject ambiguous headers.
+    cum_pat=rf'{yy}\s*年?\s*1\s*[-~至/]\s*{last}\s*月'
+    sh=[m for pat in single_headers for m in re.finditer(pat,flat,re.I)]
+    cm=list(re.finditer(cum_pat,flat,re.I))
+    if not sh or (cm and min(m.start() for m in cm)<min(m.start() for m in sh)):
+        return {}
+    # MOPS renders a row-major table; its HTML may already have been flattened.
+    # Match each financial label and stop at the next label to prevent pulling
+    # a number from an unrelated row.
+    labels={
+        'eps':r'基本每股(?:盈餘|純益)(?:\s*\([^)]*\))*',
+        'revenue':r'(?:合併)?營業收入(?:淨額|合計)?',
+        'gross':r'(?:合併)?營業毛利(?:\s*\([^)]*\))?',
+    }
+    any_label=re.compile('|'.join(r'(?:'+x+r')' for x in labels.values()),re.I)
+    numbers={}
+    for key,pattern in labels.items():
+        vals=[]
+        for m in re.finditer(pattern,flat,re.I):
+            tail=flat[m.end():]
+            next_label=any_label.search(tail)
+            if next_label: tail=tail[:next_label.start()]
+            # A short row may contain a unit, colon, and several period columns.
+            tail=tail[:150]
+            if re.search(r'去年|上年|同比|年增|變動|增減',tail[:20]): continue
+            found=re.findall(r'(?<![\dA-Za-z])\(?[+-]?\d[\d,]*(?:\.\d+)?\)?(?![\dA-Za-z])',tail)
+            if not found: continue
+            v=num(found[0]);
+            if v is not None: vals.append(v)
+        if len(set(vals))==1 and vals: numbers[key]=vals[0]
+    out={}
+    if 'eps' in numbers: out['eps']=numbers['eps']
+    if numbers.get('revenue',0)>0 and 'gross' in numbers:
+        margin=numbers['gross']/numbers['revenue']*100
+        if -100<=margin<=100: out['gross_margin']=margin
+    return out
 
 
 def direct_quarter_metrics(text, period):
@@ -1042,6 +1099,7 @@ def main():
             event=dict(ticker=x['ticker'],name=uni.get(x['ticker']) or x['name'],period=period,publish_date=x['date'],publish_time=x.get('time',''),subject=subject,source_url=x.get('source_url',''))
             if report_visible(event,now,calendars):
                 values=direct_quarter_metrics(text,period)
+                values.update(announcement_period_metrics(text,period))
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
