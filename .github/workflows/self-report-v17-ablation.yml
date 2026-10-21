@@ -1,0 +1,29 @@
+name: Self Report V17 TWSE Ablation (Private)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ablation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install V17 dependencies
+        run: pip install numpy==2.1.3 scikit-learn==1.6.1 scipy==1.14.1 joblib==1.4.2 threadpoolctl==3.5.0
+      - name: Rebuild private full attention rule audit
+        run: python scripts/self_report_rule_backtest.py --out private_rule_backtest_v2
+      - name: Compare V17 ablations and rule A
+        run: python scripts/self_report_v17_ablation.py --rule-dir private_rule_backtest_v2 --out private_v17_ablation
+      - name: Upload comparison and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-v17-twse-ablation-private
+          path: |
+            private_v17_ablation/
+            private_rule_backtest_v2/audit.json
+          retention-days: 30
