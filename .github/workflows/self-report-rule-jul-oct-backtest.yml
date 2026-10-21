@@ -6,17 +6,20 @@ permissions:
 jobs:
   backtest:
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Offline rule backtest from archived daily snapshots
-        run: python scripts/self_report_rule_backtest.py
-      - name: Upload private results
+      - name: Run independent rule strategy using official full attention universe
+        run: |
+          python scripts/self_report_rule_backtest.py --out private_rule_backtest_v2
+      - name: Upload audit and comparisons, including if run fails
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: self-report-rule-jul-oct-private
-          path: private_rule_backtest/
+          name: self-report-rule-jul-oct-private-v2
+          path: private_rule_backtest_v2/
           retention-days: 30
+          if-no-files-found: warn
