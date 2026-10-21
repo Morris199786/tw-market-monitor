@@ -31,7 +31,7 @@ def settle(history, master, ledger, existing, now):
             continue
         codes = {'twse': set(), 'tpex': set()}
         for item in all_items(history):
-            if item.get('publish_date') != target or not attention(item):
+            if item.get('publish_date') != target or not attention(item) or item.get('monthly_eps') is None:
                 continue
             ticker = str(item.get('ticker') or '').strip()
             if not re.fullmatch(r'[1-9]\d{3}', ticker):
@@ -62,3 +62,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

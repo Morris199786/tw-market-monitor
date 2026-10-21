@@ -9,52 +9,33 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from self_report_forecast_export import load, save
-from self_report_v17_settle_actuals import all_items
 
-def metric(item, prefix):
-    value = item.get(prefix+'_eps')
-    period = item.get(prefix+'_period') or '期間未解析'
-    yoy = item.get(prefix+'_eps_yoy_text')
-    if not yoy and item.get(prefix+'_eps_yoy') is not None:
-        yoy = f"{float(item[prefix+'_eps_yoy']):+.2f}%"
-    eps = '未解析／未揭露' if value is None else f'{float(value):g} 元'
-    return f'{period}：{eps}；年增減 {yoy or "未揭露"}'
-
-def render(history, forecast, day):
-    # Prefer latest announcement, with parsed record winning over its diagnostics copy.
+def render(site, forecast, day):
+    # Use exactly the website's display feed, never diagnostics or raw candidates.
     companies = {}
-    for row in sorted(all_items(history), key=lambda r: (
-            r.get('publish_time') or '', r.get('monthly_eps') is not None,
-            r.get('quarter_eps') is not None)):
+    for row in sorted(site.get('items', []), key=lambda r: r.get('publish_time') or ''):
         ticker = str(row.get('ticker') or '')
-        if row.get('publish_date') == day and ticker:
+        if row.get('publish_date') == day and ticker and row.get('monthly_eps') is not None:
             companies[ticker] = row
-    lines = [f'今日盤後自結整理（{day}）', '彙整今日公告；資料截至 '+history['updated_at']]
-    for i, (ticker, row) in enumerate(sorted(companies.items()), 1):
-        lines += [f'{i}. {ticker} {row.get("name", "")}',
-                  '   單月 EPS '+metric(row, 'monthly'),
-                  '   最近公告單季 EPS '+metric(row, 'quarter')]
+    blocks = [f'今日盤後自結整理｜{day}']
+    for ticker, row in sorted(companies.items()):
+        monthly = f'{float(row["monthly_eps"]):g}'
+        quarter = '未揭露' if row.get('quarter_eps') is None else f'{float(row["quarter_eps"]):g} 元'
+        mp = row.get('monthly_period') or ''
+        qp = row.get('quarter_period') or ''
+        blocks.append(f'📌 {row.get("name", "")} {ticker}\n'
+                      f'單月 EPS：{monthly} 元（{mp}）\n'
+                      f'上一季 EPS：{quarter}'+(f'（{qp}）' if qp else ''))
     if not companies:
-        lines += ['截至抓取時間，網站尚無本日自結公告。']
-    lines += ['', f'下一交易日盤後可能公布自結（{forecast["prediction_date"]}）']
+        blocks.append('網站目前尚無本日單月自結資訊。')
+    lines = [f'下一交易日盤後可能公布自結｜{forecast["prediction_date"]}']
     for i, row in enumerate(forecast['picks'], 1):
-        lines += [f'{i}. {row["ticker"]} {row.get("name", "")}（'+
-                  ('上市' if row['market']=='twse' else '上櫃')+'）']
+        lines.append(f'{i}. {row.get("name", "")} {row["ticker"]}')
     if not forecast['picks']:
-        lines += ['無符合條件公司']
-    settled = forecast.get('forward_settlements', {}).get(day)
-    lines += ['', '今日預測核對（僅注意交易觸發自結）']
-    if not settled:
-        lines += ['待核對／沒有事前保存的今日預測，不用明日名單回填。']
-    else:
-        def pct(v):
-            return '—' if v is None else f'{v:.2%}'
-        for market, label in [('twse', '上市'), ('tpex', '上櫃')]:
-            m = settled['metrics'][market]
-            lines += [f'{label}：命中 {m["hits"]}/{m["predictions"]}；實際 {m["actual"]} 家；命中率 {pct(m["precision"])}；召回率 {pct(m["recall"])}']
-        if settled.get('provisional'):
-            lines += ['本日為暫結，後續抓取會補入晚到／更正公告。']
-    return '\n'.join(lines)
+        lines.append('無符合條件公司')
+    blocks.append('\n'.join(lines))
+    return '\n\n'.join(blocks)
+
 
 def chunks(text, size=1800):
     # Conservative length also accommodates UTF-16 surrogate pairs.
@@ -92,7 +73,7 @@ def main():
     p.add_argument('--date', default=dt.datetime.now(ZoneInfo('Asia/Taipei')).date().isoformat())
     p.add_argument('--send', action='store_true')
     a = p.parse_args()
-    text = render(load('data/self_reports_history.json'), load('data/self_report_forecast.json'), a.date)
+    text = render(load('data/self_reports.json'), load('data/self_report_forecast.json'), a.date)
     Path('self_report_live').mkdir(exist_ok=True)
     Path('self_report_live/telegram_digest.txt').write_text(text, encoding='utf-8')
     if a.send:

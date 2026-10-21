@@ -10,7 +10,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-20-v32-durable-telegram-dedup"
+VERSION = "2026-10-21-v33-explicit-eps-tables"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -463,6 +463,29 @@ def _extract_direct_self_report_metrics(text):
     return {"eps": value, "monthly_eps": value, "monthly_period": period}
 
 
+def explicit_table_metrics(text):
+    """Parse explicit monthly/quarter table headers, not introductory prose."""
+    result = {}
+    markers = list(re.finditer(
+        r"(?:科目\s*/\s*|\([12]\)\s*)(單月|單季)", text))
+    for i, marker in enumerate(markers):
+        end = markers[i+1].start() if i+1 < len(markers) else len(text)
+        section = text[marker.end():end]
+        section = re.split(r"(?:科目\s*/\s*|\(3\)\s*)最近", section)[0]
+        # Parenthesized percentages occur in MOPS negative growth cells.
+        section = re.sub(r"\(\s*(\d+(?:\.\d+)?)\s*%\s*\)", r"-\1%", section)
+        values = _extract_eps_triplet(section)
+        if not values:
+            continue
+        prefix = "monthly" if marker.group(1) == "單月" else "quarter"
+        period = _find_month_period(section) if prefix == "monthly" else _find_quarter_period(section)
+        if not period:
+            continue
+        result.update({prefix+"_eps": values[0], prefix+"_period": period,
+                       prefix+"_eps_yoy": values[2], prefix+"_eps_yoy_text": values[3]})
+    return result
+
+
 def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
@@ -589,6 +612,13 @@ def extract_metrics(text):
     direct = _extract_direct_self_report_metrics(text)
     if direct and out["monthly_eps"] is None:
         out.update(direct)
+
+    # Only fill missing metrics; preserve already successful legacy layouts.
+    explicit = explicit_table_metrics(text)
+    for prefix in ("monthly", "quarter"):
+        if out.get(prefix+"_eps") is None and explicit.get(prefix+"_eps") is not None:
+            for suffix in ("eps", "period", "eps_yoy", "eps_yoy_text"):
+                out[prefix+"_"+suffix] = explicit.get(prefix+"_"+suffix)
 
     out["eps"] = out["monthly_eps"]
 
@@ -2876,3 +2906,4 @@ if __name__ == "__main__":
         commit_generated_data()
     else:
         main()
+
