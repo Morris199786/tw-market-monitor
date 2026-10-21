@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-21T21:05+08:00",
+  "updated_at": "2026-10-21T21:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-20-v32-durable-telegram-dedup",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -67,7 +67,7 @@
         "publish_time": "15:09:02",
         "subject": "2015 豐興 115/10/21 15:09:02 公告本公司115年9月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -1429,15 +1429,15 @@
         {
           "mode": "company_rescue",
           "ticker": "2072",
-          "base": "https://mops.twse.com.tw",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "2207",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1565,7 +1565,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2601",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1757,7 +1757,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6885",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1805,7 +1805,7 @@
         {
           "mode": "company_rescue",
           "ticker": "9946",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
