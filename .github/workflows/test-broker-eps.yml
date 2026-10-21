@@ -1,0 +1,26 @@
+name: Test broker quarterly EPS extraction
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-extraction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract from existing reports (no OpenAI / no Telegram)
+        run: python scripts/test_broker_eps_forecasts.py
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-eps-test-results
+          path: |
+            data/broker_eps_forecasts_test.json
+            data/broker_eps_forecasts_audit.json
+          retention-days: 14
