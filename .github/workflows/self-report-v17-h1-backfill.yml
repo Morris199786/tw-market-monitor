@@ -1,0 +1,23 @@
+name: V17 H1 Attention Backfill (Private)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch H1 official attention notices and trading calendar
+        run: python scripts/self_report_v17_h1_backfill.py
+      - name: Upload raw data and verification manifest (not website data)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v17-h1-attention-backfill
+          path: private_h1_backfill/
+          retention-days: 30
