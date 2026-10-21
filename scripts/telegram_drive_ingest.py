@@ -76,6 +76,9 @@ def main():
     # Telegram keeps pending updates for at most 24 hours. Read in pages, do not
     # use negative offsets or drop_pending_updates.
     count = 0
+    matched = 0
+    uploaded = 0
+    print(f'Configured report group: {CHAT_ID if CHAT_ID else CHAT_TITLE!r}; current offset={offset}', flush=True)
     while True:
         updates = telegram('getUpdates', offset=offset, limit=100, timeout=0,
                            allowed_updates=json.dumps(['message', 'channel_post']))
@@ -89,6 +92,10 @@ def main():
             chat_id = str(chat.get('id', ''))
             title = chat.get('title', '')
             selected = (chat_id == CHAT_ID) if CHAT_ID else (title == CHAT_TITLE and chat.get('type') in ('group', 'supergroup'))
+            kind = 'document' if document else ('text' if message.get('text') else 'other')
+            print(f'UPDATE: chat_id={chat_id}, chat_title={title!r}, chat_type={chat.get("type")}, kind={kind}, selected={selected}', flush=True)
+            if selected:
+                matched += 1
             if selected and document:
                 filename = document.get('file_name', '')
                 is_pdf = filename.lower().endswith('.pdf') or document.get('mime_type') == 'application/pdf'
@@ -113,14 +120,17 @@ def main():
                             print(f'SKIP non-PDF content: {filename}', flush=True)
                         else:
                             result = upload_pdf(download.content, filename, unique_id)
+                            uploaded += 1
                             print(f'UPLOADED: {result["name"]} ({result["id"]}) from chat {chat_id}', flush=True)
+                if not is_pdf:
+                    print(f'SKIP: document is not a PDF (filename={filename!r})', flush=True)
             offset = update_id + 1
             state['next_offset'] = offset
             STATE_PATH.write_text(json.dumps(state, indent=2) + '\n')
             count += 1
         if len(updates) < 100:
             break
-    print(f'Processed {count} Telegram updates; next offset={offset}.', flush=True)
+    print(f'SUMMARY: updates={count}, matching_group={matched}, uploaded={uploaded}, next_offset={offset}.', flush=True)
 
 
 if __name__ == '__main__':
