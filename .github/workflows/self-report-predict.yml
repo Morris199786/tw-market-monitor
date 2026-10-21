@@ -111,26 +111,19 @@ jobs:
             --verified-actuals data/self_report_v17_actuals_verified.json \
             --output data/self_report_forecast.json
           python -m json.tool data/self_report_forecast.json >/dev/null
+      - name: Publish website and backtest before Telegram
+        run: python scripts/self_report_publish.py
       - name: Prepare and send daily Telegram summary
+        id: digest
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/self_report_daily_digest.py --send
-      - name: Commit results
-        if: ${{ !cancelled() }}
+      - name: Persist successful Telegram chunks
+        if: ${{ always() && steps.digest.outcome != 'skipped' }}
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/self_report_forecast.json data/self_report_v17_forecast_ledger.json
-          git add data/self_reports.json data/self_reports_history.json
-          if test -f data/self_report_digest_sent.json; then git add data/self_report_digest_sent.json; fi
-          if test -f data/self_report_v17_actuals_verified.json; then
-            git add data/self_report_v17_actuals_verified.json
-          fi
-          if ! git diff --cached --quiet; then
-            git commit -m 'data: deterministic predictions and prospective settlement'
-            git pull --rebase origin main
-            git push origin HEAD:main
+          if test -f data/self_report_digest_sent.json; then
+            python scripts/self_report_publish.py --state-only
           fi
       - uses: actions/upload-artifact@v4
         if: always()
@@ -139,5 +132,8 @@ jobs:
           path: |
             self_report_live/
             self_report_determinism/
+            data/self_report_forecast.json
+            data/self_report_v17_actuals_verified.json
           retention-days: 14
+
 
