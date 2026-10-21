@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-12-v9-quarter-results",
-  "updated_at": "2026-10-21T20:33+08:00",
+  "updated_at": "2026-10-21T21:05+08:00",
   "upcoming": [
     {
       "ticker": "3264",
@@ -89,11 +89,15 @@
   ],
   "diagnostics": {
     "source_errors": [
+      "announcement_scan/2026-10-07~2026-10-21:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by",
+      "daily_mops:ConnectTimeout",
       "issuer_ir/3008/2026-Q3:single_quarter_metrics_unavailable"
     ],
-    "historical_errors": [],
+    "historical_errors": [
+      "tpex/2026-Q3: ValueError"
+    ],
     "coverage": {
-      "2026-10-07~2026-10-21": "ok"
+      "2026-10-07~2026-10-21": "failed"
     },
     "calendar_errors": []
   },
