@@ -1,62 +1,50 @@
 name: Self Report Historical Backtest
 on:
   workflow_dispatch:
-    inputs:
-      start_date:
-        description: 'Attention data start'
-        required: true
-        default: '2026-07-01'
-        type: string
-      backtest_start:
-        description: 'Backtest first trading day'
-        required: true
-        default: '2026-07-23'
-        type: string
-      end_date:
-        description: 'Backtest end'
-        required: true
-        default: '2026-10-20'
-        type: string
 permissions:
   contents: read
+  actions: read
+concurrency:
+  group: restored-self-report-historical-backtest
+  cancel-in-progress: false
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      PYTHONHASHSEED: '0'
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Freeze original model and FULL historical inputs
+        uses: actions/checkout@v4
+        with:
+          ref: 860ef3a9a011faf9a821ad128524e21d50ce29cf
+          path: _historical_source
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: python -m pip install numpy==2.1.3 scikit-learn==1.6.1 scipy==1.14.1 joblib==1.4.2 threadpoolctl==3.5.0
-      - name: Backtest Rule A and original OTC
-        env:
-          START_DATE: ${{ inputs.start_date }}
-          BACKTEST_START: ${{ inputs.backtest_start }}
-          END_DATE: ${{ inputs.end_date }}
-        run: |
-          python scripts/self_report_historical_backtest.py --root . --start "$START_DATE" --backtest-start "$BACKTEST_START" --end "$END_DATE"
-      - name: Verify requested date and publish summary
-        run: |
-          python - <<'PY2'
-          import json, os
-          from pathlib import Path
-          x=json.loads(Path('self_report_historical_backtest/backtest_summary.json').read_text())
-          assert x['first_evaluated_date']=='2026-07-23', x['first_evaluated_date']
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
-            f.write(f"## 回測 {x['first_evaluated_date']} ~ {x['last_evaluated_date']} ({x['evaluated_days']} 天)\n\n")
-            f.write('| 市場 | 推薦 | 命中 | 實際 | Precision | Recall |\n|---|---:|---:|---:|---:|---:|\n')
-            for k,label in [('twse','上市 A'),('tpex','上櫃 V17'),('model','合計')]:
-              a=x[k]
-              fmt=lambda v: '—' if v is None else f'{v:.2%}'
-              f.write(f"| {label} | {a['predictions']} | {a['hits']} | {a['actual']} | {fmt(a['precision'])} | {fmt(a['recall'])} |\n")
-          PY2
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - name: Reuse official attention cache
+        uses: actions/download-artifact@v4
         with:
           name: self-report-historical-backtest
+          run-id: 39553539254
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: _historical_notice_archive
+      - name: Download original comparison for exact daily verification
+        uses: actions/download-artifact@v4
+        with:
+          name: self-report-rule-v17-comparison
+          run-id: 39544035888
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: _historical_reference
+      - name: Offline replay with restored archive and unchanged models
+        run: |
+          python scripts/self_report_historical_backtest.py \
+            --source-root _historical_source \
+            --notice-cache _historical_notice_archive/attention_cache \
+            --reference _historical_reference/private_rule_v17_compare/comparison_daily.csv \
+            --out self_report_historical_backtest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: self-report-historical-backtest-restored
           path: self_report_historical_backtest/
           retention-days: 30
+          if-no-files-found: error
