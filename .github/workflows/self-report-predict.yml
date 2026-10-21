@@ -1,7 +1,7 @@
 name: Self Report Prediction
 on:
   schedule:
-    - cron: "30 13 * * 1-5" # 21:30 Asia/Taipei, weekdays
+    - cron: '30 13 * * 1-5'
   workflow_dispatch:
     inputs:
       start_date:
@@ -10,12 +10,12 @@ on:
         default: '2026-07-01'
         type: string
       asof_date:
-        description: 截止日（留空自動判斷；當日需20:00後）
+        description: 截止日（留空自動判斷）
         required: false
         default: ''
         type: string
       prediction_date:
-        description: 目標交易日（休市日需指定）
+        description: 目標交易日（留空自動判斷）
         required: false
         default: ''
         type: string
@@ -27,7 +27,13 @@ concurrency:
 jobs:
   predict:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
+    env:
+      PYTHONHASHSEED: '0'
+      OPENBLAS_NUM_THREADS: '1'
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +49,8 @@ jobs:
           INPUT_TARGET: ${{ inputs.prediction_date }}
         run: |
           python - <<'PY'
-          import datetime as dt, os
+          import datetime as dt, os, json
+          from pathlib import Path
           from zoneinfo import ZoneInfo
           now=dt.datetime.now(ZoneInfo('Asia/Taipei'))
           cutoff=os.environ['INPUT_ASOF'].strip()
@@ -51,66 +58,66 @@ jobs:
               cutoff=(now.date() if now.hour>=20 else now.date()-dt.timedelta(days=1)).isoformat()
           day=dt.date.fromisoformat(cutoff)
           if day>now.date() or (day==now.date() and now.hour<20):
-              raise SystemExit('Attention data cutoff is not complete')
+              raise SystemExit('Attention data cutoff not complete')
           target=os.environ['INPUT_TARGET'].strip()
           if not target:
-              d=day+dt.timedelta(days=1)
-              while d.weekday()>=5:d+=dt.timedelta(days=1)
-              target=d.isoformat()
-          if dt.date.fromisoformat(target)<=day:raise SystemExit('target must be later than cutoff')
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write(f'asof={cutoff}\ntarget={target}\n')
-          print('cutoff',cutoff,'target',target)
+              target_day=day+dt.timedelta(days=1)
+              while target_day.weekday()>=5:
+                  target_day+=dt.timedelta(days=1)
+              target=target_day.isoformat()
+          if dt.date.fromisoformat(target)<=day:
+              raise SystemExit('Target must follow cutoff')
+          ledger_path=Path('data/self_report_v17_forecast_ledger.json')
+          ledger=json.loads(ledger_path.read_text()) if ledger_path.exists() else {}
+          existing=target in ledger.get('forecasts',{})
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'asof={cutoff}\ntarget={target}\nexisting={str(existing).lower()}\n')
+          print('asof',cutoff,'target',target,'existing',existing)
           PY
       - name: Install dependencies
-        run: python -m pip install numpy scikit-learn
-      - name: Validate archived backtest inputs
-        run: |
-          test -s data/self_report_v17_archive/scores.csv
-          test -s data/self_report_v17_archive/events.csv
-      - name: Replay V17 archive July-October (same model scoring)
-        run: |
-          python scripts/self_report_predict.py --root . \
-            --offline-scores data/self_report_v17_archive/scores.csv \
-            --offline-events data/self_report_v17_archive/events.csv \
-            --start 2026-07-01 --backtest-start 2026-07-23 --asof 2026-10-20 \
-            --out self_report_archive
-      - name: Generate live V17 prediction (separate from historical labels)
+        if: steps.dates.outputs.existing == 'false'
+        run: python -m pip install numpy==2.1.3 scikit-learn==1.6.1 scipy==1.14.1 joblib==1.4.2 threadpoolctl==3.5.0
+      - name: Ten-run reproducibility check and create prediction
+        if: steps.dates.outputs.existing == 'false'
         env:
           START_DATE: ${{ inputs.start_date }}
           ASOF_DATE: ${{ steps.dates.outputs.asof }}
           TARGET_DATE: ${{ steps.dates.outputs.target }}
         run: |
-          python scripts/self_report_predict.py --root . --start "$START_DATE" \
-            --asof "$ASOF_DATE" --prediction-date "$TARGET_DATE" \
-            --reports data/self_reports_history.json --out self_report_live
-      - name: Settle forecasts from website self-report history
-        run: |
-          python scripts/self_report_v17_settle_actuals.py
-      - name: Export prospective performance (10/21 onward)
+          python scripts/self_report_v17_determinism.py \
+            --start "${START_DATE:-2026-07-01}" \
+            --asof "$ASOF_DATE" --target "$TARGET_DATE" --runs 10
+      - name: Settle using website's self-report history
+        run: python scripts/self_report_v17_settle_actuals.py
+      - name: Export immutable forecast and prospective-only performance
+        env:
+          TARGET_DATE: ${{ steps.dates.outputs.target }}
         run: |
           python scripts/self_report_forecast_export.py \
+            --target-date "$TARGET_DATE" \
             --predictions self_report_live/predictions.json \
-            --summary self_report_archive/backtest_summary.json \
-            --daily self_report_archive/backtest_daily.csv \
             --ledger data/self_report_v17_forecast_ledger.json \
             --verified-actuals data/self_report_v17_actuals_verified.json \
             --output data/self_report_forecast.json
           python -m json.tool data/self_report_forecast.json >/dev/null
-      - name: Commit published JSON and immutable ledger
+      - name: Commit results
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/self_report_forecast.json data/self_report_v17_forecast_ledger.json data/self_report_v17_actuals_verified.json
+          git add data/self_report_forecast.json data/self_report_v17_forecast_ledger.json
+          if test -f data/self_report_v17_actuals_verified.json; then
+            git add data/self_report_v17_actuals_verified.json
+          fi
           if ! git diff --cached --quiet; then
-            git commit -m 'data: update V17 forward predictions and website settlements'
+            git commit -m 'data: deterministic V17 predictions and prospective settlement'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: self-report-v17-verified-results
+          name: self-report-v17-determinism
           path: |
-            self_report_archive/
             self_report_live/
-          retention-days: 30
+            self_report_determinism/
+          retention-days: 14
