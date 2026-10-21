@@ -1,96 +1,130 @@
 #!/usr/bin/env python3
-"""V17: frozen historical replay + append-only forward forecasts + audited settlements.
-
-Optional settlement input: data/self_report_v17_actuals_verified.json:
-{"days":{"2026-10-21":{"complete":true,"twse":["1234"],"tpex":["5678"]}}}
-The upstream collector MUST set complete only after verifying the full-market
-attention-triggered self-report announcements for the TARGET date.
-"""
-import argparse, csv, datetime as dt, json, os, tempfile
+"""Publish prospective-only V17 results; never rewrite a stored prediction."""
+import argparse
+import csv
+import datetime as dt
+import json
+import os
+import tempfile
 from pathlib import Path
 from collections import Counter
 from zoneinfo import ZoneInfo
-TZ=ZoneInfo('Asia/Taipei')
 
-def load(p, default=None):
-    p=Path(p)
+TZ = ZoneInfo('Asia/Taipei')
+START = '2026-10-21'
+
+def load(path, default=None):
+    p = Path(path)
     return json.loads(p.read_text(encoding='utf-8-sig')) if p.is_file() else default
 
-def atomic_write(path, obj):
-    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    fd,tmp=tempfile.mkstemp(prefix='.'+path.name+'.',dir=path.parent)
+def save(path, data):
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix='.' + p.name, dir=p.parent)
     try:
-        with os.fdopen(fd,'w',encoding='utf-8') as f:
-            json.dump(obj,f,ensure_ascii=False,indent=2);f.write('\n')
-        os.replace(tmp,path)
+        with os.fdopen(fd, 'w', encoding='utf-8') as out:
+            json.dump(data, out, ensure_ascii=False, indent=2)
+            out.write('\n')
+        os.replace(tmp, p)
     finally:
-        if os.path.exists(tmp):os.unlink(tmp)
+        if os.path.exists(tmp):
+            os.unlink(tmp)
 
-def stats(picks,hits,actual):
-    return dict(predictions=picks,hits=hits,actual=actual,
-                precision=hits/picks if picks else None,
-                recall=hits/actual if actual else None,
-                f1=2*hits/(picks+actual) if picks+actual else None)
+def stats(predictions, hits, actual):
+    return dict(predictions=predictions, hits=hits, actual=actual,
+                precision=hits / predictions if predictions else None,
+                recall=hits / actual if actual else None,
+                f1=2 * hits / (predictions + actual) if predictions + actual else None)
 
 def run(args):
-    pred=load(args.predictions);hist=load(args.summary)
-    if not isinstance(pred,dict) or not isinstance(hist,dict):raise SystemExit('missing prediction or historical summary')
-    if hist.get('first_evaluated_date')!='2026-07-23' or hist.get('last_evaluated_date')!='2026-10-20' or hist.get('evaluated_days',0)<60:
-        raise SystemExit('historical archive incomplete; refuse publication')
-    day=pred.get('prediction_day');asof=pred.get('asof')
-    if not day or not asof or day<=asof:raise SystemExit('invalid target/cutoff')
-    picks=[dict(ticker=str(p['ticker']),name=str(p.get('name','')),market=p['market'],probability=p.get('probability'),reasons=p.get('reasons',[])) for p in pred.get('items',[]) if p.get('market') in ('twse','tpex')]
-    counts=Counter(p['market'] for p in picks)
-    if any(v>10 for v in counts.values()):raise SystemExit('more than 10 picks per market')
-    ledger=load(args.ledger,{'schema':2,'forecasts':{},'settlements':{}})
-    ledger.setdefault('forecasts',{});ledger.setdefault('settlements',{})
-    rec=dict(asof=asof,model_version=pred['version'],picks=picks)
-    old=ledger['forecasts'].get(day)
-    if old is not None and old!=rec:raise SystemExit('immutable forecast conflict: '+day)
-    ledger['forecasts'].setdefault(day,rec)
-    verified=load(args.verified_actuals,{'days':{}})
-    verified_days=verified.get('days',{})
-    if not isinstance(verified_days,dict):raise SystemExit('invalid verified actuals')
-    for target, record in sorted(ledger['forecasts'].items()):
-        actual=verified_days.get(target)
-        if not actual or actual.get('complete') is not True:continue
-        if target>=dt.datetime.now(TZ).date().isoformat():continue
-        if not all(k in actual and isinstance(actual[k],list) for k in ('twse','tpex')):raise SystemExit('verified day lacks market-wide lists: '+target)
-        daily={};clean={}
-        for market in ('twse','tpex'):
-            codes=actual[market]
-            if len(codes)!=len(set(codes)) or any(not str(c).isdigit() or len(str(c))!=4 for c in codes):raise SystemExit('invalid actual codes: '+target)
-            clean[market]=sorted(str(c) for c in codes)
-            recommended={p['ticker'] for p in record['picks'] if p['market']==market}
-            hits=sorted(recommended & set(clean[market]))
-            daily[market]=dict(**stats(len(recommended),len(hits),len(clean[market])),hit_tickers=hits,missed_tickers=sorted(set(clean[market])-recommended))
-        settlement=dict(actuals=clean,metrics=daily,source=actual.get('source','verified_full_market'),verified_at=actual.get('verified_at'))
-        existing=ledger['settlements'].get(target)
-        if existing is not None and existing!=settlement:raise SystemExit('immutable settlement conflict: '+target)
-        ledger['settlements'].setdefault(target,settlement)
-    # Legacy settlement files remain unchanged; no retroactive mutation of historical picks.
-    hist_stats={m:{k:hist[m].get(k) for k in ('predictions','hits','actual','precision','recall','f1')} for m in ('twse','tpex')}
-    forward={}
-    for market in ('twse','tpex'):
-        settled=[v['metrics'][market] for v in ledger['settlements'].values()]
-        totals={k:sum(v[k] for v in settled) for k in ('predictions','hits','actual')}
-        forward[market]=dict(**stats(totals['predictions'],totals['hits'],totals['actual']),settled_days=len(settled))
-    combined={m:forward[m].copy() for m in ('twse','tpex')}
-    with open(args.daily,encoding='utf-8-sig',newline='') as f:daily=list(csv.DictReader(f))
-    payload=dict(updated_at=dt.datetime.now(TZ).isoformat(timespec='seconds'),prediction_date=day,asof=asof,picks=picks,
-        model_version=pred.get('version'),backtest=dict(start='2026-10-21',end=max(ledger['settlements'],default=None),**combined),
-        backtest_detail=dict(kind='prospective_only',historical_end=hist['last_evaluated_date'],historical=hist_stats,forward=forward,daily=daily,
-            warning='網站只計算2026-10-21起正式預測；未通過全市場公告完整性核對的日期不結算。'),
-        forward_forecasts=ledger['forecasts'],forward_settlements=ledger['settlements'],
-        pending_dates=sorted(set(ledger['forecasts'])-set(ledger['settlements'])),source_status=pred.get('source_status',{}))
-    atomic_write(args.ledger,ledger);atomic_write(args.output,payload)
-    print('PUBLISHED',day,'historical',hist['first_evaluated_date'],hist['last_evaluated_date'],
-          'settled',len(ledger['settlements']),'pending',len(payload['pending_dates']))
+    ledger = load(args.ledger, {'schema': 2, 'forecasts': {}, 'settlements': {}})
+    if not isinstance(ledger, dict):
+        raise ValueError('Invalid ledger')
+    forecasts = ledger.setdefault('forecasts', {})
+    settlements = ledger.setdefault('settlements', {})
+    prediction = load(args.predictions)
+    day = args.target_date or (prediction or {}).get('prediction_day')
+    if not day or day < START:
+        raise ValueError('Missing/invalid target date: ' + str(day))
+    if day in forecasts:
+        # Existing date is immutable. Do NOT retrain and do NOT overwrite it.
+        rec = forecasts[day]
+        print('REUSE_IMMUTABLE_FORECAST', day, 'asof', rec['asof'])
+    else:
+        if not isinstance(prediction, dict) or prediction.get('prediction_day') != day:
+            raise ValueError('Missing new prediction for ' + day)
+        asof = prediction.get('asof')
+        if not asof or asof >= day:
+            raise ValueError('Invalid cutoff')
+        picks = [dict(ticker=str(p['ticker']), name=str(p.get('name', '')),
+                      market=p['market'], probability=p.get('probability'),
+                      reasons=p.get('reasons', [])) for p in prediction.get('items', [])
+                 if p.get('market') in ('twse', 'tpex')]
+        counts = Counter(p['market'] for p in picks)
+        if any(n > 10 for n in counts.values()):
+            raise ValueError('More than 10 picks in one market')
+        if len({(p['market'], p['ticker']) for p in picks}) != len(picks):
+            raise ValueError('Duplicate pick')
+        rec = dict(asof=asof, model_version=prediction['version'], picks=picks)
+        forecasts[day] = rec
+        print('SAVE_NEW_FORECAST', day, 'picks', len(picks))
+
+    verified = load(args.verified_actuals, {'days': {}})
+    if not isinstance(verified, dict) or not isinstance(verified.get('days'), dict):
+        raise ValueError('Invalid actuals')
+    today = dt.datetime.now(TZ).date().isoformat()
+    for target, original in sorted(forecasts.items()):
+        if target < START or target >= today or target in settlements:
+            continue
+        actual = verified['days'].get(target)
+        if not isinstance(actual, dict) or actual.get('complete') is not True:
+            continue
+        actuals, daily = {}, {}
+        for market in ('twse', 'tpex'):
+            codes = actual.get(market)
+            if not isinstance(codes, list) or any(not isinstance(c, str) or len(c) != 4 or not c.isdigit() for c in codes):
+                raise ValueError(f'Invalid actuals {target} {market}')
+            if len(set(codes)) != len(codes):
+                raise ValueError(f'Duplicate actuals {target} {market}')
+            actuals[market] = sorted(codes)
+            predicted = {p['ticker'] for p in original['picks'] if p['market'] == market}
+            hits = sorted(predicted & set(codes))
+            daily[market] = dict(**stats(len(predicted), len(hits), len(codes)),
+                                 hit_tickers=hits, missed_tickers=sorted(set(codes) - predicted))
+        settlements[target] = dict(actuals=actuals, metrics=daily,
+                                   source=actual.get('source', 'site_self_reports_history_assumed_complete'),
+                                   verified_at=actual.get('verified_at'))
+
+    forward = {}
+    for market in ('twse', 'tpex'):
+        rows = [v['metrics'][market] for date, v in settlements.items() if date >= START]
+        totals = {k: sum(x[k] for x in rows) for k in ('predictions', 'hits', 'actual')}
+        forward[market] = dict(**stats(**totals), settled_days=len(rows))
+    settled_dates = sorted(x for x in settlements if x >= START)
+    payload = dict(updated_at=dt.datetime.now(TZ).isoformat(timespec='seconds'),
+                   prediction_date=day, asof=rec['asof'], picks=rec['picks'],
+                   model_version=rec['model_version'],
+                   backtest=dict(start=START, end=settled_dates[-1] if settled_dates else None,
+                                 twse=forward['twse'], tpex=forward['tpex']),
+                   backtest_detail=dict(kind='prospective_only', start=START, forward=forward,
+                                        daily=[dict(date=d, **settlements[d]['metrics']) for d in settled_dates]),
+                   pending_dates=sorted(d for d in forecasts if d >= START and d not in settlements),
+                   forward_forecasts=forecasts, forward_settlements=settlements,
+                   source_status=(prediction or {}).get('source_status', {}))
+    save(args.ledger, ledger)
+    save(args.output, payload)
+    print('PUBLISHED', day, 'settled_days', len(settled_dates), 'pending', len(payload['pending_dates']))
 
 def main():
-    ap=argparse.ArgumentParser()
-    ap.add_argument('--predictions',required=True);ap.add_argument('--summary',required=True);ap.add_argument('--daily',required=True)
-    ap.add_argument('--output',default='data/self_report_forecast.json');ap.add_argument('--ledger',default='data/self_report_v17_forecast_ledger.json')
-    ap.add_argument('--verified-actuals',default='data/self_report_v17_actuals_verified.json')
-    run(ap.parse_args())
-if __name__=='__main__':main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--predictions', default='self_report_live/predictions.json')
+    p.add_argument('--target-date', default='')
+    p.add_argument('--summary', default='')  # legacy workflow compatibility
+    p.add_argument('--daily', default='')    # legacy workflow compatibility
+    p.add_argument('--ledger', default='data/self_report_v17_forecast_ledger.json')
+    p.add_argument('--verified-actuals', default='data/self_report_v17_actuals_verified.json')
+    p.add_argument('--output', default='data/self_report_forecast.json')
+    run(p.parse_args())
+
+if __name__ == '__main__':
+    main()
