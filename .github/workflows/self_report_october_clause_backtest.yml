@@ -1,0 +1,118 @@
+name: Self Report October V12 Clause Holdout
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: self-report-october-v12-clause-holdout
+  cancel-in-progress: false
+
+jobs:
+  october:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas scikit-learn requests
+      - name: Recover exact official V12 from Git history
+        run: |
+          python - <<'PY'
+          import subprocess,pathlib,re
+          p='scripts/self_report_predict.py'
+          for commit in subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines():
+              s=subprocess.run(['git','show',f'{commit}:{p}'],capture_output=True,text=True)
+              if s.returncode: continue
+              m=re.search(r'^VERSION\s*=\s*[\'\"]([^\'\"]+)',s.stdout,re.M)
+              if m and m.group(1)=='2026-10-20-attention-only-v12-extended':
+                  pathlib.Path('frozen_self_report_v12.py').write_text(s.stdout,encoding='utf-8')
+                  print('Frozen V12 commit:',commit,'version:',m.group(1))
+                  break
+          else: raise SystemExit('Exact official V12 missing; refusing fallback')
+          PY
+      - name: Rebuild Oct historical candidates and attention-only labels
+        run: |
+          python frozen_self_report_v12.py \
+            --root . --extend-archive --backtest \
+            --start 2026-09-01 --backtest-start 2026-07-01 \
+            --asof 2026-10-20 \
+            --offline-scores research/self_report/walk_forward_scores.csv \
+            --offline-events research/self_report/event_audit.csv \
+            --out october_rebuild
+          test -s october_rebuild/merged_input/walk_forward_scores.csv
+          test -s october_rebuild/merged_input/event_audit.csv
+      - name: Backfill real TWSE clauses through October 20
+        run: |
+          python research/self_report/backfill_clauses.py \
+            --start 2026-06-01 --end 2026-10-20 \
+            --scores october_rebuild/merged_input/walk_forward_scores.csv \
+            --output october_rebuild/october_clause_enriched_scores.csv
+          test -s october_rebuild/october_clause_enriched_scores.csv
+      - name: Check Oct date coverage and historical clause joins
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          p='october_rebuild/october_clause_enriched_scores.csv'
+          d=pd.read_csv(p,dtype={'ticker':str})
+          x=d[(d.date>='2026-10-02')&(d.date<='2026-10-20')]
+          dates=sorted(x.date.unique())
+          print('October reconstructed dates:',dates,'candidate rows:',len(x))
+          if len(dates)<10 or dates[-1]!='2026-10-20':
+              raise SystemExit('Insufficient October trading-day coverage; refusing partial backtest')
+          tw=x[x.market=='twse']
+          n=int(pd.to_numeric(tw.clause_last_known,errors='coerce').fillna(0).sum())
+          print('October listed clause matches:',n,'out of',len(tw),'candidate rows')
+          if not n:raise SystemExit('No October TWSE clause matches; refusing misleading comparison')
+          PY
+      - name: Frozen Sep 30 training - October out-of-sample V12 vs clauses
+        run: |
+          python research/self_report/compare_october_clauses.py \
+            --scores october_rebuild/october_clause_enriched_scores.csv \
+            --events october_rebuild/merged_input/event_audit.csv \
+            --baseline-script frozen_self_report_v12.py \
+            --start 2026-10-02 --end 2026-10-20 \
+            --train-end 2026-10-01 \
+            --out october_results | tee october_compare.log
+      - name: Show actual October results
+        if: success()
+        run: |
+          python - <<'PY'
+          import json,os
+          j=json.load(open('october_results/v12_vs_clauses_summary.json'))
+          f=open(os.environ['GITHUB_STEP_SUMMARY'],'a')
+          f.write('## 10月獨立驗證：正式 V12 vs 注意款項（訓練截止9月底）\n\n')
+          f.write('|市場|模型|推薦|命中|命中率|召回率|\n|---|---|---:|---:|---:|---:|\n')
+          for market,label in [('twse','上市'),('tpex','上櫃'),('all','合計')]:
+              for model in ('v12','v12_plus_clauses'):
+                  a=j['markets'][market][model]
+                  fmt=lambda v: '—' if v is None else f'{v:.1%}'
+                  f.write(f'|{label}|{model}|{a["picks"]}|{a["hits"]}|{fmt(a["precision"])}|{fmt(a["recall"])}|\n')
+          f.write('\n**回測是歷史候選池重建；若與網站10月既有64筆不同，須先稽核候選池差異，不得宣稱完全一致。**\n')
+          f.close()
+          PY
+      - name: Upload evidence and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-october-v12-clause-holdout
+          path: |
+            october_results/
+            october_compare.log
+            october_rebuild/merged_input/extension_status.json
+            october_rebuild/merged_input/walk_forward_scores.csv
+            october_rebuild/merged_input/event_audit.csv
+            october_rebuild/october_clause_enriched_scores.csv
+            twse_notice_clauses.json
+          if-no-files-found: warn
+          retention-days: 30
