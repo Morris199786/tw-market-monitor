@@ -170,7 +170,57 @@
       ]
     }
   },
-  "settlements": {},
+  "settlements": {
+    "2026-10-21": {
+      "actuals": {
+        "twse": [
+          "4960",
+          "6269",
+          "6756"
+        ],
+        "tpex": [
+          "3354",
+          "6148",
+          "8358",
+          "8437"
+        ]
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 5,
+          "hits": 3,
+          "actual": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "hit_tickers": [
+            "4960",
+            "6269",
+            "6756"
+          ],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 4,
+          "hits": 4,
+          "actual": 4,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "3354",
+            "6148",
+            "8358",
+            "8437"
+          ],
+          "missed_tickers": []
+        }
+      },
+      "provisional": true,
+      "source": "site_self_reports_history_assumed_complete",
+      "verified_at": "2026-10-21T22:23:00+08:00"
+    }
+  },
   "revisions": {
     "2026-10-21": [
       {

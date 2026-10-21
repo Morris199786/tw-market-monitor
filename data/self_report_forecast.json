@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-21T20:42:23+08:00",
+  "updated_at": "2026-10-21T22:23:46+08:00",
   "prediction_date": "2026-10-22",
   "asof": "2026-10-21",
   "picks": [
@@ -55,24 +55,24 @@
   "model_version": "2026-10-21-listed-rule-A-otc-original",
   "backtest": {
     "start": "2026-10-21",
-    "end": null,
+    "end": "2026-10-21",
     "twse": {
-      "predictions": 0,
-      "hits": 0,
-      "actual": 0,
-      "precision": null,
-      "recall": null,
-      "f1": null,
-      "settled_days": 0
+      "predictions": 5,
+      "hits": 3,
+      "actual": 3,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.75,
+      "settled_days": 1
     },
     "tpex": {
-      "predictions": 0,
-      "hits": 0,
-      "actual": 0,
-      "precision": null,
-      "recall": null,
-      "f1": null,
-      "settled_days": 0
+      "predictions": 4,
+      "hits": 4,
+      "actual": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "settled_days": 1
     }
   },
   "backtest_detail": {
@@ -80,28 +80,62 @@
     "start": "2026-10-21",
     "forward": {
       "twse": {
-        "predictions": 0,
-        "hits": 0,
-        "actual": 0,
-        "precision": null,
-        "recall": null,
-        "f1": null,
-        "settled_days": 0
+        "predictions": 5,
+        "hits": 3,
+        "actual": 3,
+        "precision": 0.6,
+        "recall": 1.0,
+        "f1": 0.75,
+        "settled_days": 1
       },
       "tpex": {
-        "predictions": 0,
-        "hits": 0,
-        "actual": 0,
-        "precision": null,
-        "recall": null,
-        "f1": null,
-        "settled_days": 0
+        "predictions": 4,
+        "hits": 4,
+        "actual": 4,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "settled_days": 1
       }
     },
-    "daily": []
+    "includes_provisional": true,
+    "daily": [
+      {
+        "date": "2026-10-21",
+        "provisional": true,
+        "twse": {
+          "predictions": 5,
+          "hits": 3,
+          "actual": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "hit_tickers": [
+            "4960",
+            "6269",
+            "6756"
+          ],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 4,
+          "hits": 4,
+          "actual": 4,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "3354",
+            "6148",
+            "8358",
+            "8437"
+          ],
+          "missed_tickers": []
+        }
+      }
+    ]
   },
   "pending_dates": [
-    "2026-10-21",
     "2026-10-22"
   ],
   "forward_forecasts": {
@@ -274,7 +308,57 @@
       ]
     }
   },
-  "forward_settlements": {},
+  "forward_settlements": {
+    "2026-10-21": {
+      "actuals": {
+        "twse": [
+          "4960",
+          "6269",
+          "6756"
+        ],
+        "tpex": [
+          "3354",
+          "6148",
+          "8358",
+          "8437"
+        ]
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 5,
+          "hits": 3,
+          "actual": 3,
+          "precision": 0.6,
+          "recall": 1.0,
+          "f1": 0.75,
+          "hit_tickers": [
+            "4960",
+            "6269",
+            "6756"
+          ],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 4,
+          "hits": 4,
+          "actual": 4,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "3354",
+            "6148",
+            "8358",
+            "8437"
+          ],
+          "missed_tickers": []
+        }
+      },
+      "provisional": true,
+      "source": "site_self_reports_history_assumed_complete",
+      "verified_at": "2026-10-21T22:23:00+08:00"
+    }
+  },
   "source_status": {
     "twse": {
       "ok": true,
