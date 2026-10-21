@@ -55,12 +55,21 @@ jobs:
           known=sum(int(r['clause_last_known']) for r in listed)
           print('TWSE candidates:',len(listed),'with known latest clause:',known)
           assert known>=100, 'Insufficient clause coverage; do not interpret backtest'
+          n1=[r for r in listed if int(r.get('n1') or 0)>0]
+          matched=sum(int(r['clause_last_known']) for r in n1)
+          print('Prior-day TWSE notices with official clauses:',matched,'/',len(n1))
+          assert n1 and matched/len(n1)>=0.80, 'Less than 80% of previous-day notices matched; stop unreliable backtest'
           with open('twse_notice_clauses.json',encoding='utf-8') as f: notices=json.load(f)
           assert len(notices)>=500, 'Unexpectedly few TWSE notices'
           print('Official stock-date notices:',len(notices))
           PY
       - name: Run baseline and clause model on identical archived dates
         working-directory: research/self_report
+        # The research model's optional GitHub summary formatter fails when
+        # precision/recall is null. Disable only that presentation side effect;
+        # all JSON/CSV metrics and model execution remain intact.
+        env:
+          GITHUB_STEP_SUMMARY: ''
         run: |
           python self_report_predict.py --root ../.. \
             --offline-scores "$(pwd)/walk_forward_scores.csv" \
@@ -75,26 +84,27 @@ jobs:
       - name: Compare model performance
         working-directory: research/self_report
         run: |
-          python - <<'PY'
+          python - <<'PYCODE'
           import csv,json
           from pathlib import Path
           root=Path('results')
           output={}
           for name in ('baseline','clause_model'):
-              p=root/name/'backtest_picks.csv'
-              with p.open(encoding='utf-8-sig',newline='') as f: picks=list(csv.DictReader(f))
-              output[name]={}
-              for market in ('twse','tpex'):
-                  rows=[r for r in picks if r['market']==market]
-                  hits=sum(int(r.get('label') or 0) for r in rows)
-                  output[name][market]={'picks':len(rows),'hits':hits,'precision':round(hits/len(rows),4) if rows else None}
+              p=root/name/'backtest_summary.json'
+              assert p.is_file(), f'Missing model summary: {p}'
+              data=json.loads(p.read_text(encoding='utf-8'))
+              output[name]={market:{key:data[market].get(key) for key in ('predictions','hits','actual','precision','recall','f1')}
+                            for market in ('twse','tpex','model')}
+          assert output['baseline']['model']['actual']==output['clause_model']['model']['actual'], 'Different evaluation denominators'
+          assert output['baseline']['model']['predictions']>0 and output['clause_model']['model']['predictions']>0, 'Model produced no recommendations'
           (root/'comparison.json').write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(output,ensure_ascii=False,indent=2))
           with open('twse_notice_clauses.json',encoding='utf-8') as f: notices=json.load(f)
           from self_report_predict import notice_clauses
           from collections import Counter
-          print('Official clause occurrences:',dict(sorted(Counter(k for n in notices for k in notice_clauses(n['reason'])).items())))
-          PY
+          counts=Counter(k for n in notices for k in notice_clauses(n['reason']))
+          print('Official clause occurrences:',dict(sorted(counts.items())))
+          PYCODE
       - name: Upload all research outputs (no production changes)
         if: always()
         uses: actions/upload-artifact@v4
