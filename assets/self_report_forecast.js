@@ -226,63 +226,25 @@
           </div>
         `;
       } else {
-        picks.innerHTML = a.map((p, i) => {
-          const v = Number(p.probability);
+        picks.innerHTML = a.map((p, i) => `
+          <article class="sr-forecast-pick">
 
-          const reasons = Array.isArray(p.reasons)
-            ? p.reasons
-            : [];
+            <div>
+              <span>${i + 1}</span>
 
-          const counts = reasons.find(x =>
-            /近3日注意\d+次、近5日注意\d+次、近20日注意\d+次/.test(x)
-          ) || '';
+              <strong>
+                ${esc(p.name || p.ticker)}
+              </strong>
 
-          const key = p.market === 'tpex'
-            ? (
-                counts.match(/近5日注意\d+次/) || []
-              )[0]
-            : (
-                counts.match(/近20日注意\d+次/) || []
-              )[0];
+              <small>
+                ${esc(p.ticker)}
+                ·
+                ${p.market === 'tpex' ? '上櫃' : '上市'}
+              </small>
+            </div>
 
-          return `
-            <article class="sr-forecast-pick">
-
-              <div>
-                <span>${i + 1}</span>
-
-                <strong>
-                  ${esc(p.name || p.ticker)}
-                </strong>
-
-                <small>
-                  ${esc(p.ticker)}
-                  ·
-                  ${p.market === 'tpex' ? '上櫃' : '上市'}
-                </small>
-
-                <b>
-                  ${
-                    Number.isFinite(v)
-                      ? (v * 100).toFixed(1) + '%'
-                      : '—'
-                  }
-                </b>
-              </div>
-
-              ${
-                key
-                  ? `
-                    <p class="sr-forecast-key">
-                      ${esc(key)}
-                    </p>
-                  `
-                  : ''
-              }
-
-            </article>
-          `;
-        }).join('');
+          </article>
+        `).join('');
       }
 
       /*
