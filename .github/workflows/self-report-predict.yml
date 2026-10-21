@@ -83,7 +83,10 @@ jobs:
           python scripts/self_report_predict.py --root . --start "$START_DATE" \
             --asof "$ASOF_DATE" --prediction-date "$TARGET_DATE" \
             --reports data/self_reports_history.json --out self_report_live
-      - name: Export historical replay + settle only verified future days
+      - name: Settle forecasts from website self-report history
+        run: |
+          python scripts/self_report_v17_settle_actuals.py
+      - name: Export prospective performance (10/21 onward)
         run: |
           python scripts/self_report_forecast_export.py \
             --predictions self_report_live/predictions.json \
@@ -97,9 +100,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/self_report_forecast.json data/self_report_v17_forecast_ledger.json
+          git add data/self_report_forecast.json data/self_report_v17_forecast_ledger.json data/self_report_v17_actuals_verified.json
           if ! git diff --cached --quiet; then
-            git commit -m 'data: publish V17 archive replay and immutable forecast'
+            git commit -m 'data: update V17 forward predictions and website settlements'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
