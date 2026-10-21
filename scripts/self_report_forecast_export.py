@@ -62,7 +62,7 @@ def run(args):
         raise ValueError('Duplicate pick')
     rec = dict(asof=asof, model_version=prediction['version'], picks=picks)
     old = forecasts.get(day)
-    if day in settlements:
+    if day in settlements or (old is not None and day <= dt.datetime.now(TZ).date().isoformat()):
         # Always recompute and verify, but never rewrite a scored historical prediction.
         if old is None:
             raise ValueError('Settled day has no original forecast: '+day)
@@ -88,7 +88,7 @@ def run(args):
         raise ValueError('Invalid actuals')
     today = dt.datetime.now(TZ).date().isoformat()
     for target, original in sorted(forecasts.items()):
-        if target < START or target >= today or target in settlements:
+        if target < START or target > today:
             continue
         actual = verified['days'].get(target)
         if not isinstance(actual, dict) or actual.get('complete') is not True:
@@ -106,6 +106,7 @@ def run(args):
             daily[market] = dict(**stats(len(predicted), len(hits), len(codes)),
                                  hit_tickers=hits, missed_tickers=sorted(set(codes) - predicted))
         settlements[target] = dict(actuals=actuals, metrics=daily,
+                                   provisional=actual.get('provisional', False),
                                    source=actual.get('source', 'site_self_reports_history_assumed_complete'),
                                    verified_at=actual.get('verified_at'))
 
@@ -121,7 +122,8 @@ def run(args):
                    backtest=dict(start=START, end=settled_dates[-1] if settled_dates else None,
                                  twse=forward['twse'], tpex=forward['tpex']),
                    backtest_detail=dict(kind='prospective_only', start=START, forward=forward,
-                                        daily=[dict(date=d, **settlements[d]['metrics']) for d in settled_dates]),
+                                        includes_provisional=any(settlements[d].get('provisional', False) for d in settled_dates),
+                                        daily=[dict(date=d, provisional=settlements[d].get('provisional', False), **settlements[d]['metrics']) for d in settled_dates]),
                    pending_dates=sorted(d for d in forecasts if d >= START and d not in settlements),
                    forward_forecasts=forecasts, forward_settlements=settlements,
                    source_status=prediction.get('source_status', {}))
@@ -142,3 +144,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
