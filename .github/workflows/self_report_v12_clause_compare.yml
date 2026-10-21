@@ -1,0 +1,95 @@
+name: Self Report V12 Clause Fair Compare
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: self-report-v12-clause-fair-compare
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout full Git history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencies
+        run: python -m pip install --disable-pip-version-check numpy pandas scikit-learn
+      - name: Locate frozen official V12 from Git history
+        shell: bash
+        run: |
+          python - <<'PY'
+          import subprocess,pathlib,re
+          p='scripts/self_report_predict.py'
+          commits=subprocess.check_output(['git','log','--format=%H','--',p],text=True).splitlines()
+          found=None
+          for commit in commits:
+              s=subprocess.run(['git','show',f'{commit}:{p}'],text=True,capture_output=True)
+              if s.returncode:continue
+              m=re.search(r'^VERSION\s*=\s*[\'\"]([^\'\"]+)',s.stdout,re.M)
+              if m and re.search(r'(?:^|-)v12(?:-|$)',m.group(1),re.I):
+                  found=(commit,m.group(1),s.stdout);break
+          if found is None:raise SystemExit('ERROR: V12 commit not found in Git history; refusing to substitute V15')
+          pathlib.Path('frozen_self_report_v12.py').write_text(found[2],encoding='utf-8')
+          print('Frozen V12:',found[0],found[1])
+          PY
+      - name: Download last successful official clause artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          RUN_ID="$(gh run list --workflow self_report_clause_backtest.yml --status success --limit 10 --json databaseId --jq '.[0].databaseId')"
+          test -n "$RUN_ID" || { echo 'ERROR: No successful clause research run'; exit 1; }
+          mkdir -p historical_clause_artifact
+          gh run download "$RUN_ID" --name self-report-clause-backtest --dir historical_clause_artifact
+          test -s historical_clause_artifact/clause_enriched_scores.csv || { echo 'ERROR: Missing real historical clause scores'; exit 1; }
+          test -s research/self_report/event_audit.csv || { echo 'ERROR: Missing event audit'; exit 1; }
+          echo "Using official clause artifact from run $RUN_ID"
+      - name: Fair V12 vs clause model replay on Jul-Sep
+        shell: bash
+        run: |
+          python research/self_report/compare_v12_clauses.py \
+            --scores historical_clause_artifact/clause_enriched_scores.csv \
+            --events research/self_report/event_audit.csv \
+            --baseline-script frozen_self_report_v12.py \
+            --start 2026-07-08 --end 2026-09-29 \
+            --out fair_compare_results | tee compare_console.log
+      - name: Publish summary
+        if: success()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,os
+          j=json.load(open('fair_compare_results/v12_vs_clauses_summary.json'))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## 7–9月：凍結正式V12 vs 注意款項重排（每日相同名額）\n\n')
+              f.write('基準版本：`'+j['baseline_version']+'`\n\n')
+              f.write('| 市場 | 模型 | 推薦 | 命中 | 命中率 | 召回率 |\n|---|---|---:|---:|---:|---:|\n')
+              for market,name in [('twse','上市'),('tpex','上櫃'),('all','合計')]:
+                  for arm in ['v12','v12_plus_clauses']:
+                      x=j['markets'][market][arm]
+                      fmt=lambda v:'—' if v is None else f'{v:.1%}'
+                      f.write(f'| {name} | {arm} | {x["picks"]} | {x["hits"]} | {fmt(x["precision"])} | {fmt(x["recall"])} |\n')
+              f.write('\n**這不是10月的驗證；10月需另補當月候選快照及款項。**\n')
+          PY
+      - name: Upload results even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-v12-clause-fair-compare
+          path: |
+            fair_compare_results/
+            compare_console.log
+          if-no-files-found: warn
+          retention-days: 30
