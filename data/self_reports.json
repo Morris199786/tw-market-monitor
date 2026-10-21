@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-21T21:34+08:00",
+  "updated_at": "2026-10-21T22:03+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-20-v32-durable-telegram-dedup",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -54,7 +54,7 @@
         "publish_time": "15:15:16",
         "subject": "8437 大地-KY 115/10/21 15:15:16 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -1281,21 +1281,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 150,
+          "rows": 151,
           "hits": 12
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 150,
+          "rows": 151,
           "hits": 3
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 150,
+          "rows": 151,
           "hits": 3
         },
         {
@@ -1565,7 +1565,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2601",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1805,7 +1805,7 @@
         {
           "mode": "company_rescue",
           "ticker": "9946",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
