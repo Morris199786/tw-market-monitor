@@ -286,7 +286,8 @@ class Model:
     reporting and notice intensity. Small groups shrink to their own market.
     """
     PRIOR_WEIGHT = 18
-    TWSE_FEATURES = ('n1', 'n20_bucket', 'clause_last_known', 'clause_last_count',
+    TWSE_CORE_FEATURES = ('n1', 'n20_bucket')
+    TWSE_FEATURES = ('clause_last_known', 'clause_last_count',
                      'clause_distinct_20d') + tuple(f'clause_{n}_last' for n in range(1, 13))
     FEATURES = ('market_pattern', 'notice_intensity', 'reason6_flag',
                 'cooldown', 'n3', 'n5')
@@ -300,7 +301,7 @@ class Model:
             market = r['market']
             self.market_stats[market][0] += r['label']
             self.market_stats[market][1] += 1
-            for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and r.get('clause_data_available') else ())):
+            for feature in (self.FEATURES + (self.TWSE_CORE_FEATURES if market == 'twse' else ()) + (self.TWSE_FEATURES if market == 'twse' and r.get('clause_data_available') else ())):
                 value = self.value(r, feature)
                 cell = self.feature_stats[(market, feature, value)]
                 cell[0] += r['label']
@@ -327,7 +328,7 @@ class Model:
         base = max(.005, min(.995, base))
         logit = math.log(base / (1 - base))
         support = total
-        for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and row.get('clause_data_available') else ())):
+        for feature in (self.FEATURES + (self.TWSE_CORE_FEATURES if market == 'twse' else ()) + (self.TWSE_FEATURES if market == 'twse' and row.get('clause_data_available') else ())):
             h, n = self.feature_stats[(market, feature, self.value(row, feature))]
             if n < 8:
                 continue
@@ -495,7 +496,7 @@ def offline_replay(args, out, now):
             for k, name in [('twse','上市'),('tpex','上櫃'),('model','合計')]:
                 m=summary[k]
                 f.write(f'| {name} | {m["predictions"]} | {m["hits"]} | '
-                        f'{m["precision"]:.1%} | {m["recall"]:.1%} |\n')
+                        f'{(format(m["precision"], ".1%") if m["precision"] is not None else "—")} | {(format(m["recall"], ".1%") if m["recall"] is not None else "—")} |\n')
             f.write(f'\n評估交易日：{summary["evaluated_days"]}；'
                     f'已公告目標月份排除：{excluded} 筆\n')
 

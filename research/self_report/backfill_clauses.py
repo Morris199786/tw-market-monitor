@@ -23,8 +23,14 @@ def main():
     a=dt.date.fromisoformat(args.start);b=dt.date.fromisoformat(args.end);notice=[]
     while a<=b:
         z=min(a+dt.timedelta(days=13),b)
-        notice+=parse_notices(fetch(a,z),'twse',a.isoformat(),z.isoformat())
+        payload=fetch(a,z)
+        if payload.get('stat') not in (None, 'OK'):
+            raise RuntimeError(f'TWSE API error {a}..{z}: {payload.get("stat")}')
+        if payload.get('data') or any(t.get('data') for t in payload.get('tables', [])):
+            notice+=parse_notices(payload,'twse',a.isoformat(),z.isoformat())
         a=z+dt.timedelta(days=1);time.sleep(.4)
+    if not notice:
+        raise RuntimeError("No TWSE attention notices fetched: refusing empty backfill")
     by_stock=defaultdict(list)
     for n in notice:by_stock[n['ticker']].append(n)
     for v in by_stock.values():v.sort(key=lambda x:x['date'])
