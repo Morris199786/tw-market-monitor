@@ -49,8 +49,7 @@ jobs:
           INPUT_TARGET: ${{ inputs.prediction_date }}
         run: |
           python - <<'PY'
-          import datetime as dt, os, json
-          from pathlib import Path
+          import datetime as dt, os
           from zoneinfo import ZoneInfo
           now=dt.datetime.now(ZoneInfo('Asia/Taipei'))
           cutoff=os.environ['INPUT_ASOF'].strip()
@@ -67,18 +66,13 @@ jobs:
               target=target_day.isoformat()
           if dt.date.fromisoformat(target)<=day:
               raise SystemExit('Target must follow cutoff')
-          ledger_path=Path('data/self_report_v17_forecast_ledger.json')
-          ledger=json.loads(ledger_path.read_text()) if ledger_path.exists() else {}
-          existing=target in ledger.get('forecasts',{})
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
-              f.write(f'asof={cutoff}\ntarget={target}\nexisting={str(existing).lower()}\n')
-          print('asof',cutoff,'target',target,'existing',existing)
+              f.write(f'asof={cutoff}\ntarget={target}\n')
+          print('asof',cutoff,'target',target,'prediction_always_runs',True)
           PY
       - name: Install dependencies
-        if: steps.dates.outputs.existing == 'false'
         run: python -m pip install numpy==2.1.3 scikit-learn==1.6.1 scipy==1.14.1 joblib==1.4.2 threadpoolctl==3.5.0
       - name: Ten-run reproducibility check and create prediction
-        if: steps.dates.outputs.existing == 'false'
         env:
           START_DATE: ${{ inputs.start_date }}
           ASOF_DATE: ${{ steps.dates.outputs.asof }}
@@ -89,7 +83,7 @@ jobs:
             --asof "$ASOF_DATE" --target "$TARGET_DATE" --runs 10
       - name: Settle using website's self-report history
         run: python scripts/self_report_v17_settle_actuals.py
-      - name: Export immutable forecast and prospective-only performance
+      - name: Export forecast and prospective-only performance
         env:
           TARGET_DATE: ${{ steps.dates.outputs.target }}
         run: |
@@ -109,7 +103,7 @@ jobs:
             git add data/self_report_v17_actuals_verified.json
           fi
           if ! git diff --cached --quiet; then
-            git commit -m 'data: deterministic V17 predictions and prospective settlement'
+            git commit -m 'data: deterministic predictions and prospective settlement'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
