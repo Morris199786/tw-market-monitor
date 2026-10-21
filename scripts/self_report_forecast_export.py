@@ -21,7 +21,8 @@ def main():
         picks.append({'ticker':str(p.get('ticker','')),'name':str(p.get('name','')),
                       'market':p['market'],'probability':p.get('probability'),
                       'reasons':p.get('reasons',[])})
-    picks=picks[:10]
+    # Two independent markets, max 10 per market (never truncate combined picks).
+    picks=[p for market in ('twse','tpex') for p in picks if p['market']==market][:20]
     def stat(key):
         m=summary.get(key) or {}
         return {k:m.get(k) for k in ('predictions','hits','actual','precision','recall')}

@@ -18,12 +18,12 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-21-listed-clause-probability-v15'
+VERSION = '2026-10-21-v17-twse-logistic-tpex-legacy'
 CAP = 10
-MIN_PROBABILITY = .15
+MIN_PROBABILITY = .10
 MARKET_RULES = {
-    'twse': '近20日注意交易與款項機率評分；不以次數或前日注意硬性排除',
-    'tpex': '前日注意；近5交易日注意剛好3次',
+    'twse': 'V17前日注意(n1=1)，擴大近3/20日候選池；邏輯迴歸機率>=10%',
+    'tpex': '保留原有前日注意、近5日注意3次及舊模型評分',
 }
 
 def read(path):
@@ -207,7 +207,7 @@ def bucket(row):
 def eligible(row):
     """Listed candidates use probability ranking; OTC structural rules unchanged."""
     if row['market'] == 'twse':
-        return int(row.get('n20') or 0) >= 1
+        return int(row.get('n1') or 0) == 1
     if row['market'] == 'tpex':
         return int(row.get('n1') or 0) == 1 and int(row.get('n5') or 0) == 3
     return False
@@ -286,7 +286,8 @@ class Model:
     reporting and notice intensity. Small groups shrink to their own market.
     """
     PRIOR_WEIGHT = 18
-    TWSE_FEATURES = ('n1', 'n20_bucket', 'clause_last_known', 'clause_last_count',
+    TWSE_CORE_FEATURES = ('n1', 'n20_bucket')
+    TWSE_FEATURES = ('clause_last_known', 'clause_last_count',
                      'clause_distinct_20d') + tuple(f'clause_{n}_last' for n in range(1, 13))
     FEATURES = ('market_pattern', 'notice_intensity', 'reason6_flag',
                 'cooldown', 'n3', 'n5')
@@ -300,7 +301,7 @@ class Model:
             market = r['market']
             self.market_stats[market][0] += r['label']
             self.market_stats[market][1] += 1
-            for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and r.get('clause_data_available') else ())):
+            for feature in (self.FEATURES + (self.TWSE_CORE_FEATURES if market == 'twse' else ()) + (self.TWSE_FEATURES if market == 'twse' and r.get('clause_data_available') else ())):
                 value = self.value(r, feature)
                 cell = self.feature_stats[(market, feature, value)]
                 cell[0] += r['label']
@@ -327,7 +328,7 @@ class Model:
         base = max(.005, min(.995, base))
         logit = math.log(base / (1 - base))
         support = total
-        for feature in (self.FEATURES + (self.TWSE_FEATURES if market == 'twse' and row.get('clause_data_available') else ())):
+        for feature in (self.FEATURES + (self.TWSE_CORE_FEATURES if market == 'twse' else ()) + (self.TWSE_FEATURES if market == 'twse' and row.get('clause_data_available') else ())):
             h, n = self.feature_stats[(market, feature, self.value(row, feature))]
             if n < 8:
                 continue
@@ -340,28 +341,67 @@ class Model:
         return probability, support
 
 
+# V17上市獨立選股；上櫃保留原本Model及rule_eligible判斷。
+# 注意：上市10%為試行門檻，與上櫃的舊版篩選門檻分離。
 def choose(rows, threshold=MIN_PROBABILITY):
-    """Daily 0-10: protect listed slots, then rank by empirical probability.
+    twse = sorted((r for r in rows if r['market'] == 'twse' and r.get('rule_eligible')
+                   and r['probability'] >= threshold),
+                  key=lambda r: (-r['probability'], r['ticker']))[:CAP]
+    tpex = sorted((r for r in rows if r['market'] == 'tpex' and r.get('rule_eligible')
+                   and r['probability'] >= .10),
+                  key=lambda r: (-r['probability'], r['ticker']))[:CAP]
+    return twse + tpex
 
-    No artificial 10-stock padding. A small listed reserve prevents OTC
-    names from occupying every slot when listed candidates exist.
-    """
-    eligible_rows = [r for r in rows if r['rule_eligible']]
-    listed = sorted((r for r in eligible_rows if r['market'] == 'twse'),
-                    key=lambda r: (-r['probability'], -r.get('cell_samples', 0), r['ticker']))
-    otc = sorted((r for r in eligible_rows if r['market'] == 'tpex'),
-                 key=lambda r: (-r['probability'], r['ticker']))
-    # Listed candidates need at least 8 supporting historical examples.
-    # A separate minimum keeps the broadened candidate pool from blindly
-    # adding every newly noticed stock.
-    listed = [r for r in listed if r['probability'] >= .10 and r.get('cell_samples', 0) >= 8]
-    otc = [r for r in otc if r['probability'] >= .10]
-    selected = listed[:4] + otc[:4]
-    used = {(r['market'], r['ticker']) for r in selected}
-    remaining = sorted((r for r in listed[4:] + otc[4:] if (r['market'], r['ticker']) not in used),
-                       key=lambda r: (-r['probability'], r['ticker']))
-    return (selected + remaining)[:CAP]
+# Frozen exploratory V16 feature set / regularization, retrained on earlier labels only.
+V17_FEATURES = ('n1','n3','n5','n10','n20','gap','days_since_report','reason6') + tuple(
+    f'clause_{n}_last' for n in range(1,13)) + ('clause_last_count','clause_distinct_20d',
+    'n20_x_clause3','n20_x_clause11','n3_x_clause3','n3_x_clause11')
 
+class V17Listed:
+    def __init__(self, training):
+        import numpy as np
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.linear_model import LogisticRegression
+        self.np = np
+        self.training = [r for r in training if r['market']=='twse' and r.get('n1') == 1]
+        labels = [int(r['label']) for r in self.training]
+        self.ready = len(self.training) >= 30 and len(set(labels)) == 2
+        if self.ready:
+            self.model = make_pipeline(StandardScaler(), LogisticRegression(C=.03, max_iter=1500))
+            self.model.fit(np.asarray([self.vector(r) for r in self.training], dtype=float), labels)
+    @staticmethod
+    def vector(row):
+        r = dict(row)
+        for n in (3,11):
+            for k in ('n20','n3'):
+                r[f'{k}_x_clause{n}'] = float(r.get(k) or 0)*float(r.get(f'clause_{n}_last') or 0)
+        out=[]
+        for key in V17_FEATURES:
+            value = r.get(key)
+            value = 999 if key=='days_since_report' and value is None else (value or 0)
+            out.append(min(999, max(-1, float(value))))
+        return out
+    def predict(self, row):
+        if not self.ready:
+            return None
+        return float(self.model.predict_proba(self.np.asarray([self.vector(row)], dtype=float))[0,1])
+
+def score_v17(rows, training):
+    # TPEX path deliberately remains the existing Model, unchanged.
+    legacy = Model(training)
+    listed = V17Listed(training)
+    scored=[]
+    for row in rows:
+        if row['market']=='twse':
+            if row.get('n1') != 1 or not listed.ready:
+                continue
+            p=listed.predict(row)
+            support=len(listed.training)
+        else:
+            p,support=legacy.predict(row)
+        scored.append(dict(row, probability=p, cell_samples=support))
+    return scored
 
 def metrics(predictions, actual):
     n = len(predictions); hits = sum(x['label'] for x in predictions)
@@ -375,11 +415,7 @@ def evaluate(day_rows, events):
     for day, rows in sorted(day_rows.items()):
         enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
         if enough:
-            model = Model(training)
-            scored = []
-            for row in rows:
-                p, support = model.predict(row)
-                scored.append(dict(row, probability=p, cell_samples=support))
+            scored = score_v17(rows, training)
             picks = choose(scored)
             baseline = sorted((r for r in rows if r['rule_eligible'] and (r['n20'] == 1 if r['market'] == 'twse' else r['n5'] >= 3)),
                               key=lambda r: (-r['n5'], r['ticker']))[:CAP]
@@ -495,7 +531,7 @@ def offline_replay(args, out, now):
             for k, name in [('twse','上市'),('tpex','上櫃'),('model','合計')]:
                 m=summary[k]
                 f.write(f'| {name} | {m["predictions"]} | {m["hits"]} | '
-                        f'{"—" if m["precision"] is None else format(m["precision"], ".1%")} | {"—" if m["recall"] is None else format(m["recall"], ".1%")} |\n')
+                        f'{(format(m["precision"], ".1%") if m["precision"] is not None else "—")} | {(format(m["recall"], ".1%") if m["recall"] is not None else "—")} |\n')
             f.write(f'\n評估交易日：{summary["evaluated_days"]}；'
                     f'已公告目標月份排除：{excluded} 筆\n')
 
@@ -606,9 +642,8 @@ def main():
     enough = len(rows) >= 5 and sum(r['label'] for r in training) >= 15
     forecast = []
     if enough and (target or provisional[:7] == cutoff[:7]):
-        model = Model(training)
-        for row in candidates:
-            p, support = model.predict(row)
+        for row in score_v17(candidates, training):
+            p, support = row['probability'], row['cell_samples']
             reasons = [f'最近注意交易距今{row["gap"]}交易日',
                        f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次、近20日注意{row["n20"]}次',
                        MARKET_RULES.get(row['market'], '未知市場'),
@@ -619,7 +654,7 @@ def main():
         forecast = choose(forecast)
     warnings = [
         '上市及上櫃一致：已公告預測月份EPS／自結者在評分前排除；不以任意天數作為冷卻期',
-        '每日0至10檔，不強制補滿；上市與上櫃分別校準、各優先保留最多4檔，再依機率補足',
+        '上市、上櫃各自0至10檔，不共用名額；上市V17 >=10%試行，上櫃維持舊模型>=10%' ,
         '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
         '只有注意交易觸發的自結計入命中及召回率；自主公告不計入',
         '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
