@@ -18,11 +18,11 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
-VERSION = '2026-10-21-v17-replay-fix1'
+VERSION = '2026-10-21-listed-rule-A-otc-original'
 CAP = 10
 MIN_PROBABILITY = .10
 MARKET_RULES = {
-    'twse': 'V17前日注意(n1=1)，擴大近3/20日候選池；邏輯迴歸機率>=10%',
+    'twse': 'A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序',
     'tpex': '保留原有前日注意、近5日注意3次及舊模型評分',
 }
 
@@ -235,12 +235,38 @@ def clause_features(hist, windows):
     return out
 
 
+# Same notice qualification as the independent rule A backtest.
+# Mixed clauses (e.g. clause 3 and 11) remain qualified.
+RULE_A_CN = dict(zip('一二三四五六七八九', range(1, 10)), **{'十': 10, '十一': 11, '十二': 12, '十三': 13,
+             '一〇': 10, '一一': 11, '一二': 12, '一三': 13})
+RULE_A_CLAUSE = re.compile(r'(?:第\s*)?([0-9０-９]{1,2}|十[一二三]?|一[〇一二三]|[一二三四五六七八九])\s*(?:款|條)', re.I)
+
+def rule_a_valid_notice(notice):
+    reason = str(notice.get('reason') or '').translate(
+        str.maketrans('０１２３４５６７８９', '0123456789'))
+    numbers = []
+    for m in RULE_A_CLAUSE.finditer(reason):
+        v = m.group(1)
+        number = int(v) if v.isdigit() else RULE_A_CN.get(v)
+        if number is not None:
+            numbers.append(number)
+    if not numbers and re.search(r'第\s*(?:十[一二三]?|1[0-3])\s*款', reason):
+        raise ValueError(f'Unparseable attention clause: {notice}')
+    return not (numbers and all(10 <= n <= 13 for n in numbers))
+
+def rule_a_select(rows):
+    """TWSE A: no ML threshold, 0-10 stocks, rank by n5/n3/ticker."""
+    return sorted((r for r in rows if r['market'] == 'twse' and r['n1'] >= 1),
+                  key=lambda r: (-r['n5'], -r['n3'], r['ticker']))[:CAP]
+
 def make_rows(cutoff, target, cal, notices, events, master):
     past = [d for d in cal if d <= cutoff]
     windows = {n: set(past[-n:]) for n in (1, 3, 5, 10, 20)}
     by_ticker, prior = collections.defaultdict(list), collections.defaultdict(list)
     for x in notices:
         if x['date'] <= cutoff:
+            if x.get('market') == 'twse' and not rule_a_valid_notice(x):
+                continue
             by_ticker[x['ticker']].append(x)
     for x in events:
         if x['date'] <= cutoff:
@@ -253,6 +279,13 @@ def make_rows(cutoff, target, cal, notices, events, master):
             continue
         hist = sorted(by_ticker[ticker], key=lambda x: x['date'])
         history = prior[ticker]
+        # TWSE A cooldown: historical events known by cutoff only.
+        # OTC is deliberately untouched.
+        if master[ticker]['market'] == 'twse':
+            target_date = dt.date.fromisoformat(target)
+            if any(0 <= (target_date - dt.date.fromisoformat(x['date'])).days <= 30
+                   for x in history):
+                continue
         # Hard exclusion for BOTH markets: once the latest target-month EPS/self-report
         # has been announced by cutoff, the company cannot announce it again.
         # This uses only filings known as of cutoff, never future labels.
@@ -409,14 +442,14 @@ def metrics(predictions, actual):
                 precision=hits/n if n else None, recall=hits/actual if actual else None,
                 f1=2*hits/(n+actual) if n+actual else None)
 
-def evaluate(day_rows, events, evaluation_start="2026-07-23"):
+def evaluate(day_rows, events, evaluation_start="2026-07-23", rule_a_live=False):
     training, daily, picks_all, scores_all, baseline_all = [], [], [], [], []
     evaluated_days = set()
     for day, rows in sorted(day_rows.items()):
         enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
         if enough and day >= evaluation_start:
             scored = score_v17(rows, training)
-            picks = choose(scored)
+            picks = ([r for r in choose(scored) if r['market'] == 'tpex'] + rule_a_select(rows)) if rule_a_live else choose(scored)
             baseline = sorted((r for r in rows if r['rule_eligible'] and (r['n20'] == 1 if r['market'] == 'twse' else r['n5'] >= 3)),
                               key=lambda r: (-r['n5'], r['ticker']))[:CAP]
             baseline_all.extend(baseline)
@@ -514,7 +547,7 @@ def offline_replay(args, out, now):
                              '歷史特徵檔僅包含前次已評估日期；本次重新暖機，因此回測日期可能少於舊版',
                              '這是既有候選特徵的離線重評分，不能補回舊版沒有保存的候選股票',
                              '只有因注意交易公告自結算命中與召回分母；自主公告僅用於已公告月份排除',
-                             '上市近20日注意候選改機率排序；歷史快照未保存款項，不能用本次離線回測驗證款項增益；上櫃5日恰好3次',
+                             '離線歷史快照無完整原始注意款次，離線模式不代表上市A規則；正式Prediction使用上市A，上櫃原版V17',
                              '上市與上櫃：截至預測前日已公告目標月份EPS／自結者直接排除'])
     write(out / 'backtest_summary.json', summary)
     csvout(out / 'backtest_daily.csv', daily)
@@ -631,7 +664,7 @@ def main():
     days = [d for d in cal if args.start < d <= end]
     rows = {d: make_rows(cal[cal.index(d)-1], d, cal, notices, events, master)
             for d in days if cal.index(d) > 0}
-    summary, daily, picks, training, scores = evaluate(rows, events)
+    summary, daily, picks, training, scores = evaluate(rows, events, rule_a_live=True)
     future_known = sorted({x['date'] for x in read(args.root / 'data/market_monitor.json').get('raw', [])
                            if x.get('index') is not None and x['date'] > cutoff})
     target = args.prediction_date or (future_known[0] if future_known else None)
@@ -641,21 +674,37 @@ def main():
     candidates = make_rows(cutoff, provisional, cal, notices, events, master)
     enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
     forecast = []
-    if enough and (target or provisional[:7] == cutoff[:7]):
-        for row in score_v17(candidates, training):
-            p, support = row['probability'], row['cell_samples']
-            reasons = [f'最近注意交易距今{row["gap"]}交易日',
-                       f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次、近20日注意{row["n20"]}次',
-                       MARKET_RULES.get(row['market'], '未知市場'),
-                       f'預測月份{previous_month(provisional)}尚未公告EPS／自結']
+    if target or provisional[:7] == cutoff[:7]:
+        # Listed Rule A does not depend on model warmup or probability.
+        for row in rule_a_select(candidates):
             clean = {k: v for k, v in row.items() if k not in ('label', 'date')}
-            clean.update(probability=p, score=round(p*100, 2), cell_samples=support, reasons=reasons)
+            clean.update(probability=None, score=None, cell_samples=None,
+                         strategy='TWSE_RULE_A',
+                         reasons=[MARKET_RULES['twse'],
+                                  f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次',
+                                  '近30日未公布自結',
+                                  f'預測月份{previous_month(provisional)}尚未公告EPS／自結'])
             forecast.append(clean)
-        forecast = choose(forecast)
+        # Keep original OTC V17 scoring, probability threshold and ranking.
+        if enough:
+            for row in score_v17(candidates, training):
+                if row['market'] != 'tpex':
+                    continue
+                p, support = row['probability'], row['cell_samples']
+                reasons = [f'最近注意交易距今{row["gap"]}交易日',
+                           f'近3日注意{row["n3"]}次、近5日注意{row["n5"]}次、近20日注意{row["n20"]}次',
+                           MARKET_RULES['tpex'],
+                           f'預測月份{previous_month(provisional)}尚未公告EPS／自結']
+                clean = {k: v for k, v in row.items() if k not in ('label', 'date')}
+                clean.update(probability=p, score=round(p*100, 2),
+                             cell_samples=support, reasons=reasons)
+                forecast.append(clean)
+            otc = choose([r for r in forecast if r['market'] == 'tpex'])
+            forecast = [r for r in forecast if r['market'] == 'twse'] + otc
     warnings = [
-        '上市及上櫃一致：已公告預測月份EPS／自結者在評分前排除；不以任意天數作為冷卻期',
-        '上市、上櫃各自0至10檔，不共用名額；上市V17 >=10%試行，上櫃維持舊模型>=10%' ,
-        '回測按日期順序訓練；新規則仍需與既有版本在相同期間比較，不能保證改善',
+        '上市A規則：排除純第10～13款注意及近30日已公布自結；上櫃仍僅排除已公布目標月份自結',
+        '上市A依近5日/3日注意次數排序、不使用機率；上櫃維持V17>=10%；各自0至10檔' ,
+        '上市A以歷史注意紀錄規則選股；上櫃維持原本按日期順序訓練的V17模型',
         '只有注意交易觸發的自結計入命中及召回率；自主公告不計入',
         '自結標籤依MOPS解析結果；公告漏抓會影響Precision與Recall',
     ]
@@ -669,7 +718,7 @@ def main():
                    market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
                asof=cutoff, prediction_day=target, prediction_window='下一交易日',
-               count=len(forecast), model='monthly-eps-excluded-market-pattern-walkforward',
+               count=len(forecast), model='twse-rule-A-tpex-original-V17',
                threshold=MIN_PROBABILITY, items=forecast, candidates=forecast,
                source_status=status, evaluation=summary, warnings=warnings)
     write(out / 'predictions.json', obj)
