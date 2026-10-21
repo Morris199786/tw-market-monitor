@@ -293,7 +293,7 @@
           ～
           ${esc(m.end || '待結算')}
 
-          （僅已完成全市場公告核對之日期）
+          ${data.backtest_detail?.includes_provisional ? '（含當日暫結，公告更新後會重算）' : '（依網站已解析單月自結公告核對）'}
         </p>
 
         <div class="sr-forecast-scroll">
