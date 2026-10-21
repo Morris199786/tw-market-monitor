@@ -1,8 +1,8 @@
 {
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
-  "version": "2026-10-12-v9-quarter-results",
-  "updated_at": "2026-10-21T22:34+08:00",
+  "version": "2026-10-21-v10-flexible-quarter-table",
+  "updated_at": "2026-10-21T23:45+08:00",
   "upcoming": [
     {
       "ticker": "3264",
@@ -54,15 +54,20 @@
       "retention_status": "exchange_calendar",
       "release_type": "quarterly_preliminary",
       "source_label": "公開資訊觀測站",
-      "released_metrics": {},
-      "eps": null,
-      "gross_margin": null,
-      "eps_basis": null,
+      "released_metrics": {
+        "2026-Q3": {
+          "eps": 1.38,
+          "gross_margin": 47.55067190834264
+        }
+      },
+      "eps": 1.38,
+      "gross_margin": 47.55067190834264,
+      "eps_basis": "reported_single",
       "prev_period": "2026-Q2",
       "prev_eps": 0.72,
       "prev_gross_margin": 28.275725694995497,
       "prev_eps_basis": "cumulative_difference",
-      "data_status": "pending_financial_data"
+      "data_status": "complete"
     },
     {
       "ticker": "3555",
@@ -89,13 +94,11 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "announcement_scan/2026-10-07~2026-10-21:ValueError:announcement schema unavailable",
-      "daily_mops:ConnectTimeout",
       "issuer_ir/3008/2026-Q3:single_quarter_metrics_unavailable"
     ],
     "historical_errors": [],
     "coverage": {
-      "2026-10-07~2026-10-21": "failed"
+      "2026-10-07~2026-10-21": "ok"
     },
     "calendar_errors": []
   },
