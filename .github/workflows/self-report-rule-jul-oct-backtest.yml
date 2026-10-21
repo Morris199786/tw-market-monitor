@@ -1,0 +1,22 @@
+name: Self Report Rule July October Backtest (Private)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline rule backtest from archived daily snapshots
+        run: python scripts/self_report_rule_backtest.py
+      - name: Upload private results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-report-rule-jul-oct-private
+          path: private_rule_backtest/
+          retention-days: 30
