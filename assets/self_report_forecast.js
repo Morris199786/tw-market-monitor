@@ -49,7 +49,7 @@
           <p>
             注意交易觸發型自結｜
             上市、上櫃分別預測｜
-            每日合計 0～10 檔
+            上市、上櫃各 0～10 檔
           </p>
         </div>
 
@@ -58,15 +58,15 @@
 
       <div
         id="srForecastStatus"
-        class="earnings-status"
-      ></div>
+        class="earnings-status">
+      </div>
 
       <div id="srForecastPicks"></div>
 
       <details class="sr-forecast-history">
 
         <summary>
-          歷史回測績效
+          正式預測績效（10/21 起）
           <small>點擊展開</small>
         </summary>
 
@@ -75,21 +75,24 @@
         <p class="sr-forecast-note">
 
           <b>命中率（Precision）</b>
-          ＝ 命中檔數 ÷ 推薦檔數
+          ＝命中檔數 ÷ 推薦檔數
           <br>
+
           → 推薦的股票，有多少真的公布自結。
 
           <br>
 
           <b>召回率（Recall）</b>
-          ＝ 命中檔數 ÷ 實際公布檔數
+          ＝命中檔數 ÷ 實際公布檔數
           <br>
+
           → 真正公布自結的股票，有多少被提前預測到。
 
           <br>
 
           <b>統計範圍：</b>
-          僅計算注意交易觸發的自結，不含自主公告及季報。
+          僅計算注意交易觸發的自結，
+          不含自主公告及季報。
 
         </p>
 
@@ -146,18 +149,18 @@
       render();
     });
 
-    tabs
-      .querySelectorAll('[data-earnings-mode]')
-      .forEach(x => {
-        x.addEventListener('click', () => {
-          active = false;
+    tabs.querySelectorAll(
+      '[data-earnings-mode]'
+    ).forEach(x => {
+      x.addEventListener('click', () => {
+        active = false;
 
-          btn.classList.remove('active');
+        btn.classList.remove('active');
 
-          panel.hidden = true;
-          panel.style.display = 'none';
-        });
+        panel.hidden = true;
+        panel.style.display = 'none';
       });
+    });
   }
 
   async function render() {
@@ -194,7 +197,7 @@
           : '尚未執行預測';
 
       const a = Array.isArray(data.picks)
-        ? data.picks.slice(0, 10)
+        ? data.picks
         : [];
 
       status.textContent =
@@ -207,78 +210,90 @@
             : '尚未設定自動排程'
         );
 
-      picks.innerHTML = !data.prediction_date
-        ? `
+      if (!data.prediction_date) {
+        picks.innerHTML = `
           <div class="earnings-empty">
             尚未執行最新預測。
             自動更新時間尚未設定，
-            不會自行抓取注意交易資料
+            不會自行抓取注意交易資料。
           </div>
-        `
-        : !a.length
-          ? `
-            <div class="earnings-empty">
-              本次符合條件 0 檔，
-              不強制湊滿10檔
-            </div>
-          `
-          : a.map((p, i) => {
-              const v = Number(p.probability);
+        `;
+      } else if (!a.length) {
+        picks.innerHTML = `
+          <div class="earnings-empty">
+            本次符合條件 0 檔，
+            不強制湊滿10檔。
+          </div>
+        `;
+      } else {
+        picks.innerHTML = a.map((p, i) => {
+          const v = Number(p.probability);
 
-              const reasons = Array.isArray(p.reasons)
-                ? p.reasons
-                : [];
+          const reasons = Array.isArray(p.reasons)
+            ? p.reasons
+            : [];
 
-              const counts = reasons.find(x =>
-                /近3日注意\d+次、近5日注意\d+次、近20日注意\d+次/.test(x)
-              ) || '';
+          const counts = reasons.find(x =>
+            /近3日注意\d+次、近5日注意\d+次、近20日注意\d+次/.test(x)
+          ) || '';
 
-              const key = p.market === 'tpex'
-                ? (
-                    counts.match(/近5日注意\d+次/) || []
-                  )[0]
-                : (
-                    counts.match(/近20日注意\d+次/) || []
-                  )[0];
+          const key = p.market === 'tpex'
+            ? (
+                counts.match(/近5日注意\d+次/) || []
+              )[0]
+            : (
+                counts.match(/近20日注意\d+次/) || []
+              )[0];
 
-              return `
-                <article class="sr-forecast-pick">
+          return `
+            <article class="sr-forecast-pick">
 
-                  <div>
-                    <span>${i + 1}</span>
+              <div>
+                <span>${i + 1}</span>
 
-                    <strong>
-                      ${esc(p.name || p.ticker)}
-                    </strong>
+                <strong>
+                  ${esc(p.name || p.ticker)}
+                </strong>
 
-                    <small>
-                      ${esc(p.ticker)}
-                      ·
-                      ${p.market === 'tpex' ? '上櫃' : '上市'}
-                    </small>
+                <small>
+                  ${esc(p.ticker)}
+                  ·
+                  ${p.market === 'tpex' ? '上櫃' : '上市'}
+                </small>
 
-                    <b>
-                      ${
-                        Number.isFinite(v)
-                          ? (v * 100).toFixed(1) + '%'
-                          : '—'
-                      }
-                    </b>
-                  </div>
-
+                <b>
                   ${
-                    key
-                      ? `
-                        <p class="sr-forecast-key">
-                          ${esc(key)}
-                        </p>
-                      `
-                      : ''
+                    Number.isFinite(v)
+                      ? (v * 100).toFixed(1) + '%'
+                      : '—'
                   }
+                </b>
+              </div>
 
-                </article>
-              `;
-            }).join('');
+              ${
+                key
+                  ? `
+                    <p class="sr-forecast-key">
+                      ${esc(key)}
+                    </p>
+                  `
+                  : ''
+              }
+
+            </article>
+          `;
+        }).join('');
+      }
+
+      /*
+       * 正式績效
+       *
+       * 僅使用後端輸出的 backtest 欄位。
+       * 後端必須確保此欄位只包含
+       * 2026/10/21 起的正式預測結果。
+       *
+       * 不將歷史回測混入正式績效。
+       */
 
       const m = data.backtest || {};
 
@@ -290,19 +305,33 @@
       const row = (name, x) => `
         <tr>
           <th>${name}</th>
-          <td>${x?.predictions ?? '—'}</td>
-          <td>${x?.hits ?? '—'}</td>
-          <td>${fmt(x?.precision)}</td>
-          <td>${fmt(x?.recall)}</td>
+
+          <td>
+            ${x?.predictions ?? '—'}
+          </td>
+
+          <td>
+            ${x?.hits ?? '—'}
+          </td>
+
+          <td>
+            ${fmt(x?.precision)}
+          </td>
+
+          <td>
+            ${fmt(x?.recall)}
+          </td>
         </tr>
       `;
 
       metrics.innerHTML = `
         <p>
-          回測期間：
-          ${esc(m.start || '—')}
+          正式績效期間：
+          ${esc(m.start || '2026-10-21')}
           ～
-          ${esc(m.end || '—')}
+          ${esc(m.end || '待結算')}
+
+          （僅已完成全市場公告核對之日期）
         </p>
 
         <div class="sr-forecast-scroll">
