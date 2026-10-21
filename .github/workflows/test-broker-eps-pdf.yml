@@ -1,0 +1,50 @@
+name: Test broker EPS from PDF
+
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Optional comma-separated stock codes (blank = 10 latest stock reports)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test-pdf-eps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Authenticate Google Drive read-only
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+      - name: Install PDF text extractor
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          python -m pip install requests
+      - name: Test 10 original broker PDFs (no AI / no Telegram)
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          TEST_TICKERS: ${{ inputs.tickers }}
+        run: python scripts/test_broker_eps_pdf.py --limit 10 --tickers "$TEST_TICKERS"
+      - name: Upload PDF EPS audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: broker-eps-pdf-test-results
+          path: |
+            data/broker_eps_pdf_test.json
+            data/broker_eps_pdf_audit.json
+          if-no-files-found: warn
+          retention-days: 14
