@@ -623,7 +623,7 @@
 
         <ul>
           ${arr.map(
-            x => `<li>${highlightedText(x + (/目標(?:股)?價/.test(x) && !/隱含[漲跌]幅/.test(x) ? upsideText(r) : ""))}</li>`
+            x => `<li>${highlightedText(x)}</li>`
           ).join("")}
         </ul>
       </div>
@@ -695,7 +695,7 @@
             ? `
               <ul class="report-summary">
                 ${summary.map(
-                  x => `<li>${highlightedText(x)}</li>`
+                  x => `<li>${highlightedText(x + (/目標(?:股)?價/.test(x) && !/隱含[漲跌]幅/.test(x) ? upsideText(r) : ""))}</li>`
                 ).join("")}
               </ul>
             `
@@ -1734,4 +1734,5 @@
     boot();
   }
 })();
+
 
