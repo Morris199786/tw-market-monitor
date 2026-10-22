@@ -21,11 +21,11 @@ import pdfplumber
 ROOT = Path(__file__).resolve().parents[1]
 # Quarterly header families: 3Q26(F), 26Q3(F), Q326e, 202603(F), 3Q26SP.
 Q = re.compile(r"(?<![A-Za-z0-9])(?:"
-    r"(?P<a>[1-4])\s*Q\s*(?P<b>20\d{2}|\d{2})|"
+    r"(?P<a>[1-4])\s*Q\s*['’]?\s*(?P<b>20\d{2}|\d{2})|"
     r"(?P<c>20\d{2}|\d{2})\s*Q\s*(?P<d>[1-4])|"
     r"Q\s*(?P<e>[1-4])\s*['’]?\s*(?P<f>20\d{2}|\d{2})|"
     r"(?P<g>20\d{2})\s*[/\-]\s*(?P<h>[1-4])Q|"
-    r"(?P<ym>20\d{2})\s*0?(?P<qm>[1-4])"
+    r"(?P<ym>20\d{2})\s*0(?P<qm>[1-4])"
     r")\s*(?:\(\s*(?P<parenflag>ACTUAL|FORECAST|EST|SP|[AEFP])\s*\)|(?P<flag>SP|[AEFP]))?(?![A-Za-z0-9])", re.I)
 YEAR = re.compile(r'(?<!\w)(?:20\d{2}|\d{2})(?:\(\s*[AEF]\s*\)|[AEFP]|SP)?(?!\w)', re.I)
 EPS = re.compile(r'(?<![A-Za-z])(?:EPS|E\.P\.S\.)(?![A-Za-z])|每股(?:稅後)?(?:盈餘|純益|收益)', re.I)
@@ -266,6 +266,158 @@ def coordinate_extract(pdf_path, report_date):
     return found,review
 
 
+
+# Generic geometry-based parser: quarterly periods can run across columns OR down
+# rows. Neither orientation nor broker identity is hard-coded.
+COMPACT_PERIOD = re.compile(r'(?<!\d)(?P<year>20\d{2}|\d{2})\s*0(?P<quarter>[1-4])\s*(?P<flag>\(\s*[AEF]\s*\)|[AEF])?(?!\d)', re.I)
+EPS_LABEL = re.compile(r'E\.?P\.?S\.?|每股.{0,8}(?:盈餘|純益|收益)',re.I)
+EPS_EXCLUDE = re.compile(r'稅前|pretax|pre.tax|EPS\s*(?:growth|yoy|qoq)|每股盈餘成長',re.I)
+
+
+def _period_tokens(text, allow_compact=False):
+    tokens=[]
+    for m in Q.finditer(text):
+        tokens.append((m.start(),m.end(),period(m),is_forecast(m),quarter_flag(m)=='A'))
+    if allow_compact:
+        for m in COMPACT_PERIOD.finditer(text):
+            if any(a<m.end() and m.start()<b for a,b,*_ in tokens):continue
+            y=int(m.group('year'))
+            if y<100:y+=2000
+            flag=(m.group('flag') or '').strip('() ').upper()
+            tokens.append((m.start(),m.end(),f'{y}-Q{m.group("quarter")}',flag in ('F','E'),flag=='A'))
+    return sorted(tokens)
+
+
+def _make_lines(page):
+    words=sorted(page.extract_words(x_tolerance=2,y_tolerance=3),key=lambda w:(w['top'],w['x0']))
+    lines=[]
+    for w in words:
+        ln=next((l for l in reversed(lines[-8:]) if abs(l['y']-w['top'])<3.5),None)
+        if ln is None:
+            ln={'y':w['top'],'words':[]};lines.append(ln)
+        ln['words'].append(w)
+    for ln in lines:
+        ln['words'].sort(key=lambda w:w['x0'])
+        ln['text']=' '.join(w['text'] for w in ln['words'])
+    return sorted(lines,key=lambda l:l['y'])
+
+
+def _word_tokens(ln, allow_compact=False):
+    text=ln['text']; out=[]
+    starts=[];off=0
+    for w in ln['words']:
+        starts.append((off,off+len(w['text']),w));off+=len(w['text'])+1
+    for a,b,p,fc,act in _period_tokens(text,allow_compact):
+        relevant=[w for lo,hi,w in starts if lo<b and a<hi]
+        if not relevant:continue
+        out.append({'period':p,'explicit':fc,'actual':act,
+            'x':(min(w['x0'] for w in relevant)+max(w['x1'] for w in relevant))/2,
+            'y':ln['y']})
+    return out
+
+
+def _numbers(ln):
+    out=[]
+    for w in ln['words']:
+        t=w['text'].replace('−','-').replace('–','-')
+        if not re.fullmatch(r'\(?[-+]?\d[\d,]*(?:\.\d+)?\)?',t):continue
+        v=parse_number(t)
+        if v is not None:out.append({'x':(w['x0']+w['x1'])/2,'value':v,'x0':w['x0']})
+    return out
+
+
+def geometry_extract(pdf_path,report_date):
+    """Infer EPS table orientation using quarter anchors and EPS-labelled axis.
+
+    Require local EPS semantics, geometric alignment, and an identifiable forecast
+    quarter. Ignore annual columns and reject ambiguous multi-value intersections.
+    """
+    found=[];review=[]
+    with pdfplumber.open(str(pdf_path)) as doc:
+        for page_no,page in enumerate(doc.pages,1):
+            lines=_make_lines(page)
+            if not lines:continue
+            # The compact YYYY0Q / YY0Q family is permitted only in a local
+            # EPS table, not throughout narrative prose or ordinary dates.
+            eps_rows=[(i,ln) for i,ln in enumerate(lines) if EPS_LABEL.search(ln['text'])
+                      and not SKIP.search(ln['text']) and not EPS_EXCLUDE.search(ln['text'])]
+            if not eps_rows:continue
+            for ei,epsline in eps_rows:
+                label_words=[w for w in epsline['words'] if EPS_LABEL.search(w['text'])]
+                if not label_words:
+                    # EPS can be split into adjacent PDF words; fallback to leftmost
+                    # word of the label row, but only when the row has EPS semantics.
+                    label_words=[epsline['words'][0]]
+                label_end=max(w['x1'] for w in label_words)
+                # HORIZONTAL: EPS is a row, quarter headers are above it.
+                nums=[n for n in _numbers(epsline) if n['x0']>label_end-1]
+                if nums:
+                    options=[]
+                    for hi in range(max(0,ei-38),ei):
+                        h=lines[hi]
+                        if not 0<epsline['y']-h['y']<270:continue
+                        heads=_word_tokens(h,allow_compact=True)
+                        # Require >=2 periods or an explicit quarterly marker.
+                        if not heads or (len(heads)<2 and not any(x['explicit'] for x in heads)):continue
+                        options.append((hi,heads))
+                    if options:
+                        # Pick the closest header row with several distinct periods.
+                        hi,heads=max(options,key=lambda t:(t[0],len(t[1])))
+                        heads=sorted(heads,key=lambda h:h['x'])
+                        # Only assign EPS to quarter anchors if the column center
+                        # is close. Annual columns remain unmapped naturally.
+                        for h in heads:
+                            candidates=sorted(nums,key=lambda n:abs(n['x']-h['x']))
+                            if not candidates:continue
+                            v=candidates[0]
+                            spacing=min([abs(h['x']-other['x']) for other in heads if other is not h] or [65])
+                            tolerance=min(38,max(15,spacing*.42))
+                            if abs(v['x']-h['x'])>tolerance:continue
+                            if sum(abs(n['x']-h['x'])<=tolerance for n in nums)!=1:continue
+                            status=report_quarter_status(h['period'],report_date,h['explicit'])
+                            if status=='forecast' and not h['actual']:
+                                found.append({'period':h['period'],'eps':v['value'],
+                                    'method':'pdf_geometry_horizontal','classification':status,
+                                    'page':page_no,'header':lines[hi]['text'][:240],
+                                    'eps_row':epsline['text'][:240],
+                                    'eps_kind':eps_kind(epsline['text'].split('EPS')[0]+'EPS' if 'EPS' in epsline['text'] else epsline['text'])})
+                # VERTICAL: EPS is a column label. Quarter anchors are in
+                # adjacent rows; infer the year/quarter column independently.
+                # Scan a modest table-height window after the label header.
+                if _numbers(epsline) and len(_numbers(epsline))>2:continue
+                eps_x=(min(w['x0'] for w in label_words)+max(w['x1'] for w in label_words))/2
+                nearby=[]
+                for row in lines[ei+1:ei+33]:
+                    if row['y']-epsline['y']>410:break
+                    periods=_word_tokens(row,allow_compact=True)
+                    if len(periods)!=1:continue
+                    numsrow=_numbers(row)
+                    if not numsrow:continue
+                    nearby.append((row,periods[0],numsrow))
+                # Demand a repeated year-quarter axis, preventing date prose
+                # or a single incidental number from being treated as a table.
+                groups=defaultdict(list)
+                for row,h,values in nearby:groups[round(h['x']/24)].append((row,h,values))
+                axis=max(groups.values(),key=len,default=[])
+                if len({h['period'] for _,h,_ in axis})<2:continue
+                for row,h,values in axis:
+                    # A period identifier can itself be numeric. Exclude its cell.
+                    values=[v for v in values if abs(v['x']-h['x'])>17]
+                    if not values:continue
+                    chosen=min(values,key=lambda v:abs(v['x']-eps_x))
+                    if abs(chosen['x']-eps_x)>max(26,page.width*.035):continue
+                    if sum(abs(v['x']-eps_x)<max(26,page.width*.035) for v in values)!=1:continue
+                    status=report_quarter_status(h['period'],report_date,h['explicit'])
+                    if status!='forecast' or h['actual']:continue
+                    found.append({'period':h['period'],'eps':chosen['value'],
+                        'method':'pdf_geometry_vertical','classification':status,
+                        'page':page_no,'header':epsline['text'][:240],
+                        'eps_row':row['text'][:240],'eps_kind':eps_kind(epsline['text'])})
+    # Deduplicate repeated occurrences of the same exact extracted value.
+    unique={}
+    for row in found:unique.setdefault((row['period'],row['eps'],row['method'],row['page']),row)
+    return list(unique.values()),review
+
 def reconcile_results(primary, coordinate, review):
     """Keep one EPS definition per quarter; prefer after-tax/diluted over basic.
 
@@ -282,7 +434,7 @@ def reconcile_results(primary, coordinate, review):
         chosen=[r for r in records if eps_priority(r.get('eps_kind','generic'))==best]
         vals={r['eps'] for r in chosen}
         if len(vals)==1:
-            safe.append(next((r for r in chosen if r['method']=='pdf_coordinate_multilevel'),chosen[0]))
+            safe.append(next((r for r in chosen if r['method']=='pdf_geometry_horizontal'),chosen[0]))
         else:
             review.append({'reason':'conflicting_methods_or_tables','period':quarter,
                            'eps_kind':chosen[0].get('eps_kind'),'values':sorted(vals)})
@@ -379,6 +531,9 @@ def run(args):
                     safe,review=extract_table(proc.stdout)
                     # Coordinate extraction also handles quarter headers without E/F.
                     coords,coord_review=coordinate_extract(pdf,report.get('date'))
+                    geo,geo_review=geometry_extract(pdf,report.get('date'))
+                    coords.extend(geo)
+                    coord_review.extend(geo_review)
                     review.extend(coord_review)
                     # Plain-text parser may label historical quarters as forecasts only
                     # when they explicitly carry E/F/P. Coordinate result is checked

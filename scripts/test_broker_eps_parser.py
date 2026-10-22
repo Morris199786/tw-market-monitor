@@ -17,6 +17,23 @@ class BrokerEpsParserTests(unittest.TestCase):
                 self.assertIsNotNone(match)
                 self.assertEqual(p.period(match),expected)
                 self.assertTrue(p.is_forecast(match))
+    def test_apostrophe_quarters(self):
+        for raw in ("3Q'26(F)","3Q’26(F)","3Q26F"):
+            with self.subTest(raw=raw):
+                m=p.Q.search(raw)
+                self.assertIsNotNone(m)
+                self.assertEqual(p.period(m),'2026-Q3')
+                self.assertTrue(p.is_forecast(m))
+    def test_compact_quarters_are_context_gated(self):
+        self.assertFalse(p.Q.search('2603(F)'))
+        self.assertFalse(p._period_tokens('2603(F)',allow_compact=False))
+        tokens=p._period_tokens('2603(F)',allow_compact=True)
+        self.assertEqual(tokens[0][2],'2026-Q3')
+        self.assertTrue(tokens[0][3])
+        self.assertEqual(p._period_tokens('202604(F)',allow_compact=True)[0][2],'2026-Q4')
+    def test_quarter_and_annual_mix(self):
+        quarters=p._period_tokens("2Q26 3Q'26(F) 4Q'26(F) 1Q27(F) 2026(F) 2027(F)")
+        self.assertEqual([t[2] for t in quarters],['2026-Q2','2026-Q3','2026-Q4','2027-Q1'])
     def test_annual_not_quarter(self):
         self.assertFalse(p.Q.search('2026(F)'))
     def test_eps_kinds(self):
