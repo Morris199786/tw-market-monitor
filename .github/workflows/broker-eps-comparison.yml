@@ -1,35 +1,33 @@
 name: Publish broker EPS comparison
-
 on:
   workflow_dispatch:
+    inputs:
+      backfill_zero_eps:
+        description: "One-time retry for PDFs previously yielding zero EPS"
+        type: boolean
+        default: false
   schedule:
-    # 19:15 Asia/Taipei every day, after the 18:00 broker report roundup.
     - cron: '15 11 * * *'
   workflow_run:
     workflows: ["Broker reports Drive inbox"]
     types: [completed]
-
 permissions:
   contents: write
   id-token: write
-
 concurrency:
   group: broker-eps-comparison-publish
   cancel-in-progress: false
-
 jobs:
   publish:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-      - name: Sync latest main
-        run: |
+      - run: |
           git fetch origin main
           git reset --hard origin/main
       - uses: actions/setup-python@v5
@@ -48,27 +46,45 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y poppler-utils
           python -m pip install requests pdfplumber
-      - name: Test EPS parser
+      - name: Install grouped-year EPS parser enhancement
+        run: python scripts/upgrade_broker_eps_parser.py
+      - name: Parser regression tests
         run: python scripts/test_broker_eps_parser.py -v
-      - name: Extract broker EPS (no AI or Telegram)
+      - name: Select only unprocessed PDFs
+        run: |
+          python scripts/incremental_broker_eps.py prepare
+          if [ "${{ github.event.inputs.backfill_zero_eps }}" = "true" ]; then
+            python scripts/broker_eps_zero_backfill.py
+          fi
+      - name: Extract new PDFs only (no AI)
+        if: hashFiles('data/broker_eps_new_reports.json') != ''
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-        run: python scripts/test_broker_eps_pdf.py --limit 0
-      - name: Publish forecasts and install UI
         run: |
-          python scripts/publish_broker_eps_comparison.py
-          python scripts/install_broker_eps_comparison.py
-      - name: Commit only comparison data and UI registration
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('data/broker_eps_new_reports.json')
+          n=len(json.loads(path.read_text()).get('items',[]))
+          print(f'New reports: {n}')
+          PY
+          if [ "$(cat data/broker_eps_new_count.txt)" -gt 0 ]; then
+            python scripts/test_broker_eps_pdf.py --source data/broker_eps_new_reports.json --output data/broker_eps_pdf_test.json --audit data/broker_eps_audit_new.json --limit 0
+            python scripts/incremental_broker_eps.py finalize
+            python scripts/publish_broker_eps_comparison.py --merge-existing
+          fi
+      - name: Audit actual Compare matches
+        run: python scripts/broker_eps_compare_audit.py
+      - name: Ensure UI registration
+        run: python scripts/install_broker_eps_comparison.py
+      - name: Commit comparison data and processed ledger
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/broker_eps_forecasts.json index.html
-          if git diff --cached --quiet; then
-            echo 'No comparison changes'
-            exit 0
-          fi
-          git commit -m 'Update broker EPS comparison data'
+          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_compare_audit.json index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Update incremental broker EPS comparisons and audit'
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git rebase origin/main
