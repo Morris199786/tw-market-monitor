@@ -241,6 +241,57 @@ def reconcile_results(primary, coordinate, review):
     return sorted(safe,key=lambda r:r['period']),review
 
 
+
+def diagnose_pdf(text, safe, review, report_date):
+    """Evidence-based triage: zero extracted != no forecasts in the PDF."""
+    pages=text.split('\f')
+    accepted={r['period'] for r in safe}
+    quarter_evidence=[]
+    eps_table_evidence=[]
+    inline_candidates=[]
+    for page_no,page in enumerate(pages,1):
+        lines=page.splitlines()
+        for i,line in enumerate(lines):
+            qm=list(Q.finditer(line))
+            has_eps=bool(EPS.search(line))
+            if qm and (len(qm)>=2 or has_eps):
+                quarter_evidence.append({'page':page_no,'line':i+1,'text':line.strip()[:260],
+                    'quarters':list(dict.fromkeys(period(m) for m in qm))})
+            if has_eps and len(list(NUM.finditer(line)))>=3:
+                eps_table_evidence.append({'page':page_no,'line':i+1,'text':line.strip()[:260]})
+            # Only diagnostic: inline EPS estimates are not safe to publish without
+            # deciding whether the number is a broker estimate or a consensus value.
+            if qm and has_eps:
+                for m in qm:
+                    q=period(m)
+                    if q in accepted:continue
+                    inline_candidates.append({'page':page_no,'line':i+1,'quarter':q,
+                        'text':line.strip()[:260]})
+    reasons=Counter(r.get('reason','UNKNOWN') for r in review)
+    if not safe:
+        if quarter_evidence and eps_table_evidence:
+            status='POSSIBLE_MISSED_QUARTER_EPS'
+        elif quarter_evidence or eps_table_evidence:
+            status='INSUFFICIENT_TABLE_ALIGNMENT'
+        else:
+            status='NO_QUARTER_EPS_EVIDENCE'
+    elif any(x['quarter'] not in accepted for x in inline_candidates):
+        status='PARTIAL_EXTRACTION_REVIEW'
+    else:
+        status='EXTRACTED_REVIEW_NOT_PROVEN_COMPLETE'
+    return {'diagnostic_status':status,
+            'quarter_header_evidence_count':len(quarter_evidence),
+            'eps_numeric_row_evidence_count':len(eps_table_evidence),
+            'inline_unmatched_quarter_count':len(inline_candidates),
+            'quarter_header_evidence':quarter_evidence[:12],
+            'eps_numeric_row_evidence':eps_table_evidence[:12],
+            'unmatched_inline_evidence':inline_candidates[:12],
+            'review_reason_counts':dict(reasons),
+            'review_examples_priority':sorted(review,key=lambda x:(
+                0 if x.get('reason') in ('conflicting_methods_or_tables','conflicting_eps_same_period','AMBIGUOUS_FORECAST','MULTIPLE_VALUES_NO_SUBHEADER','COLUMN_MISMATCH') else 1,
+                x.get('page',999)))[:16]}
+
+
 def download_pdf(fid,token,path):
     resp=requests.get(f'https://www.googleapis.com/drive/v3/files/{fid}',
         params={'alt':'media','supportsAllDrives':'true'},
@@ -292,7 +343,8 @@ def run(args):
                             'report_date':report.get('date'),'report_id':report.get('id'),
                             'source_url':report.get('source_url')})
                     entry.update(status='processed',extracted_characters=len(proc.stdout),
-                        accepted_forecasts=len(safe),review_count=len(review),review_examples=review[:8])
+                        accepted_forecasts=len(safe),review_count=len(review),review_examples=review[:8],
+                        **diagnose_pdf(proc.stdout,safe,review,report.get('date')))
                     entry['pdf_sha256']=hashlib.sha256(pdf.read_bytes()).hexdigest()
                     counts['accepted']+=len(safe)
                     counts['needs_review']+=len(review)
@@ -304,15 +356,26 @@ def run(args):
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps({'mode':'test_only_no_ai_no_push',
         'generated_at':datetime.now(timezone.utc).isoformat(),'forecasts':output},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    reason_counts=Counter(x.get('reason','UNKNOWN') for entry in audit for x in entry.get('review_examples',[]))
+    reason_counts=Counter()
+    for entry in audit: reason_counts.update(entry.get('review_reason_counts',{}))
+    diagnostic_counts=Counter(entry.get('diagnostic_status','NOT_DIAGNOSED') for entry in audit)
+    zero_reports=[{'ticker':r['ticker'],'broker':r['broker'],'report_id':r['report_id'],
+                   'status':r.get('diagnostic_status',r['status']),
+                   'quarter_header_evidence_count':r.get('quarter_header_evidence_count',0),
+                   'eps_numeric_row_evidence_count':r.get('eps_numeric_row_evidence_count',0)}
+                  for r in audit if r.get('accepted_forecasts',0)==0]
     args.audit.write_text(json.dumps({'mode':'read_only_pdf_test',
         'eligible_reports':len(eligible),'selected_reports':len(selected),
-        'accepted_forecasts':len(output),'counts':dict(counts),'review_reason_sample_counts':dict(reason_counts),'reports':audit,
+        'accepted_forecasts':len(output),'counts':dict(counts),
+        'diagnostic_counts':dict(diagnostic_counts),'zero_forecast_reports':zero_reports,
+        'review_reason_counts':dict(reason_counts),'reports':audit,
         'limitations':['Text PDFs only; scanned table images require a separate vision fallback.',
-            'No quarterly forecast in report is a valid zero result.',
+            'Zero extracted is not proof that no quarterly EPS exists.',
             'Ambiguous values are not published.','No AI, Telegram, or existing data changes.']},
         ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(f'Eligible={len(eligible)}, tested={len(selected)}, accepted={len(output)}')
+    print('Diagnostic statuses:',dict(diagnostic_counts))
+    print('Zero-extraction reports:',len(zero_reports))
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
