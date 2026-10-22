@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-22T20:02+08:00",
+  "updated_at": "2026-10-22T20:31+08:00",
   "source": "Google News RSS",
   "parser_version": "single-period-v3-contextual-eps",
   "coverage": "明確單一公司／單月或單季 EPS 的新聞標題與 RSS 摘要；不保證涵蓋所有公告",
@@ -75,6 +75,23 @@
       "release_type": "quarterly_preliminary"
     },
     {
+      "ticker": "5340",
+      "name": "建榮",
+      "market": "tpex",
+      "kind": "monthly",
+      "period": "2026-09",
+      "eps": 0.25,
+      "publish_date": "2026-10-22",
+      "publish_time": "14:53:00",
+      "subject": "建榮自結9月合併獲利4900萬元,每股稅後0.25元",
+      "source": "news_backup",
+      "source_label": "新聞備援｜MoneyDJ理財網",
+      "source_url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTU9DclRMeXI1ejA4OHlVYWowYkJ2NDlRVXJPY2ZrX0pyN2hVODJwSTZjMWZGOE00NmFNRndLMFlUeVdtdnBVX3YzdXZ4ZWdCZzh4cTdGVXNTV1lEVVNFN0U2MXBvb29UcEJ6NlJnOG9IWkdnZkk2bHdUYnJUUVYyT2NXbnFIdnVma3Z5TU5QUV9mdw?oc=5",
+      "evidence": "9月合併獲利4900萬元,每股稅後0.25元",
+      "eps_basis": "news_reported_single",
+      "release_type": "quarterly_preliminary"
+    },
+    {
       "ticker": "2221",
       "name": "大甲",
       "market": "tpex",
@@ -122,23 +139,6 @@
       "source_label": "新聞備援｜MoneyDJ理財網",
       "source_url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQbXExZ0JPYVpDV0oxZzZNR09pa3VLQkdIY0ViNFR4ZXYtUFVIVExKTEtPOTJFdHVGUnJFckhQazV6MHBOZnNHaDB5WmhSc3R2QUlnUmk3RV9rbTAxMk8xaDhlWXYtS2hnSE03VUNRaXYxT0R2ZkxsMDROWGV4djZrbWt4MVd3ZmtpR0hKdXFKSGMzZw?oc=5",
       "evidence": "9月合併獲利1172萬元,每股稅後0.40元",
-      "eps_basis": "news_reported_single",
-      "release_type": "quarterly_preliminary"
-    },
-    {
-      "ticker": "5340",
-      "name": "建榮",
-      "market": "tpex",
-      "kind": "monthly",
-      "period": "2026-09",
-      "eps": 0.25,
-      "publish_date": "2026-10-22",
-      "publish_time": "14:53:00",
-      "subject": "建榮自結9月合併獲利4900萬元,每股稅後0.25元",
-      "source": "news_backup",
-      "source_label": "新聞備援｜MoneyDJ理財網",
-      "source_url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTU9DclRMeXI1ejA4OHlVYWowYkJ2NDlRVXJPY2ZrX0pyN2hVODJwSTZjMWZGOE00NmFNRndLMFlUeVdtdnBVX3YzdXZ4ZWdCZzh4cTdGVXNTV1lEVVNFN0U2MXBvb29UcEJ6NlJnOG9IWkdnZkk2bHdUYnJUUVYyT2NXbnFIdnVma3Z5TU5QUV9mdw?oc=5",
-      "evidence": "9月合併獲利4900萬元,每股稅後0.25元",
       "eps_basis": "news_reported_single",
       "release_type": "quarterly_preliminary"
     },
@@ -541,9 +541,9 @@
       "result": "ambiguous_company"
     },
     {
-      "title": "驊宏資獲利／9月自結稅後淨利500萬元 EPS 0.12元 - UDN",
-      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE96M19jU3B2TXp2cUxjNU5iVHh1dWEzTXlTN1VJakNHSEtrV0hMY2hSd2dVU3ZqSmFZbzFVYVVsNHNwVjFiUFJPQk1XS3Z3elN00gFWQVVfeXFMT1dEZ2NpOG16REt1dVJsX0QxbW5zRXNuLXJaLXl5a0ExbVhiNmdSelB6b0hSVnktRnMzV004YkozbXdoYVFzMndXYU5KSFlFTDFVbEd6UHc?oc=5",
-      "result": "accepted"
+      "title": "敦吉自結前三季合併稅後EPS 4.10元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNX01idy1LcGRMOVZsdnJnb3E3aE1YQlR6SE1mMzFCaThNeUFsUWpwN0RrZExaNHA4VnRFcGNYZUJvT2RzU3VyLVl6djNOR1R0ODRWdENOV00xTmx4ckhlakNTWkRJanczeVlpMXZlVkxLRHhEcmtiTDNDeTRDOURSVmVaZG0zUEx2TDJqdHhkZE9MQQ?oc=5",
+      "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "製鞋廠鈺齊前3季營收143.69億元 自結EPS達2.46元 - 鉅亨網",
@@ -554,6 +554,11 @@
       "title": "金居自結9月獲利年增89%、EPS 0.8元 擬再投資百億新建高階銅箔廠 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMi_wJBVV95cUxPSnJRUHE1UUN0bk1PMnYwLUwxRlBLTEpmX1k2a0pudllxejBmb1BXRjE1V0dNbTFQbHZ3ekFqVkwtV0lVNzNsUTVvZEtfVW5HUHdWNXNVc0ZuQzFKaEdfUGNJWkxBQ2JfMVg1QVVTdGprSUdnUmJUa0dXdFJZblpObzVZbTIyU1R5Z0FDRkMzbHhiRDByNEZhUDVTTW91djQ5dUd2eHRTN3hISTdNZnVPUlhtazlueXp3TmZWSkdNZzRuektIZ3d0b0VzNzNlZnZKT01pV1YtMDBkQnNmVFVEd0lBOC0xWV95d0trMFZ6QlJiMjVKNDU0MVVDR3gydFBnWDdhOHhlejFuNXhGSXBKUnBGRDRxcGIzNnQ3WDBOUm9jemlrVThDYnM1Z2htUVlZYTJRNGxha29CU0NpeGNiR1VKdVYyWlRjeGVROE9IZk16RnZhQXRYNFF2NE01YnNNUGJDdXNIblV1akxrRXY4Qjk4X0R6Nzh1YmFaVmlKYw?oc=5",
       "result": "ambiguous_company"
+    },
+    {
+      "title": "驊宏資獲利／9月自結稅後淨利500萬元 EPS 0.12元 - UDN",
+      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE96M19jU3B2TXp2cUxjNU5iVHh1dWEzTXlTN1VJakNHSEtrV0hMY2hSd2dVU3ZqSmFZbzFVYVVsNHNwVjFiUFJPQk1XS3Z3elN00gFWQVVfeXFMT1dEZ2NpOG16REt1dVJsX0QxbW5zRXNuLXJaLXl5a0ExbVhiNmdSelB6b0hSVnktRnMzV004YkozbXdoYVFzMndXYU5KSFlFTDFVbEd6UHc?oc=5",
+      "result": "accepted"
     },
     {
       "title": "志強-KY自結前三季合併獲利6.81億元，每股稅後3.4元 - MoneyDJ理財網",
@@ -596,9 +601,9 @@
       "result": "ambiguous_company"
     },
     {
-      "title": "中華資安獲利／自結前三季獲利3.56億元 與營收同創同期新高 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBjOGtWRkdYYzZqWVBLSUVMSWpTZTNTNmdZdnQ3b0w2SG4wT2dzRnFXQ0t2THViVEg2bW4zZGNEQnRhRlIyd1JPRmI0cnRLX0x6UU1pZEtHeXJ0d9IBX0FVX3lxTFByc25ROUlzenlKRElmRDBCRExFeEEtZy1ZbGMzckg0bVF5VUZIWi1RVHktQzRQaVBkdDNtdFJiVko0SC1BbUJUVS1BYXNqb1Q5TFdNMGV6aVBmVmV4U0s0?oc=5",
-      "result": "ambiguous_company"
+      "title": "建榮自結9月合併獲利4900萬元，每股稅後0.25元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTU9DclRMeXI1ejA4OHlVYWowYkJ2NDlRVXJPY2ZrX0pyN2hVODJwSTZjMWZGOE00NmFNRndLMFlUeVdtdnBVX3YzdXZ4ZWdCZzh4cTdGVXNTV1lEVVNFN0U2MXBvb29UcEJ6NlJnOG9IWkdnZkk2bHdUYnJUUVYyT2NXbnFIdnVma3Z5TU5QUV9mdw?oc=5",
+      "result": "accepted"
     },
     {
       "title": "大甲自結9月合併獲利3000萬元，每股稅後0.72元 - MoneyDJ理財網",
@@ -613,11 +618,6 @@
     {
       "title": "應廣自結9月合併獲利1172萬元，每股稅後0.40元 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQbXExZ0JPYVpDV0oxZzZNR09pa3VLQkdIY0ViNFR4ZXYtUFVIVExKTEtPOTJFdHVGUnJFckhQazV6MHBOZnNHaDB5WmhSc3R2QUlnUmk3RV9rbTAxMk8xaDhlWXYtS2hnSE03VUNRaXYxT0R2ZkxsMDROWGV4djZrbWt4MVd3ZmtpR0hKdXFKSGMzZw?oc=5",
-      "result": "accepted"
-    },
-    {
-      "title": "建榮自結9月合併獲利4900萬元，每股稅後0.25元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTU9DclRMeXI1ejA4OHlVYWowYkJ2NDlRVXJPY2ZrX0pyN2hVODJwSTZjMWZGOE00NmFNRndLMFlUeVdtdnBVX3YzdXZ4ZWdCZzh4cTdGVXNTV1lEVVNFN0U2MXBvb29UcEJ6NlJnOG9IWkdnZkk2bHdUYnJUUVYyT2NXbnFIdnVma3Z5TU5QUV9mdw?oc=5",
       "result": "accepted"
     },
     {
@@ -651,13 +651,13 @@
       "result": "accepted"
     },
     {
-      "title": "驊宏資自結9月合併獲利500萬元，每股稅後0.12元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNbmctVG5iQzV0ZzM0NkF1a1NGQ21WaXkyM3hnUnVfTzJYNm13dE1xMVNNbkZMNEdQUTZUX19ZTTJVZGgtZGZPR2V4Z28tWW5CckF3U3BoZmNwNHZNWFpMeWcycUFhLVdVaXAta2dtSXd4cDFiQkxUZ1FLeVNnQXFTcmRrNTk2eDdmZ2FEcDR2bTJiQQ?oc=5",
+      "title": "意藍自結9月合併獲利996萬元，每股稅後0.50元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNcXBkdVk2MkdMZS0zaV9wa2F2ZnI5akYzc3hxX2JCSnhBVHN4d0dkZU9IdVRPTkZBaFJwUnBIR2F0N0tSVFR2aTBSMXBrLWxYSWZZSkQ1dWF5QWY2ejZBOHdjYmpsRURLRkF3R3pSNDNDSEJSdjNZaXlpSGJDLVpONVJpcUdEVU9xR2J5SDFUX1duUQ?oc=5",
       "result": "accepted"
     },
     {
-      "title": "意藍自結9月合併獲利996萬元，每股稅後0.50元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNcXBkdVk2MkdMZS0zaV9wa2F2ZnI5akYzc3hxX2JCSnhBVHN4d0dkZU9IdVRPTkZBaFJwUnBIR2F0N0tSVFR2aTBSMXBrLWxYSWZZSkQ1dWF5QWY2ejZBOHdjYmpsRURLRkF3R3pSNDNDSEJSdjNZaXlpSGJDLVpONVJpcUdEVU9xR2J5SDFUX1duUQ?oc=5",
+      "title": "驊宏資自結9月合併獲利500萬元，每股稅後0.12元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNbmctVG5iQzV0ZzM0NkF1a1NGQ21WaXkyM3hnUnVfTzJYNm13dE1xMVNNbkZMNEdQUTZUX19ZTTJVZGgtZGZPR2V4Z28tWW5CckF3U3BoZmNwNHZNWFpMeWcycUFhLVdVaXAta2dtSXd4cDFiQkxUZ1FLeVNnQXFTcmRrNTk2eDdmZ2FEcDR2bTJiQQ?oc=5",
       "result": "accepted"
     },
     {
@@ -686,14 +686,14 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "錦明自結9月合併虧損1500萬元，每股稅後 -0.18元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPeWNLTzFyWlJvUk5rd0N3cndMdVd5WERuTWNDNnAtUlN6blQzN1lwTzBKUm1CSThXa19ZRmNmcmwtWXRoR05hT0tLNHRlS1NQcVQ2MWlha1ItYllyc1JwSXhTR280aWo1c2Z5T1Vjd2dWWUhneDNyMTlkQzdGamRLcHBucVVwVndqVzBpY0RrdjN0dw?oc=5",
-      "result": "accepted"
-    },
-    {
       "title": "建榮獲利／9月自結淨利4,900萬元 每股稅後純益0.25元 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMieEFVX3lxTFBYZU1UYm01X2FtQV9DWjVhYU1EUXdBYm1WN1JwZEVUbzNmQU51NXRXdS1Lejd2S0hPOW8tVjFMXzJlSVJ4N2FsNHp2ZVVyT2xJMWN2OWstaW5JNVM2LXZERUJadm81M1lfeUwxc3VjWVVqVkZNeHcwX9IBYEFVX3lxTE9FNmozSTN5Z2pEblBIckZDMGI2M1ZUN3FYLWQ2QVVGaTNvckJETTZQclREQ0Y5ZVNiWjRsSXJ1MWFYYUlMd1pNU2gzWjUwY3VKNjJQNHpBR2ZaMG82OVE2OA?oc=5",
       "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "錦明自結9月合併虧損1500萬元，每股稅後 -0.18元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPeWNLTzFyWlJvUk5rd0N3cndMdVd5WERuTWNDNnAtUlN6blQzN1lwTzBKUm1CSThXa19ZRmNmcmwtWXRoR05hT0tLNHRlS1NQcVQ2MWlha1ItYllyc1JwSXhTR280aWo1c2Z5T1Vjd2dWWUhneDNyMTlkQzdGamRLcHBucVVwVndqVzBpY0RrdjN0dw?oc=5",
+      "result": "accepted"
     },
     {
       "title": "南亞獲利／9月自結淨賺350億元 年增逾9倍 高階 CCL 驗證順利推進中 - UDN",
@@ -776,23 +776,18 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "亞信 115年第3季綜合損益表，每股盈餘1.06元 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMinAJBVV95cUxQZ0lSQUFSclVNNWtmSWl5RGxqbHhSTEdNTmc3UnI5YUE2ZWVLY3VvTmJ1SGhoMVgwSTBhZTR1cmMwbGdvQ0VOR1RLbllmRjc2Z0ZFNDZJYTVaZHo3VDlocnlCZnFrRXpBWEh2ZXJTSVRBYzJzLV9PRnFhQ0RrOE5vWDgtU1FWX1FiSzN6VkJMektfVDl0RGgwMk00c1BMcVNERkhRTjNsSkFBRHdkQXhvWDdxVkdXTmNrSXpBTEJQX2Q4cVlOTXVyU3phX2tpcENma0ppWldUMGw3ckZqYWtKNjByUFJpcmZoLXZSaDRNdFpyVDYyYjE2LVZoU21KcDItRk9La1FjRHZmU203cFZTNVQ3VC1VdG14Vkhldg?oc=5",
-      "result": "accepted"
-    },
-    {
       "title": "志強-KY前三季EPS 3.4元；Q4出貨有望回升- 新聞 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNVXZOWUNaV0ZlcjRJUUlHcWdpQktibEVMQjZwWC1OWWRCejVMdVlTUzVLYjk0b0txdGFwbG8wNVo0MVlCX18zb3NucF82T180dkRoZk1yQURWcTk5Z3QtdXVZREQ2QXpLbjI3bG1pY2J5RHpYQVdzVEhzaEZkYnN0a2xTdG1JQVdKNS1lYlVDQW1Ydw?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "富邦金前9月EPS 8.8元，保留盈餘影響數2499.6億元超越歷年全年表現 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMigwNBVV95cUxQQmxLN05OaEc0SFdZTjhqeDVkWUdMRlFhcnB3ZjRwVWhkNXdPRVJDQm4zRmFqRG10Yk1tZEV1RVoyaDdSUFJxd0RVTERRWGVmdU5KVVpZU0N5cmM2LWZxWmNzbWRaRVNtMkpMNENQYkpqYm1yMkdaUjk0YlRWeWxjb0U0ZERMTnh1NHlnSzhUdFQyNko1dmdRcEdGc1JZVWMxeEZDTmtnTjUtS05mWDNLaExwVnI1eU16SFpyTWZuSy1vVng0dUMyYUR5RnZpVTN1bzAwZHpRUldhNVNsMTlaMC1WUmdKSlFmVkJHZ0tMclpBVndjVk5ROUJhSE51Uk1jRzFfaW5ac0lOR01JTTgyMllEX2JoMzNPVVJEVE1oWGVsSjRMNURUN3g5OHhwUEp4dEN1b05Ld2ZUSURXSjJYSTBSS2tsXzFhVERUVk1mUGdrdjQxcXlNUVdWdGlQTUN1VW9RMW9MVXNTMDRKcXY0Q1NGNzl3MGJCdXVTZllXU2FCT1E?oc=5",
-      "result": "no_unambiguous_single_period_eps"
+      "title": "亞信 115年第3季綜合損益表，每股盈餘1.06元 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMinAJBVV95cUxQZ0lSQUFSclVNNWtmSWl5RGxqbHhSTEdNTmc3UnI5YUE2ZWVLY3VvTmJ1SGhoMVgwSTBhZTR1cmMwbGdvQ0VOR1RLbllmRjc2Z0ZFNDZJYTVaZHo3VDlocnlCZnFrRXpBWEh2ZXJTSVRBYzJzLV9PRnFhQ0RrOE5vWDgtU1FWX1FiSzN6VkJMektfVDl0RGgwMk00c1BMcVNERkhRTjNsSkFBRHdkQXhvWDdxVkdXTmNrSXpBTEJQX2Q4cVlOTXVyU3phX2tpcENma0ppWldUMGw3ckZqYWtKNjByUFJpcmZoLXZSaDRNdFpyVDYyYjE2LVZoU21KcDItRk9La1FjRHZmU203cFZTNVQ3VC1VdG14Vkhldg?oc=5",
+      "result": "accepted"
     },
     {
-      "title": "富喬9月 EPS 0.56元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTFA0c2NUMkVVekJjZDJDRk1LQkRfU2dCSFFkUmdRZVpSdXI4SzJNRG1fSlpuNHVWRWNKbkRsV2NLQUpydkNtUGVHVWVQblkxTnN6YnRfeDVST2tHS3fSAWBBVV95cUxOdmV2dzlUWlBGdmdSRVNoUkxLR200ajFLVVRLSmdHZjNOeHpwTjU3bnVJcXdKN1c1SDUxQlVISUdORnVNYkVKYXdTNUI2eEJQQWVVazVVUVZSbUZDM3dvSzU?oc=5",
+      "title": "富邦金前9月EPS 8.8元，保留盈餘影響數2499.6億元超越歷年全年表現 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMigwNBVV95cUxQQmxLN05OaEc0SFdZTjhqeDVkWUdMRlFhcnB3ZjRwVWhkNXdPRVJDQm4zRmFqRG10Yk1tZEV1RVoyaDdSUFJxd0RVTERRWGVmdU5KVVpZU0N5cmM2LWZxWmNzbWRaRVNtMkpMNENQYkpqYm1yMkdaUjk0YlRWeWxjb0U0ZERMTnh1NHlnSzhUdFQyNko1dmdRcEdGc1JZVWMxeEZDTmtnTjUtS05mWDNLaExwVnI1eU16SFpyTWZuSy1vVng0dUMyYUR5RnZpVTN1bzAwZHpRUldhNVNsMTlaMC1WUmdKSlFmVkJHZ0tMclpBVndjVk5ROUJhSE51Uk1jRzFfaW5ac0lOR01JTTgyMllEX2JoMzNPVVJEVE1oWGVsSjRMNURUN3g5OHhwUEp4dEN1b05Ld2ZUSURXSjJYSTBSS2tsXzFhVERUVk1mUGdrdjQxcXlNUVdWdGlQTUN1VW9RMW9MVXNTMDRKcXY0Q1NGNzl3MGJCdXVTZllXU2FCT1E?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
@@ -801,19 +796,24 @@
       "result": "ambiguous_company"
     },
     {
+      "title": "富喬9月 EPS 0.56元 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTFA0c2NUMkVVekJjZDJDRk1LQkRfU2dCSFFkUmdRZVpSdXI4SzJNRG1fSlpuNHVWRWNKbkRsV2NLQUpydkNtUGVHVWVQblkxTnN6YnRfeDVST2tHS3fSAWBBVV95cUxOdmV2dzlUWlBGdmdSRVNoUkxLR200ajFLVVRLSmdHZjNOeHpwTjU3bnVJcXdKN1c1SDUxQlVISUdORnVNYkVKYXdTNUI2eEJQQWVVazVVUVZSbUZDM3dvSzU?oc=5",
+      "result": "no_unambiguous_single_period_eps"
+    },
+    {
       "title": "南亞獲利／9月自結淨賺350億元 年增逾9倍 高階 CCL 驗證順利推進中 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE0tY2pINFljeUprY3J0RFAzQm5SNFhSZ1BJbnIxbVRsWlEwcl81TzNtUl9uSlV0LWFZZjRMdk9pQVJ3bWh1WkRWZkxoVW5WQ3A2Rjk0QUV2T1VabUhRT1gw0gFfQVVfeXFMTS1jakg0WWN5SmtjcnREUDNCblI0WFJnUElucjFtVGxaUTByXzVPM21SX25KVXQtYVlmNEx2T2lBUndtaHVaRFZmTGhVblZDcDZGOTRBRXZPVVptSFFPWDA?oc=5",
+      "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "健和興:公告本公司115年09月份自結損益 - 鉅亨網",
+      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTFBqZEVCQ1VXSkJDN3JJLWFEMUV3d21wc2dfMVlhVkpVZU1zd1ZYbEFzdVZVLXpDMWJfMzR6eEttQ1BZeTZvSjJGdjluWDVnc0xMS0tZ?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "南亞自結9月合併獲利350.69億元，每股稅後4.42元 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOTW9ZVE4xRkxwN2tTZGh1ckF3ZVd6MEZpcTl5UzlXNzhFTW8tdWFPR3lJaGhLcFBjNDJlNU94N0s4UmlEWGpfRmdjZHNWZ29hUFRvYXBBd0JYaXppQmc1WnhFd1RQQzNKZkNucURHX3A1akhKdHVBcU9ZODU2QUpaY2FWaDZaZlVqNE5RR0FUdU92UQ?oc=5",
       "result": "accepted"
-    },
-    {
-      "title": "健和興:公告本公司115年09月份自結損益 - 鉅亨網",
-      "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTFBqZEVCQ1VXSkJDN3JJLWFEMUV3d21wc2dfMVlhVkpVZU1zd1ZYbEFzdVZVLXpDMWJfMzR6eEttQ1BZeTZvSjJGdjluWDVnc0xMS0tZ?oc=5",
-      "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "製鞋廠志強-KY自結前9月稅後賺6.81億元 每股純益3.4元 - Yahoo股市",
@@ -841,13 +841,13 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "大甲自結9月合併獲利3000萬元，每股稅後0.72元 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMiqAJBVV95cUxQMjdOMVA2RDgtVkJqaHJMQ2tQYXFLZzdmUnJZeWdHTHB4ckl3NkVMc3dtcFpXQm9YNm00blFpdXNaX01rcEtySDRiUGMtamh4eDFwa0oxcndERU0tbU9EOFE0azQ4ZWMwVEJyelFlSGt0b3BCYm5OTGxGYUtrbElnZzdIOEROQ0JQZE1sT0lCN3UzVEljYm1SMkNEM2Q2ZmtXdnN2a2RQUlhqOV93bGpORUJHMDFjeGZEOUNqX3pSMms0V0ljdFFsdW04emc0aXVTQkt4WnpSRUNRYVU1Z0R3bFdjSWVyb3lPRE9fZ2Z2S1EzRjRMMjh4dWZUM2JZZ2doSlN0WExlZlEwN2x6YlBUOVgyendneGxnLVpWSXFDUWNXOE9VVG5uSw?oc=5",
+      "title": "AMAX-KY自結第三季合併獲利3.04億元，每股稅後7.16元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTGU1NlNrSEc3c29GcFhHVU1pMEk4NDBEMkpNWV9haUllM1hMNkR2TnpVTGY5UWJsT0lYczQ1QTlLdV9XUFY5M29pMW5EdktWZDc4SktSM0xDR0dYT2R6MU82T1pPLUdWTXFBME1Pa3VhRDB2MmxyVHphYlY2NFlBcWFrb2RGb1I5dmZiN2hwT0hJdw?oc=5",
       "result": "accepted"
     },
     {
-      "title": "AMAX-KY自結第三季合併獲利3.04億元，每股稅後7.16元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPTGU1NlNrSEc3c29GcFhHVU1pMEk4NDBEMkpNWV9haUllM1hMNkR2TnpVTGY5UWJsT0lYczQ1QTlLdV9XUFY5M29pMW5EdktWZDc4SktSM0xDR0dYT2R6MU82T1pPLUdWTXFBME1Pa3VhRDB2MmxyVHphYlY2NFlBcWFrb2RGb1I5dmZiN2hwT0hJdw?oc=5",
+      "title": "大甲自結9月合併獲利3000萬元，每股稅後0.72元 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMiqAJBVV95cUxQMjdOMVA2RDgtVkJqaHJMQ2tQYXFLZzdmUnJZeWdHTHB4ckl3NkVMc3dtcFpXQm9YNm00blFpdXNaX01rcEtySDRiUGMtamh4eDFwa0oxcndERU0tbU9EOFE0azQ4ZWMwVEJyelFlSGt0b3BCYm5OTGxGYUtrbElnZzdIOEROQ0JQZE1sT0lCN3UzVEljYm1SMkNEM2Q2ZmtXdnN2a2RQUlhqOV93bGpORUJHMDFjeGZEOUNqX3pSMms0V0ljdFFsdW04emc0aXVTQkt4WnpSRUNRYVU1Z0R3bFdjSWVyb3lPRE9fZ2Z2S1EzRjRMMjh4dWZUM2JZZ2doSlN0WExlZlEwN2x6YlBUOVgyendneGxnLVpWSXFDUWNXOE9VVG5uSw?oc=5",
       "result": "accepted"
     },
     {
@@ -931,11 +931,6 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "EPS達4.9元！「CCL大廠」Q3獲利飆漲10倍 外資卻連砍2刀抱回188億元 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMi2gJBVV95cUxPb3ZUdndzMFBIY3RxekhfWjRQY0pSVFBCN05EcjJJaF9tM3RBeGJ1X3BjOVhnTkxtMGlkaGdqRW5tc0lxTHlmcHBteU90aU9ZTVh2WW5mYlp6VThSVmhOZGloWFppWWxqYTh2VHlsV05NUVdjNGFJbXQzeGpQcmZ3Mk9BZERkdDRxaDBnSmlIT1cxcUtmM1NHZWdvaDVoYUh0V3FtWndvTDZkYUl1NXYtUGVkazhueDgxMW03NFo3TVVTZV9XTU4tMXZadzM5YVAwZkNjMEY4djljeEJBcFFfYmdWeUEyMWFTa0hlVHVJZ1I0ZmhObDE2SmVUTjUwOXZCd1hrU0dYeDZTclRGcFprejE5SXNHT0Rqai1GNnhVTWNnd2tNSXdGUXVhMG5Sd0taZFd4OUJ3NU8td1BwY3lQOF94bFAxaDFHTUQ1WDdsbHhUYzFwNlkzMlpn?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
       "title": "勝一上季 EPS 2.44元 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxObW1aalRiX3lUa1VpclN4RjY5VjBRZmhEVFVYdVlPZmhGc3E4U3JYaHNlcm1meV9ERWt1WGhtOGVtbjZBT3ZwdXo4a1dzcjdESlVieVp5cjFRMkE2c0hXR1QyOTR6T0pCMFpzTExnU0RIQmQzMEhrenk4NmgxaUNDbnViYVRqVXVQT1pLS0ZvUWXSAV9BVV95cUxNMzVJdmtNaWg0d1NjeDZmM0wyNzFoM2NSM2FuVm9NMkdjWE9VdG03RXM2T2NQeEV2N29RRmlybzNrdzlOVG5pbVBhUW5zeGVyVmd4Zmw4ZHJoZ2hKdlZSSQ?oc=5",
       "result": "no_unambiguous_single_period_eps"
@@ -951,9 +946,19 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
+      "title": "EPS達4.9元！「CCL大廠」Q3獲利飆漲10倍 外資卻連砍2刀抱回188億元 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMi2gJBVV95cUxPb3ZUdndzMFBIY3RxekhfWjRQY0pSVFBCN05EcjJJaF9tM3RBeGJ1X3BjOVhnTkxtMGlkaGdqRW5tc0lxTHlmcHBteU90aU9ZTVh2WW5mYlp6VThSVmhOZGloWFppWWxqYTh2VHlsV05NUVdjNGFJbXQzeGpQcmZ3Mk9BZERkdDRxaDBnSmlIT1cxcUtmM1NHZWdvaDVoYUh0V3FtWndvTDZkYUl1NXYtUGVkazhueDgxMW03NFo3TVVTZV9XTU4tMXZadzM5YVAwZkNjMEY4djljeEJBcFFfYmdWeUEyMWFTa0hlVHVJZ1I0ZmhObDE2SmVUTjUwOXZCd1hrU0dYeDZTclRGcFprejE5SXNHT0Rqai1GNnhVTWNnd2tNSXdGUXVhMG5Sd0taZFd4OUJ3NU8td1BwY3lQOF94bFAxaDFHTUQ1WDdsbHhUYzFwNlkzMlpn?oc=5",
+      "result": "ambiguous_company"
+    },
+    {
       "title": "應廣自結9月合併獲利1172萬元，每股稅後0.40元 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMiqAJBVV95cUxOTE80TzBnSHl2YmVJVkUxVF93VThFQy15dE9LSW1Gci11cHRrbXYyN0JCSkFGQ3o1RjlCZFkyV0ZFYklCeUR0SWR0QmFPbHFsU2NveWFpd3FEaktrWnBpck5JamVqb0NTdnFTUk1uLVJSTHlCVkdsTTVpRFpuVW14aExlLWZLZlZnLWMzQ0VkR1MyQjNlelVnR2d3R0FtRTAzNDZoanpGZkgwVHRfcFhaUjJPd0Fza2ZLWmpBQVBIdnlqcHBlMXlQdTVHeld2YjAyX2Z5dzJ4OHg4UlBJNTNiX2Y3dThpY3IyTzQzWEU1R2NnM2MxSUVLa0NPTkVLT2RnSC1xakdrYy1VVFhwRHdTcjRQNkdHbl9jOXprOUVhSWJVaDRRcGdhRQ?oc=5",
       "result": "accepted"
+    },
+    {
+      "title": "聯發科第3季營收超越預期 法人估全年 EPS 66元 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBMRko5c3pHSVVTeUN6SUFydk4tczBqRnlkNXJtajNtV1FJWlBUMHpCLVZOZjdjUWlqU2xMRkdLdndYaVdJTUI1UjVIUl9xWGZmR3V0SzNQSlRsQdIBX0FVX3lxTE5TVkc3cjVUZEZseEdRb3VrVUtaR2FFTHI0T21mRVlpeDlMUWlvNlpDclZRS1RBbG5xQUFIemR5OVhfQzhkRkg4anFlUVdLVFBZTXBhLTZWRkhpUWNLalNj?oc=5",
+      "result": "ambiguous_company"
     },
     {
       "title": "兩大效益創造成長動能，旭然Q3 EPS拚新高 - Yahoo股市",
@@ -1016,23 +1021,18 @@
       "result": "ambiguous_company"
     },
     {
-      "title": "律勝 本公司有價證券近期達公佈注意交易資訊標準，故公告相關訊息，以利投資人區別瞭解。 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOVkNIOUp1QWpCZzRYVVgxRHFRMDdTLXJ5UDhlX2JqZ05pTDJmbElEZHU5dWhWUFh6Z1RlY1QxYzdRbjdIQzRPNk1ZbWwzYm92blVETld5VFNCR3d6dGtWLTY0Y2VFalpHLTN5OXZXRUhNdG9reGtid2R4dnc2YTJjS1BqSE8wc1J3QmE2bW5mNXQ0Zw?oc=5",
-      "result": "no_unambiguous_single_period_eps"
-    },
-    {
       "title": "日友今年營收首戰40億、EPS看連4年回升 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMijAJBVV95cUxNYVRQQTJKT3VGN0dPSjUwOTNuVi1SajdmVGdnbDFFTWtZbW9FWjZkTlJzRlNseUxfaEVXMWU3emhZbV9obXl6TnNHY2NyUi1UNnBKT3BzY09TTU5qRVdyQm5zS3VIR0dMNTVOMzBjUFE3ZDRjVTdQMDBBV0V3UGFib21xeFFTNDhDSUVqbkRTWkxXak94SXUzeGQ1cVBJS0RtM1J2T2FXcVhCZ3R4LVlETFJWM1pHZUtIM2JWWjlsRWpuamRXYWRZamRiMlY0S3JobThLQzQ1cThnX3A0OFprVk5UemZTR0ZVbmxCVzhmalNMX2FVazVLckM5ZnA2bDFlWm9mczk0YWtuNHJC?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "力積電公告本公司115年第三季自結合併損益- 新聞 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQOTlQbjVEbWJtMnFhSnJSd3g5ZzVhUnVFbmo4eGs5SGlENU1kbk5nRjVDVW9CSHBpcTNWcVR3T1FCakpLdWtIMHNNbmVrLW5uaVI3T2RQdGlnXzQ4Ul84bEctcjl3cnktZlREY0JHTHc4QmNCQndtV2E3NzVCeWZEaVdiNWthalZhU0xkS2Z5NGRiUQ?oc=5",
+      "title": "律勝 本公司有價證券近期達公佈注意交易資訊標準，故公告相關訊息，以利投資人區別瞭解。 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOVkNIOUp1QWpCZzRYVVgxRHFRMDdTLXJ5UDhlX2JqZ05pTDJmbElEZHU5dWhWUFh6Z1RlY1QxYzdRbjdIQzRPNk1ZbWwzYm92blVETld5VFNCR3d6dGtWLTY0Y2VFalpHLTN5OXZXRUhNdG9reGtid2R4dnc2YTJjS1BqSE8wc1J3QmE2bW5mNXQ0Zw?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "2奈米營收突破8％！台積電第3季EPS衝上29.43元、獲利大增逾六成 營運表現全面超標 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMiygNBVV95cUxPRm9VV0QxRWV2SEdQMmRDYmlydncwU0xkNXBURklUUGlvakFISDdHUkFxa2FRMUNxYWVyX2xmVFJlelpVNnRKTENRclN5QnpSMEZ3STQzekhGUmg0RVlUZ1ZLalpFcFBzYXB2cTAtOXdTZU5ORlE5dW1ZbURiOHhjVkFsVTFSc0ppQnVuWDhrQVlyV0tqTkxsZmNtOXpSam5JdGtTN2ZIY2hNSVFZZDVydGFuYmppVkNjSWppNEtOZnZuSVN5enRpa29sLUY1OU5LME1idmgxMGdoRXlzSjNXYy12c1lJV3VJRXRkVVlXQ1V0STZvT3MweTdiSnFhelV2RGl2cEhYYTBPNHpWWGdiNzE2QzUtWVBYYmJmTkFFRmVRV3pkd1dlOEVEZFZjYnh3dTRqQ0RJRVVvdldIQ0M2emNrdldtcDR2dzY4Q0E4aE1ZY1piaUlkVnVaemphYTVOSFpTVi1xLUIwWlo5aVFiazA5amh0dk4zTHd3Wmg5VngyRVRUbkktRk5rUG9tdlN4UTV5LVRRNUFPcW5BSHhjUXJkZlRHUVkxZ2dhYm9ocU5uTFlibzlmRFIybUgxajJyelhhLUp0SVZQUQ?oc=5",
+      "title": "力積電公告本公司115年第三季自結合併損益- 新聞 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQOTlQbjVEbWJtMnFhSnJSd3g5ZzVhUnVFbmo4eGs5SGlENU1kbk5nRjVDVW9CSHBpcTNWcVR3T1FCakpLdWtIMHNNbmVrLW5uaVI3T2RQdGlnXzQ4Ul84bEctcjl3cnktZlREY0JHTHc4QmNCQndtV2E3NzVCeWZEaVdiNWthalZhU0xkS2Z5NGRiUQ?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
@@ -1076,14 +1076,19 @@
       "result": "accepted"
     },
     {
-      "title": "博士旺 115年第3季綜合損益表，每股盈餘4.37元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNNWlHZnRhRUlBUkluNG93OGwwb0ZvSHBQcDRXUzAwYmZIcHJpU00zZEQ5d2NfcHNONGtJTllKckxCd196R0UxNEZHOXN4WS1CNFJ0M1VOUm9xLWVpZ1FhUDdSUTdNQ2FEUGVobjVNSzFXZ00tMTVZaUZNSmRnN19MUzhScDNYbWlQdHVSOWdnU0Fsdw?oc=5",
+      "title": "信邦 115年第3季綜合損益表，每股盈餘3.79元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQSGVZZnhQLW4xT2xrTUlNbi1fdVItUHNqVmdXbVF5ZnpRN3cybmJ6enRHbnI3Z3RGTkdQQWZsZ1NCd2xxOXNpUmNvMURKNHRSZXRSd3pkYVpyRDMwZW5BSm03SzJHYWQ4UVY4eV9kTGJCZHJGR3hBNU4xbm83ZjhWSjNFM2dXRllRQ0xTN1N2S2tDQQ?oc=5",
       "result": "accepted"
     },
     {
       "title": "信邦前三季獲利年增近11%，EPS 11.16元 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNdUJWRVNQN25ONE45eUF0X1lacmVlYkhnTVpSajNQN2RXbnRrUGZFYy02OFlaWnh2Mi1sMGU3MWNQcll0UFpTRDlfX1FPTW1GODIwbDA5UzlTMTdSd2UtcWlVdDFBUlZad1VpSHI5TGRaUUtOY1hZVUp3Y2Y5ckxBbnRWTHBEWkZIczlzZTBoNmVaUQ?oc=5",
       "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "博士旺 115年第3季綜合損益表，每股盈餘4.37元 - MoneyDJ理財網",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNNWlHZnRhRUlBUkluNG93OGwwb0ZvSHBQcDRXUzAwYmZIcHJpU00zZEQ5d2NfcHNONGtJTllKckxCd196R0UxNEZHOXN4WS1CNFJ0M1VOUm9xLWVpZ1FhUDdSUTdNQ2FEUGVobjVNSzFXZ00tMTVZaUZNSmRnN19MUzhScDNYbWlQdHVSOWdnU0Fsdw?oc=5",
+      "result": "accepted"
     },
     {
       "title": "勝一上季 EPS 2.44元 - 經濟日報",
@@ -1106,14 +1111,14 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "凌航財報／第3季首破10億元創新高 前三季EPS達30.01元 - UDN",
-      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE12RWdxNG1DUnBhUU1Qb3dGSkdNZkFuUlBRaGJKTWtwYUltNTRCczlTVzUzbG04djE1UHlZMXJab3NWWXRMMUdfYjN0aHdya1p50gFWQVVfeXFMT28zZ3c5aXB5ajJHV0JoV1AyRGxsY0NQM2plWHJrUFhHblpuMzhFUjlWX2oxaXBCR0R4S3hrYVp1UGlSQ01FVjRmdzNpVk1xdXR0Mm1XckE?oc=5",
-      "result": "no_unambiguous_single_period_eps"
-    },
-    {
       "title": "勝一 115年第3季綜合損益表，每股盈餘2.44元 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNZFdwenFkZkFrdllHbFBpR1FsNXdCRmpMSWZVZkthLWd0eFV5NVpCSFNyQmJPWkNaVDVja2pDM2FZYVdjMWg1cTRLZHZZT0hxc3B1M1BOZ0RuY21wR3BLYnpremE1RWtCWEU2dFFJMzFkdFNzNlpOMFRfNmFITEplTXluQXFMYlp2NEt2Qjc1VGZRUQ?oc=5",
       "result": "accepted"
+    },
+    {
+      "title": "凌航財報／第3季首破10億元創新高 前三季EPS達30.01元 - UDN",
+      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE12RWdxNG1DUnBhUU1Qb3dGSkdNZkFuUlBRaGJKTWtwYUltNTRCczlTVzUzbG04djE1UHlZMXJab3NWWXRMMUdfYjN0aHdya1p50gFWQVVfeXFMT28zZ3c5aXB5ajJHV0JoV1AyRGxsY0NQM2plWHJrUFhHblpuMzhFUjlWX2oxaXBCR0R4S3hrYVp1UGlSQ01FVjRmdzNpVk1xdXR0Mm1XckE?oc=5",
+      "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "勝一前三季EPS 6.82元創同期新高 再斥逾28億擴建PM產能 - 工商時報",
@@ -1121,9 +1126,9 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "信邦 115年第3季綜合損益表，每股盈餘3.79元 - MoneyDJ理財網",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQSGVZZnhQLW4xT2xrTUlNbi1fdVItUHNqVmdXbVF5ZnpRN3cybmJ6enRHbnI3Z3RGTkdQQWZsZ1NCd2xxOXNpUmNvMURKNHRSZXRSd3pkYVpyRDMwZW5BSm03SzJHYWQ4UVY4eV9kTGJCZHJGR3hBNU4xbm83ZjhWSjNFM2dXRllRQ0xTN1N2S2tDQQ?oc=5",
-      "result": "accepted"
+      "title": "《電零組》信邦前3季EPS為11.16元 Q4可望維持Q3水準 - 工商時報",
+      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5YWHR5b3JlYnNfeXpmLVB3R1VIRHAzX0d1NWRqMzNsd1R0RFBzZlhlWTFLZ0VMeVpEdC13cWltR1RsdUFWb1NkM0VscXU1Vl9MYldadVVhT2p3c0RPNFRN?oc=5",
+      "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "欣銓 115年第3季綜合損益表，每股盈餘3.10元 - MoneyDJ理財網",
@@ -1133,11 +1138,6 @@
     {
       "title": "信邦前三季獲利年增近11%，EPS 11.16元 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMi7wFBVV95cUxOcURDWmVjYk81TXdNNjBPdXlZdzVNUG9KZHpjTUZxQXdETkFRWElkNjJOZ3FjR1g3ZS1YYTVFWVNNakVqU3F6SHdpY1VMSEZ3S1RjSEVGb2twY3FzZ2hNTmdQckxnYXozTlRMcDFGbVZJOXZOWEk2V3dNUkJTMi1uU3VPalAyemEwRUdPYTZCR1N2M2p0dE04VFFxaUVjR0hKVVNHZUExaDY5U3dWY2pMb0EzS0IyWG4wYXpRbk9QSE9UeWxGR09xaEMwRmhLQnFraDVQVXdUbXhqdXNOTmlaOU1kVTgtR1FVLTlMRXZaTQ?oc=5",
-      "result": "no_unambiguous_single_period_eps"
-    },
-    {
-      "title": "《電零組》信邦前3季EPS為11.16元 Q4可望維持Q3水準 - 工商時報",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5YWHR5b3JlYnNfeXpmLVB3R1VIRHAzX0d1NWRqMzNsd1R0RFBzZlhlWTFLZ0VMeVpEdC13cWltR1RsdUFWb1NkM0VscXU1Vl9MYldadVVhT2p3c0RPNFRN?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
@@ -1181,8 +1181,8 @@
       "result": "ambiguous_company"
     },
     {
-      "title": "聯電在矽光子及先進封裝布局有成 分析師估今年 EPS 為7元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9CYVVaLTllbWI5T3NtZDFWS0NLN3VGdi1Ja0NibVVzVDdpd21vcFdUN3E0QkxfZlZFeTlzU3p0Y1FwaGFna3RZbGZIZ1o0d3piZHluNGJDNENKZ9IBX0FVX3lxTE1EUGVaMjNuU1lGdFZGamhCQjJmVkZFWWY0Q19MYzBORFg3anF2cElCb3pTUzhiMG1XNWhFYUI0VjlvYU8yQXlQb0IzSi1BSVNFc3k5cC1OaGlJVlhSa21J?oc=5",
+      "title": "欣銓獲利／第3季淨賺14.7億元創高、年增78% 前三季 EPS 達7.49元 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE4tNEEtR0VWcUU2SWRzUU9xelg4UFJxZm9tSGVPQXJyZ0phLVpudEFaVXAyeGRnYm9xQ08wMG5DNkdOMVdOZmlOLUc4a09mazl4cXk3VWZMb3pPbnhzUzVkS9IBYEFVX3lxTE4tNEEtR0VWcUU2SWRzUU9xelg4UFJxZm9tSGVPQXJyZ0phLVpudEFaVXAyeGRnYm9xQ08wMG5DNkdOMVdOZmlOLUc4a09mazl4cXk3VWZMb3pPbnhzUzVkSw?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
@@ -1196,19 +1196,24 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
+      "title": "聯電在矽光子及先進封裝布局有成 分析師估今年 EPS 為7元 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9CYVVaLTllbWI5T3NtZDFWS0NLN3VGdi1Ja0NibVVzVDdpd21vcFdUN3E0QkxfZlZFeTlzU3p0Y1FwaGFna3RZbGZIZ1o0d3piZHluNGJDNENKZ9IBX0FVX3lxTE1EUGVaMjNuU1lGdFZGamhCQjJmVkZFWWY0Q19MYzBORFg3anF2cElCb3pTUzhiMG1XNWhFYUI0VjlvYU8yQXlQb0IzSi1BSVNFc3k5cC1OaGlJVlhSa21J?oc=5",
+      "result": "no_unambiguous_single_period_eps"
+    },
+    {
       "title": "勝一上季 EPS 2.44元 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE0zNUl2a01paDR3U2N4NmYzTDI3MWgzY1IzYW5Wb00yR2NYT1V0bTdFczZPY1B4RXY3b1FGaXJvM2t3OU5UbmltUGFRbnN4ZXJWZ3hmbDhkcmhnaEp2VlJJ0gFfQVVfeXFMTTM1SXZrTWloNHdTY3g2ZjNMMjcxaDNjUjNhblZvTTJHY1hPVXRtN0VzNk9jUHhFdjdvUUZpcm8za3c5TlRuaW1QYVFuc3hlclZneGZsOGRyaGdoSnZWUkk?oc=5",
+      "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "去年還虧今年前三季竟賺一股本！財經達人拆解南亞財報藏投資關鍵- 證券 - 工商時報",
+      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE9ON3l1b1ZrSW5Ia3RfdXlLdUFZWl9JMENuNXJXWldxOGZRSGdkMU10VUh1dXR3WHVfZmpjbENOODczMEJkcGZwMTBMamItRFYwcy11VXJ1eGVQUFdTTXBn?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "〈財報〉Netflix Q3優預期盤後仍跌6% 廣告與營收展望拖累 - 鉅亨網",
       "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTFA0QnZfRzF3Z044MnNWdU5HOHRlZC10T0tyckJUQ1FXZ242NTg2YmFZcVdWQ2NOemxPVXY3Qk84ak9DUVE2VzN4ckhpUm5iV0U?oc=5",
       "result": "ambiguous_company"
-    },
-    {
-      "title": "去年還虧今年前三季竟賺一股本！財經達人拆解南亞財報藏投資關鍵- 證券 - 工商時報",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE9ON3l1b1ZrSW5Ia3RfdXlLdUFZWl9JMENuNXJXWldxOGZRSGdkMU10VUh1dXR3WHVfZmpjbENOODczMEJkcGZwMTBMamItRFYwcy11VXJ1eGVQUFdTTXBn?oc=5",
-      "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "〈財報〉IBM Q3優預期、上修軟體展望 盤後先漲後跌 - 鉅亨網",
@@ -1221,14 +1226,14 @@
       "result": "accepted"
     },
     {
-      "title": "強茂期貨2610(WGYFV6) 財務報表 - 每股盈餘 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1TZzB6cHVNT2hxaWYwOFp3NkViRHNnSUJiZExPNVFzOWVEVERxSnJyMGloWnRiUDQzYkRBRVU5aDBhRHV3ZW5HM1phMGhCOURCX3o5WXhR?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
       "title": "高毛利事業增加，信邦Q3獲利年增24%，前三季EPS達11.16元 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMixgJBVV95cUxQLVUtckd3d1pTUUZCN2RSUTJIblFFM08ycXdwTlU5NkV2UUsteWNvaF9wNldJRmpXTjZNUGc4S0JoWTZyT0d3ODFYWW1TaXlwVUEwcHNxZURtWU12TlI4Q1JSck4zU3JSYmNGSXpIUGZLcDA3R1NHYWpYMmRwWnpQaWU1amlmYTNpSUxYQ0duMnd2YWlSQVp2NERJLTlGcXYyeGdSbVNtSHNUUHBSTEt4WVhrX3dsQTluMWllaUs5ZU51V0hpdkx1ckM0NHZpOXVHUnozZHVqU0xHckZUN0k0YU93c01meXc4M3Q5bkFvZGxiNHphRldjLUwtdVFLRVpSYUcxakhhVnJuakJBdHZIb0s1VVJmN0pMQ3Rld09QaWcyU3k0S09teXBoeklqN3FibDFHSzNzbFd2M3VON2lvcU9BX0RyUQ?oc=5",
       "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "強茂期貨2610(WGYFV6) 財務報表 - 每股盈餘 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE1TZzB6cHVNT2hxaWYwOFp3NkViRHNnSUJiZExPNVFzOWVEVERxSnJyMGloWnRiUDQzYkRBRVU5aDBhRHV3ZW5HM1phMGhCOURCX3o5WXhR?oc=5",
+      "result": "ambiguous_company"
     },
     {
       "title": "亞信 115年第3季綜合損益表，每股盈餘1.06元 - 台股 - 新聞 - MoneyDJ",
@@ -1238,11 +1243,6 @@
     {
       "title": "今日要聞內容-D2EA7BF4-0AC0-491D-AB3D-E02B8738B983 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMijgFBVV95cUxNV3I1RWNJVkhhZEMxSC04QXVtMzZCVklhTlBNSG9qamxJR2tBZkpyLW0td0w3TExGN05TdVRrV0hMcEJZLTh3UG50a3JNXzNfNXJvR3cxc3I5azVjNnhlREVFM0dySmVLOE9YYXJGeGpVVVpfQzNhTHZFcEpmQkFVU3NMbW5pMS1Ic3N2QlRR?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
-      "title": "聯發科第3季營收超越預期 法人估全年EPS 66元 - UDN",
-      "url": "https://news.google.com/rss/articles/CBMiUEFVX3lxTE55WjhGQnFvZU45WTN3UmtaYTJaZkNoeldqeFNvZ0kyd0M2ZGtLemJSLVNRaU1GQ3d5cGxXZXBOc3YyM2I5NV9xNUNJaV9XcHlI0gFWQVVfeXFMT29MazlBemcxYU81aUQ1dVp6N0FOMFd4RU0wNEltRWEwWjl5bERtVDdwQkFDRUVjOTRXX1hBR3VpQklYa1JOcHhWYWZIMmluc1VFSy02UUE?oc=5",
       "result": "ambiguous_company"
     },
     {
@@ -1281,6 +1281,11 @@
       "result": "ambiguous_company"
     },
     {
+      "title": "〈財報〉科林研發Q1創新高 財測驚喜有限盤後跌逾6% - 鉅亨網",
+      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1kOE5ob1hiQTAwZGJPdzVSYU1KODBDa0ZSSHZlV1VzTllJVDdVN0QzUWxTVlVlanF6ZEExRmwwMGttYTcyeWdsbTRQQk5NbHM?oc=5",
+      "result": "ambiguous_company"
+    },
+    {
       "title": "永新-KY Q3營運回神，明年大馬廠挹注新動能- 新聞 - MoneyDJ理財網",
       "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQZ195NXpLdnRUUnR4TllZQVF1SGRYWVJYdE5abGtaSWgyX21QMXpMdlREaW1uX2JOV2o0SkE4Z2dmcDMxNWticTYtN1o1RGdEVjN4cGF5OW03bjh5Q2VaSFU4QjM3bmFqckdwSDlsam5RY0dwLWg2aDFhX0pUMlJMYjF5QjUwbDllaEx6MlBEdFJxQQ?oc=5",
       "result": "no_unambiguous_single_period_eps"
@@ -1291,24 +1296,14 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "欣銓獲利／第3季淨賺14.7億元創高、年增78% 前三季 EPS 達7.49元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE1zUE5waHBhc3FGeDM4dDVIcDJlenFrMWNLQzVkOHRlUDl5cHktVGY0MTdGUlJhbVRvdmpCanMtblNWTTdkN05xWk1iQ1JWbC1xWWswQ2t3SjBBTEHSAWBBVV95cUxOLTRBLUdFVnFFNklkc1FPcXpYOFBScWZvbUhlT0FycmdKYS1abnRBWlVwMnhkZ2JvcUNPMDBuQzZHTjFXTmZpTi1HOGtPZms5eHF5N1VmTG96T254c1M1ZEs?oc=5",
+      "title": "信邦財報／今年前三季獲利年增10.9% 賺逾1個股本 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPU0k2RXRMX2pONEtSSTdpNkVpSlBqajJyT0w1dGcxcWFLanBFR3JFcEdfajRrMUN5WGRRS0kxbDh2NG1USUx2dWdadldacnQ3dE5IVGJETDIzbFg2WWdtQVJGMkJaWEZNdXlRNVl0bEtPNkQ0R3NjN1lyYW1VT1VieNIBX0FVX3lxTE9fWVh2Q1lxUS04MEd4aWIzcmxRTi1QeF92enhOT1V4SGVHdTlJZlFVclF3eHVUSEY2QnRNN3ZBQ2pnWXpnOVk2OGJzNDA4cVh4N2ZaQlFnN3l6SjgzTDY4?oc=5",
       "result": "no_unambiguous_single_period_eps"
     },
     {
       "title": "金融評價損失影響，上奇Q3獲利年減11%，前三季EPS 2.50元 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMixgJBVV95cUxPRnVPMTlXRXpXUkZ5Z0lZUGd1U0tTMTMxN00ta0RzVjJwamxpOWYzWGpNTmVlSFF0TUo0b1Rzc2MzTENxSk1aV3k5QlluSTRYTTN0NDhjV3QzS3VkUjgzWE93czhWd0U2RWxQMTNJVE9TYVVVTWF4elJCQzBOUlY4UEhIUlhvMjVNd3dFLUdYVVNlS2ktTWcwdDBSYjJ6Sm83MjQ1MGNpNVpyRWgwRVloTlhnazFQcXZGOExhTGtZaEtWSVBMMmpUOW9wbzZxd3lKT2VKQ1ljSDg0WU94R0N3NjVoekhvMURfYlVuYzdGZHdSNHpYc2IyV1JjVlpBVFVjR19mekNpeG5IUVRISVA4bjhJVUI4RW4yYjdZQVZSandMZ0JMNWRTMGo1dlNxa1FBdXJmLTFiRElQNkVVT1k5cVJfX1ZTZw?oc=5",
       "result": "no_unambiguous_single_period_eps"
-    },
-    {
-      "title": "信邦財報／今年前三季獲利年增10.9% 賺逾1個股本 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPU0k2RXRMX2pONEtSSTdpNkVpSlBqajJyT0w1dGcxcWFLanBFR3JFcEdfajRrMUN5WGRRS0kxbDh2NG1USUx2dWdadldacnQ3dE5IVGJETDIzbFg2WWdtQVJGMkJaWEZNdXlRNVl0bEtPNkQ0R3NjN1lyYW1VT1VieNIBX0FVX3lxTE9fWVh2Q1lxUS04MEd4aWIzcmxRTi1QeF92enhOT1V4SGVHdTlJZlFVclF3eHVUSEY2QnRNN3ZBQ2pnWXpnOVk2OGJzNDA4cVh4N2ZaQlFnN3l6SjgzTDY4?oc=5",
-      "result": "no_unambiguous_single_period_eps"
-    },
-    {
-      "title": "〈財報〉科林研發Q1創新高 財測驚喜有限盤後跌逾6% - 鉅亨網",
-      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1kOE5ob1hiQTAwZGJPdzVSYU1KODBDa0ZSSHZlV1VzTllJVDdVN0QzUWxTVlVlanF6ZEExRmwwMGttYTcyeWdsbTRQQk5NbHM?oc=5",
-      "result": "ambiguous_company"
     },
     {
       "title": "頎邦Q3獲利看增；Q4營運拚持穩- 新聞 - MoneyDJ理財網",
@@ -1328,6 +1323,11 @@
     {
       "title": "法人上修明年EPS至223.3元！「這檔」9月營收年增近100%創新高、前三季逼近兆元AI伺服器需求強勁 - Yahoo股市",
       "url": "https://news.google.com/rss/articles/CBMi0wJBVV95cUxOdkFaOHFFRGlscTg1VzQ1NDI3ODVFNXNHRnhmSE1UeUphblpOZDRGeEJ2Qk5KdjJwMkUxTmxFRWRiN1EtODZ1TEllTTZIVTZaa1lFSktDQTFPWUFOYVpfdDI1Y2Q1NE5HczFNMmo4VHJzRTFmd2JHcTRyR3B4bS1ILWZVVmlIbTFTRmd5OGwtNzlQSUNRemYyWV91cUNGX29wN3Z6VzNGLV9pQkFjOHN4N18zalhUUzVVaXdPM3RxTXZRWGV1blNWN2ZRaDFsSWF6aGt1OVVhRVBMc002QUVUaGdyYVQ2RWlhVkJfWVZ5Q1dlYm9wT2hXMVJFdUJQQVQ2bm1wSXV0LVB4RFFYTTVzS1FBc1NLbGNVR3R6MlBzOGpwd1draDZSR3Y0bG5ST2RJb080ZDRfXy1sZ1BOVGJNckZtNHF3SjVueWpBNmQzM2hhbTA?oc=5",
+      "result": "ambiguous_company"
+    },
+    {
+      "title": "累計EPS達30元！「記憶體模組廠」Q3獲利首破10億元創高 DRAM、NAND齊漲20%加持 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMi6gJBVV95cUxNcXBPWjRHTWcyajBFaDRSdTl6ZzJFaVJVeFMtc1ZmTTljd1RDMWxGUW5jendDZ0I0OWR6QXpLdklUUE9FUi1IQmpVZWtEZDFsNF9GQkJUMTNBR1FGbHBsU3pZSEtkYUx3blo4OEhGSS16OTMxUWlYdVU2THVjbkNoLVRpS3dwZ01tU0tKc0l3VmVtWXVKN3JBOXJGNk45RmpVVTNveGx4dWxGcDczY1ZZVFk4Qk5KNUJWSzM0bjRaNURDTGRMSjJLTDFkbFVvUzJSU2thV25OMWtrN29wdjhVREJuYy1Rd3Yya1otRWF5SkExWFYtWjFVMU1EUVNwVExtTEg3VTA2SlBIeGRoUUF4YWtPak9leWFKRHJNSjA5LUJLWEhURHhZUS1SMlVhX3R1U2tHaF84RWhHcnFDeHAyTUlYX1VGc2NnXzg1ZUpKbS1ZSFdKMGVPbzhjSmpGZDNqQzdubTdXU3N0dw?oc=5",
       "result": "ambiguous_company"
     },
     {
@@ -1356,6 +1356,11 @@
       "result": "ambiguous_company"
     },
     {
+      "title": "2奈米營收突破8％！台積電第3季EPS衝上29.43元、獲利大增逾六成 營運表現全面超標 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMiygNBVV95cUxPRm9VV0QxRWV2SEdQMmRDYmlydncwU0xkNXBURklUUGlvakFISDdHUkFxa2FRMUNxYWVyX2xmVFJlelpVNnRKTENRclN5QnpSMEZ3STQzekhGUmg0RVlUZ1ZLalpFcFBzYXB2cTAtOXdTZU5ORlE5dW1ZbURiOHhjVkFsVTFSc0ppQnVuWDhrQVlyV0tqTkxsZmNtOXpSam5JdGtTN2ZIY2hNSVFZZDVydGFuYmppVkNjSWppNEtOZnZuSVN5enRpa29sLUY1OU5LME1idmgxMGdoRXlzSjNXYy12c1lJV3VJRXRkVVlXQ1V0STZvT3MweTdiSnFhelV2RGl2cEhYYTBPNHpWWGdiNzE2QzUtWVBYYmJmTkFFRmVRV3pkd1dlOEVEZFZjYnh3dTRqQ0RJRVVvdldIQ0M2emNrdldtcDR2dzY4Q0E4aE1ZY1piaUlkVnVaemphYTVOSFpTVi1xLUIwWlo5aVFiazA5amh0dk4zTHd3Wmg5VngyRVRUbkktRk5rUG9tdlN4UTV5LVRRNUFPcW5BSHhjUXJkZlRHUVkxZ2dhYm9ocU5uTFlibzlmRFIybUgxajJyelhhLUp0SVZQUQ?oc=5",
+      "result": "no_unambiguous_single_period_eps"
+    },
+    {
       "title": "力積電法說會／第3季獲利近翻倍、每股賺1.38元 稼動率衝97% - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5wMTY0WWlhcmFKS3ZfTTJZRnlFVzhUQ3JWWDZUVVNCVkIwTVdRRjZ1R3JsaTE0cHl6VW9oQ1h4c1BwTFFodmlSOC1xZEt4RzZma1o3dVFJcHBqQdIBX0FVX3lxTE1aRGt2dFFoOVgydVQyRTk5VEQxVnN3d0lOdF9iVGJpcXlwcVhFUTJOcUZiT1hvbzh0VEhsdU5pVkM0U0ZXTVdQUkRRSG9nV25WLXd4dkQ5SGc5dy1QOS1B?oc=5",
       "result": "no_unambiguous_single_period_eps"
@@ -1364,6 +1369,11 @@
       "title": "順達Q3營運熱 獲利季增62% - 工商時報",
       "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE8xU2I3dGdIUDRnSFE3cUNPM2kyU01PY1BDMjJRUFNrQXp2MnVnekNhLTNHUll0TGgxcDh2MVJscjkyMVJ4akxMX1NYbHRaM3J4WGt3N3NvMFd0QmFmak9j?oc=5",
       "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "〈財報〉半導體風向球報喜！德儀Q4財測超預期 工業與AI需求同步回溫 - 鉅亨網",
+      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE1zYXlvZFVoMTJJeThJQl9oQVFMUjFGN0VITF9ya2VDVnhUTFdrakJ0cDl1dlE3Z2J2R2RVSWZwSllOYWNHeEViVDJXX1NWcHc?oc=5",
+      "result": "ambiguous_company"
     },
     {
       "title": "AT&T寬頻淨增用戶創高上修全年獲利、調降長期資本支出 - 鉅亨網",
@@ -1376,14 +1386,14 @@
       "result": "no_unambiguous_single_period_eps"
     },
     {
-      "title": "前三季EPS賺破1股本！「玻纖布大廠」目標價喊390元 三大法人卻斬3.3萬張抱走107億元 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMizANBVV95cUxQVUFVOVZ2Vms2TWtWLUNwdFVqM2w1Umh3a3VuMXl2UmJFVnZLSFlZTWlBU0htZkpGc2w2MmxxdXl5V1ByV2tMT0o2Q2hVSW5OWGd1alMwV0JsQk1oMlZaOE9ram91NGZOekhOdm1Lc2Zmd3RKSXNKNXJTaThjWnozcjZPVzJ5R3NZQkh4MWZ6bTVQUkwtVlM0NVNCWjY1STBBanFHdnZyd1o4SGVKWTBfZ21NOEhDY1hOQTgxZkRXZTVaZkFYTkVRZzZINWpNZjRsVTBpWTc3a1VWWFJaYk5MVmV6OEtJNGFtSVJyTjZkUzJjN0ZTV19UYWJoOUd3bkxPdTFLVUFqaXJOdlFoXzIyR1JPckhhblVrNW5falNzLUhELXFvM2RsYTZVSWJjdTFaTnN6eGRQOXAwYmpxZ18tTDlfUl9pVUFuOTV3Vk5mU3gtZThad2dkMHBfcWJEUnhLejZHSGJOTU1hRUJsT1cwQlNBTmFUZ0pSaXRRVFRRc2VpRGFGOWcySVB6QnlvMHVCa2FYb3cybXFVdVVlVmctNk45ZVlBVWZaRFMxVnRnTWhFX2tvdlU0OV9GS1VxUkZieGVXSTRiUHliN2R4?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
       "title": "至上今年業績拚6,000億 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMidEFVX3lxTE9pbVo2RnE1Q3pKWmJYVk1WZ2xTNkp4bFFjNXR4Wlc1RFVqZWNfbXRpdEdGam1QQngxSm8tYzUtRWdnSVIwal9EZl9GVWYtQnBqSEJwWG1iODJpclZsSTQtSHJqRHRZZnZfM1RSU1lrMURhQ1NT0gFfQVVfeXFMT2lPZ0FwWWhVRXpoNHVoYmw0UXRwWVZ0aEYwSk9QVEw2Z3VSQ0NVWFE0TkRYenFsWGVZUG85WnFHX0hmakJWWmJWdzJxQ0dPaDBVWGpiOUxOdkIzOUpJRVU?oc=5",
       "result": "no_unambiguous_single_period_eps"
+    },
+    {
+      "title": "前三季EPS賺破1股本！「玻纖布大廠」目標價喊390元 三大法人卻斬3.3萬張抱走107億元 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMizANBVV95cUxQVUFVOVZ2Vms2TWtWLUNwdFVqM2w1Umh3a3VuMXl2UmJFVnZLSFlZTWlBU0htZkpGc2w2MmxxdXl5V1ByV2tMT0o2Q2hVSW5OWGd1alMwV0JsQk1oMlZaOE9ram91NGZOekhOdm1Lc2Zmd3RKSXNKNXJTaThjWnozcjZPVzJ5R3NZQkh4MWZ6bTVQUkwtVlM0NVNCWjY1STBBanFHdnZyd1o4SGVKWTBfZ21NOEhDY1hOQTgxZkRXZTVaZkFYTkVRZzZINWpNZjRsVTBpWTc3a1VWWFJaYk5MVmV6OEtJNGFtSVJyTjZkUzJjN0ZTV19UYWJoOUd3bkxPdTFLVUFqaXJOdlFoXzIyR1JPckhhblVrNW5falNzLUhELXFvM2RsYTZVSWJjdTFaTnN6eGRQOXAwYmpxZ18tTDlfUl9pVUFuOTV3Vk5mU3gtZThad2dkMHBfcWJEUnhLejZHSGJOTU1hRUJsT1cwQlNBTmFUZ0pSaXRRVFRRc2VpRGFGOWcySVB6QnlvMHVCa2FYb3cybXFVdVVlVmctNk45ZVlBVWZaRFMxVnRnTWhFX2tvdlU0OV9GS1VxUkZieGVXSTRiUHliN2R4?oc=5",
+      "result": "ambiguous_company"
     },
     {
       "title": "美超微初估財報驚開大紅盤！台鏈被利多砸醒「不只緯創、南俊受惠」另有1檔EPS更直上500元天價 - Yahoo股市",
@@ -1426,6 +1436,11 @@
       "result": "ambiguous_company"
     },
     {
+      "title": "智通期貨12611(WVL1X6) 財務報表 - 每股盈餘 - Yahoo股市",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTE5NYlhKbndnS1VZXzhscXRYSHBjSng0N2NDVFhZcXNZLVFxOC01SUVsVkZlX1ROZUFvS3o3SDFoTG4tMEIzTm84LUtaazlUMUZBb3hNanFn?oc=5",
+      "result": "ambiguous_company"
+    },
+    {
       "title": "至上今年業績拚6,000億 - 經濟日報",
       "url": "https://news.google.com/rss/articles/CBMiekFVX3lxTE5IOHhrUjktUGJaWjBqVmFwMkpwY1dxNGg2WDdxOEVQRzJzR0w3M0ZMMWdEUkctMVpMeHNzbWxrY2V5T2hRd3dJa1pMVnFEd2MzX05hSkRhaERiVGJFWkx0M05EeXU3WWZneG1GVEdKdEFJeTF0Q2h6ZWF30gFfQVVfeXFMT2lPZ0FwWWhVRXpoNHVoYmw0UXRwWVZ0aEYwSk9QVEw2Z3VSQ0NVWFE0TkRYenFsWGVZUG85WnFHX0hmakJWWmJWdzJxQ0dPaDBVWGpiOUxOdkIzOUpJRVU?oc=5",
       "result": "no_unambiguous_single_period_eps"
@@ -1448,16 +1463,6 @@
     {
       "title": "美股市場動態：川普支持率下滑、半導體競爭加劇及能源股財報前景看好 - 鉅亨網",
       "url": "https://news.google.com/rss/articles/CBMiU0FVX3lxTE1PVWtzOTl0MW9HRnRSRkpPZVpvbnlGLU5qVHp6c0VIclNXdWpxTmUwaWduUkhka3ZpOVFsbC1iSHo2UHNBQ2Y4bzl1LVlfendDX1Zj?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
-      "title": "SpaceX財報聚焦AI！營收暴增背後燒錢壓力浮現、特斯拉整併傳聞再起 - 鉅亨網",
-      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE9wNi02WHR0WTBmQUVBdlNzSXBzLWZuR2V4Rm1UYXA5ZlpxUXViZWNaTHhMYWRYYUNPTXZpcFo5R1N5bmFzMkxURFFybGJYVHM?oc=5",
-      "result": "ambiguous_company"
-    },
-    {
-      "title": "僑威期貨2611(WQQFX6) 財務報表 - 每股盈餘 - Yahoo股市",
-      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTFA0NmsxeDFwbXR0REpxLXI0Vk10MTJVcHA4Q3N5dnpyYUpJVmwtNHZMMElxX29FU2ZQdUhUeVNVTkxzS3d6dGF5aWVqRmtPbEpNcjlBTUdR?oc=5",
       "result": "ambiguous_company"
     }
   ]
