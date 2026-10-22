@@ -19,18 +19,54 @@ import requests
 import pdfplumber
 
 ROOT = Path(__file__).resolve().parents[1]
-Q = re.compile(r"(?<![A-Za-z0-9])(?:(?P<a>[1-4])\s*Q\s*(?P<b>20\d{2}|\d{2})|(?P<c>20\d{2}|\d{2})\s*Q\s*(?P<d>[1-4])|Q\s*(?P<e>[1-4])\s*['’]?\s*(?P<f>20\d{2}|\d{2})|(?P<g>20\d{2})\s*[/\-]\s*(?P<h>[1-4])Q)\s*(?:\(\s*(?P<parenflag>[AEFP])\s*\)|(?P<flag>[AEFP]))?(?![A-Za-z0-9])", re.I)
-YEAR = re.compile(r'(?<!\w)(?:20\d{2}|\d{2})(?:[AEFP])?(?!\w)', re.I)
+# Quarterly header families: 3Q26(F), 26Q3(F), Q326e, 202603(F), 3Q26SP.
+Q = re.compile(r"(?<![A-Za-z0-9])(?:"
+    r"(?P<a>[1-4])\s*Q\s*(?P<b>20\d{2}|\d{2})|"
+    r"(?P<c>20\d{2}|\d{2})\s*Q\s*(?P<d>[1-4])|"
+    r"Q\s*(?P<e>[1-4])\s*['’]?\s*(?P<f>20\d{2}|\d{2})|"
+    r"(?P<g>20\d{2})\s*[/\-]\s*(?P<h>[1-4])Q|"
+    r"(?P<ym>20\d{2})\s*0?(?P<qm>[1-4])"
+    r")\s*(?:\(\s*(?P<parenflag>ACTUAL|FORECAST|EST|SP|[AEFP])\s*\)|(?P<flag>SP|[AEFP]))?(?![A-Za-z0-9])", re.I)
+YEAR = re.compile(r'(?<!\w)(?:20\d{2}|\d{2})(?:\(\s*[AEF]\s*\)|[AEFP]|SP)?(?!\w)', re.I)
 EPS = re.compile(r'(?<![A-Za-z])(?:EPS|E\.P\.S\.)(?![A-Za-z])|每股(?:稅後)?(?:盈餘|純益|收益)', re.I)
 NUM = re.compile(r'(?<![\w.])\(?[-+]?\d[\d,]*(?:\.\d+)?\)?(?![\w.%])')
-SKIP = re.compile(r'growth|YoY|QoQ|成長率|成長幅度|增幅|變動率|修正率|上修幅度|下修幅度|CAGR|稀釋率', re.I)
+SKIP = re.compile(r'growth|YoY|QoQ|成長率|成長幅度|增幅|變動率|修正率|上修幅度|下修幅度|CAGR|稀釋率|EPS\s*change', re.I)
 FORECAST = re.compile(r'forecast|estimate|projection|預估|預測|預期|預計|預估值', re.I)
+ACTUAL_FLAG = re.compile(r'^(?:A|ACTUAL)$',re.I)
+FORECAST_FLAG = re.compile(r'^(?:E|F|P|SP|EST|FORECAST)$',re.I)
+
+
+def quarter_flag(m):
+    return (m.group('flag') or m.group('parenflag') or '').upper()
+
+
+def is_forecast(m):
+    return bool(FORECAST_FLAG.fullmatch(quarter_flag(m)))
+
+
+def eps_kind(label):
+    t = re.sub(r'\s+', '', label).lower()
+    if '稅前' in t or 'pretax' in t or 'pre-tax' in t:
+        return 'pretax'
+    if 'diluted' in t or '稀釋' in t:
+        return 'diluted'
+    if 'basic' in t or '基本' in t:
+        return 'basic'
+    if 'adjusted' in t or '調整後' in t:
+        return 'adjusted'
+    if '稅後' in t or 'aftertax' in t:
+        return 'after_tax'
+    return 'generic'
+
+
+def eps_priority(kind):
+    return {'after_tax':0,'diluted':1,'adjusted':2,'generic':3,'basic':4,'pretax':99}.get(kind,50)
 
 
 def period(m):
-    y = int(m.group('b') or m.group('c') or m.group('f') or m.group('g'))
+    y = int(m.group('b') or m.group('c') or m.group('f') or m.group('g') or m.group('ym'))
     if y < 100: y += 2000
-    return f'{y}-Q{m.group("a") or m.group("d") or m.group("e") or m.group("h")}'
+    return f'{y}-Q{m.group("a") or m.group("d") or m.group("e") or m.group("h") or m.group("qm")}'
 
 
 def parse_number(raw):
@@ -44,7 +80,7 @@ def parse_number(raw):
 def header_columns(line):
     """Find quarterly AND annual columns, preserving positions for alignment."""
     qmatches = list(Q.finditer(line))
-    cols = [{'kind':'quarter', 'period':period(m), 'forecast':(m.group('flag') or m.group('parenflag') or '').upper() in ('E','F','P'),
+    cols = [{'kind':'quarter', 'period':period(m), 'forecast':is_forecast(m),
              'start':m.start(), 'center':(m.start()+m.end())/2, 'end':m.end()} for m in qmatches]
     masked = list(line)
     for m in qmatches:
@@ -64,7 +100,7 @@ def extract_table(text):
         lines = page.splitlines()
         for i,line in enumerate(lines):
             match = EPS.search(line)
-            if not match or SKIP.search(line): continue
+            if not match or SKIP.search(line) or eps_kind(line[:match.end()])=='pretax': continue
             # EPS row values begin after the label, never treat label/units as data.
             vals = [(m.start(),parse_number(m.group())) for m in NUM.finditer(line,match.end())]
             vals = [(pos,val) for pos,val in vals if val is not None]
@@ -89,7 +125,7 @@ def extract_table(text):
                         candidates.append({'period':col['period'],'eps':value,
                             'method':'pdf_table_quarter_with_annual_alignment',
                             'page':page_no,'page_line':i+1,
-                            'header':h.strip()[:240], 'eps_row':line.strip()[:240]})
+                            'header':h.strip()[:240], 'eps_row':line.strip()[:240], 'eps_kind':eps_kind(line[:match.end()])})
             # Choose nearest matching header. Distant summary headers often refer
             # to a different table; reject conflicting values for a period.
             uniq={}
@@ -105,7 +141,7 @@ def extract_table(text):
     safe=[]
     for p,rows in by_period.items():
         vals={r['eps'] for r in rows}
-        if len(vals)==1: safe.append(rows[0])
+        if len(vals)==1: safe.append(min(rows,key=lambda r:eps_priority(r.get('eps_kind','generic'))))
         else: review.append({'reason':'conflicting_eps_same_period','period':p,'values':sorted(vals)})
     return sorted(safe,key=lambda r:r['period']),review
 
@@ -156,7 +192,7 @@ def coordinate_extract(pdf_path, report_date):
                         if a<m.end() and b>m.start():relevant.append(w)
                         pos=b+1
                     if not relevant:continue
-                    headers.append({'period':period(m),'explicit':bool(m.group('flag') or m.group('parenflag')),
+                    headers.append({'period':period(m),'explicit':is_forecast(m), 'actual':bool(ACTUAL_FLAG.fullmatch(quarter_flag(m))),
                         'x0':min(w['x0'] for w in relevant),'x1':max(w['x1'] for w in relevant),
                         'x':sum((w['x0']+w['x1'])/2 for w in relevant)/len(relevant),
                         'y':ln['y'],'line':hi,'header':ln['text'][:220]})
@@ -164,6 +200,8 @@ def coordinate_extract(pdf_path, report_date):
             for i,row in enumerate(lines):
                 if not EPS.search(row['text']):continue
                 if SKIP.search(row['text']):continue
+                kind=eps_kind(row['text'].split('EPS')[0]+'EPS' if 'EPS' in row['text'] else row['text'])
+                if kind=='pretax':continue
                 label=[w for w in row['words'] if EPS.search(w['text'])]
                 if not label:continue
                 end=max(w['x1'] for w in label)
@@ -220,7 +258,7 @@ def coordinate_extract(pdf_path, report_date):
                     status=report_quarter_status(h['period'],report_date,h['explicit'])
                     rec={'period':h['period'],'eps':chosen['eps'],'method':'pdf_coordinate_multilevel',
                         'classification':status,'page':page_number,'header':h['header'],
-                        'eps_row':row['text'][:240]}
+                        'eps_row':row['text'][:240], 'eps_kind':kind}
                     if status=='forecast':found.append(rec);matched+=1
                     else:review.append({'reason':'ACTUAL_OR_FORECAST_UNCONFIRMED',**rec})
                 if not matched:
@@ -229,17 +267,26 @@ def coordinate_extract(pdf_path, report_date):
 
 
 def reconcile_results(primary, coordinate, review):
+    """Keep one EPS definition per quarter; prefer after-tax/diluted over basic.
+
+    Competing values of the *same* EPS definition remain unresolved rather than
+    silently selecting a convenient number.
+    """
     grouped=defaultdict(list)
-    for r in primary+coordinate:grouped[r['period']].append(r)
+    for r in primary+coordinate:
+        grouped[r['period']].append(r)
     safe=[]
     for quarter,records in grouped.items():
-        vals={r['eps'] for r in records}
+        priorities=[eps_priority(r.get('eps_kind','generic')) for r in records]
+        best=min(priorities)
+        chosen=[r for r in records if eps_priority(r.get('eps_kind','generic'))==best]
+        vals={r['eps'] for r in chosen}
         if len(vals)==1:
-            safe.append(next((r for r in records if r['method']=='pdf_coordinate_table'),records[0]))
+            safe.append(next((r for r in chosen if r['method']=='pdf_coordinate_multilevel'),chosen[0]))
         else:
-            review.append({'reason':'conflicting_methods_or_tables','period':quarter,'values':sorted(vals)})
+            review.append({'reason':'conflicting_methods_or_tables','period':quarter,
+                           'eps_kind':chosen[0].get('eps_kind'),'values':sorted(vals)})
     return sorted(safe,key=lambda r:r['period']),review
-
 
 
 def diagnose_pdf(text, safe, review, report_date):
@@ -364,9 +411,19 @@ def run(args):
                    'quarter_header_evidence_count':r.get('quarter_header_evidence_count',0),
                    'eps_numeric_row_evidence_count':r.get('eps_numeric_row_evidence_count',0)}
                   for r in audit if r.get('accepted_forecasts',0)==0]
+    broker_stats=defaultdict(lambda:{'pdf_reports':0,'with_forecasts':0,'zero_forecasts':0,'eps_rows':0,'errors':0})
+    for r in audit:
+        b=broker_stats[str(r.get('broker') or 'UNKNOWN')]
+        b['pdf_reports']+=1
+        n=r.get('accepted_forecasts',0)
+        b['eps_rows']+=n
+        b['with_forecasts']+=int(n>0)
+        b['zero_forecasts']+=int(n==0)
+        b['errors']+=int(r.get('status')=='error')
     args.audit.write_text(json.dumps({'mode':'read_only_pdf_test',
         'eligible_reports':len(eligible),'selected_reports':len(selected),
         'accepted_forecasts':len(output),'counts':dict(counts),
+        'broker_summary':dict(sorted(broker_stats.items())),
         'diagnostic_counts':dict(diagnostic_counts),'zero_forecast_reports':zero_reports,
         'review_reason_counts':dict(reason_counts),'reports':audit,
         'limitations':['Text PDFs only; scanned table images require a separate vision fallback.',
