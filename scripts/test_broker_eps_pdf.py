@@ -259,7 +259,7 @@ def coordinate_extract(pdf_path, report_date):
                     rec={'period':h['period'],'eps':chosen['eps'],'method':'pdf_coordinate_multilevel',
                         'classification':status,'page':page_number,'header':h['header'],
                         'eps_row':row['text'][:240], 'eps_kind':kind}
-                    if status=='forecast':found.append(rec);matched+=1
+                    if status=='forecast' and h['explicit'] and not h['actual']:found.append(rec);matched+=1
                     else:review.append({'reason':'ACTUAL_OR_FORECAST_UNCONFIRMED',**rec})
                 if not matched:
                     review.append({'reason':'NO_SAFE_QUARTER_ALIGNMENT','page':page_number,'eps_row':row['text'][:180]})
@@ -326,94 +326,112 @@ def _numbers(ln):
     return out
 
 
-def geometry_extract(pdf_path,report_date):
-    """Infer EPS table orientation using quarter anchors and EPS-labelled axis.
+def _eps_anchors(line):
+    """Locate individual EPS labels; do not discard a row containing both
+    pretax EPS and after-tax EPS (common in vertical broker tables).
+    """
+    ws=line['words']; anchors=[]
+    for i,w in enumerate(ws):
+        t=w['text']; normalized=re.sub(r'\s+','',t)
+        if not EPS_LABEL.search(normalized):
+            continue
+        context=''.join(z['text'] for z in ws[max(0,i-1):i+1])
+        if re.search(r'成長|增幅|YoY|QoQ|growth|change',context,re.I):continue
+        kind=eps_kind(t) if re.search(r'稅前|稅後|diluted|basic|adjusted',t,re.I) else eps_kind(context)
+        if re.search(r'after.tax|aftertax',context,re.I):kind='after_tax'
+        if re.search(r'pre.tax|pretax',t,re.I):kind='pretax'
+        if kind=='pretax':continue
+        anchors.append({'x':(w['x0']+w['x1'])/2,'end':w['x1'],
+                        'kind':kind,'text':t})
+    return anchors
 
-    Require local EPS semantics, geometric alignment, and an identifiable forecast
-    quarter. Ignore annual columns and reject ambiguous multi-value intersections.
+
+def _quarter_sequence(items):
+    """At least two different, chronologically plausible quarter labels."""
+    periods=list(dict.fromkeys(x['period'] for x in items))
+    if len(periods)<2:return False
+    seq=[int(p[:4])*4+int(p[-1]) for p in periods]
+    return len(set(seq))>=2 and max(seq)-min(seq)<=16
+
+
+def geometry_extract(pdf_path,report_date):
+    """Find quarterly EPS by the two axes of a table, independent of broker.
+
+    Horizontal: EPS is a data row; period labels above identify columns.
+    Vertical: EPS is a column header; period labels below identify rows.
+    Both use real PDF coordinates and explicit forecast labels. A plain date
+    or an isolated numeric cell is never sufficient evidence.
     """
     found=[];review=[]
     with pdfplumber.open(str(pdf_path)) as doc:
         for page_no,page in enumerate(doc.pages,1):
             lines=_make_lines(page)
             if not lines:continue
-            # The compact YYYY0Q / YY0Q family is permitted only in a local
-            # EPS table, not throughout narrative prose or ordinary dates.
-            eps_rows=[(i,ln) for i,ln in enumerate(lines) if EPS_LABEL.search(ln['text'])
-                      and not SKIP.search(ln['text']) and not EPS_EXCLUDE.search(ln['text'])]
-            if not eps_rows:continue
-            for ei,epsline in eps_rows:
-                label_words=[w for w in epsline['words'] if EPS_LABEL.search(w['text'])]
-                if not label_words:
-                    # EPS can be split into adjacent PDF words; fallback to leftmost
-                    # word of the label row, but only when the row has EPS semantics.
-                    label_words=[epsline['words'][0]]
-                label_end=max(w['x1'] for w in label_words)
-                # HORIZONTAL: EPS is a row, quarter headers are above it.
-                nums=[n for n in _numbers(epsline) if n['x0']>label_end-1]
+            for ei,epsline in enumerate(lines):
+                anchors=_eps_anchors(epsline)
+                if not anchors or SKIP.search(epsline['text']):continue
+                nums=_numbers(epsline)
+                # HORIZONTAL: quarterly header is above an EPS numeric row.
                 if nums:
                     options=[]
-                    for hi in range(max(0,ei-38),ei):
-                        h=lines[hi]
-                        if not 0<epsline['y']-h['y']<270:continue
-                        heads=_word_tokens(h,allow_compact=True)
-                        # Require >=2 periods or an explicit quarterly marker.
-                        if not heads or (len(heads)<2 and not any(x['explicit'] for x in heads)):continue
+                    for hi in range(max(0,ei-35),ei):
+                        header=lines[hi]
+                        if not 0<epsline['y']-header['y']<245:continue
+                        heads=_word_tokens(header,allow_compact=True)
+                        if not _quarter_sequence(heads):continue
+                        # Favor an actual EPS table, not a remote header in prose.
+                        if not any(h['explicit'] for h in heads):continue
                         options.append((hi,heads))
                     if options:
-                        # Pick the closest header row with several distinct periods.
-                        hi,heads=max(options,key=lambda t:(t[0],len(t[1])))
+                        hi,heads=max(options,key=lambda t:t[0])
                         heads=sorted(heads,key=lambda h:h['x'])
-                        # Only assign EPS to quarter anchors if the column center
-                        # is close. Annual columns remain unmapped naturally.
+                        label=min(anchors,key=lambda a:a['x'])
+                        rownums=[n for n in nums if n['x0']>label['end']]
                         for h in heads:
-                            candidates=sorted(nums,key=lambda n:abs(n['x']-h['x']))
-                            if not candidates:continue
-                            v=candidates[0]
-                            spacing=min([abs(h['x']-other['x']) for other in heads if other is not h] or [65])
-                            tolerance=min(38,max(15,spacing*.42))
-                            if abs(v['x']-h['x'])>tolerance:continue
-                            if sum(abs(n['x']-h['x'])<=tolerance for n in nums)!=1:continue
-                            status=report_quarter_status(h['period'],report_date,h['explicit'])
-                            if status=='forecast' and not h['actual']:
-                                found.append({'period':h['period'],'eps':v['value'],
-                                    'method':'pdf_geometry_horizontal','classification':status,
-                                    'page':page_no,'header':lines[hi]['text'][:240],
-                                    'eps_row':epsline['text'][:240],
-                                    'eps_kind':eps_kind(epsline['text'].split('EPS')[0]+'EPS' if 'EPS' in epsline['text'] else epsline['text'])})
-                # VERTICAL: EPS is a column label. Quarter anchors are in
-                # adjacent rows; infer the year/quarter column independently.
-                # Scan a modest table-height window after the label header.
-                if _numbers(epsline) and len(_numbers(epsline))>2:continue
-                eps_x=(min(w['x0'] for w in label_words)+max(w['x1'] for w in label_words))/2
+                            if h['actual'] or not h['explicit']:continue
+                            spacing=min((abs(h['x']-other['x']) for other in heads if other is not h),default=65)
+                            tolerance=min(34,max(11,spacing*.43))
+                            close=[n for n in rownums if abs(n['x']-h['x'])<=tolerance]
+                            if len(close)!=1:continue
+                            found.append({'period':h['period'],'eps':close[0]['value'],
+                                'method':'pdf_geometry_horizontal','classification':'forecast',
+                                'page':page_no,'header':lines[hi]['text'][:240],
+                                'eps_row':epsline['text'][:240],'eps_kind':label['kind']})
+                # VERTICAL: EPS is a column header, and a repeated period axis
+                # runs downward. Handle several EPS labels on SAME header row.
+                # Do not require the header row to contain no numeric cells.
                 nearby=[]
-                for row in lines[ei+1:ei+33]:
-                    if row['y']-epsline['y']>410:break
-                    periods=_word_tokens(row,allow_compact=True)
-                    if len(periods)!=1:continue
-                    numsrow=_numbers(row)
-                    if not numsrow:continue
-                    nearby.append((row,periods[0],numsrow))
-                # Demand a repeated year-quarter axis, preventing date prose
-                # or a single incidental number from being treated as a table.
-                groups=defaultdict(list)
-                for row,h,values in nearby:groups[round(h['x']/24)].append((row,h,values))
-                axis=max(groups.values(),key=len,default=[])
-                if len({h['period'] for _,h,_ in axis})<2:continue
-                for row,h,values in axis:
-                    # A period identifier can itself be numeric. Exclude its cell.
-                    values=[v for v in values if abs(v['x']-h['x'])>17]
+                for row in lines[ei+1:ei+38]:
+                    if row['y']-epsline['y']>440:break
+                    ps=_word_tokens(row,allow_compact=True)
+                    if len(ps)!=1:continue
+                    values=_numbers(row)
                     if not values:continue
-                    chosen=min(values,key=lambda v:abs(v['x']-eps_x))
-                    if abs(chosen['x']-eps_x)>max(26,page.width*.035):continue
-                    if sum(abs(v['x']-eps_x)<max(26,page.width*.035) for v in values)!=1:continue
-                    status=report_quarter_status(h['period'],report_date,h['explicit'])
-                    if status!='forecast' or h['actual']:continue
-                    found.append({'period':h['period'],'eps':chosen['value'],
-                        'method':'pdf_geometry_vertical','classification':status,
-                        'page':page_no,'header':epsline['text'][:240],
-                        'eps_row':row['text'][:240],'eps_kind':eps_kind(epsline['text'])})
-    # Deduplicate repeated occurrences of the same exact extracted value.
+                    nearby.append((row,ps[0],values))
+                groups=defaultdict(list)
+                for row,h,values in nearby:
+                    groups[round(h['x']/20)].append((row,h,values))
+                for axis in groups.values():
+                    if not _quarter_sequence([h for _,h,_ in axis]):continue
+                    if not any(h['explicit'] for _,h,_ in axis):continue
+                    for anchor in anchors:
+                        matches=[]
+                        for row,h,values in axis:
+                            if not h['explicit'] or h['actual']:continue
+                            # The period itself is sometimes a numeric PDF word.
+                            cells=[v for v in values if abs(v['x']-h['x'])>19]
+                            tolerance=max(65,page.width*.105)
+                            close=sorted((v for v in cells if abs(v['x']-anchor['x'])<tolerance),key=lambda v:abs(v['x']-anchor['x']))[:1]
+                            if len(close)!=1:continue
+                            matches.append((row,h,close[0]))
+                        if not matches:continue
+                        # Confirm that EPS values actually share one column.
+                        if max(abs(v['x']-anchor['x']) for _,_,v in matches)>max(65,page.width*.105):continue
+                        for row,h,v in matches:
+                            found.append({'period':h['period'],'eps':v['value'],
+                                'method':'pdf_geometry_vertical','classification':'forecast',
+                                'page':page_no,'header':epsline['text'][:240],
+                                'eps_row':row['text'][:240],'eps_kind':anchor['kind']})
     unique={}
     for row in found:unique.setdefault((row['period'],row['eps'],row['method'],row['page']),row)
     return list(unique.values()),review

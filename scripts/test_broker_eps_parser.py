@@ -8,6 +8,24 @@ p=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p)
 
 class BrokerEpsParserTests(unittest.TestCase):
+    def test_multiple_eps_labels_same_header(self):
+        words=[{'text':'年季','x0':20,'x1':40},
+               {'text':'稅前EPS','x0':380,'x1':420},
+               {'text':'稅後EPS','x0':530,'x1':570}]
+        line={'words':words,'text':'年季 稅前EPS 稅後EPS'}
+        labels=p._eps_anchors(line)
+        self.assertEqual(len(labels),1)
+        self.assertEqual(labels[0]['kind'],'after_tax')
+
+    def test_vertical_compact_period_sequence(self):
+        tokens=[]
+        for q in ['202601(A)','202602(A)','202603(F)','202604(F)','202701(F)']:
+            a,b,per,fc,act=p._period_tokens(q,True)[0]
+            tokens.append({'period':per,'explicit':fc,'actual':act})
+        self.assertTrue(p._quarter_sequence(tokens))
+        self.assertEqual([t['period'] for t in tokens if t['explicit']],
+                         ['2026-Q3','2026-Q4','2027-Q1'])
+
     def test_quarter_headers(self):
         cases={'26Q3(F)':'2026-Q3','202603(F)':'2026-Q3','3Q26SP':'2026-Q3',
                '3Q26e':'2026-Q3','Q326E':'2026-Q3','27Q4(F)':'2027-Q4'}
