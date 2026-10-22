@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / 'data/eps_news_backup.json'
 TZ = ZoneInfo('Asia/Taipei')
 HOSTS = ('moneydj.com', 'money-link.com.tw', 'cnyes.com', 'udn.com', 'yahoo.com', 'ctee.com.tw')
+PARSER_VERSION = 'single-period-v3-contextual-eps'
 
 
 def read(path, default):
@@ -35,11 +36,6 @@ def parse_article(article, stocks):
     description = unicodedata.normalize('NFKC', plain(article.get('description')))
     description = description.replace(article.get('publisher') or '\0', '')
     text = title + '。' + description
-    # Forecasts, pretax EPS, accumulated EPS and adjusted EPS are not actual single-period EPS.
-    if re.search(r'預估|預期|預測|估計|有望|挑戰|上看|法人估|稅前|調整後|排除.*損益', title):
-        return [], 'not_actual_after_tax'
-    if '綜合損益表' in title and '單季' not in title:
-        return [], 'financial_table_period_ambiguous'
     identities = [(t, s) for t, s in stocks.items() if re.search(r'(?<!\d)' + re.escape(t) + r'(?!\d)', title)
                   or (len(s.get('name', '')) >= 2 and s['name'] in title)]
     if len(identities) != 1:
@@ -53,20 +49,34 @@ def parse_article(article, stocks):
         published = datetime.fromisoformat(article['published_at']).astimezone(TZ)
     except (KeyError, ValueError):
         return [], 'missing_date'
-    # Bind the period and EPS within a short clause; never turn cumulative into single-quarter EPS.
+
+    # Never reject an entire story merely because an unrelated fundraising or
+    # price-target sentence contains 上看/預估. Check the EPS clause itself.
+    # Do not accept cumulative YTD figures such as 前三季EPS11.16.
     pattern = re.compile(
-        r'(?<![\d前累計至\-~～])(?:(?P<year>20\d{2}|1\d{2})年)?'
-        r'(?P<period>\d{1,2}月|第[一二三四1234]季|Q[1-4])'
+        r'(?<![\d前累計至\-~～])(?:(?P<year>20\d{2}|1\d{2})\s*年\s*)?'
+        r'(?P<period>\d{1,2}\s*月|第\s*[一二三四1234]\s*季|[一二三四]\s*季|Q[1-4])'
         r'(?P<context>[^。；;!?！？]{0,45}?)'
         r'(?P<label>EPS|每股盈餘|每股純益|每股稅後盈餘|每股稅後|每股虧損|每股虧)'
         r'\s*(?:為|達|約|:|：)?\s*(?P<value>[+\-−]?\d+(?:\.\d+)?)\s*元?', re.I)
     found = {}
     for match in pattern.finditer(text):
         context = match.group('context')
-        before = text[max(0, match.start()-8):match.start()]
-        if re.search(r'累計|累積|前\s*$|[\d一二三四五六七八九十][\-~～至]\s*$', before) or re.search(r'累計|累積|前[一二三四五六七八九十\d]+[季月]|稅前|預估|預期|上看|有望|去年|前年|EPS|每股', context, re.I):
+        before = text[max(0, match.start()-14):match.start()]
+        clause = text[max(0, match.start()-18):match.end()]
+        # A report's period must refer to one month/quarter, not cumulative
+        # first N quarters, year-to-date or a comparison with prior years.
+        if re.search(r'累計|累積|前\s*$|[\d一二三四五六七八九十]\s*[\-~～至]\s*$', before):
             continue
-        raw_period = match.group('period').upper()
+        if re.search(r'累計|累積|前[一二三四五六七八九十\d]+[季月]|稅前|去年|前年|EPS|每股', context, re.I):
+            continue
+        if re.search(r'預估|預期|預測|估計|有望|挑戰|上看|法人估|調整後|排除.*損益', context):
+            continue
+        # Forecast terms near the EPS number are disqualifying; unrelated
+        # future plans elsewhere in the headline are not.
+        if re.search(r'(?:預估|預期|預測|估計|有望|上看|法人估|稅前|調整後)\s*(?:單季|本季|第?[一二三四1234]季|Q[1-4]|EPS|每股)', clause, re.I):
+            continue
+        raw_period = re.sub(r'\s+', '', match.group('period')).upper()
         year = int(match.group('year')) if match.group('year') else published.year
         if year < 1911:
             year += 1911
@@ -78,7 +88,7 @@ def parse_article(article, stocks):
             end_month = month
             period = f'{year}-{month:02d}'
         else:
-            number = raw_period[1] if raw_period.startswith('Q') else raw_period[1:-1]
+            number = raw_period[1] if raw_period.startswith('Q') else raw_period.replace('第', '')[:-1]
             quarter = int(number) if number.isdigit() else '一二三四'.index(number)+1
             end_month = quarter*3
             period = f'{year}-Q{quarter}'
@@ -106,7 +116,6 @@ def parse_article(article, stocks):
 def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
-    # Expired cache cannot masquerade as a successful current news scan.
     return [x for x in data.get('items', []) if x.get('kind') == kind
             and (now.date()-timedelta(days=7)).isoformat() <= x.get('publish_date','') <= now.date().isoformat()]
 
@@ -171,13 +180,12 @@ def collect():
         except Exception as exc:
             errors.append(type(exc).__name__+': '+str(exc)[:160])
     prior_data = read(PATH, {})
-    previous = prior_data.get('items', []) if prior_data.get('parser_version') == 'single-period-v2' else []
-    # Keep prior verified snippets during feed failures, within the same date window.
+    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', PARSER_VERSION) else []
     for row in previous:
         if (now.date()-timedelta(days=7)).isoformat() <= row.get('publish_date','') <= now.date().isoformat():
             accepted.setdefault((row['ticker'],row['period']), row)
     items = [x for x in accepted.values() if not x.get('conflict')]
-    payload = dict(updated_at=now.isoformat(timespec='minutes'), source='Google News RSS', parser_version='single-period-v2',
+    payload = dict(updated_at=now.isoformat(timespec='minutes'), source='Google News RSS', parser_version=PARSER_VERSION,
         coverage='明確單一公司／單月或單季 EPS 的新聞標題與 RSS 摘要；不保證涵蓋所有公告',
         source_errors=errors, conflict_count=sum(bool(x.get('conflict')) for x in accepted.values()),
         items=items, audit=audit)
@@ -188,5 +196,4 @@ def collect():
     print('EPS news backup:', len(items), 'accepted;', len(errors), 'source errors; AI calls=0')
 
 
-if __name__ == '__main__':
-    collect()
+if __name__ == '__main__': collect()
