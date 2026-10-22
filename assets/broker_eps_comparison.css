@@ -1,0 +1,8 @@
+/* EPS forecast attainment, visually subordinate to the actual reported EPS. */
+.broker-eps-comparison { display:flex; flex-direction:column; gap:5px; margin-top:9px; padding-top:8px; border-top:1px solid rgba(128,140,155,.18); font-size:12px; line-height:1.5; font-weight:500; }
+.broker-eps-entry { display:flex; flex-wrap:wrap; column-gap:6px; align-items:baseline; overflow-wrap:anywhere; color:#64748b; }
+.broker-eps-rate { color:#0f766e; font-weight:700; }
+html[data-theme="dark"] .broker-eps-entry { color:#b6c1d1; }
+html[data-theme="dark"] .broker-eps-rate { color:#5eead4; }
+.earnings-detail .broker-eps-comparison { font-size:12px; }
+@media(max-width:520px) { .broker-eps-comparison { font-size:11px; } .broker-eps-entry { column-gap:4px; } }
