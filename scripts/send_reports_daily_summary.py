@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from report_presentation import complete_reason, upside_text
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -105,7 +106,7 @@ def fmt_num(v):
     )
 
 
-def target_text(report):
+def _target_text(report):
     old = report.get(
         "target_price_old"
     )
@@ -140,6 +141,10 @@ def target_text(report):
     return "目標價未提供"
 
 
+def target_text(report):
+    return _target_text(report) + upside_text(report)
+
+
 def rating_text(report):
     action = action_zh(
         report.get("action")
@@ -168,29 +173,7 @@ def rating_text(report):
 
 
 def short_reason(report):
-    reason = str(
-        report.get("push_reason")
-        or ""
-    ).strip()
-
-    if not reason:
-        summary = (
-            report.get("summary")
-            or []
-        )
-
-        if summary:
-            reason = str(
-                summary[0]
-            ).strip()
-
-    if len(reason) > 52:
-        reason = (
-            reason[:52]
-            + "…"
-        )
-
-    return reason
+    return complete_reason(report)
 
 
 def company_block(
@@ -688,4 +671,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 

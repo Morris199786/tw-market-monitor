@@ -6,6 +6,7 @@ import hashlib
 import urllib.request
 import unicodedata
 from pathlib import Path
+from report_presentation import enrich_upside
 
 VERSION = "2026-10-10-identity-target-tp"
 ROOT = Path(__file__).resolve().parents[1]
@@ -272,6 +273,17 @@ def page_targets(text, companies):
             currency = _target_currency(page, match)
             line = page[match.start():].split("\n", 1)[0]
             context_before = page[max(0, match.start()-350):match.start()]
+            old_value = None
+            # Chinese comparison table: column order, not first number, identifies current TP.
+            headers = list(re.finditer(r'(上次|前次|本次)\s+(上次|前次|本次)', context_before))
+            pair = re.match(r'\s+(\d[\d,]*(?:\.\d+)?)(?![\d.])', page[match.end():])
+            if headers and pair and '本次' in headers[-1].groups():
+                second = float(pair.group(1).replace(',', ''))
+                if headers[-1].group(2) == '本次':
+                    old_value, value = value, second
+                else:
+                    old_value = second
+                currency = 'TWD'
             if re.search(r"From\s+To", context_before, re.I):
                 pair = re.findall(r"(?:NT\$|TWD|NTD)\s*(\d[\d,]*(?:\.\d+)?)", line, re.I)
                 if len(pair) == 2:
@@ -281,7 +293,7 @@ def page_targets(text, companies):
             rating, action = _rating_and_action(page, match)
             views.append({
                 "ticker": t, "name": companies[t]["name"], "target_price_new": value,
-                "target_price_old": None, "currency": "TWD" if value is not None else "",
+                "target_price_old": old_value, "currency": "TWD" if value is not None else "",
                 "rating": rating, "action": action, "page": page_no,
                 "evidence": compact(page[max(0, match.start()-160):min(len(page), match.end()+160)]),
                 "target_unavailable": value is None,
@@ -353,7 +365,7 @@ def audit_report(report, src, companies):
                     old = None
             else:
                 old = None
-            r["target_price_old"] = old
+            r["target_price_old"] = own.get("target_price_old") if own.get("target_price_old") is not None else old
             r["target_price_new"] = own["target_price_new"]
             if own.get("rating"):
                 r["rating"] = own["rating"]
@@ -367,7 +379,8 @@ def audit_report(report, src, companies):
     if lines:
         r["recommendation_headlines"] = lines
         r["summary"] = lines + [x for x in r.get("summary", []) if x not in lines]
-        r["push_reason"] = "；".join(lines)
+        # Preserve the causal investment thesis instead of replacing it with price labels.
+    enrich_upside(r, text)
     r["identity_changes"] = changes
     for key in ("validation_error", "audit_error", "audit_failed_at"):
         r.pop(key, None)
@@ -375,4 +388,5 @@ def audit_report(report, src, companies):
     r["validation_status"] = "verified"
     r["source_text_hash"] = hashlib.sha256(text.encode()).hexdigest()
     return r
+
 
