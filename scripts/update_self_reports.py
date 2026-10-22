@@ -10,7 +10,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-21-v33-explicit-eps-tables"
+VERSION = "2026-10-22-v34-abnormal-price-self-report"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -31,6 +31,10 @@ SEARCH_KEYWORDS = (
     "自結",
     "自行結算",
     "自行結算損益",
+    "近期股價異常",
+    "股價異常",
+    "投資人區別瞭解",
+    "投資人區別了解",
 )
 
 SELF_REPORT_KEYWORDS = (
@@ -48,6 +52,10 @@ SELF_REPORT_KEYWORDS = (
     "最近一個季",
     "單月",
     "單季",
+    "近期股價異常",
+    "股價異常",
+    "投資人區別瞭解",
+    "投資人區別了解",
 )
 
 ATTENTION_KEYWORDS = (
