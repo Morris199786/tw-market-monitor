@@ -1,4 +1,4 @@
-/* Broker EPS comparison: zero API; only forecasts earlier than or on actual announcement. */
+/* Broker EPS comparison: zero API; forecasts on or before actual announcement. */
 (() => {
   'use strict';
 
@@ -262,9 +262,11 @@
         return '';
       }
 
+      // 單月自結 EPS 與券商整季 EPS 預估比較。
+      // 季度財報 EPS 則顯示季度達成率。
       const label =
         x.kind === 'monthly'
-          ? '單月／季預估比'
+          ? '單月／季達成率'
           : '季度達成率';
 
       return `
