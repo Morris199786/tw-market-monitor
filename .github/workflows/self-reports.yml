@@ -29,6 +29,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Collect EPS news backup
+        continue-on-error: true
+        run: python scripts/eps_news_backup.py
+
       - name: Update self reports
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -45,3 +49,4 @@ jobs:
       - name: Commit updated data
         if: ${{ !cancelled() }}
         run: python scripts/update_self_reports.py --commit-data
+
