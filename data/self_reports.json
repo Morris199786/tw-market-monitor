@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-10-22T13:55+08:00",
+  "updated_at": "2026-10-22T14:06+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 184,
-    "parsed_count": 80,
+    "candidate_count": 185,
+    "parsed_count": 81,
     "parse_failed_count": 97,
     "parse_failed": [
       {
@@ -1274,28 +1274,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 1,
+      "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 16,
+          "rows": 24,
+          "hits": 1
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 24,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 16,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 16,
+          "rows": 24,
           "hits": 0
         },
         {
@@ -1330,14 +1330,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 16,
+          "rows": 24,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 16,
+          "rows": 24,
           "hits": 0
         },
         {
@@ -1419,10 +1419,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2072",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 4,
+          "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -1475,7 +1474,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2514",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1483,7 +1482,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2630",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1491,7 +1490,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2723",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1499,7 +1498,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2816",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1507,7 +1506,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2880",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1627,7 +1626,7 @@
         {
           "mode": "company_rescue",
           "ticker": "4532",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1683,9 +1682,10 @@
         {
           "mode": "company_rescue",
           "ticker": "5871",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -1730,7 +1730,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6770",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1807,6 +1807,30 @@
     }
   },
   "items": [
+    {
+      "market": "",
+      "ticker": "6925",
+      "name": "意藍",
+      "publish_date": "2026-10-22",
+      "publish_time": "14:00:25",
+      "subject": "6925 意藍 115/10/22 14:00:25 因本公司有價證券於櫃買市場達公佈注意交易資訊標準， 故公佈相關財務業務等重大訊息，以利投資人區別瞭解。",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 6925 意藍 公司提供 序號 1 發言日期 115/10/22 發言時間 14:00:25 發言人 楊立偉 發言人職稱 總經理 發言人電話 2755-1533 主旨 因本公司有價證券於櫃買市場達公佈注意交易資訊標準， 故公佈相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 53 款 事實發生日 115/10/22 說明 1.事實發生日:115/10/22 2.發生緣由:依財團法人中華民國證券櫃檯買賣中心通知辦理。 3.財務業務資訊: (1)單月： 最近一月單月 去年同月 與去年同期增減% 115年09月 114年09月 ----------- ----------- --------------- 營業收入(百萬元) 24.08 19.84 21% 稅前淨利(百萬元) 12.34 3.52 251% 本期淨利(百萬元) 9.96 3.70 169% 每股盈餘(元) 0.50 0.19 163% (2)單季： 最近一季單季 去年同期 與去年同期增減% 115年第2季 114年第2季 ----------- ----------- --------------- 營業收入(百萬元) 51.76 49.22 5% 稅前淨利(百萬元) 16.78 15.31 10% 本期淨利(百萬元) 13.86 12.81 8% 每股盈餘(元) 0.69 0.69 - (3)最近四季累計： 114年第3季至115年第2季 --------------------- 營業收入(百萬元) 215 稅前淨利(百萬元) 69 本期淨利(百萬元) 58 每股盈餘(元) 2.93 4.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）:無。 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事:無。 6.其他應敘明事項: 註1：以上115年9月及去年同期比較數之財務資料係本公司採IFRS會計準則編製 之合併數，未經會計師查核(閱)，僅供投資人參考。 註2：最近一季115年第2季係指單季數字，非為最近財務報告中之累計數字， 且係本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 註3：最近四季累計係本公司114年第3季至115年第2季採IFRS編製之合併數， 業經會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6925&SPOKE_DATE=20261022&SPOKE_TIME=140025&SEQ_NO=1&skey=6925202610221",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": 0.5,
+      "monthly_eps": 0.5,
+      "monthly_eps_yoy": 163.0,
+      "monthly_period": "2026-09",
+      "quarter_eps": 0.69,
+      "quarter_eps_yoy": null,
+      "quarter_period": "2026-Q2",
+      "monthly_eps_yoy_text": "163%",
+      "quarter_eps_yoy_text": "-",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": ""
+    },
     {
       "ticker": "4960",
       "name": "誠美材",
