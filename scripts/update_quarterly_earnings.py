@@ -8,7 +8,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-21-v10-flexible-quarter-table"
+VERSION = "2026-10-22-v11-exclude-conference-invitations"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -248,26 +248,54 @@ def is_preview_subject(s):
         )
     )
 
+def is_investor_invitation(subject):
+    """Conference invitations/schedules are not quarterly earnings releases."""
+    s = re.sub(r"\s+", "", clean(subject))
+    return bool(re.search(
+        r"受邀|應邀|邀請|參加|出席|舉辦|辦理|將於|預計|預告|召開|召集", s
+    ))
+
+
 def is_report_subject(s):
     s = re.sub(r"\s+", "", clean(s))
-    if is_preview_subject(s) or re.search(r"代.*子公司|更正|重編|差異|預測|無法|未通過|會計政策|預計|預告|召開|召集", s):
+    if is_preview_subject(s) or is_investor_invitation(s) or re.search(
+        r"代.*子公司|更正|重編|差異|預測|無法|未通過|會計政策", s
+    ):
         return False
-    # Monthly revenue/self reports and a scheduled call alone are not quarterly releases.
     formal = bool(re.search(r"財務(?:報告|報表)", s) and re.search(r"公告|通過|決議", s))
-    quarterly = bool(period_from_text(s) and re.search(r"(?:合併)?(?:損益|財務業績|財務結果|營運結果|營運成果|財報|財務報告|財務報表)", s))
+    quarterly = bool(
+        period_from_text(s)
+        and re.search(r"(?:合併)?(?:損益|財務業績|財務結果|營運結果|營運成果|財報|財務報告|財務報表)", s)
+        and re.search(r"公告|公布|發布|揭露|自結|結算|通過|決議|說明會摘要|法說會摘要", s)
+    )
     return formal or quarterly
 
 
 def is_result_candidate(subject):
-    # Some issuers disclose results under '今日法人說明會摘要', with quarter in body.
-    return is_report_subject(subject) or bool(re.search(r'(?:今日)?(?:法人說明會|法說會).*(?:摘要|結果|財務資訊)', clean(subject)))
+    if is_investor_invitation(subject):
+        return False
+    return is_report_subject(subject) or bool(re.search(
+        r"(?:今日)?(?:法人說明會|法說會).*(?:摘要|結果|財務資訊)", clean(subject)
+    ))
 
 
 def is_quarterly_release(subject, text):
-    if is_report_subject(subject): return True
-    return (is_result_candidate(subject) and bool(period_from_text(text))
-            and bool(re.search(r'合併.*(?:財務|損益)|每股.*(?:盈餘|純益)|EPS', text, re.I))
-            and not bool(re.search(r'預計|預告|受邀', subject)))
+    if not is_result_candidate(subject):
+        return False
+    if is_report_subject(subject):
+        return True
+    return bool(period_from_text(text)) and bool(re.search(
+        r"合併.*(?:財務|損益)|每股.*(?:盈餘|純益)|EPS", text, re.I
+    ))
+
+
+def valid_cached_earnings_report(x):
+    """Drop stale false positives from persisted events on every update."""
+    subject = x.get('subject', '')
+    # IR PDF releases and news-backup results are independently verified sources.
+    if x.get('release_type') == 'issuer_conference' or x.get('source') == 'news_backup':
+        return True
+    return not is_investor_invitation(subject)
 
 
 def announcement_period_metrics(text, period):
@@ -1086,7 +1114,7 @@ def main():
     for x in event_history.get('upcoming',[]):
         if x.get('ticker') in uni and x.get('planned_date','')>=today: upcoming[(x['ticker'],x['period'])]=x
     for x in event_history.get('reports',[]):
-        if x.get('ticker') in uni and x.get('publish_date') and report_visible(x,now,calendars): events[(x['ticker'],x['period'])]=x
+        if x.get('ticker') in uni and x.get('publish_date') and valid_cached_earnings_report(x) and report_visible(x,now,calendars): events[(x['ticker'],x['period'])]=x
     for x in news:
         if not x.get('date') or x['ticker'] not in uni: continue
         text=announcement_text(x);subject=x['subject']
