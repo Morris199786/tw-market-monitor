@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       tickers:
-        description: 'Optional comma-separated stock codes (blank = 10 latest stock reports)'
+        description: 'Optional stock codes separated by comma (blank = all reports)'
         required: false
         default: ''
+      limit:
+        description: 'Number of PDF reports to test; 0 = ALL eligible PDFs'
+        required: false
+        default: '0'
 
 permissions:
   contents: read
@@ -15,6 +19,7 @@ permissions:
 jobs:
   test-pdf-eps:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,21 +33,22 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
-      - name: Install PDF text and coordinate extractors
+      - name: Install PDF extractors
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y poppler-utils
           python -m pip install requests pdfplumber
-      - name: Test 10 original broker PDFs (no AI / no Telegram)
+      - name: Audit all eligible broker PDFs (no AI, no Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           TEST_TICKERS: ${{ inputs.tickers }}
-        run: python scripts/test_broker_eps_pdf.py --limit 10 --tickers "$TEST_TICKERS"
-      - name: Upload PDF EPS audit
+          TEST_LIMIT: ${{ inputs.limit }}
+        run: python scripts/test_broker_eps_pdf.py --limit "$TEST_LIMIT" --tickers "$TEST_TICKERS"
+      - name: Upload EPS audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: broker-eps-pdf-test-results
+          name: broker-eps-pdf-all-results
           path: |
             data/broker_eps_pdf_test.json
             data/broker_eps_pdf_audit.json
