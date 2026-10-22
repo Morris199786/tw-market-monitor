@@ -48,15 +48,17 @@ jobs:
           python -m pip install requests pdfplumber
       - name: Install grouped-year EPS parser enhancement
         run: python scripts/upgrade_broker_eps_parser.py
+      - name: Install structured multi-row parser
+        run: python scripts/install_broker_eps_structured.py
       - name: Parser regression tests
-        run: python scripts/test_broker_eps_parser.py -v
+        run: |
+          python scripts/test_broker_eps_parser.py -v
+          python -m unittest discover -s scripts -p test_broker_eps_structured.py -v
       - name: Select only unprocessed PDFs
         run: |
           python scripts/incremental_broker_eps.py prepare
-          if [ "${{ github.event.inputs.backfill_zero_eps }}" = "true" ]; then
-            python scripts/broker_eps_zero_backfill.py
-          fi
-      - name: Extract new PDFs only (no AI)
+          python scripts/broker_eps_selective_retry.py
+      - name: Extract selected PDFs (no AI)
         if: hashFiles('data/broker_eps_new_reports.json') != ''
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -71,6 +73,7 @@ jobs:
           if [ "$(cat data/broker_eps_new_count.txt)" -gt 0 ]; then
             python scripts/test_broker_eps_pdf.py --source data/broker_eps_new_reports.json --output data/broker_eps_pdf_test.json --audit data/broker_eps_audit_new.json --limit 0
             python scripts/incremental_broker_eps.py finalize
+            python scripts/broker_eps_retry_finalize.py
             python scripts/publish_broker_eps_comparison.py --merge-existing
           fi
       - name: Audit actual Compare matches
