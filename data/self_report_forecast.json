@@ -59,10 +59,10 @@
     "twse": {
       "predictions": 5,
       "hits": 3,
-      "actual": 3,
+      "actual": 4,
       "precision": 0.6,
-      "recall": 1.0,
-      "f1": 0.75,
+      "recall": 0.75,
+      "f1": 0.6666666666666665,
       "settled_days": 1
     },
     "tpex": {
@@ -82,10 +82,10 @@
       "twse": {
         "predictions": 5,
         "hits": 3,
-        "actual": 3,
+        "actual": 4,
         "precision": 0.6,
-        "recall": 1.0,
-        "f1": 0.75,
+        "recall": 0.75,
+        "f1": 0.6666666666666665,
         "settled_days": 1
       },
       "tpex": {
@@ -106,16 +106,18 @@
         "twse": {
           "predictions": 5,
           "hits": 3,
-          "actual": 3,
+          "actual": 4,
           "precision": 0.6,
-          "recall": 1.0,
-          "f1": 0.75,
+          "recall": 0.75,
+          "f1": 0.6666666666666665,
           "hit_tickers": [
             "4960",
             "6269",
             "6756"
           ],
-          "missed_tickers": []
+          "missed_tickers": [
+            "5205"
+          ]
         },
         "tpex": {
           "predictions": 4,
@@ -313,6 +315,7 @@
       "actuals": {
         "twse": [
           "4960",
+          "5205",
           "6269",
           "6756"
         ],
@@ -327,16 +330,18 @@
         "twse": {
           "predictions": 5,
           "hits": 3,
-          "actual": 3,
+          "actual": 4,
           "precision": 0.6,
-          "recall": 1.0,
-          "f1": 0.75,
+          "recall": 0.75,
+          "f1": 0.6666666666666665,
           "hit_tickers": [
             "4960",
             "6269",
             "6756"
           ],
-          "missed_tickers": []
+          "missed_tickers": [
+            "5205"
+          ]
         },
         "tpex": {
           "predictions": 4,
@@ -355,7 +360,7 @@
         }
       },
       "provisional": true,
-      "source": "site_self_reports_history_assumed_complete",
+      "source": "site_self_reports_history_plus_manual_verified_5205",
       "verified_at": "2026-10-21T22:51:00+08:00"
     }
   },
