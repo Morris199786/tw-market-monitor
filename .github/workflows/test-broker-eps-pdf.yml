@@ -38,6 +38,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y poppler-utils
           python -m pip install requests pdfplumber
+      - name: Run offline EPS parser regression tests
+        run: python scripts/test_broker_eps_parser.py -v
       - name: Audit all eligible broker PDFs (no AI, no Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
