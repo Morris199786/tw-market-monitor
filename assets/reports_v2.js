@@ -395,6 +395,7 @@
 
     const oldTp = r.target_price_old;
     const newTp = r.target_price_new;
+    const upside = upsideText(r);
 
     if (
       oldTp !== null &&
@@ -402,14 +403,14 @@
       newTp !== null &&
       newTp !== undefined
     ) {
-      return `${oldTp} → ${newTp}`;
+      return `${oldTp} → ${newTp}${upside}`;
     }
 
     if (
       newTp !== null &&
       newTp !== undefined
     ) {
-      return String(newTp);
+      return String(newTp) + upside;
     }
 
     return "";
@@ -420,6 +421,13 @@
      只搜尋網站上已經顯示的報告內容
      不讀取原始 PDF
      ========================================================= */
+
+  function upsideText(r) {
+    if (r.implied_upside_pct == null || !r.upside_basis) return "";
+    const n = Number(r.implied_upside_pct);
+    if (!Number.isFinite(n)) return "";
+    return `（隱含${n >= 0 ? "漲" : "跌"}幅 ${n >= 0 ? "+" : ""}${n.toFixed(1)}%，報告基準）`;
+  }
 
   function searchText(r) {
     const primaryNames =
@@ -615,7 +623,7 @@
 
         <ul>
           ${arr.map(
-            x => `<li>${highlightedText(x)}</li>`
+            x => `<li>${highlightedText(x + (/目標(?:股)?價/.test(x) && !/隱含[漲跌]幅/.test(x) ? upsideText(r) : ""))}</li>`
           ).join("")}
         </ul>
       </div>
@@ -1726,3 +1734,4 @@
     boot();
   }
 })();
+
