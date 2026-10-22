@@ -1,0 +1,36 @@
+name: Seal existing broker EPS reports (one time)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: broker-eps-comparison-publish
+  cancel-in-progress: false
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Sync latest baseline
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Seal all existing reports without parsing or AI
+        run: python scripts/broker_eps_pipeline.py seal
+      - name: Persist seal before enabling automated comparison
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/broker_eps_processed.json data/broker_eps_baseline_sealed.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Seal existing broker EPS reports without reprocessing'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

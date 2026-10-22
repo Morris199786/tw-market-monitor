@@ -1,19 +1,13 @@
 name: Publish broker EPS comparison
 on:
   workflow_dispatch:
-    inputs:
-      backfill_zero_eps:
-        description: "Legacy input (no automatic historical reprocessing)"
-        type: boolean
-        default: false
   schedule:
-    - cron: '15 11 * * *'
+    - cron: '*/30 * * * *'
   workflow_run:
     workflows: ["Broker reports Drive inbox"]
     types: [completed]
 permissions:
   contents: write
-  id-token: write
 concurrency:
   group: broker-eps-comparison-publish
   cancel-in-progress: false
@@ -21,79 +15,39 @@ jobs:
   publish:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-      - run: |
+      - name: Sync current main
+        run: |
           git fetch origin main
           git reset --hard origin/main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Authenticate Google Drive read-only
-        id: auth
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
-      - name: Install offline PDF tools
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y poppler-utils
-          python -m pip install requests pdfplumber
-      - name: Install grouped-year EPS parser enhancement
-        run: python scripts/upgrade_broker_eps_parser.py
-      - name: Install structured multi-row parser
-        run: python scripts/install_broker_eps_structured.py
-      - name: Parser regression tests
-        run: |
-          python scripts/test_broker_eps_parser.py -v
-          python -m unittest discover -s scripts -p test_broker_eps_structured.py -v
-          python -m unittest discover -s scripts -p test_eps_fix.py -v
-      - name: Select only unprocessed PDFs
-        run: |
-          python scripts/incremental_broker_eps.py prepare
-          python scripts/broker_eps_selective_retry.py
-      - name: Extract selected PDFs (no AI)
-        if: hashFiles('data/broker_eps_new_reports.json') != ''
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+      - name: Test offline EPS modules
+        run: python -m unittest discover -s scripts -p 'test_broker_eps_*.py' -v
+      - name: Refuse unsealed baseline
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          path=Path('data/broker_eps_new_reports.json')
-          n=len(json.loads(path.read_text()).get('items',[]))
-          print(f'Truly new reports: {n}')
+          p=Path('data/broker_eps_baseline_sealed.json')
+          if not p.exists() or not json.loads(p.read_text()).get('sealed'):
+              raise SystemExit('Baseline not sealed: run the one-time seal workflow before enabling publication')
           PY
-          if [ "$(cat data/broker_eps_new_count.txt)" -gt 0 ]; then
-            python scripts/test_broker_eps_pdf.py --source data/broker_eps_new_reports.json --output data/broker_eps_pdf_test.json --audit data/broker_eps_audit_new.json --limit 0
-            python scripts/incremental_broker_eps.py finalize
-            python scripts/broker_eps_retry_finalize.py
-            python scripts/publish_broker_eps_comparison.py --merge-existing
-          fi
-      - name: Apply verified historical EPS corrections (no PDF / no AI)
-        run: python scripts/repair_verified_broker_eps.py
-      - name: Audit actual Compare matches
-        run: python scripts/broker_eps_compare_audit.py
-      - name: Ensure UI registration
-        run: python scripts/install_broker_eps_comparison.py
-      - name: Commit comparison data and processed ledger
+      - name: Publish EPS data offline (zero API calls, zero PDF reparse)
+        run: python scripts/broker_eps_safe_publish.py
+      - name: Commit only changed EPS data
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_compare_audit.json index.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Update incremental broker EPS comparisons and audit'
-          git reset --hard HEAD
-          git clean -fd
-          test -z "$(git status --porcelain)"
+          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json
+          if git diff --cached --quiet; then echo 'No EPS changes'; exit 0; fi
+          git commit -m 'Publish broker EPS comparisons offline'
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git rebase origin/main

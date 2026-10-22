@@ -1,52 +1,37 @@
 name: Broker reports Drive inbox
-
 on:
   workflow_dispatch:
-
 permissions:
   contents: write
   id-token: write
-
-# Serialize report runs only; heatmap updates must not replace pending reports.
-# Git publication retries safely rebase unrelated market updates.
 concurrency:
   group: broker-reports-drive
   cancel-in-progress: false
-
 jobs:
   ingest-reports:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout latest main
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
-
-      # A queued workflow may have been created before the previous run pushed.
-      # Force the workspace to the latest remote main before any API/Telegram work.
       - name: Sync latest processed state
         run: |
           git fetch origin main
           git reset --hard origin/main
-
-      - name: Authenticate to Google Cloud
+      - uses: google-github-actions/auth@v3
         id: auth
-        uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
-
       - name: Install document and image tools
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
           python -m pip install --upgrade pip
           python -m pip install pillow pillow-heif requests
-
       - name: Ingest new broker reports
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -54,8 +39,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
         run: python scripts/update_reports_drive.py
-
-      - name: Extract Taiwan rating adjustments
+      - name: Extract Taiwan rating adjustments (original behavior)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           DRIVE_FOLDER_ID: 1HCAfe0ohQIucD0ob3ziLI_JgePh0Uy9L
@@ -65,44 +49,27 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
         run: python scripts/update_tw_ratings.py
-
-      - name: AI summarize broker reports
+      - name: AI summarize and extract quarterly EPS in the same one-shot API request
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_REPORT_MODEL: gpt-5.6-luna
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
-        run: python scripts/update_reports_ai.py
-
+        run: python scripts/update_reports_ai_eps.py
       - name: Fix upgrade and downgrade classification
         run: python scripts/fix_report_actions.py
-
-      - name: Commit report data
+      - name: Commit report data (no second API request)
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add \
-            data/report_inbox.json \
-            data/processed_reports.json \
-            data/reports.json \
-            data/report_company_registry.json \
-            data/tw_ratings.json \
-            data/tw_ratings_state.json
-
-          if git diff --cached --quiet; then
-            echo "No report changes"
-            exit 0
-          fi
-
+          git add data/report_inbox.json data/processed_reports.json data/reports.json data/report_company_registry.json data/tw_ratings.json data/tw_ratings_state.json
+          if git diff --cached --quiet; then echo "No report changes"; exit 0; fi
           git commit -m "Update broker reports"
-
-          # Retry publication only, never rerun paid calls or notifications.
           python - <<'PY'
           import sys
-          sys.path.insert(0, "scripts")
+          sys.path.insert(0,'scripts')
           from update_reports_ai import push_report_commits
           push_report_commits()
           PY
