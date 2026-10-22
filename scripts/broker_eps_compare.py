@@ -2,7 +2,7 @@
 """Evidence-dated EPS comparison; offline, deterministic, no paid calls.
 
 Only actual EPS with an explicit, verified announcement date may match a
-broker report whose date is strictly earlier. Never derive a disclosure date
+broker report whose date is earlier than or equal to. Never derive a disclosure date
 from a fiscal period, file mtime, or a scheduled board meeting.
 """
 from __future__ import annotations
@@ -92,13 +92,13 @@ def compare(root=ROOT):
     matches = {}
     audit = {'forecasts': len(forecasts), 'valid_forecasts': sum(map(len, by_key.values())),
              'dated_actuals': 0, 'potential_same_ticker_period': 0,
-             'excluded_late_or_same_day': 0, 'matches': 0}
+             'excluded_late': 0, 'matches': 0}
     for a in actuals(data):
         audit['dated_actuals'] += 1
         for f, report_day, estimate in by_key.get((a['ticker'], a['period']), []):
             audit['potential_same_ticker_period'] += 1
-            if report_day >= a['announcement_date']:
-                audit['excluded_late_or_same_day'] += 1
+            if report_day > a['announcement_date']:
+                audit['excluded_late'] += 1
                 continue
             rid = str(f['report_id'])
             key = (a['ticker'], a['kind'], a['actual_period'], a['announcement_date'], a['actual_eps'], rid)
