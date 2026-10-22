@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       backfill_zero_eps:
-        description: "One-time retry for PDFs previously yielding zero EPS"
+        description: "Legacy input (no automatic historical reprocessing)"
         type: boolean
         default: false
   schedule:
@@ -54,6 +54,7 @@ jobs:
         run: |
           python scripts/test_broker_eps_parser.py -v
           python -m unittest discover -s scripts -p test_broker_eps_structured.py -v
+          python -m unittest discover -s scripts -p test_eps_fix.py -v
       - name: Select only unprocessed PDFs
         run: |
           python scripts/incremental_broker_eps.py prepare
@@ -68,7 +69,7 @@ jobs:
           from pathlib import Path
           path=Path('data/broker_eps_new_reports.json')
           n=len(json.loads(path.read_text()).get('items',[]))
-          print(f'New reports: {n}')
+          print(f'Truly new reports: {n}')
           PY
           if [ "$(cat data/broker_eps_new_count.txt)" -gt 0 ]; then
             python scripts/test_broker_eps_pdf.py --source data/broker_eps_new_reports.json --output data/broker_eps_pdf_test.json --audit data/broker_eps_audit_new.json --limit 0
@@ -76,6 +77,8 @@ jobs:
             python scripts/broker_eps_retry_finalize.py
             python scripts/publish_broker_eps_comparison.py --merge-existing
           fi
+      - name: Apply verified historical EPS corrections (no PDF / no AI)
+        run: python scripts/repair_verified_broker_eps.py
       - name: Audit actual Compare matches
         run: python scripts/broker_eps_compare_audit.py
       - name: Ensure UI registration
@@ -88,8 +91,6 @@ jobs:
           git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_compare_audit.json index.html
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update incremental broker EPS comparisons and audit'
-          # Disposable GitHub runner: all required outputs are already committed.
-          # Discard remaining generated/tracked changes before rebase.
           git reset --hard HEAD
           git clean -fd
           test -z "$(git status --porcelain)"
