@@ -85,6 +85,11 @@ jobs:
           git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_compare_audit.json index.html
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Update incremental broker EPS comparisons and audit'
+          # Disposable GitHub runner: all required outputs are already committed.
+          # Discard remaining generated/tracked changes before rebase.
+          git reset --hard HEAD
+          git clean -fd
+          test -z "$(git status --porcelain)"
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git rebase origin/main
