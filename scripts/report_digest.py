@@ -1,5 +1,6 @@
 """One Telegram notification per category; no AI calls or automatic retries."""
 import json
+import math
 import requests
 
 
@@ -35,8 +36,15 @@ def rating_entry(item):
             return f'{float(value):g}'
         except (ValueError, TypeError):
             return str(value)
-    line = f"{item.get('name') or ''} {item.get('ticker') or ''}｜{item.get('broker') or '券商'}｜{action}{kind}"
+    line = f"📌 {item.get('name') or ''} {item.get('ticker') or ''}｜{item.get('broker') or '券商'}｜{action}{kind}"
     line += f"\n目標價 {number(item.get('target_price_old'))} → {number(item.get('target_price_new'))}"
+    try:
+        pct = float(item.get('potential_upside_pct'))
+        if math.isfinite(pct):
+            line += f"（潛在{'漲' if pct >= 0 else '跌'}幅 {pct:+.1f}%）"
+    except (TypeError, ValueError):
+        pass
     if item.get('rating'):
         line += f"｜評等 {item['rating']}"
     return line
+

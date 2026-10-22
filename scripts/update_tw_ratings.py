@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import os
 import re
 from datetime import datetime
@@ -196,11 +197,13 @@ def analyze_image(raw, mime_type, filename):
 1. 讀取圖片右上角或表頭的當日日期，sheet_date 用 YYYY-MM-DD
 2. 只擷取「當日且黃色底」的資料列，白底舊日期全部忽略
 3. 目標價調整區：New > Old 為 upgrade；New < Old 為 downgrade；New = Old 不輸出；kind=target_price
-4. 評等調整區：Upgrade 為 upgrade；Downgrade 為 downgrade；kind=rating；同列 Old/New TP 也保留
+4. 評等調整區：Upgrade 為 upgrade；Downgrade 為 downgrade；kind=rating；同列 Old/New TP 也保留。即使 Old=New 或 Old 為 NA 也必須輸出，不得因目標價未變而省略升降評
 5. 只輸出上下調，不輸出未變動列
 6. broker、公司名稱、股票代號、Old TP、New TP 必須精確
 7. rating 填圖上可見文字，例如 Neutral、Buy、Sell、Downgrade to Neutral
 8. 不得補圖片以外資訊
+9. potential_upside_pct 擷取該列「潛在幅度／Potential／Upside」欄百分比，保留負號，例如 -18.2；未提供或無法辨識填 null。這不是 (New/Old-1)，不得用目標價調整幅度代替
+10. 分別檢查目標價調整區及評等調整區的當日黃色資料列，確保所有符合條件的列都輸出；不得遺漏下方評等調整區
 
 只輸出 JSON：
 {{
@@ -216,7 +219,8 @@ def analyze_image(raw, mime_type, filename):
       "action": "upgrade",
       "rating": "Neutral",
       "target_price_old": 56,
-      "target_price_new": 61
+      "target_price_new": 61,
+      "potential_upside_pct": null
     }}
   ]
 }}
@@ -287,15 +291,8 @@ def send_telegram(item):
     old_tp = item.get("target_price_old")
     new_tp = item.get("target_price_new")
 
-    lines = [
-        f"{broker} {action} {name} {ticker}",
-        f"{kind}｜目標價：{old_tp:g} → {new_tp:g}",
-    ]
-
-    if item.get("rating"):
-        lines.append(
-            f"評等：{item['rating']}"
-        )
+    from report_digest import rating_entry
+    lines = [rating_entry(item)]
 
     key = (
         item.get("notification_key")
@@ -381,15 +378,26 @@ def normalize_item(x, sheet_date, source):
         if v is None:
             return None
         try:
-            return float(v)
+            value = float(str(v).replace(',', '').strip())
+            return value if math.isfinite(value) and value > 0 else None
         except Exception:
             return None
 
     old_tp = price(x.get("target_price_old"))
     new_tp = price(x.get("target_price_new"))
 
-    if old_tp is None or new_tp is None or old_tp == new_tp:
-        return None
+    if kind == 'target_price':
+        if old_tp is None or new_tp is None or old_tp == new_tp:
+            return None
+        action = 'upgrade' if new_tp > old_tp else 'downgrade'
+    # Rating changes remain valid with unchanged or unavailable targets.
+    raw_pct = x.get('potential_upside_pct')
+    try:
+        pct = float(str(raw_pct).replace('%', '').replace('％', '').replace('−', '-').strip())
+        if not math.isfinite(pct):
+            pct = None
+    except (TypeError, ValueError):
+        pct = None
 
     item = {
         "date": sheet_date,
@@ -401,6 +409,7 @@ def normalize_item(x, sheet_date, source):
         "rating": str(x.get("rating") or "").strip(),
         "target_price_old": old_tp,
         "target_price_new": new_tp,
+        "potential_upside_pct": pct,
         "source_file_id": source.get("id"),
         "source_name": source.get("name"),
     }
@@ -425,11 +434,41 @@ def mark_inbox_rating(file_id):
         save_json(INBOX_PATH, inbox)
 
 
+def repair_saved_oct22(data):
+    """Source-locked transcription from the supplied image; no AI or notification."""
+    file_id = '1r_m5L4_LYB-qWZePpS2WDY85Q3havLLK'
+    if (data.get('source_file_id') != file_id or data.get('date') != '2026-10-22'
+            or data.get('local_repair_version') == 'oct22-ratings-v1'):
+        return False
+    source = {'id': file_id, 'name': data.get('source_name', 'IMG_1316.JPG')}
+    pct_by_ticker = {'2610':17.9, '3037':45.5, '3293':27.9, '3324':41.8, '6669':70.2, '8046':4.5}
+    for item in data.get('items', []):
+        if item.get('source_file_id') == file_id and item.get('ticker') in pct_by_ticker:
+            item['potential_upside_pct'] = pct_by_ticker[item['ticker']]
+            if item['ticker'] == '3293':
+                item['name'] = '鈊象'
+    for ticker, name, broker, rating, old, new, pct in [
+        ('2308', '台達電', 'Morningstar', 'Upgrade to Hold', 1330, 1330, -18.2),
+        ('5483', '中美晶', 'Morningstar', 'Upgrade to Buy', 235, 235, 18.1),
+        ('6757', '台灣虎航', 'SinoPac', 'Upgrade to Buy', None, 62, 17.6),
+    ]:
+        if not any(x.get('ticker') == ticker and x.get('broker') == broker and x.get('kind') == 'rating' for x in data.get('items', [])):
+            item = normalize_item(dict(ticker=ticker, name=name, broker=broker, rating=rating,
+                action='upgrade', kind='rating', target_price_old=old, target_price_new=new,
+                potential_upside_pct=pct), '2026-10-22', source)
+            data.setdefault('items', []).append(item)
+    data['local_repair_version'] = 'oct22-ratings-v1'
+    data['updated_at'] = now_tpe()
+    return True
+
+
 def main():
     state = load_json(STATE_PATH, {"processed_file_ids": [], "telegram_ids": []})
     processed = set(state.get("processed_file_ids", []))
     telegram_sent = set(state.get("telegram_ids", []))
     existing = load_json(DATA_PATH, {"date": "", "items": []})
+    if repair_saved_oct22(existing):
+        save_json(DATA_PATH, existing)
 
     files = [
         x for x in walk_folder(ROOT_FOLDER_ID)
@@ -478,6 +517,7 @@ def main():
                 "source_url": item.get("webViewLink"),
                 "items": items,
             }
+            repair_saved_oct22(candidate)
 
             if newest_result is None or sheet_date > newest_result.get("date", ""):
                 newest_result = candidate
@@ -528,3 +568,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
