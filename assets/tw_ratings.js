@@ -46,9 +46,13 @@
       : "目標價調整";
 
   function rowHtml(x) {
+    const hasPrice = v => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
+    const priceDown = hasPrice(x.target_price_old) && hasPrice(x.target_price_new)
+      && Number(x.target_price_new) < Number(x.target_price_old);
+    const negativePotential = hasPrice(x.potential_upside_pct) && Number(x.potential_upside_pct) < 0;
     return `
       <div
-        class="tw-rating-card ${actionClass(x.action)}"
+        class="tw-rating-card ${actionClass(x.action)} ${priceDown || negativePotential ? "has-negative" : ""}"
         data-rating-key="${esc(x.notification_key || "")}"
       >
         <div class="tw-rating-top">
@@ -58,7 +62,7 @@
             </div>
 
             <div class="tw-rating-stock">
-              <b>${esc(x.name || "")}</b>
+              <b>📌 ${esc(x.name || "")}</b>
               <span>${esc(x.ticker || "")}</span>
             </div>
           </div>
@@ -77,11 +81,13 @@
           }
         </div>
 
-        <div class="tw-rating-target">
-          <span>目標價</span>
+        <div class="tw-rating-target ${priceDown ? "target-down" : ""}">
+          <span>${priceDown ? "▼ 下調目標價" : "目標價"}</span>
           <b>${num(x.target_price_old)}</b>
           <i>→</i>
           <strong>${num(x.target_price_new)}</strong>
+          ${x.potential_upside_pct != null && Number.isFinite(Number(x.potential_upside_pct))
+            ? `<span class="tw-rating-potential ${negativePotential ? "potential-negative" : ""}">（${negativePotential ? "▼ " : ""}潛在${Number(x.potential_upside_pct) >= 0 ? "漲" : "跌"}幅 ${Number(x.potential_upside_pct) >= 0 ? "+" : ""}${Number(x.potential_upside_pct).toFixed(1)}%）</span>` : ""}
         </div>
       </div>
     `;
@@ -278,3 +284,4 @@
     boot();
   }
 })();
+
