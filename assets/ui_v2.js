@@ -1,3 +1,16 @@
+function epsNewsSourceNote(x) {
+  if (x.source !== "news_backup") return "";
+  const esc = v => String(v || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  let link = "";
+  try {
+    const u = new URL(x.source_url);
+    if (u.protocol === "https:" && u.hostname === "news.google.com") {
+      link = ' · <a href="' + esc(u.href) + '" target="_blank" rel="noopener noreferrer">查看新聞</a>';
+    }
+  } catch (_) {}
+  return '<div class="muted" style="margin:8px 0">' + esc(x.source_label || "新聞備援") + '｜待官方公告核對' + link + '</div>';
+}
+
 const featureItems = [
   ["heat", "市場熱力圖", "heat", "red", "19族群・5分鐘"],
   ["selfReports", "自結公布", "earnings", "amber", "每30分鐘"],
@@ -1376,6 +1389,8 @@ async function selfReports(force = false) {
               </span>
 
             </div>
+
+            ${epsNewsSourceNote(x)}
 
             <div
               class="metric-grid"
@@ -2927,4 +2942,5 @@ console.log(
   }
   schedule();
 })();
+
 

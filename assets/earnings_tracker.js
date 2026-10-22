@@ -442,9 +442,12 @@ function upcomingHTML(arr) {
 
 function reportItem(x) {
   const estimated = [x.eps_basis, x.prev_eps_basis].includes("cumulative_difference");
+  const news = x.eps_basis === "news_reported_single";
+  const newsSource = x.eps_news_source || x;
   return `<article class="earnings-report-row">
     <div class="earnings-result-head"><div class="earnings-company"><b>${esc(x.name || x.ticker)}</b><span>${esc(x.ticker)}</span></div>
     <span class="earnings-period">公布 ${esc(fmtFull(x.publish_date))}</span></div>
+    ${news ? '<p class="earnings-note">新聞備援 EPS｜待官方資料核對</p>' : ''}
     <div class="earnings-detail four">
       <div><small>本季 EPS · ${esc(x.period)}</small><b>${n2(x.eps)} 元</b></div>
       <div><small>本季毛利率 · ${esc(x.period)}</small><b>${pct(x.gross_margin)}</b></div>
@@ -452,9 +455,10 @@ function reportItem(x) {
       <div><small>上一季毛利率 · ${esc(x.prev_period)}</small><b>${pct(x.prev_gross_margin)}</b></div>
     </div>
     ${x.data_status === "pending_financial_data" ? '<p class="earnings-note">已公布財報，部分數值待官方資料補齊；「—」不代表 0</p>' : ''}
-    ${x.release_type === "quarterly_preliminary" ? '<p class="earnings-note">公司官方季度初步業績（自結／未核閱），非正式核閱財報</p>' : ''}
+    ${x.release_type === "quarterly_preliminary" ? '<p class="earnings-note">季度初步業績（自結／未核閱），非正式核閱財報</p>' : ''}
     ${estimated ? '<p class="earnings-note">EPS 含累計差額推算值，若股本或加權平均股數改變，可能與公告單季 EPS 不同</p>' : ''}
     <details class="earnings-source"><summary>公告內容與資料來源</summary><p>${esc(x.subject)}</p>
+    ${news && /^https:\/\/news\.google\.com\//.test(newsSource.source_url || '') ? `<a href="${esc(newsSource.source_url)}" target="_blank" rel="noopener">${esc(newsSource.source_label || "新聞備援來源")} ↗</a>` : ''}
     ${/^https:\/\/(?:(?:mops|mopsov)\.twse\.com\.tw|www\.largan\.com\.tw)\//.test(x.source_url || '') ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">${esc(x.source_label || "官方資料來源")} ↗</a>` : ''}</details>
   </article>`;
 }
@@ -1248,5 +1252,6 @@ window.refreshQuarterlyReports =
   };
 
 })();
+
 
 
