@@ -1,105 +1,127 @@
 #!/usr/bin/env python3
-"""Compare brokerage forecasts only with dated, verifiable actual EPS disclosures.
-No network, AI, PDF reparse, or paid calls. Never infer release date from fiscal period.
+"""Evidence-dated EPS comparison; offline, deterministic, no paid calls.
+
+Only actual EPS with an explicit, verified announcement date may match a
+broker report whose date is strictly earlier. Never derive a disclosure date
+from a fiscal period, file mtime, or a scheduled board meeting.
 """
+from __future__ import annotations
 import json
+import math
 import re
 from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-Q = re.compile(r'^20\d{2}-Q[1-4]$')
-M = re.compile(r'^20\d{2}-(0[1-9]|1[0-2])$')
+QUARTER = re.compile(r'^20\d{2}-Q[1-4]$')
+MONTH = re.compile(r'^20\d{2}-(?:0[1-9]|1[0-2])$')
+TICKER = re.compile(r'^\d{4}$')
 
-def read(path, default):
-    return json.loads(path.read_text(encoding='utf-8')) if path.exists() else default
+def load(path, default):
+    return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else default
 
 def valid_date(value):
+    s = str(value or '')[:10]
     try:
-        s = str(value or '')[:10]
         date.fromisoformat(s)
         return s
-    except (TypeError, ValueError):
+    except ValueError:
         return ''
 
+def number(value):
+    if isinstance(value, bool) or value is None or str(value).strip() == '':
+        return None
+    try:
+        n = float(value)
+        return n if math.isfinite(n) else None
+    except (ValueError, TypeError):
+        return None
+
 def actuals(data):
-    # History retains self reports after the live cards have rolled off.
-    # Deduplicate repeated announcements across current and historical feeds.
+    """All verifiably dated monthly/quarterly announcements, including history."""
     seen = set()
-    for filename in ('self_reports.json', 'self_reports_history.json'):
-        for r in read(data / filename, {'items': []}).get('items', []):
+    sources = (
+        ('self_reports.json', 'items'),
+        ('self_reports_history.json', 'items'),
+        ('quarterly_earnings.json', 'reports'),
+        ('quarterly_earnings_announcements_history.json', 'items'),
+    )
+    for filename, key in sources:
+        for r in load(data / filename, {}).get(key, []):
             ticker = str(r.get('ticker') or '')
-            month = str(r.get('monthly_period') or '')
             day = valid_date(r.get('publish_date'))
-            value = r.get('monthly_eps')
-            if not (re.fullmatch(r'\d{4}', ticker) and M.fullmatch(month) and day and value is not None):
+            if not TICKER.fullmatch(ticker) or not day:
                 continue
-            key = ('monthly', ticker, month, day)
-            if key in seen:
-                continue
-            seen.add(key)
-            yield r, f'{month[:4]}-Q{(int(month[5:])-1)//3+1}', 'monthly', month, value, day
-    # Only quarterly disclosures with their own actual announcement date.
-    # The quarterly_earnings_history cumulative financial statement has no
-    # disclosure timestamp, so it must NOT be treated as a dated release.
-    for r in read(data / 'quarterly_earnings.json', {'reports': []}).get('reports', []):
-        ticker = str(r.get('ticker') or '')
-        period = str(r.get('period') or '')
-        day = valid_date(r.get('publish_date'))
-        value = r.get('eps')
-        if not (re.fullmatch(r'\d{4}', ticker) and Q.fullmatch(period) and day and value is not None):
-            continue
-        key = ('quarterly', ticker, period, day)
-        if key in seen:
-            continue
-        seen.add(key)
-        yield r, period, 'quarterly', period, value, day
+            candidates = []
+            if filename.startswith('self_reports'):
+                month = str(r.get('monthly_period') or '')
+                if MONTH.fullmatch(month):
+                    period = f'{month[:4]}-Q{(int(month[5:])-1)//3+1}'
+                    candidates.append(('monthly', month, period, number(r.get('monthly_eps'))))
+                # A self-report may also explicitly disclose last quarter's EPS.
+                # Its own publication date, not the financial period, is used.
+                qp = str(r.get('quarter_period') or '')
+                if QUARTER.fullmatch(qp):
+                    candidates.append(('quarterly', qp, qp, number(r.get('quarter_eps'))))
+            else:
+                qp = str(r.get('period') or '')
+                if QUARTER.fullmatch(qp):
+                    candidates.append(('quarterly', qp, qp, number(r.get('eps'))))
+            for kind, actual_period, period, eps in candidates:
+                if eps is None:
+                    continue
+                ident = (ticker, kind, actual_period, day, eps)
+                if ident in seen:
+                    continue
+                seen.add(ident)
+                yield {'ticker': ticker, 'name': r.get('name') or '', 'kind': kind,
+                       'actual_period': actual_period, 'period': period,
+                       'announcement_date': day, 'actual_eps': eps,
+                       'actual_source': filename}
 
 def compare(root=ROOT):
     data = root / 'data'
-    forecasts = read(data / 'broker_eps_forecasts.json', {'items': []}).get('items', [])
+    forecasts = load(data / 'broker_eps_forecasts.json', {'items': []}).get('items', [])
     by_key = {}
     for f in forecasts:
         ticker, period = str(f.get('ticker') or ''), str(f.get('period') or '')
-        report_date = valid_date(f.get('report_date'))
-        try:
-            eps = float(f.get('eps'))
-        except (TypeError, ValueError):
+        day, eps = valid_date(f.get('report_date')), number(f.get('eps'))
+        if not TICKER.fullmatch(ticker) or not QUARTER.fullmatch(period) or not day or eps in (None, 0) or not f.get('report_id'):
             continue
-        if not (re.fullmatch(r'\d{4}', ticker) and Q.fullmatch(period) and report_date and eps != 0):
-            continue
-        by_key.setdefault((ticker, period), []).append((f, report_date, eps))
+        by_key.setdefault((ticker, period), []).append((f, day, eps))
     matches = {}
-    for a, period, kind, actual_period, value, published in actuals(data):
-        ticker = str(a['ticker'])
-        try:
-            actual_eps = float(value)
-        except (TypeError, ValueError):
-            continue
-        for f, report_date, forecast_eps in by_key.get((ticker, period), []):
-            if report_date >= published:
-                continue  # No same-day comparison without verified intraday order.
-            rid = str(f.get('report_id') or '')
-            if not rid:
+    audit = {'forecasts': len(forecasts), 'valid_forecasts': sum(map(len, by_key.values())),
+             'dated_actuals': 0, 'potential_same_ticker_period': 0,
+             'excluded_late_or_same_day': 0, 'matches': 0}
+    for a in actuals(data):
+        audit['dated_actuals'] += 1
+        for f, report_day, estimate in by_key.get((a['ticker'], a['period']), []):
+            audit['potential_same_ticker_period'] += 1
+            if report_day >= a['announcement_date']:
+                audit['excluded_late_or_same_day'] += 1
                 continue
-            key = (kind, actual_period, ticker, published, rid)
+            rid = str(f['report_id'])
+            key = (a['ticker'], a['kind'], a['actual_period'], a['announcement_date'], a['actual_eps'], rid)
             matches[key] = {
-                'ticker': ticker, 'name': a.get('name') or '', 'period': period,
-                'actual_kind': kind, 'actual_period': actual_period,
-                'announcement_date': published, 'actual_eps': actual_eps,
-                'broker': f.get('broker') or '', 'report_date': report_date,
-                'report_id': rid, 'forecast_eps': forecast_eps,
-                'ratio_pct': round(actual_eps / forecast_eps * 100, 1),
-                'ratio_label': '單月／季預估比' if kind == 'monthly' else '季度達成率',
-                'source_url': f.get('source_url') or ''
-            }
-    output = {'version': 2, 'items': sorted(matches.values(), key=lambda x: (x['ticker'], x['period'], x['actual_period'], x['report_date'], x['report_id']))}
-    path = data / 'broker_eps_comparisons.json'
-    path.parent.mkdir(parents=True, exist_ok=True)
-    content = json.dumps(output, ensure_ascii=False, indent=2) + '\n'
-    if not path.exists() or path.read_text(encoding='utf-8') != content:
-        path.write_text(content, encoding='utf-8')
-    print(f'Offline compare: {len(output["items"])} matches; API calls=0; PDF parses=0')
+                'ticker': a['ticker'], 'name': a['name'], 'period': a['period'],
+                'actual_kind': a['kind'], 'actual_period': a['actual_period'],
+                'announcement_date': a['announcement_date'], 'actual_eps': a['actual_eps'],
+                'broker': f.get('broker') or '', 'report_date': report_day,
+                'report_id': rid, 'forecast_eps': estimate,
+                'ratio_pct': round(a['actual_eps'] / estimate * 100, 1),
+                'ratio_label': '單月／季預估比' if a['kind'] == 'monthly' else '季度達成率',
+                'source_url': f.get('source_url') or '',
+                'actual_source': a['actual_source']}
+    output = {'version': 3, 'items': sorted(matches.values(), key=lambda x:
+              (x['ticker'], x['period'], x['actual_period'], x['announcement_date'], x['report_date'], x['report_id']))}
+    audit['matches'] = len(output['items'])
+    for filename, value in (('broker_eps_comparisons.json', output), ('broker_eps_compare_audit.json', audit)):
+        p = data / filename
+        content = json.dumps(value, ensure_ascii=False, indent=2) + '\n'
+        if not p.exists() or p.read_text(encoding='utf-8') != content:
+            p.write_text(content, encoding='utf-8')
+    print('EPS compare audit:', json.dumps(audit, ensure_ascii=False))
+    print('API calls=0; PDF parses=0')
     return output
 
 if __name__ == '__main__':
