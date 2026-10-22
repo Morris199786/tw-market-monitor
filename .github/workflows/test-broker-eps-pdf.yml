@@ -28,11 +28,11 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
-      - name: Install PDF text extractor
+      - name: Install PDF text and coordinate extractors
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y poppler-utils
-          python -m pip install requests
+          python -m pip install requests pdfplumber
       - name: Test 10 original broker PDFs (no AI / no Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
