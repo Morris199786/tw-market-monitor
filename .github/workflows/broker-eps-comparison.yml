@@ -57,9 +57,16 @@ jobs:
           git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json
           if git diff --cached --quiet; then echo 'No EPS changes'; exit 0; fi
           git commit -m 'Publish broker EPS comparisons offline'
+          # The publisher may touch other tracked files. Those uncommitted
+          # changes must not block rebase or accidentally enter the commit.
+          git restore --worktree .
           for attempt in 1 2 3 4 5; do
             git fetch origin main
-            git rebase origin/main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo 'Rebase conflict; refusing to overwrite upstream changes'
+              exit 1
+            fi
             if git push origin HEAD:main; then exit 0; fi
             sleep 3
           done
