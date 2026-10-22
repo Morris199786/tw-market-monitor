@@ -69,6 +69,26 @@ class BrokerEpsParserTests(unittest.TestCase):
         self.assertEqual(len(safe),1)
         self.assertEqual(safe[0]['eps'],15.60)
         self.assertFalse(review)
+    def test_layout_mixed_annual_gis(self):
+        t="""1Q26       2Q26    3Q26E    4Q26F      FY25    FY26E    FY27F
+Revenue     100 200 300 400 500 600 700
+EPS                   -0.61    -3.14      -0.10     0.61    -0.79    -3.25     3.28
+"""
+        rows,_=p.layout_block_extract(t)
+        self.assertEqual([(r['period'],r['eps']) for r in rows],[('2026-Q3',-0.1),('2026-Q4',0.61)])
+
+    def test_layout_side_by_side_tenghui(self):
+        t="""1Q26F        2Q26                     3Q26F         4Q26F      Year-end Dec. 31         FY24       FY25                   FY26 F         FY27 F
+Revenue 100 200 300 400
+EPS                        1.73      2.96                        4.38          6.04   Capex                      -86      -326                     -326           -326
+"""
+        rows,_=p.layout_block_extract(t)
+        self.assertEqual([(r['period'],r['eps']) for r in rows],[('2026-Q1',1.73),('2026-Q3',4.38),('2026-Q4',6.04)])
+
+    def test_layout_no_forecast_header_no_guess(self):
+        rows,_=p.layout_block_extract('1Q26 2Q26 3Q26 4Q26\nEPS 1 2 3 4')
+        self.assertEqual(rows,[])
+
     def test_same_kind_conflict_is_rejected(self):
         rows=[{'period':'2026-Q3','eps':15.60,'eps_kind':'diluted','method':'text'},
               {'period':'2026-Q3','eps':15.70,'eps_kind':'diluted','method':'text'}]

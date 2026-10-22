@@ -436,6 +436,68 @@ def geometry_extract(pdf_path,report_date):
     for row in found:unique.setdefault((row['period'],row['eps'],row['method'],row['page']),row)
     return list(unique.values()),review
 
+def layout_block_extract(text):
+    """Parse pdftotext -layout EPS tables by ordered cells within one block.
+
+    The EPS row may contain a second, side-by-side financial table. In that
+    case stop at the first non-EPS label (e.g. Capex), never align its numbers.
+    Annual FY columns occupy positions but are never returned as quarters.
+    """
+    found, review = [], []
+    other_table = re.compile(r'\s{2,}(?:Capex|Cash flow|Cash dividend|Total liability|Total assets|Balance sheet|Ratio Analysis|Operating cash|Change in|Net cash|Long.term debt)\b', re.I)
+    fy = re.compile(r'(?<![A-Za-z0-9])FY\s*(?:20\d{2}|\d{2})\s*(?:\(?[EFAP]\)?)?(?![A-Za-z0-9])', re.I)
+    for page_no, page in enumerate(text.split('\f'), 1):
+        lines = page.splitlines()
+        for i, row in enumerate(lines):
+            label = re.match(r'^\s*(?:EPS|E\.?P\.?S\.?|每股(?:稅後)?(?:盈餘|純益|收益))\s*(?:\(\s*(?:NT\$|元)\s*\))?\s+', row, re.I)
+            if not label or SKIP.search(row):
+                continue
+            # A side-by-side table's values must never be interpreted as EPS.
+            cut = other_table.search(row, label.end())
+            eps_segment = row[:cut.start()] if cut else row
+            values = [parse_number(m.group()) for m in NUM.finditer(eps_segment, label.end())]
+            values = [v for v in values if v is not None]
+            if len(values) < 2:
+                continue
+            candidates = []
+            for hi in range(max(0, i-14), i):
+                header = lines[hi]
+                qms = list(Q.finditer(header))
+                if len(qms) < 2 or not any(is_forecast(m) for m in qms):
+                    continue
+                # Header must be a tabular line, not a sentence mentioning quarters.
+                if not re.match(r'^\s*(?:[1-4]\s*Q|Q\s*[1-4]|20\d{2}\s*Q|\d{2}\s*Q)', header, re.I):
+                    continue
+                annual = list(fy.finditer(header))
+                ncols = len(qms) + len(annual)
+                # Without a second table, all visible quarter/annual cells must
+                # be accounted for. With a side-by-side table, EPS can occupy
+                # only the quarter half of the header.
+                if len(values) != ncols and not (cut and len(values) == len(qms)):
+                    continue
+                candidates.append((hi, qms, annual))
+            if not candidates:
+                continue
+            hi, qms, annual = max(candidates, key=lambda x: x[0])
+            columns = sorted([(m.start(), 'quarter', m) for m in qms] +
+                             [(m.start(), 'annual', m) for m in annual], key=lambda x: x[0])
+            if len(values) == len(qms) and cut:
+                columns = [(m.start(), 'quarter', m) for m in qms]
+            if len(columns) != len(values):
+                continue
+            for (_, kind, m), val in zip(columns, values):
+                if kind != 'quarter' or not is_forecast(m):
+                    continue
+                found.append({'period':period(m), 'eps':val,
+                    'method':'pdf_layout_block', 'classification':'forecast',
+                    'page':page_no, 'header':lines[hi].strip()[:240],
+                    'eps_row':row.strip()[:240], 'eps_kind':'generic'})
+    unique = {}
+    for r in found:
+        unique.setdefault((r['period'], r['eps'], r['page']), r)
+    return list(unique.values()), review
+
+
 def reconcile_results(primary, coordinate, review):
     """Keep one EPS definition per quarter; prefer after-tax/diluted over basic.
 
@@ -445,6 +507,13 @@ def reconcile_results(primary, coordinate, review):
     grouped=defaultdict(list)
     for r in primary+coordinate:
         grouped[r['period']].append(r)
+    # A complete EPS table with explicit forecast-quarter headers is stronger
+    # evidence than a remote narrative/coordinate guess. Do not let the latter
+    # erase a safely aligned table cell for the same period.
+    for quarter, records in list(grouped.items()):
+        verified=[r for r in records if r.get('method')=='pdf_layout_block']
+        if verified:
+            grouped[quarter]=verified
     safe=[]
     for quarter,records in grouped.items():
         priorities=[eps_priority(r.get('eps_kind','generic')) for r in records]
@@ -551,6 +620,9 @@ def run(args):
                     coords,coord_review=coordinate_extract(pdf,report.get('date'))
                     geo,geo_review=geometry_extract(pdf,report.get('date'))
                     coords.extend(geo)
+                    layout,layout_review=layout_block_extract(proc.stdout)
+                    coords.extend(layout)
+                    coord_review.extend(layout_review)
                     coord_review.extend(geo_review)
                     review.extend(coord_review)
                     # Plain-text parser may label historical quarters as forecasts only
