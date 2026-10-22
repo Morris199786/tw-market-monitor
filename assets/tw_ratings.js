@@ -21,12 +21,9 @@
     const n = Number(v);
 
     return Number.isFinite(n)
-      ? n.toLocaleString(
-          "zh-TW",
-          {
-            maximumFractionDigits: 2
-          }
-        )
+      ? n.toLocaleString("zh-TW", {
+          maximumFractionDigits: 2
+        })
       : esc(v);
   }
 
@@ -46,13 +43,40 @@
       : "目標價調整";
 
   function rowHtml(x) {
-    const hasPrice = v => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
-    const priceDown = hasPrice(x.target_price_old) && hasPrice(x.target_price_new)
-      && Number(x.target_price_new) < Number(x.target_price_old);
-    const negativePotential = hasPrice(x.potential_upside_pct) && Number(x.potential_upside_pct) < 0;
+    const hasPrice = v =>
+      v !== null &&
+      v !== undefined &&
+      v !== "" &&
+      Number.isFinite(Number(v));
+
+    const priceDown =
+      hasPrice(x.target_price_old) &&
+      hasPrice(x.target_price_new) &&
+      Number(x.target_price_new) <
+        Number(x.target_price_old);
+
+    const negativePotential =
+      hasPrice(x.potential_upside_pct) &&
+      Number(x.potential_upside_pct) < 0;
+
+    const isNegative =
+      priceDown ||
+      negativePotential ||
+      x.action === "downgrade";
+
+    const cardClass =
+      isNegative
+        ? "is-down has-negative"
+        : actionClass(x.action);
+
+    const displayAction =
+      isNegative
+        ? "is-down"
+        : actionClass(x.action);
+
     return `
       <div
-        class="tw-rating-card ${actionClass(x.action)} ${priceDown || negativePotential ? "has-negative" : ""}"
+        class="tw-rating-card ${cardClass}"
         data-rating-key="${esc(x.notification_key || "")}"
       >
         <div class="tw-rating-top">
@@ -62,12 +86,12 @@
             </div>
 
             <div class="tw-rating-stock">
-              <b>📌 ${esc(x.name || "")}</b>
+              <b>${esc(x.name || "")}</b>
               <span>${esc(x.ticker || "")}</span>
             </div>
           </div>
 
-          <div class="tw-rating-action ${actionClass(x.action)}">
+          <div class="tw-rating-action ${displayAction}">
             ${actionText(x.action)}
           </div>
         </div>
@@ -81,55 +105,68 @@
           }
         </div>
 
-        <div class="tw-rating-target ${priceDown ? "target-down" : ""}">
-          <span>${priceDown ? "▼ 下調目標價" : "目標價"}</span>
+        <div class="tw-rating-target ${isNegative ? "target-down" : ""}">
+          <span>
+            ${priceDown ? "▼ 下調目標價" : "目標價"}
+          </span>
+
           <b>${num(x.target_price_old)}</b>
+
           <i>→</i>
+
           <strong>${num(x.target_price_new)}</strong>
-          ${x.potential_upside_pct != null && Number.isFinite(Number(x.potential_upside_pct))
-            ? `<span class="tw-rating-potential ${negativePotential ? "potential-negative" : ""}">（${negativePotential ? "▼ " : ""}潛在${Number(x.potential_upside_pct) >= 0 ? "漲" : "跌"}幅 ${Number(x.potential_upside_pct) >= 0 ? "+" : ""}${Number(x.potential_upside_pct).toFixed(1)}%）</span>` : ""}
+
+          ${
+            x.potential_upside_pct != null &&
+            Number.isFinite(Number(x.potential_upside_pct))
+              ? `
+                <span class="tw-rating-potential ${
+                  isNegative ? "potential-negative" : ""
+                }">
+                  （${
+                    negativePotential ? "▼ " : ""
+                  }潛在${
+                    Number(x.potential_upside_pct) >= 0
+                      ? "漲"
+                      : "跌"
+                  }幅 ${
+                    Number(x.potential_upside_pct) >= 0
+                      ? "+"
+                      : ""
+                  }${Number(x.potential_upside_pct).toFixed(1)}%）
+                </span>
+              `
+              : ""
+          }
         </div>
       </div>
     `;
   }
 
   async function loadRatings() {
-    const status =
-      $("#twRatingsStatus");
+    const status = $("#twRatingsStatus");
+    const box = $("#twRatingsList");
 
-    const box =
-      $("#twRatingsList");
-
-    if (!box) {
-      return;
-    }
+    if (!box) return;
 
     let data = {};
 
     try {
-      const r =
-        await fetch(
-          "./data/tw_ratings.json?v="
-            + Date.now(),
-          {
-            cache: "no-store"
-          }
-        );
+      const r = await fetch(
+        "./data/tw_ratings.json?v=" + Date.now(),
+        {
+          cache: "no-store"
+        }
+      );
 
       if (!r.ok) {
-        throw new Error(
-          "HTTP " + r.status
-        );
+        throw new Error("HTTP " + r.status);
       }
 
-      data =
-        await r.json();
+      data = await r.json();
 
     } catch (e) {
-      console.error(
-        "tw ratings load failed",
-        e
-      );
+      console.error("tw ratings load failed", e);
 
       if (status) {
         status.textContent =
@@ -146,9 +183,7 @@
     }
 
     const items =
-      Array.isArray(
-        data.items
-      )
+      Array.isArray(data.items)
         ? data.items
         : [];
 
@@ -169,17 +204,13 @@
       return;
     }
 
-    const up =
-      items.filter(
-        x =>
-          x.action === "upgrade"
-      );
+    const up = items.filter(
+      x => x.action === "upgrade"
+    );
 
-    const down =
-      items.filter(
-        x =>
-          x.action === "downgrade"
-      );
+    const down = items.filter(
+      x => x.action === "downgrade"
+    );
 
     box.innerHTML = `
       ${
@@ -219,20 +250,14 @@
   }
 
   function setMode(mode) {
-    const reportList =
-      $("#reportList");
+    const reportList = $("#reportList");
+    const ratingsPanel = $("#twRatingsPanel");
 
-    const ratingsPanel =
-      $("#twRatingsPanel");
-
-    $$(
-      '[data-report-mode]'
-    ).forEach(
+    $$('[data-report-mode]').forEach(
       btn =>
         btn.classList.toggle(
           "active",
-          btn.dataset.reportMode
-            === mode
+          btn.dataset.reportMode === mode
         )
     );
 
@@ -246,36 +271,24 @@
         mode !== "ratings";
     }
 
-    if (
-      mode === "ratings"
-    ) {
+    if (mode === "ratings") {
       loadRatings();
     }
   }
 
   function boot() {
-    $$(
-      '[data-report-mode]'
-    ).forEach(
+    $$('[data-report-mode]').forEach(
       btn =>
         btn.addEventListener(
           "click",
-          () =>
-            setMode(
-              btn.dataset.reportMode
-            )
+          () => setMode(btn.dataset.reportMode)
         )
     );
 
-    setMode(
-      "reports"
-    );
+    setMode("reports");
   }
 
-  if (
-    document.readyState
-      === "loading"
-  ) {
+  if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
       boot
@@ -284,4 +297,3 @@
     boot();
   }
 })();
-
