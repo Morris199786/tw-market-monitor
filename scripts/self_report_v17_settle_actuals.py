@@ -12,6 +12,8 @@ def all_items(history):
     return history.get('items', []) + history.get('parse_failed', []) + history.get('diagnostics', {}).get('parse_failed', [])
 
 def attention(item):
+    if item.get('source') == 'news_backup':
+        return False  # News is not an official attention-trading announcement.
     subject = str(item.get('subject') or '')
     return bool(re.search(r'注意交易|注意股|達公[布佈]注意', subject))
 
@@ -62,4 +64,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

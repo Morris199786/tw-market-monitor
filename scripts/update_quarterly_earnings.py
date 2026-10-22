@@ -1,4 +1,5 @@
 from sources import *
+from eps_news_backup import current_items
 import os, re, html, math, unicodedata, time
 from html.parser import HTMLParser
 from urllib.parse import urlencode
@@ -883,6 +884,9 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
         if x.get('release_type')=='quarterly_preliminary': text+='\n公司公布之季度初步業績（自結／未核閱）'
+        if x.get('eps_news_source'):
+            text+='\nEPS 來源：新聞備援｜'+x['eps_news_source'].get('source_label','')
+            text+='\n'+x['eps_news_source'].get('source_url','')
         if x.get('source_url'): text+='\n'+x['source_url']
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
@@ -1120,6 +1124,10 @@ def main():
             if key in events:
                 events[key].update(released_metrics=x['released_metrics'],official_sources=x['official_sources'])
             else: events[key]=x
+    news_eps = {(x['ticker'],x['period']):x for x in current_items('quarterly',now) if x['ticker'] in uni}
+    for key,x in news_eps.items():
+        if key not in events and report_visible(x,now,calendars):
+            events[key] = dict(x, released_metrics={})
     # Both current and prior quarter need their preceding YTD period
     periods=set()
     for x in list(upcoming.values())+list(events.values()):
@@ -1143,7 +1151,15 @@ def main():
         if prevp in verified:
             prev.update({k:v for k,v in verified[prevp].items() if v is not None})
             if verified[prevp].get('eps') is not None: prev['eps_basis']='reported_single'
+        fallback = news_eps.get(key) or (dict(x) if x.get('source') == 'news_backup' else None)
         x.update(eps=cur['eps'],gross_margin=cur['gross_margin'],eps_basis=cur.get('eps_basis'),prev_period=prevp,prev_eps=prev['eps'],prev_gross_margin=prev['gross_margin'],prev_eps_basis=prev.get('eps_basis'))
+        if x['eps'] is None and fallback and fallback.get('eps') is not None:
+            x['eps'] = fallback['eps']
+            x['eps_basis'] = 'news_reported_single'
+            x['eps_news_source'] = {k:fallback.get(k) for k in ('source_label','source_url','evidence')}
+            x['source_label'] = 'EPS 新聞備援（其餘欄位沿用官方資料）'
+        elif x['eps'] is not None:
+            x.pop('eps_news_source', None)
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
         upcoming.pop(key,None)
     for x in upcoming.values():
@@ -1158,5 +1174,6 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 

@@ -1,4 +1,5 @@
 from sources import *
+from eps_news_backup import monthly_fallback
 
 import html
 import json
@@ -2012,7 +2013,7 @@ def commit_generated_data():
     """CAS-publish only this workflow's files, preserving unrelated updates."""
     paths = ["self_reports.json", "self_reports_history.json", "self_reports_sent.json",
              "quarterly_earnings.json", "quarterly_earnings_sent.json", "quarterly_earnings_history.json",
-             "quarterly_earnings_events.json", "quarterly_earnings_scan.json", "earnings_calendar.json"]
+             "quarterly_earnings_events.json", "quarterly_earnings_scan.json", "earnings_calendar.json", "eps_news_backup.json"]
     files = {"data/"+name:(ROOT/"data"/name).read_text(encoding="utf-8") for name in paths if (ROOT/"data"/name).exists()}
     if not files:
         return
@@ -2361,6 +2362,9 @@ def push_text(item):
                 )
             )
 
+    if item.get('source') == 'news_backup':
+        lines.append(item.get('source_label', '新聞備援'))
+        lines.append(item.get('source_url', ''))
     return "\n".join(lines)
 
 
@@ -2555,6 +2559,8 @@ def main():
 
     # 保留原本重新解析 history
     for item in all_candidates:
+        if item.get('source') == 'news_backup':
+            continue
         parse_text = "\n".join(
             x
             for x in (
@@ -2598,6 +2604,18 @@ def main():
     # Voluntary self-reports use only values published in the announcement.
     # Missing comparison / prior-quarter values remain unpublished.
 
+    # Official single-month data takes priority; news fills only missing company-periods.
+    official = [x for x in all_candidates if x.get('source') != 'news_backup']
+    occupied = {(x.get('ticker'), x.get('monthly_period')) for x in official if x.get('monthly_eps') is not None}
+    backup_by_period = {(x.get('ticker'),x.get('monthly_period')):x for x in all_candidates if x.get('source') == 'news_backup'}
+    for item in monthly_fallback(official):
+        key = (item['ticker'],item['monthly_period'])
+        # Preserve the first detected publication identity across repeat news syndication.
+        if key not in backup_by_period:
+            backup_by_period[key] = item
+            fresh.append(item)
+            saved[identity(item)] = item
+    all_candidates = official + [x for key,x in backup_by_period.items() if key not in occupied]
     all_candidates.sort(
         key=lambda item: (
             item.get(
@@ -2914,4 +2932,5 @@ if __name__ == "__main__":
         commit_generated_data()
     else:
         main()
+
 
