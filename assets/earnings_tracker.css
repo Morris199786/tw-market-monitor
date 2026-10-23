@@ -98,3 +98,17 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #earningsFinanceCalendar .self-cal-foot .self-cal-close{background:var(--ink);color:var(--bg)}
 .self-cal-month-pick{display:flex;gap:8px;margin-bottom:10px}
 .self-cal-month-pick select{min-width:0;flex:1;padding:8px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font:inherit}
+
+/* V7 統一搜尋日期區塊 */
+.tw-filter-card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:0 5px 22px rgba(0,0,0,.035);box-sizing:border-box;width:100%}
+#earningsCompanySearchWrap.tw-filter-card{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#earningsCompanySearchWrap.tw-filter-card[hidden]{display:none!important}
+#earningsCompanySearchWrap .earnings-date-picker{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 6px}
+#earningsCompanySearchWrap #earningsFinanceCalendar{width:min(230px,65%)}
+#earningsCompanySearchWrap #earningsCompanySearch{flex:1;min-width:0;width:auto}
+.tw-search-clear{flex-shrink:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:9px 12px;cursor:pointer}
+.tw-search-clear[hidden],#earningsFilters .earnings-quick[hidden]{display:none!important}
+#earningsFinanceCalendar .self-cal-day{position:relative}
+#earningsFinanceCalendar .self-cal-day i{position:absolute;bottom:3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#24bd76}
+#selfReportCalendarWidget .self-cal-foot{justify-content:space-between}
+@media(max-width:600px){#earningsCompanySearchWrap.tw-filter-card{padding:13px}#earningsCompanySearchWrap .earnings-date-picker{flex-wrap:wrap}#earningsCompanySearchWrap #earningsFinanceCalendar{width:100%}}
