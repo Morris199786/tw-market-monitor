@@ -851,11 +851,17 @@ def expiry_date(publish_date, calendars):
     return None
 
 
+def current_reporting_period(now):
+    # now is supplied in Asia/Taipei by the existing runner.
+    return f"{now.year-1}-Q4" if now.month <= 3 else f"{now.year}-Q{(now.month-1)//3}"
+
+
 def report_visible(event, now, calendars):
-    expiry=expiry_date(event['publish_date'],calendars)
-    event['expires_at']=expiry+'T18:00:00+08:00' if expiry else None
-    event['retention_status']='exchange_calendar' if expiry else 'calendar_unavailable'
-    return expiry is None or now.date().isoformat()<expiry or (now.date().isoformat()==expiry and now.hour<18)
+    event.pop('expires_at', None)
+    event['retention_status'] = 'reporting_quarter'
+    return (event.get('period') == current_reporting_period(now)
+            and bool(event.get('publish_date'))
+            and event['publish_date'] <= now.date().isoformat())
 
 
 def save_financial_history(by):
@@ -1108,6 +1114,13 @@ def main():
     old=load_json(OUT,{'upcoming':[],'reports':[]})
     # Persist all future events, independent of this week's view
     event_history=load_json(DATA/'quarterly_earnings_events.json',old)
+    # Recovery seed contains only previously captured announcement events.
+    # Live records override the seed; never replace current data with a snapshot.
+    seed=load_json(DATA/'quarterly_earnings_recovered.json',{'reports':[]})
+    merged_events={}
+    for row in seed.get('reports',[])+old.get('reports',[])+event_history.get('reports',[]):
+        merged_events[(row.get('ticker'),row.get('period'))]=dict(row)
+    event_history={**event_history,'reports':list(merged_events.values())}
     news=fetch_news()+historical_mops_news()+daily_mops_news()+cached_official_announcements(now)
     by=merge_history(financial_snapshot());upcoming={};events={};calendars={}
     ir_upcoming,ir_reports=largan_ir_events(uni,now)
@@ -1195,13 +1208,14 @@ def main():
         x.update(prev_period=pp,prev_eps=pm['eps'],prev_gross_margin=pm['gross_margin'])
     ups=sorted(upcoming.values(),key=lambda x:(x['planned_date'],x['ticker']))
     reports=sorted(events.values(),key=lambda x:(x['publish_date'],x.get('publish_time','')),reverse=True)
-    result=dict(universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='公告當日及下一交易日保留，下一交易日18:00移除；官方休市表排除假日')
+    result=dict(universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
     save_json(DATA/'quarterly_earnings_events.json',result)
     save_json(OUT,result)
     notify_earnings(ups, reports, now_tpe(), bool(SOURCE_ERRORS))
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
