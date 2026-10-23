@@ -52,3 +52,13 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsPanel .earnings-detail.four{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 #quarterlyEarningsPanel .earnings-detail small{line-height:1.5}
 @media(max-width:480px){#quarterlyEarningsPanel .earnings-result-head{align-items:flex-start;flex-direction:column}}
+
+/* 財報、自結歷史搜尋：日期欄位可切換年月 */
+.earnings-search-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.earnings-search-bar[hidden],.earnings-filters[hidden],.earnings-list[hidden]{display:none!important}
+.earnings-search-bar>input{flex:1 1 230px;min-width:0}
+.earnings-search-bar input{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
+.earnings-search-bar label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.earnings-search-bar button{padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.earnings-history-count{font-size:13px;color:var(--muted);padding:8px 3px}
+@media(max-width:600px){.earnings-search-bar>input{flex-basis:100%}.earnings-search-bar label{flex:1}}
