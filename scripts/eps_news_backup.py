@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / 'data/eps_news_backup.json'
 TZ = ZoneInfo('Asia/Taipei')
 HOSTS = ('moneydj.com', 'money-link.com.tw', 'cnyes.com', 'udn.com', 'yahoo.com', 'ctee.com.tw')
-PARSER_VERSION = 'single-period-v3-contextual-eps'
+PARSER_VERSION = 'single-period-v4-margin-25days'
 
 
 def read(path, default):
@@ -110,6 +110,48 @@ def parse_article(article, stocks):
             subject=title, source='news_backup', source_label='新聞備援｜'+article['publisher'],
             source_url=article['url'], evidence=match.group(0), eps_basis='news_reported_single',
             release_type='quarterly_preliminary' if '自結' in text else 'financial_report')
+    # A separate margin pass: a story may report gross margin without EPS.
+    # A quarter reference must precede the value in the same short clause.
+    margin_pattern = re.compile(
+        r'(?:(?P<year>20\d{2}|1\d{2})\s*年\s*)?'
+        r'(?P<period>第\s*[一二三四1234]\s*季|[一二三四]\s*季|Q[1-4])'
+        r'(?P<context>[^。；;!?！？]{0,48}?)'
+        r'(?P<label>合併毛利率|單季毛利率|毛利率)'
+        r'\s*(?:為|達|約|:|：)?\s*(?P<value>\d{1,2}(?:\.\d+)?)\s*[%％]', re.I)
+    for match in margin_pattern.finditer(text):
+        before = text[max(0, match.start()-18):match.start()]
+        context = match.group('context')
+        if re.search(r'累計|累積|前\s*[一二三四1234]\s*季|預估|預期|預測|估計|上看|法人估|指引|展望|去年|前年', before+context):
+            continue
+        raw = re.sub(r'\s+', '', match.group('period')).upper()
+        number = raw[1] if raw.startswith('Q') else raw.replace('第', '')[:-1]
+        q = int(number) if number.isdigit() else '一二三四'.index(number)+1
+        year = int(match.group('year')) if match.group('year') else published.year
+        if year < 1911: year += 1911
+        if not match.group('year') and q*3 > published.month: year -= 1
+        end_month=q*3
+        end=datetime(year,end_month,calendar.monthrange(year,end_month)[1],tzinfo=TZ).date()
+        if not 0 <= (published.date()-end).days <= 150: continue
+        value=float(match.group('value'))
+        if not 0 <= value <= 100: continue
+        period=f'{year}-Q{q}'
+        key=(ticker,period)
+        if key not in found:
+            found[key]=dict(ticker=ticker,name=company['name'],market=company.get('market'),
+                kind='quarterly',period=period,eps=None,publish_date=published.date().isoformat(),
+                publish_time=published.strftime('%H:%M:%S'),subject=title,source='news_backup',
+                source_label='新聞備援｜'+article['publisher'],source_url=article['url'],
+                evidence=match.group(0),eps_basis=None,
+                release_type='quarterly_preliminary' if '自結' in text else 'financial_report')
+        if found[key].get('gross_margin') is not None and found[key]['gross_margin'] != value:
+            found[key]['margin_conflict']=True
+        else:
+            found[key]['gross_margin']=value
+            found[key]['gross_margin_evidence']=match.group(0)
+    for row in found.values():
+        if row.pop('margin_conflict',False):
+            row.pop('gross_margin',None)
+            row.pop('gross_margin_evidence',None)
     return list(found.values()), 'accepted' if found else 'no_unambiguous_single_period_eps'
 
 
@@ -117,13 +159,14 @@ def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
     return [x for x in data.get('items', []) if x.get('kind') == kind
-            and (now.date()-timedelta(days=7)).isoformat() <= x.get('publish_date','') <= now.date().isoformat()]
+            and (now.date()-timedelta(days=25)).isoformat() <= x.get('publish_date','') <= now.date().isoformat()]
 
 
 def monthly_fallback(official, now=None):
     result = []
     occupied = {(x.get('ticker'), x.get('monthly_period')) for x in official if x.get('monthly_eps') is not None and x.get('source') != 'news_backup'}
     for x in current_items('monthly', now):
+        if x.get('eps') is None: continue
         key = (x['ticker'], x['period'])
         if key in occupied:
             continue
@@ -140,10 +183,10 @@ def collect():
     stocks = read(ROOT/'data/master.json', {}).get('stocks', {})
     if not stocks:
         raise RuntimeError('master.json company registry unavailable')
-    queries = ['自結 (EPS OR 每股盈餘 OR 每股虧損)', '(財報 OR 單季 OR 第三季 OR 第四季) (EPS OR 每股盈餘)']
+    queries = ['自結 (EPS OR 每股盈餘 OR 每股虧損)', '(財報 OR 單季 OR 第三季 OR 第四季 OR Q3 OR Q4) (EPS OR 每股盈餘 OR 每股純益 OR 毛利率)']
     accepted, audit, seen, errors = {}, [], set(), []
     for query in queries:
-        query += ' when:7d (' + ' OR '.join('site:'+h for h in HOSTS) + ')'
+        query += ' when:25d (' + ' OR '.join('site:'+h for h in HOSTS) + ')'
         url = 'https://news.google.com/rss/search?' + urlencode(dict(q=query, hl='zh-TW', gl='TW', ceid='TW:zh-Hant'))
         try:
             req = urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
@@ -164,7 +207,7 @@ def collect():
                     pub = parsedate_to_datetime(node.findtext('pubDate')).astimezone(TZ)
                 except (TypeError, ValueError):
                     continue
-                if not now-timedelta(days=7) <= pub <= now+timedelta(minutes=5):
+                if not now-timedelta(days=25) <= pub <= now+timedelta(minutes=5):
                     continue
                 article = dict(title=node.findtext('title'), description=node.findtext('description'),
                     url=link, publisher=source.text or host, published_at=pub.isoformat())
@@ -173,20 +216,31 @@ def collect():
                 for row in rows:
                     key = (row['ticker'],row['period'])
                     prior = accepted.get(key)
-                    if prior and prior['eps'] != row['eps']:
-                        accepted[key] = dict(prior, conflict=True)
-                    elif prior is None:
+                    if prior is None:
                         accepted[key] = row
+                    else:
+                        if prior.get('eps') is not None and row.get('eps') is not None and prior['eps'] != row['eps']:
+                            prior['conflict'] = True
+                        elif prior.get('eps') is None and row.get('eps') is not None:
+                            prior['eps'] = row['eps']
+                            prior['eps_basis'] = row.get('eps_basis')
+                        if prior.get('gross_margin') is not None and row.get('gross_margin') is not None and prior['gross_margin'] != row['gross_margin']:
+                            prior.pop('gross_margin', None)
+                            prior.pop('gross_margin_evidence', None)
+                            prior['margin_conflict'] = True
+                        elif prior.get('gross_margin') is None and row.get('gross_margin') is not None and not prior.get('margin_conflict'):
+                            prior['gross_margin'] = row['gross_margin']
+                            prior['gross_margin_evidence'] = row.get('gross_margin_evidence')
         except Exception as exc:
             errors.append(type(exc).__name__+': '+str(exc)[:160])
     prior_data = read(PATH, {})
-    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', PARSER_VERSION) else []
+    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', PARSER_VERSION) else []
     for row in previous:
-        if (now.date()-timedelta(days=7)).isoformat() <= row.get('publish_date','') <= now.date().isoformat():
+        if (now.date()-timedelta(days=25)).isoformat() <= row.get('publish_date','') <= now.date().isoformat():
             accepted.setdefault((row['ticker'],row['period']), row)
     items = [x for x in accepted.values() if not x.get('conflict')]
     payload = dict(updated_at=now.isoformat(timespec='minutes'), source='Google News RSS', parser_version=PARSER_VERSION,
-        coverage='明確單一公司／單月或單季 EPS 的新聞標題與 RSS 摘要；不保證涵蓋所有公告',
+        coverage='最近25天；明確單一公司／單月或單季 EPS、單季毛利率；新聞標題與 RSS 摘要，不保證涵蓋所有公告',
         source_errors=errors, conflict_count=sum(bool(x.get('conflict')) for x in accepted.values()),
         items=items, audit=audit)
     PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -910,6 +910,10 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
             sent.add(digest_key);checkpoint()
 
     for x in reports:
+        # Historical backfills update the website only; never send Telegram.
+        # The actual company announcement date is authoritative, not the crawl date.
+        if x.get('publish_date') != today or x.get('source') == 'news_backup' and not x.get('official_announcement_date'):
+            continue
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
         if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
@@ -1201,6 +1205,12 @@ def main():
             x['source_label'] = 'EPS 新聞備援（其餘欄位沿用官方資料）'
         elif x['eps'] is not None:
             x.pop('eps_news_source', None)
+        # Official gross margin takes precedence; RSS can fill only missing values.
+        if x.get('gross_margin') is None and fallback and fallback.get('gross_margin') is not None:
+            x['gross_margin'] = fallback['gross_margin']
+            x['gross_margin_news_source'] = {k:fallback.get(k) for k in ('source_label','source_url','gross_margin_evidence')}
+        elif x.get('gross_margin') is not None:
+            x.pop('gross_margin_news_source', None)
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
         upcoming.pop(key,None)
     for x in upcoming.values():
