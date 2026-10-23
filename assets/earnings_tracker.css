@@ -62,3 +62,8 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 .earnings-search-bar button{padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
 .earnings-history-count{font-size:13px;color:var(--muted);padding:8px 3px}
 @media(max-width:600px){.earnings-search-bar>input{flex-basis:100%}.earnings-search-bar label{flex:1}}
+
+/* 自結：以單一歷史搜尋/月曆取代舊日期下拉與舊搜尋欄 */
+#selfReports .self-report-search-card{display:none!important}
+#selfReports #selfReportDateFilter{display:none!important}
+#selfReports #selfHistorySearch[hidden],#selfReports #selfHistoryResults[hidden]{display:none!important}
