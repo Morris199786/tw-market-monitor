@@ -112,3 +112,17 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #earningsFinanceCalendar .self-cal-day i{position:absolute;bottom:3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#24bd76}
 #selfReportCalendarWidget .self-cal-foot{justify-content:space-between}
 @media(max-width:600px){#earningsCompanySearchWrap.tw-filter-card{padding:13px}#earningsCompanySearchWrap .earnings-date-picker{flex-wrap:wrap}#earningsCompanySearchWrap #earningsFinanceCalendar{width:100%}}
+
+
+/* 20261023-quarter-retention: 公司與日期維持同一排，包含手機。 */
+#earningsCompanySearchWrap.tw-filter-card {display:flex;flex-wrap:nowrap;gap:10px;padding:12px;align-items:center}
+#earningsCompanySearchWrap .earnings-search-field {position:relative;flex:1 1 55%;min-width:0}
+#earningsCompanySearchWrap #earningsCompanySearch {width:100%;padding-right:52px;font-size:14px}
+#earningsCompanySearchWrap #earningsCompanySearchClear {position:absolute;right:5px;top:50%;transform:translateY(-50%);padding:6px;font-size:13px}
+#earningsCompanySearchWrap .earnings-date-picker {flex:0 1 42%;width:auto;min-width:0;margin:0;display:block}
+#earningsCompanySearchWrap .earnings-date-picker > span {display:none}
+#earningsCompanySearchWrap #earningsFinanceCalendar {width:100%}
+#earningsCompanySearchWrap .self-cal-trigger {width:100%;min-width:0;padding:10px 8px;font-size:14px}
+#earningsFilters .earnings-quick[hidden] {display:none!important}
+#earningsFinanceCalendar .self-cal-day i {width:6px;height:6px;left:calc(50% - 3px);background:#24bd76}
+#earningsCompanySearchWrap #earningsFinanceCalendar {min-width:0}
