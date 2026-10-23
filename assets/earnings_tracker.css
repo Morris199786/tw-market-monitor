@@ -53,17 +53,29 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsPanel .earnings-detail small{line-height:1.5}
 @media(max-width:480px){#quarterlyEarningsPanel .earnings-result-head{align-items:flex-start;flex-direction:column}}
 
-/* 財報、自結歷史搜尋：日期欄位可切換年月 */
-.earnings-search-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
-.earnings-search-bar[hidden],.earnings-filters[hidden],.earnings-list[hidden]{display:none!important}
-.earnings-search-bar>input{flex:1 1 230px;min-width:0}
-.earnings-search-bar input{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
-.earnings-search-bar label{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.earnings-search-bar button{padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
-.earnings-history-count{font-size:13px;color:var(--muted);padding:8px 3px}
-@media(max-width:600px){.earnings-search-bar>input{flex-basis:100%}.earnings-search-bar label{flex:1}}
+/* Only new finance search field. Original page layout remains unchanged. */
+#earningsCompanySearchWrap[hidden]{display:none!important}
+#earningsCompanySearchWrap{margin:0 0 12px}
+#earningsCompanySearch{width:100%;box-sizing:border-box;min-height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;padding:10px 14px}
+#selfReportDateFilter[hidden]{display:none!important}
+#selfReportCalendar{font:inherit;border:1px solid var(--line);border-radius:11px;background:var(--card);color:inherit;min-height:42px;padding:6px 10px}
 
-/* 自結：以單一歷史搜尋/月曆取代舊日期下拉與舊搜尋欄 */
-#selfReports .self-report-search-card{display:none!important}
-#selfReports #selfReportDateFilter{display:none!important}
-#selfReports #selfHistorySearch[hidden],#selfReports #selfHistoryResults[hidden]{display:none!important}
+/* Self-report date calendar: only replaces the original date dropdown. */
+#selfReportCalendarWidget{position:relative;display:inline-block;min-width:166px;max-width:100%;font-size:14px;z-index:15}
+#selfReportCalendarWidget .self-cal-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;width:100%;border:1px solid var(--line);border-radius:11px;padding:8px 12px;background:var(--card);color:var(--ink);font:inherit;font-weight:750;cursor:pointer}
+#selfReportCalendarWidget .self-cal-pop{position:absolute;top:calc(100% + 8px);left:0;width:min(310px,calc(100vw - 48px));box-sizing:border-box;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:200}
+#selfReportCalendarWidget .self-cal-pop[hidden]{display:none!important}
+#selfReportCalendarWidget .self-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+#selfReportCalendarWidget .self-cal-head button{border:0;background:transparent;color:inherit;cursor:pointer;font:inherit;font-weight:800}
+#selfReportCalendarWidget .self-cal-head .self-cal-prev,#selfReportCalendarWidget .self-cal-head .self-cal-next{width:36px;height:36px;border-radius:10px;font-size:25px;line-height:1}
+#selfReportCalendarWidget .self-cal-head .self-cal-month{padding:7px 10px;border-radius:10px}
+#selfReportCalendarWidget .self-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+#selfReportCalendarWidget .self-cal-week{margin-bottom:5px;color:var(--muted);font-size:12px;font-weight:700}
+#selfReportCalendarWidget .self-cal-week span{padding:5px 0}
+#selfReportCalendarWidget .self-cal-day{position:relative;aspect-ratio:1;border:1px solid transparent;border-radius:11px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+#selfReportCalendarWidget .self-cal-day.is-today{border-color:var(--muted)}
+#selfReportCalendarWidget .self-cal-day.is-selected{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:800}
+#selfReportCalendarWidget .self-cal-day i{position:absolute;bottom:3px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:#24bd76}
+#selfReportCalendarWidget .self-cal-foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;gap:8px}
+#selfReportCalendarWidget .self-cal-foot button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;padding:7px 15px;cursor:pointer}
+#selfReportCalendarWidget .self-cal-foot .self-cal-close{background:var(--ink);color:var(--bg)}
