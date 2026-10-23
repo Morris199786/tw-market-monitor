@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-22-v11-exclude-conference-invitations",
-  "updated_at": "2026-10-23T13:11+08:00",
+  "updated_at": "2026-10-23T13:33+08:00",
   "upcoming": [
     {
       "ticker": "2383",
@@ -146,22 +146,17 @@
       "source_label": "EPS 新聞備援（其餘欄位沿用官方資料）",
       "source_url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxONi1Fd2pJclk1d3hWbDViQzBFWjJDTWIyQWpscHpMbEE4R2lFUWtIRmNyTDY4TV9TMktLR3NqQTJ3c1lEQlg3aHU5RUxiRnVJd3FXSFN2UGJheUNKYjdCZmFFeWJQTFpSblY2RE5EZ0cxVmxwS3lYcTFzNThFMmpkZXFLWnV4YXJpczA3WkRGU1JjUQ?oc=5",
       "evidence": "115年第3季綜合損益表,每股盈餘0.01元",
-      "eps_basis": "news_reported_single",
+      "eps_basis": "cumulative_difference",
       "release_type": "financial_report",
       "expires_at": "2026-10-27T18:00:00+08:00",
       "retention_status": "exchange_calendar",
       "released_metrics": {},
-      "gross_margin": null,
+      "gross_margin": 16.79790764761763,
       "prev_period": "2026-Q2",
       "prev_eps": 0.05,
       "prev_gross_margin": 16.441569875723815,
       "prev_eps_basis": "cumulative_difference",
-      "eps_news_source": {
-        "source_label": "新聞備援｜MoneyDJ理財網",
-        "source_url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxONi1Fd2pJclk1d3hWbDViQzBFWjJDTWIyQWpscHpMbEE4R2lFUWtIRmNyTDY4TV9TMktLR3NqQTJ3c1lEQlg3aHU5RUxiRnVJd3FXSFN2UGJheUNKYjdCZmFFeWJQTFpSblY2RE5EZ0cxVmxwS3lYcTFzNThFMmpkZXFLWnV4YXJpczA3WkRGU1JjUQ?oc=5",
-        "evidence": "115年第3季綜合損益表,每股盈餘0.01元"
-      },
-      "data_status": "pending_financial_data"
+      "data_status": "complete"
     },
     {
       "ticker": "3264",
@@ -240,10 +235,11 @@
     }
   ],
   "diagnostics": {
-    "source_errors": [],
-    "historical_errors": [
-      "twse/2026-Q3: ValueError"
+    "source_errors": [
+      "detail/3555/2026-10-21",
+      "detail/6775/2026-10-21"
     ],
+    "historical_errors": [],
     "coverage": {
       "2026-10-09~2026-10-23": "ok"
     },
