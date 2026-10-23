@@ -79,3 +79,22 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #selfReportCalendarWidget .self-cal-foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;gap:8px}
 #selfReportCalendarWidget .self-cal-foot button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;padding:7px 15px;cursor:pointer}
 #selfReportCalendarWidget .self-cal-foot .self-cal-close{background:var(--ink);color:var(--bg)}
+/* V6: same professional calendar design for financial-report date selection */
+#earningsFinanceCalendar{position:relative;display:inline-block;min-width:166px;max-width:100%;font-size:14px;z-index:15}
+#earningsFinanceCalendar .self-cal-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;width:100%;border:1px solid var(--line);border-radius:11px;padding:8px 12px;background:var(--card);color:var(--ink);font:inherit;font-weight:750;cursor:pointer}
+#earningsFinanceCalendar .self-cal-pop{position:absolute;top:calc(100% + 8px);right:0;width:min(310px,calc(100vw - 48px));box-sizing:border-box;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--ink);box-shadow:0 16px 40px rgba(0,0,0,.18);z-index:200}
+#earningsFinanceCalendar .self-cal-pop[hidden],.self-cal-month-pick[hidden]{display:none!important}
+#earningsFinanceCalendar .self-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+#earningsFinanceCalendar .self-cal-head button{border:0;background:transparent;color:inherit;cursor:pointer;font:inherit;font-weight:800}
+#earningsFinanceCalendar .self-cal-head .self-cal-prev,#earningsFinanceCalendar .self-cal-head .self-cal-next{width:36px;height:36px;border-radius:10px;font-size:25px}
+#earningsFinanceCalendar .self-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center}
+#earningsFinanceCalendar .self-cal-week{margin-bottom:5px;color:var(--muted);font-size:12px;font-weight:700}
+#earningsFinanceCalendar .self-cal-week span{padding:5px 0}
+#earningsFinanceCalendar .self-cal-day{aspect-ratio:1;border:1px solid transparent;border-radius:11px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+#earningsFinanceCalendar .self-cal-day.is-today{border-color:var(--muted)}
+#earningsFinanceCalendar .self-cal-day.is-selected{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:800}
+#earningsFinanceCalendar .self-cal-foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;gap:8px}
+#earningsFinanceCalendar .self-cal-foot button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;font-weight:700;padding:7px 15px;cursor:pointer}
+#earningsFinanceCalendar .self-cal-foot .self-cal-close{background:var(--ink);color:var(--bg)}
+.self-cal-month-pick{display:flex;gap:8px;margin-bottom:10px}
+.self-cal-month-pick select{min-width:0;flex:1;padding:8px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);font:inherit}
