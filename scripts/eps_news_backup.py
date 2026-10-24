@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / 'data/eps_news_backup.json'
 TZ = ZoneInfo('Asia/Taipei')
 HOSTS = ('moneydj.com', 'money-link.com.tw', 'cnyes.com', 'udn.com', 'yahoo.com', 'ctee.com.tw')
-PARSER_VERSION = 'single-period-v4-margin-25days'
+PARSER_VERSION = 'single-period-v7-since-2026-10-01'
 
 
 def read(path, default):
@@ -43,8 +43,8 @@ def parse_article(article, stocks):
     ticker, company = identities[0]
     other_companies = [t for t,s in stocks.items() if t != ticker and
         ((len(s.get('name','')) >= 2 and s['name'] in text) or re.search(r'[(（]'+re.escape(t)+r'[)）]', text))]
-    if other_companies:
-        return [], 'multi_company_article'
+    # Other companies in the summary do not invalidate a title that uniquely
+    # identifies the reporting issuer; extracted values still need a period.
     try:
         published = datetime.fromisoformat(article['published_at']).astimezone(TZ)
     except (KeyError, ValueError):
@@ -56,7 +56,7 @@ def parse_article(article, stocks):
     pattern = re.compile(
         r'(?<![\d前累計至\-~～])(?:(?P<year>20\d{2}|1\d{2})\s*年\s*)?'
         r'(?P<period>\d{1,2}\s*月|第\s*[一二三四1234]\s*季|[一二三四]\s*季|Q[1-4])'
-        r'(?P<context>[^。；;!?！？]{0,45}?)'
+        r'(?P<context>[^。；;!?！？]{0,75}?)'
         r'(?P<label>EPS|每股盈餘|每股純益|每股稅後盈餘|每股稅後|每股虧損|每股虧)'
         r'\s*(?:為|達|約|:|：)?\s*(?P<value>[+\-−]?\d+(?:\.\d+)?)\s*元?', re.I)
     found = {}
@@ -115,7 +115,7 @@ def parse_article(article, stocks):
     margin_pattern = re.compile(
         r'(?:(?P<year>20\d{2}|1\d{2})\s*年\s*)?'
         r'(?P<period>第\s*[一二三四1234]\s*季|[一二三四]\s*季|Q[1-4])'
-        r'(?P<context>[^。；;!?！？]{0,48}?)'
+        r'(?P<context>[^。；;!?！？]{0,75}?)'
         r'(?P<label>合併毛利率|單季毛利率|毛利率)'
         r'\s*(?:為|達|約|:|：)?\s*(?P<value>\d{1,2}(?:\.\d+)?)\s*[%％]', re.I)
     for match in margin_pattern.finditer(text):
@@ -155,11 +155,13 @@ def parse_article(article, stocks):
     return list(found.values()), 'accepted' if found else 'no_unambiguous_single_period_eps'
 
 
+NEWS_START = '2026-10-01'
+
 def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
     return [x for x in data.get('items', []) if x.get('kind') == kind
-            and (now.date()-timedelta(days=25)).isoformat() <= x.get('publish_date','') <= now.date().isoformat()]
+            and NEWS_START <= x.get('publish_date','') <= now.date().isoformat()]
 
 
 def monthly_fallback(official, now=None):
@@ -183,10 +185,28 @@ def collect():
     stocks = read(ROOT/'data/master.json', {}).get('stocks', {})
     if not stocks:
         raise RuntimeError('master.json company registry unavailable')
-    queries = ['自結 (EPS OR 每股盈餘 OR 每股虧損)', '(財報 OR 單季 OR 第三季 OR 第四季 OR Q3 OR Q4) (EPS OR 每股盈餘 OR 每股純益 OR 毛利率)']
+    base_queries = [
+        '自結 (EPS OR 每股盈餘 OR 每股虧損)',
+        '(財報 OR 單季 OR 第三季 OR 第四季 OR Q3 OR Q4) (EPS OR 每股盈餘 OR 每股純益 OR 毛利率)',
+        '(第三季 OR Q3) (獲利 OR 毛利率 OR 稅後純益)',
+    ]
+    # Fixed historical starting date; never search before 2026-10-01.
+    queries = []
+    start_date = datetime.fromisoformat(NEWS_START).date()
+    cursor = start_date
+    while cursor <= now.date():
+        end = min(cursor + timedelta(days=5), now.date() + timedelta(days=1))
+        for base in base_queries:
+            queries.append(f'{base} after:{(cursor-timedelta(days=1)).isoformat()} before:{end.isoformat()}')
+        cursor = end
+    # Known high-value gaps get independent searches rather than competing with
+    # hundreds of unrelated earnings headlines for the same RSS result window.
+    for ticker in ('2330','2408','3008','3211','6933'):
+        name = stocks.get(ticker, {}).get('name','')
+        if name:
+            queries.append(f'"{name}" (第三季 OR Q3) (EPS OR 每股 OR 毛利率) after:2026-10-14')
     accepted, audit, seen, errors = {}, [], set(), []
     for query in queries:
-        query += ' when:25d (' + ' OR '.join('site:'+h for h in HOSTS) + ')'
         url = 'https://news.google.com/rss/search?' + urlencode(dict(q=query, hl='zh-TW', gl='TW', ceid='TW:zh-Hant'))
         try:
             req = urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'})
@@ -201,13 +221,12 @@ def collect():
                 if source is None:
                     continue
                 host = (urlparse(source.get('url','')).hostname or '').lower()
-                if not any(host == h or host.endswith('.'+h) for h in HOSTS):
-                    continue
+                # Source domain is not a correctness criterion; article text is.
                 try:
                     pub = parsedate_to_datetime(node.findtext('pubDate')).astimezone(TZ)
                 except (TypeError, ValueError):
                     continue
-                if not now-timedelta(days=25) <= pub <= now+timedelta(minutes=5):
+                if not datetime.fromisoformat(NEWS_START).date() <= pub.date() <= now.date():
                     continue
                 article = dict(title=node.findtext('title'), description=node.findtext('description'),
                     url=link, publisher=source.text or host, published_at=pub.isoformat())
@@ -234,13 +253,19 @@ def collect():
         except Exception as exc:
             errors.append(type(exc).__name__+': '+str(exc)[:160])
     prior_data = read(PATH, {})
-    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', PARSER_VERSION) else []
+    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', PARSER_VERSION) else []
     for row in previous:
-        if (now.date()-timedelta(days=25)).isoformat() <= row.get('publish_date','') <= now.date().isoformat():
-            accepted.setdefault((row['ticker'],row['period']), row)
+        if NEWS_START <= row.get('publish_date','') <= now.date().isoformat():
+            key=(row['ticker'],row['period'])
+            if key not in accepted:
+                accepted[key]=row
+            else:
+                for field in ('eps','gross_margin','eps_basis','gross_margin_evidence'):
+                    if accepted[key].get(field) is None and row.get(field) is not None:
+                        accepted[key][field]=row[field]
     items = [x for x in accepted.values() if not x.get('conflict')]
     payload = dict(updated_at=now.isoformat(timespec='minutes'), source='Google News RSS', parser_version=PARSER_VERSION,
-        coverage='最近25天；明確單一公司／單月或單季 EPS、單季毛利率；新聞標題與 RSS 摘要，不保證涵蓋所有公告',
+        coverage='自2026-10-01起；明確單一公司／單月或單季 EPS、單季毛利率；新聞標題與 RSS 摘要，不保證涵蓋所有公告',
         source_errors=errors, conflict_count=sum(bool(x.get('conflict')) for x in accepted.values()),
         items=items, audit=audit)
     PATH.parent.mkdir(parents=True, exist_ok=True)

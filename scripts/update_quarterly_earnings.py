@@ -912,7 +912,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
     for x in reports:
         # Historical backfills update the website only; never send Telegram.
         # The actual company announcement date is authoritative, not the crawl date.
-        if x.get('publish_date') != today or x.get('source') == 'news_backup' and not x.get('official_announcement_date'):
+        if x.get('publish_date') != today or (x.get('source') == 'news_backup' and not x.get('official_announcement_date')):
             continue
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
@@ -921,7 +921,6 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
-        if x.get('release_type')=='quarterly_preliminary': text+='\n公司公布之季度初步業績（自結／未核閱）'
         if x.get('eps_news_source'):
             text+='\nEPS 來源：新聞備援｜'+x['eps_news_source'].get('source_label','')
             text+='\n'+x['eps_news_source'].get('source_url','')
