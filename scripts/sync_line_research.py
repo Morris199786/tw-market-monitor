@@ -13,14 +13,15 @@ import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote, urlparse, unquote
 
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'data/line_research.json'
 BROKER_FILE = ROOT / 'data/reports.json'
-SHEET_ID = '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM'
-SHEET_TAB = 'LINE產業研究資料庫'
+SHEET_ID = os.getenv('LINE_SHEET_ID', '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM').strip()
+SHEET_TAB = os.getenv('LINE_SHEET_TAB', 'LINE產業研究資料庫').strip()
 COLUMNS = ('date','type','source','industry','company','ticker','period','story',
            'revenue','eps','inventory','utilization','guidance','trend','rating_target',
            'numbers','dividend_current','dividend_next','dividend_policy',
@@ -113,32 +114,71 @@ def transform(values, brokers, today):
             'broker_overlap_candidates': sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 
-def fetch_sheet(access_token):
-    endpoint = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{SHEET_TAB}!A1:W'
+def configured_identity():
+    """Read only impersonation target; never print credential contents or tokens."""
+    expected = os.getenv('LINE_EXPECTED_SERVICE_ACCOUNT', '').strip()
+    path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    actual = None
+    if path:
+        config = json.loads(Path(path).read_text(encoding='utf-8'))
+        url = config.get('service_account_impersonation_url', '')
+        match = re.search(r'/serviceAccounts/([^/:]+):', unquote(url))
+        actual = match.group(1) if match else config.get('client_email')
+    if expected and actual and expected != actual:
+        raise RuntimeError('SERVICE_ACCOUNT_MISMATCH: workflow 帳號與預期帳號不同；停止讀取')
+    print(json.dumps({'service_account': actual or expected or 'not_verified',
+                      'identity_verified_from_auth_config': bool(actual),
+                      'spreadsheet_id': SHEET_ID}, ensure_ascii=False))
+
+
+def sheets_get(endpoint, access_token, params):
     resp = requests.get(endpoint, headers={'Authorization': 'Bearer ' + access_token},
-                        params={'valueRenderOption': 'FORMATTED_VALUE'}, timeout=120)
-    if not resp.ok:
-        try:
-            detail = resp.json().get('error', {})
-        except ValueError:
-            detail = {}
-        diagnostics = {
-            'http_status': resp.status_code,
-            'google_status': detail.get('status', 'UNKNOWN'),
-            'google_message': detail.get('message', 'No JSON error message returned'),
-            'reasons': [e.get('reason') for e in detail.get('errors', []) if isinstance(e, dict)],
-            'error_info': [
-                {'reason': e.get('reason'), 'domain': e.get('domain'), 'metadata': {
-                    k: v for k, v in e.get('metadata', {}).items()
-                    if k in ('service', 'method', 'consumer', 'permission')
-                }}
-                for e in detail.get('details', [])
-                if isinstance(e, dict) and e.get('@type', '').endswith('ErrorInfo')
-            ],
-        }
-        print('GOOGLE_SHEETS_API_ERROR ' + json.dumps(diagnostics, ensure_ascii=False), file=sys.stderr)
-        raise RuntimeError(f'Google Sheets request failed (HTTP {resp.status_code}); see GOOGLE_SHEETS_API_ERROR above')
-    return resp.json().get('values', [])
+                        params=params, timeout=120)
+    if resp.ok:
+        return resp.json()
+    try:
+        detail = resp.json().get('error', {})
+    except ValueError:
+        detail = {}
+    reasons = [x.get('reason') for x in detail.get('errors', []) if isinstance(x, dict)]
+    reasons += [x.get('reason') for x in detail.get('details', []) if isinstance(x, dict)]
+    # Do not print arbitrary server messages: they can include URLs or request data.
+    print('GOOGLE_SHEETS_API_ERROR ' + json.dumps({
+        'http_status': resp.status_code, 'google_status': detail.get('status'),
+        'reasons': reasons, 'spreadsheet_id': SHEET_ID}, ensure_ascii=False), file=sys.stderr)
+    if 'SERVICE_DISABLED' in reasons or 'accessNotConfigured' in reasons:
+        hint = 'SHEETS_API_DISABLED: 請在服務帳號所屬專案啟用 Google Sheets API'
+    elif 'ACCESS_TOKEN_SCOPE_INSUFFICIENT' in reasons or 'insufficientPermissions' in reasons:
+        hint = 'TOKEN_SCOPE_INSUFFICIENT: token 缺少 spreadsheets.readonly scope'
+    elif resp.status_code == 403:
+        hint = ('SHEET_ACCESS_DENIED: 指定服務帳號無法讀取這個試算表 ID。'
+                '請核對作者分享的是同一份原始試算表，且分享名單中的完整帳號一致；'
+                '若皆一致，需由作者或 Workspace 管理員檢查檔案存取限制。'
+                '你的個人帳號權限不會自動套用到服務帳號。')
+    elif resp.status_code == 404:
+        hint = 'SHEET_NOT_FOUND_OR_HIDDEN: ID 錯誤、檔案不存在或此帳號無權看見'
+    elif resp.status_code == 401:
+        hint = 'TOKEN_INVALID: 權杖失效，請重新執行 workflow 取得新權杖'
+    else:
+        hint = 'SHEETS_REQUEST_FAILED: HTTP ' + str(resp.status_code)
+    raise RuntimeError(hint)
+
+
+def fetch_sheet(access_token):
+    if not re.fullmatch(r'[A-Za-z0-9_-]+', SHEET_ID):
+        raise ValueError('LINE_SHEET_ID 必須填 /d/ 後面的 ID，不是完整網址')
+    configured_identity()
+    base = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}'
+    metadata = sheets_get(base, access_token,
+                         {'fields': 'spreadsheetId,sheets.properties(title,sheetId)'})
+    titles = [x.get('properties', {}).get('title') for x in metadata.get('sheets', [])]
+    if SHEET_TAB not in titles:
+        raise RuntimeError('SHEET_TAB_NOT_FOUND: 已有讀取檔案權限，但找不到指定分頁；請確認 LINE_SHEET_TAB')
+    print('SHEET_ACCESS_OK: 已通過指定試算表及分頁的讀取檢查')
+    a1_range = "'" + SHEET_TAB.replace("'", "''") + "'!A1:W"
+    result = sheets_get(base + '/values/' + quote(a1_range, safe=''), access_token,
+                        {'valueRenderOption': 'FORMATTED_VALUE'})
+    return result.get('values', [])
 
 
 def main():
@@ -168,3 +208,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
