@@ -1,12 +1,12 @@
 {
-  "updated_at": "2026-10-24T08:26+08:00",
+  "updated_at": "2026-10-24T08:47+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 201,
+    "candidate_count": 204,
     "parsed_count": 87,
-    "parse_failed_count": 107,
+    "parse_failed_count": 110,
     "parse_failed": [
       {
         "ticker": "2459",
@@ -958,6 +958,19 @@
         "quarter_eps": null
       },
       {
+        "ticker": "2492",
+        "name": "華新科",
+        "publish_date": "2026-10-08",
+        "publish_time": "15:00:00",
+        "subject": "【新聞備援】華新科9月營收創近8年單月高 8月自結純益年增6成EPS 1.55元",
+        "source": "news_backup",
+        "source_error": "",
+        "eps_parse_status": "parsed",
+        "eps_parse_reason": "新聞明確單月稅後EPS；非官方核對資料",
+        "monthly_eps": 1.55,
+        "quarter_eps": null
+      },
+      {
         "ticker": "3293",
         "name": "鈊象",
         "publish_date": "2026-10-08",
@@ -1179,6 +1192,19 @@
         "quarter_eps": null
       },
       {
+        "ticker": "2855",
+        "name": "統一證",
+        "publish_date": "2026-10-06",
+        "publish_time": "15:00:00",
+        "subject": "【新聞備援】《金融股》統一證自結9月每股盈餘0.583元",
+        "source": "news_backup",
+        "source_error": "",
+        "eps_parse_status": "parsed",
+        "eps_parse_reason": "新聞明確單月稅後EPS；非官方核對資料",
+        "monthly_eps": 0.583,
+        "quarter_eps": null
+      },
+      {
         "ticker": "1459",
         "name": "聯發",
         "publish_date": "2026-10-06",
@@ -1332,6 +1358,19 @@
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
+        "quarter_eps": null
+      },
+      {
+        "ticker": "8084",
+        "name": "巨虹",
+        "publish_date": "2026-10-02",
+        "publish_time": "15:00:00",
+        "subject": "【新聞備援】盈餘:巨虹(8084)股價遭警示,自結8月歸屬母公司淨損1708萬元,EPS-0.25元",
+        "source": "news_backup",
+        "source_error": "",
+        "eps_parse_status": "parsed",
+        "eps_parse_reason": "新聞明確單月稅後EPS；非官方核對資料",
+        "monthly_eps": -0.25,
         "quarter_eps": null
       },
       {
@@ -1517,7 +1556,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1440",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1533,7 +1572,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2303",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1621,7 +1660,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5203",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1629,7 +1668,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5546",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
