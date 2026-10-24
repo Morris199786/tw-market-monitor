@@ -3,6 +3,7 @@
 import calendar
 import hashlib
 import json
+import ast
 import os
 import re
 import sys
@@ -143,19 +144,62 @@ def original_date(row):
 
 
 def clean_display(value):
-    """Conservative presentation cleanup; never alter underlying financial numbers."""
-    text = str(value or '').replace('\r\n', '\n').replace('\r', '\n').replace('\x0c', '\n')
+    """Presentation-only cleanup. Keep the source Excel and numeric values intact."""
+    if isinstance(value, (list, tuple)):
+        text = '\n'.join(str(x) for x in value if str(x).strip())
+    else:
+        text = str(value or '')
+        stripped = text.strip()
+        # Some AI-produced cells are serialized Python/JSON string arrays.
+        if stripped.startswith('[') and stripped.endswith(']'):
+            try:
+                parsed = json.loads(stripped)
+            except (ValueError, TypeError):
+                try:
+                    parsed = ast.literal_eval(stripped)
+                except (ValueError, SyntaxError):
+                    parsed = None
+            if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
+                text = '\n'.join(x.strip() for x in parsed if x.strip())
+    text = text.replace('\r\n', '\n').replace('\r', '\n').replace('\x0c', '\n')
     if text.strip().lower() in ('null', 'none', 'nan'):
         return ''
-    text = re.sub(r'【Raw_Inbox\s+row\d+】', '', text, flags=re.I)
-    text = re.sub(r'【另一來源】', '', text)
-    text = re.sub(r'(?m)^\s*(?:檔案|原始檔)\s*[:：]\s*[^\n]+\.(?:pdf|docx?|pptx?)\s*$', '', text, flags=re.I)
-    # Remove standalone boilerplate disclaimer paragraphs, not paragraphs containing analysis.
-    text = re.sub(r'(?m)^\s*(?:⚠️\s*)?(?:以上僅供內部同仁參考[^\n]*|敬請配合[，,。！!\s]*謝謝[^\n]*|免責聲明[:：]?[^\n]*|本(?:文|資料)僅供(?:內部|參考)[^\n]*)$', '', text)
-    text = re.sub(r'(?m)^\s*\d{1,3}\s*$', '', text)
-    text = re.sub(r'[ \t]+\n', '\n', text)
-    text = re.sub(r'\n[ \t]*\n(?:[ \t]*\n)+', '\n\n', text)
+    text = re.sub(r'【Raw_Inbox\s+row\d+】|【另一來源】', '', text, flags=re.I)
+    text = re.sub(r'(?im)^\s*(?:檔案|原始檔)\s*[:：]\s*[^\n]+\.(?:pdf|docx?|pptx?)\s*$', '', text)
+    # Remove complete boilerplate/contact lines only, not adjacent research analysis.
+    boiler = re.compile(r'(?i)(?:免責聲明|不構成(?:任何)?投資建議|僅供(?:內部|參考)|請勿外傳|禁止轉載|copyright\s*[©\d]|all rights reserved|important disclosures|analyst certification|研究員(?:聯絡|電話|信箱)|聯絡電話|電子郵件|e-?mail\s*[:：]|傳真\s*[:：]|\bfax\s*[:：])')
+    lines = []
+    for line in text.split('\n'):
+        s = line.strip()
+        if not s: lines.append(''); continue
+        if re.fullmatch(r'\d{1,3}', s): continue
+        if re.fullmatch(r'(?:[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:tel|phone|fax|email|e-mail)\s*[:：].*)',s,re.I): continue
+        if boiler.search(s) and (len(s) < 210 or len(s.split()) < 25): continue
+        lines.append(s)
+    text = '\n'.join(lines)
+    # Chinese punctuation: preserve thousands separators and normal English-only prose.
+    def punct(line):
+        if not re.search(r'[\u3400-\u9fff]',line): return line
+        line = re.sub(r'(?<!\d),(?!\d{3}(?:\D|$))', '，', line)
+        line = re.sub(r'(?<=\d),(?!\d{3}(?:\D|$))', '，', line)
+        return line.replace(';','；').replace('， ', '，')
+    text = '\n'.join(punct(x) for x in text.split('\n'))
+    text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
+
+
+def display_title(row):
+    title = str(row.get('company') or row.get('title') or row.get('name') or '').strip()
+    code = str(row.get('ticker') or '').strip()
+    multi = len(re.findall(r'(?<!\d)\d{4}\.(?:TW|TWO)(?!\w)', title+' '+code,re.I)) >= 3 or '多檔聚合' in title
+    if multi:
+        topic = str(row.get('period') or row.get('title') or title)
+        topic = re.sub(r'[（(]?多檔聚合[）)]?', '', topic)
+        topic = re.sub(r'(?:[;；,，\s]*\d{4}\.(?:TW|TWO))+', '', topic, flags=re.I)
+        topic = re.sub(r'\s+', ' ', topic).strip(' -|；,，')
+        if not topic or re.fullmatch(r'\d{4,8}',topic): topic = '多股研究整理'
+        return topic, '', True
+    return title, code, False
 
 
 def is_us_research(row):
@@ -195,6 +239,7 @@ def transform(values, brokers, today):
         row['market'] = 'US' if is_us_research(row) else 'TW'
         row['display'] = {k: clean_display(row.get(k)) for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','dividend_current','dividend_next','dividend_policy','full_text','full_text_2','full_text_3')}
         row['possible_broker_duplicates'] = broker_candidates(row, brokers)
+        row['display_title'], row['display_ticker'], row['is_multi_company'] = display_title(row)
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
     items.sort(key=lambda r:(r['date'],r['sheet_row_number']),reverse=True)
@@ -212,6 +257,7 @@ def broker_records(brokers):
         item['display']={'story':clean_display(item.get('summary') or item.get('title') or '')}
         item['category']='產業研究' if r.get('report_type') == 'sector' else '個股研究'
         item['original_type']='券商報告'
+        item['display_title'], item['display_ticker'], item['is_multi_company'] = display_title(item)
         item['company']=r.get('name') or ''
         item['source']=r.get('broker') or ''
         item['date']=str(r.get('group_date') or r.get('date') or '')[:10]
@@ -361,10 +407,12 @@ def main():
                 rid = str(record.get('id') or f'{filename}:{offset}')
                 metadata = {'id':rid, 'file':filename, 'date':str(record.get('date') or '')[:10],
                             'category': '券商報告' if record.get('source_kind') == 'broker' else record.get('category','市場情報'),
-                            'company':record.get('company') or record.get('name') or '',
-                            'ticker':record.get('ticker') or '',
+                            'company':record.get('display_title') or record.get('company') or record.get('name') or '',
+                            'is_multi_company':bool(record.get('is_multi_company')),
+                            'title':record.get('title') or record.get('period') or '',
+                            'ticker':record.get('display_ticker') if record.get('is_multi_company') else record.get('ticker') or '',
                             'source':record.get('source') or record.get('broker') or '',
-                            'story':clean_display(record.get('story') or record.get('summary') or record.get('title') or '')[:1400],
+                            'story':clean_display(record.get('story') or record.get('summary') or record.get('title') or ''),
                             'market':record.get('market','TW'), 'source_kind':record.get('source_kind','line')}
                 meta_rows.append(metadata)
                 fields = ('company','name','ticker','stock_id','source','broker','source_name',
