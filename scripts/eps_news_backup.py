@@ -255,13 +255,16 @@ def parse_article(article, stocks):
     return list(found.values()), 'accepted' if found else 'no_unambiguous_single_period_eps'
 
 
-NEWS_START = '2026-10-01'
+LOOKBACK_DAYS = 3
+
+def news_start(now):
+    return (now.date() - timedelta(days=LOOKBACK_DAYS)).isoformat()
 
 def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
     return [sanitize_news_margin(x) for x in data.get('items', []) if not invalid_quarterly_news(x) and x.get('kind') == kind
-            and NEWS_START <= x.get('publish_date','') <= now.date().isoformat()]
+            and news_start(now) <= x.get('publish_date','') <= now.date().isoformat()]
 
 
 def monthly_fallback(official, now=None):
@@ -290,9 +293,9 @@ def collect():
         '(財報 OR 單季 OR 第三季 OR 第四季 OR Q3 OR Q4) (EPS OR 每股盈餘 OR 每股純益 OR 毛利率)',
         '(第三季 OR Q3) (獲利 OR 毛利率 OR 稅後純益)',
     ]
-    # Fixed historical starting date; never search before 2026-10-01.
+    # Search only the most recent three calendar days (inclusive of today).
     queries = []
-    start_date = datetime.fromisoformat(NEWS_START).date()
+    start_date = datetime.fromisoformat(news_start(now)).date()
     cursor = start_date
     while cursor <= now.date():
         end = min(cursor + timedelta(days=5), now.date() + timedelta(days=1))
@@ -326,7 +329,7 @@ def collect():
                     pub = parsedate_to_datetime(node.findtext('pubDate')).astimezone(TZ)
                 except (TypeError, ValueError):
                     continue
-                if not datetime.fromisoformat(NEWS_START).date() <= pub.date() <= now.date():
+                if not start_date <= pub.date() <= now.date():
                     continue
                 article = dict(title=node.findtext('title'), description=node.findtext('description'),
                     url=link, publisher=source.text or host, published_at=pub.isoformat())
@@ -367,7 +370,7 @@ def collect():
     previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', 'single-period-v7-since-2026-10-01', 'single-period-v8-company-spans-margins', 'single-period-v9-actual-margin-only', PARSER_VERSION) else []
     for cached_row in previous:
         row = sanitize_news_margin(cached_row)
-        if NEWS_START <= row.get('publish_date','') <= now.date().isoformat():
+        if news_start(now) <= row.get('publish_date','') <= now.date().isoformat():
             key=(row['ticker'],row['period'])
             if key not in accepted:
                 accepted[key]=row
@@ -378,7 +381,7 @@ def collect():
                         accepted[key][field]=row[field]
     items = [x for x in accepted.values() if not x.get('conflict')]
     payload = dict(updated_at=now.isoformat(timespec='minutes'), source='Google News RSS', parser_version=PARSER_VERSION,
-        coverage='自2026-10-01起；明確單一公司／單月或單季 EPS、單季毛利率；新聞標題與 RSS 摘要，不保證涵蓋所有公告',
+        coverage='最近3天前至今日（含）；明確單一公司／單月或單季 EPS、單季毛利率；新聞標題與 RSS 摘要，不保證涵蓋所有公告',
         source_errors=errors, conflict_count=sum(bool(x.get('conflict')) for x in accepted.values()),
         items=items, audit=audit)
     PATH.parent.mkdir(parents=True, exist_ok=True)
