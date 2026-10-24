@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / 'data/eps_news_backup.json'
 TZ = ZoneInfo('Asia/Taipei')
 HOSTS = ('moneydj.com', 'money-link.com.tw', 'cnyes.com', 'udn.com', 'yahoo.com', 'ctee.com.tw')
-PARSER_VERSION = 'single-period-v9-actual-margin-only'
+PARSER_VERSION = 'single-period-v10-verified-q3-margin-and-h1-guard'
 MARGIN_VALIDATION = 'actual-margin-v1'
 
 
@@ -76,6 +76,36 @@ def sanitize_news_margin(row):
         for key in ('gross_margin', 'gross_margin_evidence', 'gross_margin_validation', 'gross_margin_source'):
             out.pop(key, None)
     return out
+
+
+# Verified 2026-Q3 actual margins. These are fallback values only; official
+# financial-statement data always takes precedence in the earnings updater.
+# Keep the source and period attached so a future quarter cannot reuse them.
+VERIFIED_Q3_MARGINS = {
+    ('2330', '2026-Q3'): (66.4, '台積電第三季財報新聞稿', 'https://pr.tsmc.com/chinese/news/3346'),
+    ('2408', '2026-Q3'): (85.7, '南亞科第三季財報新聞稿', 'https://www.nanya.com/tw/IR/16/%E6%96%B0%E8%81%9E%E7%A8%BF?IRId=14188'),
+    ('2402', '2026-Q3'): (14.0, '毅嘉第三季自結公告（約14%）', 'https://www.moneydj.com/kmdj/news/newsviewer.aspx?a=3ca57a7d-563c-4241-90a3-9de6a3dcd312'),
+    ('7747', '2026-Q3'): (15.9, '昕奇雲端第三季獲利報導', 'https://ieknet.iek.org.tw/ieknews/news_open.aspx?nsl_id=612bd12b363e4f0ca14d3bc2ab4d78a3'),
+}
+
+
+def verified_margin(ticker, period):
+    """Return a source-labelled verified historical margin, or None."""
+    item = VERIFIED_Q3_MARGINS.get((str(ticker), str(period)))
+    if item is None:
+        return None
+    value, label, url = item
+    return {'gross_margin': value, 'gross_margin_validation': MARGIN_VALIDATION,
+            'gross_margin_source': {'source_label': label, 'source_url': url,
+                                    'gross_margin_evidence': '2026 Q3 已公布實際毛利率'}}
+
+
+def invalid_quarterly_news(row):
+    """Known H1 EPS wrongly attributed to a Q3 earnings-call headline."""
+    return (str(row.get('ticker')) == '7689' and row.get('period') == '2026-Q3'
+            and (row.get('source') == 'news_backup' or row.get('kind') == 'quarterly')
+            and bool(re.search(r'上半年|前二季|前兩季|H1|半年EPS',
+                               str(row.get('subject', '')) + ' ' + str(row.get('evidence', '')), re.I)))
 
 
 def parse_article(article, stocks):
@@ -165,6 +195,8 @@ def parse_article(article, stocks):
             subject=title, source='news_backup', source_label='新聞備援｜'+article['publisher'],
             source_url=article['url'], evidence=match.group(0), eps_basis='news_reported_single',
             release_type='quarterly_preliminary' if '自結' in text else 'financial_report')
+    # Reject a Q3 headline that actually reports first-half EPS.
+    found = {key: row for key, row in found.items() if not invalid_quarterly_news(row)}
     # A separate margin pass: a story may report gross margin without EPS.
     # A quarter reference must precede the value in the same short clause.
     margin_pattern = re.compile(
@@ -228,7 +260,7 @@ NEWS_START = '2026-10-01'
 def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
-    return [sanitize_news_margin(x) for x in data.get('items', []) if x.get('kind') == kind
+    return [sanitize_news_margin(x) for x in data.get('items', []) if not invalid_quarterly_news(x) and x.get('kind') == kind
             and NEWS_START <= x.get('publish_date','') <= now.date().isoformat()]
 
 
@@ -332,7 +364,7 @@ def collect():
         except Exception as exc:
             errors.append(type(exc).__name__+': '+str(exc)[:160])
     prior_data = read(PATH, {})
-    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', 'single-period-v7-since-2026-10-01', 'single-period-v8-company-spans-margins', PARSER_VERSION) else []
+    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', 'single-period-v7-since-2026-10-01', 'single-period-v8-company-spans-margins', 'single-period-v9-actual-margin-only', PARSER_VERSION) else []
     for cached_row in previous:
         row = sanitize_news_margin(cached_row)
         if NEWS_START <= row.get('publish_date','') <= now.date().isoformat():

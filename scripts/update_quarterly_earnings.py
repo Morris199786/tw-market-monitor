@@ -1,5 +1,5 @@
 from sources import *
-from eps_news_backup import current_items, sanitize_news_margin
+from eps_news_backup import current_items, sanitize_news_margin, verified_margin, invalid_quarterly_news
 import os, re, html, math, unicodedata, time
 from html.parser import HTMLParser
 from urllib.parse import urlencode
@@ -1122,6 +1122,8 @@ def main():
     seed=load_json(DATA/'quarterly_earnings_recovered.json',{'reports':[]})
     merged_events={}
     for row in seed.get('reports',[])+old.get('reports',[])+event_history.get('reports',[]):
+        if invalid_quarterly_news(row):
+            continue
         merged_events[(row.get('ticker'),row.get('period'))]=dict(row)
     event_history={**event_history,'reports':list(merged_events.values())}
     news=fetch_news()+historical_mops_news()+daily_mops_news()+cached_official_announcements(now)
@@ -1186,6 +1188,7 @@ def main():
         for p in required: targets.setdefault(p,set()).add(x['ticker'])
     errors=backfill_history(by,set(targets),targets)
     save_financial_history(by)
+    events = {key: x for key, x in events.items() if not invalid_quarterly_news(x)}
     for key,x in events.items():
         cur=single_metrics(by,x['ticker'],x['period']);prevp=previous(x['period']);prev=single_metrics(by,x['ticker'],prevp)
         verified=x.get('released_metrics',{})
@@ -1214,6 +1217,14 @@ def main():
             x['gross_margin_validation'] = fallback.get('gross_margin_validation')
         elif x.get('gross_margin') is not None:
             x.pop('gross_margin_news_source', None)
+        # One-time verified, period-specific fallback; never replace MOPS or
+        # another already validated actual margin. Retain source attribution.
+        if x.get('gross_margin') is None:
+            confirmed = verified_margin(x['ticker'], x['period'])
+            if confirmed:
+                x['gross_margin'] = confirmed['gross_margin']
+                x['gross_margin_news_source'] = confirmed['gross_margin_source']
+                x['gross_margin_validation'] = confirmed['gross_margin_validation']
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
         upcoming.pop(key,None)
     for x in upcoming.values():
