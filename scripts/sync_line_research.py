@@ -117,7 +117,27 @@ def fetch_sheet(access_token):
     endpoint = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{SHEET_TAB}!A1:W'
     resp = requests.get(endpoint, headers={'Authorization': 'Bearer ' + access_token},
                         params={'valueRenderOption': 'FORMATTED_VALUE'}, timeout=120)
-    resp.raise_for_status()
+    if not resp.ok:
+        try:
+            detail = resp.json().get('error', {})
+        except ValueError:
+            detail = {}
+        diagnostics = {
+            'http_status': resp.status_code,
+            'google_status': detail.get('status', 'UNKNOWN'),
+            'google_message': detail.get('message', 'No JSON error message returned'),
+            'reasons': [e.get('reason') for e in detail.get('errors', []) if isinstance(e, dict)],
+            'error_info': [
+                {'reason': e.get('reason'), 'domain': e.get('domain'), 'metadata': {
+                    k: v for k, v in e.get('metadata', {}).items()
+                    if k in ('service', 'method', 'consumer', 'permission')
+                }}
+                for e in detail.get('details', [])
+                if isinstance(e, dict) and e.get('@type', '').endswith('ErrorInfo')
+            ],
+        }
+        print('GOOGLE_SHEETS_API_ERROR ' + json.dumps(diagnostics, ensure_ascii=False), file=sys.stderr)
+        raise RuntimeError(f'Google Sheets request failed (HTTP {resp.status_code}); see GOOGLE_SHEETS_API_ERROR above')
     return resp.json().get('values', [])
 
 
