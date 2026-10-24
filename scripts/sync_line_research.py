@@ -142,6 +142,31 @@ def original_date(row):
     return row['date'], 'sheet'
 
 
+def clean_display(value):
+    """Conservative presentation cleanup; never alter underlying financial numbers."""
+    text = str(value or '').replace('\r\n', '\n').replace('\r', '\n').replace('\x0c', '\n')
+    if text.strip().lower() in ('null', 'none', 'nan'):
+        return ''
+    text = re.sub(r'【Raw_Inbox\s+row\d+】', '', text, flags=re.I)
+    text = re.sub(r'【另一來源】', '', text)
+    text = re.sub(r'(?m)^\s*(?:檔案|原始檔)\s*[:：]\s*[^\n]+\.(?:pdf|docx?|pptx?)\s*$', '', text, flags=re.I)
+    # Remove standalone boilerplate disclaimer paragraphs, not paragraphs containing analysis.
+    text = re.sub(r'(?m)^\s*(?:⚠️\s*)?(?:以上僅供內部同仁參考[^\n]*|敬請配合[，,。！!\s]*謝謝[^\n]*|免責聲明[:：]?[^\n]*|本(?:文|資料)僅供(?:內部|參考)[^\n]*)$', '', text)
+    text = re.sub(r'(?m)^\s*\d{1,3}\s*$', '', text)
+    text = re.sub(r'[ \t]+\n', '\n', text)
+    text = re.sub(r'\n[ \t]*\n(?:[ \t]*\n)+', '\n\n', text)
+    return text.strip()
+
+
+def is_us_research(row):
+    code = str(row.get('ticker') or '').strip().upper()
+    if re.search(r'\.(?:US|NYSE|NASDAQ)$', code):
+        return True
+    if re.fullmatch(r'[A-Z]{1,5}', code) and code not in ('',):
+        return True
+    return False
+
+
 def transform(values, brokers, today):
     if not values or not values[0]:
         raise ValueError('Empty sheet; refuse to overwrite existing data')
@@ -167,6 +192,8 @@ def transform(values, brokers, today):
         row['category'] = classify(row)
         row['date'], row['date_source'] = original_date(row)
         row['source_kind'] = 'line'
+        row['market'] = 'US' if is_us_research(row) else 'TW'
+        row['display'] = {k: clean_display(row.get(k)) for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','dividend_current','dividend_next','dividend_policy','full_text','full_text_2','full_text_3')}
         row['possible_broker_duplicates'] = broker_candidates(row, brokers)
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
@@ -181,6 +208,8 @@ def broker_records(brokers):
     for r in brokers:
         item=dict(r)
         item['source_kind']='broker'
+        item['market']='US' if is_us_research(item) else 'TW'
+        item['display']={'story':clean_display(item.get('summary') or item.get('title') or '')}
         item['category']='產業研究' if r.get('report_type') == 'sector' else '個股研究'
         item['original_type']='券商報告'
         item['company']=r.get('name') or ''
@@ -334,12 +363,15 @@ def main():
                             'category': '券商報告' if record.get('source_kind') == 'broker' else record.get('category','市場情報'),
                             'company':record.get('company') or record.get('name') or '',
                             'ticker':record.get('ticker') or '',
-                            'source':record.get('source') or record.get('broker') or ''}
+                            'source':record.get('source') or record.get('broker') or '',
+                            'story':clean_display(record.get('story') or record.get('summary') or record.get('title') or '')[:1400],
+                            'market':record.get('market','TW'), 'source_kind':record.get('source_kind','line')}
                 meta_rows.append(metadata)
                 fields = ('company','name','ticker','stock_id','source','broker','source_name',
                           'summary','story','full_text','full_text_2','full_text_3',
+                          'revenue','eps','inventory','utilization','guidance','trend',
                           'numbers','rating_target','title','industry','sector')
-                haystack = ' '.join(str(record.get(k) or '') for k in fields).casefold()
+                haystack = ' '.join(clean_display(record.get(k)) for k in fields).casefold()
                 haystack = re.sub(r'\s+', ' ', haystack)
                 # 2-character grams support Chinese names and mixed Chinese/English phrases.
                 grams = set(haystack[i:i+2] for i in range(max(0,len(haystack)-1)))
