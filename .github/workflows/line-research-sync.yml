@@ -1,22 +1,10 @@
 name: LINE research sync (3 months)
 on:
   workflow_dispatch:
-    inputs:
-      sheet_id:
-        description: '作者已分享的 Google 試算表 ID（網址 /d/ 後面的部分）'
-        required: true
-        default: '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM'
-        type: string
-      sheet_tab:
-        description: '要讀取的分頁名稱'
-        required: true
-        default: 'LINE產業研究資料庫'
-        type: string
   schedule:
     - cron: '*/30 * * * *'
 permissions:
   contents: read
-  id-token: write
 concurrency:
   group: line-research-sync
   cancel-in-progress: false
@@ -27,24 +15,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
-      - uses: google-github-actions/auth@v3
-        id: auth
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
-          token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
       - name: Install requests
         run: python -m pip install requests
-      - name: Sync without AI or Telegram
+      - name: Sync with user OAuth (dry run, no AI or Telegram)
         env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          LINE_GOOGLE_CLIENT_ID: ${{ secrets.LINE_GOOGLE_CLIENT_ID }}
+          LINE_GOOGLE_CLIENT_SECRET: ${{ secrets.LINE_GOOGLE_CLIENT_SECRET }}
+          LINE_GOOGLE_REFRESH_TOKEN: ${{ secrets.LINE_GOOGLE_REFRESH_TOKEN }}
           LINE_SYNC_DRY_RUN: '1'
-          LINE_SHEET_ID: ${{ inputs.sheet_id || '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM' }}
-          LINE_SHEET_TAB: ${{ inputs.sheet_tab || 'LINE產業研究資料庫' }}
-          LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
         run: python scripts/sync_line_research.py
-      # Safety: dry-run only until service account access and private data protection are verified.
-      # No data is committed to this currently public repository.
-
+      # Intentionally no commits: the repo is currently public.
+      # Once data is hosted in a protected location, enable publishing separately.
