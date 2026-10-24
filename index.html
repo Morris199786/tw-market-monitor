@@ -8,7 +8,7 @@
 
 <link rel="stylesheet" href="./assets/styles.css?v=20260924-ui2">
 <link rel="stylesheet" href="./assets/ui_v2.css?v=20260928-holders-week-v8">
-<link rel="stylesheet" href="./assets/reports_v2.css?v=20261022-report-render-fix">
+<link rel="stylesheet" href="./assets/reports_v2.css?v=20261024-research-v1">
 <link rel="stylesheet" href="./assets/tw_ratings.css?v=20260930-v1">
 <link rel="stylesheet" href="./assets/heatmap_sector_filter.css?v=20260929-sector-v1">
 <link rel="stylesheet" href="./assets/earnings_tracker.css?v=20261023-quarter-retention-v8">
@@ -99,7 +99,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <nav>
 <button class="nav active" data-p="home">總覽</button>
 <button class="nav" data-p="heat">市場熱力圖</button>
-<button class="nav" data-p="reports">券商報告</button>
+<button class="nav" data-p="reports">產業資料庫</button>
 <button class="nav" data-p="selfReports">財報追蹤</button>
 <button class="nav" data-p="flows">籌碼日報</button>
 <button class="nav" data-p="volume">突然放量</button>
@@ -112,7 +112,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
 <select id="mobileNav" aria-label="切換分頁">
-<option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">券商報告</option>
+<option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">產業資料庫</option>
 <option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
 <option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="marketMonitor">大盤監控</option>
@@ -125,7 +125,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <main>
 <section id="home" class="page active"><div class="hero"><div><div class="kicker">MARKET DASHBOARD</div><h1>台股市場監測</h1><p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p></div><div class="badges"><span class="badge live">GitHub 自動更新</span></div></div><div id="featureRail" class="feature-rail"></div><div id="homeCards" class="grid four"></div><div class="section"><h2>目前強勢族群</h2><span>市值加權</span></div><div id="topSectors" class="grid three"></div></section>
 <section id="heat" class="page"><div class="hero"><div><div class="kicker">SECTOR HEATMAP</div><h1>市場熱力圖</h1><p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p></div><div class="badges"><span class="badge live">盤中每 5 分鐘</span><span id="heatTime" class="badge"></span></div></div><div id="heatGrid" class="heatgrid"></div></section>
-<section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>券商報告</h1><p>券商研究報告與台股評等／目標價調整</p></div><span class="badge">每 15 分鐘檢查</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">券商報告</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div></section>
+<section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>產業資料庫</h1><p>個股研究、產業報告、券商評等與研究全文搜尋</p></div><span class="badge">每 30 分鐘同步</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">資料庫</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div></section>
 <section id="selfReports" class="page">
 <div class="hero"><div><div class="kicker">EARNINGS TRACKER</div><h1>財報追蹤</h1><p>自結公布｜盤後可能公布自結｜即將開財報｜季度財報</p></div><div class="badges"><span id="selfWeekBadge" class="badge"></span></div></div>
 <div id="selfWeekTabs" class="week-strip"></div>
@@ -169,7 +169,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/ui_v2.js?v=20261023-self-date-sync-v10"></script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20261004-market-monitor-nav"></script>
-<script src="./assets/reports_v2.js?v=20261022-report-render-fix"></script>
+<script src="./assets/reports_v2.js?v=20261024-research-v1"></script>
 <script src="./assets/tw_ratings.js?v=20260930-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/daily_k.js?v=20261013-restored"></script>
@@ -267,6 +267,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 })();
 </script>
 <script src="./assets/broker_eps_comparison.js?v=20261022-compare-v3"></script>
+<script src="./assets/research_merged.js?v=20261024-merge-v1"></script>
 </body>
 </html>
 
