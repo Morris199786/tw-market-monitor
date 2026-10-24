@@ -310,8 +310,11 @@ def main():
     folder = ROOT / 'data/research_shards'
     folder.mkdir(parents=True, exist_ok=True)
     manifest = {'version': 2, 'count': len(merged), 'line_count': len(data['items']),
-                'broker_count': len(brokers), 'shards': []}
+                'broker_count': len(brokers), 'shards': [], 'search_buckets': 64}
     live = set()
+    from collections import defaultdict as _dd
+    search_index = _dd(lambda: _dd(list))
+    meta_rows = []
     # Content-addressed names allow safe caching and atomic manifest switch.
     for key in sorted(shards, reverse=True):
         items = shards[key]
@@ -325,8 +328,32 @@ def main():
             if not path.exists():
                 path.write_bytes(raw)
             live.add(filename)
+            for offset, record in enumerate(batch):
+                rid = str(record.get('id') or f'{filename}:{offset}')
+                metadata = {'id':rid, 'file':filename, 'date':str(record.get('date') or '')[:10],
+                            'category': '券商報告' if record.get('source_kind') == 'broker' else record.get('category','市場情報'),
+                            'company':record.get('company') or record.get('name') or '',
+                            'ticker':record.get('ticker') or '',
+                            'source':record.get('source') or record.get('broker') or ''}
+                meta_rows.append(metadata)
+                fields = ('company','name','ticker','stock_id','source','broker','source_name',
+                          'summary','story','full_text','full_text_2','full_text_3',
+                          'numbers','rating_target','title','industry','sector')
+                haystack = ' '.join(str(record.get(k) or '') for k in fields).casefold()
+                haystack = re.sub(r'\s+', ' ', haystack)
+                # 2-character grams support Chinese names and mixed Chinese/English phrases.
+                grams = set(haystack[i:i+2] for i in range(max(0,len(haystack)-1)))
+                for gram in grams:
+                    bucket = sum((i+1)*ord(ch) for i,ch in enumerate(gram))%64
+                    search_index[bucket][gram].append(len(meta_rows)-1)
             manifest['shards'].append({'file': filename, 'month': key, 'count': len(batch),
                                        'bytes': len(raw)})
+    # Lightweight metadata (no full texts) and bucketed inverted index.
+    write_json_atomic(ROOT / 'data/research_meta.json', meta_rows)
+    search_folder = ROOT / 'data/research_search'
+    search_folder.mkdir(parents=True,exist_ok=True)
+    for bucket in range(64):
+        write_json_atomic(search_folder / f'{bucket:02d}.json', search_index[bucket])
     write_json_atomic(ROOT / 'data/research_manifest.json', manifest)
     write_json_atomic(AUDIT_OUTPUT, audit)
     # Clean old content-addressed shards only after new manifest is ready.
