@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""LINE research Google Sheets ingestion: rolling 3 calendar months, no AI/Telegram.
-
-The output is a separate JSON file. No existing broker report state is modified.
+"""Read LINE research with the SAME service-account token as broker reports.
+Dry run is the default. Never sends notifications or calls an AI service.
 """
 import calendar
 import hashlib
@@ -13,6 +12,7 @@ import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 import requests
 
@@ -51,9 +51,7 @@ def parse_date(value):
 
 
 def load_json(path):
-    if not path.exists():
-        return {}
-    return json.loads(path.read_text(encoding='utf-8'))
+    return json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
 
 
 def ticker(value):
@@ -64,16 +62,17 @@ def ticker(value):
 def broker_candidates(row, brokers):
     if row['type'] not in BROKER_TYPES:
         return []
-    day = row['date']
     stock_code = ticker(row['ticker'])
     company = normalize(row['company'])
     matches = []
     for report in brokers:
-        if report.get('date') != day:
+        if report.get('date') != row['date']:
             continue
-        same_stock = (stock_code and ticker(report.get('ticker')) == stock_code) or (company and normalize(report.get('name')) == company)
+        same_stock = ((stock_code and ticker(report.get('ticker')) == stock_code)
+                      or (company and normalize(report.get('name')) == company))
         if same_stock:
-            matches.append({'id': report.get('id'), 'broker': report.get('broker'), 'title': report.get('title')})
+            matches.append({'id': report.get('id'), 'broker': report.get('broker'),
+                            'title': report.get('title')})
     return matches
 
 
@@ -102,7 +101,6 @@ def transform(values, brokers, today):
             continue
         seen.add(digest)
         record['id'] = 'line-' + digest[:20]
-        # Candidate matches are NOT automatically removed: avoid false merges.
         record['possible_broker_duplicates'] = broker_candidates(record, brokers)
         items.append(record)
     items.sort(key=lambda r: (r['date'], r['sheet_row_number']), reverse=True)
@@ -113,78 +111,69 @@ def transform(values, brokers, today):
             'broker_overlap_candidates': sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 
-def fetch_sheet(access_token):
-    endpoint = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{SHEET_TAB}!A1:W'
-    resp = requests.get(endpoint, headers={'Authorization': 'Bearer ' + access_token},
-                        params={'valueRenderOption': 'FORMATTED_VALUE'}, timeout=120)
-    if not resp.ok:
-        try:
-            detail = resp.json().get('error', {})
-        except ValueError:
-            detail = {}
-        diagnostics = {
-            'http_status': resp.status_code,
-            'google_status': detail.get('status', 'UNKNOWN'),
-            'google_message': detail.get('message', 'No JSON error message returned'),
-            'reasons': [e.get('reason') for e in detail.get('errors', []) if isinstance(e, dict)],
-            'error_info': [
-                {'reason': e.get('reason'), 'domain': e.get('domain'), 'metadata': {
-                    k: v for k, v in e.get('metadata', {}).items()
-                    if k in ('service', 'method', 'consumer', 'permission')
-                }}
-                for e in detail.get('details', [])
-                if isinstance(e, dict) and e.get('@type', '').endswith('ErrorInfo')
-            ],
-        }
-        print('GOOGLE_SHEETS_API_ERROR ' + json.dumps(diagnostics, ensure_ascii=False), file=sys.stderr)
-        raise RuntimeError(f'Google Sheets request failed (HTTP {resp.status_code}); see GOOGLE_SHEETS_API_ERROR above')
-    return resp.json().get('values', [])
-
-
-def get_access_token():
-    """Refresh an end-user OAuth token; never print credentials or tokens."""
-    client_id = os.getenv('LINE_GOOGLE_CLIENT_ID', '').strip()
-    client_secret = os.getenv('LINE_GOOGLE_CLIENT_SECRET', '').strip()
-    refresh_token = os.getenv('LINE_GOOGLE_REFRESH_TOKEN', '').strip()
-    if not all((client_id, client_secret, refresh_token)):
-        raise RuntimeError('Missing LINE_GOOGLE_CLIENT_ID / LINE_GOOGLE_CLIENT_SECRET / LINE_GOOGLE_REFRESH_TOKEN GitHub Secrets')
+def describe_error(response):
     try:
-        response = requests.post(
-            'https://oauth2.googleapis.com/token',
-            data={'client_id': client_id, 'client_secret': client_secret,
-                  'refresh_token': refresh_token, 'grant_type': 'refresh_token'},
-            timeout=30,
-        )
-    except requests.RequestException as exc:
-        raise RuntimeError('Google OAuth token refresh network failure') from exc
-    if not response.ok:
-        try:
-            error_code = response.json().get('error', 'unknown')
-        except ValueError:
-            error_code = 'unknown'
-        # Do not log raw server response: it might contain private details.
-        raise RuntimeError(f'Google OAuth refresh failed: HTTP {response.status_code}, error={error_code}. '
-                           'Check consent-screen testing status, token expiry and secrets.')
-    token = response.json().get('access_token')
-    if not token:
-        raise RuntimeError('Google OAuth refresh response lacks access_token')
-    return token
+        err = response.json().get('error', {})
+    except (ValueError, AttributeError):
+        err = {}
+    return {'http_status': response.status_code, 'status': err.get('status'),
+            'message': err.get('message'),
+            'reasons': [e.get('reason') for e in err.get('errors', []) if isinstance(e, dict)]}
+
+
+def fetch_sheet(token):
+    headers = {'Authorization': 'Bearer ' + token}
+    # Independent Drive check distinguishes file-sharing problems from Sheets API problems.
+    meta_url = f'https://www.googleapis.com/drive/v3/files/{SHEET_ID}'
+    drive = requests.get(meta_url, headers=headers,
+                         params={'fields': 'id,name,mimeType,capabilities(canDownload)'}, timeout=30)
+    if drive.ok:
+        metadata = drive.json()
+        print('DRIVE_FILE_ACCESS_OK ' + json.dumps(metadata, ensure_ascii=False))
+    else:
+        print('DRIVE_FILE_ACCESS_ERROR ' + json.dumps(describe_error(drive), ensure_ascii=False))
+
+    range_name = quote(f"'{SHEET_TAB}'!A1:W", safe='')
+    url = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{range_name}'
+    sheets = requests.get(url, headers=headers,
+                          params={'valueRenderOption': 'FORMATTED_VALUE'}, timeout=120)
+    if sheets.ok:
+        print('SHEETS_READ_OK')
+        return sheets.json().get('values', [])
+    print('SHEETS_READ_ERROR ' + json.dumps(describe_error(sheets), ensure_ascii=False), file=sys.stderr)
+    # Drive export is an alternative for a Google-native spreadsheet, not an authorization bypass.
+    if drive.ok and drive.json().get('mimeType') == 'application/vnd.google-apps.spreadsheet':
+        export_url = f'https://www.googleapis.com/drive/v3/files/{SHEET_ID}/export'
+        exported = requests.get(export_url, headers=headers,
+                                params={'mimeType': 'text/csv'}, timeout=120)
+        if exported.ok:
+            # CSV export only exports the first tab. Don't silently import the wrong tab.
+            print('DRIVE_CSV_EXPORT_AVAILABLE_BUT_NOT_USED: cannot verify target tab; Sheets API access required')
+        else:
+            print('DRIVE_CSV_EXPORT_ERROR ' + json.dumps(describe_error(exported), ensure_ascii=False), file=sys.stderr)
+    raise RuntimeError('Google Sheets inaccessible. Check DRIVE_FILE_ACCESS and SHEETS_READ diagnostics above.')
 
 
 def main():
-    today = date.fromisoformat(os.environ['LINE_SYNC_TODAY']) if os.getenv('LINE_SYNC_TODAY') else datetime.now(ZoneInfo('Asia/Taipei')).date()
+    today = (date.fromisoformat(os.environ['LINE_SYNC_TODAY'])
+             if os.getenv('LINE_SYNC_TODAY') else datetime.now(ZoneInfo('Asia/Taipei')).date())
     fixture = os.getenv('LINE_SYNC_FIXTURE')
     if fixture:
         values = json.loads(Path(fixture).read_text(encoding='utf-8'))
     else:
-        # Prefer the user's own OAuth identity. Never fall back to a service account.
-        token = get_access_token()
+        token = os.getenv('ACCESS_TOKEN', '').strip()
+        if not token:
+            raise RuntimeError('Missing ACCESS_TOKEN from google-github-actions/auth; check workflow WIF setup')
         values = fetch_sheet(token)
     brokers = load_json(BROKER_FILE).get('items', [])
     data, stats = transform(values, brokers, today)
-    print(json.dumps(stats, ensure_ascii=False))
-    if os.getenv('LINE_SYNC_DRY_RUN') == '1':
+    print('LINE_SYNC_STATS ' + json.dumps(stats, ensure_ascii=False))
+    if os.getenv('LINE_SYNC_DRY_RUN', '1') == '1':
+        print('DRY_RUN: no data written, no AI calls, no Telegram')
         return
+    # Explicit opt-in required to avoid exposing research text in a public repository.
+    if os.getenv('LINE_ALLOW_PUBLIC_WRITE') != 'I_UNDERSTAND':
+        raise RuntimeError('Refusing to write research text without explicit LINE_ALLOW_PUBLIC_WRITE opt-in')
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     if load_json(OUTPUT) == data:
         print('Unchanged; skip write')
@@ -192,7 +181,7 @@ def main():
     tmp = OUTPUT.with_suffix('.json.tmp')
     tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     tmp.replace(OUTPUT)
-    print(f'Updated {OUTPUT}; no AI calls or notifications')
+    print('Updated LINE data locally; no AI calls or notifications')
 
 
 if __name__ == '__main__':
