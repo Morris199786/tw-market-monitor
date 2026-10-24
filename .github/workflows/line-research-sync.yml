@@ -1,25 +1,29 @@
 name: LINE research sync (3 months)
+
 on:
   workflow_dispatch:
     inputs:
       sheet_id:
-        description: '作者已分享的 Google 試算表 ID（網址 /d/ 後面的部分）'
+        description: 'Google 試算表 ID'
         required: true
         default: '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM'
         type: string
       sheet_tab:
-        description: '要讀取的分頁名稱'
+        description: '分頁名稱'
         required: true
         default: 'LINE產業研究資料庫'
         type: string
   schedule:
     - cron: '*/30 * * * *'
+
 permissions:
   contents: read
   id-token: write
+
 concurrency:
   group: line-research-sync
   cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -28,6 +32,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
+
       - uses: google-github-actions/auth@v3
         id: auth
         with:
@@ -35,16 +40,51 @@ jobs:
           service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
+
       - name: Install requests
         run: python -m pip install requests
-      - name: Sync without AI or Telegram
+
+      - name: Verify sheet rows and date range (dry run, no AI or Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-          LINE_SYNC_DRY_RUN: '1'
           LINE_SHEET_ID: ${{ inputs.sheet_id || '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM' }}
           LINE_SHEET_TAB: ${{ inputs.sheet_tab || 'LINE產業研究資料庫' }}
           LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
-        run: python scripts/sync_line_research.py
-      # Safety: dry-run only until service account access and private data protection are verified.
-      # No data is committed to this currently public repository.
+        run: |
+          python - <<'PY'
+          import os
+          from collections import Counter
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          from scripts import sync_line_research as sync
 
+          today = datetime.now(ZoneInfo('Asia/Taipei')).date()
+          values = sync.fetch_sheet(os.environ['ACCESS_TOKEN'])
+          brokers = sync.load_json(sync.BROKER_FILE).get('items', [])
+          data, stats = sync.transform(values, brokers, today)
+          dates = [sync.parse_date(row[0]) for row in values[1:] if row]
+          dates = [day for day in dates if day]
+          if not dates:
+              raise RuntimeError('沒有可解析的日期，停止驗證')
+          print('=== LINE 資料庫核對 ===')
+          print('原始筆數:', stats['input_rows'])
+          print('原始最早日期:', min(dates).isoformat())
+          print('原始最新日期:', max(dates).isoformat())
+          print('篩選起始日期:', data['window_start'])
+          print('篩選結束日期:', data['window_end'])
+          print('近三個月保留:', stats['kept'])
+          print('日期範圍外:', stats['skipped_outside_window'])
+          print('無效日期:', stats['invalid_dates'])
+          print('完全重複:', stats['identical_rows_removed'])
+          print('疑似與券商重疊:', stats['broker_overlap_candidates'])
+          print('月份分布:', dict(sorted(Counter(row['date'][:7] for row in data['items']).items())))
+          print('=== 最新 10 筆（僅日期、公司、代號，不顯示研究內文）===')
+          for row in data['items'][:10]:
+              print(row['date'], str(row['company'])[:50], str(row['ticker'])[:30])
+          assert stats['kept'] == len(data['items'])
+          assert all(data['window_start'] <= row['date'] <= data['window_end'] for row in data['items'])
+          print('VALIDATION_OK: 只驗證，不寫入公開 repo')
+          PY
+
+      # The repository is public. Never commit the full research text here.
+      # A private storage/publishing path is required before enabling live website sync.
