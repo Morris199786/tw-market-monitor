@@ -1,0 +1,85 @@
+name: Apply Telegram URL Patch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-telegram-url-patch
+  cancel-in-progress: false
+
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Check patch file
+        run: |
+          if [ ! -f "telegram_site_url.patch" ]; then
+            echo "::error::找不到 telegram_site_url.patch，請放在 Repository 根目錄"
+            exit 1
+          fi
+
+      - name: Apply patch
+        run: |
+          git apply --check telegram_site_url.patch
+          git apply telegram_site_url.patch
+
+      - name: Verify URLs
+        run: |
+          echo "檢查舊網址是否仍存在於推播程式..."
+
+          if grep -RFn \
+            "https://morris199786.github.io/tw-market-monitor/" \
+            scripts/update_self_reports.py \
+            scripts/update_reports_ai.py \
+            scripts/update_tw_ratings.py \
+            scripts/send_reports_daily_summary.py \
+            scripts/send_update_telegram.py \
+            .github/workflows/reports-drive.yml \
+            .github/workflows/reports-daily-summary.yml; then
+
+            echo "::error::仍有舊網址，Patch 未完整套用"
+            exit 1
+          fi
+
+          echo "舊網址已全部移除"
+
+      - name: Commit and push changes
+        run: |
+          git add \
+            scripts/update_self_reports.py \
+            scripts/update_reports_ai.py \
+            scripts/update_tw_ratings.py \
+            scripts/send_reports_daily_summary.py \
+            scripts/send_update_telegram.py \
+            .github/workflows/reports-drive.yml \
+            .github/workflows/reports-daily-summary.yml
+
+          if git diff --cached --quiet; then
+            echo "沒有需要提交的變更"
+            exit 0
+          fi
+
+          git commit -m "Fix Telegram links to Cloudflare Pages"
+          git push origin main
+
+      - name: Completed
+        run: |
+          echo "======================================"
+          echo "Telegram 網址 Patch 套用完成"
+          echo "新網址：https://tw-market-monitor.pages.dev/"
+          echo "======================================"
