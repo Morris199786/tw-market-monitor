@@ -30,13 +30,14 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
-          access_token_scopes: https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/spreadsheets.readonly
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
       - name: Install dependencies
-        run: python -m pip install requests
+        run: python -m pip install requests 'openpyxl>=3.1,<4'
 
       - name: Sync with existing service account (dry run, no AI or Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_SYNC_DRY_RUN: '1'
         run: python scripts/sync_line_research.py
+
