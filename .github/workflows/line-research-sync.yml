@@ -28,16 +28,38 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
       - name: Install dependencies
         run: python -m pip install requests 'openpyxl>=3.1,<4'
 
+      - name: Verify actual Drive token identity
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          python - <<'PY'
+          import os
+          import requests
+          expected = 'id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com'
+          response = requests.get(
+              'https://www.googleapis.com/drive/v3/about',
+              headers={'Authorization': 'Bearer ' + os.environ['ACCESS_TOKEN']},
+              params={'fields': 'user(emailAddress)'}, timeout=30)
+          if not response.ok:
+              raise SystemExit('DRIVE_IDENTITY_CHECK_FAILED HTTP ' + str(response.status_code))
+          actual = response.json().get('user', {}).get('emailAddress')
+          print('DRIVE_TOKEN_ACCOUNT:', actual or 'not returned')
+          if actual != expected:
+              raise SystemExit('DRIVE_IDENTITY_MISMATCH: token identity does not match shared account')
+          print('DRIVE_TOKEN_IDENTITY_VERIFIED')
+          PY
+
       - name: Sync with existing service account (dry run, no AI or Telegram)
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_SYNC_DRY_RUN: '1'
         run: python scripts/sync_line_research.py
+
 
