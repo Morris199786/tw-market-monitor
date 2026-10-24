@@ -3,6 +3,8 @@
 Dry run is the default. Never sends notifications or calls an AI service.
 """
 import calendar
+from io import BytesIO
+from openpyxl import load_workbook
 import hashlib
 import json
 import os
@@ -19,8 +21,8 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'data/line_research.json'
 BROKER_FILE = ROOT / 'data/reports.json'
-SHEET_ID = '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM'
-SHEET_TAB = 'LINE產業研究資料庫'
+SHEET_ID = os.getenv('LINE_SHEET_ID', '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM').strip()
+SHEET_TAB = os.getenv('LINE_SHEET_TAB', 'LINE產業研究資料庫').strip()
 COLUMNS = ('date','type','source','industry','company','ticker','period','story',
            'revenue','eps','inventory','utilization','guidance','trend','rating_target',
            'numbers','dividend_current','dividend_next','dividend_policy',
@@ -111,47 +113,103 @@ def transform(values, brokers, today):
             'broker_overlap_candidates': sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 
-def describe_error(response):
+XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+GOOGLE_SHEET_MIME = 'application/vnd.google-apps.spreadsheet'
+
+
+def drive_get(url, token, params, stage):
+    try:
+        response = requests.get(url, headers={'Authorization': 'Bearer ' + token},
+                                params=params, timeout=120)
+    except requests.RequestException:
+        raise RuntimeError(stage + ': Google Drive connection failed') from None
+    if response.ok:
+        return response
     try:
         err = response.json().get('error', {})
     except (ValueError, AttributeError):
         err = {}
-    return {'http_status': response.status_code, 'status': err.get('status'),
-            'message': err.get('message'),
-            'reasons': [e.get('reason') for e in err.get('errors', []) if isinstance(e, dict)]}
+    reasons = [e.get('reason') for e in err.get('errors', []) if isinstance(e, dict)]
+    reasons += [e.get('reason') for e in err.get('details', []) if isinstance(e, dict)]
+    print('DRIVE_API_ERROR ' + json.dumps({
+        'stage': stage, 'http_status': response.status_code,
+        'status': err.get('status'), 'reasons': reasons
+    }), file=sys.stderr)
+    # Never log tokens, request headers, workbook contents or arbitrary server messages.
+    if 'exportSizeLimitExceeded' in reasons:
+        hint = 'Google 試算表匯出超過 10 MB 上限；請提供較小的匯出檔案'
+    elif 'SERVICE_DISABLED' in reasons or 'accessNotConfigured' in reasons:
+        hint = '請在授權專案啟用 Google Drive API'
+    elif response.status_code in (403, 404):
+        hint = '此帳號無法執行此檔案操作；請依 stage 區分中繼資料或下載權限，不代表一定未分享'
+    elif response.status_code == 401:
+        hint = '權杖無效或過期'
+    else:
+        hint = 'Google Drive request failed'
+    raise RuntimeError(stage + ': ' + hint)
+
+
+def read_xlsx(content):
+    try:
+        workbook = load_workbook(BytesIO(content), read_only=True, data_only=True)
+    except Exception:
+        raise RuntimeError('INVALID_XLSX: 下載內容不是可讀取的 Excel 活頁簿') from None
+    try:
+        if SHEET_TAB not in workbook.sheetnames:
+            raise RuntimeError('SHEET_TAB_NOT_FOUND: 檔案已下載，但找不到指定分頁 ' + SHEET_TAB)
+        values = []
+        for raw in workbook[SHEET_TAB].iter_rows(max_col=len(COLUMNS), values_only=True):
+            row = []
+            for value in raw:
+                if isinstance(value, (datetime, date)):
+                    value = value.isoformat()
+                elif value is None:
+                    value = ''
+                row.append(value)
+            values.append(row)
+        if not values or not any(v != '' for v in values[0]):
+            raise RuntimeError('EMPTY_WORKSHEET: 指定分頁無標題資料，停止匯入')
+        print('DRIVE_WORKBOOK_READ_OK: 指定分頁已解析；公式使用檔案儲存的計算結果')
+        return values
+    finally:
+        workbook.close()
 
 
 def fetch_sheet(token):
-    headers = {'Authorization': 'Bearer ' + token}
-    # Independent Drive check distinguishes file-sharing problems from Sheets API problems.
-    meta_url = f'https://www.googleapis.com/drive/v3/files/{SHEET_ID}'
-    drive = requests.get(meta_url, headers=headers,
-                         params={'fields': 'id,name,mimeType,capabilities(canDownload)'}, timeout=30)
-    if drive.ok:
-        metadata = drive.json()
-        print('DRIVE_FILE_ACCESS_OK ' + json.dumps(metadata, ensure_ascii=False))
+    if not re.fullmatch(r'[A-Za-z0-9_-]+', SHEET_ID):
+        raise ValueError('LINE_SHEET_ID 必須填檔案 ID，不是完整網址')
+    file_id = SHEET_ID
+    visited = set()
+    # Follow Drive shortcuts only through Google's API and retain target permission checks.
+    for _ in range(5):
+        if file_id in visited:
+            raise RuntimeError('DRIVE_SHORTCUT_LOOP')
+        visited.add(file_id)
+        base = 'https://www.googleapis.com/drive/v3/files/' + quote(file_id, safe='')
+        metadata = drive_get(base, token, {
+            'fields': 'id,mimeType,capabilities(canDownload),shortcutDetails(targetId)',
+            'supportsAllDrives': 'true'
+        }, 'METADATA').json()
+        mime = metadata.get('mimeType')
+        if mime != 'application/vnd.google-apps.shortcut':
+            break
+        file_id = metadata.get('shortcutDetails', {}).get('targetId', '')
+        if not re.fullmatch(r'[A-Za-z0-9_-]+', file_id):
+            raise RuntimeError('INVALID_SHORTCUT_TARGET')
     else:
-        print('DRIVE_FILE_ACCESS_ERROR ' + json.dumps(describe_error(drive), ensure_ascii=False))
-
-    range_name = quote(f"'{SHEET_TAB}'!A1:W", safe='')
-    url = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{range_name}'
-    sheets = requests.get(url, headers=headers,
-                          params={'valueRenderOption': 'FORMATTED_VALUE'}, timeout=120)
-    if sheets.ok:
-        print('SHEETS_READ_OK')
-        return sheets.json().get('values', [])
-    print('SHEETS_READ_ERROR ' + json.dumps(describe_error(sheets), ensure_ascii=False), file=sys.stderr)
-    # Drive export is an alternative for a Google-native spreadsheet, not an authorization bypass.
-    if drive.ok and drive.json().get('mimeType') == 'application/vnd.google-apps.spreadsheet':
-        export_url = f'https://www.googleapis.com/drive/v3/files/{SHEET_ID}/export'
-        exported = requests.get(export_url, headers=headers,
-                                params={'mimeType': 'text/csv'}, timeout=120)
-        if exported.ok:
-            # CSV export only exports the first tab. Don't silently import the wrong tab.
-            print('DRIVE_CSV_EXPORT_AVAILABLE_BUT_NOT_USED: cannot verify target tab; Sheets API access required')
-        else:
-            print('DRIVE_CSV_EXPORT_ERROR ' + json.dumps(describe_error(exported), ensure_ascii=False), file=sys.stderr)
-    raise RuntimeError('Google Sheets inaccessible. Check DRIVE_FILE_ACCESS and SHEETS_READ diagnostics above.')
+        raise RuntimeError('DRIVE_SHORTCUT_DEPTH_EXCEEDED')
+    print('DRIVE_FILE_ACCESS_OK ' + json.dumps({
+        'mimeType': mime, 'canDownload': metadata.get('capabilities', {}).get('canDownload')
+    }))
+    if metadata.get('capabilities', {}).get('canDownload') is False:
+        raise RuntimeError('DOWNLOAD_NOT_ALLOWED: Google Drive 明確禁止此帳號下載；停止')
+    if mime == GOOGLE_SHEET_MIME:
+        response = drive_get(base + '/export', token, {'mimeType': XLSX_MIME}, 'EXPORT_XLSX')
+    elif mime in (XLSX_MIME, 'application/vnd.ms-excel.sheet.macroEnabled.12'):
+        response = drive_get(base, token, {'alt': 'media', 'supportsAllDrives': 'true'}, 'DOWNLOAD_XLSX')
+    else:
+        raise RuntimeError('UNSUPPORTED_FILE_TYPE: ' + str(mime) + '；請提供 .xlsx 或 Google 試算表')
+    return read_xlsx(response.content)
 
 
 def main():
@@ -186,3 +244,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
