@@ -1,80 +1,26 @@
-/* 產業資料庫 v2：按需載入小分片、全文搜尋、手機一致字級 */
+/* 產業資料庫：近七天預設、六大分類、全歷史索引搜尋、全文按需載入 */
 (()=>{'use strict';
-const root=document.querySelector('#reports'),legacy=document.querySelector('#reportList');if(!root||!legacy)return;
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const norm=s=>String(s??'').toLowerCase().trim();
-const txt=s=>String(s??'').trim();
-const url='./data/research_manifest.json';
-let manifest=null,rows=[],loaded=new Set(),loading=false,query='',category='全部',rating='全部評等',sector='全部產業',limit=30,exhausted=false;
-const cats=['全部','個股研究','產業研究','法說／訪談','週報','市場情報'];
-const ratings=['全部評等','上調','下調','初評','維持','未評等'];
-const css=`
-#researchMergedPanel{margin:14px 0 22px;font-family:inherit;color:inherit;font-size:14px}
-#researchMergedPanel *{box-sizing:border-box}
-#researchMergedPanel .research-toolbar{display:grid;gap:10px;margin-bottom:12px}
-#researchMergedPanel .research-cats,#researchMergedPanel .research-ratings{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 6px}
-#researchMergedPanel .research-cats::-webkit-scrollbar,#researchMergedPanel .research-ratings::-webkit-scrollbar{display:none}
-#researchMergedPanel button,#researchMergedPanel input,#researchMergedPanel select{font:inherit}
-#researchMergedPanel .research-filter{flex:0 0 auto;border:1px solid #dce2ea;background:#fff;color:#252b36;border-radius:999px;padding:9px 14px;font-size:14px;font-weight:650;line-height:1.3;white-space:nowrap}
-#researchMergedPanel .research-filter.active{background:#2563eb;border-color:#2563eb;color:white}
-#researchMergedPanel .research-searchrow{display:flex;gap:8px}
-#researchMergedPanel .research-search{min-width:0;flex:1;padding:11px 12px;border:1px solid #dce2ea;border-radius:12px;background:#fff;font-size:14px}
-#researchMergedPanel .research-clear{padding:9px 13px;border:1px solid #dce2ea;border-radius:12px;background:#fff;color:#252b36;font-size:14px}
-#researchMergedPanel .research-sector{width:100%;padding:11px 12px;border:1px solid #dce2ea;border-radius:12px;background:#fff;color:#252b36;font-size:14px}
-#researchMergedPanel .research-meta{font-size:13px;color:#687385;line-height:1.5}
-#researchMergedPanel .research-card{border:1px solid #dce2ea;border-radius:14px;background:#fff;padding:14px;margin:10px 0;color:#252b36;overflow-wrap:anywhere}
-#researchMergedPanel .research-title{font-size:16px;line-height:1.45;font-weight:750;margin:0 0 6px}
-#researchMergedPanel .research-sub{font-size:12px;color:#64748b;line-height:1.55;margin-bottom:9px}
-#researchMergedPanel .research-body{font-size:14px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
-#researchMergedPanel .research-expand{margin-top:10px;border:0;background:#eef4ff;color:#1d4ed8;border-radius:9px;padding:8px 12px;font-size:13px;font-weight:700}
-#researchMergedPanel .research-date{font-size:14px;font-weight:750;margin:20px 0 10px;color:#344256}
-#researchMergedPanel mark{background:#fff1a8;color:inherit}
-#researchMergedPanel .research-more{display:block;width:100%;margin:14px auto;padding:12px;border:1px solid #dce2ea;border-radius:12px;background:#fff;color:#252b36;font-size:14px}
-#researchMergedPanel .research-loading{font-size:14px;color:#64748b;padding:14px 0}
-@media(max-width:700px){
-#researchMergedPanel{font-size:14px}
-#researchMergedPanel .research-filter{font-size:14px;padding:9px 12px}
-#researchMergedPanel .research-title{font-size:16px}
-#researchMergedPanel .research-body{font-size:14px}
-#researchMergedPanel .research-search,#researchMergedPanel .research-clear,#researchMergedPanel .research-sector{font-size:14px}
-}`;
-const style=document.createElement('style');style.textContent=css;document.head.appendChild(style);
-const panel=document.createElement('div');panel.id='researchMergedPanel';
-panel.innerHTML=`<div class="research-toolbar">
-<div class="research-cats">${cats.map(x=>`<button type="button" class="research-filter" data-category="${esc(x)}">${esc(x)}</button>`).join('')}</div>
-<div class="research-searchrow"><input id="researchSearch" class="research-search" type="search" placeholder="搜尋公司、代號、券商或全文"><button id="researchClear" class="research-clear" type="button">清除</button></div>
-<select id="researchSector" class="research-sector"><option>全部產業</option></select>
-<div class="research-ratings">${ratings.map(x=>`<button type="button" class="research-filter" data-rating="${esc(x)}">${esc(x)}</button>`).join('')}</div>
-<div id="researchMeta" class="research-meta">準備載入資料…</div>
-</div><div id="researchCards"></div><button type="button" id="researchMore" class="research-more" hidden>載入更多</button>`;
-legacy.parentNode.insertBefore(panel,legacy);
-const list=$('#researchCards'),meta=$('#researchMeta'),more=$('#researchMore');
-const bodyOf=r=>[r.full_text,r.full_text_2,r.full_text_3,r.story].map(txt).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join('\n\n')||txt(r.summary)||txt(r.source_name);
-const dateOf=r=>txt(r.report_date||r.date||r.group_date||r.received_at).slice(0,10)||'日期未明';
-const titleOf=r=>[txt(r.company||r.company_name),txt(r.ticker||r.stock_id)].filter(Boolean).join(' ')||txt(r.source_name)||'研究資料';
-const categoryOf=r=>txt(r.category||r.research_category)||'市場情報';
-const ratingOf=r=>txt(r.rating_change||r.rating_category)||'未評等';
-const sectorOf=r=>txt(r.sector||r.industry)||'';
-const hay=r=>norm([r.company,r.company_name,r.ticker,r.stock_id,r.source,r.broker,r.source_name,r.summary,r.story,r.full_text,r.full_text_2,r.full_text_3,r.numbers,r.rating_target].join(' '));
-const hi=s=>{let h=esc(s);if(!query)return h;const needle=esc(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');try{return h.replace(new RegExp(needle,'gi'),m=>`<mark>${m}</mark>`)}catch{return h}};
-function matches(r){return(category==='全部'||categoryOf(r)===category)&&(rating==='全部評等'||ratingOf(r)===rating)&&(sector==='全部產業'||sectorOf(r)===sector)&&(!query||hay(r).includes(norm(query)))}
-function setActive(){panel.querySelectorAll('[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category===category));panel.querySelectorAll('[data-rating]').forEach(b=>b.classList.toggle('active',b.dataset.rating===rating))}
-function card(r){const b=bodyOf(r),expanded=!!query&&norm(b).includes(norm(query))&&norm(b.slice(0,300)).indexOf(norm(query))<0;const short=b.length>300&&!expanded;return `<article class="research-card" data-research-id="${esc(r.id)}"><div class="research-title">${hi(titleOf(r))}</div><div class="research-sub">${esc(dateOf(r))}　${esc(r.source||r.broker||'')}　${esc(r.type||'')}　${esc(categoryOf(r))}</div><div class="research-body">${hi(short?b.slice(0,300)+'…':b)}</div>${b.length>300?`<button type="button" class="research-expand" aria-expanded="${expanded?'true':'false'}">${expanded?'收合內容 ▲':'展開全文 ▼'}</button>`:''}</article>`}
-function render(){setActive();const filtered=rows.filter(matches).sort((a,b)=>dateOf(b).localeCompare(dateOf(a)));const visible=filtered.slice(0,limit);let last='';list.innerHTML=visible.map(r=>{const d=dateOf(r);let header='';if(d!==last){header=`<div class="research-date">${esc(d)}</div>`;last=d}return header+card(r)}).join('')||'<div class="research-loading">目前沒有符合條件的資料</div>';meta.textContent=`符合 ${filtered.length} 筆｜已載入 ${rows.length} 筆${manifest?'｜資料庫共 '+(manifest.total||manifest.total_items||'?')+' 筆':''}`;more.hidden=exhausted&&filtered.length<=limit;more.textContent=loading?'載入中…':filtered.length>limit?'顯示更多':'繼續載入歷史資料'}
-async function getJSON(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw Error(`${r.status} ${path}`);return r.json()}
-function shards(){const s=manifest?.shards||manifest?.files||[];return s.map(x=>typeof x==='string'?x:(x.path||x.file||x.url)).filter(Boolean)}
-async function loadNext(){if(loading||exhausted)return;loading=true;more.disabled=true;try{const all=shards();const next=all.find(x=>!loaded.has(x));if(!next){exhausted=true;return}loaded.add(next);const data=await getJSON(next.startsWith('./')||next.startsWith('/')?next:'./'+next);const batch=Array.isArray(data)?data:(data.items||[]);rows.push(...batch);if(loaded.size>=all.length)exhausted=true}catch(e){console.error('research shard load failed',e);meta.textContent='資料載入失敗：'+e.message}finally{loading=false;more.disabled=false;render()}}
-async function loadAllForSearch(){if(!query)return;const all=shards();for(let i=0;i<all.length;i++){if(!query)return;if(exhausted)break;await loadNext();if(i%4===3)await new Promise(r=>setTimeout(r,0))}}
-async function init(){try{manifest=await getJSON(url);await loadNext()}catch(e){meta.textContent='資料庫載入失敗：'+e.message;console.error(e)}}
-function sync(){const active=root.classList.contains('active');const ratingsPanel=$('#twRatingsPanel');const isRatings=ratingsPanel&&!ratingsPanel.hidden;panel.hidden=!active||isRatings;if(active&&!isRatings){legacy.hidden=true;if(!manifest)init()}else if(isRatings){legacy.hidden=true}else{legacy.hidden=false}}
-panel.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{category=b.dataset.category;limit=30;render()}));
-panel.querySelectorAll('[data-rating]').forEach(b=>b.addEventListener('click',()=>{rating=b.dataset.rating;limit=30;render()}));
-$('#researchSector').addEventListener('change',e=>{sector=e.target.value;limit=30;render()});
-let searchTimer;$('#researchSearch').addEventListener('input',e=>{query=e.target.value.trim();limit=30;clearTimeout(searchTimer);searchTimer=setTimeout(async()=>{render();if(query)await loadAllForSearch()},250)});
-$('#researchClear').addEventListener('click',()=>{$('#researchSearch').value='';query='';limit=30;render()});
-more.addEventListener('click',async()=>{const n=rows.filter(matches).length;if(n>limit){limit+=30;render()}else await loadNext()});
-list.addEventListener('click',e=>{const b=e.target.closest('.research-expand');if(!b)return;const cardEl=b.closest('.research-card'),r=rows.find(x=>String(x.id)===cardEl.dataset.researchId);if(!r)return;const expanded=b.getAttribute('aria-expanded')==='true';cardEl.querySelector('.research-body').innerHTML=hi(expanded?bodyOf(r).slice(0,300)+'…':bodyOf(r));b.setAttribute('aria-expanded',String(!expanded));b.textContent=expanded?'展開全文 ▼':'收合內容 ▲'});
-const observer=new MutationObserver(sync);observer.observe(root,{attributes:true,attributeFilter:['class']});const ratingsPanel=$('#twRatingsPanel');if(ratingsPanel)observer.observe(ratingsPanel,{attributes:true,attributeFilter:['hidden']});
-if($('#reportModeReports'))$('#reportModeReports').textContent='資料庫';if(root.classList.contains('active'))sync();
+const root=document.getElementById('reports'),legacy=document.getElementById('reportList');if(!root||!legacy)return;
+const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T=s=>String(s??'').trim(),N=s=>T(s).toLocaleLowerCase(),C=['個股研究','產業研究','法說／訪談','週報','市場情報','券商報告'];
+const panel=document.createElement('div');panel.id='researchMergedPanel';panel.innerHTML=`<div class="research-toolbar"><div class="research-cats">${C.map(c=>`<button type="button" class="research-filter" data-cat="${E(c)}">${E(c)}</button>`).join('')}</div><div class="research-searchrow"><input id="researchSearch" type="search" placeholder="搜尋所有歷史：公司、代號、券商、全文"><button id="researchClear" type="button">清除</button></div><div id="researchMeta" class="research-meta">載入中…</div></div><div id="researchCards"></div><button id="researchMore" type="button" hidden>顯示更多</button>`;legacy.parentNode.insertBefore(panel,legacy);
+const style=document.createElement('style');style.textContent=`#researchMergedPanel{margin:14px 0 24px;font-size:14px;color:#263244}#researchMergedPanel *{box-sizing:border-box}#researchMergedPanel .research-toolbar{display:grid;gap:10px;margin-bottom:12px}#researchMergedPanel .research-cats{display:flex;gap:7px;overflow-x:auto;padding:3px 0 8px;scrollbar-width:none}#researchMergedPanel .research-cats::-webkit-scrollbar{display:none}#researchMergedPanel button,#researchMergedPanel input{font:inherit}#researchMergedPanel .research-filter{flex:0 0 auto;border:1px solid #d9e0ea;background:#fff;border-radius:20px;padding:9px 12px;font-size:13px;color:#263244;white-space:nowrap}#researchMergedPanel .research-filter.active{background:#2563eb;border-color:#2563eb;color:#fff}#researchMergedPanel .research-searchrow{display:flex;gap:8px}#researchMergedPanel #researchSearch{flex:1;min-width:0;border:1px solid #d9e0ea;border-radius:10px;padding:11px;font-size:14px;background:#fff;color:#263244}#researchMergedPanel #researchClear,#researchMergedPanel #researchMore{border:1px solid #d9e0ea;border-radius:10px;background:#fff;padding:10px 13px;font-size:14px;color:#263244}#researchMergedPanel .research-meta{color:#64748b;font-size:12px;line-height:1.6}#researchMergedPanel .research-card{border:1px solid #d9e0ea;background:#fff;border-radius:13px;padding:13px;margin:10px 0;overflow-wrap:anywhere}#researchMergedPanel .research-title{font-weight:750;font-size:16px;line-height:1.45;margin-bottom:5px}#researchMergedPanel .research-sub{font-size:12px;color:#64748b;margin-bottom:8px;line-height:1.6}#researchMergedPanel .research-body{white-space:pre-wrap;font-size:14px;line-height:1.75;overflow-wrap:anywhere}#researchMergedPanel .research-expand{margin-top:10px;border:0;background:#eef4ff;color:#1d4ed8;border-radius:8px;padding:9px 12px;font-size:13px}#researchMergedPanel #researchMore{display:block;width:100%;margin-top:12px}#researchMergedPanel #researchMore[hidden]{display:none}#researchMergedPanel .research-date{font-size:14px;font-weight:750;margin:19px 0 9px}#researchMergedPanel mark{background:#fff1a8}`;document.head.appendChild(style);
+const cards=panel.querySelector('#researchCards'),metaEl=panel.querySelector('#researchMeta'),more=panel.querySelector('#researchMore'),input=panel.querySelector('#researchSearch');
+let manifest=null,metadata=[],category='',query='',ids=[],limit=30,searchSerial=0,initialized=false;
+const cache=new Map(),indexCache=new Map();
+async function json(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw Error(`${r.status} ${path}`);return r.json()}
+const bucket=gram=>Array.from(gram).reduce((sum,ch,i)=>sum+(i+1)*ch.codePointAt(0),0)%64;
+async function lookupGram(gram){const b=bucket(gram);if(!indexCache.has(b))indexCache.set(b,await json(`./data/research_search/${String(b).padStart(2,'0')}.json`));return indexCache.get(b)[gram]||[]}
+const dateCutoff=()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+function selection(){const arr=ids.filter(i=>!category||metadata[i]?.category===category);return arr}
+function repaint(){panel.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',b.dataset.cat===category));const selected=selection();const slice=selected.slice(0,limit);metaEl.textContent=`${query?'歷史搜尋':'近七天'}｜符合 ${selected.length} 筆｜資料庫 ${manifest?.count??metadata.length} 筆`;cards.innerHTML='';let last='';for(const i of slice){const m=metadata[i];if(!m)continue;if(m.date!==last){const h=document.createElement('div');h.className='research-date';h.textContent=m.date||'日期未明';cards.appendChild(h);last=m.date}const a=document.createElement('article');a.className='research-card';a.innerHTML=`<div class="research-title">${E([m.company,m.ticker].filter(Boolean).join(' ')||'研究資料')}</div><div class="research-sub">${E(m.date)}　${E(m.source)}　${E(m.category)}</div><div class="research-body">點擊查看研究內容</div><button type="button" class="research-expand">展開全文 ▼</button>`;a.querySelector('button').addEventListener('click',()=>expand(a,m));cards.appendChild(a)}more.hidden=selected.length<=limit;more.disabled=false}
+async function fetchShard(file){if(cache.has(file))return cache.get(file);const promise=json(`./data/research_shards/${encodeURIComponent(file)}`).then(x=>x.items||[]).catch(e=>{cache.delete(file);throw e});cache.set(file,promise);if(cache.size>8)cache.delete(cache.keys().next().value);return promise}
+async function expand(a,m){const btn=a.querySelector('button'),body=a.querySelector('.research-body');if(btn.dataset.open==='1'){body.textContent='點擊查看研究內容';btn.textContent='展開全文 ▼';btn.dataset.open='0';return}btn.disabled=true;body.textContent='載入全文中…';try{const rows=await fetchShard(m.file);const r=rows.find(x=>String(x.id)===String(m.id));if(!r)throw Error('找不到該篇研究');const content=[r.full_text,r.full_text_2,r.full_text_3,r.story,r.summary,r.title].map(T).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join('\n\n');body.textContent=content||'此篇研究沒有文字內容';btn.textContent='收合內容 ▲';btn.dataset.open='1'}catch(e){body.textContent='載入失敗：'+e.message}finally{btn.disabled=false}}
+async function searchAll(term,serial){const needle=N(term);if(!needle){ids=metadata.map((m,i)=>m.date>=dateCutoff()?i:-1).filter(i=>i>=0);repaint();return}metaEl.textContent='搜尋全部歷史索引中…';let candidates=[];if(needle.length>=2){const grams=[...new Set(Array.from({length:needle.length-1},(_,i)=>needle.slice(i,i+2)))];let postings=null;for(const gram of grams){const list=await lookupGram(gram);if(serial!==searchSerial)return;const set=new Set(list);postings=postings===null?set:new Set([...postings].filter(x=>set.has(x)));if(!postings.size)break}candidates=[...(postings||[])];}else{candidates=metadata.map((_,i)=>i)}if(serial!==searchSerial)return;const matches=[];for(const i of candidates){const m=metadata[i];if(N([m.company,m.ticker,m.source,m.category].join(' ')).includes(needle)){matches.push(i);continue}/* ngram candidate must be verified against original full text */try{const rows=await fetchShard(m.file);const r=rows.find(x=>String(x.id)===String(m.id));if(r&&N([r.company,r.name,r.ticker,r.source,r.broker,r.story,r.full_text,r.full_text_2,r.full_text_3,r.summary,r.title,r.numbers,r.rating_target].join(' ')).includes(needle))matches.push(i)}catch(e){console.warn('research search shard failed',m.file,e)}if(serial!==searchSerial)return}ids=matches.sort((a,b)=>(metadata[b].date||'').localeCompare(metadata[a].date||''));limit=30;repaint()}
+async function init(){if(initialized)return;initialized=true;try{[manifest,metadata]=await Promise.all([json('./data/research_manifest.json'),json('./data/research_meta.json')]);ids=metadata.map((m,i)=>m.date>=dateCutoff()?i:-1).filter(i=>i>=0);repaint()}catch(e){metaEl.textContent='研究資料載入失敗：'+e.message;initialized=false}}
+function sync(){const active=root.classList.contains('active'),ratings=document.getElementById('twRatingsPanel'),ratingOn=ratings&&!ratings.hidden;panel.hidden=!active||ratingOn;if(active&&!ratingOn){legacy.hidden=true;init()}else if(ratingOn){legacy.hidden=true}else legacy.hidden=false}
+panel.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>{category=category===b.dataset.cat?'':b.dataset.cat;limit=30;repaint()}));
+let timer;input.addEventListener('input',()=>{query=T(input.value);clearTimeout(timer);const serial=++searchSerial;timer=setTimeout(()=>searchAll(query,serial).catch(e=>metaEl.textContent='搜尋失敗：'+e.message),350)});
+panel.querySelector('#researchClear').addEventListener('click',()=>{input.value='';query='';++searchSerial;limit=30;ids=metadata.map((m,i)=>m.date>=dateCutoff()?i:-1).filter(i=>i>=0);repaint()});more.addEventListener('click',()=>{limit+=30;repaint()});
+const observer=new MutationObserver(sync);observer.observe(root,{attributes:true,attributeFilter:['class']});const ratingPanel=document.getElementById('twRatingsPanel');if(ratingPanel)observer.observe(ratingPanel,{attributes:true,attributeFilter:['hidden']});sync();
 })();
