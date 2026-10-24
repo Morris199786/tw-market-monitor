@@ -299,10 +299,47 @@ def main():
         print(json.dumps({'merged':len(merged),'line':len(data['items']),
                           'broker':len(brokers),'audit':len(audit['candidates'])},ensure_ascii=False))
         return
-    write_json_atomic(PUBLIC_OUTPUT,public)
-    write_json_atomic(AUDIT_OUTPUT,audit)
-    write_json_atomic(OUTPUT,data)
-    print(f'Updated merged={len(merged)} LINE={len(data["items"])} broker={len(brokers)}; no AI/Telegram')
+    # Bounded-size immutable month shards. No 50MB monolithic browser request.
+    from collections import defaultdict
+    shards = defaultdict(list)
+    for item in merged:
+        key = str(item.get('date') or '')[:7]
+        if not re.fullmatch(r'20\d{2}-\d{2}', key):
+            key = 'unknown'
+        shards[key].append(item)
+    folder = ROOT / 'data/research_shards'
+    folder.mkdir(parents=True, exist_ok=True)
+    manifest = {'version': 2, 'count': len(merged), 'line_count': len(data['items']),
+                'broker_count': len(brokers), 'shards': []}
+    live = set()
+    # Content-addressed names allow safe caching and atomic manifest switch.
+    for key in sorted(shards, reverse=True):
+        items = shards[key]
+        # Each shard capped at 100 records, preventing unbounded monthly files.
+        for part in range(0, len(items), 100):
+            batch = items[part:part+100]
+            raw = json.dumps({'items':batch}, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+            digest = hashlib.sha256(raw).hexdigest()[:12]
+            filename = f'{key}-{part//100:03d}-{digest}.json'
+            path = folder / filename
+            if not path.exists():
+                path.write_bytes(raw)
+            live.add(filename)
+            manifest['shards'].append({'file': filename, 'month': key, 'count': len(batch),
+                                       'bytes': len(raw)})
+    write_json_atomic(ROOT / 'data/research_manifest.json', manifest)
+    write_json_atomic(AUDIT_OUTPUT, audit)
+    # Clean old content-addressed shards only after new manifest is ready.
+    for path in folder.glob('*.json'):
+        if path.name not in live:
+            path.unlink()
+    # Retire giant legacy exports to avoid ever growing the repository on each run.
+    for legacy in (OUTPUT, PUBLIC_OUTPUT):
+        if legacy.exists():
+            legacy.unlink()
+    print(f'RESEARCH_SHARDS_OK count={len(merged)} shards={len(manifest["shards"])} '
+          f'max_bytes={max((x["bytes"] for x in manifest["shards"]), default=0)}; no AI/Telegram')
+
 
 
 if __name__ == '__main__':
