@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Read LINE research with the SAME service-account token as broker reports.
-Dry run is the default. Never sends notifications or calls an AI service.
+"""LINE research Google Sheets ingestion: rolling 3 calendar months, no AI/Telegram.
+
+The output is a separate JSON file. No existing broker report state is modified.
 """
 import calendar
-from io import BytesIO
-from openpyxl import load_workbook
 import hashlib
 import json
 import os
@@ -14,7 +13,7 @@ import unicodedata
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, unquote
 
 import requests
 
@@ -53,7 +52,9 @@ def parse_date(value):
 
 
 def load_json(path):
-    return json.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding='utf-8'))
 
 
 def ticker(value):
@@ -64,17 +65,16 @@ def ticker(value):
 def broker_candidates(row, brokers):
     if row['type'] not in BROKER_TYPES:
         return []
+    day = row['date']
     stock_code = ticker(row['ticker'])
     company = normalize(row['company'])
     matches = []
     for report in brokers:
-        if report.get('date') != row['date']:
+        if report.get('date') != day:
             continue
-        same_stock = ((stock_code and ticker(report.get('ticker')) == stock_code)
-                      or (company and normalize(report.get('name')) == company))
+        same_stock = (stock_code and ticker(report.get('ticker')) == stock_code) or (company and normalize(report.get('name')) == company)
         if same_stock:
-            matches.append({'id': report.get('id'), 'broker': report.get('broker'),
-                            'title': report.get('title')})
+            matches.append({'id': report.get('id'), 'broker': report.get('broker'), 'title': report.get('title')})
     return matches
 
 
@@ -103,6 +103,7 @@ def transform(values, brokers, today):
             continue
         seen.add(digest)
         record['id'] = 'line-' + digest[:20]
+        # Candidate matches are NOT automatically removed: avoid false merges.
         record['possible_broker_duplicates'] = broker_candidates(record, brokers)
         items.append(record)
     items.sort(key=lambda r: (r['date'], r['sheet_row_number']), reverse=True)
@@ -113,125 +114,88 @@ def transform(values, brokers, today):
             'broker_overlap_candidates': sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 
-XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-GOOGLE_SHEET_MIME = 'application/vnd.google-apps.spreadsheet'
+def configured_identity():
+    """Read only impersonation target; never print credential contents or tokens."""
+    expected = os.getenv('LINE_EXPECTED_SERVICE_ACCOUNT', '').strip()
+    path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+    actual = None
+    if path:
+        config = json.loads(Path(path).read_text(encoding='utf-8'))
+        url = config.get('service_account_impersonation_url', '')
+        match = re.search(r'/serviceAccounts/([^/:]+):', unquote(url))
+        actual = match.group(1) if match else config.get('client_email')
+    if expected and actual and expected != actual:
+        raise RuntimeError('SERVICE_ACCOUNT_MISMATCH: workflow 帳號與預期帳號不同；停止讀取')
+    print(json.dumps({'service_account': actual or expected or 'not_verified',
+                      'identity_verified_from_auth_config': bool(actual),
+                      'spreadsheet_id': SHEET_ID}, ensure_ascii=False))
 
 
-def drive_get(url, token, params, stage):
+def sheets_get(endpoint, access_token, params):
+    resp = requests.get(endpoint, headers={'Authorization': 'Bearer ' + access_token},
+                        params=params, timeout=120)
+    if resp.ok:
+        return resp.json()
     try:
-        response = requests.get(url, headers={'Authorization': 'Bearer ' + token},
-                                params=params, timeout=120)
-    except requests.RequestException:
-        raise RuntimeError(stage + ': Google Drive connection failed') from None
-    if response.ok:
-        return response
-    try:
-        err = response.json().get('error', {})
-    except (ValueError, AttributeError):
-        err = {}
-    reasons = [e.get('reason') for e in err.get('errors', []) if isinstance(e, dict)]
-    reasons += [e.get('reason') for e in err.get('details', []) if isinstance(e, dict)]
-    print('DRIVE_API_ERROR ' + json.dumps({
-        'stage': stage, 'http_status': response.status_code,
-        'status': err.get('status'), 'reasons': reasons
-    }), file=sys.stderr)
-    # Never log tokens, request headers, workbook contents or arbitrary server messages.
-    if 'exportSizeLimitExceeded' in reasons:
-        hint = 'Google 試算表匯出超過 10 MB 上限；請提供較小的匯出檔案'
-    elif 'SERVICE_DISABLED' in reasons or 'accessNotConfigured' in reasons:
-        hint = '請在授權專案啟用 Google Drive API'
-    elif response.status_code in (403, 404):
-        hint = '此帳號無法執行此檔案操作；請依 stage 區分中繼資料或下載權限，不代表一定未分享'
-    elif response.status_code == 401:
-        hint = '權杖無效或過期'
+        detail = resp.json().get('error', {})
+    except ValueError:
+        detail = {}
+    reasons = [x.get('reason') for x in detail.get('errors', []) if isinstance(x, dict)]
+    reasons += [x.get('reason') for x in detail.get('details', []) if isinstance(x, dict)]
+    # Do not print arbitrary server messages: they can include URLs or request data.
+    print('GOOGLE_SHEETS_API_ERROR ' + json.dumps({
+        'http_status': resp.status_code, 'google_status': detail.get('status'),
+        'reasons': reasons, 'spreadsheet_id': SHEET_ID}, ensure_ascii=False), file=sys.stderr)
+    if 'SERVICE_DISABLED' in reasons or 'accessNotConfigured' in reasons:
+        hint = 'SHEETS_API_DISABLED: 請在服務帳號所屬專案啟用 Google Sheets API'
+    elif 'ACCESS_TOKEN_SCOPE_INSUFFICIENT' in reasons or 'insufficientPermissions' in reasons:
+        hint = 'TOKEN_SCOPE_INSUFFICIENT: token 缺少 spreadsheets.readonly scope'
+    elif resp.status_code == 403:
+        hint = ('SHEET_ACCESS_DENIED: 指定服務帳號無法讀取這個試算表 ID。'
+                '請核對作者分享的是同一份原始試算表，且分享名單中的完整帳號一致；'
+                '若皆一致，需由作者或 Workspace 管理員檢查檔案存取限制。'
+                '你的個人帳號權限不會自動套用到服務帳號。')
+    elif resp.status_code == 404:
+        hint = 'SHEET_NOT_FOUND_OR_HIDDEN: ID 錯誤、檔案不存在或此帳號無權看見'
+    elif resp.status_code == 401:
+        hint = 'TOKEN_INVALID: 權杖失效，請重新執行 workflow 取得新權杖'
     else:
-        hint = 'Google Drive request failed'
-    raise RuntimeError(stage + ': ' + hint)
+        hint = 'SHEETS_REQUEST_FAILED: HTTP ' + str(resp.status_code)
+    raise RuntimeError(hint)
 
 
-def read_xlsx(content):
-    try:
-        workbook = load_workbook(BytesIO(content), read_only=True, data_only=True)
-    except Exception:
-        raise RuntimeError('INVALID_XLSX: 下載內容不是可讀取的 Excel 活頁簿') from None
-    try:
-        if SHEET_TAB not in workbook.sheetnames:
-            raise RuntimeError('SHEET_TAB_NOT_FOUND: 檔案已下載，但找不到指定分頁 ' + SHEET_TAB)
-        values = []
-        for raw in workbook[SHEET_TAB].iter_rows(max_col=len(COLUMNS), values_only=True):
-            row = []
-            for value in raw:
-                if isinstance(value, (datetime, date)):
-                    value = value.isoformat()
-                elif value is None:
-                    value = ''
-                row.append(value)
-            values.append(row)
-        if not values or not any(v != '' for v in values[0]):
-            raise RuntimeError('EMPTY_WORKSHEET: 指定分頁無標題資料，停止匯入')
-        print('DRIVE_WORKBOOK_READ_OK: 指定分頁已解析；公式使用檔案儲存的計算結果')
-        return values
-    finally:
-        workbook.close()
-
-
-def fetch_sheet(token):
+def fetch_sheet(access_token):
     if not re.fullmatch(r'[A-Za-z0-9_-]+', SHEET_ID):
-        raise ValueError('LINE_SHEET_ID 必須填檔案 ID，不是完整網址')
-    file_id = SHEET_ID
-    visited = set()
-    # Follow Drive shortcuts only through Google's API and retain target permission checks.
-    for _ in range(5):
-        if file_id in visited:
-            raise RuntimeError('DRIVE_SHORTCUT_LOOP')
-        visited.add(file_id)
-        base = 'https://www.googleapis.com/drive/v3/files/' + quote(file_id, safe='')
-        metadata = drive_get(base, token, {
-            'fields': 'id,mimeType,capabilities(canDownload),shortcutDetails(targetId)',
-            'supportsAllDrives': 'true'
-        }, 'METADATA').json()
-        mime = metadata.get('mimeType')
-        if mime != 'application/vnd.google-apps.shortcut':
-            break
-        file_id = metadata.get('shortcutDetails', {}).get('targetId', '')
-        if not re.fullmatch(r'[A-Za-z0-9_-]+', file_id):
-            raise RuntimeError('INVALID_SHORTCUT_TARGET')
-    else:
-        raise RuntimeError('DRIVE_SHORTCUT_DEPTH_EXCEEDED')
-    print('DRIVE_FILE_ACCESS_OK ' + json.dumps({
-        'mimeType': mime, 'canDownload': metadata.get('capabilities', {}).get('canDownload')
-    }))
-    if metadata.get('capabilities', {}).get('canDownload') is False:
-        raise RuntimeError('DOWNLOAD_NOT_ALLOWED: Google Drive 明確禁止此帳號下載；停止')
-    if mime == GOOGLE_SHEET_MIME:
-        response = drive_get(base + '/export', token, {'mimeType': XLSX_MIME}, 'EXPORT_XLSX')
-    elif mime in (XLSX_MIME, 'application/vnd.ms-excel.sheet.macroEnabled.12'):
-        response = drive_get(base, token, {'alt': 'media', 'supportsAllDrives': 'true'}, 'DOWNLOAD_XLSX')
-    else:
-        raise RuntimeError('UNSUPPORTED_FILE_TYPE: ' + str(mime) + '；請提供 .xlsx 或 Google 試算表')
-    return read_xlsx(response.content)
+        raise ValueError('LINE_SHEET_ID 必須填 /d/ 後面的 ID，不是完整網址')
+    configured_identity()
+    base = f'https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}'
+    metadata = sheets_get(base, access_token,
+                         {'fields': 'spreadsheetId,sheets.properties(title,sheetId)'})
+    titles = [x.get('properties', {}).get('title') for x in metadata.get('sheets', [])]
+    if SHEET_TAB not in titles:
+        raise RuntimeError('SHEET_TAB_NOT_FOUND: 已有讀取檔案權限，但找不到指定分頁；請確認 LINE_SHEET_TAB')
+    print('SHEET_ACCESS_OK: 已通過指定試算表及分頁的讀取檢查')
+    a1_range = "'" + SHEET_TAB.replace("'", "''") + "'!A1:W"
+    result = sheets_get(base + '/values/' + quote(a1_range, safe=''), access_token,
+                        {'valueRenderOption': 'FORMATTED_VALUE'})
+    return result.get('values', [])
 
 
 def main():
-    today = (date.fromisoformat(os.environ['LINE_SYNC_TODAY'])
-             if os.getenv('LINE_SYNC_TODAY') else datetime.now(ZoneInfo('Asia/Taipei')).date())
+    today = date.fromisoformat(os.environ['LINE_SYNC_TODAY']) if os.getenv('LINE_SYNC_TODAY') else datetime.now(ZoneInfo('Asia/Taipei')).date()
     fixture = os.getenv('LINE_SYNC_FIXTURE')
     if fixture:
         values = json.loads(Path(fixture).read_text(encoding='utf-8'))
     else:
         token = os.getenv('ACCESS_TOKEN', '').strip()
         if not token:
-            raise RuntimeError('Missing ACCESS_TOKEN from google-github-actions/auth; check workflow WIF setup')
+            sys.exit('ACCESS_TOKEN missing; no output written')
         values = fetch_sheet(token)
     brokers = load_json(BROKER_FILE).get('items', [])
     data, stats = transform(values, brokers, today)
-    print('LINE_SYNC_STATS ' + json.dumps(stats, ensure_ascii=False))
-    if os.getenv('LINE_SYNC_DRY_RUN', '1') == '1':
-        print('DRY_RUN: no data written, no AI calls, no Telegram')
+    print(json.dumps(stats, ensure_ascii=False))
+    if os.getenv('LINE_SYNC_DRY_RUN') == '1':
         return
-    # Explicit opt-in required to avoid exposing research text in a public repository.
-    if os.getenv('LINE_ALLOW_PUBLIC_WRITE') != 'I_UNDERSTAND':
-        raise RuntimeError('Refusing to write research text without explicit LINE_ALLOW_PUBLIC_WRITE opt-in')
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     if load_json(OUTPUT) == data:
         print('Unchanged; skip write')
@@ -239,7 +203,7 @@ def main():
     tmp = OUTPUT.with_suffix('.json.tmp')
     tmp.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     tmp.replace(OUTPUT)
-    print('Updated LINE data locally; no AI calls or notifications')
+    print(f'Updated {OUTPUT}; no AI calls or notifications')
 
 
 if __name__ == '__main__':
