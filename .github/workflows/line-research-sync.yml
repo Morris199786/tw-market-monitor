@@ -1,10 +1,21 @@
 name: LINE research sync (3 months)
 on:
   workflow_dispatch:
+    inputs:
+      sheet_id:
+        description: '作者已分享的 Google 試算表 ID（網址 /d/ 後面的部分）'
+        required: true
+        default: '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM'
+        type: string
+      sheet_tab:
+        description: '要讀取的分頁名稱'
+        required: true
+        default: 'LINE產業研究資料庫'
+        type: string
   schedule:
     - cron: '*/30 * * * *'
 permissions:
-  contents: write
+  contents: read
   id-token: write
 concurrency:
   group: line-research-sync
@@ -21,7 +32,7 @@ jobs:
         id: auth
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
       - name: Install requests
@@ -30,6 +41,10 @@ jobs:
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_SYNC_DRY_RUN: '1'
+          LINE_SHEET_ID: ${{ inputs.sheet_id || '1ujXlmxd7h5lap-Np6saR9i9Dp1V8Q5orgO9Ko1ccISM' }}
+          LINE_SHEET_TAB: ${{ inputs.sheet_tab || 'LINE產業研究資料庫' }}
+          LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
         run: python scripts/sync_line_research.py
       # Safety: dry-run only until service account access and private data protection are verified.
       # No data is committed to this currently public repository.
+
