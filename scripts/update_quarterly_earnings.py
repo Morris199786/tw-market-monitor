@@ -1,5 +1,5 @@
 from sources import *
-from eps_news_backup import current_items
+from eps_news_backup import current_items, sanitize_news_margin
 import os, re, html, math, unicodedata, time
 from html.parser import HTMLParser
 from urllib.parse import urlencode
@@ -1195,7 +1195,10 @@ def main():
         if prevp in verified:
             prev.update({k:v for k,v in verified[prevp].items() if v is not None})
             if verified[prevp].get('eps') is not None: prev['eps_basis']='reported_single'
-        fallback = news_eps.get(key) or (dict(x) if x.get('source') == 'news_backup' else None)
+        fallback = news_eps.get(key) or (sanitize_news_margin(x) if x.get('source') == 'news_backup' else None)
+        # Rebuild news-margin provenance only from the validated fallback below.
+        for field in ('gross_margin_news_source', 'gross_margin_validation', 'gross_margin_source', 'gross_margin_evidence'):
+            x.pop(field, None)
         x.update(eps=cur['eps'],gross_margin=cur['gross_margin'],eps_basis=cur.get('eps_basis'),prev_period=prevp,prev_eps=prev['eps'],prev_gross_margin=prev['gross_margin'],prev_eps_basis=prev.get('eps_basis'))
         if x['eps'] is None and fallback and fallback.get('eps') is not None:
             x['eps'] = fallback['eps']
@@ -1207,7 +1210,8 @@ def main():
         # Official gross margin takes precedence; RSS can fill only missing values.
         if x.get('gross_margin') is None and fallback and fallback.get('gross_margin') is not None:
             x['gross_margin'] = fallback['gross_margin']
-            x['gross_margin_news_source'] = {k:fallback.get(k) for k in ('source_label','source_url','gross_margin_evidence')}
+            x['gross_margin_news_source'] = fallback.get('gross_margin_source') or {k:fallback.get(k) for k in ('source_label','source_url','gross_margin_evidence')}
+            x['gross_margin_validation'] = fallback.get('gross_margin_validation')
         elif x.get('gross_margin') is not None:
             x.pop('gross_margin_news_source', None)
         x['data_status']='complete' if all(x[k] is not None for k in ['eps','gross_margin','prev_eps','prev_gross_margin']) else 'pending_financial_data'
@@ -1224,6 +1228,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 

@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PATH = ROOT / 'data/eps_news_backup.json'
 TZ = ZoneInfo('Asia/Taipei')
 HOSTS = ('moneydj.com', 'money-link.com.tw', 'cnyes.com', 'udn.com', 'yahoo.com', 'ctee.com.tw')
-PARSER_VERSION = 'single-period-v8-company-spans-margins'
+PARSER_VERSION = 'single-period-v9-actual-margin-only'
+MARGIN_VALIDATION = 'actual-margin-v1'
 
 
 def read(path, default):
@@ -41,6 +42,40 @@ def compatible_rounding(a, b):
 
 def more_precise(a, b):
     return max((a, b), key=lambda v: max(0, -Decimal(str(v)).as_tuple().exponent))
+
+
+def margin_is_estimate(text, match):
+    """Bind forecast cues to this metric, not to a later-quarter outlook."""
+    left = max([text.rfind(mark, 0, match.start()) for mark in ('。', '；', ';', '!', '！', '?', '？', '\n')] + [-1]) + 1
+    prefix = text[left:match.start('value')]
+    # Realised results may beat estimates; these phrases do not make them forecasts.
+    prefix = re.sub(r'(?:優於|高於|低於|超越|超出|符合|不如)(?:市場|法人|公司|原先|先前)?(?:預估|預期|預測)', '', prefix)
+    # An explicit actual-result marker starts a new attribution scope.
+    markers = list(re.finditer(r'實際(?:公布)?|實績(?:為)?|公布(?:財報|財務報告|業績)', prefix))
+    if markers:
+        prefix = prefix[markers[-1].end():]
+    if re.search(r'預估|預期|預測|估計|估算|推估|估\s*|財測|指引|展望|上看|有望|可望|料將|預料|目標|挑戰|預計|預告|預覽|將達|將至|有機會|假設|forecast|guidance|estimate|expected', prefix, re.I):
+        return True
+    # Trailing attribution e.g. "67.5%（法人預估）", without rejecting
+    # "66.4%，預估Q4..." following a complete actual-result statement.
+    tail = text[match.end():match.end()+45]
+    if re.match(r'\s*(?:[（(][^）)]{0,20}(?:估|財測|指引|目標|forecast)|(?:為|屬於|係|是).{0,8}(?:預估|預測|財測|指引))', tail, re.I):
+        return True
+    if re.match(r'\s*(?:[-~～至到]|以上|以下|左右|附近|上下)', tail):
+        return True
+    return False
+
+
+def sanitize_news_margin(row):
+    """Legacy RSS margins were not screened for bare 估; revalidate by refetching.
+
+    Preserve EPS and all official fields. Only this news-margin cache is invalidated.
+    """
+    out = dict(row)
+    if out.get('gross_margin_validation') != MARGIN_VALIDATION or out.get('margin_conflict'):
+        for key in ('gross_margin', 'gross_margin_evidence', 'gross_margin_validation', 'gross_margin_source'):
+            out.pop(key, None)
+    return out
 
 
 def parse_article(article, stocks):
@@ -141,6 +176,10 @@ def parse_article(article, stocks):
     for match in margin_pattern.finditer(text):
         before = text[max(0, match.start()-18):match.start()]
         context = match.group('context')
+        if re.search(r'前\s*$|[\d一二三四]\s*[-~～至]\s*$', before):
+            continue
+        if margin_is_estimate(text, match):
+            continue
         if re.search(r'累計|累積|前\s*[一二三四1234]\s*季|預估|預期|預測|估計|上看|法人估|指引|展望|去年|前年', before+context):
             continue
         if re.search(r'第?\s*[一二三四1234]\s*季|Q[1-4]', context, re.I):
@@ -171,6 +210,12 @@ def parse_article(article, stocks):
             old_value=found[key].get('gross_margin')
             found[key]['gross_margin']=more_precise(old_value,value) if old_value is not None else value
             found[key]['gross_margin_evidence']=match.group(0)
+            found[key]['gross_margin_validation']=MARGIN_VALIDATION
+            found[key]['gross_margin_source']={
+                'source_url':article['url'], 'source_label':'新聞備援｜'+article['publisher'],
+                'gross_margin_evidence':match.group(0), 'subject':title,
+                'published_at':article['published_at']}
+
     for row in found.values():
         if row.pop('margin_conflict',False):
             row.pop('gross_margin',None)
@@ -183,7 +228,7 @@ NEWS_START = '2026-10-01'
 def current_items(kind, now=None):
     now = now or datetime.now(TZ)
     data = read(PATH, {})
-    return [x for x in data.get('items', []) if x.get('kind') == kind
+    return [sanitize_news_margin(x) for x in data.get('items', []) if x.get('kind') == kind
             and NEWS_START <= x.get('publish_date','') <= now.date().isoformat()]
 
 
@@ -254,7 +299,9 @@ def collect():
                 article = dict(title=node.findtext('title'), description=node.findtext('description'),
                     url=link, publisher=source.text or host, published_at=pub.isoformat())
                 rows, reason = parse_article(article, stocks)
-                audit.append(dict(title=article['title'], url=link, result=reason))
+                audit.append(dict(title=article['title'], url=link, result=reason,
+                    published_at=article['published_at'], publisher=article['publisher'],
+                    metrics=[{k:row.get(k) for k in ('ticker','period','eps','gross_margin','gross_margin_evidence')} for row in rows]))
                 for row in rows:
                     key = (row['ticker'],row['period'])
                     prior = accepted.get(key)
@@ -275,20 +322,25 @@ def collect():
                             if chosen == row['gross_margin']:
                                 prior['gross_margin'] = chosen
                                 prior['gross_margin_evidence'] = row.get('gross_margin_evidence')
+                                prior['gross_margin_validation'] = row.get('gross_margin_validation')
+                                prior['gross_margin_source'] = row.get('gross_margin_source')
                         elif prior.get('gross_margin') is None and row.get('gross_margin') is not None and not prior.get('margin_conflict'):
                             prior['gross_margin'] = row['gross_margin']
                             prior['gross_margin_evidence'] = row.get('gross_margin_evidence')
+                            prior['gross_margin_validation'] = row.get('gross_margin_validation')
+                            prior['gross_margin_source'] = row.get('gross_margin_source')
         except Exception as exc:
             errors.append(type(exc).__name__+': '+str(exc)[:160])
     prior_data = read(PATH, {})
-    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', 'single-period-v7-since-2026-10-01', PARSER_VERSION) else []
-    for row in previous:
+    previous = prior_data.get('items', []) if prior_data.get('parser_version') in ('single-period-v2', 'single-period-v3-contextual-eps', 'single-period-v5-windowed-25days', 'single-period-v7-since-2026-10-01', 'single-period-v8-company-spans-margins', PARSER_VERSION) else []
+    for cached_row in previous:
+        row = sanitize_news_margin(cached_row)
         if NEWS_START <= row.get('publish_date','') <= now.date().isoformat():
             key=(row['ticker'],row['period'])
             if key not in accepted:
                 accepted[key]=row
             else:
-                for field in ('eps','gross_margin','eps_basis','gross_margin_evidence'):
+                for field in ('eps','gross_margin','eps_basis','gross_margin_evidence','gross_margin_validation','gross_margin_source'):
                     if (not accepted[key].get('conflict' if field in ('eps','eps_basis') else 'margin_conflict')
                             and accepted[key].get(field) is None and row.get(field) is not None):
                         accepted[key][field]=row[field]
@@ -305,4 +357,5 @@ def collect():
 
 
 if __name__ == '__main__': collect()
+
 
