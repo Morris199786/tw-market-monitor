@@ -1,0 +1,30 @@
+name: Hide research report IDs (no API)
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-ui-patch
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Hide report IDs in research UI
+        run: |
+          python scripts/hide_research_report_id.py
+          git diff --check
+      - name: Commit UI change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets/research_ai_status.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Hide internal research IDs in AI status cards'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
