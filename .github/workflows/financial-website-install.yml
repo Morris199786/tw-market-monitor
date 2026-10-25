@@ -1,0 +1,28 @@
+name: Install research financial tables
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-report-processing
+  cancel-in-progress: false
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Install financial forecast tables (offline, no API)
+        run: python scripts/install_financial_tables.py
+      - name: Commit website changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/research_merged.js index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Show annual and quarterly financial forecast tables"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
