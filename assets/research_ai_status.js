@@ -51,7 +51,7 @@
       <input
         id="raaSearch"
         type="search"
-        placeholder="搜尋公司、券商、日期、報告 ID"
+        placeholder="搜尋公司、券商、日期"
       >
 
       <div id="raaStats"></div>
@@ -349,8 +349,6 @@
           ${esc(r.company)} ·
           ${esc(r.source)} ·
           ${esc(r.date)}
-          <br>
-          報告 ID：${esc(r.id)}
         </div>
 
         ${
