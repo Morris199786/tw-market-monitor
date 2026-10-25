@@ -16,13 +16,25 @@ jobs:
           fetch-depth: 0
       - name: Parse cached Excel text without OpenAI
         run: python scripts/extract_research_financials.py
-      - name: Commit financial forecasts
+      - name: Print backfill summary
+        run: |
+          python - <<'PY'
+          import json
+          p='data/research_financial_backfill_report.json'
+          d=json.load(open(p))
+          print('STATS:',json.dumps(d['stats'],ensure_ascii=False))
+          print('METRICS:',json.dumps(d['metric_counts'],ensure_ascii=False))
+          print('PERIODS:',json.dumps(d['period_counts'],ensure_ascii=False))
+          for name in ('日月光投控','禾伸堂'):
+              print(name,json.dumps(d['companies'].get(name,{}),ensure_ascii=False))
+          PY
+      - name: Commit financial forecasts and audit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/research_financial_forecasts.json
+          git add data/research_financial_forecasts.json data/research_financial_backfill_report.json
           if ! git diff --cached --quiet; then
-            git commit -m "Backfill financial forecasts from existing Excel text"
+            git commit -m "Backfill financial forecasts and audit summary"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -31,5 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: financial-forecast-backfill
-          path: data/research_financial_forecasts.json
+          path: |
+            data/research_financial_forecasts.json
+            data/research_financial_backfill_report.json
           if-no-files-found: ignore
