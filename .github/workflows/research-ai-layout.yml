@@ -1,0 +1,26 @@
+name: Install compact Excel AI report layout
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Install read-only frontend layout
+        run: |
+          python scripts/install_research_ai_layout.py
+          git diff --check
+      - name: Commit frontend only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets/research_ai_layout_fix.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Improve Excel AI report mobile layout (no API)'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
