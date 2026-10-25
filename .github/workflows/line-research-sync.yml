@@ -1,41 +1,73 @@
-name: LINE research sync (full history)
+name: LINE research sync (manual only)
+
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/30 * * * *'
+    inputs:
+      run_ai_backfill:
+        description: '執行近一個月個股／產業報告 AI 回補'
+        required: true
+        type: boolean
+        default: false
+
 permissions:
   contents: write
   id-token: write
+
 concurrency:
   group: line-research-sync
   cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: google-github-actions/auth@v3
+
+      - name: Authenticate Google
+        uses: google-github-actions/auth@v3
         id: auth
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
-      - run: python -m pip install requests
-      - name: Build sharded research database (no AI, no Telegram)
+
+      - name: Install dependencies
+        run: python -m pip install requests
+
+      - name: Backfill AI research
+        if: ${{ inputs.run_ai_backfill == true }}
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RESEARCH_AI_DRY_RUN: '0'
+        run: python scripts/ai_research_backfill.py
+
+      - name: Build research database
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
         run: python scripts/sync_line_research.py
-      - name: Commit research shards
+
+      - name: Commit research data
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- data/research_shards/ data/research_search/ data/research_meta.json data/research_manifest.json data/research_dedup_audit.json
+
+          git add -A -- \
+            data/research_shards/ \
+            data/research_search/ \
+            data/research_meta.json \
+            data/research_manifest.json \
+            data/research_dedup_audit.json \
+            data/research_ai_cache.json
+
           if ! git diff --cached --quiet; then
-            git commit -m 'Update scalable research shards'
+            git commit -m 'Update research database and AI analysis'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
