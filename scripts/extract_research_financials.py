@@ -229,6 +229,40 @@ def extract(row):
     return sorted(records,key=lambda x:(x['period'],x['metric']))
 
 
+# AI_FIRST_FINANCIAL_MERGE_V1
+
+def ai_financials(row, cache):
+    """Use the financial forecasts saved by the existing ONE OpenAI call."""
+    from sync_line_research import resolve_cache
+    from update_reports_ai_eps import normalize_financial
+    record = resolve_cache(row, cache)
+    if not isinstance(record, dict) or record.get('status') != 'success':
+        return []
+    output = []
+    supported = {name for name, _ in METRICS}
+    for x in normalize_financial((record.get('result') or {}).get('financial_forecasts')):
+        # The website displays broker estimates, not consensus or historical actuals.
+        if x['type'] != 'forecast' or x['source'] != 'broker' or x['scope'] != 'company':
+            continue
+        if x['metric'] not in supported:
+            continue
+        output.append({
+            'period': x['period'], 'metric': x['metric'], 'value': x['value'],
+            'unit': x['unit'], 'status': 'E', 'segment': 'company',
+            'evidence': x['evidence'], 'source_field': 'openai_financial_forecasts',
+            'confidence': 'high',
+        })
+    return output
+
+
+def merge_ai_python(ai, fallback):
+    """Prefer AI by period/metric, fill AI gaps from offline Python."""
+    merged = {(x['period'], x['metric'], x.get('segment', 'company')): x for x in fallback}
+    for x in ai:
+        merged[(x['period'], x['metric'], x.get('segment', 'company'))] = x
+    return sorted(merged.values(), key=lambda x: (x['period'], x['metric'], x.get('segment', 'company')))
+
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--root',default=str(Path(__file__).resolve().parents[1]))
@@ -237,14 +271,21 @@ def main():
     folder=root/'data/research_shards'
     if not folder.is_dir():raise SystemExit('Missing data/research_shards; run LINE research sync first')
     manifest=json.loads((root/'data/research_manifest.json').read_text(encoding='utf8'))
-    result={};stats={'scanned':0,'eligible':0,'with_financials':0,'facts':0,'conflicts_omitted':0}
+    cache_path=root/'data/research_ai_cache.json'
+    cache=json.loads(cache_path.read_text(encoding='utf8')) if cache_path.exists() else {}
+    result={};stats={'scanned':0,'eligible':0,'with_financials':0,'facts':0,'conflicts_omitted':0,
+                     'ai_reports':0,'ai_facts':0,'python_facts':0}
     audit={'version':1,'companies':{},'metric_counts':{},'period_counts':{'annual':0,'quarterly':0},'empty_examples':[]}
     for sh in manifest['shards']:
         for row in json.loads((folder/sh['file']).read_text(encoding='utf8')).get('items',[]):
             stats['scanned']+=1
             if row.get('source_kind')!='line' or row.get('market')=='US':continue
             stats['eligible']+=1
-            records=extract(row)
+            ai_records=ai_financials(row,cache)
+            records=merge_ai_python(ai_records,extract(row))
+            if ai_records:stats['ai_reports']+=1
+            stats['ai_facts']+=sum(x.get('source_field')=='openai_financial_forecasts' for x in records)
+            stats['python_facts']+=sum(x.get('source_field')!='openai_financial_forecasts' for x in records)
             if records:
                 result[row['id']]={'company':row.get('company'),'date':row.get('date'),
                                     'broker':row.get('source'),'forecasts':records}
