@@ -1,96 +1,98 @@
-name: LINE research sync (manual only)
-
+name: LINE research sync and incremental AI
 on:
   workflow_dispatch:
     inputs:
       run_mode:
-        description: '選擇執行模式'
+        description: 'check=只比對不花費；sync=更新網頁；ai=近一個月未處理報告'
         required: true
         type: choice
-        options:
-          - check
-          - sync
-          - ai
+        options: [check, sync, ai]
         default: check
-
+      max_reports:
+        description: '本次最多 API 報告數（1–200）；重跑接續未處理項目'
+        required: true
+        default: '10'
+        type: string
 permissions:
   contents: write
   id-token: write
-
 concurrency:
-  group: line-research-sync
+  group: research-report-processing
   cancel-in-progress: false
-
 jobs:
   sync:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 330
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
-
-      - name: Authenticate Google
-        uses: google-github-actions/auth@v3
+      - name: Refresh durable processing ledger
+        run: git pull --ff-only origin main
+      - uses: google-github-actions/auth@v3
         id: auth
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
-
-      - name: Install dependencies
-        run: python -m pip install requests
-
-      - name: Configure Git
+      - name: Install dependencies and configure Git
         run: |
+          python -m pip install requests
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Check AI backfill candidates
-        if: ${{ inputs.run_mode == 'check' }}
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-          RESEARCH_AI_DRY_RUN: '1'
-        run: |
-          python scripts/ai_research_backfill.py
-
-      - name: AI backfill
-        if: ${{ inputs.run_mode == 'ai' }}
-        env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          RESEARCH_AI_DRY_RUN: '0'
-        run: |
-          python scripts/ai_research_backfill.py
-
-      - name: Build research database
-        if: ${{ inputs.run_mode == 'sync' || inputs.run_mode == 'ai' }}
+      - name: Read one consistent Excel snapshot
+        id: sheet
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
         run: |
-          python scripts/sync_line_research.py
-
-      - name: Commit research data
-        if: ${{ inputs.run_mode == 'sync' || inputs.run_mode == 'ai' }}
+          python - <<'PY'
+          import os, sys, json
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from sync_line_research import fetch_sheet
+          p=Path(os.environ['RUNNER_TEMP'])/'research_sheet.json'
+          p.write_text(json.dumps(fetch_sheet(os.environ['ACCESS_TOKEN']),ensure_ascii=False),encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f'LINE_SYNC_FIXTURE={p}\n')
+          PY
+      - name: Check duplicate and unprocessed reports (zero API calls)
+        if: ${{ inputs.run_mode == 'check' }}
+        env:
+          RESEARCH_AI_DRY_RUN: '1'
+        run: python scripts/ai_research_backfill.py
+      - name: Analyze only new reports with the existing broker model
+        if: ${{ inputs.run_mode == 'ai' }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_REPORT_MODEL: gpt-5.6-luna
+          RESEARCH_AI_DRY_RUN: '0'
+          RESEARCH_AI_MAX_REPORTS: ${{ inputs.max_reports }}
+        run: python scripts/ai_research_backfill.py
+      - name: Publish all reports and successful cached analyses
+        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
+        run: python scripts/sync_line_research.py
+      - name: Commit published database
+        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
         run: |
-          if [ -f data/research_ai_cache.json ]; then
-            git add -- data/research_ai_cache.json
-          fi
-
-          git add -A -- \
-            data/research_shards/ \
-            data/research_search/ \
-            data/research_meta.json \
-            data/research_manifest.json \
-            data/research_dedup_audit.json
-
+          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json
+          for f in data/research_ai_cache.json data/research_ai_plan.json; do
+            if [ -f "$f" ]; then git add -- "$f"; fi
+          done
           if ! git diff --cached --quiet; then
-            git commit -m 'Update research database and AI analysis'
+            git commit -m 'Publish unified research database and incremental AI results'
             git pull --rebase origin main
             git push origin HEAD:main
-          else
-            echo "No research data changes."
           fi
+      - name: Downloadable duplicate audit and recovery ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-processing-audit
+          path: |
+            data/research_ai_plan.json
+            data/research_ai_cache.json
+            data/research_dedup_audit.json
+          if-no-files-found: ignore
