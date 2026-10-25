@@ -3,11 +3,15 @@ name: LINE research sync (manual only)
 on:
   workflow_dispatch:
     inputs:
-      run_ai_backfill:
-        description: '執行 2026/09/25～2026/10/25 的個股／產業報告 AI 回補（會消耗 API 額度）'
-        required: false
-        type: boolean
-        default: false
+      run_mode:
+        description: '選擇執行模式'
+        required: true
+        type: choice
+        options:
+          - check
+          - sync
+          - ai
+        default: check
 
 permissions:
   contents: write
@@ -39,33 +43,43 @@ jobs:
       - name: Install dependencies
         run: python -m pip install requests
 
-      - name: Configure Git for durable AI checkpoints
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: AI backfill (only when manually selected)
-        if: ${{ inputs.run_ai_backfill == true }}
+      - name: Check AI backfill candidates
+        if: ${{ inputs.run_mode == 'check' }}
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          RESEARCH_AI_DRY_RUN: '1'
+        run: |
+          python scripts/ai_research_backfill.py
+
+      - name: AI backfill
+        if: ${{ inputs.run_mode == 'ai' }}
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           RESEARCH_AI_DRY_RUN: '0'
-        run: python scripts/ai_research_backfill.py
+        run: |
+          python scripts/ai_research_backfill.py
 
       - name: Build research database
+        if: ${{ inputs.run_mode == 'sync' || inputs.run_mode == 'ai' }}
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
-        run: python scripts/sync_line_research.py
-
-      - name: Commit research shards and AI cache
         run: |
-          # 只有 AI 快取檔案存在時才加入提交
+          python scripts/sync_line_research.py
+
+      - name: Commit research data
+        if: ${{ inputs.run_mode == 'sync' || inputs.run_mode == 'ai' }}
+        run: |
           if [ -f data/research_ai_cache.json ]; then
             git add -- data/research_ai_cache.json
           fi
 
-          # 提交研究資料庫及搜尋索引
           git add -A -- \
             data/research_shards/ \
             data/research_search/ \
@@ -73,11 +87,10 @@ jobs:
             data/research_manifest.json \
             data/research_dedup_audit.json
 
-          # 有資料變更才提交，避免空 commit
           if ! git diff --cached --quiet; then
-            git commit -m 'Update manual research database and AI summaries'
+            git commit -m 'Update research database and AI analysis'
             git pull --rebase origin main
             git push origin HEAD:main
           else
-            echo "No research data changes to commit."
+            echo "No research data changes."
           fi
