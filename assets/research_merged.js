@@ -990,16 +990,18 @@ function sync() {
 
   const ratingOn = rating && !rating.hidden;
 
+  /* original-broker-v3-view-v1 */
+  // Broker reports must use the original reports_v2.js renderer and its
+  // complete AI analysis, rather than the simplified merged reader.
+  const brokerMode = active && !ratingOn && category === '券商報告';
   panel.hidden = !active || ratingOn;
+  legacy.hidden = active && !ratingOn ? !brokerMode : Boolean(ratingOn);
+  cards.hidden = brokerMode;
+  panel.querySelector('.rm-search').hidden = brokerMode;
+  meta.hidden = brokerMode;
+  if (brokerMode) more.hidden = true;
 
-  if (active && !ratingOn) {
-    legacy.hidden = true;
-    init();
-  } else if (ratingOn) {
-    legacy.hidden = true;
-  } else {
-    legacy.hidden = false;
-  }
+  if (active && !ratingOn) init();
 }
 
 const observer = new MutationObserver(sync);
@@ -1034,6 +1036,8 @@ panel.querySelectorAll(
       limit = 30;
       render();
     }
+    sync();
+    console.info('[RESEARCH_VIEW] mode=' + (category === '券商報告' ? 'original_broker_v3' : 'merged_research'));
   });
 });
 
@@ -1091,3 +1095,5 @@ sync();
 
 })();
 
+
+/* Keep hidden elements hidden when switching to the original broker view. */
