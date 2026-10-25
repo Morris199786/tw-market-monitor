@@ -72,22 +72,47 @@ jobs:
           RESEARCH_AI_MAX_REPORTS: ${{ inputs.max_reports }}
         run: python scripts/ai_research_backfill.py
       - name: Publish all reports and successful cached analyses
+        id: publish
         if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
         run: python scripts/sync_line_research.py
       - name: Extract annual and quarterly financials from Excel text (zero API)
-        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
-        run: python scripts/extract_research_financials.py
-      - name: Commit published database
-        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
+        id: financial
+        if: ${{ steps.publish.outcome == 'success' && inputs.run_mode != 'check' }}
         run: |
-          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json
+          python scripts/extract_research_financials.py
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          base=Path('data')
+          payload=json.loads((base/'research_financial_forecasts.json').read_text(encoding='utf-8'))
+          reports=payload.get('reports',{})
+          out=base/'research_financial_by_id'
+          missing=[]
+          for rid,record in reports.items():
+              p=out/(hashlib.sha256(str(rid).encode()).hexdigest()[:24]+'.json')
+              if not p.is_file():
+                  missing.append(str(p)); continue
+              saved=json.loads(p.read_text(encoding='utf-8'))
+              if saved.get('id')!=str(rid) or saved.get('forecasts')!=record.get('forecasts'):
+                  missing.append(str(p))
+          if missing:
+              raise SystemExit('Financial report export mismatch: '+str(missing[:5]))
+          print(f'Financial website export validated: {len(reports)} reports, {len(list(out.glob("*.json")))} files')
+          PY
+      - name: Commit published database and financial website data
+        if: ${{ steps.financial.outcome == 'success' && inputs.run_mode != 'check' }}
+        run: |
+          set -euo pipefail
+          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id
           for f in data/research_ai_cache.json data/research_ai_plan.json; do
             if [ -f "$f" ]; then git add -- "$f"; fi
           done
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish unified research database and incremental AI results'
+            git commit -m 'Publish unified research database, financial tables and incremental AI results'
             git pull --rebase origin main
             git push origin HEAD:main
+          else
+            echo 'No report or financial changes'
           fi
       - name: Downloadable duplicate audit and recovery ledger
         if: always()
@@ -99,4 +124,5 @@ jobs:
             data/research_ai_cache.json
             data/research_dedup_audit.json
             data/research_financial_forecasts.json
+            data/research_financial_backfill_report.json
           if-no-files-found: ignore
