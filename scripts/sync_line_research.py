@@ -369,7 +369,7 @@ def main():
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
-    from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes, same_dedicated
+    from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes, same_dedicated, multi_broker_source, broker_name
     matcher=Matcher(brokers,load_json(ROOT/'data/report_inbox.json').get('items',[]))
     kept=[]; suppressed=[]; seen_content={}; seen_documents={}
     # Compare with the prior audit to distinguish newly suppressed reports.
@@ -396,10 +396,10 @@ def main():
         if decision['status']=='broker_duplicate':
             suppress(item,decision['evidence'],broker_report_id=decision['broker_report_id'])
             continue
-        if isinstance(record,dict) and record.get('status')=='broker_duplicate' and str(record.get('broker_report_id')) in broker_ids:
+        if not multi_broker_source(item.get('source')) and isinstance(record,dict) and record.get('status')=='broker_duplicate' and str(record.get('broker_report_id')) in broker_ids:
             suppress(item,'saved_duplicate',broker_report_id=record['broker_report_id'])
             continue
-        if item.get('original_type')=='券商評等':
+        if item.get('original_type')=='券商評等' and not multi_broker_source(item.get('source')):
             stocks=codes(item)
             if len(stocks)==1:
                 matches=[pdf for pdf in pdf_by_stock.get(next(iter(stocks)),[]) if excel_rating_duplicate(pdf,item)]
@@ -421,6 +421,8 @@ def main():
         if doc and doc in seen_documents:
             suppress(item,'same_original_document',excel_report_id=seen_documents[doc]); continue
         key=content_key(item)
+        # Never collapse independent broker opinions solely because summaries match.
+        key=(broker_name(item.get('source')) or 'mixed:'+str(item.get('id')), key) if key else None
         if key and key in seen_content:
             suppress(item,'same_excel_content',excel_report_id=seen_content[key])
             continue

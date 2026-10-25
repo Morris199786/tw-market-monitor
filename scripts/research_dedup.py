@@ -19,7 +19,17 @@ def norm(s):
     if isinstance(s,list): s=' '.join(map(str,s))
     return re.sub(r'[^\w\u3400-\u9fff]', '', unicodedata.normalize('NFKC',str(s or '')).casefold())
 
+def multi_broker_source(value):
+    """A broker roundup is NOT an individual brokerage report."""
+    raw = unicodedata.normalize('NFKC', str(value or ''))
+    if re.search(r'多家(?:券商|投顧)|(?:券商|機構)(?:彙整|綜合|整理)|(?:multiple|various)\s+brokers?', raw, re.I):
+        return True
+    # Source like '凱基/統一/元富' or '國泰、瑞銀'; do not split ordinary English names.
+    head = re.split(r'[（(]', raw)[0].strip()
+    return bool(re.search(r'[/／、，,;+＋]', head))
+
 def broker_name(s):
+    if multi_broker_source(s): return ''
     s=norm(re.split(r'[（(]',str(s or ''))[0])
     for alias,target in sorted(ALIASES.items(),key=lambda x:-len(x[0])):
         if alias in s: return target
@@ -66,7 +76,10 @@ def dedicated(row):
     typ = row.get('original_type') or row.get('report_type') or ''
     if typ not in ('個股報告', '券商評等', 'company'):
         return False
-    if row.get('is_multi_company'):
+    if row.get('is_multi_company') or multi_broker_source(row.get('source') or row.get('broker')):
+        return False
+    # A roundup sometimes has only one ticker despite containing multiple brokers.
+    if re.search(r'多家券商|券商彙整|綜合評等', str(row.get('company') or '') + ' ' + str(row.get('title') or '')):
         return False
     c = codes(row)
     return len(c) == 1 and bool(re.fullmatch(r'\d{4,6}', next(iter(c))))
@@ -90,6 +103,7 @@ def same_dedicated(row, other, days=3):
 def evidence(row, broker):
     """A positive match suppresses the Excel copy, never the original broker."""
     if row.get('original_type') not in ('個股報告','產業報告','券商評等'): return ''
+    if multi_broker_source(row.get('source')): return ''
     ids=source_ids(row)
     if len(ids)==1 and ids & source_ids(broker): return 'same_source_file_id'
     a=row['_body'] if '_body' in row else body_norm(text(row))
@@ -188,6 +202,7 @@ def _annual_eps(row):
 def excel_rating_duplicate(report,rating):
     """Cross-type duplicate only when stock, broker, date, target and annual EPS agree."""
     if report.get('original_type')!='個股報告' or rating.get('original_type')!='券商評等': return False
+    if multi_broker_source(report.get('source')) or multi_broker_source(rating.get('source')): return False
     a,b=broker_name(report.get('source')),broker_name(rating.get('source'))
     if not a or a!=b: return False
     ca,cb=codes(report),codes(rating)
