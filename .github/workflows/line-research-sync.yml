@@ -5,6 +5,7 @@ on:
     inputs:
       run_ai_backfill:
         description: '執行 2026/09/25～2026/10/25 的個股／產業報告 AI 回補（會消耗 API 額度）'
+        required: false
         type: boolean
         default: false
 
@@ -21,11 +22,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: google-github-actions/auth@v3
+      - name: Authenticate Google
+        uses: google-github-actions/auth@v3
         id: auth
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -33,7 +36,8 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
 
-      - run: python -m pip install requests
+      - name: Install dependencies
+        run: python -m pip install requests
 
       - name: Configure Git for durable AI checkpoints
         run: |
@@ -56,19 +60,24 @@ jobs:
 
       - name: Commit research shards and AI cache
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # 只有 AI 快取檔案存在時才加入提交
+          if [ -f data/research_ai_cache.json ]; then
+            git add -- data/research_ai_cache.json
+          fi
 
+          # 提交研究資料庫及搜尋索引
           git add -A -- \
-            data/research_ai_cache.json \
             data/research_shards/ \
             data/research_search/ \
             data/research_meta.json \
             data/research_manifest.json \
             data/research_dedup_audit.json
 
+          # 有資料變更才提交，避免空 commit
           if ! git diff --cached --quiet; then
             git commit -m 'Update manual research database and AI summaries'
             git pull --rebase origin main
             git push origin HEAD:main
+          else
+            echo "No research data changes to commit."
           fi
