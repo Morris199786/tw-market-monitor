@@ -11,7 +11,7 @@ ALIASES = {
  'jpmorgan':'jpm','摩根大通':'jpm','小摩':'jpm',
  'bankofamerica':'bofa','美銀':'bofa','merrilllynch':'bofa',
  'goldmansachs':'gs','高盛':'gs','瑞銀':'ubs','瑞士銀行':'ubs',
- '大和':'daiwa','中國信託':'中信','中信投顧':'中信',
+ '大和':'daiwa','中國信託':'中信','中信投顧':'中信','中信託':'中信',
 }
 
 def norm(s):
@@ -133,3 +133,46 @@ class Matcher:
                     'evidence':'unique_broker_company_within_2_days'}
         candidates=[str(b['id']) for b in self.brokers if candidate(row,b)]
         return {'status':'needs_review','reason':'possible_broker_duplicate','broker_ids':candidates} if candidates else {'status':'new'}
+
+
+def excel_document_key(row):
+    """Only an explicit document filename + same broker/stock, not vague date."""
+    raw='\n'.join(str(row.get(k) or '')[:1500] for k in ('source_row','story','full_text','full_text_2'))
+    names=re.findall(r'(?im)(?:原始檔(?:名)?|檔案(?:名稱)?|filename|file name)\s*[:：]\s*([^\n\r|]{3,180}?\.(?:pdf|docx?|pptx?))',raw)
+    if not names: return ''
+    name=norm(names[0].strip().replace('\\','/').split('/')[-1])
+    broker=broker_name(row.get('source'))
+    code=','.join(sorted(codes(row))) or norm(row.get('company'))
+    return f'{broker}|{code}|{name}' if broker and code and name else ''
+
+def _price(row):
+    s='\n'.join(str(row.get(k) or '') for k in ('rating_target','story','numbers'))
+    matches=re.findall(r'(?:目標價|target\s*price|\bTP\b)\s*[:：]?\s*(?:\d+(?:\.\d+)?\s*(?:→|->|至|調升至|調降至)\s*)?(\d+(?:\.\d+)?)',s,re.I)
+    return float(matches[0]) if matches else None
+
+def _annual_eps(row):
+    s='\n'.join(str(row.get(k) or '') for k in ('eps','numbers','story'))
+    pairs=re.findall(r'(?<!\d)(20\d{2})\s*(?:年|E|F|預估|預測)?\s*(?:EPS|每股盈餘)?\s*[:：=]?\s*(\d{1,3}\.\d{1,2})(?!\d)',s,re.I)
+    pairs+=re.findall(r'(?:EPS|每股盈餘)\s*(?:預估)?\s*(20\d{2})\s*[:：=]?\s*(\d{1,3}\.\d{1,2})(?!\d)',s,re.I)
+    return {(int(y),float(v)) for y,v in pairs}
+
+def excel_rating_duplicate(report,rating):
+    """Cross-type duplicate only when stock, broker, date, target and annual EPS agree."""
+    if report.get('original_type')!='個股報告' or rating.get('original_type')!='券商評等': return False
+    a,b=broker_name(report.get('source')),broker_name(rating.get('source'))
+    if not a or a!=b: return False
+    ca,cb=codes(report),codes(rating)
+    if len(ca)!=1 or ca!=cb: return False
+    try:
+        da=date.fromisoformat(str(report['date'])[:10]); db=date.fromisoformat(str(rating['date'])[:10])
+    except (ValueError,KeyError): return False
+    if abs((da-db).days)>2: return False
+    pa,pb=_price(report),_price(rating)
+    if pa is None or pb is None or abs(pa-pb)>.01: return False
+    if _annual_eps(report) & _annual_eps(rating): return True
+    # Some Sheet rows show '2026/2027 EPS 3.95/3.99' without per-year labels.
+    # Require TWO matching decimal EPS figures to avoid accidental merging.
+    def eps_values(row):
+        raw=str(row.get('eps') or '')
+        return {float(v) for v in re.findall(r'(?<!\d)\d{1,2}\.\d{1,2}(?!\d)',raw)}
+    return len(eps_values(report) & eps_values(rating))>=2

@@ -369,9 +369,13 @@ def main():
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
-    from research_dedup import Matcher, content_key
+    from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes
     matcher=Matcher(brokers,load_json(ROOT/'data/report_inbox.json').get('items',[]))
-    kept=[]; suppressed=[]; seen_content={}
+    kept=[]; suppressed=[]; seen_content={}; seen_documents={}
+    pdf_by_stock={}
+    for row in data['items']:
+        if row.get('original_type')=='個股報告':
+            for code in codes(row): pdf_by_stock.setdefault(code,[]).append(row)
     broker_ids={str(b['id']) for b in brokers}
     for item in data['items']:
         decision=matcher.decide(item)
@@ -382,11 +386,21 @@ def main():
         if isinstance(record,dict) and record.get('status')=='broker_duplicate' and str(record.get('broker_report_id')) in broker_ids:
             suppressed.append({'excel_id':item['id'],'broker_report_id':record['broker_report_id'],'evidence':'saved_duplicate'})
             continue
+        if item.get('original_type')=='券商評等':
+            stocks=codes(item)
+            if len(stocks)==1:
+                matches=[pdf for pdf in pdf_by_stock.get(next(iter(stocks)),[]) if excel_rating_duplicate(pdf,item)]
+                if len(matches)==1:
+                    suppressed.append({'excel_id':item['id'],'excel_report_id':matches[0]['id'],'evidence':'same_broker_rating_target_annual_eps'}); continue
+        doc=excel_document_key(item)
+        if doc and doc in seen_documents:
+            suppressed.append({'excel_id':item['id'],'excel_report_id':seen_documents[doc],'evidence':'same_original_document'}); continue
         key=content_key(item)
         if key and key in seen_content:
             suppressed.append({'excel_id':item['id'],'excel_report_id':seen_content[key],'evidence':'same_excel_content'})
             continue
         if key: seen_content[key]=item['id']
+        if doc: seen_documents[doc]=item['id']
         kept.append(attach_ai(item,cache))
     merged = broker_records(brokers) + kept
     merged.sort(key=lambda r:(str(r.get('date') or ''),str(r.get('id') or '')),reverse=True)

@@ -13,7 +13,7 @@ import sys
 from zoneinfo import ZoneInfo
 
 from sync_line_research import fetch_sheet, load_json, transform, ROOT, BROKER_FILE, write_json_atomic, load_all_brokers
-from research_dedup import Matcher, content_key, stable_key, source_ids
+from research_dedup import Matcher, content_key, stable_key, source_ids, excel_document_key
 
 CACHE=ROOT/'data/research_ai_cache.json'
 PLAN=ROOT/'data/research_ai_plan.json'
@@ -33,9 +33,10 @@ def validate_cache(cache):
 def previous(row,cache):
     if row['id'] in cache: return row['id']
     key,body,ids=stable_key(row),content_key(row),source_ids(row)
+    doc=excel_document_key(row)
     hits=[]
     for cid,e in cache.items():
-        if e.get('stable_key')==key or (body and e.get('content_key')==body) or (
+        if e.get('stable_key')==key or (body and e.get('content_key')==body) or (doc and e.get('document_key')==doc) or (
                 len(ids)==1 and ids & set(e.get('source_ids',[]))): hits.append(cid)
     # Any prior attempt blocks charging, even when aliases are ambiguous.
     return sorted(hits)[0] if hits else None
@@ -44,7 +45,7 @@ def make_plan(rows,brokers,inbox,cache,today):
     start,end=window(today)
     matcher=Matcher(brokers,inbox)
     counts=Counter(stable_key(r) for r in rows)
-    seen={}; result=[]
+    seen={}; seen_documents={}; result=[]
     for row in rows:
         day=date.fromisoformat(row['date'])
         if row.get('original_type') not in ('個股報告','產業報告') or not start<=day<=end: continue
@@ -56,11 +57,13 @@ def make_plan(rows,brokers,inbox,cache,today):
             body=content_key(row)
             if old: entry.update(status='cached',cache_id=old,previous_status=cache[old]['status'])
             elif body and body in seen: entry.update(status='excel_duplicate',cache_id=seen[body])
+            elif (doc := excel_document_key(row)) and doc in seen_documents: entry.update(status='excel_duplicate',cache_id=seen_documents[doc])
             elif counts[stable_key(row)]>1:
                 entry.update(status='needs_review',reason='ambiguous_excel_identity')
             elif not body: entry.update(status='needs_review',reason='insufficient_source_text')
             else:
                 seen[body]=row['id']
+                if (doc := excel_document_key(row)): seen_documents[doc]=row['id']
         result.append(entry)
     return {'start':start.isoformat(),'end':end.isoformat(),'items':result,
             'counts':dict(Counter(x['status'] for x in result))}
@@ -110,7 +113,7 @@ def request_ai(src):
     return result
 
 def execute(rows,plan,cache,max_reports,save=checkpoint,analyze=request_ai):
-    lookup={r['id']:r for r in rows}; used=0
+    lookup={r['id']:r for r in rows}; used=0; consecutive_errors=0
     for item in plan['items']:
         row=lookup[item['id']]; rid=row['id']; status=item['status']
         if status in ('broker_duplicate','cached','excel_duplicate'):
@@ -122,14 +125,16 @@ def execute(rows,plan,cache,max_reports,save=checkpoint,analyze=request_ai):
                 save(cache)
             continue
         if status!='new' or used>=max_reports or previous(row,cache): continue
-        src=source_for(row)
+        try: src=source_for(row)
+        except ValueError:
+            item.update(status='needs_review',reason='insufficient_source_text'); continue
         # All deterministic validation is before the durable reservation.
         from update_reports_ai import prepare_report_text
         try: prepare_report_text(src)
         except ValueError:
             item.update(status='needs_review',reason='source_too_large'); continue
         record={'status':'api_reserved','stable_key':stable_key(row),'content_key':content_key(row),
-                'source_ids':sorted(source_ids(row)),'date':row['date'],
+                'source_ids':sorted(source_ids(row)),'document_key':excel_document_key(row),'date':row['date'],
                 'reserved_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
         cache[rid]=record
         save(cache)  # Must succeed remotely BEFORE external request.
@@ -144,8 +149,15 @@ def execute(rows,plan,cache,max_reports,save=checkpoint,analyze=request_ai):
         save(cache)
         print(f"{used}/{max_reports} {rid} {cache[rid]['status']}",flush=True)
         if cache[rid]['status']=='unknown':
-            print('Stopped after uncertain API result; no automatic retry')
-            break
+            consecutive_errors+=1
+            # A validation error is quarantined, NEVER retried. Other errors
+            # and two consecutive failures trigger a fail-closed circuit breaker.
+            if cache[rid]['error_type']!='ValueError' or consecutive_errors>=2:
+                print('Stopped: uncertain or repeated errors; no automatic retry',flush=True)
+                break
+            print('Quarantined validation error; continuing with next NEW report',flush=True)
+        else:
+            consecutive_errors=0
     return used
 
 def main():
