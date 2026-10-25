@@ -14,36 +14,124 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Parse cached Excel text without OpenAI
-        run: python scripts/extract_research_financials.py
-      - name: Print backfill summary
+      - name: Repair existing financial display and exporter (no API)
         run: |
           python - <<'PY'
-          import json
-          p='data/research_financial_backfill_report.json'
-          d=json.load(open(p))
-          print('STATS:',json.dumps(d['stats'],ensure_ascii=False))
-          print('METRICS:',json.dumps(d['metric_counts'],ensure_ascii=False))
-          print('PERIODS:',json.dumps(d['period_counts'],ensure_ascii=False))
-          for name in ('日月光投控','禾伸堂'):
-              print(name,json.dumps(d['companies'].get(name,{}),ensure_ascii=False))
+          from pathlib import Path
+          import re
+          root=Path.cwd()
+          extract=root/'scripts/extract_research_financials.py'
+          js=root/'assets/research_merged.js'
+          yml=root/'.github/workflows/financial-forecast-backfill.yml'
+          html=root/'index.html'
+          for p in (extract,js,yml,html):
+              if not p.exists(): raise SystemExit(f'Missing {p}')
+          s=extract.read_text(encoding='utf8')
+          marker='    audit[\'stats\']=stats'
+          insert='''    # Per-report files: avoid downloading the entire historical database for one report.
+              # File name derives only from the stable report ID; no API calls.
+              import hashlib
+              per_dir=root/'data/research_financial_by_id'
+              per_dir.mkdir(parents=True,exist_ok=True)
+              expected=set()
+              for report_id, report in result.items():
+                  fname=hashlib.sha256(str(report_id).encode('utf8')).hexdigest()[:24]+'.json'
+                  expected.add(fname)
+                  (per_dir/fname).write_text(json.dumps({'id':str(report_id),**report},ensure_ascii=False,separators=(',',':')),encoding='utf8')
+              for old in per_dir.glob('*.json'):
+                  if old.name not in expected: old.unlink()
+              print('FINANCIAL_PER_REPORT_FILES:',len(expected))
+          '''
+          if 'FINANCIAL_PER_REPORT_FILES:' not in s:
+              assert marker in s
+              s=s.replace(marker,insert+marker)
+              extract.write_text(s,encoding='utf8')
+          s=js.read_text(encoding='utf8')
+          start=s.find('let financialPromise;')
+          end=s.find('function financialTables(records)',start)
+          if start<0 and 'async function financialForReport(id)' not in s: raise SystemExit('Missing financial loader anchor')
+          replacement='''// Per-report financial JSON; small fetches prevent mobile memory/network failures.
+          // Report IDs are hashed using Web Crypto, same SHA-256 as Python backfill.
+          const financialCache = new Map();
+          async function financialForReport(id){
+            const key=String(id||'');
+            if(!key)return [];
+            if(!financialCache.has(key)){
+              const task=(async()=>{
+                try{
+                  const bytes=new TextEncoder().encode(key);
+                  const hash=await crypto.subtle.digest('SHA-256',bytes);
+                  const filename=Array.from(new Uint8Array(hash)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,24)+'.json';
+                  const response=await fetch('./data/research_financial_by_id/'+filename,{cache:'no-cache'});
+                  if(!response.ok){if(response.status!==404)console.warn('Financial HTTP',response.status,key);return [];}
+                  const record=await response.json();
+                  if(String(record.id)!==key)return [];
+                  return Array.isArray(record.forecasts)?record.forecasts:[];
+                }catch(e){console.warn('Financial data fetch failed',key,e);return [];}
+              })();
+              financialCache.set(key,task);
+            }
+            return financialCache.get(key);
+          }
+          '''
+          if start>=0:
+              s=s[:start]+replacement+s[end:]
+          old="const financialRecords = (await financialData())[String(r.id)]?.forecasts || [];"
+          assert old in s or 'await financialForReport(r.id)' in s
+          s=s.replace(old,'const financialRecords = await financialForReport(r.id);')
+          js.write_text(s,encoding='utf8')
+          s=yml.read_text(encoding='utf8')
+          s=s.replace('git add data/research_financial_forecasts.json data/research_financial_backfill_report.json','git add -A data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id/')
+          s=s.replace('            data/research_financial_backfill_report.json\n','            data/research_financial_backfill_report.json\n            data/research_financial_by_id/\n')
+          yml.write_text(s,encoding='utf8')
+          s=html.read_text(encoding='utf8')
+          s=re.sub(r'(assets/research_merged\.js\?v=)[^"\']+',r'\g<1>20261025-financial-per-report-v3',s)
+          html.write_text(s,encoding='utf8')
+          print('Installed financial per-report display fix; no API calls.')
           PY
-      - name: Commit financial forecasts and audit
+      - name: Rebuild offline financial records without OpenAI
+        run: python scripts/extract_research_financials.py
+      - name: Verify display linkage and report-level data
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/research_financial_forecasts.json data/research_financial_backfill_report.json
+          python - <<'PY'
+          import json,hashlib,pathlib
+          root=pathlib.Path('data')
+          audit=json.loads((root/'research_financial_backfill_report.json').read_text(encoding='utf8'))
+          print('TOTAL:',json.dumps(audit['stats'],ensure_ascii=False))
+          assert audit['stats']['with_financials']>0,'No forecasts extracted'
+          for name in ('日月光投控','禾伸堂'):
+              entry=audit['companies'].get(name)
+              assert entry and entry['facts']>0,(name,entry)
+              for rid in entry['report_ids']:
+                  fname=hashlib.sha256(str(rid).encode('utf8')).hexdigest()[:24]+'.json'
+                  p=root/'research_financial_by_id'/fname
+                  assert p.is_file(),(name,rid,p)
+                  doc=json.loads(p.read_text(encoding='utf8'))
+                  assert doc['id']==rid and doc['forecasts'],(name,rid)
+              print(name,'reports:',entry['reports'],'facts:',entry['facts'],'PASS')
+          js=pathlib.Path('assets/research_merged.js').read_text(encoding='utf8')
+          assert 'await financialForReport(r.id)' in js
+          assert 'function financialTables(records)' in js
+          print('DISPLAY LINKAGE: PASS')
+          PY
+          node --check assets/research_merged.js
+      - name: Commit financial forecasts, UI and audit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/extract_research_financials.py assets/research_merged.js index.html data/research_financial_forecasts.json data/research_financial_backfill_report.json
+          git add -A data/research_financial_by_id/
           if ! git diff --cached --quiet; then
-            git commit -m "Backfill financial forecasts and audit summary"
+            git commit -m 'Repair research financial display with per-report offline data'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
-      - name: Upload audit output
+      - name: Upload backfill audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: financial-forecast-backfill
           path: |
-            data/research_financial_forecasts.json
             data/research_financial_backfill_report.json
+            data/research_financial_forecasts.json
           if-no-files-found: ignore
