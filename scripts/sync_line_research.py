@@ -227,6 +227,10 @@ def is_same_broker_report(row, broker):
 
 def attach_ai(item, cache):
     record=cache.get(item.get('id'))
+    if record is None:
+        key='|'.join(re.sub(r'\s+', '', str(item.get(k) or '')).casefold() for k in ('date','original_type','source','company','ticker','period'))
+        matches=[v for v in cache.values() if isinstance(v,dict) and v.get('stable_key')==key]
+        if len(matches)==1: record=matches[0]
     if isinstance(record,dict) and record.get('status')=='success':
         item['ai_research']=record.get('result',{})
     return item

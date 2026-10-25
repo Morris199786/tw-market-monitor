@@ -3,12 +3,14 @@
 Runs before sync_line_research.py; keeps an append-only status cache by Excel content ID.
 """
 import json, os, sys, time, urllib.request, urllib.error
-from datetime import date
+from datetime import datetime
 import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from datetime import date
-import retime
+import subprocess
+import hashlib
+from collections import Counter
 from sync_line_research import (fetch_sheet, load_json, transform, is_same_broker_report,
                                 BROKER_FILE, ROOT, write_json_atomic, parse_date)
 
@@ -66,6 +68,29 @@ def request_ai(row, context):
         raise ValueError('API 回傳格式不正確')
     return data
 
+def stable_key(row):
+    """Stable across edits to narrative; independent of Excel row order."""
+    fields = ('date', 'original_type', 'source', 'company', 'ticker', 'period')
+    return '|'.join(re.sub(r'\s+', '', str(row.get(k) or '')).casefold() for k in fields)
+
+
+def checkpoint(cache):
+    """Commit AND push the durable record before any API request."""
+    write_json_atomic(CACHE, cache)
+    if os.getenv('RESEARCH_AI_DRY_RUN', '1') != '0':
+        return
+    def git(*args):
+        subprocess.run(['git', *args], cwd=ROOT, check=True, capture_output=True, text=True)
+    git('add', '--', 'data/research_ai_cache.json')
+    diff = subprocess.run(['git', 'diff', '--cached', '--quiet'], cwd=ROOT)
+    if diff.returncode == 0:
+        return
+    if diff.returncode != 1:
+        raise RuntimeError('git diff failed; API call blocked')
+    git('commit', '-m', 'Checkpoint research AI report status')
+    git('push', 'origin', 'HEAD:main')
+
+
 def main():
     token=os.getenv('ACCESS_TOKEN','')
     if not token: sys.exit('缺少 ACCESS_TOKEN；不執行')
@@ -74,28 +99,58 @@ def main():
     today=datetime.now(ZoneInfo('Asia/Taipei')).date()
     data,_=transform(values,brokers,today)
     cache=load_json(CACHE)
+    if not isinstance(cache,dict): sys.exit('AI cache 格式錯誤')
     history=data['items']
+    counts=Counter(stable_key(row) for row in history)
+    # Existing content-hash IDs remain valid; add a stable-key index for future edits.
+    index={}
+    for cid, entry in cache.items():
+        if not isinstance(entry,dict): continue
+        key=entry.get('stable_key')
+        if key: index.setdefault(key,[]).append(cid)
     targets=[]
-    for row in data['items']:
+    for row in history:
         day=parse_date(row['date'])
         if row['original_type'] not in ('個股報告','產業報告') or not day or not START<=day<=END: continue
-        if any(is_same_broker_report(row,b) for b in brokers): continue
-        if row['id'] in cache: continue  # success and failure never automatically retried
-        targets.append(row)
+        key=stable_key(row)
+        if row['id'] in cache: continue
+        # Do not auto-process ambiguous records with the same identifying fields.
+        if counts[key]>1 or len(index.get(key,[]))>1:
+            print(f'AMBIGUOUS: {row["id"]}; manual review, no API')
+            continue
+        if key in index:
+            # Old content changed: alias to prior processing record, no new API.
+            cache[row['id']]=dict(cache[index[key][0]],stable_key=key)
+            continue
+        matches=[b for b in brokers if is_same_broker_report(row,b)]
+        if matches:
+            cache[row['id']]={'status':'broker_duplicate','stable_key':key,
+                              'broker_report_id':str(matches[0].get('id') or ''), 'date':row['date']}
+            index[key]=[row['id']]
+            continue
+        targets.append((row,key))
     print(f'Eligible unprocessed reports: {len(targets)}')
     if os.getenv('RESEARCH_AI_DRY_RUN','1')!='0':
-        print('DRY RUN: no OpenAI calls. Set RESEARCH_AI_DRY_RUN=0 manually to run.')
+        print('DRY RUN: no OpenAI calls, no files written')
         return
     if not os.getenv('OPENAI_API_KEY'): sys.exit('OPENAI_API_KEY 未設定；停止')
-    for i,row in enumerate(targets,1):
+    # Publish aliases and broker duplicate statuses first.
+    checkpoint(cache)
+    for i,(row,key) in enumerate(targets,1):
+        # Reserve and PUSH before contacting the API. Unknown attempts are never retried.
+        cache[row['id']]={'status':'api_reserved','stable_key':key,'date':row['date'],
+                          'reserved_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
+        checkpoint(cache)
         try:
             result=request_ai(row,context_for(row,history))
-            cache[row['id']]={'status':'success','result':result,'model':MODEL,'date':row['date']}
+            cache[row['id']]={'status':'success','stable_key':key,'result':result,
+                              'model':MODEL,'date':row['date']}
             status='success'
         except Exception as exc:
-            cache[row['id']]={'status':'failed','reason':str(exc)[:400],'date':row['date']}
-            status='failed'
-        write_json_atomic(CACHE,cache)
+            cache[row['id']]={'status':'unknown','stable_key':key,
+                              'reason':str(exc)[:400],'date':row['date']}
+            status='unknown'
+        checkpoint(cache)
         print(f'{i}/{len(targets)} {row["id"]} {status}',flush=True)
         time.sleep(.25)
 
