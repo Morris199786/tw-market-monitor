@@ -769,7 +769,42 @@ function displayText(value, key) {
   return table ? table + readable(normalized) : readable(normalized);
 }
 
-function brokerFullDetail(r) {
+
+// BEGIN FINANCIAL FORECAST TABLES V2
+const financialLabels={revenue:'營收',revenue_yoy:'營收年增率',revenue_qoq:'營收季增率',gross_profit:'毛利',gross_margin:'毛利率',operating_profit:'營業利益',operating_margin:'營益率',pretax_profit:'稅前淨利',pretax_margin:'稅前淨利率',net_income:'稅後淨利',net_margin:'淨利率',eps:'EPS',roe:'ROE',roa:'ROA',operating_cash_flow:'營業現金流',free_cash_flow:'自由現金流',capex:'資本支出',dividend:'每股現金股利',pe:'本益比',pb:'本淨比'};
+let financialPromise;
+function financialData(){
+  if(!financialPromise) financialPromise=fetch('./data/research_financial_forecasts.json',{cache:'no-cache'})
+    .then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+    .then(x=>x&&x.reports&&typeof x.reports==='object'?x.reports:{})
+    .catch(e=>{console.warn('Financial forecasts unavailable',e);return {}});
+  return financialPromise;
+}
+function financialTables(records){
+  if(!Array.isArray(records))return '';
+  const data=records.filter(x=>x&&financialLabels[x.metric]&&/^20\d{2}(?:-Q[1-4])?$/.test(String(x.period||''))&&Number.isFinite(Number(x.value))&&x.confidence!=='conflict'&&(!x.segment||x.segment==='company'));
+  const render=quarterly=>{
+    const rows=data.filter(x=>String(x.period).includes('-Q')===quarterly);
+    if(!rows.length)return '';
+    const periods=[...new Set(rows.map(x=>String(x.period)))].sort();
+    const metrics=Object.keys(financialLabels).filter(k=>rows.some(x=>x.metric===k));
+    const lookup=new Map();
+    for(const x of rows){const key=x.metric+'|'+x.period;if(!lookup.has(key))lookup.set(key,x)}
+    const heads=periods.map(p=>'<th>'+escape(p.replace('-Q',' Q'))+'</th>').join('');
+    const body=metrics.map(metric=>'<tr><th>'+escape(financialLabels[metric])+'</th>'+periods.map(p=>{
+      const x=lookup.get(metric+'|'+p);
+      if(!x)return '<td>—</td>';
+      const value=Number(x.value).toLocaleString('en-US',{maximumFractionDigits:4});
+      const unit=x.unit?' '+x.unit:'';
+      return '<td title="'+escape([x.evidence,x.source_field].filter(Boolean).join(' | '))+'">'+escape(value+unit)+'</td>';
+    }).join('')+'</tr>').join('');
+    return section(quarterly?'季度財務數字':'年度財務數字','<div class="rm-table-hint">原始報告數字；F/E 為預估，缺漏以 — 顯示。表格可左右滑動。</div><div class="rm-table-wrap" tabindex="0"><table class="rm-financial"><thead><tr><th>指標</th>'+heads+'</tr></thead><tbody>'+body+'</tbody></table></div>');
+  };
+  return render(false)+render(true);
+}
+// END FINANCIAL FORECAST TABLES V2
+
+function brokerFullDetail(r, financialRecords=[]) {
   const parts=[];
   const prose=value => displayText(Array.isArray(value) ? value.join('\n\n') : String(value || ''));
   const identity=[r.name || r.company,r.ticker].filter(Boolean).join(' ');
@@ -786,12 +821,13 @@ function brokerFullDetail(r) {
   if (Array.isArray(r.quarterly_eps) && r.quarterly_eps.length) parts.push(section('券商單季 EPS 預估',
     `<div class="rm-table-wrap"><table><thead><tr><th>季度</th><th>預估 EPS</th></tr></thead><tbody>${r.quarterly_eps.map(x=>
     `<tr><th>${escape(x.period)}</th><td>${escape(x.eps)}</td></tr>`).join('')}</tbody></table></div>`));
+  parts.push(financialTables([...(Array.isArray(r.financial_forecasts)?r.financial_forecasts:[]),...financialRecords]));
   return parts.join('');
 }
 
-function showDetail(r, m) {
-  if (r.source_kind === 'broker') return brokerFullDetail(r);
-  if (r.ai_schema === 'broker-v1' && r.ai_research) return brokerFullDetail({...r.ai_research, date:r.date, source:r.source});
+function showDetail(r, m, financialRecords=[]) {
+  if (r.source_kind === 'broker') return brokerFullDetail(r,financialRecords);
+  if (r.ai_schema === 'broker-v1' && r.ai_research) return brokerFullDetail({...r.ai_research, date:r.date, source:r.source},financialRecords);
   const d = r.display || {};
 
   const story = clean(
@@ -862,6 +898,8 @@ function showDetail(r, m) {
     );
   }
 
+  html += financialTables([...(Array.isArray(ai.financial_forecasts)?ai.financial_forecasts:[]),...financialRecords]);
+
   // Original PDF text stays in source data for auditing, not the reader UI.
 
   return html || section(
@@ -904,7 +942,9 @@ async function openReader(m) {
       throw Error('找不到這篇研究');
     }
 
-    content.innerHTML = showDetail(r, m);
+    const financialRecords = (await financialData())[String(r.id)]?.forecasts || [];
+    if (dialog.hidden || opening !== readerSerial) return;
+    content.innerHTML = showDetail(r, m, financialRecords);
 
     const toggle = content.querySelector(
       '#rmShowOriginal'
