@@ -261,6 +261,33 @@ def main():
                 audit['empty_examples'].append({'id':str(row.get('id')),'company':row.get('company'),'broker':row.get('source'),'date':row.get('date')})
     path=root/args.output;path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps({'version':1,'stats':stats,'reports':result},ensure_ascii=False,separators=(',',':')),encoding='utf8')
+    # Per-report files: no API calls.
+    import hashlib
+    per_dir=root/'data/research_financial_by_id'
+    per_dir.mkdir(parents=True,exist_ok=True)
+    expected=set()
+
+    for report_id, report in result.items():
+        fname=hashlib.sha256(
+            str(report_id).encode('utf8')
+        ).hexdigest()[:24]+'.json'
+
+        expected.add(fname)
+
+        (per_dir/fname).write_text(
+            json.dumps(
+                {'id':str(report_id),**report},
+                ensure_ascii=False,
+                separators=(',',':')
+            ),
+            encoding='utf8'
+        )
+
+    for old in per_dir.glob('*.json'):
+        if old.name not in expected:
+            old.unlink()
+
+    print('FINANCIAL_PER_REPORT_FILES:',len(expected))
     audit['stats']=stats
     audit_path=root/'data/research_financial_backfill_report.json'
     audit_path.write_text(json.dumps(audit,ensure_ascii=False,indent=2),encoding='utf8')

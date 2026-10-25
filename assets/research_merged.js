@@ -772,14 +772,70 @@ function displayText(value, key) {
 
 // BEGIN FINANCIAL FORECAST TABLES V2
 const financialLabels={revenue:'營收',revenue_yoy:'營收年增率',revenue_qoq:'營收季增率',gross_profit:'毛利',gross_margin:'毛利率',operating_profit:'營業利益',operating_margin:'營益率',pretax_profit:'稅前淨利',pretax_margin:'稅前淨利率',net_income:'稅後淨利',net_margin:'淨利率',eps:'EPS',roe:'ROE',roa:'ROA',operating_cash_flow:'營業現金流',free_cash_flow:'自由現金流',capex:'資本支出',dividend:'每股現金股利',pe:'本益比',pb:'本淨比'};
-let financialPromise;
-function financialData(){
-  if(!financialPromise) financialPromise=fetch('./data/research_financial_forecasts.json',{cache:'no-cache'})
-    .then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
-    .then(x=>x&&x.reports&&typeof x.reports==='object'?x.reports:{})
-    .catch(e=>{console.warn('Financial forecasts unavailable',e);return {}});
-  return financialPromise;
+// Per-report financial JSON.
+const financialCache = new Map();
+
+async function financialForReport(id) {
+  const key = String(id || '');
+  if (!key) return [];
+
+  if (!financialCache.has(key)) {
+    const task = (async () => {
+      try {
+        const bytes = new TextEncoder().encode(key);
+        const hash = await crypto.subtle.digest(
+          'SHA-256',
+          bytes
+        );
+
+        const filename = Array.from(
+          new Uint8Array(hash)
+        ).map(
+          x => x.toString(16).padStart(2, '0')
+        ).join('').slice(0, 24) + '.json';
+
+        const response = await fetch(
+          './data/research_financial_by_id/' + filename,
+          { cache: 'no-cache' }
+        );
+
+        if (!response.ok) {
+          if (response.status !== 404) {
+            console.warn(
+              'Financial HTTP',
+              response.status,
+              key
+            );
+          }
+          return [];
+        }
+
+        const record = await response.json();
+
+        if (String(record.id) !== key) {
+          return [];
+        }
+
+        return Array.isArray(record.forecasts)
+          ? record.forecasts
+          : [];
+
+      } catch (e) {
+        console.warn(
+          'Financial data fetch failed',
+          key,
+          e
+        );
+        return [];
+      }
+    })();
+
+    financialCache.set(key, task);
+  }
+
+  return financialCache.get(key);
 }
+
 function financialTables(records){
   if(!Array.isArray(records))return '';
   const data=records.filter(x=>x&&financialLabels[x.metric]&&/^20\d{2}(?:-Q[1-4])?$/.test(String(x.period||''))&&Number.isFinite(Number(x.value))&&x.confidence!=='conflict'&&(!x.segment||x.segment==='company'));
@@ -942,7 +998,7 @@ async function openReader(m) {
       throw Error('找不到這篇研究');
     }
 
-    const financialRecords = (await financialData())[String(r.id)]?.forecasts || [];
+    const financialRecords = await financialForReport(r.id);
     if (dialog.hidden || opening !== readerSerial) return;
     content.innerHTML = showDetail(r, m, financialRecords);
 
