@@ -1,111 +1,86 @@
-/* Excel AI reports: compact broker-style presentation. Read-only; no API calls. */
+/* Broker-style presentation for completed Excel AI reports.
+ * Uses existing cache only. No OpenAI API calls.
+ */
 (() => {
   'use strict';
 
-  const ROOT = 'researchAiAudit';
+  const ROOT_ID = 'researchAiAudit';
 
-  const esc = v => String(v ?? '').replace(
+  const esc = value => String(value ?? '').replace(
     /[&<>"']/g,
-    c => ({
+    char => ({
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
       '"': '&quot;',
       "'": '&#39;'
-    }[c])
+    }[char])
   );
 
-  const nonempty = v =>
-    v !== null &&
-    v !== undefined &&
-    String(v).trim() !== '';
+  const exists = value =>
+    value !== null &&
+    value !== undefined &&
+    String(value).trim() !== '';
 
-  const str = v =>
-    Array.isArray(v)
-      ? v.map(str).join('\n')
-      : (typeof v === 'object' && v
-          ? JSON.stringify(v)
-          : String(v ?? ''));
+  const asText = value => {
+    if (Array.isArray(value)) {
+      return value.map(asText).join('\n');
+    }
 
-  const css = `
+    if (value && typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+
+    return String(value ?? '');
+  };
+
+  const style = document.createElement('style');
+
+  style.textContent = `
     #researchAiAudit .raa-card {
-      padding: 16px !important;
+      padding: 15px !important;
       margin: 10px 0 !important;
-      line-height: 1.55 !important;
       min-height: 0 !important;
+      line-height: 1.55 !important;
     }
 
     #researchAiAudit .raa-card * {
       box-sizing: border-box !important;
     }
 
-    #researchAiAudit .raa-card .raa-section {
-      white-space: normal !important;
-      margin: 12px 0 0 !important;
-      padding: 12px 0 0 !important;
-      min-height: 0 !important;
-      line-height: 1.6 !important;
-    }
-
-    #researchAiAudit .raa-card .raa-section strong {
-      margin: 0 0 5px !important;
-    }
-
-    #researchAiAudit .raa-card .raa-section p {
-      margin: 0 0 7px !important;
-      padding: 0 !important;
-    }
-
-    #researchAiAudit .raa-card .raa-section ul {
-      margin: 5px 0 !important;
-      padding: 0 0 0 22px !important;
-    }
-
-    #researchAiAudit .raa-card .raa-section li {
-      margin: 0 0 6px !important;
-      padding: 0 !important;
-    }
-
-    #researchAiAudit .raa-card details {
-      margin: 8px 0 0 !important;
-    }
-
-    #researchAiAudit .raa-card details summary {
-      padding: 7px 0 !important;
-    }
-
     #researchAiAudit .raa-v2-header {
       display: flex;
-      align-items: flex-start;
       justify-content: space-between;
+      align-items: flex-start;
       gap: 10px;
-      margin-bottom: 8px;
+      margin-bottom: 9px;
     }
 
     #researchAiAudit .raa-v2-name {
+      color: #142d4e;
       font-size: 19px;
       font-weight: 800;
-      line-height: 1.35;
-      color: #132944;
+      line-height: 1.4;
     }
 
     #researchAiAudit .raa-v2-ticker {
+      margin-left: 6px;
+      color: #526d89;
+      font-size: 16px;
       font-weight: 750;
-      color: #57718b;
-      margin-left: 7px;
     }
 
     #researchAiAudit .raa-v2-broker {
+      margin-top: 5px;
+      color: #64748b;
       font-size: 12px;
-      color: #61738b;
-      margin-top: 4px;
     }
 
     #researchAiAudit .raa-v2-title {
+      margin: 8px 0 12px;
+      color: #344b68;
       font-size: 14px;
       font-weight: 650;
-      color: #344b68;
-      margin: 6px 0 12px;
       line-height: 1.5;
     }
 
@@ -113,66 +88,89 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      margin: 10px 0;
+      margin: 10px 0 14px;
     }
 
     #researchAiAudit .raa-v2-fact {
-      background: #f3f7fc;
-      border: 1px solid #e1eaf5;
-      border-radius: 11px;
-      padding: 9px 10px;
       min-width: 0;
+      padding: 10px;
+      border: 1px solid #e1eaf5;
+      border-radius: 10px;
+      background: #f3f7fc;
     }
 
-    #researchAiAudit .raa-v2-fact .label {
-      font-size: 11px;
-      color: #64748b;
+    #researchAiAudit .raa-v2-fact-label {
       display: block;
-      margin-bottom: 2px;
+      margin-bottom: 3px;
+      color: #64748b;
+      font-size: 11px;
     }
 
-    #researchAiAudit .raa-v2-fact .value {
-      font-size: 17px;
-      font-weight: 800;
+    #researchAiAudit .raa-v2-fact-value {
       color: #193c68;
+      font-size: 16px;
+      font-weight: 800;
       overflow-wrap: anywhere;
     }
 
-    #researchAiAudit .raa-v2-fact.wide {
-      grid-column: span 2;
+    #researchAiAudit .raa-v2-section {
+      margin: 12px 0 0 !important;
+      padding: 11px 0 0 !important;
+      border-top: 1px solid #e2e8f0;
+      min-height: 0 !important;
+      line-height: 1.6 !important;
+    }
+
+    #researchAiAudit .raa-v2-section-title {
+      margin: 0 0 7px !important;
+      color: #163b6a;
+      font-size: 14px;
+      font-weight: 800;
     }
 
     #researchAiAudit .raa-v2-text {
+      margin: 0 !important;
+      padding: 0 !important;
       white-space: pre-line !important;
-      line-height: 1.62 !important;
+      line-height: 1.65 !important;
       overflow-wrap: anywhere;
+    }
+
+    #researchAiAudit .raa-v2-list {
+      margin: 5px 0 0 !important;
+      padding-left: 21px !important;
+    }
+
+    #researchAiAudit .raa-v2-list li {
+      margin: 0 0 6px !important;
+      padding: 0 !important;
+      line-height: 1.6 !important;
     }
 
     #researchAiAudit .raa-v2-table-wrap {
       max-width: 100%;
       overflow-x: auto;
-      margin-top: 6px;
+      margin: 8px 0;
     }
 
     #researchAiAudit .raa-v2-table {
-      border-collapse: collapse;
       width: 100%;
+      border-collapse: collapse;
       font-size: 13px;
-      line-height: 1.5;
     }
 
     #researchAiAudit .raa-v2-table th {
       background: #edf3fa;
       color: #365170;
       font-weight: 750;
-      text-align: left;
     }
 
     #researchAiAudit .raa-v2-table th,
     #researchAiAudit .raa-v2-table td {
-      padding: 8px !important;
+      padding: 9px 8px !important;
       border-bottom: 1px solid #e1e8f1 !important;
-      vertical-align: top;
+      text-align: left;
+      vertical-align: middle;
     }
 
     #researchAiAudit .raa-v2-table td.num {
@@ -185,15 +183,30 @@
       background: #f9fbfe;
     }
 
+    #researchAiAudit .raa-v2-details {
+      margin-top: 10px !important;
+    }
+
+    #researchAiAudit .raa-v2-details summary {
+      padding: 8px 0 !important;
+      color: #205fcd;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
     #researchAiAudit .raa-v2-note {
+      margin-top: 10px;
+      color: #8290a2;
       font-size: 11px;
-      color: #7b8899;
-      margin: 8px 0;
     }
 
     @media (max-width: 500px) {
       #researchAiAudit .raa-card {
         padding: 12px !important;
+      }
+
+      #researchAiAudit .raa-v2-name {
+        font-size: 17px;
       }
 
       #researchAiAudit .raa-v2-facts {
@@ -204,30 +217,71 @@
         padding: 8px;
       }
 
-      #researchAiAudit .raa-v2-name {
-        font-size: 17px;
+      #researchAiAudit .raa-v2-fact-value {
+        font-size: 15px;
       }
     }
   `;
 
-  const style = document.createElement('style');
-  style.textContent = css;
   document.head.appendChild(style);
 
-  function table(heads, rows) {
+  function section(title, value) {
+    if (
+      !exists(value) ||
+      (Array.isArray(value) && !value.length)
+    ) {
+      return '';
+    }
+
+    let body;
+
+    if (Array.isArray(value)) {
+      body = `
+        <ul class="raa-v2-list">
+          ${value.map(item => `
+            <li>${esc(asText(item))}</li>
+          `).join('')}
+        </ul>
+      `;
+    } else {
+      body = `
+        <div class="raa-v2-text">
+          ${esc(asText(value))}
+        </div>
+      `;
+    }
+
+    return `
+      <section class="raa-v2-section">
+        <div class="raa-v2-section-title">
+          ${esc(title)}
+        </div>
+        ${body}
+      </section>
+    `;
+  }
+
+  function table(headers, rows) {
+    if (!rows.length) return '';
+
     return `
       <div class="raa-v2-table-wrap">
         <table class="raa-v2-table">
           <thead>
             <tr>
-              ${heads.map(h => `<th>${esc(h)}</th>`).join('')}
+              ${headers.map(header =>
+                `<th>${esc(header)}</th>`
+              ).join('')}
             </tr>
           </thead>
+
           <tbody>
             ${rows.map(row => `
               <tr>
-                ${row.map((c, i) => `
-                  <td${i ? ' class="num"' : ''}>${esc(c)}</td>
+                ${row.map((value, index) => `
+                  <td${index ? ' class="num"' : ''}>
+                    ${esc(value)}
+                  </td>
                 `).join('')}
               </tr>
             `).join('')}
@@ -237,48 +291,26 @@
     `;
   }
 
-  function paragraphs(value) {
-    if (Array.isArray(value)) {
-      return `
-        <ul>
-          ${value
-            .filter(nonempty)
-            .map(x => `<li>${esc(str(x))}</li>`)
-            .join('')}
-        </ul>
-      `;
-    }
-
-    return `<div class="raa-v2-text">${esc(str(value))}</div>`;
-  }
-
-  function section(label, value) {
-    if (!nonempty(value) ||
-        (Array.isArray(value) && !value.length)) {
-      return '';
-    }
-
-    return `
-      <section class="raa-section">
-        <strong>${esc(label)}</strong>
-        ${paragraphs(value)}
-      </section>
-    `;
-  }
-
   function epsTable(items) {
     if (!Array.isArray(items) || !items.length) {
       return '';
     }
 
-    const rows = items.map(x => [
-      x.period || x.quarter || x.label || '',
-      x.eps ?? x.value ?? '—'
-    ]);
+    const rows = items
+      .filter(item => item && typeof item === 'object')
+      .map(item => [
+        item.period || item.quarter || item.label || '—',
+        item.eps ?? item.value ?? '—'
+      ]);
+
+    if (!rows.length) return '';
 
     return `
-      <section class="raa-section">
-        <strong>券商季度 EPS 預估</strong>
+      <section class="raa-v2-section">
+        <div class="raa-v2-section-title">
+          券商季度 EPS 預估
+        </div>
+
         ${table(['季度', 'EPS（元）'], rows)}
       </section>
     `;
@@ -289,23 +321,28 @@
       return '';
     }
 
-    const valid = items.filter(
-      x => x && typeof x === 'object'
-    );
+    const rows = items
+      .filter(item => item && typeof item === 'object')
+      .map(item => [
+        item.period ||
+          item.year ||
+          item.metric ||
+          item.item ||
+          '財測',
+        item.old ?? item.previous ?? '—',
+        item.new ?? item.current ?? item.value ?? '—'
+      ]);
 
-    if (!valid.length) {
+    if (!rows.length) {
       return section('財測調整', items);
     }
 
-    const rows = valid.map(x => [
-      x.period || x.year || x.metric || x.item || '財測',
-      x.old ?? x.previous ?? '—',
-      x.new ?? x.current ?? x.value ?? '—'
-    ]);
-
     return `
-      <section class="raa-section">
-        <strong>財測調整</strong>
+      <section class="raa-v2-section">
+        <div class="raa-v2-section-title">
+          財測調整
+        </div>
+
         ${table(
           ['項目／期間', '原預估', '新預估'],
           rows
@@ -320,20 +357,23 @@
     }
 
     const rows = items
-      .filter(x => x && typeof x === 'object')
-      .map(x => [
-        `${x.name || ''} ${x.ticker || ''}`.trim(),
-        x.rating || '—',
-        x.target_price_new ?? x.target_price ?? '—'
+      .filter(item => item && typeof item === 'object')
+      .map(item => [
+        `${item.name || ''} ${item.ticker || ''}`.trim(),
+        item.rating || '—',
+        item.target_price_new ??
+          item.target_price ??
+          '—'
       ]);
 
-    if (!rows.length) {
-      return '';
-    }
+    if (!rows.length) return '';
 
     return `
-      <section class="raa-section">
-        <strong>個股評等與目標價</strong>
+      <section class="raa-v2-section">
+        <div class="raa-v2-section-title">
+          個股評等與目標價
+        </div>
+
         ${table(
           ['公司／代號', '評等', '目標價'],
           rows
@@ -342,120 +382,166 @@
     `;
   }
 
-  function card(item, entry) {
+  function fact(label, value) {
+    if (!exists(value)) return '';
+
+    return `
+      <div class="raa-v2-fact">
+        <span class="raa-v2-fact-label">
+          ${esc(label)}
+        </span>
+
+        <span class="raa-v2-fact-value">
+          ${esc(value)}
+        </span>
+      </div>
+    `;
+  }
+
+  function reportCard(item, entry) {
     const ai = entry.result || {};
 
-    const company = ai.name || item.company || '';
-    const ticker = ai.ticker || item.ticker || '';
-    const broker = ai.broker || item.source || '';
+    const company =
+      ai.name ||
+      item.company ||
+      '';
+
+    const ticker =
+      ai.ticker ||
+      item.ticker ||
+      '';
+
+    const broker =
+      ai.broker ||
+      item.source ||
+      '';
+
     const rating = ai.rating || '';
 
     const target = ai.target_price_new;
-    const old = ai.target_price_old;
-
-    const type = ai.report_type === 'sector'
-      ? '產業報告'
-      : '個股報告';
+    const oldTarget = ai.target_price_old;
 
     const date = ai.date || item.date || '';
 
-    const fact = (label, value, wide = false) => {
-      if (!nonempty(value)) {
-        return '';
-      }
+    const reportType =
+      ai.report_type === 'sector'
+        ? '產業報告'
+        : '個股報告';
 
-      return `
-        <div class="raa-v2-fact${wide ? ' wide' : ''}">
-          <span class="label">${esc(label)}</span>
-          <span class="value">${esc(value)}</span>
-        </div>
-      `;
-    };
-
-    const targets = nonempty(target)
+    const targetText = exists(target)
       ? `NT$${target}`
       : '';
 
-    const sections = [
-      section('核心投資觀點', ai.push_reason),
+    const oldTargetText = exists(oldTarget)
+      ? `NT$${oldTarget}`
+      : '';
+
+    const details = [
       section('研究摘要', ai.summary),
+      section('核心投資觀點', ai.push_reason),
       section('研究重點', ai.key_points),
       epsTable(ai.quarterly_eps),
       forecastTable(ai.forecast_changes),
       stockTable(ai.stock_views),
-      section('完整研究分析', ai.detail),
       section('風險因素', ai.risks)
     ].filter(Boolean).join('');
+
+    const fullAnalysis = section(
+      '完整研究分析',
+      ai.detail
+    );
 
     return `
       <div class="raa-v2-header">
         <div>
           <div class="raa-v2-name">
             ${esc(company || ai.title || '研究報告')}
-            ${ticker
-              ? `<span class="raa-v2-ticker">${esc(ticker)}</span>`
-              : ''}
+
+            ${
+              ticker
+                ? `
+                  <span class="raa-v2-ticker">
+                    ${esc(ticker)}
+                  </span>
+                `
+                : ''
+            }
           </div>
 
           <div class="raa-v2-broker">
-            ${esc(broker)} · ${esc(date)} · ${esc(type)}
+            ${esc(broker)}
+            ${date ? ` · ${esc(date)}` : ''}
+            · ${esc(reportType)}
           </div>
         </div>
 
-        <span class="raa-badge success">AI 已完成</span>
+        <span class="raa-badge success">
+          AI 已完成
+        </span>
       </div>
 
-      <div class="raa-v2-title">
-        ${esc(ai.title || '')}
-      </div>
+      ${
+        ai.title
+          ? `
+            <div class="raa-v2-title">
+              ${esc(ai.title)}
+            </div>
+          `
+          : ''
+      }
 
       <div class="raa-v2-facts">
         ${fact('評等', rating)}
-        ${fact('目標價', targets)}
-        ${fact(
-          '原目標價',
-          nonempty(old) ? `NT$${old}` : ''
-        )}
+        ${fact('目標價', targetText)}
+        ${fact('原目標價', oldTargetText)}
         ${fact('發布券商', broker)}
-        ${fact('報告日期', date)}
       </div>
 
-      ${sections}
+      ${details}
+
+      ${
+        fullAnalysis
+          ? `
+            <details class="raa-v2-details">
+              <summary>展開完整研究分析 ▼</summary>
+              ${fullAnalysis}
+            </details>
+          `
+          : ''
+      }
 
       <div class="raa-v2-note">
-        來源：已保存的 AI 解析快取 · 本頁不會重新呼叫 API
+        來源：既有 AI 解析結果，不重新執行 API
       </div>
     `;
   }
 
   let data = null;
-  let fetching = null;
+  let loading = null;
+  let queued = false;
 
   async function load() {
-    if (data) {
-      return data;
-    }
+    if (data) return data;
+    if (loading) return loading;
 
-    if (fetching) {
-      return fetching;
-    }
-
-    fetching = Promise.all([
-      './data/research_ai_plan.json',
-      './data/research_ai_cache.json'
-    ].map(async url => {
-      const response = await fetch(url, {
+    loading = Promise.all([
+      fetch('./data/research_ai_plan.json', {
         cache: 'no-store'
-      });
-
-      if (!response.ok) {
+      }),
+      fetch('./data/research_ai_cache.json', {
+        cache: 'no-store'
+      })
+    ]).then(async ([planResponse, cacheResponse]) => {
+      if (!planResponse.ok || !cacheResponse.ok) {
         throw new Error(
-          `${url}: HTTP ${response.status}`
+          `AI layout data unavailable: ` +
+          `${planResponse.status}/${cacheResponse.status}`
         );
       }
 
-      return response.json();
-    })).then(([plan, cache]) => {
+      const plan = await planResponse.json();
+      const cache = await cacheResponse.json();
+
       const map = new Map();
 
       for (const item of plan.items || []) {
@@ -464,71 +550,114 @@
 
       data = { map, cache };
 
-      console.info('[AI_LAYOUT] cache ready', {
+      console.info('[AI_LAYOUT] data loaded', {
         reports: map.size
       });
 
       return data;
     }).catch(error => {
-      fetching = null;
-
-      console.error(
-        '[AI_LAYOUT] fetch failed',
-        error
-      );
-
+      loading = null;
+      console.error('[AI_LAYOUT] load failed', error);
       throw error;
     });
 
-    return fetching;
+    return loading;
+  }
+
+  function resolveEntry(id, item) {
+    if (!data) return null;
+
+    const cache = data.cache;
+
+    let current = id;
+    const visited = new Set();
+
+    for (let i = 0; i < 8; i++) {
+      if (!current || visited.has(current)) {
+        break;
+      }
+
+      visited.add(current);
+
+      const entry = cache[current];
+
+      if (!entry) break;
+
+      if (
+        entry.status === 'alias' &&
+        entry.cache_id
+      ) {
+        current = entry.cache_id;
+        continue;
+      }
+
+      return entry;
+    }
+
+    if (
+      item?.cache_id &&
+      !visited.has(item.cache_id)
+    ) {
+      return cache[item.cache_id] || null;
+    }
+
+    return null;
   }
 
   function refresh() {
-    const root = document.getElementById(ROOT);
+    const root = document.getElementById(ROOT_ID);
 
-    if (!root || !data) {
-      return;
-    }
+    if (!root || !data) return;
 
-    for (const element of root.querySelectorAll('.raa-card')) {
-      if (element.dataset.raaLayout === 'v2') {
+    let updated = 0;
+
+    for (const element of root.querySelectorAll(
+      '.raa-card[data-report-id]'
+    )) {
+      if (element.dataset.raaLayout === 'v3') {
         continue;
       }
 
-      const raw = element.textContent || '';
+      const id = element.dataset.reportId;
 
-      const id = raw.match(
-        /line-[a-f0-9]{20}/
-      )?.[0];
-
-      if (!id) {
-        continue;
-      }
+      if (!id) continue;
 
       const item = data.map.get(id);
 
-      const entry =
-        data.cache[id] ||
-        data.cache[item?.cache_id];
-
-      if (!item ||
-          !entry ||
-          entry.status !== 'success' ||
-          !entry.result) {
+      if (!item) {
+        console.warn(
+          '[AI_LAYOUT] report missing from plan',
+          id
+        );
         continue;
       }
 
-      element.innerHTML = card(item, entry);
-      element.dataset.raaLayout = 'v2';
+      const entry = resolveEntry(id, item);
+
+      if (
+        !entry ||
+        entry.status !== 'success' ||
+        !entry.result
+      ) {
+        continue;
+      }
+
+      element.innerHTML = reportCard(item, entry);
+      element.dataset.raaLayout = 'v3';
+
+      updated++;
+    }
+
+    if (updated) {
+      console.info(
+        '[AI_LAYOUT] upgraded completed reports',
+        updated
+      );
     }
   }
 
-  let queued = false;
-
   function schedule() {
-    if (queued) {
-      return;
-    }
+    if (queued) return;
 
     queued = true;
 
@@ -543,7 +672,7 @@
   });
 
   function init() {
-    const root = document.getElementById(ROOT);
+    const root = document.getElementById(ROOT_ID);
 
     if (!root) {
       setTimeout(init, 400);
@@ -558,15 +687,25 @@
     root.addEventListener('click', () => {
       load()
         .then(schedule)
-        .catch(() => {});
+        .catch(error => {
+          console.error(
+            '[AI_LAYOUT] refresh failed',
+            error
+          );
+        });
     });
 
     load()
       .then(schedule)
-      .catch(() => {});
+      .catch(error => {
+        console.error(
+          '[AI_LAYOUT] initialization failed',
+          error
+        );
+      });
 
     console.info(
-      '[AI_LAYOUT] broker-style compact layout installed (read-only)'
+      '[AI_LAYOUT] v3 installed; cache-only, zero API'
     );
   }
 
