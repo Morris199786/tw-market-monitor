@@ -106,7 +106,7 @@ def parse_table(text,source,out):
             if len(label)>48:continue
             vals=[m.group() for m in NUM.finditer(row[len(label):])]
             if len(vals)!=len(cols):continue
-            unit='%' if ('%' in label or mt.endswith('margin') or mt in ('roe','roa')) else ('元' if mt in ('eps','dividend') else '')
+            unit='%' if ('%' in label or mt.endswith('margin') or mt in ('roe','roa')) else ('元' if mt in ('eps','dividend') else (re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)',line) or re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)', ' '.join(lines[max(0,i-3):i+1]))).group() if (re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)',line) or re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)', ' '.join(lines[max(0,i-3):i+1]))) else '')
             for (period,status),v in zip(cols,vals):
                 add(out,period,mt,numeric(v),unit,source,row,status,priority=3)
 
@@ -137,6 +137,46 @@ def parse_inline(text,source,out):
                 add(out,p[2],metric,value,unit,source,line,p[3],priority=1)
 
 
+# Parallel period/value lists in broker memos (e.g. 2026/27 EPS 55/99).
+PAIRED=re.compile(r'(?:20\d{2}|\d{2})\s*(?:年|E|F)?\s*[/／、和及]\s*(?:20\d{2}|\d{2})\s*(?:年|E|F)?')
+VALUE_PAIR=re.compile(r'([-−]?\d+(?:\.\d+)?)\s*(?:元)?\s*[/／、]\s*([-−]?\d+(?:\.\d+)?)\s*(?:元)?')
+def parse_pairs(text,source,out):
+    for line in re.split(r'[\n。；;]',text):
+        if len(line)>350:continue
+        pm=PAIRED.search(line)
+        if not pm:continue
+        years=re.findall(r'20\d{2}|(?<!\d)\d{2}(?!\d)',pm.group())
+        if len(years)!=2:continue
+        ys=[int(x) if len(x)==4 else 2000+int(x) for x in years]
+        if not all(2020<=y<=2040 for y in ys):continue
+        # Avoid mapping multi-company text or multiple metrics in the same clause.
+        for metric,pat in METRICS:
+            matches=list(re.finditer(pat,line,re.I))
+            if len(matches)!=1:continue
+            m=matches[0]
+            if m.start()<pm.start() or m.start()-pm.end()>70:continue
+            vm=VALUE_PAIR.search(line[m.end():m.end()+75])
+            if not vm:continue
+            if metric in ('eps','revenue','net_income','operating_profit') and '%' in line[m.end():m.end()+75][:vm.end()]:continue
+            if re.search(r'上修|下修|調升|調降|共識|consensus',line[m.end():m.end()+75],re.I):continue
+            vals=[numeric(vm.group(1)),numeric(vm.group(2))]
+            for year,val in zip(ys,vals):
+                add(out,str(year),metric,val,'元' if metric=='eps' else '',source,line,priority=2)
+
+def parse_period_first_eps(text,source,out):
+    # "2026E EPS 55.01(+95%)、2027E 99.35(+81%)" — second period inherits EPS.
+    pat=re.compile(r'(20\d{2})\s*[EF]\s*EPS\s*([-−]?\d+(?:\.\d+)?)(?:\s*\([^)]*\))?\s*[、,;/／]\s*(20\d{2})\s*[EF]\s*([-−]?\d+(?:\.\d+)?)',re.I)
+    for m in pat.finditer(text):
+        for year,val in [(m.group(1),m.group(2)),(m.group(3),m.group(4))]:
+            add(out,year,'eps',numeric(val),'元',source,m.group(),priority=2)
+
+def parse_repeated_year_eps(text,source,out):
+    # 2026F EPS -4.04元、2027F -3.25元
+    pat=re.compile(r'(20\d{2})\s*[EF]\s*(?:稅後\s*)?EPS\s*([-−]?\d+(?:\.\d+)?)\s*元?\s*[、,;/／]\s*(20\d{2})\s*[EF]\s*([-−]?\d+(?:\.\d+)?)',re.I)
+    for m in pat.finditer(text):
+        for year,val in ((m.group(1),m.group(2)),(m.group(3),m.group(4))):
+            add(out,year,'eps',numeric(val),'元',source,m.group(),priority=2)
+
 def extract(row):
     if row.get('source_kind')!='line' or row.get('market')=='US':return []
     if ';' in str(row.get('ticker','')) or '多檔聚合' in str(row.get('company','')):return []
@@ -146,6 +186,9 @@ def extract(row):
         if not isinstance(value,str) or not value.strip():continue
         parse_table(value,field,out)
         parse_inline(value,field,out)
+        parse_pairs(value,field,out)
+        parse_period_first_eps(value,field,out)
+        parse_repeated_year_eps(value,field,out)
     records=[]
     for v in out.values():
         v.pop('_priority',None)
