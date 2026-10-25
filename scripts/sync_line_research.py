@@ -145,6 +145,8 @@ def original_date(row):
 
 def clean_display(value):
     """Conservative presentation cleanup; never alter underlying financial numbers."""
+    if isinstance(value, list):
+        value = '\n\n'.join(str(x) for x in value if x)
     text = str(value or '').replace('\r\n', '\n').replace('\r', '\n').replace('\x0c', '\n')
     if text.strip().lower() in ('null', 'none', 'nan'):
         return ''
@@ -205,35 +207,55 @@ def transform(values, brokers, today):
 
 
 def is_same_broker_report(row, broker):
-    """High-confidence overlap only; never suppress a distinct research edition."""
-    if row.get('original_type') not in ('個股報告','產業報告','券商評等'):
-        return False
-    a=parse_date(row.get('date')); b=parse_date(broker.get('group_date') or broker.get('date'))
-    if not a or not b or abs((a-b).days)>1: return False
-    ra=ticker(row.get('ticker')); rb=ticker(broker.get('ticker') or broker.get('stock_id'))
-    if ra and rb and ra!=rb: return False
-    if not (ra and rb) and normalize(row.get('company'))!=normalize(broker.get('name')): return False
-    sa=broker_key(row.get('source')); sb=broker_key(broker.get('broker'))
-    if not sa or not sb or not (sa in sb or sb in sa): return False
-    title_a=normalize(row.get('period') or row.get('company'))
-    title_b=normalize(broker.get('title'))
-    # Exact matching title, or strong similarity of substantive report text.
-    if len(title_a)>=12 and len(title_b)>=12 and SequenceMatcher(None,title_a,title_b).ratio()>=0.85:
-        return True
-    original=normalize(' '.join(str(row.get(k) or '') for k in ('story','full_text','full_text_2','full_text_3')))
-    old=normalize(broker.get('summary') or '')
-    return len(original)>=120 and len(old)>=120 and (old[:100] in original or original[:100] in old)
+    from research_dedup import evidence
+    return bool(evidence(row, dict(broker, source_kind='broker')))
+
+
+def resolve_cache(item, cache):
+    from research_dedup import stable_key, content_key
+    record=cache.get(item.get('id'))
+    if record is None:
+        key,body=stable_key(item),content_key(item)
+        matches=[v for v in cache.values() if isinstance(v,dict) and
+                 (v.get('stable_key')==key or (body and v.get('content_key')==body))]
+        successes=[v for v in matches if v.get('status')=='success']
+        if successes: record=successes[0]
+        elif matches: record=matches[0]
+    visited=set()
+    while isinstance(record,dict) and record.get('status')=='alias':
+        ref=record.get('cache_id')
+        if ref in visited: return None
+        visited.add(ref); record=cache.get(ref)
+    return record
 
 
 def attach_ai(item, cache):
-    record=cache.get(item.get('id'))
-    if record is None:
-        key='|'.join(re.sub(r'\s+', '', str(item.get(k) or '')).casefold() for k in ('date','original_type','source','company','ticker','period'))
-        matches=[v for v in cache.values() if isinstance(v,dict) and v.get('stable_key')==key]
-        if len(matches)==1: record=matches[0]
+    record=resolve_cache(item,cache)
     if isinstance(record,dict) and record.get('status')=='success':
-        item['ai_research']=record.get('result',{})
+        result=record.get('result',{})
+        item['ai_research']=result
+        item['ai_schema']=record.get('schema','legacy')
+        if record.get('schema')=='broker-v1':
+            item['title']=result.get('title','')
+            item['display']['story']=clean_display(result.get('summary',[]))
+            item['story']=item['display']['story']
     return item
+
+
+def load_all_brokers():
+    # Carry forward all published original broker reports, not only this month.
+    history={}
+    manifest=load_json(ROOT/'data/research_manifest.json')
+    for shard in manifest.get('shards',[]):
+        filename=shard.get('file','')
+        if Path(filename).name!=filename: raise ValueError('Unsafe shard path')
+        path=ROOT/'data/research_shards'/filename
+        if not path.exists(): raise ValueError('Missing historical shard; refuse partial publication')
+        for r in load_json(path).get('items',[]):
+            if r.get('source_kind')=='broker' and r.get('id'): history[str(r['id'])]=r
+    for r in load_json(BROKER_FILE).get('items',[]):
+        if r.get('id'): history[str(r['id'])]=r
+    return list(history.values())
 
 
 def broker_records(brokers):
@@ -341,19 +363,31 @@ def main():
         if not token:
             sys.exit('ACCESS_TOKEN missing; no output written')
         values = fetch_sheet(token)
-    brokers = load_json(BROKER_FILE).get('items', [])
+    brokers = load_all_brokers()
     data, stats = transform(values, brokers, today)
     print(json.dumps(stats, ensure_ascii=False))
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
-    kept=[]; suppressed=[]
+    from research_dedup import Matcher, content_key
+    matcher=Matcher(brokers,load_json(ROOT/'data/report_inbox.json').get('items',[]))
+    kept=[]; suppressed=[]; seen_content={}
+    broker_ids={str(b['id']) for b in brokers}
     for item in data['items']:
-        matches=[b for b in brokers if is_same_broker_report(item,b)]
-        if matches:
-            suppressed.append({'excel_id':item['id'],'broker_ids':[b.get('id') for b in matches]})
-        else:
-            kept.append(attach_ai(item,cache))
+        decision=matcher.decide(item)
+        record=resolve_cache(item,cache)
+        if decision['status']=='broker_duplicate':
+            suppressed.append({'excel_id':item['id'],**decision})
+            continue
+        if isinstance(record,dict) and record.get('status')=='broker_duplicate' and str(record.get('broker_report_id')) in broker_ids:
+            suppressed.append({'excel_id':item['id'],'broker_report_id':record['broker_report_id'],'evidence':'saved_duplicate'})
+            continue
+        key=content_key(item)
+        if key and key in seen_content:
+            suppressed.append({'excel_id':item['id'],'excel_report_id':seen_content[key],'evidence':'same_excel_content'})
+            continue
+        if key: seen_content[key]=item['id']
+        kept.append(attach_ai(item,cache))
     merged = broker_records(brokers) + kept
     merged.sort(key=lambda r:(str(r.get('date') or ''),str(r.get('id') or '')),reverse=True)
     public={'count':len(merged),'line_count':len(data['items']),
@@ -402,12 +436,15 @@ def main():
             for offset, record in enumerate(batch):
                 rid = str(record.get('id') or f'{filename}:{offset}')
                 metadata = {'id':rid, 'file':filename, 'date':str(record.get('date') or '')[:10],
-                            'category': '券商報告' if record.get('source_kind') == 'broker' else record.get('category','市場情報'),
-                            'company':record.get('display_title') or record.get('company') or record.get('name') or '',
+                            'category':record.get('category','市場情報'),
+                            'company':record.get('company') or record.get('name') or '',
+                            'title':(record.get('ai_research') or {}).get('title') or record.get('display_title') or record.get('title') or '',
+                            'is_multi_company':bool(record.get('is_multi_company')) or ';' in str(record.get('ticker','')),
+                            'ai_processed':bool(record.get('ai_research')),
                             'original_type':record.get('original_type') or '',
                             'ticker':record.get('display_ticker') or record.get('ticker') or record.get('stock_id') or '',
                             'source':record.get('source') or record.get('broker') or '',
-                            'story':clean_display((record.get('ai_research') or {}).get('summary') or record.get('story') or record.get('summary') or record.get('title') or '')[:1400],
+                            'story':clean_display((record.get('ai_research') or {}).get('summary') or record.get('story') or record.get('summary') or record.get('title') or ''),
                             'market':record.get('market','TW'), 'source_kind':record.get('source_kind','line')}
                 meta_rows.append(metadata)
                 fields = ('company','name','ticker','stock_id','source','broker','source_name',

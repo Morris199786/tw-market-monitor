@@ -1,157 +1,175 @@
 #!/usr/bin/env python3
-"""Manual one-month backfill. Uses OPENAI_API_KEY only when explicitly invoked.
-Runs before sync_line_research.py; keeps an append-only status cache by Excel content ID.
+"""Incremental Excel research analysis. Durable claim before ONE broker API call.
+No automatic retry, notification, or modification of original broker reports.
 """
-import json, os, sys, time, urllib.request, urllib.error
-from datetime import datetime
-import re
-from pathlib import Path
-from zoneinfo import ZoneInfo
-from datetime import date
-import subprocess
-import hashlib
+import calendar
 from collections import Counter
-from sync_line_research import (fetch_sheet, load_json, transform, is_same_broker_report,
-                                BROKER_FILE, ROOT, write_json_atomic, parse_date)
+from datetime import date, datetime
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+from zoneinfo import ZoneInfo
+
+from sync_line_research import fetch_sheet, load_json, transform, ROOT, BROKER_FILE, write_json_atomic, load_all_brokers
+from research_dedup import Matcher, content_key, stable_key, source_ids
 
 CACHE=ROOT/'data/research_ai_cache.json'
-START=date(2026,9,25)
-END=date(2026,10,25)
-MODEL=os.getenv('RESEARCH_AI_MODEL','gpt-4.1-mini')
+PLAN=ROOT/'data/research_ai_plan.json'
 
-def context_for(row, history):
-    """Only dated, earlier records; distinguish same-broker revisions from other views."""
-    day=parse_date(row['date'])
-    code=re.search(r'(?<!\d)\d{4}(?!\d)',str(row.get('ticker') or ''))
-    code=code.group() if code else ''
-    company=str(row.get('company') or '').strip()
-    same=[]; related=[]
-    for old in history:
-        if old['id']==row['id']: continue
-        old_day=parse_date(old['date'])
-        if not old_day or not day or old_day>=day: continue
-        old_code=re.search(r'(?<!\d)\d{4}(?!\d)',str(old.get('ticker') or ''))
-        old_code=old_code.group() if old_code else ''
-        if not ((code and old_code==code) or (company and company==str(old.get('company') or '').strip())): continue
-        brief={'date':old['date'],'source':old.get('source',''), 'company':old.get('company',''),
-               'ticker':old.get('ticker',''), 'story':str(old.get('story') or '')[:1000],
-               'eps':str(old.get('eps') or '')[:700], 'guidance':str(old.get('guidance') or '')[:700],
-               'rating_target':str(old.get('rating_target') or '')[:500]}
-        (same if str(old.get('source') or '').strip()==str(row.get('source') or '').strip() else related).append(brief)
-    same.sort(key=lambda x:x['date'],reverse=True)
-    related.sort(key=lambda x:x['date'],reverse=True)
-    return {'same_broker_previous':same[:3], 'other_broker_history':related[:3]}
+def window(today):
+    year,month=today.year,today.month-1
+    if month==0: year,month=year-1,12
+    return date(year,month,min(today.day,calendar.monthrange(year,month)[1])),today
 
-def request_ai(row, context):
-    raw='\n\n'.join(str(row.get(k) or '') for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','full_text','full_text_2','full_text_3'))
-    if len(raw.strip())<80: raise ValueError('原始內容不足，跳過 API')
-    system=("你是台股研究分析員。只根據提供的原文與歷史報告作證據導向整理，繁體中文。"
-            "優先說明時間序列的變動、幅度、原因、是否有直接證據。"
-            "只有同一券商、同一公司、同一預估期間且指標口徑相同，才可以稱上修或下修；"
-            "不同券商只能說預估分歧，不得當作時間序列修正。"
-            "產業上下游、客戶與競爭對手交互驗證，只能根據明確提供的資料，"
-            "若無資料請填證據不足，不能杜撰供應鏈關係或客戶。"
-            "數字要保留單位、期間、實際/預估與出處。原文沒有的理由不能推定為事實。"
-            "不輸出聯絡方式、免責聲明。只輸出 JSON 物件，包含 title,summary,sections,financial_tables,"
-            "changes (陣列，每項含 metric,period,previous,current,change,reason,evidence,source_dates),"
-            "cross_validation (陣列，每項含 topic,status,evidence,contradictions,missing_evidence),"
-            "uncertainties (陣列)。沒有證據的欄位用空陣列。")
-    payload={'model':MODEL,'temperature':0,'response_format':{'type':'json_object'},'messages':[
-        {'role':'system','content':system},
-        {'role':'user','content':json.dumps({'report':{'original_type':row['original_type'],'date':row['date'],
-            'company':row.get('company',''),'ticker':row.get('ticker',''),'broker':row.get('source',''),
-            'raw':raw[:50000]},'historical_context':context},ensure_ascii=False)}]}
-    req=urllib.request.Request('https://api.openai.com/v1/chat/completions',data=json.dumps(payload,ensure_ascii=False).encode(),headers={'Authorization':'Bearer '+os.environ['OPENAI_API_KEY'],'Content-Type':'application/json'})
-    with urllib.request.urlopen(req,timeout=180) as res: reply=json.load(res)
-    data=json.loads(reply['choices'][0]['message']['content'])
-    if not isinstance(data,dict) or not isinstance(data.get('summary'),str) or not data['summary'].strip():
-        raise ValueError('API 回傳格式不正確')
-    return data
+def validate_cache(cache):
+    if not isinstance(cache,dict): raise ValueError('AI cache must be an object; API blocked')
+    for key,entry in cache.items():
+        if not isinstance(entry,dict) or not entry.get('status'):
+            raise ValueError('Malformed AI ledger entry; API blocked')
+    return cache
 
-def stable_key(row):
-    """Stable across edits to narrative; independent of Excel row order."""
-    fields = ('date', 'original_type', 'source', 'company', 'ticker', 'period')
-    return '|'.join(re.sub(r'\s+', '', str(row.get(k) or '')).casefold() for k in fields)
+def previous(row,cache):
+    if row['id'] in cache: return row['id']
+    key,body,ids=stable_key(row),content_key(row),source_ids(row)
+    hits=[]
+    for cid,e in cache.items():
+        if e.get('stable_key')==key or (body and e.get('content_key')==body) or (
+                len(ids)==1 and ids & set(e.get('source_ids',[]))): hits.append(cid)
+    # Any prior attempt blocks charging, even when aliases are ambiguous.
+    return sorted(hits)[0] if hits else None
 
+def make_plan(rows,brokers,inbox,cache,today):
+    start,end=window(today)
+    matcher=Matcher(brokers,inbox)
+    counts=Counter(stable_key(r) for r in rows)
+    seen={}; result=[]
+    for row in rows:
+        day=date.fromisoformat(row['date'])
+        if row.get('original_type') not in ('個股報告','產業報告') or not start<=day<=end: continue
+        decision=matcher.decide(row)
+        entry={'id':row['id'],'date':row['date'],'company':row.get('company',''),
+               'source':row.get('source',''),**decision}
+        if decision['status']=='new':
+            old=previous(row,cache)
+            body=content_key(row)
+            if old: entry.update(status='cached',cache_id=old,previous_status=cache[old]['status'])
+            elif body and body in seen: entry.update(status='excel_duplicate',cache_id=seen[body])
+            elif counts[stable_key(row)]>1:
+                entry.update(status='needs_review',reason='ambiguous_excel_identity')
+            elif not body: entry.update(status='needs_review',reason='insufficient_source_text')
+            else:
+                seen[body]=row['id']
+        result.append(entry)
+    return {'start':start.isoformat(),'end':end.isoformat(),'items':result,
+            'counts':dict(Counter(x['status'] for x in result))}
 
 def checkpoint(cache):
-    """Commit AND push the durable record before any API request."""
-    write_json_atomic(CACHE, cache)
-    if os.getenv('RESEARCH_AI_DRY_RUN', '1') != '0':
-        return
-    def git(*args):
-        subprocess.run(['git', *args], cwd=ROOT, check=True, capture_output=True, text=True)
-    git('add', '--', 'data/research_ai_cache.json')
-    diff = subprocess.run(['git', 'diff', '--cached', '--quiet'], cwd=ROOT)
-    if diff.returncode == 0:
-        return
-    if diff.returncode != 1:
-        raise RuntimeError('git diff failed; API call blocked')
-    git('commit', '-m', 'Checkpoint research AI report status')
-    git('push', 'origin', 'HEAD:main')
+    """If push fails, stop. A reserved remote entry survives a killed runner."""
+    write_json_atomic(CACHE,cache)
+    def git(*args,check=True):
+        return subprocess.run(['git',*args],cwd=ROOT,check=check,capture_output=True,text=True)
+    git('add','--','data/research_ai_cache.json')
+    diff=git('diff','--cached','--quiet',check=False)
+    if diff.returncode==0: return
+    if diff.returncode!=1: raise RuntimeError('Cannot inspect checkpoint; API blocked')
+    git('commit','-m','Checkpoint Excel research AI ledger')
+    for attempt in range(3):
+        if git('push','origin','HEAD:main',check=False).returncode==0: return
+        # Unrelated market data writers may have pushed. Ledger conflicts fail
+        # closed; never resolve them by overwriting the remote claim.
+        if git('pull','--rebase','origin','main',check=False).returncode:
+            git('rebase','--abort',check=False)
+            raise RuntimeError('Checkpoint conflict; API blocked, inspect ledger')
+    raise RuntimeError('Checkpoint push failed; API blocked')
 
+def source_for(row):
+    fields=('story','revenue','eps','inventory','utilization','guidance','trend','rating_target',
+            'numbers','full_text','full_text_2','full_text_3')
+    raw='\n\n'.join(f'{k}:\n{row[k]}' for k in fields if row.get(k))
+    if len(raw.strip())<80: raise ValueError('Insufficient source text')
+    return {'drive_file_id':row['id'],'name':f"{row.get('company','')} {row.get('source','')} {row['date']}",
+            'drive_url':'','report_date':row['date'],
+            'text':f"資料類型：{row['original_type']}\n報告日期：{row['date']}\n券商：{row.get('source','')}\n"+raw}
+
+def request_ai(src):
+    # Same model, prompt, identity audit and one-shot quarterly EPS as broker reports.
+    import update_reports_ai as base
+    import update_reports_ai_eps as eps
+    base.COMPANIES=base.registry(refresh=False)
+    old_post,old_normalize=base.requests.post,base.normalize_report
+    try:
+        base.requests.post=eps._post
+        base.normalize_report=eps._normalize
+        result=base.analyze_report(src)
+    finally:
+        base.requests.post,base.normalize_report=old_post,old_normalize
+    if not result.get('title') or not result.get('summary') or not result.get('detail'):
+        raise ValueError('Incomplete analysis; saved as unknown, no auto-retry')
+    return result
+
+def execute(rows,plan,cache,max_reports,save=checkpoint,analyze=request_ai):
+    lookup={r['id']:r for r in rows}; used=0
+    for item in plan['items']:
+        row=lookup[item['id']]; rid=row['id']; status=item['status']
+        if status in ('broker_duplicate','cached','excel_duplicate'):
+            if rid not in cache:
+                if status=='broker_duplicate': cache[rid]=dict(item)
+                elif item['cache_id'] in cache: cache[rid]={'status':'alias','cache_id':item['cache_id']}
+                else: continue
+                cache[rid].update(stable_key=stable_key(row),content_key=content_key(row),source_ids=sorted(source_ids(row)))
+                save(cache)
+            continue
+        if status!='new' or used>=max_reports or previous(row,cache): continue
+        src=source_for(row)
+        # All deterministic validation is before the durable reservation.
+        from update_reports_ai import prepare_report_text
+        try: prepare_report_text(src)
+        except ValueError:
+            item.update(status='needs_review',reason='source_too_large'); continue
+        record={'status':'api_reserved','stable_key':stable_key(row),'content_key':content_key(row),
+                'source_ids':sorted(source_ids(row)),'date':row['date'],
+                'reserved_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
+        cache[rid]=record
+        save(cache)  # Must succeed remotely BEFORE external request.
+        used+=1
+        try:
+            result=analyze(src)
+            cache[rid]={**record,'status':'success','result':result,'schema':'broker-v1',
+                        'model':result.get('ai_model'),'finished_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
+        except Exception as exc:
+            # Do not persist raw API exceptions (may contain request content).
+            cache[rid]={**record,'status':'unknown','error_type':type(exc).__name__}
+        save(cache)
+        print(f"{used}/{max_reports} {rid} {cache[rid]['status']}",flush=True)
+        if cache[rid]['status']=='unknown':
+            print('Stopped after uncertain API result; no automatic retry')
+            break
+    return used
 
 def main():
-    token=os.getenv('ACCESS_TOKEN','')
-    if not token: sys.exit('缺少 ACCESS_TOKEN；不執行')
-    brokers=load_json(BROKER_FILE).get('items',[])
-    values=fetch_sheet(token)
-    today=datetime.now(ZoneInfo('Asia/Taipei')).date()
-    data,_=transform(values,brokers,today)
-    cache=load_json(CACHE)
-    if not isinstance(cache,dict): sys.exit('AI cache 格式錯誤')
-    history=data['items']
-    counts=Counter(stable_key(row) for row in history)
-    # Existing content-hash IDs remain valid; add a stable-key index for future edits.
-    index={}
-    for cid, entry in cache.items():
-        if not isinstance(entry,dict): continue
-        key=entry.get('stable_key')
-        if key: index.setdefault(key,[]).append(cid)
-    targets=[]
-    for row in history:
-        day=parse_date(row['date'])
-        if row['original_type'] not in ('個股報告','產業報告') or not day or not START<=day<=END: continue
-        key=stable_key(row)
-        if row['id'] in cache: continue
-        # Do not auto-process ambiguous records with the same identifying fields.
-        if counts[key]>1 or len(index.get(key,[]))>1:
-            print(f'AMBIGUOUS: {row["id"]}; manual review, no API')
-            continue
-        if key in index:
-            # Old content changed: alias to prior processing record, no new API.
-            cache[row['id']]=dict(cache[index[key][0]],stable_key=key)
-            continue
-        matches=[b for b in brokers if is_same_broker_report(row,b)]
-        if matches:
-            cache[row['id']]={'status':'broker_duplicate','stable_key':key,
-                              'broker_report_id':str(matches[0].get('id') or ''), 'date':row['date']}
-            index[key]=[row['id']]
-            continue
-        targets.append((row,key))
-    print(f'Eligible unprocessed reports: {len(targets)}')
+    today=date.fromisoformat(os.environ['RESEARCH_AI_TODAY']) if os.getenv('RESEARCH_AI_TODAY') else datetime.now(ZoneInfo('Asia/Taipei')).date()
+    fixture=os.getenv('LINE_SYNC_FIXTURE')
+    if fixture: values=json.loads(Path(fixture).read_text(encoding='utf-8'))
+    else:
+        token=os.getenv('ACCESS_TOKEN','')
+        if not token: sys.exit('Missing ACCESS_TOKEN; no API calls')
+        values=fetch_sheet(token)
+    brokers=load_all_brokers()
+    inbox=load_json(ROOT/'data/report_inbox.json').get('items',[])
+    rows=transform(values,brokers,today)[0]['items']
+    cache=validate_cache(load_json(CACHE))
+    plan=make_plan(rows,brokers,inbox,cache,today)
+    # Plan is saved for review even in check mode, but never changes ledger.
+    print(json.dumps({k:v for k,v in plan.items() if k!='items'},ensure_ascii=False))
     if os.getenv('RESEARCH_AI_DRY_RUN','1')!='0':
-        print('DRY RUN: no OpenAI calls, no files written')
-        return
-    if not os.getenv('OPENAI_API_KEY'): sys.exit('OPENAI_API_KEY 未設定；停止')
-    # Publish aliases and broker duplicate statuses first.
-    checkpoint(cache)
-    for i,(row,key) in enumerate(targets,1):
-        # Reserve and PUSH before contacting the API. Unknown attempts are never retried.
-        cache[row['id']]={'status':'api_reserved','stable_key':key,'date':row['date'],
-                          'reserved_at':datetime.now(ZoneInfo('Asia/Taipei')).isoformat()}
-        checkpoint(cache)
-        try:
-            result=request_ai(row,context_for(row,history))
-            cache[row['id']]={'status':'success','stable_key':key,'result':result,
-                              'model':MODEL,'date':row['date']}
-            status='success'
-        except Exception as exc:
-            cache[row['id']]={'status':'unknown','stable_key':key,
-                              'reason':str(exc)[:400],'date':row['date']}
-            status='unknown'
-        checkpoint(cache)
-        print(f'{i}/{len(targets)} {row["id"]} {status}',flush=True)
-        time.sleep(.25)
+        write_json_atomic(PLAN,plan)
+        print('CHECK ONLY: zero API calls; ledger unchanged'); return
+    if not os.getenv('OPENAI_API_KEY'): sys.exit('Missing OPENAI_API_KEY; stopped')
+    cap=int(os.getenv('RESEARCH_AI_MAX_REPORTS','10'))
+    if not 1<=cap<=200: sys.exit('Batch cap must be 1..200')
+    execute(rows,plan,cache,cap)
+    write_json_atomic(PLAN,make_plan(rows,brokers,inbox,cache,today))
 
 if __name__=='__main__': main()
