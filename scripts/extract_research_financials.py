@@ -93,12 +93,23 @@ def parse_table(text,source,out):
         context=' '.join(lines[max(0,i-2):i+2])
         if REVISION.search(context):continue
         cols=[(p,s) for _,_,p,s in pp]
+        accepted_rows=0
         for row in lines[i+1:i+25]:
-            if not row:continue
+            if not row:
+                if accepted_rows:break
+                continue
             if periods(row) and len(periods(row))>=2:break
             if REVISION.search(row) or re.search(r'資料來源|免責聲明|圖表\s*\d',row):break
+            # Only accept a proper table row starting with a metric label.
+            # A prose sentence such as '4Q26營收預估...' must never be
+            # interpreted as a three-column table.
+            if re.match(r'^(?:\d|(?:FY\s*)?20\d{2}|[1-4]Q\d{2})',row,re.I):break
             mt=metric_of(row)
             if not mt:continue
+            if not re.match(r'^(?:營業收入(?:淨額)?|營收|銷貨毛利|營業毛利(?:淨額)?|營業利益|營業利潤|稅後淨利|稅後純益|歸屬母公司淨利|EPS|稅後\s*EPS|每股(?:稅後)?盈餘|每股現金股利|現金股利|本益比|本淨比|淨值報酬率|股東權益報酬率|毛利率|營益率|營業利益率|營業利潤率|淨利率|ROE|ROA|gross\s+profit|operating\s+(?:income|profit)|net\s+income|revenue|net\s+sales|GPM|OPM|年成長率|YoY)',row,re.I):continue
+            # Unqualified YoY row can refer to revenue, operating profit,
+            # or net profit; never assign it to revenue_yoy by position.
+            if re.match(r'^年成長率',row):continue
             # Require row to begin with a financial metric, not prose mentioning it.
             first=re.search(r'\d',row)
             if first and first.start()>65:continue
@@ -109,6 +120,27 @@ def parse_table(text,source,out):
             unit='%' if ('%' in label or mt.endswith('margin') or mt in ('roe','roa')) else ('元' if mt in ('eps','dividend') else (re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)',line) or re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)', ' '.join(lines[max(0,i-3):i+1]))).group() if (re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)',line) or re.search(r'(?:百萬元|千元|億元|美元|US\$mn|NT\$mn)', ' '.join(lines[max(0,i-3):i+1]))) else '')
             for (period,status),v in zip(cols,vals):
                 add(out,period,mt,numeric(v),unit,source,row,status,priority=3)
+            accepted_rows+=1
+
+
+def parse_year_first_table(text,source,out):
+    """Rows beginning YYYY or YYYY(F), with metric names in preceding wrapped header.
+    Only accept a recognized financial-statement header and fixed column count.
+    """
+    lines=[re.sub(r"[ \t]+"," ",x).strip() for x in text.splitlines()]
+    for i,line in enumerate(lines):
+        m=re.match(r"^(20\d{2})\s*(?:\(([EF])\)|([EF]))?\s+(.+)$",line,re.I)
+        if not m:continue
+        vals=[numeric(z.group()) for z in NUM.finditer(m.group(4))]
+        if len(vals)!=8:continue
+        hdr=' '.join(lines[max(0,i-16):i])
+        if not (re.search(r"年度\s+營收\s+毛利率",hdr) and re.search(r"稅後\s*EPS",hdr)):
+            continue
+        # 華南格式：營收、毛利率、營益率、業外收支率、股本、稅前純益、稅前EPS、稅後EPS
+        y=m.group(1);status=(m.group(2) or m.group(3) or '').upper()
+        for metric,val,unit in [('revenue',vals[0],'億元'),('gross_margin',vals[1],'%'),
+                ('operating_margin',vals[2],'%'),('pretax_profit',vals[5],'億元'),('eps',vals[7],'元')]:
+            add(out,y,metric,val,unit,source,line,status,priority=3)
 
 
 def parse_inline(text,source,out):
@@ -127,7 +159,7 @@ def parse_inline(text,source,out):
                 after=line[m.end():m.end()+38]
                 after=re.sub(r'^(?:\s*(?:預估|估計|預計|約|達|為|至|NT\$|US\$|:|：|\(|\)))*','',after)
                 nm=NUM.match(after)
-                if not nm:continue
+                if not nm or (nm.end()<len(after) and after[nm.end()].isalpha()):continue
                 # Growth/revision percentages must not become absolute EPS or revenue.
                 if metric not in ('revenue_yoy','revenue_qoq') and re.search(r'上修|下修|調升|調降|成長率|增幅',line):continue
                 if metric in ('eps','revenue','net_income','operating_profit') and '%' in nm.group():continue
@@ -185,6 +217,7 @@ def extract(row):
         value=row.get(field)
         if not isinstance(value,str) or not value.strip():continue
         parse_table(value,field,out)
+        parse_year_first_table(value,field,out)
         parse_inline(value,field,out)
         parse_pairs(value,field,out)
         parse_period_first_eps(value,field,out)
@@ -205,6 +238,7 @@ def main():
     if not folder.is_dir():raise SystemExit('Missing data/research_shards; run LINE research sync first')
     manifest=json.loads((root/'data/research_manifest.json').read_text(encoding='utf8'))
     result={};stats={'scanned':0,'eligible':0,'with_financials':0,'facts':0,'conflicts_omitted':0}
+    audit={'version':1,'companies':{},'metric_counts':{},'period_counts':{'annual':0,'quarterly':0},'empty_examples':[]}
     for sh in manifest['shards']:
         for row in json.loads((folder/sh['file']).read_text(encoding='utf8')).get('items',[]):
             stats['scanned']+=1
@@ -215,8 +249,21 @@ def main():
                 result[row['id']]={'company':row.get('company'),'date':row.get('date'),
                                     'broker':row.get('source'),'forecasts':records}
                 stats['with_financials']+=1;stats['facts']+=len(records)
+                name=str(row.get('company') or '未知')
+                audit['companies'].setdefault(name,{'reports':0,'facts':0,'report_ids':[]})
+                audit['companies'][name]['reports']+=1
+                audit['companies'][name]['facts']+=len(records)
+                audit['companies'][name]['report_ids'].append(str(row['id']))
+                for fact in records:
+                    metric=fact['metric'];audit['metric_counts'][metric]=audit['metric_counts'].get(metric,0)+1
+                    audit['period_counts']['quarterly' if '-Q' in fact['period'] else 'annual']+=1
+            elif len(audit['empty_examples'])<150:
+                audit['empty_examples'].append({'id':str(row.get('id')),'company':row.get('company'),'broker':row.get('source'),'date':row.get('date')})
     path=root/args.output;path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps({'version':1,'stats':stats,'reports':result},ensure_ascii=False,separators=(',',':')),encoding='utf8')
-    print(json.dumps(stats,ensure_ascii=False));print(path)
+    audit['stats']=stats
+    audit_path=root/'data/research_financial_backfill_report.json'
+    audit_path.write_text(json.dumps(audit,ensure_ascii=False,indent=2),encoding='utf8')
+    print(json.dumps(stats,ensure_ascii=False));print(path);print(audit_path)
 
 if __name__=='__main__':main()
