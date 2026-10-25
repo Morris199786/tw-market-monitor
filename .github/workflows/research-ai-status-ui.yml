@@ -1,0 +1,35 @@
+name: Install temporary research AI status UI
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-report-processing
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate and install temporary UI (zero API)
+        run: |
+          set -euo pipefail
+          test -s assets/research_ai_status.js
+          node --check assets/research_ai_status.js
+          python -m py_compile scripts/install_research_ai_status.py
+          python scripts/install_research_ai_status.py
+          grep -n 'research_ai_status.js' index.html
+      - name: Commit frontend only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- index.html assets/research_ai_status.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add temporary Excel AI audit and broker-style completed reports'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
