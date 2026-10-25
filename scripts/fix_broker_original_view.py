@@ -4,7 +4,7 @@ No data mutation, no API calls, no AI ledger writes.
 """
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2] if Path(__file__).resolve().parent.name == 'scripts' else Path.cwd()
+root = Path(__file__).resolve().parents[1] if Path(__file__).resolve().parent.name == 'scripts' else Path.cwd()
 p = root / 'assets' / 'research_merged.js'
 s = p.read_text(encoding='utf-8')
 marker = '/* original-broker-v3-view-v1 */'
