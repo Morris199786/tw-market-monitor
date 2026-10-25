@@ -1,0 +1,32 @@
+name: Exclude US reports from research AI
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-report-processing
+  cancel-in-progress: false
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Install Taiwan-only AI guard (zero API)
+        run: |
+          python scripts/install_tw_only_ai.py
+          python -m py_compile scripts/ai_research_backfill.py
+          grep -q TW_ONLY_AI_GUARD_V1 scripts/ai_research_backfill.py
+          echo '[TW_ONLY] Guard syntax OK; API not called'
+      - name: Commit guarded script
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- scripts/ai_research_backfill.py
+          if ! git diff --cached --quiet; then
+            git commit -m 'Exclude US and unverified markets from Excel AI analysis'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
