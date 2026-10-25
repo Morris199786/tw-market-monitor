@@ -74,10 +74,13 @@ jobs:
       - name: Publish all reports and successful cached analyses
         if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
         run: python scripts/sync_line_research.py
+      - name: Extract annual and quarterly financials from Excel text (zero API)
+        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
+        run: python scripts/extract_research_financials.py
       - name: Commit published database
         if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
         run: |
-          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json
+          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json
           for f in data/research_ai_cache.json data/research_ai_plan.json; do
             if [ -f "$f" ]; then git add -- "$f"; fi
           done
@@ -95,4 +98,5 @@ jobs:
             data/research_ai_plan.json
             data/research_ai_cache.json
             data/research_dedup_audit.json
+            data/research_financial_forecasts.json
           if-no-files-found: ignore

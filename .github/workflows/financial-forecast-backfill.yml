@@ -1,0 +1,35 @@
+name: Research financial forecasts offline backfill
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: research-report-processing
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Parse cached Excel text without OpenAI
+        run: python scripts/extract_research_financials.py
+      - name: Commit financial forecasts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/research_financial_forecasts.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Backfill financial forecasts from existing Excel text"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Upload audit output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: financial-forecast-backfill
+          path: data/research_financial_forecasts.json
+          if-no-files-found: ignore
