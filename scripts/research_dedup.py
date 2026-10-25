@@ -6,6 +6,7 @@ from datetime import date
 
 TEXT_FIELDS = ('full_text', 'full_text_2', 'full_text_3')
 ALIASES = {
+ '國泰':'國泰','cathay':'國泰',
  'citiresearch':'citi','花旗':'citi','citigroup':'citi',
  'morganstanley':'ms','摩根士丹利':'ms','大摩':'ms',
  'jpmorgan':'jpm','摩根大通':'jpm','小摩':'jpm',
@@ -60,6 +61,32 @@ def stable_key(row):
     return '|'.join(re.sub(r'\s+','',str(row.get(k) or '')).casefold() for k in
                     ('date','original_type','source','company','ticker','period'))
 
+def dedicated(row):
+    """Only single-company analyst research; sector/multi-stock reports are excluded."""
+    typ = row.get('original_type') or row.get('report_type') or ''
+    if typ not in ('個股報告', '券商評等', 'company'):
+        return False
+    if row.get('is_multi_company'):
+        return False
+    c = codes(row)
+    return len(c) == 1 and bool(re.fullmatch(r'\d{4,6}', next(iter(c))))
+
+
+def same_dedicated(row, other, days=3):
+    if not dedicated(row) or not dedicated(other):
+        return False
+    a = broker_name(row.get('source') or row.get('broker'))
+    b = broker_name(other.get('source') or other.get('broker'))
+    if not a or a != b or codes(row) != codes(other):
+        return False
+    try:
+        da = date.fromisoformat(str(row.get('date') or '')[:10])
+        db = date.fromisoformat(str(other.get('report_date') or other.get('date') or '')[:10])
+    except ValueError:
+        return False
+    return abs((da - db).days) <= days
+
+
 def evidence(row, broker):
     """A positive match suppresses the Excel copy, never the original broker."""
     if row.get('original_type') not in ('個股報告','產業報告','券商評等'): return ''
@@ -68,6 +95,7 @@ def evidence(row, broker):
     a=row['_body'] if '_body' in row else body_norm(text(row))
     b=broker['_body'] if '_body' in broker else body_norm(broker.get('text') or text(broker))
     if len(a)>=300 and a==b: return 'identical_original_text'
+    if same_dedicated(row, broker): return 'same_broker_stock_within_3_days'
     if not candidate(row,broker): return ''
     # Require substantial bidirectional overlap; one company mentioned in a
     # multi-company report or a small summary is not proof of identical reports.
@@ -119,7 +147,8 @@ class Matcher:
         for b in self.pending:
             if (source_ids(row) & source_ids(b)) or (len(norm(text(row)))>=300 and norm(text(row))==norm(b.get('text'))):
                 return {'status':'needs_review','reason':'broker_inbox_pending','broker_ids':[str(b['id'])]}
-        # User-approved unique company/broker match with a two-day date tolerance.
+        # Single-stock reports are already matched above with a 3-day window.
+        # Preserve conservative fallback for non-dedicated reports.
         same=[]
         for b in self.brokers:
             if row.get('original_type') not in ('個股報告','券商評等') or not candidate(row,b) or b.get('report_type')!='company': continue
@@ -166,7 +195,8 @@ def excel_rating_duplicate(report,rating):
     try:
         da=date.fromisoformat(str(report['date'])[:10]); db=date.fromisoformat(str(rating['date'])[:10])
     except (ValueError,KeyError): return False
-    if abs((da-db).days)>2: return False
+    if abs((da-db).days)>3: return False
+    if same_dedicated(report,rating): return True
     pa,pb=_price(report),_price(rating)
     if pa is None or pb is None or abs(pa-pb)>.01: return False
     if _annual_eps(report) & _annual_eps(rating): return True

@@ -369,9 +369,22 @@ def main():
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
-    from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes
+    from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes, same_dedicated
     matcher=Matcher(brokers,load_json(ROOT/'data/report_inbox.json').get('items',[]))
     kept=[]; suppressed=[]; seen_content={}; seen_documents={}
+    # Compare with the prior audit to distinguish newly suppressed reports.
+    old_audit=load_json(AUDIT_OUTPUT)
+    old_suppressed={str(x.get('excel_id')) for x in old_audit.get('suppressed_excel_duplicates',[])}
+    by_id={r['id']:r for r in data['items']}
+    def suppress(item, reason, **fields):
+        record=resolve_cache(item,cache)
+        suppressed.append({'excel_id':item['id'], 'company':item.get('company',''),
+            'ticker':item.get('ticker',''), 'broker':item.get('source',''),
+            'date':item.get('date',''), 'original_type':item.get('original_type',''),
+            'ai_status':record.get('status','none') if isinstance(record,dict) else 'none',
+            'newly_suppressed':item['id'] not in old_suppressed,
+            'evidence':reason, **fields})
+
     pdf_by_stock={}
     for row in data['items']:
         if row.get('original_type')=='個股報告':
@@ -381,28 +394,53 @@ def main():
         decision=matcher.decide(item)
         record=resolve_cache(item,cache)
         if decision['status']=='broker_duplicate':
-            suppressed.append({'excel_id':item['id'],**decision})
+            suppress(item,decision['evidence'],broker_report_id=decision['broker_report_id'])
             continue
         if isinstance(record,dict) and record.get('status')=='broker_duplicate' and str(record.get('broker_report_id')) in broker_ids:
-            suppressed.append({'excel_id':item['id'],'broker_report_id':record['broker_report_id'],'evidence':'saved_duplicate'})
+            suppress(item,'saved_duplicate',broker_report_id=record['broker_report_id'])
             continue
         if item.get('original_type')=='券商評等':
             stocks=codes(item)
             if len(stocks)==1:
                 matches=[pdf for pdf in pdf_by_stock.get(next(iter(stocks)),[]) if excel_rating_duplicate(pdf,item)]
                 if len(matches)==1:
-                    suppressed.append({'excel_id':item['id'],'excel_report_id':matches[0]['id'],'evidence':'same_broker_rating_target_annual_eps'}); continue
+                    suppress(item,'same_broker_stock_within_3_days',excel_report_id=matches[0]['id']); continue
+        # Within the LINE Excel dataset, deduplicate dedicated single-stock
+        # research across all source types. Keep the AI-processed copy when possible.
+        existing=next((r for r in kept if same_dedicated(item,r)),None)
+        if existing:
+            prior=resolve_cache(existing,cache)
+            current=resolve_cache(item,cache)
+            if isinstance(current,dict) and current.get('status')=='success' and not (isinstance(prior,dict) and prior.get('status')=='success'):
+                kept.remove(existing)
+                suppress(existing,'same_broker_stock_within_3_days',excel_report_id=item['id'])
+            else:
+                suppress(item,'same_broker_stock_within_3_days',excel_report_id=existing['id'])
+                continue
         doc=excel_document_key(item)
         if doc and doc in seen_documents:
-            suppressed.append({'excel_id':item['id'],'excel_report_id':seen_documents[doc],'evidence':'same_original_document'}); continue
+            suppress(item,'same_original_document',excel_report_id=seen_documents[doc]); continue
         key=content_key(item)
         if key and key in seen_content:
-            suppressed.append({'excel_id':item['id'],'excel_report_id':seen_content[key],'evidence':'same_excel_content'})
+            suppress(item,'same_excel_content',excel_report_id=seen_content[key])
             continue
         if key: seen_content[key]=item['id']
         if doc: seen_documents[doc]=item['id']
         kept.append(attach_ai(item,cache))
-    merged = broker_records(brokers) + kept
+    broker_items=broker_records(brokers)
+    broker_lookup={str(r.get('id')):r for r in broker_items}
+    # Preserve an already-paid Excel AI result on the surviving PDF card.
+    for entry in suppressed:
+        target=broker_lookup.get(str(entry.get('broker_report_id','')))
+        source=by_id.get(entry['excel_id'])
+        if target is None or source is None or target.get('ai_research'):
+            continue
+        record=resolve_cache(source,cache)
+        if isinstance(record,dict) and record.get('status')=='success' and isinstance(record.get('result'),dict):
+            target['ai_research']=record['result']
+            target['ai_schema']=record.get('schema','legacy')
+            entry['ai_attached_to_survivor']=True
+    merged = broker_items + kept
     merged.sort(key=lambda r:(str(r.get('date') or ''),str(r.get('id') or '')),reverse=True)
     public={'count':len(merged),'line_count':len(data['items']),
             'broker_count':len(brokers),'items':merged}
@@ -410,10 +448,12 @@ def main():
            'exact_line_duplicates':stats['identical_rows_removed'],
            'broker_overlap_candidates':stats['broker_overlap_candidates'],
            'suppressed_excel_duplicates':suppressed,
+           'newly_suppressed_count':sum(bool(x['newly_suppressed']) for x in suppressed),
+           'newly_suppressed_reports':[x for x in suppressed if x['newly_suppressed']],
            'candidates':[{'sheet_row_number':r['sheet_row_number'],'id':r['id'],
              'matches':r['possible_broker_duplicates']} for r in data['items']
              if r['possible_broker_duplicates']],
-           'note':'跨來源僅高信心重複採原券商報告；模糊疑似重複保留。'}
+           'note':'同券商同股票三天內專屬個股報告去重；產業／多檔報告不依公司日期合併。'}
     if os.getenv('LINE_SYNC_DRY_RUN') == '1':
         print(json.dumps({'merged':len(merged),'line':len(data['items']),
                           'broker':len(brokers),'audit':len(audit['candidates'])},ensure_ascii=False))

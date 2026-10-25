@@ -13,7 +13,7 @@ import sys
 from zoneinfo import ZoneInfo
 
 from sync_line_research import fetch_sheet, load_json, transform, ROOT, BROKER_FILE, write_json_atomic, load_all_brokers
-from research_dedup import Matcher, content_key, stable_key, source_ids, excel_document_key
+from research_dedup import Matcher, content_key, stable_key, source_ids, excel_document_key, same_dedicated
 
 CACHE=ROOT/'data/research_ai_cache.json'
 PLAN=ROOT/'data/research_ai_plan.json'
@@ -73,7 +73,7 @@ def make_plan(rows,brokers,inbox,cache,today):
     start,end=window(today)
     matcher=Matcher(brokers,inbox)
     counts=Counter(stable_key(r) for r in rows)
-    seen={}; seen_documents={}; result=[]
+    seen={}; seen_documents={}; seen_dedicated=[]; result=[]
     for row in rows:
         day=date.fromisoformat(row['date'])
         if row.get('original_type') not in ('個股報告','產業報告') or not start<=day<=end: continue
@@ -87,6 +87,20 @@ def make_plan(rows,brokers,inbox,cache,today):
         entry={'id':row['id'],'date':row['date'],'company':row.get('company',''),
                'source':row.get('source',''),**decision}
         if decision['status']=='new':
+            earlier=next((r for r in seen_dedicated if same_dedicated(row,r)),None)
+            if earlier:
+                entry.update(status='excel_duplicate',cache_id=earlier['id'],
+                             evidence='same_broker_stock_within_3_days')
+                result.append(entry)
+                continue
+            # A prior AI attempt for any equivalent dedicated report blocks billing.
+            earlier_cached=next((r for r in rows if r['id'] in cache and
+                                 r['id']!=row['id'] and same_dedicated(row,r)),None)
+            if earlier_cached:
+                entry.update(status='cached',cache_id=earlier_cached['id'],
+                             previous_status=cache[earlier_cached['id']]['status'])
+                result.append(entry)
+                continue
             old=previous(row,cache)
             body=content_key(row)
             if old: entry.update(status='cached',cache_id=old,previous_status=cache[old]['status'])
@@ -96,6 +110,7 @@ def make_plan(rows,brokers,inbox,cache,today):
                 entry.update(status='needs_review',reason='ambiguous_excel_identity')
             elif not body: entry.update(status='needs_review',reason='insufficient_source_text')
             else:
+                seen_dedicated.append(row)
                 seen[body]=row['id']
                 if (doc := excel_document_key(row)): seen_documents[doc]=row['id']
         result.append(entry)
