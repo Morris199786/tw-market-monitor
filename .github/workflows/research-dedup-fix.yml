@@ -1,0 +1,39 @@
+name: Apply research dedup and credit safety fix
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research-report-processing
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply safe code patch (NO API)
+        run: |
+          python scripts/fix_research_dedup.py
+          python -m py_compile scripts/research_dedup.py scripts/ai_research_backfill.py scripts/sync_line_research.py
+
+      - name: Commit only code changes (never AI ledger)
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add -- scripts/research_dedup.py scripts/ai_research_backfill.py scripts/sync_line_research.py
+
+          if ! git diff --cached --quiet; then
+            git commit -m 'Prevent duplicate Excel research and quarantine AI failures'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
