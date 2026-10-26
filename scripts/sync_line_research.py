@@ -130,23 +130,45 @@ NEWS_RE = re.compile(r'(哈燒新聞|新聞彙整|新聞摘要|外電綜合|媒�
 MEETING_RE = re.compile(r'(法說|聯合法說|法人說明|電話會議|訪談|call\s*memo|conference\s*call)', re.I)
 
 def classify(row):
+    """Classify the document, not subjects mentioned in its body.
+
+    Excel B controls ingestion; a mislabeled B=法說會 does not turn an
+    investment morning digest, industry report, or weekly report into a call.
+    This function never changes API eligibility or the original source data.
+    """
     original = str(row.get('type') or '').strip()
-    title = ' '.join(str(row.get(k) or '') for k in ('source','company','period','story'))[:1300]
-    body_start = ' '.join(str(row.get(k) or '')[:600] for k in ('full_text','full_text_2'))
-    header = (title + ' ' + body_start)[:2200]
-    # The actual document heading outranks the spreadsheet's often incorrect call-memo label.
-    if MORNING_RE.search(header):
+    source = str(row.get('source') or '').strip()
+    company = str(row.get('company') or '').strip()
+    story = str(row.get('story') or '').strip()
+    identity = source + ' ' + company
+    # The first sentence can identify an otherwise generically named digest.
+    lead = re.split(r'[\n。；;]', story, maxsplit=1)[0][:140]
+
+    # Source/document identity wins over embedded mentions of earnings calls.
+    if MORNING_RE.search(identity):
         return '早報'
-    if NEWS_RE.search(header) and original not in ('個股報告','券商評等'):
+    if NEWS_RE.search(identity):
         return '市場情報'
+    if re.search(r'(?i)(週報|周報|weekly\s*(?:report|update|review)|週度更新)', identity):
+        return '週報'
     if original in ('個股報告', '券商評等'):
         return '個股研究'
-    if original == '產業報告' or INDUSTRY_RE.search(header):
+    if original == '產業報告' or INDUSTRY_RE.search(identity):
         return '產業研究'
-    if original in ('call memo', '法說會') or MEETING_RE.search(header):
+
+    # Only an explicit document label at the start of the summary can
+    # override a generic source; incidental mentions later cannot.
+    if re.match(r'^(?:[\W_]*)(?:[^：:]{0,24})?(?:投資早報|晨會摘要|晨會重點|台股晨會|總經產業日報|市場早報|morning\s+(?:brief|meeting))', lead, re.I):
+        return '早報'
+    if re.match(r'^[\W_]*(?:哈燒新聞|新聞彙整|新聞摘要|市場新聞)', lead, re.I):
+        return '市場情報'
+    if re.match(r'^[\W_]*[^：:]{0,24}(?:產業報告|產業研究|sector\s+report|industry\s+report)', lead, re.I):
+        return '產業研究'
+
+    if original in ('call memo', '法說會'):
         return '法說／訪談'
-    if original == '週報' or re.search(r'(?i)(週報|weekly report|weekly update)', header):
-        return '週報'
+    if MEETING_RE.search(identity):
+        return '法說／訪談'
     if original in ('小作文', '漲停強勢'):
         return '市場情報'
     return '市場情報'
