@@ -32,9 +32,9 @@ FIELD_NAMES = {
     'full_text_3':'W 原文全文3',
 }
 RAW_KEYS = ('full_text', 'full_text_2', 'full_text_3')
-SCHEMA = 'research-batch-v2'
+SCHEMA = 'research-full-article-v2'
 TARGET_REPROCESS_IDS = {'line-eb38fe730115b004ab61', 'line-d254637831a810ab2161', 'line-989d0430b6a71dde3aac'}
-TRIAL_SUFFIX = '::gpt-5.6-luna-trial-v1'
+TRIAL_SUFFIX = '::gpt-5.6-luna-full-article-v2'
 
 
 def load(path, default):
@@ -122,11 +122,11 @@ def route(row):
 SYSTEM_PROMPT = '''你是專業台股產業研究分析師。完整閱讀 Excel A–W 原文，直接產生可刊登在網站的繁體中文研究整理。所有文章的取捨、章節、文字深度、數字比較與是否使用表格，均由你自主決定；Python 不負責寫作、組表、比對原文或篩選內容。
 
 輸出唯一 JSON 物件：
-{"title":"文章標題","summary":["適合首頁閱讀的精簡重點"],"blocks":[{"type":"heading|paragraph|bullets|table|quote","text":"heading/paragraph/quote 的文字","items":["bullets 條目"],"columns":["table 欄名"],"rows":[["table 儲存格"]]}]}
+{"title":"文章標題","summary":["適合首頁閱讀的精簡重點"],"blocks":[{"type":"heading|paragraph|bullets|table|quote|chart","text":"heading/paragraph/quote 的文字","items":["bullets 條目"],"columns":["table 欄名"],"rows":[["table 儲存格"]]}]}
 
 summary 僅供首頁卡片，blocks 必須是獨立完整的 AI 研究全文，不可只重複 summary。按照原文資訊量完整整理背景、營運數據、業務驅動、比較、展望、風險及重要問答；文章短則精簡，長則深入，不得硬湊固定章節或固定表格。數字多且適合比較時主動設計表格；只有敘事時以段落呈現；可以交錯使用表格與文字。表格欄位與列數由你自行決定，絕不固定。
 
-忠於來源，不得虛構。清楚區分公司指引、券商估計、歷史實績及推論；保留期間、單位、約數、範圍和重要條件。若原文沒有的資料，不要補造。避免冗長重複、空泛總結。不要輸出 markdown，只輸出合法 JSON。'''
+所有視覺化也由你自主選擇：除了 table，必要時可使用 chart 區塊，格式為 {"type":"chart","chart_type":"bar|line|donut","title":"圖表標題","labels":["項目"],"values":[數值],"unit":"單位","note":"資料期間與性質"}。只有數值可比且有明確同單位時才使用圖表；不要虛構數字，也不要把預估與實績混成同一口徑。對於缺少日期、期間或資料無法判定的欄位，不要輸出 unknown，改以文字說明或省略不重要的欄位。數字和單位在同一個儲存格只寫一次。忠於來源，不得虛構。清楚區分公司指引、券商估計、歷史實績及推論；保留期間、單位、約數、範圍和重要條件。若原文沒有的資料，不要補造。避免冗長重複、空泛總結。不要輸出 markdown，只輸出合法 JSON。'''
 
 
 def parse(text, model):
@@ -160,12 +160,20 @@ def parse(text, model):
 
 def audit(result, row):
     """Only verify the JSON can be displayed; editorial judgment belongs to AI."""
-    if not isinstance(result, dict) or not isinstance(result.get('blocks'), list):
+    if not isinstance(result, dict) or not isinstance(result.get('blocks'), list) or not result['blocks']:
         return {'status':'needs_review','issues':['AI 輸出缺少 blocks 陣列']}
-    allowed = {'heading','paragraph','bullets','table','quote'}
+    allowed = {'heading','paragraph','bullets','table','quote','chart'}
     for block in result['blocks']:
         if not isinstance(block, dict) or block.get('type') not in allowed:
             return {'status':'needs_review','issues':['AI 區塊格式無法顯示']}
+    for block in result['blocks']:
+        if block.get('type') == 'chart':
+            labels, values = block.get('labels'), block.get('values')
+            if (block.get('chart_type') not in ('bar','line','donut') or
+                not isinstance(labels,list) or not isinstance(values,list) or
+                not labels or len(labels)!=len(values) or
+                any(not isinstance(v,(int,float)) or isinstance(v,bool) for v in values)):
+                return {'status':'needs_review','issues':['AI 圖表資料格式不完整']}
     return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
 
 

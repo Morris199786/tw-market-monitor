@@ -239,6 +239,7 @@ def export_ai_direct(root=ROOT):
     cache = read(root / 'data/research_ai_cache.json', {})
     out = {}
     trial_suffix = '::gpt-5.6-luna-trial-v1'
+    full_article_suffix = '::gpt-5.6-luna-full-article-v2'
     for shard in manifest.get('shards', []):
         path = root / 'data/research_shards' / shard.get('file', '')
         if not path.is_file():
@@ -248,9 +249,9 @@ def export_ai_direct(root=ROOT):
             if not rid or not is_meeting(row):
                 continue
             # A paid 5.6 trial takes priority over older cached extraction.
-            candidates = [cache.get(rid + trial_suffix), cache.get(rid)]
+            candidates = [cache.get(rid + full_article_suffix), cache.get(rid), cache.get(rid + trial_suffix)]
             for rec in candidates:
-                if not isinstance(rec, dict) or not isinstance(rec.get('result'), dict):
+                if not isinstance(rec, dict) or rec.get('status') != 'success' or not isinstance(rec.get('result'), dict):
                     continue
                 result = rec['result']
                 # New model's free-form blocks, or existing model's native result.
