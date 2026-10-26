@@ -8,6 +8,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SECTIONS = ('financials', 'guidance', 'operating_metrics', 'valuations')
+TICKER_RE = re.compile(r'^\d{4}(?:\.(?:TW|TWO))?$', re.I)
+AGGREGATE_RE = re.compile(r'早報|晨報|日報|週報|彙總|匯總|總覽|多家公司|多檔|產業綜合|市場綜合|投資週刊|投資月刊', re.I)
+
+
+def single_company_identity(company, ticker):
+    """Only publish facts tied to a single verifiable TW ticker.
+
+    A document's title/source is not evidence of the underlying company's
+    identity. In particular, a broker morning digest must not become a stock.
+    """
+    name = str(company or '').strip()
+    code = str(ticker or '').strip()
+    return bool(TICKER_RE.fullmatch(code) and name and
+                not AGGREGATE_RE.search(name) and
+                not re.search(r'[;,；、/／]|(?:及|與).{1,10}(?:公司|股份)', name))
+
 
 
 def read(path, default):
@@ -32,7 +48,9 @@ def export(root=ROOT):
     # Keep original extraction and the new API facts separate; never infer
     # guidance/actual/estimate from a number with no explicit classification.
     items, seen_ids, stats = [], set(), {'meeting_rows': 0, 'offline_financial': 0, 'ai_facts': 0,
-                                         'legacy_cache_without_new_schema': 0}
+                                         'legacy_cache_without_new_schema': 0,
+                                         'excluded_ambiguous_offline': 0,
+                                         'excluded_ambiguous_ai': 0}
     for shard in manifest['shards']:
         name = shard.get('file', '')
         if not name or Path(name).name != name:
@@ -50,7 +68,14 @@ def export(root=ROOT):
                     'document_type': row.get('original_type') or row.get('type'),
                     'document_source': row.get('source')}
             report = financial.get(rid, {})
-            for fact in report.get('forecasts', []):
+            offline_company = report.get('company') or row.get('company')
+            offline_ticker = row.get('ticker')
+            # Offline regex extraction cannot attribute a table in a digest
+            # to its underlying issuer; exclude the entire ambiguous report.
+            if not single_company_identity(offline_company, offline_ticker):
+                stats['excluded_ambiguous_offline'] += len(report.get('forecasts', []))
+            for fact in (report.get('forecasts', []) if
+                         single_company_identity(offline_company, offline_ticker) else []):
                 if not isinstance(fact, dict) or fact.get('confidence') == 'conflict':
                     continue
                 # 'status' denotes A/E/F for some financial tables, but blank
@@ -58,8 +83,8 @@ def export(root=ROOT):
                 status = str(fact.get('status') or '').upper()
                 classification = ('actual' if status == 'A' else
                                   'estimate' if status in ('E', 'F') else 'unknown')
-                items.append({**base, 'company': report.get('company') or row.get('company'),
-                              'ticker': row.get('ticker'), 'section': 'financials',
+                items.append({**base, 'company': offline_company,
+                              'ticker': offline_ticker, 'section': 'financials',
                               'metric': fact.get('metric'), 'period': fact.get('period'),
                               'value': fact.get('value'), 'unit': fact.get('unit'),
                               'actual_or_estimate': classification,
@@ -84,6 +109,17 @@ def export(root=ROOT):
                 continue
             for company in result['companies']:
                 if not isinstance(company, dict):
+                    continue
+                ai_company = company.get('name') or row.get('company')
+                ai_ticker = company.get('ticker') or row.get('ticker')
+                # A multi-company memo is allowed only when AI explicitly
+                # identifies the issuer and ticker, never by inheriting the
+                # aggregate document's company name/ticker.
+                if not single_company_identity(ai_company, ai_ticker) or (
+                        not single_company_identity(row.get('company'), row.get('ticker'))
+                        and not (company.get('name') and company.get('ticker'))):
+                    stats['excluded_ambiguous_ai'] += sum(
+                        len(company.get(sec) or []) for sec in SECTIONS)
                     continue
                 for section in SECTIONS:
                     for fact in company.get(section) or []:
