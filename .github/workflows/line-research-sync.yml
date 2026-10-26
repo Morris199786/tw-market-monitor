@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       run_mode:
-        description: 'check=只比對不花費；sync=更新網頁；ai=近一個月未處理報告'
+        description: 'check=只檢查；sync=同步B欄法說/訪談；ai=同步、解析需要API的文章、更新網頁'
         required: true
         type: choice
         options: [check, sync, ai]
         default: check
       max_reports:
-        description: '本次最多 API 報告數（1–200）；重跑接續未處理項目'
+        description: 'ai模式本次最多API文章數（1–200）；只處理未嘗試文章'
         required: true
         default: '10'
         type: string
@@ -28,7 +28,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Refresh durable processing ledger
+      - name: Refresh ledger
         run: git pull --ff-only origin main
       - uses: google-github-actions/auth@v3
         id: auth
@@ -37,92 +37,73 @@ jobs:
           service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
-      - name: Install dependencies and configure Git
+      - name: Dependencies and git identity
         run: |
           python -m pip install requests
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Read one consistent Excel snapshot
-        id: sheet
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Read consistent Sheet snapshot
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
           LINE_EXPECTED_SERVICE_ACCOUNT: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
         run: |
-          python - <<'PY'
-          import os, sys, json
+          python - <<'PYCODE'
+          import os,sys,json
           from pathlib import Path
           sys.path.insert(0,'scripts')
           from sync_line_research import fetch_sheet
           p=Path(os.environ['RUNNER_TEMP'])/'research_sheet.json'
           p.write_text(json.dumps(fetch_sheet(os.environ['ACCESS_TOKEN']),ensure_ascii=False),encoding='utf-8')
-          with open(os.environ['GITHUB_ENV'],'a') as f:
-              f.write(f'LINE_SYNC_FIXTURE={p}\n')
-          PY
-      - name: Check duplicate and unprocessed reports (zero API calls)
+          with open(os.environ['GITHUB_ENV'],'a') as f: f.write(f'LINE_SYNC_FIXTURE={p}\n')
+          PYCODE
+      - name: Check B-column selection and API routing without publishing
         if: ${{ inputs.run_mode == 'check' }}
         env:
-          RESEARCH_AI_DRY_RUN: '1'
-        run: python scripts/ai_research_backfill.py
-      - name: Analyze only new reports with the existing broker model
+          LINE_SYNC_DRY_RUN: '1'
+        run: python scripts/sync_line_research.py
+      - name: Publish B-column allowed research and API routing
+        if: ${{ inputs.run_mode != 'check' }}
+        run: python scripts/sync_line_research.py
+      - name: Show API candidates without charges
+        if: ${{ inputs.run_mode == 'ai' }}
+        env:
+          BATCH_LIMIT: ${{ inputs.max_reports }}
+        run: python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending --dry-run
+      - name: Analyze selected unprocessed articles
         if: ${{ inputs.run_mode == 'ai' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_REPORT_MODEL: gpt-5.6-luna
-          RESEARCH_AI_DRY_RUN: '0'
-          RESEARCH_AI_MAX_REPORTS: ${{ inputs.max_reports }}
-        run: python scripts/ai_research_backfill.py
-      - name: Publish all reports and successful cached analyses
-        id: publish
-        if: ${{ always() && steps.sheet.outcome == 'success' && inputs.run_mode != 'check' }}
+          BATCH_LIMIT: ${{ inputs.max_reports }}
+          RESEARCH_AI_REMOTE_CHECKPOINT: '1'
+        run: python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending
+      - name: Republish AI results into research shards
+        if: ${{ inputs.run_mode == 'ai' }}
         run: python scripts/sync_line_research.py
-      - name: Extract annual and quarterly financials from Excel text (zero API)
-        id: financial
-        if: ${{ steps.publish.outcome == 'success' && inputs.run_mode != 'check' }}
-        run: |
-          python scripts/extract_research_financials.py
-          python - <<'PY'
-          import json, hashlib
-          from pathlib import Path
-          base=Path('data')
-          payload=json.loads((base/'research_financial_forecasts.json').read_text(encoding='utf-8'))
-          reports=payload.get('reports',{})
-          out=base/'research_financial_by_id'
-          missing=[]
-          for rid,record in reports.items():
-              p=out/(hashlib.sha256(str(rid).encode()).hexdigest()[:24]+'.json')
-              if not p.is_file():
-                  missing.append(str(p)); continue
-              saved=json.loads(p.read_text(encoding='utf-8'))
-              if saved.get('id')!=str(rid) or saved.get('forecasts')!=record.get('forecasts'):
-                  missing.append(str(p))
-          if missing:
-              raise SystemExit('Financial report export mismatch: '+str(missing[:5]))
-          print(f'Financial website export validated: {len(reports)} reports, {len(list(out.glob("*.json")))} files')
-          PY
-      - name: Commit published database and financial website data
-        if: ${{ steps.financial.outcome == 'success' && inputs.run_mode != 'check' }}
+      - name: Extract research financials without API
+        if: ${{ inputs.run_mode != 'check' }}
+        run: python scripts/extract_research_financials.py
+      - name: Commit all published data and processing ledger
+        if: ${{ inputs.run_mode != 'check' }}
         run: |
           set -euo pipefail
           git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id
-          for f in data/research_ai_cache.json data/research_ai_plan.json; do
+          for f in data/research_ai_cache.json data/research_ai_batch_history.json; do
             if [ -f "$f" ]; then git add -- "$f"; fi
           done
           if ! git diff --cached --quiet; then
-            git commit -m 'Publish unified research database, financial tables and incremental AI results'
+            git commit -m 'Sync B-column meeting research and bounded AI analysis'
             git pull --rebase origin main
             git push origin HEAD:main
           else
-            echo 'No report or financial changes'
+            echo 'No changes'
           fi
-      - name: Downloadable duplicate audit and recovery ledger
+      - name: Upload research processing audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: research-processing-audit
+          name: line-research-audit
           path: |
-            data/research_ai_plan.json
             data/research_ai_cache.json
+            data/research_ai_batch_history.json
             data/research_dedup_audit.json
-            data/research_financial_forecasts.json
-            data/research_financial_backfill_report.json
           if-no-files-found: ignore
