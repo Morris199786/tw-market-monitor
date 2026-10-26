@@ -94,14 +94,14 @@ jobs:
       - name: Extract research financials without API
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/extract_research_financials.py
-      - name: Export verified financial and operating tables without API
+      - name: Export research data and AI-direct display without API
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/export_research_metrics.py
       - name: Commit all published data and processing ledger
         if: ${{ inputs.run_mode != 'check' }}
         run: |
           set -euo pipefail
-          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id data/research_metrics.json
+          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id data/research_metrics.json data/research_ai_render.json
           for f in data/research_ai_cache.json data/research_ai_batch_history.json; do
             if [ -f "$f" ]; then git add -- "$f"; fi
           done
