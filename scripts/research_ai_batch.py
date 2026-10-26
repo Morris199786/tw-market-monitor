@@ -78,6 +78,7 @@ def main():
             if row.get('source_kind')!='line':continue
             from sync_line_research import allowed_sheet_type
             if not allowed_sheet_type(row.get('original_type') or row.get('type')):continue
+            if row.get('market') == 'US':continue
             stats['line_rows']+=1
             cat0=row.get('category') or '(missing)'
             stats['by_category'][cat0]=stats['by_category'].get(cat0,0)+1

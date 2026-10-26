@@ -152,19 +152,11 @@ def classify(row):
     return '市場情報'
 
 
+from research_python_enhance import enrich, decide_route
+
 def api_route(row):
-    """Conservative routing: clear single-company meeting notes need no paid model."""
-    category = row.get('category') or classify(row)
-    if category == '早報':
-        return 'required' if any(str(row.get(k) or '').strip() for k in ('full_text','full_text_2','full_text_3','story')) else 'none'
-    if category not in ('法說／訪談','產業研究'):
-        return 'none'
-    raw = '\n'.join(str(row.get(k) or '') for k in ('full_text','full_text_2','full_text_3'))
-    if not raw.strip():
-        return 'none'
-    # Long/garbled table-heavy content requires structured extraction.
-    noisy = len(raw) > 16000 or raw.count('\ufffd') > 3 or bool(re.search(r'(?m)^.{0,20}(?:Q[1-4]|20\d{2}).*(?:EPS|毛利率).{0,40}(?:Q[1-4]|20\d{2})',raw,re.I))
-    return 'required' if noisy else 'python'
+    return decide_route(row)
+
 
 def original_date(row):
     # The Sheet date is often the import date. Use a publication date only if
@@ -242,6 +234,8 @@ def transform(values, brokers, today):
         row['id'] = 'line-' + digest[:20]
         row['original_type'] = row['type']
         row['category'] = classify(row)
+        row['market'] = 'US' if is_us_research(row) else 'TW'
+        row.update(enrich(row))
         row['api_route'] = api_route(row)
         row['date'], row['date_source'] = original_date(row)
         row['source_kind'] = 'line'
