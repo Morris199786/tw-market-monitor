@@ -20,7 +20,29 @@ concurrency:
   group: research-report-processing
   cancel-in-progress: false
 jobs:
+  yingbang_guard:
+    if: ${{ inputs.run_mode == 'yingbang_only' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check Yingbang without API or publishing
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          article_id = 'line-abf8ae3b2e0a9eae6703'
+          cache = json.loads(Path('data/research_ai_cache.json').read_text(encoding='utf-8'))
+          record = cache.get(article_id)
+          if record is None:
+              print('YINGBANG_NOT_ATTEMPTED: No existing claim. No API called. Use the normal workflow after checking the source.')
+          else:
+              print('YINGBANG_NO_API: existing claim status=' + str(record.get('status')))
+              print('YINGBANG_NO_API: refusing paid retry; no Excel sync, republish, or commit')
+          PYCODE
   sync:
+    if: ${{ inputs.run_mode != 'yingbang_only' }}
     runs-on: ubuntu-latest
     timeout-minutes: 330
     steps:
