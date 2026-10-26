@@ -1430,10 +1430,134 @@
     }
   },
   "line-d254637831a810ab2161": {
-    "status": "attempted",
+    "status": "needs_review",
     "fingerprint": "60c2f1e9a76d175c354f4757e076a8dfbb39a61a31a0f0c6f7ed3c29a2691557",
     "category": "法說／訪談",
     "model": "gpt-4o-mini",
-    "at": "2026-10-26T06:02:19.324919+00:00"
+    "at": "2026-10-26T06:02:19.324919+00:00",
+    "schema": "research-batch-v2",
+    "result": {
+      "title": "聯發科 3Q26 財報前瞻",
+      "summary": [
+        "3Q26 營收 1,680 億元，季增 10.4%，優於財測上緣 5%。",
+        "4Q26 營收季增預估由 48% 下修至 34%。",
+        "2026 年 AI ASIC 營收預估略低於 20 億美元。",
+        "目標價下調至 5,500 元，維持增加持股評等。"
+      ],
+      "companies": [
+        {
+          "name": "聯發科",
+          "ticker": "2454.TW",
+          "key_points": [
+            "3Q26 營收 1,680 億元，季增 10.4%。",
+            "4Q26 營收季增預估 34%，低於先前預估的 48%。",
+            "2026 年 AI ASIC 營收預估略低於 20 億美元。",
+            "目標價下調至 5,500 元，維持增加持股評等。"
+          ],
+          "financials": [
+            {
+              "metric": "營收",
+              "period": "3Q26",
+              "value": "1680",
+              "unit": "億元",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "凱基",
+              "evidence": "3Q26 營收 1,680 億元，季增 10.4%",
+              "source_column": "I",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營收季增預估",
+              "period": "4Q26",
+              "value": "34",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "company",
+              "provider": "凱基",
+              "evidence": "4Q26 營收季增預估 34%",
+              "source_column": "I",
+              "qualifier": "exact"
+            }
+          ],
+          "guidance": [
+            {
+              "metric": "營益率",
+              "period": "3Q26",
+              "value": "16.4",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "company",
+              "provider": "凱基",
+              "evidence": "3Q26 營益率預估 16.4%",
+              "source_column": "M",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "AI ASIC 營收",
+              "period": "2026",
+              "value": "20",
+              "unit": "億美元",
+              "actual_or_estimate": "estimate",
+              "source_type": "company",
+              "provider": "凱基",
+              "evidence": "2026 年 AI ASIC 營收預估略低於 20 億美元",
+              "source_column": "M",
+              "qualifier": "exact"
+            }
+          ],
+          "operating_metrics": [],
+          "valuations": [
+            {
+              "metric": "目標價",
+              "period": "2026",
+              "value": "5500",
+              "unit": "元",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "目標價下調至 5,500 元",
+              "source_column": "O",
+              "qualifier": "exact"
+            }
+          ],
+          "risks": [
+            "生產問題仍為潛在隱憂，特別是 AI ASIC 專案的量產爬坡。",
+            "IC 載板供應短缺及良率不確定性可能影響 Humufish 的量產進度。"
+          ],
+          "unstructured_notes": [
+            "法說會將於 10 月 30 日召開。",
+            "Humufish 於 Intel EMIB-T 產線的量產爬坡時程已由 4Q27 延後至 2Q28。",
+            "2028 年 AI ASIC 營收預估由 500 億美元降至 360 億美元，仍年增 139%。"
+          ]
+        }
+      ]
+    },
+    "audit": {
+      "status": "needs_review",
+      "financial_count": 5,
+      "issues": [
+        "聯發科 營收: 證據不在 Excel A-W",
+        "聯發科 營收季增預估: 證據不在 Excel A-W",
+        "聯發科 營益率: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收: 證據不在 Excel A-W",
+        "聯發科 目標價: 來源欄位不吻合"
+      ]
+    },
+    "usage": {
+      "prompt_tokens": 1944,
+      "completion_tokens": 973,
+      "total_tokens": 2917,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    }
   }
 }
