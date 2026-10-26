@@ -223,6 +223,7 @@ def main():
     parser.add_argument('--mode', choices=['pending','failed','rerun_three','retry_mediatek'], default='pending')
     parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-5.6-luna'))
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--article-id', default='', help='Only process this exact research row ID; existing attempt blocks paid retry')
     args = parser.parse_args()
     if not 1 <= args.limit <= 200:
         sys.exit('limit must be 1..200')
@@ -242,6 +243,8 @@ def main():
             if row.get('source_kind') != 'line' or not allowed_type(row.get('original_type') or row.get('type')):
                 continue
             if row.get('market') == 'US':
+                continue
+            if args.article_id and row.get('id') != args.article_id:
                 continue
             stats['line_rows'] += 1
             cat = row.get('category') or '(missing)'
@@ -275,6 +278,8 @@ def main():
                 continue
             if args.mode == 'pending' and old is not None:
                 stats['cached'] += 1
+                if args.article_id:
+                    print('EXISTING_ATTEMPT_NO_API ' + json.dumps({'id': row['id'], 'status': old.get('status'), 'at': old.get('at')}, ensure_ascii=False))
                 continue
             if args.mode == 'failed' and (not old or old.get('status') not in ('failed','needs_review')):
                 continue
@@ -283,6 +288,13 @@ def main():
     stats['eligible'] = len(entries)
     print('BATCH_DIAGNOSTICS ' + json.dumps(stats, ensure_ascii=False, sort_keys=True))
     selected = entries[:args.limit]
+    if args.article_id and (args.mode != 'pending' or args.limit != 1):
+        sys.exit('TARGET_SAFETY: requires --mode pending --limit 1')
+    if args.article_id and not selected:
+        print('TARGET_BLOCKED_NO_API: existing attempt or ineligible article; no credit charged')
+        return
+    if args.article_id and (len(selected) != 1 or selected[0][0]['id'] != args.article_id):
+        sys.exit('TARGET_SAFETY: unexpected candidate; refusing paid call')
     if args.mode in ('rerun_three','retry_mediatek') and args.model != 'gpt-5.6-luna':
         sys.exit('selected mode requires gpt-5.6-luna')
     if args.mode == 'retry_mediatek' and len(selected) != 1:
