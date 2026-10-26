@@ -152,7 +152,7 @@ def classify(row):
     return '市場情報'
 
 
-from research_python_enhance import enrich, decide_route
+from research_python_enhance import enrich, decide_route, quality, normalize_display
 
 def api_route(row):
     return decide_route(row)
@@ -237,10 +237,11 @@ def transform(values, brokers, today):
         row['market'] = 'US' if is_us_research(row) else 'TW'
         row.update(enrich(row))
         row['api_route'] = api_route(row)
+        row['python_qa'] = quality(row) if row['market'] == 'TW' and row['category'] in ('法說／訪談','產業研究') else {'requires_ai': False, 'issues': []}
         row['date'], row['date_source'] = original_date(row)
         row['source_kind'] = 'line'
         row['market'] = 'US' if is_us_research(row) else 'TW'
-        row['display'] = {k: clean_display(row.get(k)) for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','dividend_current','dividend_next','dividend_policy','full_text','full_text_2','full_text_3')}
+        row['display'] = {k: normalize_display(clean_display(row.get(k))) for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','dividend_current','dividend_next','dividend_policy','full_text','full_text_2','full_text_3')}
         row['possible_broker_duplicates'] = broker_candidates(row, brokers)
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
