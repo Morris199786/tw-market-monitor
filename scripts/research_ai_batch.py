@@ -225,8 +225,8 @@ def main():
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--article-id', default='', help='Only process this exact research row ID; existing attempt blocks paid retry')
     args = parser.parse_args()
-    if not 1 <= args.limit <= 200:
-        sys.exit('limit must be 1..200')
+    if not 1 <= args.limit <= 250:
+        sys.exit('limit must be 1..250')
     cache = load(CACHE, {})
     history = load(AUDIT, [])
     manifest = load(ROOT / 'data/research_manifest.json', {})
