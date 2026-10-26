@@ -20,27 +20,50 @@ concurrency:
   group: research-report-processing
   cancel-in-progress: false
 jobs:
-  yingbang_guard:
+  yingbang_only:
     if: ${{ inputs.run_mode == 'yingbang_only' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Check Yingbang without API or publishing
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Refresh ledger and configure checkpoint identity
         run: |
-          python - <<'PYCODE'
-          import json
-          from pathlib import Path
-          article_id = 'line-abf8ae3b2e0a9eae6703'
-          cache = json.loads(Path('data/research_ai_cache.json').read_text(encoding='utf-8'))
-          record = cache.get(article_id)
-          if record is None:
-              print('YINGBANG_NOT_ATTEMPTED: No existing claim. No API called. Use the normal workflow after checking the source.')
-          else:
-              print('YINGBANG_NO_API: existing claim status=' + str(record.get('status')))
-              print('YINGBANG_NO_API: refusing paid retry; no Excel sync, republish, or commit')
-          PYCODE
+          git pull --ff-only origin main
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Preview only Yingbang (no API)
+        run: python scripts/research_ai_batch.py --mode yingbang_only --limit 1 --dry-run
+      - name: Process or reuse only Yingbang
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RESEARCH_AI_REMOTE_CHECKPOINT: '1'
+          RESEARCH_AI_MODEL: gpt-5.6-luna
+        run: python scripts/research_ai_batch.py --mode yingbang_only --limit 1
+      - name: Publish only Yingbang output and its audit
+        if: always()
+        run: |
+          set -euo pipefail
+          git add -- data/research_ai_cache.json data/research_ai_batch_history.json data/research_ai_render.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish bounded Yingbang-only research result'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+      - name: Upload Yingbang processing audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yingbang-only-audit
+          path: |
+            data/research_ai_cache.json
+            data/research_ai_batch_history.json
+          if-no-files-found: ignore
   sync:
     if: ${{ inputs.run_mode != 'yingbang_only' }}
     runs-on: ubuntu-latest
