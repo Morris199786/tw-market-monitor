@@ -3,13 +3,13 @@ on:
   workflow_dispatch:
     inputs:
       run_mode:
-        description: 'check=只檢查；sync=同步B欄法說/訪談；ai=同步、解析需要API的文章、更新網頁'
+        description: 'check=只檢查；sync=同步並匯出既有資料；ai=同步、API解析、匯出網站資料'
         required: true
         type: choice
         options: [check, sync, ai]
         default: check
       max_reports:
-        description: 'ai模式本次最多API文章數（1–200）；只處理未嘗試文章'
+        description: 'ai模式最多新API文章數（1–200）；已有任何快取紀錄均不重跑'
         required: true
         default: '10'
         type: string
@@ -82,16 +82,19 @@ jobs:
       - name: Extract research financials without API
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/extract_research_financials.py
+      - name: Export chart-ready research metrics without API
+        if: ${{ inputs.run_mode != 'check' }}
+        run: python scripts/export_research_metrics.py
       - name: Commit all published data and processing ledger
         if: ${{ inputs.run_mode != 'check' }}
         run: |
           set -euo pipefail
-          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id
+          git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id data/research_metrics.json
           for f in data/research_ai_cache.json data/research_ai_batch_history.json; do
             if [ -f "$f" ]; then git add -- "$f"; fi
           done
           if ! git diff --cached --quiet; then
-            git commit -m 'Sync B-column meeting research and bounded AI analysis'
+            git commit -m 'Sync B-column research, financials and metrics'
             git pull --rebase origin main
             git push origin HEAD:main
           else
@@ -106,4 +109,5 @@ jobs:
             data/research_ai_cache.json
             data/research_ai_batch_history.json
             data/research_dedup_audit.json
+            data/research_metrics.json
           if-no-files-found: ignore
