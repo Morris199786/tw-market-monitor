@@ -126,6 +126,10 @@ SYSTEM_PROMPT = '''你是台灣上市櫃法說會及 call memo 的研究資料�
 financials、guidance、operating_metrics、valuations 均為自由長度陣列，不要求任何欄位必填。每個數字物件盡量提供：
 metric(指標名稱不限)、period(例 3Q26、1H26、2027E)、value(原文數字字串)、unit、actual_or_estimate(actual/estimate/guidance/unknown)、source_type(company/broker/unknown)、provider(來源機構若可辨)、evidence(來源中的原文連續短句)、source_column(例如 I、J、P、U)、qualifier(exact/range/at_least/at_most/approximate/qualitative)。
 有區間則保留原區間；年度、季度、累計、半年不可混用；公司指引、券商預估、實績必須分開；多家公司、多券商分別標註。
+強制期間：前三季/1~9月=9MYY、上半年/1~6月=1HYY，絕不能寫成Q3/Q2單季。
+來源為券商財報前瞻且句子含「我們預估」「我們預期」「我們認為」時，一律是券商 estimate，不得當成公司 actual。公司已公布的歷史營收/財報實績才能標 actual。
+「約」「接近」「多元」「超過」「略低」不得標 exact，須分別保留 approximate/at_least/at_most。
+evidence 必須從某個 Excel 欄位原封不動複製一段連續文字，不得自行改寫或拼接；source_column 必須是實際包含該 evidence 的欄位。
 對無法確認期間、公司歸屬或數值性質的資訊，保留在 unstructured_notes，絕不可硬猜。
 目標價或評等只有原文明確寫出且來源歸屬清楚時才填入 valuations；call memo 不要求有目標價。
 不要求完整三表；任何已確認的現金流、負債比、CAPEX、訂單、稼動率、產品占比等都應保留。
@@ -186,6 +190,12 @@ def audit(result, row):
                 # Missing periods or qualitative guidance should be reviewed, not rejected.
                 if not fact.get('period'):
                     issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 期間不明")
+                if re.search(r'前三季|前3季|1\s*[~～至-]\s*9\s*月', evidence) and re.search(r'^[34]Q', str(fact.get('period') or ''), re.I):
+                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 累計期間誤作單季")
+                if str(fact.get('qualifier') or '') == 'exact' and re.search(r'約|接近|多元|多億|超過|略低|左右', evidence):
+                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 約數誤標 exact")
+                if str(fact.get('actual_or_estimate') or '') == 'actual' and re.search(r'我們預估|我們預期|預估|預期', evidence) and str(fact.get('source_type') or '') == 'broker':
+                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 券商預估誤標實績")
     return {'status':'needs_review' if issues else 'passed',
             'financial_count':count,'issues':issues[:60]}
 
