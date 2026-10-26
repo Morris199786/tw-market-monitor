@@ -216,15 +216,119 @@ def audit(result, row):
     return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
 
 
+YINGBANG_ID = 'line-abf8ae3b2e0a9eae6703'
+# Immutable one-time claim: never change this key to bypass a prior paid attempt.
+YINGBANG_ONCE_KEY = YINGBANG_ID + '::yingbang-only-full-article-once-v1'
+
+
+def publish_yingbang(record):
+    """Publish only this ID. Other reports and all Excel shards stay untouched."""
+    dest = ROOT / 'data/research_ai_render.json'
+    render = load(dest, {'schema':'research-ai-direct-v2','items':{}})
+    if not isinstance(render, dict) or not isinstance(render.get('items'), dict):
+        raise RuntimeError('YINGBANG_RENDER_INVALID: refusing to overwrite render data')
+    render['items'][YINGBANG_ID] = {'model':record.get('model'), 'content':record['result']}
+    write(dest, render)
+    print('YINGBANG_PUBLISHED ' + YINGBANG_ID)
+
+
+def run_yingbang_only(args):
+    """Explicit, bounded recovery of the old stuck attempt. Never retries this claim."""
+    if args.limit != 1 or args.article_id not in ('', YINGBANG_ID):
+        sys.exit('YINGBANG_SAFETY: --limit 1 and only the fixed Yingbang article are allowed')
+    cache = load(CACHE, {})
+    if not isinstance(cache, dict):
+        sys.exit('YINGBANG_CACHE_INVALID: no API called')
+    # Prefer a reusable completed article over any paid recovery, including aliases.
+    candidates = [(k,v) for k,v in cache.items() if isinstance(v,dict) and
+                  (k == YINGBANG_ID or k.startswith(YINGBANG_ID + '::') or v.get('original_id') == YINGBANG_ID)]
+    base = cache.get(YINGBANG_ID)
+    visited = set()
+    while isinstance(base,dict) and base.get('status') == 'alias':
+        key=base.get('cache_id')
+        if not key or key in visited: break
+        visited.add(key);base=cache.get(key)
+    if isinstance(base,dict): candidates.insert(0,(YINGBANG_ID,base))
+    for key,record in candidates:
+        if record.get('status') == 'success' and audit(record.get('result'), {})['status'] == 'passed':
+            print('YINGBANG_REUSE_NO_API ' + key)
+            if not args.dry_run:
+                if cache.get(YINGBANG_ID) != record:
+                    cache[YINGBANG_ID] = {**record, 'previous_version':cache.get(YINGBANG_ID)}
+                    checkpoint(cache)
+                publish_yingbang(record)
+            return
+    # Any prior result, failure, timeout or interrupted call blocks another charge.
+    if YINGBANG_ONCE_KEY in cache:
+        status = (cache[YINGBANG_ONCE_KEY] or {}).get('status')
+        sys.exit('YINGBANG_BLOCKED_NO_API: one-time claim already exists (' + str(status) + '); no automatic retry')
+    manifest = load(ROOT / 'data/research_manifest.json', {})
+    matches = []
+    for shard in manifest.get('shards', []):
+        name = shard.get('file', '')
+        if not name or Path(name).name != name:
+            sys.exit('YINGBANG_INVALID_SHARD: no API called')
+        for row in load(ROOT / 'data/research_shards' / name, {}).get('items', []):
+            if row.get('id') == YINGBANG_ID: matches.append(row)
+    if len(matches) != 1:
+        sys.exit('YINGBANG_NOT_UNIQUE: expected exactly one source row; no API called')
+    row = matches[0]
+    if not (row.get('company') == '營邦' and row.get('ticker') in ('3693','3693.TWO','3693.TW')
+            and row.get('date') == '2026-10-23' and row.get('source') == '元大投顧'
+            and row.get('source_kind') == 'line' and row.get('market') != 'US'
+            and allowed_type(row.get('original_type') or row.get('type'))):
+        sys.exit('YINGBANG_IDENTITY_MISMATCH: no API called')
+    if not any(str(row.get(k) or '').strip() for k in RAW_KEYS):
+        sys.exit('YINGBANG_EMPTY_SOURCE: no API called')
+    raw=content(row)
+    print('YINGBANG_CANDIDATE ' + json.dumps({'id':YINGBANG_ID,'company':'營邦','ticker':'3693',
+          'date':row['date'],'source':row['source'],'max_api_calls':1},ensure_ascii=False))
+    if args.dry_run:
+        print('DRY_RUN_NO_API: only Yingbang; no sheet sync or other report processing')
+        return
+    # Fail before payment if the existing publication or history cannot be preserved.
+    render=load(ROOT / 'data/research_ai_render.json', {'items':{}})
+    history=load(AUDIT, [])
+    if not isinstance(render,dict) or not isinstance(render.get('items'),dict) or not isinstance(history,list):
+        sys.exit('YINGBANG_OUTPUT_INVALID: no API called')
+    if not os.getenv('OPENAI_API_KEY'):
+        sys.exit('OPENAI_API_KEY missing; no calls made')
+    if os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
+        sys.exit('YINGBANG_DURABLE_CLAIM_REQUIRED: no API called')
+    at=datetime.datetime.now(datetime.timezone.utc).isoformat()
+    cache[YINGBANG_ONCE_KEY]={'status':'attempted','original_id':YINGBANG_ID,'at':at,
+        'model':args.model,'fingerprint':hashlib.sha256(raw.encode()).hexdigest(),'category':row.get('category')}
+    checkpoint(cache)  # Must reach origin/main before parse() can spend credit.
+    try:
+        result, usage=parse(raw,args.model)
+        check=audit(result,row)
+        status='success' if check['status']=='passed' else 'needs_review'
+        cache[YINGBANG_ONCE_KEY].update(status=status,schema=SCHEMA,result=result,audit=check,usage=usage)
+        if status=='success':
+            cache[YINGBANG_ID]={**cache[YINGBANG_ONCE_KEY], 'previous_version':cache.get(YINGBANG_ID)}
+    except Exception as exc:
+        cache[YINGBANG_ONCE_KEY].update(status='failed',error=str(exc)[:1000])
+    checkpoint(cache)
+    record=cache[YINGBANG_ONCE_KEY]
+    history.append({'at':at,'mode':'yingbang_only','limit':1,'model':args.model,
+                    'results':[{'id':YINGBANG_ID,'claim_key':YINGBANG_ONCE_KEY,'status':record['status']}]})
+    write(AUDIT, history)
+    if record['status'] != 'success':
+        sys.exit('YINGBANG_NEEDS_ATTENTION: result saved; repeat runs will not call API')
+    publish_yingbang(record)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--limit', type=int, default=10)
     parser.add_argument('--category', choices=['all','morning','meeting','industry'], default='all')
-    parser.add_argument('--mode', choices=['pending','failed','rerun_three','retry_mediatek'], default='pending')
+    parser.add_argument('--mode', choices=['pending','failed','rerun_three','retry_mediatek','yingbang_only'], default='pending')
     parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-5.6-luna'))
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--article-id', default='', help='Only process this exact research row ID; existing attempt blocks paid retry')
     args = parser.parse_args()
+    if args.mode == 'yingbang_only':
+        return run_yingbang_only(args)
     if not 1 <= args.limit <= 250:
         sys.exit('limit must be 1..250')
     cache = load(CACHE, {})
