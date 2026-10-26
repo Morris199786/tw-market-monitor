@@ -201,5 +201,63 @@
         "promoted": true
       }
     ]
+  },
+  {
+    "at": "2026-10-26T13:36:14.506901+00:00",
+    "category": "all",
+    "mode": "rerun_three",
+    "limit": 3,
+    "model": "gpt-5.6-luna",
+    "results": [
+      {
+        "id": "line-eb38fe730115b004ab61",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 23
+        },
+        "usage": {
+          "input_tokens": 2350,
+          "input_tokens_details": {
+            "cache_write_tokens": 2347,
+            "cached_tokens": 0
+          },
+          "output_tokens": 2925,
+          "output_tokens_details": {
+            "reasoning_tokens": 116
+          },
+          "total_tokens": 5275
+        },
+        "promoted": true
+      },
+      {
+        "id": "line-d254637831a810ab2161",
+        "status": "failed",
+        "error": "Expecting ',' delimiter: line 1 column 911 (char 910)"
+      },
+      {
+        "id": "line-989d0430b6a71dde3aac",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 26
+        },
+        "usage": {
+          "input_tokens": 2833,
+          "input_tokens_details": {
+            "cache_write_tokens": 2830,
+            "cached_tokens": 0
+          },
+          "output_tokens": 3686,
+          "output_tokens_details": {
+            "reasoning_tokens": 128
+          },
+          "total_tokens": 6519
+        },
+        "promoted": true
+      }
+    ]
   }
 ]
