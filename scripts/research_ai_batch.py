@@ -45,21 +45,52 @@ def write(path, obj):
 
 
 def checkpoint(cache):
-    """Before every paid call, persist a durable attempt record."""
+    """Durably save each attempt before a paid call; fail closed if remote rejects it.
+
+    A workflow may have uncommitted sync outputs. Commit only the ledger, then
+    rebase with autostash to handle an independently advanced main branch.
+    """
     write(CACHE, cache)
     if os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
         return
+
     def git(*args):
         return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True)
-    if git('add', '--', 'data/research_ai_cache.json').returncode:
-        raise RuntimeError('Cannot stage attempt ledger; refusing paid call')
+
+    def checked(args, label):
+        result = git(*args)
+        if result.returncode:
+            details = (result.stderr or result.stdout or '').strip()[-1500:]
+            raise RuntimeError(f'{label}: {details}; refusing paid call')
+        return result
+
+    checked(('add', '--', 'data/research_ai_cache.json'), 'Cannot stage attempt ledger')
     diff = git('diff', '--cached', '--quiet')
     if diff.returncode == 0:
         return
-    if diff.returncode != 1 or git('commit', '-m', 'Checkpoint LINE research AI attempt').returncode:
-        raise RuntimeError('Cannot commit attempt ledger; refusing paid call')
-    if git('push', 'origin', 'HEAD:main').returncode:
-        raise RuntimeError('Cannot push attempt ledger; refusing paid call')
+    if diff.returncode != 1:
+        raise RuntimeError('Cannot inspect staged attempt ledger; refusing paid call')
+    checked(('commit', '-m', 'Checkpoint LINE research AI attempt'), 'Cannot commit attempt ledger')
+
+    import time
+    for attempt in range(4):
+        # Preserve unstaged research sync files while incorporating concurrent
+        # commits. Never send a paid request until this ledger reaches main.
+        fetched = git('fetch', 'origin', 'main')
+        if fetched.returncode:
+            details = (fetched.stderr or fetched.stdout or '').strip()[-1000:]
+            raise RuntimeError(f'Cannot fetch main: {details}; refusing paid call')
+        rebased = git('-c', 'rebase.autoStash=true', 'rebase', 'origin/main')
+        if rebased.returncode:
+            details = (rebased.stderr or rebased.stdout or '').strip()[-1000:]
+            raise RuntimeError(f'Cannot rebase checkpoint: {details}; refusing paid call')
+        pushed = git('push', 'origin', 'HEAD:main')
+        if pushed.returncode == 0:
+            return
+        if attempt < 3:
+            time.sleep(2 * (attempt + 1))
+    details = (pushed.stderr or pushed.stdout or '').strip()[-1500:]
+    raise RuntimeError(f'Cannot push attempt ledger after 4 attempts: {details}; refusing paid call')
 
 
 def allowed_type(value):
