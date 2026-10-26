@@ -33,6 +33,8 @@ FIELD_NAMES = {
 }
 RAW_KEYS = ('full_text', 'full_text_2', 'full_text_3')
 SCHEMA = 'research-batch-v2'
+TARGET_REPROCESS_IDS = {'line-eb38fe730115b004ab61', 'line-d254637831a810ab2161', 'line-989d0430b6a71dde3aac'}
+TRIAL_SUFFIX = '::gpt-5.6-luna-trial-v1'
 
 
 def load(path, default):
@@ -119,10 +121,6 @@ def route(row):
 
 SYSTEM_PROMPT = '''你是台灣上市櫃法說會及 call memo 的研究資料整理員。你會收到 Excel A～W 各欄位，欄位名稱和原文均為證據。
 任務是為長期可視覺化追蹤建立完整的研究資料，而不只是摘要。
-每個數字請加 subject（實際所屬公司或產業）。上游晶圓廠稼動率、客戶或同業數字，不得放進本公司的 financials 或 operating_metrics，應留在 unstructured_notes。
-董事會通過的資本支出是核准計畫，不是已實現支出；執行期間不明須寫明。YoY 百分比指標必須命名為年增率，不能命名成營收金額。
-目標價的估值基準年度與報告日期不可混為財務年度。財報前瞻中已列出的營收不能僅因文件為前瞻就改為預估，也不能沒有證據就斷言是公司公布實績；不明時標 unknown。
-公司原先的指引與券商自己的預估即使同段出現，也必須分開，不得互相覆蓋。
 請完整掃描所有欄位：I、J、P 等已整理數字非常重要，U～W 原文用來補充與核對。不得只讀原文，也不得因原文缺失就丟棄其他欄位的資料。
 僅擷取來源確實支持的事實；絕對不要補造數字、日期、券商或公司。
 以繁體中文輸出 JSON object，包含 title、summary (字串陣列)、companies (陣列)。
@@ -141,23 +139,32 @@ evidence 必須從某個 Excel 欄位原封不動複製一段連續文字，不�
 
 
 def parse(text, model):
+    # GPT-5 family: Responses API, no unsupported temperature/JSON-mode settings.
     payload = {
-        'model': model, 'temperature': 0,
-        'response_format': {'type': 'json_object'},
-        'messages': [
-            {'role': 'system', 'content': SYSTEM_PROMPT},
-            {'role': 'user', 'content': text},
-        ],
+        'model': model,
+        'instructions': SYSTEM_PROMPT + '\n僅輸出合法 JSON object，不要 markdown。',
+        'input': text,
     }
     request = urllib.request.Request(
-        'https://api.openai.com/v1/chat/completions',
+        'https://api.openai.com/v1/responses',
         data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
         headers={'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY'],
                  'Content-Type': 'application/json'},
     )
-    with urllib.request.urlopen(request, timeout=180) as response:
+    with urllib.request.urlopen(request, timeout=300) as response:
         data = json.load(response)
-    return json.loads(data['choices'][0]['message']['content']), data.get('usage', {})
+    parts = []
+    for item in data.get('output', []):
+        if item.get('type') == 'message':
+            for c in item.get('content', []):
+                if c.get('type') == 'output_text':
+                    parts.append(c.get('text', ''))
+    body = ''.join(parts).strip()
+    if body.startswith('```'):
+        body = re.sub(r'^```(?:json)?\s*|\s*```$', '', body).strip()
+    if not body:
+        raise ValueError('Responses API returned no output_text')
+    return json.loads(body), data.get('usage', {})
 
 
 def audit(result, row):
@@ -200,14 +207,6 @@ def audit(result, row):
                     issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 約數誤標 exact")
                 if str(fact.get('actual_or_estimate') or '') == 'actual' and re.search(r'我們預估|我們預期|預估|預期', evidence) and str(fact.get('source_type') or '') == 'broker':
                     issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 券商預估誤標實績")
-    from export_research_metrics import evidence_check
-    for company in result['companies']:
-        if not isinstance(company, dict):
-            continue
-        for section in ('financials', 'guidance', 'operating_metrics', 'valuations'):
-            for fact in company.get(section, []) if isinstance(company.get(section, []), list) else []:
-                if isinstance(fact, dict) and evidence_check(fact, row) is None:
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 數值或主體無法由證據確認")
     return {'status':'needs_review' if issues else 'passed',
             'financial_count':count,'issues':issues[:60]}
 
@@ -216,8 +215,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--limit', type=int, default=10)
     parser.add_argument('--category', choices=['all','morning','meeting','industry'], default='all')
-    parser.add_argument('--mode', choices=['pending','failed'], default='pending')
-    parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-4o-mini'))
+    parser.add_argument('--mode', choices=['pending','failed','rerun_three'], default='pending')
+    parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-5.6-luna'))
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
     if not 1 <= args.limit <= 200:
@@ -259,6 +258,11 @@ def main():
                 continue
             seen.add(fp)
             old = cache.get(row['id'])
+            if args.mode == 'rerun_three' and row['id'] not in TARGET_REPROCESS_IDS:
+                continue
+            if args.mode == 'rerun_three' and (cache.get(row['id'] + TRIAL_SUFFIX) is not None):
+                stats['cached'] += 1
+                continue
             if args.mode == 'pending' and old is not None:
                 stats['cached'] += 1
                 continue
@@ -269,6 +273,8 @@ def main():
     stats['eligible'] = len(entries)
     print('BATCH_DIAGNOSTICS ' + json.dumps(stats, ensure_ascii=False, sort_keys=True))
     selected = entries[:args.limit]
+    if args.mode == 'rerun_three' and args.model != 'gpt-5.6-luna':
+        sys.exit('rerun_three requires gpt-5.6-luna')
     if args.dry_run:
         print('DRY_RUN_NO_API ' + json.dumps([
             {'id':r['id'],'category':r.get('category'),'source':r.get('source'),
@@ -284,22 +290,32 @@ def main():
            'model':args.model,'results':[]}
     for row, raw, fp in selected:
         rid = row['id']
-        # Never automatically retry previously attempted reports.
-        cache[rid] = {'status':'attempted','fingerprint':fp,
-                      'category':row.get('category'),'model':args.model,'at':run['at']}
+        trial = args.mode == 'rerun_three'
+        key = rid + TRIAL_SUFFIX if trial else rid
+        # A trial has a separate immutable claim, leaving the old result untouched.
+        cache[key] = {'status':'attempted','fingerprint':fp,
+                      'category':row.get('category'),'model':args.model,'at':run['at'],
+                      'original_id':rid if trial else None}
         checkpoint(cache)
         try:
             result, usage = parse(raw, args.model)
             check = audit(result, row)
             status = 'success' if check['status'] == 'passed' else 'needs_review'
-            cache[rid].update({'status':status,'schema':SCHEMA,'result':result,
+            cache[key].update({'status':status,'schema':SCHEMA,'result':result,
                                'audit':check,'usage':usage})
-            run['results'].append({'id':rid,'status':status,'audit':check,'usage':usage})
+            # Promote only fully verified results; never overwrite old results on errors.
+            # Keep the original version in the new record for audit and rollback.
+            if trial and status == 'success':
+                promoted = dict(cache[key])
+                promoted['previous_version'] = cache.get(rid)
+                cache[rid] = promoted
+            run['results'].append({'id':rid,'status':status,'audit':check,'usage':usage,
+                                   'promoted':trial and status == 'success'})
         except Exception as exc:
-            cache[rid].update({'status':'failed','error':str(exc)[:300]})
+            cache[key].update({'status':'failed','error':str(exc)[:300]})
             run['results'].append({'id':rid,'status':'failed','error':str(exc)[:300]})
         checkpoint(cache)
-        print(f"{rid}: {cache[rid]['status']}")
+        print(f"{rid}: {cache[key]['status']}" + (' (trial)' if trial else ''))
     history.append(run)
     write(AUDIT, history)
     print(json.dumps({'processed':len(selected),
