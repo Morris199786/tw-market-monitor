@@ -2282,11 +2282,331 @@
     }
   },
   "line-d254637831a810ab2161::gpt-5.6-luna-trial-v1": {
-    "status": "attempted",
+    "status": "needs_review",
     "fingerprint": "60c2f1e9a76d175c354f4757e076a8dfbb39a61a31a0f0c6f7ed3c29a2691557",
     "category": "法說／訪談",
     "model": "gpt-5.6-luna",
     "at": "2026-10-26T12:13:33.834197+00:00",
-    "original_id": "line-d254637831a810ab2161"
+    "original_id": "line-d254637831a810ab2161",
+    "schema": "research-batch-v2",
+    "result": {
+      "title": "凱基：聯發科 3Q26 財報前瞻",
+      "summary": [
+        "凱基預估聯發科 3Q26 營收為 1,680 億元，季增 10.4%，較公司財測上緣高出 5%。",
+        "凱基預估 4Q26 營收季增 34%，低於先前預估的 48%，主要受 3Q26 高基期、智慧型手機需求轉弱及 Zebrafish 量產爬坡進度低於預期影響。",
+        "凱基預估 3Q26 營益率為 16.4%，較 2Q26 的 15% 增加 1.4 個百分點；2026 年 AI ASIC 營收預估略低於 20 億美元。",
+        "Humufish 量產因 IC 載板短缺、生產良率及設計修改面臨延遲，凱基下修 2028 年 Humufish 出貨量及 AI ASIC 營收預估，但上修 Zebrafish 出貨量預估。",
+        "凱基將聯發科目標價下調至 5,500 元，維持「增加持股」評等，估值基準為 2028 年景氣循環高峰本益比 25 倍。"
+      ],
+      "companies": [
+        {
+          "name": "聯發科",
+          "ticker": "2454.TW",
+          "key_points": [
+            "3Q26 營運表現預期優於市場共識及公司財測，主要受旗艦手機 SoC 天璣 9600 提前拉貨及通訊晶片需求維持強勁帶動。",
+            "4Q26 AI ASIC 專案量產爬坡可能使利潤率小幅下滑。",
+            "TPU 需求目前未觀察到放緩跡象，凱基上修 2028 年 Zebrafish 出貨量預估。"
+          ],
+          "financials": [
+            {
+              "metric": "營收",
+              "period": "3Q26",
+              "value": "1,680億元",
+              "unit": "新台幣",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們認為營收優於預期主要受惠於旗艦手機 SoC 天璣 9600 提前拉貨，以及通訊晶片需求維持強勁。隨著營運槓桿改善，我們預估 3Q26 營益",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營收季增率",
+              "period": "3Q26",
+              "value": "10.4%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "聯發科 3Q26 營收 1,680 億元，季增 10.4%，較公司財測上緣高出 5%",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營收相較公司財測上緣",
+              "period": "3Q26",
+              "value": "高出5%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "聯發科 3Q26 營收 1,680 億元，季增 10.4%，較公司財測上緣高出 5%",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營益率",
+              "period": "3Q26",
+              "value": "16.4%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們預估 3Q26 營益率將較 2Q26 的 15%提升 1.4ppts 至 16.4%。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營益率",
+              "period": "2Q26",
+              "value": "15%",
+              "unit": "%",
+              "actual_or_estimate": "actual",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們預估 3Q26 營益率將較 2Q26 的 15%提升 1.4ppts 至 16.4%。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營收季增率",
+              "period": "4Q26",
+              "value": "34%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們預估 4Q26 營收季增 34%，低於先前預估的 48%",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "營收季增率前次預估",
+              "period": "4Q26",
+              "value": "48%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們預估 4Q26 營收季增 34%，低於先前預估的 48%",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "AI ASIC 營收",
+              "period": "2026",
+              "value": "略低於20億美元",
+              "unit": "美元",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們預估 2026 年 AI ASIC 營收將略低於 20 億美元。",
+              "source_column": "U",
+              "qualifier": "at_most"
+            },
+            {
+              "metric": "AI ASIC 營收預估下修後",
+              "period": "2028E",
+              "value": "360億美元",
+              "unit": "美元",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將聯發科 2028 年 AI ASIC 營收預估下修 28%，由 500 億美元降至 360 億美元，仍年增 139%。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "AI ASIC 營收預估下修前",
+              "period": "2028E",
+              "value": "500億美元",
+              "unit": "美元",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將聯發科 2028 年 AI ASIC 營收預估下修 28%，由 500 億美元降至 360 億美元，仍年增 139%。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "AI ASIC 營收年增率",
+              "period": "2028E",
+              "value": "139%",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將聯發科 2028 年 AI ASIC 營收預估下修 28%，由 500 億美元降至 360 億美元，仍年增 139%。",
+              "source_column": "U",
+              "qualifier": "exact"
+            }
+          ],
+          "guidance": [
+            {
+              "metric": "AI ASIC 營收目標",
+              "period": "2026",
+              "value": "超過20億美元",
+              "unit": "美元",
+              "actual_or_estimate": "guidance",
+              "source_type": "company",
+              "provider": "聯發科",
+              "evidence": "聯發科於上次法說會將 2026 年 AI ASIC 營收目標由 20 億美元上修至超過 20 億美元",
+              "source_column": "U",
+              "qualifier": "at_least"
+            }
+          ],
+          "operating_metrics": [
+            {
+              "metric": "Humufish 出貨量",
+              "period": "2028E",
+              "value": "200萬顆",
+              "unit": "顆",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將 2028 年 Humufish 出貨量預估由 330 萬顆下修至 200 萬顆。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "Humufish 出貨量預估下修前",
+              "period": "2028E",
+              "value": "330萬顆",
+              "unit": "顆",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將 2028 年 Humufish 出貨量預估由 330 萬顆下修至 200 萬顆。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "Zebrafish 出貨量",
+              "period": "2028E",
+              "value": "180萬顆",
+              "unit": "顆",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將 2028 年 Zebrafish 出貨量預估由 80 萬顆上修至 180 萬顆。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "Zebrafish 出貨量預估上修前",
+              "period": "2028E",
+              "value": "80萬顆",
+              "unit": "顆",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們將 2028 年 Zebrafish 出貨量預估由 80 萬顆上修至 180 萬顆。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "Intel EMIB-T 量產時程",
+              "period": "Humufish",
+              "value": "由4Q27延後至2Q28",
+              "unit": "季度",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "Humufish 於 Intel EMIB-T 產線的量產爬坡時程已由 4Q27 延後至 2Q28",
+              "source_column": "U",
+              "qualifier": "exact"
+            }
+          ],
+          "valuations": [
+            {
+              "metric": "目標價",
+              "period": "unknown",
+              "value": "5,500元",
+              "unit": "新台幣/股",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "將目標價下調至 5,500 元。",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "目標價估值基準",
+              "period": "2028E",
+              "value": "25倍",
+              "unit": "本益比",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "我們維持以 2028 年景氣循環高峰本益比 25 倍作為目標價評價基準",
+              "source_column": "U",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "投資評等",
+              "period": "unknown",
+              "value": "增加持股",
+              "unit": "評等",
+              "actual_or_estimate": "estimate",
+              "source_type": "broker",
+              "provider": "凱基",
+              "evidence": "維持「增加持股」評等。",
+              "source_column": "U",
+              "qualifier": "qualitative"
+            }
+          ],
+          "risks": [
+            "IC 載板供應短缺、生產良率不確定性、零組件短缺及設計修改可能造成 Humufish 量產時程延宕。",
+            "4Q26 智慧型手機需求可能轉弱，且 3Q26 比較基期墊高。",
+            "AI ASIC 專案量產爬坡可能使 4Q26 利潤率小幅下滑。",
+            "Zebrafish 於 4Q26 的量產爬坡進度略低於預期。"
+          ],
+          "unstructured_notes": [
+            "資料日期為 2026-10-21，來源類型為法說會，來源機構為凱基，事件為 3Q26 前瞻。",
+            "聯發科預計於 2026-10-30 召開法說會並公布 3Q26 財報。",
+            "公司指引與券商預估存在差異：公司上次法說會將 2026 年 AI ASIC 營收目標上修至超過 20 億美元；凱基則因生產端不確定性預估實際營收略低於 20 億美元。",
+            "凱基認為市場對 Humufish 可能於 1Q27 重新流片的疑慮過度。",
+            "凱基指出 2028 年整體出貨量預估較先前下修 8-10%，且 Zebrafish ASP 遠低於 Humufish。",
+            "2028 年 AI ASIC 營收預估由 500 億美元下修至 360 億美元，來源原文同時表述為下修 28%及仍年增 139%，兩者均予以保留。",
+            "原文列示的 2Q26 營益率 15%為歷史比較數字，但該段落未提供獨立財報來源欄位。"
+          ]
+        }
+      ]
+    },
+    "audit": {
+      "status": "needs_review",
+      "financial_count": 20,
+      "issues": [
+        "聯發科 營收: 證據不在 Excel A-W",
+        "聯發科 營收季增率: 證據不在 Excel A-W",
+        "聯發科 營收相較公司財測上緣: 證據不在 Excel A-W",
+        "聯發科 營益率: 證據不在 Excel A-W",
+        "聯發科 營益率: 證據不在 Excel A-W",
+        "聯發科 營益率: 券商預估誤標實績",
+        "聯發科 營收季增率: 證據不在 Excel A-W",
+        "聯發科 營收季增率前次預估: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收預估下修後: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收預估下修前: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收年增率: 證據不在 Excel A-W",
+        "聯發科 AI ASIC 營收目標: 證據不在 Excel A-W",
+        "聯發科 Humufish 出貨量: 證據不在 Excel A-W",
+        "聯發科 Humufish 出貨量預估下修前: 證據不在 Excel A-W",
+        "聯發科 Zebrafish 出貨量: 證據不在 Excel A-W",
+        "聯發科 Zebrafish 出貨量預估上修前: 證據不在 Excel A-W"
+      ]
+    },
+    "usage": {
+      "input_tokens": 2133,
+      "input_tokens_details": {
+        "cache_write_tokens": 2130,
+        "cached_tokens": 0
+      },
+      "output_tokens": 4240,
+      "output_tokens_details": {
+        "reasoning_tokens": 769
+      },
+      "total_tokens": 6373
+    }
   }
 }
