@@ -3,6 +3,7 @@
 No paid API calls. Never modifies research_ai_cache.json or attempt ledger.
 """
 import json
+import hashlib
 import re
 import unicodedata
 from pathlib import Path
@@ -59,6 +60,14 @@ def evidence_check(fact, row):
     matches = [col for col, value in fields.items() if ev in normalized(value)]
     if not matches:
         return None
+    number = re.compile(r'(?<![\w.])-?\d+(?:,\d{3})*(?:\.\d+)?')
+    ev_numbers = {n.replace(',', '') for n in number.findall(evidence)}
+    value_numbers = {n.replace(',', '') for n in number.findall(str(fact.get('value')))}
+    if value_numbers and not value_numbers.issubset(ev_numbers):
+        return None
+    # Upstream industry utilization must not become the reporting company's metric.
+    if re.search(r'稼動率|利用率', str(fact.get('metric'))) and re.search(r'晶圓代工|晶圓廠|成熟製程', evidence):
+        return None
     f = dict(fact)
     col = str(f.get('source_column') or '').strip().upper()
     if col not in matches:
@@ -99,6 +108,23 @@ def evidence_check(fact, row):
     return f
 
 
+def reviewed_result(row, result, reviews):
+    """Editorial corrections apply only to the exact source and cached result reviewed."""
+    review = reviews.get(row['id']) or {}
+    payload = {k: row.get(k) for k in ('company','ticker','date','full_text','full_text_2','full_text_3')}
+    digest = lambda obj: hashlib.sha256(json.dumps(obj, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    if review.get('source_sha256') != digest(payload) or review.get('result_sha256') != digest(result):
+        return None
+    corrected = review.get('result') or {}
+    for company in corrected.get('companies', []):
+        for section in SECTIONS:
+            for fact in company.get(section, []):
+                col = fact.get('source_column')
+                if not fact.get('evidence') or fact['evidence'] not in source_fields(row).get(col, ''):
+                    raise ValueError('Reviewed evidence no longer matches source: ' + row['id'])
+    return corrected
+
+
 def export(root=ROOT):
     manifest_path = root / 'data/research_manifest.json'
     if not manifest_path.exists():
@@ -107,6 +133,7 @@ def export(root=ROOT):
     if not manifest.get('shards'):
         raise RuntimeError('Empty research manifest; refusing empty export')
     cache = read(root / 'data/research_ai_cache.json', {})
+    reviews = read(root / 'data/research_reviewed_overrides.json', {})
     financial = read(root / 'data/research_financial_forecasts.json', {}).get('reports', {})
     items, seen = [], set()
     stats = {'meeting_rows': 0, 'offline_financial': 0, 'ai_facts': 0,
@@ -160,6 +187,13 @@ def export(root=ROOT):
             if rec.get('status') not in ('success', 'needs_review'):
                 continue
             result = rec.get('result') or {}
+            reviewed = reviewed_result(row, result, reviews)
+            if reviewed is not None:
+                result = reviewed
+            elif rec.get('status') == 'needs_review':
+                # An unresolved AI audit is not a verified financial table.
+                stats['excluded_unverified_ai'] += sum(len(c.get(s) or []) for c in result.get('companies', []) if isinstance(c, dict) for s in SECTIONS)
+                continue
             if not isinstance(result.get('companies'), list):
                 stats['legacy_cache_without_new_schema'] += 1
                 continue
@@ -178,7 +212,7 @@ def export(root=ROOT):
                         if not isinstance(fact, dict):
                             stats['excluded_unverified_ai'] += 1
                             continue
-                        checked = evidence_check(fact, row)
+                        checked = dict(fact) if reviewed is not None else evidence_check(fact, row)
                         if checked is None:
                             stats['excluded_unverified_ai'] += 1
                             continue
@@ -192,7 +226,7 @@ def export(root=ROOT):
                                       'qualifier': checked.get('qualifier'),
                                       'source_column': checked.get('source_column'),
                                       'evidence': checked.get('evidence'),
-                                      'review_status': 'source_verified',
+                                      'review_status': 'editorially_verified' if reviewed is not None else 'source_verified',
                                       'extraction_method': 'openai_new_schema'})
                         stats['ai_facts'] += 1
     return {'schema': 'research-metrics-v1', 'count': len(items), 'stats': stats, 'items': items}
