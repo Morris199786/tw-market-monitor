@@ -35,6 +35,8 @@ RAW_KEYS = ('full_text', 'full_text_2', 'full_text_3')
 SCHEMA = 'research-full-article-v2'
 TARGET_REPROCESS_IDS = {'line-eb38fe730115b004ab61', 'line-d254637831a810ab2161', 'line-989d0430b6a71dde3aac'}
 TRIAL_SUFFIX = '::gpt-5.6-luna-full-article-v2'
+MEDIATEK_ID = 'line-d254637831a810ab2161'
+MEDIATEK_RETRY_SUFFIX = '::gpt-5.6-luna-structured-retry-v1'
 
 
 def load(path, default):
@@ -129,12 +131,43 @@ summary 僅供首頁卡片，blocks 必須是獨立完整的 AI 研究全文，�
 所有視覺化也由你自主選擇：除了 table，必要時可使用 chart 區塊，格式為 {"type":"chart","chart_type":"bar|line|donut","title":"圖表標題","labels":["項目"],"values":[數值],"unit":"單位","note":"資料期間與性質"}。只有數值可比且有明確同單位時才使用圖表；不要虛構數字，也不要把預估與實績混成同一口徑。對於缺少日期、期間或資料無法判定的欄位，不要輸出 unknown，改以文字說明或省略不重要的欄位。數字和單位在同一個儲存格只寫一次。忠於來源，不得虛構。清楚區分公司指引、券商估計、歷史實績及推論；保留期間、單位、約數、範圍和重要條件。若原文沒有的資料，不要補造。避免冗長重複、空泛總結。不要輸出 markdown，只輸出合法 JSON。'''
 
 
+
+# Structured Outputs constrain only the transport shape, never the research content.
+# Each block carries optional-in-meaning fields as required JSON fields with empty defaults.
+ARTICLE_SCHEMA = {
+    'type': 'object', 'additionalProperties': False,
+    'properties': {
+        'title': {'type':'string'},
+        'summary': {'type':'array','items':{'type':'string'}},
+        'blocks': {'type':'array','items': {
+            'type':'object','additionalProperties':False,
+            'properties': {
+                'type':{'type':'string','enum':['heading','paragraph','bullets','table','quote','chart']},
+                'text':{'type':'string'},
+                'items':{'type':'array','items':{'type':'string'}},
+                'columns':{'type':'array','items':{'type':'string'}},
+                'rows':{'type':'array','items':{'type':'array','items':{'type':'string'}}},
+                'chart_type':{'type':'string','enum':['bar','line','donut','']},
+                'title':{'type':'string'},
+                'labels':{'type':'array','items':{'type':'string'}},
+                'values':{'type':'array','items':{'type':'number'}},
+                'unit':{'type':'string'},
+                'note':{'type':'string'},
+            },
+            'required':['type','text','items','columns','rows','chart_type','title','labels','values','unit','note'],
+        }},
+    },
+    'required':['title','summary','blocks'],
+}
+
 def parse(text, model):
     # GPT-5 family: Responses API, no unsupported temperature/JSON-mode settings.
     payload = {
         'model': model,
         'instructions': SYSTEM_PROMPT + '\n僅輸出合法 JSON object，不要 markdown。',
         'input': text,
+        'text': {'format': {'type': 'json_schema', 'name': 'research_article',
+                            'strict': True, 'schema': ARTICLE_SCHEMA}},
     }
     request = urllib.request.Request(
         'https://api.openai.com/v1/responses',
@@ -154,8 +187,14 @@ def parse(text, model):
     if body.startswith('```'):
         body = re.sub(r'^```(?:json)?\s*|\s*```$', '', body).strip()
     if not body:
-        raise ValueError('Responses API returned no output_text')
-    return json.loads(body), data.get('usage', {})
+        raise ValueError('Responses API returned no output_text; status=' + str(data.get('status')))
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError as exc:
+        # Preserve the original model text for diagnosis; do not alter its content.
+        raise ValueError('STRUCTURED_JSON_ERROR ' + str(exc) +
+                         ' | near=' + repr(body[max(0,exc.pos-80):exc.pos+80])) from exc
+    return parsed, data.get('usage', {})
 
 
 def audit(result, row):
@@ -181,7 +220,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--limit', type=int, default=10)
     parser.add_argument('--category', choices=['all','morning','meeting','industry'], default='all')
-    parser.add_argument('--mode', choices=['pending','failed','rerun_three'], default='pending')
+    parser.add_argument('--mode', choices=['pending','failed','rerun_three','retry_mediatek'], default='pending')
     parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-5.6-luna'))
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
@@ -224,6 +263,11 @@ def main():
                 continue
             seen.add(fp)
             old = cache.get(row['id'])
+            if args.mode == 'retry_mediatek' and row['id'] != MEDIATEK_ID:
+                continue
+            if args.mode == 'retry_mediatek' and cache.get(row['id'] + MEDIATEK_RETRY_SUFFIX) is not None:
+                stats['cached'] += 1
+                continue
             if args.mode == 'rerun_three' and row['id'] not in TARGET_REPROCESS_IDS:
                 continue
             if args.mode == 'rerun_three' and (cache.get(row['id'] + TRIAL_SUFFIX) is not None):
@@ -239,8 +283,10 @@ def main():
     stats['eligible'] = len(entries)
     print('BATCH_DIAGNOSTICS ' + json.dumps(stats, ensure_ascii=False, sort_keys=True))
     selected = entries[:args.limit]
-    if args.mode == 'rerun_three' and args.model != 'gpt-5.6-luna':
-        sys.exit('rerun_three requires gpt-5.6-luna')
+    if args.mode in ('rerun_three','retry_mediatek') and args.model != 'gpt-5.6-luna':
+        sys.exit('selected mode requires gpt-5.6-luna')
+    if args.mode == 'retry_mediatek' and len(selected) != 1:
+        sys.exit('retry_mediatek requires exactly one eligible Mediatek report; no API called')
     if args.dry_run:
         print('DRY_RUN_NO_API ' + json.dumps([
             {'id':r['id'],'category':r.get('category'),'source':r.get('source'),
@@ -256,8 +302,9 @@ def main():
            'model':args.model,'results':[]}
     for row, raw, fp in selected:
         rid = row['id']
-        trial = args.mode == 'rerun_three'
-        key = rid + TRIAL_SUFFIX if trial else rid
+        trial = args.mode in ('rerun_three','retry_mediatek')
+        key = (rid + MEDIATEK_RETRY_SUFFIX if args.mode == 'retry_mediatek' else
+               rid + TRIAL_SUFFIX if trial else rid)
         # A trial has a separate immutable claim, leaving the old result untouched.
         cache[key] = {'status':'attempted','fingerprint':fp,
                       'category':row.get('category'),'model':args.model,'at':run['at'],
@@ -278,12 +325,14 @@ def main():
             run['results'].append({'id':rid,'status':status,'audit':check,'usage':usage,
                                    'promoted':trial and status == 'success'})
         except Exception as exc:
-            cache[key].update({'status':'failed','error':str(exc)[:300]})
+            cache[key].update({'status':'failed','error':str(exc)[:1000]})
             run['results'].append({'id':rid,'status':'failed','error':str(exc)[:300]})
         checkpoint(cache)
         print(f"{rid}: {cache[key]['status']}" + (' (trial)' if trial else ''))
     history.append(run)
     write(AUDIT, history)
+    if args.mode == 'retry_mediatek' and any(x['status'] != 'success' for x in run['results']):
+        sys.exit('MEDIATEK_RETRY_FAILED: see research_ai_cache.json; no other report retried')
     print(json.dumps({'processed':len(selected),
                       'status_counts':{s:sum(x['status']==s for x in run['results'])
                                        for s in ('success','needs_review','failed')}},
