@@ -103,33 +103,48 @@ def broker_candidates(row, brokers):
     return matches
 
 
-CATEGORIES = ('個股研究', '產業研究', '法說／訪談', '週報', '市場情報')
-
+CATEGORIES = ('個股研究', '產業研究', '法說／訪談', '早報', '週報', '市場情報')
+MORNING_RE = re.compile(r'(早報|晨會|晨報|早會|日報|每日重點|晨間重點|morning\s*(?:brief|meeting|note)|daily\s*(?:brief|digest|report))', re.I)
+INDUSTRY_RE = re.compile(r'(產業論壇|產業趨勢|產業教育|產業研究|產業報告|月報|sector\s*report|industry\s*report|教育訓練|主題論壇|產業對談)', re.I)
+NEWS_RE = re.compile(r'(哈燒新聞|新聞彙整|新聞摘要|外電綜合|媒體熱點|市場新聞)', re.I)
+MEETING_RE = re.compile(r'(法說|聯合法說|法人說明|電話會議|訪談|call\s*memo|conference\s*call)', re.I)
 
 def classify(row):
     original = str(row.get('type') or '').strip()
+    title = ' '.join(str(row.get(k) or '') for k in ('source','company','period','story'))[:1300]
+    body_start = ' '.join(str(row.get(k) or '')[:600] for k in ('full_text','full_text_2'))
+    header = (title + ' ' + body_start)[:2200]
+    # The actual document heading outranks the spreadsheet's often incorrect call-memo label.
+    if MORNING_RE.search(header):
+        return '早報'
+    if NEWS_RE.search(header) and original not in ('個股報告','券商評等'):
+        return '市場情報'
     if original in ('個股報告', '券商評等'):
         return '個股研究'
-    if original == '產業報告':
+    if original == '產業報告' or INDUSTRY_RE.search(header):
         return '產業研究'
-    if original in ('call memo', '法說會'):
+    if original in ('call memo', '法說會') or MEETING_RE.search(header):
         return '法說／訪談'
-    if original == '週報':
+    if original == '週報' or re.search(r'(?i)(週報|weekly report|weekly update)', header):
         return '週報'
     if original in ('小作文', '漲停強勢'):
         return '市場情報'
-    if original == '產業訊息':
-        text = ' '.join(str(row.get(k) or '') for k in ('source','story','full_text','full_text_2','full_text_3'))[:1500]
-        if re.search(r'(?i)(call memo|法說會|電話會議|法說摘要|訪談紀要)', text):
-            return '法說／訪談'
-        if re.search(r'(?i)(週報|weekly report|weekly update)', text):
-            return '週報'
-        if re.search(r'(?i)(產業報告|產業研究|sector report|industry report)', text):
-            return '產業研究'
-        if re.search(r'(?i)(個股報告|公司研究|equity research|company report|券商評等)', text):
-            return '個股研究'
     return '市場情報'
 
+
+def api_route(row):
+    """Conservative routing: clear single-company meeting notes need no paid model."""
+    category = row.get('category') or classify(row)
+    if category == '早報':
+        return 'required'
+    if category not in ('法說／訪談','產業研究'):
+        return 'none'
+    raw = '\n'.join(str(row.get(k) or '') for k in ('full_text','full_text_2','full_text_3'))
+    if not raw.strip():
+        return 'none'
+    # Long/garbled table-heavy content requires structured extraction.
+    noisy = len(raw) > 16000 or raw.count('\ufffd') > 3 or bool(re.search(r'(?m)^.{0,20}(?:Q[1-4]|20\d{2}).*(?:EPS|毛利率).{0,40}(?:Q[1-4]|20\d{2})',raw,re.I))
+    return 'required' if noisy else 'python'
 
 def original_date(row):
     # The Sheet date is often the import date. Use a publication date only if
@@ -193,6 +208,7 @@ def transform(values, brokers, today):
         row['id'] = 'line-' + digest[:20]
         row['original_type'] = row['type']
         row['category'] = classify(row)
+        row['api_route'] = api_route(row)
         row['date'], row['date_source'] = original_date(row)
         row['source_kind'] = 'line'
         row['market'] = 'US' if is_us_research(row) else 'TW'
@@ -493,6 +509,7 @@ def main():
                 rid = str(record.get('id') or f'{filename}:{offset}')
                 metadata = {'id':rid, 'file':filename, 'date':str(record.get('date') or '')[:10],
                             'category':record.get('category','市場情報'),
+                            'api_route':record.get('api_route','none'),
                             'company':record.get('company') or record.get('name') or '',
                             'title':(record.get('ai_research') or {}).get('title') or record.get('display_title') or record.get('title') or '',
                             'is_multi_company':bool(record.get('is_multi_company')) or ';' in str(record.get('ticker','')),
