@@ -9,7 +9,7 @@ on:
         options: [check, sync, ai, failed, rerun_three, retry_mediatek, yingbang_only]
         default: check
       max_reports:
-        description: 'ai模式本次最多API文章數（1–200）；只處理未嘗試文章'
+        description: 'ai模式本次最多API文章數（1–250）；只處理未嘗試文章'
         required: true
         default: '10'
         type: string
