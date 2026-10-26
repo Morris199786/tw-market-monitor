@@ -382,6 +382,9 @@ def main():
     brokers = load_all_brokers()
     data, stats = transform(values, brokers, today)
     print(json.dumps(stats, ensure_ascii=False))
+    from collections import Counter
+    print('LINE_CATEGORY_COUNTS '+json.dumps(dict(Counter(r['category'] for r in data['items'])),ensure_ascii=False))
+    print('LINE_API_ROUTE_COUNTS '+json.dumps(dict(Counter(r['api_route'] for r in data['items'])),ensure_ascii=False))
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
