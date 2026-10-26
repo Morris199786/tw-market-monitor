@@ -1,0 +1,49 @@
+name: Research AI batch (manual)
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: '本次解析篇數 (1-100)'
+        required: true
+        default: '10'
+        type: string
+      category:
+        description: '解析類型'
+        required: true
+        default: morning
+        type: choice
+        options: [morning, meeting, industry, all]
+      mode:
+        description: '待解析或手動重試'
+        required: true
+        default: pending
+        type: choice
+        options: [pending, failed]
+permissions:
+  contents: write
+concurrency:
+  group: research-ai-batch
+  cancel-in-progress: false
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Parse selected research articles
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BATCH_LIMIT: ${{ inputs.limit }}
+          BATCH_CATEGORY: ${{ inputs.category }}
+          BATCH_MODE: ${{ inputs.mode }}
+        run: |
+          python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category "$BATCH_CATEGORY" --mode "$BATCH_MODE"
+      - name: Commit results
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add data/research_ai_cache.json data/research_ai_batch_history.json
+          git diff --cached --quiet || (git commit -m 'Update research AI batch audit' && git push)
