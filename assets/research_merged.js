@@ -56,6 +56,11 @@ style.textContent = `
 #rmReader .rm-info{color:#64748b;font-size:13px;margin-bottom:10px}
 #rmReader .rm-section{background:#fff;border:1px solid #e3e8f0;border-radius:13px;padding:15px;margin:12px 0;overflow-wrap:anywhere}
 #rmReader h3{font-size:16px;margin:0 0 10px;color:#1d3554}
+#rmReader .rm-table-scroll{overflow-x:auto;max-width:100%}
+#rmReader table{border-collapse:collapse;width:100%;font-size:13px}
+#rmReader th,#rmReader td{padding:10px;border-bottom:1px solid #e1e6ee;text-align:left;vertical-align:top;min-width:95px}
+#rmReader .rm-number{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+#rmReader td details{min-width:100px;max-width:260px}
 #rmReader .rm-original-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.8}
 #rmReader .rm-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 #rmReader table{border-collapse:collapse;width:100%;font-size:14px}
@@ -149,6 +154,49 @@ function readableText(value,r) {
     return line.replace(/,/g,(c,i,t)=>/\d/.test(t[i-1]||'')&&/\d/.test(t[i+1]||'')?',':'，').replace(/;/g,'；').replace(/:/g,'：');
   }).join('\n');
   return text.replace(/\n{3,}/g,'\n\n').trim();
+}
+// Reflow PDF physical line breaks only; keep headings, lists and real paragraphs.
+function readableProse(value,r) {
+  const raw=String(value||'').replace(/\r\n?/g,'\n');
+  const lines=raw.split('\n');
+  const wrapped=lines.filter(x=>x.trim().length>=28).length>=3;
+  if(!wrapped)return readableText(raw,r);
+  const out=[];
+  const heading=x=>/^(?:[\-•●📌📍]|\d+[.、]\s|Q&A|重點摘要|營運成果|營運展望|投資建議|評論及分析|重要訊息|【|\|)/.test(x)
+    || /^[\u3400-\u9fffA-Za-z\-]+\s*[（(]\d{4}/.test(x)
+    || /^(?:\d{4}\s*[\u3400-\u9fff]|[1-4]Q\d{2}(?:\s+[1-4]Q\d{2}){2})/.test(x);
+  for(const line of lines){
+    const t=line.trim(),prev=out[out.length-1]||'';
+    if(t&&prev&&prev.length>=28&&!/[。！？：:]$/.test(prev)&&!heading(t)&&!heading(prev)
+      && /[\u3400-\u9fff]/.test(prev)&& !/\t|\s{3,}/.test(line)){
+      const sep=/[A-Za-z0-9]$/.test(prev)&&/^[A-Za-z0-9]/.test(t)?' ':'';
+      out[out.length-1]=prev+sep+t;
+    }else out.push(t);
+  }
+  return readableText(out.join('\n'),r);
+}
+let metricsPromise;
+function loadReportMetrics(){
+  return metricsPromise ||= fetchJSON('./data/research_metrics.json').then(x=>x.items||[]).catch(()=>{metricsPromise=null;return []});
+}
+function metricTables(items,r){
+  const verified=items.filter(x=>x.research_id===r.id&&['editorially_verified','source_verified'].includes(x.review_status));
+  const groups=new Map();
+  for(const fact of verified){
+    const key=JSON.stringify([fact.company,fact.ticker,fact.provider||r.source]);
+    if(!groups.has(key))groups.set(key,[]);groups.get(key).push(fact);
+  }
+  const status={actual:'實績',estimate:'券商預估',guidance:'公司計畫／展望',unknown:'性質待確認'};
+  const prefix={approximate:'約 ',at_least:'至少 ',at_most:'不高於 '};
+  return [...groups].map(([key,facts])=>{
+    const [name,ticker,provider]=JSON.parse(key);
+    const body=facts.map(x=>{
+      const val=String(x.value??'');
+      const qualified=/約|略低|超過|多|至少|不高於|低於/.test(val)?val:(prefix[x.qualifier]||'')+val;
+      return `<tr><th>${esc(x.metric)}</th><td>${esc(x.period)}</td><td class="rm-number">${esc(qualified)} ${esc(x.unit||'')}</td><td>${esc(status[x.actual_or_estimate]||'性質待確認')}</td><td><details><summary>原文依據</summary>${highlight(x.evidence||'')}</details></td></tr>`;
+    }).join('');
+    return section(`${name} ${ticker}｜財務與營運數據`,`<p>${esc(r.date)} · ${esc(provider)} · 已核對來源文字</p><div class="rm-table-scroll" tabindex="0" aria-label="財務數據，可左右捲動"><table><thead><tr><th>指標</th><th>期間／口徑</th><th>數值</th><th>性質</th><th>依據</th></tr></thead><tbody>${body}</tbody></table></div>`);
+  }).join('');
 }
 function companyList(r) {
   const codes=stockCodes(r.ticker);
@@ -299,12 +347,12 @@ function rawTexts(r) {
   const list=[d.full_text ?? r.full_text,d.full_text_2 ?? r.full_text_2,d.full_text_3 ?? r.full_text_3].map(clean).filter(Boolean);
   return [...new Set(list)];
 }
-function detail(r,m) {
+function detail(r,m,metrics=[]) {
   const info=`<div class="rm-info">${esc(r.date||m.date)} · ${esc(r.source||m.source)} · ${esc(r.original_type||m.original_type||'')}</div>`;
   const raw=rawTexts(r);
   const ai=r.ai_research||{};
   const aiIntro=ai && Object.keys(ai).length ? section('AI 解析重點',`<div class="rm-original-text">${highlight((Array.isArray(ai.summary)?ai.summary.join('\n'):ai.summary)||'')}</div>`) : '';
-  if(raw.length) return info+aiIntro+raw.map((t,i)=>section(raw.length>1?`原文 ${i+1}`:'研究原文',`<div class="rm-original-text">${highlight(readableText(t,r))}</div>`)).join('');
+  if(raw.length) return info+metricTables(metrics,r)+aiIntro+raw.map((t,i)=>section(raw.length>1?`原文 ${i+1}`:'研究原文',`<div class="rm-original-text">${highlight(readableProse(t,r))}</div>`)).join('');
   const d=r.display||{};
   const fields=[['story','研究重點'],['summary','摘要'],['revenue','營收／成長率'],['eps','EPS／獲利'],['inventory','庫存／出貨'],['utilization','產能利用率'],['guidance','未來展望'],['trend','產業趨勢'],['rating_target','評等／目標價'],['numbers','關鍵數字']];
   let result=info;
@@ -312,10 +360,11 @@ function detail(r,m) {
   return result===info ? info+section('研究內容','尚無可顯示的資料') : result;
 }
 async function openReader(m) {
+  reader.dataset.reportId=String(m.id);
   const token=++readerSerial;scrollY=window.scrollY;reader.hidden=false;document.body.classList.add('rm-reader-open');reader.scrollTop=0;
   reader.querySelector('#rmReaderTitle').innerHTML=highlight(heading(m));
   const body=reader.querySelector('#rmReaderContent');body.textContent='載入研究內容中…';
-  try {const items=await shard(m.file);if(token!==readerSerial||reader.hidden)return;const r=items.find(x=>String(x.id)===String(m.id));if(!r)throw Error('找不到這篇研究');body.innerHTML=detail(r,m)}
+  try {const [items,metrics]=await Promise.all([shard(m.file),loadReportMetrics()]);if(token!==readerSerial||reader.hidden)return;const r=items.find(x=>String(x.id)===String(m.id));if(!r)throw Error('找不到這篇研究');body.innerHTML=detail(r,m,metrics)}
   catch(e){if(token===readerSerial)body.textContent='讀取失敗：'+e.message}
 }
 function closeReader(){++readerSerial;reader.hidden=true;document.body.classList.remove('rm-reader-open');window.scrollTo(0,scrollY)}

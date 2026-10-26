@@ -193,22 +193,8 @@
     }
   }
   async function enhanceMerged(){
-    // Formal Excel database: add saved AI financial tables to its existing full-screen reader.
-    const reader=document.getElementById('rmReader');
-    const content=reader?.querySelector('#rmReaderContent');
-    if(!content || !content.children.length || content.dataset.ruV4==='1')return;
-    const title=reader.querySelector('#rmReaderTitle')?.textContent.trim()||'';
-    if(!title)return;
-    const data=await loadCache();if(!data)return;
-    const candidates=[...data.plan.values()].filter(x=>{
-      const name=String(x.company||'').trim();
-      return name && (title.includes(name)||name.includes(title)) && (x.status==='cached'||data.cache[x.id]?.status==='success');
-    }).map(x=>({x,e:resolve(data,x.id)})).filter(z=>z.e);
-    if(candidates.length!==1){if(candidates.length>1)log('reader match ambiguous; no AI data injected',title);return;}
-    const {x,e}=candidates[0],ai=e.result;
-    const fin=financialTable(ai);
-    if(fin){const wrap=document.createElement('div');wrap.innerHTML=fin;content.prepend(wrap);log('formal reader financials',x.company);}
-    content.dataset.ruV4='1';
+    // Exact report-ID tables are rendered by research_merged.js from verified metrics.
+    // Never attach another report's cached table through a company-name substring.
   }
   function tidyMergedCards(){
     for(const el of document.querySelectorAll('#researchMergedPanel .rm-card:not([data-ru-v4])')){
