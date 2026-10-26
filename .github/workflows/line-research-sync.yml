@@ -6,7 +6,7 @@ on:
         description: 'check=只檢查；sync=同步B欄法說/訪談；ai=同步、解析需要API的文章、更新網頁'
         required: true
         type: choice
-        options: [check, sync, ai, failed, rerun_three, retry_mediatek]
+        options: [check, sync, ai, failed, rerun_three, retry_mediatek, yingbang_only]
         default: check
       max_reports:
         description: 'ai模式本次最多API文章數（1–200）；只處理未嘗試文章'
@@ -65,12 +65,14 @@ jobs:
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/sync_line_research.py
       - name: Show API candidates without charges
-        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
+        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' || inputs.run_mode == 'yingbang_only' }}
         env:
           BATCH_LIMIT: ${{ inputs.max_reports }}
           RESEARCH_AI_MODEL: gpt-5.6-luna
         run: |
-          if [ "${{ inputs.run_mode }}" = "retry_mediatek" ]; then
+          if [ "${{ inputs.run_mode }}" = "yingbang_only" ]; then
+            python scripts/research_ai_batch.py --limit 1 --category meeting --mode pending --article-id line-abf8ae3b2e0a9eae6703 --dry-run
+          elif [ "${{ inputs.run_mode }}" = "retry_mediatek" ]; then
             python scripts/research_ai_batch.py --limit 1 --category all --mode retry_mediatek --dry-run
           elif [ "${{ inputs.run_mode }}" = "rerun_three" ]; then
             python scripts/research_ai_batch.py --limit 3 --category all --mode rerun_three --dry-run
@@ -80,14 +82,16 @@ jobs:
             python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending --dry-run
           fi
       - name: Analyze selected unprocessed articles
-        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
+        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' || inputs.run_mode == 'yingbang_only' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           BATCH_LIMIT: ${{ inputs.max_reports }}
           RESEARCH_AI_REMOTE_CHECKPOINT: '1'
           RESEARCH_AI_MODEL: gpt-5.6-luna
         run: |
-          if [ "${{ inputs.run_mode }}" = "retry_mediatek" ]; then
+          if [ "${{ inputs.run_mode }}" = "yingbang_only" ]; then
+            python scripts/research_ai_batch.py --limit 1 --category meeting --mode pending --article-id line-abf8ae3b2e0a9eae6703
+          elif [ "${{ inputs.run_mode }}" = "retry_mediatek" ]; then
             python scripts/research_ai_batch.py --limit 1 --category all --mode retry_mediatek
           elif [ "${{ inputs.run_mode }}" = "rerun_three" ]; then
             python scripts/research_ai_batch.py --limit 3 --category all --mode rerun_three
@@ -97,7 +101,7 @@ jobs:
             python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending
           fi
       - name: Republish AI results into research shards
-        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
+        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' || inputs.run_mode == 'yingbang_only' }}
         run: python scripts/sync_line_research.py
       - name: Export research data and AI-direct display without API
         if: ${{ inputs.run_mode != 'check' }}
