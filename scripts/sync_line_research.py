@@ -28,12 +28,12 @@ COLUMNS = ('date','type','source','industry','company','ticker','period','story'
            'source_row','full_text','full_text_2','full_text_3')
 BROKER_TYPES = {'券商評等', '個股報告', '產業報告'}
 
-# Publication boundary: only spreadsheet column B (type) entries explicitly
-# marked 法說／訪談 may be published as LINE research.
+# Only publish the two actual B-column types verified in the Sheet audit:
+# call memo (204) and 法說會 (191). Other Sheet categories are never imported.
 def allowed_sheet_type(value):
-    normalized = unicodedata.normalize('NFKC', str(value or '')).strip()
-    normalized = re.sub(r'\s+', '', normalized).replace('／', '/')
-    return normalized == '法說/訪談'
+    normalized = unicodedata.normalize('NFKC', str(value or '')).strip().casefold()
+    normalized = re.sub(r'\s+', ' ', normalized)
+    return normalized in {'call memo', '法說會'}
 
 
 
@@ -197,10 +197,21 @@ def clean_display(value):
 
 
 def is_us_research(row):
-    code = str(row.get('ticker') or '').strip().upper()
-    if re.search(r'\.(?:US|NYSE|NASDAQ)$', code):
+    """Classify US-specific research, not Taiwan notes merely mentioning US stocks.
+
+    Explicit exchange suffixes and a standalone US ticker take priority.
+    Preserve the original ticker; do not invent or overwrite symbols.
+    """
+    code = unicodedata.normalize('NFKC', str(row.get('ticker') or '')).strip().upper()
+    if re.search(r'(?<![A-Z])(?:NASDAQ|NYSE|AMEX|NYSEARCA)\s*[:：]\s*[A-Z]{1,5}(?:[.-][A-Z])?(?![A-Z])', code):
         return True
-    if re.fullmatch(r'[A-Z]{1,5}', code) and code not in ('',):
+    if re.fullmatch(r'[A-Z]{1,5}(?:[.-][A-Z])?\.(?:US|NYSE|NASDAQ|AMEX)', code):
+        return True
+    if re.fullmatch(r'[A-Z]{1,5}(?:[.-][A-Z])?', code):
+        return True
+    # Some meeting notes omit the ticker but explicitly label their market.
+    marker = ' '.join(str(row.get(k) or '') for k in ('industry','company','period','source'))
+    if re.search(r'(?i)(?:^|[\s（(【\[/])(?:美股|美國股票|US\s*(?:equity|stock)|NASDAQ|NYSE)(?:$|[\s）)】\]/:：])', marker):
         return True
     return False
 
@@ -240,7 +251,7 @@ def transform(values, brokers, today):
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
     if not items:
-        raise ValueError('No rows with column B = 法說/訪談; refusing to replace published LINE data. Check the exact Sheet B-column values.')
+        raise ValueError('No rows with column B = call memo or 法說會; refusing to replace published LINE data. Check Sheet B-column values.')
     items.sort(key=lambda r:(r['date'],r['sheet_row_number']),reverse=True)
     return {'count':len(items),'items':items}, {'input_rows':len(values)-1,
         'kept':len(items),'excluded_other_B_types':excluded_type,'invalid_dates':invalid,'identical_rows_removed':identical,
