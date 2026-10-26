@@ -28,6 +28,14 @@ COLUMNS = ('date','type','source','industry','company','ticker','period','story'
            'source_row','full_text','full_text_2','full_text_3')
 BROKER_TYPES = {'券商評等', '個股報告', '產業報告'}
 
+# Publication boundary: only spreadsheet column B (type) entries explicitly
+# marked 法說／訪談 may be published as LINE research.
+def allowed_sheet_type(value):
+    normalized = unicodedata.normalize('NFKC', str(value or '')).strip()
+    normalized = re.sub(r'\s+', '', normalized).replace('／', '/')
+    return normalized == '法說/訪談'
+
+
 
 def normalize(value):
     return re.sub(r'[^\w\u4e00-\u9fff]', '', unicodedata.normalize('NFKC', str(value or '')).casefold())
@@ -136,7 +144,7 @@ def api_route(row):
     """Conservative routing: clear single-company meeting notes need no paid model."""
     category = row.get('category') or classify(row)
     if category == '早報':
-        return 'required'
+        return 'required' if any(str(row.get(k) or '').strip() for k in ('full_text','full_text_2','full_text_3','story')) else 'none'
     if category not in ('法說／訪談','產業研究'):
         return 'none'
     raw = '\n'.join(str(row.get(k) or '') for k in ('full_text','full_text_2','full_text_3'))
@@ -189,10 +197,13 @@ def transform(values, brokers, today):
     if not values or not values[0]:
         raise ValueError('Empty sheet; refuse to overwrite existing data')
     items, seen = [], set()
-    invalid = identical = 0
+    invalid = identical = excluded_type = 0
     for sheet_row_number, raw in enumerate(values[1:], 2):
         cells = (list(raw) + [''] * len(COLUMNS))[:len(COLUMNS)]
         row = dict(zip(COLUMNS,cells))
+        if not allowed_sheet_type(row['type']):
+            excluded_type += 1
+            continue
         d = parse_date(row['date'])
         if d is None:
             invalid += 1
@@ -216,9 +227,11 @@ def transform(values, brokers, today):
         row['possible_broker_duplicates'] = broker_candidates(row, brokers)
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
+    if not items:
+        raise ValueError('No rows with column B = 法說/訪談; refusing to replace published LINE data. Check the exact Sheet B-column values.')
     items.sort(key=lambda r:(r['date'],r['sheet_row_number']),reverse=True)
     return {'count':len(items),'items':items}, {'input_rows':len(values)-1,
-        'kept':len(items),'invalid_dates':invalid,'identical_rows_removed':identical,
+        'kept':len(items),'excluded_other_B_types':excluded_type,'invalid_dates':invalid,'identical_rows_removed':identical,
         'broker_overlap_candidates':sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 

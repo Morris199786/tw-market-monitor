@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Manual, bounded research AI batch. Never retries an attempted source implicitly."""
-import argparse, datetime, hashlib, json, os, pathlib, re, sys, urllib.request
+import argparse, datetime, hashlib, json, os, pathlib, re, sys, urllib.request, subprocess
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 CACHE=ROOT/'data/research_ai_cache.json'
 AUDIT=ROOT/'data/research_ai_batch_history.json'
@@ -12,8 +12,25 @@ def write(path,data):
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
+def checkpoint(cache):
+    """Persist a durable attempt ledger to GitHub before each paid request."""
+    write(CACHE,cache)
+    if os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
+        return
+    def git(*args):
+        return subprocess.run(['git',*args],cwd=ROOT,capture_output=True,text=True)
+    result=git('add','--','data/research_ai_cache.json')
+    if result.returncode: raise RuntimeError('Cannot stage API ledger; refusing API call')
+    diff=git('diff','--cached','--quiet')
+    if diff.returncode==0: return
+    if diff.returncode!=1: raise RuntimeError('Cannot inspect ledger')
+    if git('commit','-m','Checkpoint LINE research AI attempt').returncode:
+        raise RuntimeError('Cannot commit API ledger; refusing API call')
+    if git('push','origin','HEAD:main').returncode:
+        raise RuntimeError('Cannot push API ledger; refusing further API calls')
+
 def content(row):
-    return '\n\n'.join(str(row.get(k) or '') for k in ('full_text','full_text_2','full_text_3') if row.get(k))
+    return '\n\n'.join(str(row.get(k) or '') for k in ('story','revenue','eps','inventory','utilization','guidance','trend','numbers','full_text','full_text_2','full_text_3') if row.get(k))
 
 def route(row):
     return row.get('api_route') or ('required' if row.get('category')=='早報' else 'none')
@@ -49,7 +66,7 @@ def audit(result,original):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--limit',type=int,default=10);p.add_argument('--category',choices=['all','morning','meeting','industry'],default='all');p.add_argument('--mode',choices=['pending','failed'],default='pending');p.add_argument('--model',default=os.getenv('RESEARCH_AI_MODEL','gpt-4o-mini'));p.add_argument('--dry-run',action='store_true',help='List candidate counts without API calls or file writes');a=p.parse_args()
-    if not 1<=a.limit<=100:sys.exit('limit must be 1..100')
+    if not 1<=a.limit<=200:sys.exit('limit must be 1..200')
     cache=load(CACHE,{}); history=load(AUDIT,[])
     manifest=load(ROOT/'data/research_manifest.json',{})
     if not manifest.get('shards'):sys.exit('research_manifest.json missing or empty; sync first')
@@ -59,6 +76,8 @@ def main():
         for row in load(file,{}).get('items',[]):
             stats['shard_rows']+=1
             if row.get('source_kind')!='line':continue
+            from sync_line_research import allowed_sheet_type
+            if not allowed_sheet_type(row.get('original_type') or row.get('type')):continue
             stats['line_rows']+=1
             cat0=row.get('category') or '(missing)'
             stats['by_category'][cat0]=stats['by_category'].get(cat0,0)+1
@@ -97,7 +116,7 @@ def main():
         rid=row['id']
         # Record attempted before request: even API errors must not auto-repeat.
         cache[rid]={'status':'attempted','fingerprint':fp,'category':row.get('category'),'model':a.model,'at':run['at']}
-        write(CACHE,cache)
+        checkpoint(cache)
         try:
             result,usage=parse(raw,a.model)
             check=audit(result,raw)
@@ -107,7 +126,7 @@ def main():
         except Exception as exc:
             cache[rid].update({'status':'failed','error':str(exc)[:300]})
             run['results'].append({'id':rid,'status':'failed','error':str(exc)[:300]})
-        write(CACHE,cache)
+        checkpoint(cache)
         print(f"{rid}: {cache[rid]['status']}")
     history.append(run);write(AUDIT,history)
     print(json.dumps({'processed':len(selected),'status_counts':{s:sum(r['status']==s for r in run['results']) for s in ('success','needs_review','failed')}},ensure_ascii=False))
