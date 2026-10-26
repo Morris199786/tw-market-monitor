@@ -33,6 +33,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Preview candidates (no API)
+        env:
+          BATCH_LIMIT: ${{ inputs.limit }}
+          BATCH_CATEGORY: ${{ inputs.category }}
+          BATCH_MODE: ${{ inputs.mode }}
+        run: |
+          python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category "$BATCH_CATEGORY" --mode "$BATCH_MODE" --dry-run
       - name: Parse selected research articles
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -46,26 +53,4 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add data/research_ai_cache.json data/research_ai_batch_history.json
-          if git diff --cached --quiet; then
-            echo 'No audit changes to commit.'
-            exit 0
-          fi
-          git commit -m 'Update research AI batch audit'
-          # Another workflow may have updated main during parsing.
-          # Replay our audit commit on the latest main, then push.
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            if ! git rebase origin/main; then
-              echo 'Rebase conflict: stop instead of overwriting remote data.'
-              git rebase --abort || true
-              exit 1
-            fi
-            if git push origin HEAD:main; then
-              echo 'Audit committed successfully.'
-              exit 0
-            fi
-            echo "Push race on attempt $attempt; retrying..."
-            sleep 3
-          done
-          echo 'Push failed after 5 attempts.' >&2
-          exit 1
+          git diff --cached --quiet || (git commit -m 'Update research AI batch audit' && git push)
