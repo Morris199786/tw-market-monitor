@@ -232,11 +232,43 @@ def export(root=ROOT):
     return {'schema': 'research-metrics-v1', 'count': len(items), 'stats': stats, 'items': items}
 
 
+
+def export_ai_direct(root=ROOT):
+    """Publish model output verbatim as data. No Python content or evidence gating."""
+    manifest = read(root / 'data/research_manifest.json', {})
+    cache = read(root / 'data/research_ai_cache.json', {})
+    out = {}
+    trial_suffix = '::gpt-5.6-luna-trial-v1'
+    for shard in manifest.get('shards', []):
+        path = root / 'data/research_shards' / shard.get('file', '')
+        if not path.is_file():
+            continue
+        for row in read(path, {}).get('items', []):
+            rid = row.get('id')
+            if not rid or not is_meeting(row):
+                continue
+            # A paid 5.6 trial takes priority over older cached extraction.
+            candidates = [cache.get(rid + trial_suffix), cache.get(rid)]
+            for rec in candidates:
+                if not isinstance(rec, dict) or not isinstance(rec.get('result'), dict):
+                    continue
+                result = rec['result']
+                # New model's free-form blocks, or existing model's native result.
+                if isinstance(result.get('blocks'), list) or isinstance(result.get('companies'), list):
+                    out[rid] = {'model':rec.get('model'), 'content':result}
+                    break
+    dest = root / 'data/research_ai_render.json'
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps({'schema':'research-ai-direct-v1','items':out},ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+    print('AI_DIRECT_PUBLISHED',len(out))
+    return out
+
 def main():
     data = export()
     output = ROOT / 'data/research_metrics.json'
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
+    export_ai_direct(ROOT)
     print('Research metrics:', json.dumps(data['stats'], ensure_ascii=False))
     print(f'Exported {data["count"]} research metrics to {output}')
 

@@ -119,23 +119,13 @@ def route(row):
     return row.get('api_route') or 'none'
 
 
-SYSTEM_PROMPT = '''你是台灣上市櫃法說會及 call memo 的研究資料整理員。你會收到 Excel A～W 各欄位，欄位名稱和原文均為證據。
-任務是為長期可視覺化追蹤建立完整的研究資料，而不只是摘要。
-請完整掃描所有欄位：I、J、P 等已整理數字非常重要，U～W 原文用來補充與核對。不得只讀原文，也不得因原文缺失就丟棄其他欄位的資料。
-僅擷取來源確實支持的事實；絕對不要補造數字、日期、券商或公司。
-以繁體中文輸出 JSON object，包含 title、summary (字串陣列)、companies (陣列)。
-每家公司可有 name、ticker、key_points、financials、guidance、operating_metrics、valuations、risks、unstructured_notes。
-financials、guidance、operating_metrics、valuations 均為自由長度陣列，不要求任何欄位必填。每個數字物件盡量提供：
-metric(指標名稱不限)、period(例 3Q26、1H26、2027E)、value(原文數字字串)、unit、actual_or_estimate(actual/estimate/guidance/unknown)、source_type(company/broker/unknown)、provider(來源機構若可辨)、evidence(來源中的原文連續短句)、source_column(例如 I、J、P、U)、qualifier(exact/range/at_least/at_most/approximate/qualitative)。
-有區間則保留原區間；年度、季度、累計、半年不可混用；公司指引、券商預估、實績必須分開；多家公司、多券商分別標註。
-強制期間：前三季/1~9月=9MYY、上半年/1~6月=1HYY，絕不能寫成Q3/Q2單季。
-來源為券商財報前瞻且句子含「我們預估」「我們預期」「我們認為」時，一律是券商 estimate，不得當成公司 actual。公司已公布的歷史營收/財報實績才能標 actual。
-「約」「接近」「多元」「超過」「略低」不得標 exact，須分別保留 approximate/at_least/at_most。
-evidence 必須從某個 Excel 欄位原封不動複製一段連續文字，不得自行改寫或拼接；source_column 必須是實際包含該 evidence 的欄位。
-對無法確認期間、公司歸屬或數值性質的資訊，保留在 unstructured_notes，絕不可硬猜。
-目標價或評等只有原文明確寫出且來源歸屬清楚時才填入 valuations；call memo 不要求有目標價。
-不要求完整三表；任何已確認的現金流、負債比、CAPEX、訂單、稼動率、產品占比等都應保留。
-如 Excel 不同欄位有衝突，分別保留並於 notes 說明，不要自行裁決。'''
+SYSTEM_PROMPT = '''你是專業的台灣產業與個股研究助理。請完整閱讀提供的 Excel A-W 資訊，像你直接閱讀使用者貼上的研究報告一樣，自主判斷哪些內容值得整理。
+以繁體中文忠實整理；不可杜撰、不可將預估說成已實現、不可任意換算或補造數字。不要固定章節、固定欄位、固定表格，也不要為了填滿模板而湊內容。
+只輸出 JSON 物件：
+{"title":"依文章決定的標題","blocks":[{"type":"heading|paragraph|bullets|table|quote","text":"文字（heading/paragraph/quote 用）","items":["項目"],"columns":["欄名"],"rows":[["儲存格"]]}]}
+blocks 按文章脈絡自由排列，使用需要的 type 和欄位即可。適合比較或多項數字才用 table，適合敘述就用 paragraph，重要訊息可用 bullets。不得強制每篇有表格。表格欄位數由內容決定，不固定指標/期間/性質。
+不要輸出與原文無關的空泛結論；保留具體數字、期間、單位、來源歸屬、假設與限制；同一文章內容不要重複。
+'''
 
 
 def parse(text, model):
@@ -168,47 +158,14 @@ def parse(text, model):
 
 
 def audit(result, row):
-    issues = []
-    count = 0
-    if not isinstance(result, dict) or not isinstance(result.get('companies'), list):
-        return {'status':'needs_review','financial_count':0,'issues':['companies 格式不正確']}
-    fields = source_fields(row)
-    for company in result['companies']:
-        if not isinstance(company, dict):
-            issues.append('公司格式不正確')
-            continue
-        for section in ('financials', 'guidance', 'operating_metrics', 'valuations'):
-            facts = company.get(section) or []
-            if not isinstance(facts, list):
-                issues.append(f'{section} 格式不正確')
-                continue
-            for fact in facts:
-                count += 1
-                if not isinstance(fact, dict):
-                    issues.append(f'{section} 項目非物件')
-                    continue
-                evidence = str(fact.get('evidence') or '').strip()
-                col = str(fact.get('source_column') or '').strip().upper()
-                matched = [v for k, v in fields.items() if k.startswith(col + ' ')] if col else []
-                if not evidence or not any(evidence in v for v in fields.values()):
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 證據不在 Excel A-W")
-                elif col and (not matched or not any(evidence in v for v in matched)):
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 來源欄位不吻合")
-                if not str(fact.get('metric') or '').strip():
-                    issues.append('指標名稱缺失')
-                if not str(fact.get('value') or '').strip() and section != 'guidance':
-                    issues.append('數值缺失')
-                # Missing periods or qualitative guidance should be reviewed, not rejected.
-                if not fact.get('period'):
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 期間不明")
-                if re.search(r'前三季|前3季|1\s*[~～至-]\s*9\s*月', evidence) and re.search(r'^[34]Q', str(fact.get('period') or ''), re.I):
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 累計期間誤作單季")
-                if str(fact.get('qualifier') or '') == 'exact' and re.search(r'約|接近|多元|多億|超過|略低|左右', evidence):
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 約數誤標 exact")
-                if str(fact.get('actual_or_estimate') or '') == 'actual' and re.search(r'我們預估|我們預期|預估|預期', evidence) and str(fact.get('source_type') or '') == 'broker':
-                    issues.append(f"{company.get('name','?')} {fact.get('metric','?')}: 券商預估誤標實績")
-    return {'status':'needs_review' if issues else 'passed',
-            'financial_count':count,'issues':issues[:60]}
+    """Only verify the JSON can be displayed; editorial judgment belongs to AI."""
+    if not isinstance(result, dict) or not isinstance(result.get('blocks'), list):
+        return {'status':'needs_review','issues':['AI 輸出缺少 blocks 陣列']}
+    allowed = {'heading','paragraph','bullets','table','quote'}
+    for block in result['blocks']:
+        if not isinstance(block, dict) or block.get('type') not in allowed:
+            return {'status':'needs_review','issues':['AI 區塊格式無法顯示']}
+    return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
 
 
 def main():
