@@ -1,4 +1,5 @@
 name: LINE research sync and incremental AI
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,28 +9,35 @@ on:
         type: choice
         options: [check, sync, ai, rerun_three]
         default: check
+
       max_reports:
         description: 'ai模式本次最多API文章數（1–200）；只處理未嘗試文章'
         required: true
         default: '10'
         type: string
+
 permissions:
   contents: write
   id-token: write
+
 concurrency:
   group: research-report-processing
   cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 330
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+
       - name: Refresh ledger
         run: git pull --ff-only origin main
+
       - uses: google-github-actions/auth@v3
         id: auth
         with:
@@ -37,11 +45,13 @@ jobs:
           service_account: id-tw-market-drive-reader@project-0c762295-9cd6-4a78-a63.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/spreadsheets.readonly
+
       - name: Dependencies and git identity
         run: |
           python -m pip install requests
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
       - name: Read consistent Sheet snapshot
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -54,16 +64,20 @@ jobs:
           from sync_line_research import fetch_sheet
           p=Path(os.environ['RUNNER_TEMP'])/'research_sheet.json'
           p.write_text(json.dumps(fetch_sheet(os.environ['ACCESS_TOKEN']),ensure_ascii=False),encoding='utf-8')
-          with open(os.environ['GITHUB_ENV'],'a') as f: f.write(f'LINE_SYNC_FIXTURE={p}\n')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write(f'LINE_SYNC_FIXTURE={p}\n')
           PYCODE
+
       - name: Check B-column selection and API routing without publishing
         if: ${{ inputs.run_mode == 'check' }}
         env:
           LINE_SYNC_DRY_RUN: '1'
         run: python scripts/sync_line_research.py
+
       - name: Publish B-column allowed research and API routing
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/sync_line_research.py
+
       - name: Show API candidates without charges
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'rerun_three' }}
         env:
@@ -75,6 +89,7 @@ jobs:
           else
             python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending --dry-run
           fi
+
       - name: Analyze selected unprocessed articles
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'rerun_three' }}
         env:
@@ -88,23 +103,27 @@ jobs:
           else
             python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending
           fi
+
       - name: Republish AI results into research shards
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'rerun_three' }}
         run: python scripts/sync_line_research.py
-      - name: Extract research financials without API
-        if: ${{ inputs.run_mode != 'check' }}
-        run: python scripts/extract_research_financials.py
+
       - name: Export research data and AI-direct display without API
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/export_research_metrics.py
+
       - name: Commit all published data and processing ledger
         if: ${{ inputs.run_mode != 'check' }}
         run: |
           set -euo pipefail
           git add -A -- data/research_shards data/research_search data/research_meta.json data/research_manifest.json data/research_dedup_audit.json data/research_financial_forecasts.json data/research_financial_backfill_report.json data/research_financial_by_id data/research_metrics.json data/research_ai_render.json
+
           for f in data/research_ai_cache.json data/research_ai_batch_history.json; do
-            if [ -f "$f" ]; then git add -- "$f"; fi
+            if [ -f "$f" ]; then
+              git add -- "$f"
+            fi
           done
+
           if ! git diff --cached --quiet; then
             git commit -m 'Sync B-column meeting research and bounded AI analysis'
             git pull --rebase origin main
@@ -112,6 +131,7 @@ jobs:
           else
             echo 'No changes'
           fi
+
       - name: Upload research processing audit
         if: always()
         uses: actions/upload-artifact@v4
