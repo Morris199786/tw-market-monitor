@@ -37,6 +37,18 @@ def allowed_sheet_type(value):
 
 
 
+def inspect_sheet_types(values):
+    """Inspect real column B labels without changing the publication allowlist."""
+    from collections import Counter
+    if not values or not values[0]:
+        raise ValueError('Empty sheet; nothing to inspect')
+    counts = Counter(str(row[1]).strip() if len(row) > 1 and str(row[1]).strip() else '(空白)' for row in values[1:])
+    accepted = {label: count for label, count in counts.items() if allowed_sheet_type(label)}
+    print('LINE_SHEET_B_COLUMN_COUNTS ' + json.dumps(dict(counts.most_common()), ensure_ascii=False), flush=True)
+    print('LINE_SHEET_B_COLUMN_ALLOWED ' + json.dumps({'matching_types': accepted, 'matching_rows': sum(accepted.values()), 'excluded_rows': sum(counts.values())-sum(accepted.values())}, ensure_ascii=False), flush=True)
+    return counts, accepted
+
+
 def normalize(value):
     return re.sub(r'[^\w\u4e00-\u9fff]', '', unicodedata.normalize('NFKC', str(value or '')).casefold())
 
@@ -392,6 +404,10 @@ def main():
         if not token:
             sys.exit('ACCESS_TOKEN missing; no output written')
         values = fetch_sheet(token)
+    _, allowed = inspect_sheet_types(values)
+    if os.getenv('LINE_SYNC_DRY_RUN') == '1' and not allowed:
+        print('CHECK_ONLY_NO_MATCH: B 欄沒有完全符合「法說/訪談」的資料；未發布、未修改檔案、未呼叫 API。請根據上述真實 B 欄分布確認篩選類型。', flush=True)
+        return
     brokers = load_all_brokers()
     data, stats = transform(values, brokers, today)
     print(json.dumps(stats, ensure_ascii=False))
