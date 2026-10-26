@@ -1825,824 +1825,940 @@
     "fingerprint": "6fa4501ad1853108df6003f7268685f450300bc00d3dd4e8a3ad846072a82e49",
     "category": "法說／訪談",
     "model": "gpt-5.6-luna",
-    "at": "2026-10-26T12:13:33.834197+00:00",
+    "at": "2026-10-26T13:36:14.506901+00:00",
     "original_id": "line-989d0430b6a71dde3aac",
-    "schema": "research-batch-v2",
+    "schema": "research-full-article-v2",
     "result": {
-      "title": "杰力2026年2Q26營運成果與4Q26、2027年展望",
+      "title": "杰力2Q26獲利回升但4Q26面臨庫存調節，AI與高階MOSFET成為中長期成長支點",
       "summary": [
-        "2Q26營收4.03億元，季增4%，EPS 3.04元；毛利率33.2%，較前季下降1.3個百分點。",
-        "4Q26受客戶庫存調節、傳統電子淡季及部分市場客戶資金緊張影響，訂單有所下調；公司未做財務預測。",
-        "高壓LDO等產品已進行價格調整，後續將擴大調整比例與涵蓋範圍，功率元件成本轉嫁氛圍改善。",
-        "AI相關營收占比於2026年1~9月約1.4%，3Q26已超過2%，且每季呈高幅度成長。",
-        "PC及NB仍占主要營收，2026年1~9月占比82%；伺服器及車用占比由2025年的0.7%提升至1.45%，但目前貢獻仍有限。",
-        "2027年正面因素包括CPU與GPU雙架構改變，負面因素包括基板價格仍高；公司將由傳統MOSFET逐步轉向高階MOSFET，以維持營收與獲利。"
+        "杰力2Q26營收4.03億元、EPS 3.04元，稅後淨利較前季增加84%，但毛利率降至33.2%。",
+        "4Q26受客戶庫存調節、傳統淡季及部分客戶資金緊張影響，訂單已下調；高壓LDO漲價與成本轉嫁範圍擴大，有助支撐毛利。",
+        "AI相關營收占比由2026年1～9月約1.4%提升至3Q26逾2%，伺服器與車用目前仍屬小個位數，但高階MOSFET布局持續推進。",
+        "2027年公司以維持營收與現狀為目標，CPU/GPU架構變化為正面因素，基板價格高漲則仍是主要逆風。"
       ],
-      "companies": [
+      "blocks": [
         {
-          "name": "杰力",
-          "ticker": "5299.TWO",
-          "key_points": [
-            "高壓LDO已漲價，後續將陸續擴大價格調整比例與涵蓋範圍。",
-            "成熟製程晶圓代工產能利用率約98%，晶圓廠加入許多AI相關產品，2027年產能利用率預期更高。",
-            "伺服器及車用已有營收，但目前貢獻在小個位數，有待突破。",
-            "合作夥伴在車用市場全球市占率超過70%，其模組使用的MOSFET由杰力配合供應。",
-            "公司逐步由傳統MOSFET轉向高階MOSFET，高階產品價格較傳統產品高。"
+          "type": "paragraph",
+          "text": "國泰證期於2026年10月21日發布杰力（5299.TWO）Call Memo，重點聚焦2Q26營運表現與4Q26展望。杰力2025年受到地緣政治與供應鏈不確定性影響，全年營收下滑，但透過持續開發電源開關、電源功率轉換及保護元件，改善產品組合並提升獲利結構。進入2026年後，公司仍處於傳統PC／NB比重偏高的產業結構，短期業績受季節性、客戶庫存與終端需求影響；另一方面，AI、伺服器、車用及高階MOSFET產品逐步形成新的成長來源。"
+        },
+        {
+          "type": "heading",
+          "text": "一、2Q26營收溫和成長，稅後獲利顯著回升"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2Q26／2026年1～9月",
+            "比較或說明"
           ],
-          "financials": [
-            {
-              "metric": "營收",
-              "period": "2Q26",
-              "value": "4.03億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26營收4.03億元(+4% QoQ)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營收季增率",
-              "period": "2Q26",
-              "value": "+4%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26營收4.03億元(+4% QoQ)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營收",
-              "period": "2025",
-              "value": "14.83億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "營收14.83億元(-12% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營收年增率",
-              "period": "2025",
-              "value": "-12%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "營收14.83億元(-12% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "毛利率",
-              "period": "2Q26",
-              "value": "33.2%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26營收4.03億元(+4% QoQ)，毛利率33.2%(-1.3個百分點QoQ)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "毛利率季變化",
-              "period": "2Q26",
-              "value": "-1.3個百分點QoQ",
-              "unit": "百分點",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "毛利率33.2%(-1.3個百分點QoQ)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "毛利率",
-              "period": "2025",
-              "value": "34.8%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "毛利率由2024年的28.3%提升6.5個百分點至34.8%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "毛利率",
-              "period": "2024",
-              "value": "28.3%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "毛利率由2024年的28.3%提升6.5個百分點至34.8%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營業利益",
-              "period": "2025",
-              "value": "2.0億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "營業利益2.0億元(+13% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營業利益年增率",
-              "period": "2025",
-              "value": "+13%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "營業利益2.0億元(+13% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "稅後淨利",
-              "period": "2025",
-              "value": "2.33億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2025年稅後淨利2.33億元(-23% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "稅後淨利年增率",
-              "period": "2025",
-              "value": "-23%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2025年稅後淨利2.33億元(-23% YoY)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "EPS",
-              "period": "2Q26",
-              "value": "3.04元",
-              "unit": "元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26 EPS為3.04元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "EPS",
-              "period": "2025",
-              "value": "4.58元",
-              "unit": "元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "EPS為4.58元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "EPS",
-              "period": "2024",
-              "value": "5.93元",
-              "unit": "元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "較2024年的5.93元減少1.35元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營業費用",
-              "period": "2Q26",
-              "value": "9,000萬元",
-              "unit": "萬元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "季增9%至9,000萬元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "營業利益",
-              "period": "2Q26",
-              "value": "4,398萬元",
-              "unit": "萬元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "營業利益4,398萬元(-14% QoQ)",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "稅後淨利",
-              "period": "2Q26",
-              "value": "1.55億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "稅後淨利季增84%至1.55億元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "資產總額",
-              "period": "2Q26",
-              "value": "41.4億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26資產總額41.4億元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "現金及金融資產",
-              "period": "2Q26",
-              "value": "31.1億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "其中現金及金融資產31.1億元，占資產總額75%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "現金及金融資產占資產比",
-              "period": "2Q26",
-              "value": "75%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "現金及金融資產31.1億元，占資產總額75%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "負債總額",
-              "period": "2Q26",
-              "value": "8.19億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "負債8.19億元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "權益總額",
-              "period": "2Q26",
-              "value": "33.2億元",
-              "unit": "億元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "權益總額33.2億元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "每股淨值",
-              "period": "2Q26",
-              "value": "65.28元",
-              "unit": "元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2Q26每股淨值65.28元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "每股淨值",
-              "period": "去年同期",
-              "value": "60.68元",
-              "unit": "元",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "高於去年同期的60.68元",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "流動比率",
-              "period": "2Q26",
-              "value": "2.66倍",
-              "unit": "倍",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "流動比率2.66倍",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "速動比率",
-              "period": "2Q26",
-              "value": "2.34倍",
-              "unit": "倍",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "速動比率2.34倍",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "存貨銷售天數",
-              "period": "2Q26",
-              "value": "95.05天",
-              "unit": "天",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "存貨銷售天數",
-              "period": "去年同期",
-              "value": "102.53天",
-              "unit": "天",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
-              "source_column": "U",
-              "qualifier": "exact"
-            }
-          ],
-          "guidance": [
-            {
-              "metric": "4Q26訂單",
-              "period": "4Q26",
-              "value": "有所下調",
-              "unit": "qualitative",
-              "actual_or_estimate": "guidance",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "兩項因素使訂單有所下調",
-              "source_column": "U",
-              "qualifier": "qualitative"
-            },
-            {
-              "metric": "公司財務預測",
-              "period": "4Q26",
-              "value": "未做財務預測",
-              "unit": "qualitative",
-              "actual_or_estimate": "guidance",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "公司未做財務預測",
-              "source_column": "U",
-              "qualifier": "qualitative"
-            },
-            {
-              "metric": "成熟製程晶圓代工產能利用率",
-              "period": "目前",
-              "value": "約98%",
-              "unit": "%",
-              "actual_or_estimate": "guidance",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "成熟製程產能利用率約98%",
-              "source_column": "U",
-              "qualifier": "approximate"
-            },
-            {
-              "metric": "成熟製程晶圓代工產能利用率",
-              "period": "2027",
-              "value": "會更高",
-              "unit": "qualitative",
-              "actual_or_estimate": "guidance",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2027年產能利用率會更高",
-              "source_column": "U",
-              "qualifier": "qualitative"
-            },
-            {
-              "metric": "營收",
-              "period": "2027",
-              "value": "盡量維持營收與現狀",
-              "unit": "qualitative",
-              "actual_or_estimate": "guidance",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "杰力將盡量維持營收與現狀",
-              "source_column": "U",
-              "qualifier": "qualitative"
-            },
-            {
-              "metric": "產業景氣",
-              "period": "2027",
-              "value": "小幅衰退",
-              "unit": "qualitative",
-              "actual_or_estimate": "estimate",
-              "source_type": "broker",
-              "provider": "國泰證期",
-              "evidence": "研究機構預估2027年仍屬小幅衰退",
-              "source_column": "U",
-              "qualifier": "qualitative"
-            }
-          ],
-          "operating_metrics": [
-            {
-              "metric": "存貨天數",
-              "period": "2Q26",
-              "value": "95.05天",
-              "unit": "天",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "PC及NB營收占比",
-              "period": "9M26",
-              "value": "82%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2026年1~9月與2025年應用別營收占比比較，PC及NB占比82%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "智慧家居營收占比",
-              "period": "9M26",
-              "value": "9%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "第二大應用智慧家居占比9%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "智慧家居占比成長",
-              "period": "9M26",
-              "value": "約50%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "占比成長約50%",
-              "source_column": "U",
-              "qualifier": "approximate"
-            },
-            {
-              "metric": "伺服器及車用營收占比",
-              "period": "9M26",
-              "value": "1.45%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "伺服器及車用占比由2025年的0.7%提升至1.45%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "伺服器及車用營收占比",
-              "period": "2025",
-              "value": "0.7%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "伺服器及車用占比由2025年的0.7%提升至1.45%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "SMPS營收占比",
-              "period": "9M26",
-              "value": "5%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "SMPS占比5%",
-              "source_column": "U",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "SMPS占比變化",
-              "period": "9M26",
-              "value": "約減少32%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "占比減少約32%",
-              "source_column": "U",
-              "qualifier": "approximate"
-            },
-            {
-              "metric": "AI相關營收占比",
-              "period": "9M26",
-              "value": "約1.4%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "AI相關營收占比2026年1~9月約1.4%",
-              "source_column": "U",
-              "qualifier": "approximate"
-            },
-            {
-              "metric": "AI相關營收占比",
-              "period": "3Q26",
-              "value": "超過2%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "3Q26已超過2%",
-              "source_column": "U",
-              "qualifier": "at_least"
-            },
-            {
-              "metric": "車用合作夥伴全球市占率",
-              "period": "未明確",
-              "value": "超過70%",
-              "unit": "%",
-              "actual_or_estimate": "unknown",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "合作夥伴在車用市場全球市占率超過70%",
-              "source_column": "U",
-              "qualifier": "at_least"
-            },
-            {
-              "metric": "股本增資",
-              "period": "2021至2025",
-              "value": "30%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "期間包含30%的股本增資",
-              "source_column": "U",
-              "qualifier": "exact"
-            }
-          ],
-          "valuations": [
-            {
-              "metric": "本益比",
-              "period": "2025",
-              "value": "15.5倍",
-              "unit": "倍",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "2025年本益比15.5倍",
-              "source_column": "S",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "殖利率",
-              "period": "2025",
-              "value": "5.2%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "殖利率5.2%，優於定存",
-              "source_column": "S",
-              "qualifier": "exact"
-            },
-            {
-              "metric": "股利配發率",
-              "period": "去年",
-              "value": "83.66%",
-              "unit": "%",
-              "actual_or_estimate": "actual",
-              "source_type": "company",
-              "provider": "杰力",
-              "evidence": "去年配發率為83.66%",
-              "source_column": "S",
-              "qualifier": "exact"
-            }
-          ],
-          "risks": [
-            "4Q26面臨客戶庫存調節及傳統電子淡季。",
-            "部分市場客戶因發債等因素資金較緊張，造成訂單下調。",
-            "基板價格仍高漲，今年客戶受基板價格影響，市場單價上漲且銷售狀況不佳，2027年不利因素仍存在。",
-            "成熟製程晶圓成本可能上升，但公司表示以加權平均成本進貨，成本不會立即大幅變動。",
-            "伺服器及車用目前營收貢獻仍有限，且相關占比基期低。"
-          ],
-          "unstructured_notes": [
-            "2025年受地緣政治影響，供應鏈不確定性升高；公司持續開發新的電源開關、電源功率轉換及加強保護元件，以最佳化產品組合。",
-            "2025年業外受匯率波動影響；公司過去以美元定存作為自然避險，2026年改為多元配置，包括海外金融債、國內壽險發行債券、波動較小的ETF及原有定存。",
-            "2Q26營業費用增加，主因獲利增加及章程相關固定酬勞提列等；營業利益較1Q26減少約700萬元，稅後淨利較1Q26增加約7,000萬元。",
-            "2Q26資產增加的主要來源為現金及金融資產多元配置；應收帳款、存貨及固定資產無太大變化。負債增加主要為股東常會通過的股利分派轉列應付股利。",
-            "平均收現日數、負債比及資產周轉率持穩，但原文未提供具體數值。",
-            "股利政策自公開發行以來維持配發七成上下，依每年營運狀況調整。",
-            "伺服器及車用模組使用的MOSFET由杰力配合供應；公司另有開發中的方案及風扇等應用，相關MOSFET單價較高。",
-            "4Q26針對訂單調節，公司表示將爭取訂單追加或成本吸收。",
-            "CPU與GPU雙架構改變被公司視為2027年正面因素；基板價格高漲則為負面因素，兩者影響方向相反。",
-            "原文未提供明確目標價或股票評等。",
-            "來源為國泰證期研究部Call Memo，資料日期為2026-10-21，原文rowIndex為22336。"
+          "rows": [
+            [
+              "營收",
+              "4.03億元",
+              "季增4%"
+            ],
+            [
+              "毛利率",
+              "33.2%",
+              "季減1.3個百分點"
+            ],
+            [
+              "營業費用",
+              "9,000萬元",
+              "季增9%，主要受獲利增加及章程相關固定酬勞提列等影響"
+            ],
+            [
+              "營業利益",
+              "4,398萬元",
+              "季減14%，較1Q26減少約700萬元"
+            ],
+            [
+              "稅後淨利",
+              "1.55億元",
+              "季增84%，較1Q26增加約7,000萬元"
+            ],
+            [
+              "EPS",
+              "3.04元",
+              "高於1Q26的1.65元"
+            ],
+            [
+              "存貨銷售天數",
+              "95.05天",
+              "低於去年同期的102.53天"
+            ]
           ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2Q26營收較前季增加4%，但毛利率因產品組合及成本因素降至33.2%，營業費用則季增9%，使營業利益降至4,398萬元。然而，業外收益改善帶動稅後淨利季增84%至1.55億元，EPS由1Q26的1.65元升至3.04元。從營運資產觀察，存貨銷售天數由去年同期102.53天下降至95.05天，顯示庫存水位較前期改善。"
+        },
+        {
+          "type": "heading",
+          "text": "二、2025年營收承壓，但產品組合優化推升毛利率"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2025年",
+            "比較或背景"
+          ],
+          "rows": [
+            [
+              "營收",
+              "14.83億元",
+              "年減12%，受地緣政治及供應鏈不確定性影響"
+            ],
+            [
+              "毛利率",
+              "34.8%",
+              "較2024年的28.3%提升6.5個百分點"
+            ],
+            [
+              "營業利益",
+              "2.0億元",
+              "年增13%"
+            ],
+            [
+              "稅後淨利",
+              "2.33億元",
+              "年減23%，受匯率波動影響"
+            ],
+            [
+              "EPS",
+              "4.58元",
+              "低於2024年的5.93元"
+            ],
+            [
+              "2025年本益比",
+              "15.5倍",
+              "來源原文所列估值口徑"
+            ],
+            [
+              "殖利率",
+              "5.2%",
+              "原文評述優於定存"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2025年營收雖年減12%，公司仍透過新電源開關、功率轉換及保護元件等產品開發，將毛利率由2024年的28.3%提升至34.8%，營業利益反而年增13%至2.0億元。稅後淨利則降至2.33億元，主要受到匯率波動影響。公司過去以美元定存作為自然避險，但因其對財報波動影響較大，2026年改採多元配置，包括3A等級且流動性佳的海外金融債、國內壽險發行的年息3.78%債券、波動較小的ETF及原有定存，期望提升整體避險穩定性。"
+        },
+        {
+          "type": "heading",
+          "text": "三、資產結構穩健，現金與金融資產占比高"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2Q26數據",
+            "重點解讀"
+          ],
+          "rows": [
+            [
+              "資產總額",
+              "41.4億元",
+              "較1Q26增加約2.5億元"
+            ],
+            [
+              "現金及金融資產",
+              "31.1億元",
+              "占資產總額75%，為資產增加主要來源"
+            ],
+            [
+              "負債",
+              "8.19億元",
+              "增加部分主要為股利分派轉列應付股利"
+            ],
+            [
+              "權益總額",
+              "33.2億元",
+              "公司資本結構仍具穩健性"
+            ],
+            [
+              "每股淨值",
+              "65.28元",
+              "高於去年同期的60.68元"
+            ],
+            [
+              "流動比率",
+              "2.66倍",
+              "流動性充足"
+            ],
+            [
+              "速動比率",
+              "2.34倍",
+              "短期償債能力穩健"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2Q26資產總額為41.4億元，其中現金及金融資產合計31.1億元，占總資產75%，主要受多元金融配置增加帶動。應收帳款、存貨及固定資產變化不大；負債增加則主要來自股東常會通過股利分派後轉列的應付股利。每股淨值由去年同期60.68元升至65.28元，流動比率及速動比率分別為2.66倍與2.34倍，整體財務結構與流動性仍屬穩健。"
+        },
+        {
+          "type": "heading",
+          "text": "四、營收仍高度集中PC／NB，AI、伺服器與車用占比上升"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "應用別",
+            "2026年1～9月或近期占比",
+            "與2025年比較／解讀"
+          ],
+          "rows": [
+            [
+              "PC及NB",
+              "82%",
+              "占比變化不到1個百分點，仍是主要營收來源"
+            ],
+            [
+              "智慧家居",
+              "9%",
+              "占比成長約50%，為第二大應用"
+            ],
+            [
+              "伺服器及車用",
+              "1.45%",
+              "高於2025年的0.7%，但基期低、對整體營收貢獻仍有限"
+            ],
+            [
+              "SMPS",
+              "5%",
+              "占比減少約32%"
+            ],
+            [
+              "AI相關營收",
+              "約1.4%；3Q26逾2%",
+              "占比仍低，但2026年各季呈高幅度成長"
+            ],
+            [
+              "其他",
+              "未列示占比",
+              "主要包括網通及工業電腦"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "杰力目前的營收結構仍由PC及NB主導，占比約82%，短期仍容易受到消費電子景氣與換機週期影響。智慧家居占比約9%，較前期成長約50%；伺服器及車用占比則由2025年的0.7%升至1.45%，雖然成長幅度明顯，但由於基期及絕對占比仍低，尚不足以改變整體營收結構。AI相關營收在2026年1～9月約占1.4%，3Q26已超過2%，呈逐季攀升趨勢。"
+        },
+        {
+          "type": "paragraph",
+          "text": "在車用領域，公司合作夥伴的全球市占率超過70%，其模組採用杰力供應的MOSFET。公司亦持續開發其他車用方案及風扇等應用，相關MOSFET單價較傳統產品高。私募的策略意義，則包括協助合作夥伴推進MOSFET模組的成熟與量產。"
+        },
+        {
+          "type": "heading",
+          "text": "五、4Q26短期訂單下修，但高壓LDO漲價有助成本轉嫁"
+        },
+        {
+          "type": "paragraph",
+          "text": "公司未提出正式財務預測。依公司說明，4Q26受到客戶庫存調節與傳統電子淡季影響，部分市場客戶又因發債等因素導致資金較緊，訂單因此有所下調。公司目前針對訂單調節積極爭取追加訂單，並努力降低成本吸收壓力，因此4Q26的營收與毛利率仍取決於客戶庫存去化速度、訂單變化及價格轉嫁進度。"
+        },
+        {
+          "type": "paragraph",
+          "text": "成本轉嫁氛圍正在改善，高壓LDO產品已開始調整價格，後續將逐步擴大調價比例與涵蓋範圍。成熟製程晶圓代工產能利用率約98%，且晶圓廠將更多產能投入AI相關產品，預期2027年產能利用率仍會更高，形成晶圓供給偏緊與漲價環境。不過，公司指出此類成熟製程產品長期調價幅度通常較小，且杰力採加權平均成本進貨，晶圓成本不會立即大幅反映，因此毛利率目前仍處在成本轉嫁的初期，但轉嫁條件正逐步增強。"
+        },
+        {
+          "type": "heading",
+          "text": "六、2027年以維持營收為目標，高階產品與架構變化提供支撐"
+        },
+        {
+          "type": "paragraph",
+          "text": "針對2027年，公司以盡量維持營收與現狀為主要目標。研究機構目前預估杰力所處產業在2027年仍將小幅衰退，且目前尚未看到下修訊號；這屬研究機構預估，並非公司正式財務指引。公司將透過由傳統MOSFET逐步轉向價格較高的高階MOSFET，改善產品組合，以降低產業需求偏弱對營收及獲利的影響。"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "2027年因素",
+            "方向",
+            "說明"
+          ],
+          "rows": [
+            [
+              "CPU與GPU架構變化",
+              "正面",
+              "可能帶動相關電源與功率元件需求"
+            ],
+            [
+              "AI相關營收",
+              "正面",
+              "2026年逐季成長，預期2027年仍有不錯成長"
+            ],
+            [
+              "高階MOSFET滲透",
+              "正面",
+              "產品單價高於傳統MOSFET，有助維持營收與獲利"
+            ],
+            [
+              "基板價格",
+              "負面",
+              "今年已影響客戶成本、產品單價及銷售，明年不利因素仍在"
+            ],
+            [
+              "基板價格漲幅",
+              "相對緩和但仍有壓力",
+              "公司認為明年漲幅或許不會如過去幾年大"
+            ],
+            [
+              "產業景氣",
+              "中性偏負面",
+              "研究機構預估所屬產業仍為小幅衰退"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2027年展望呈現正負因素並存。CPU與GPU可能迎來雙架構變化，對電源及功率元件需求具有正面意義；AI相關營收也預期延續成長。不過，基板價格高漲仍會壓抑客戶的銷售與採購意願，儘管明年漲幅可能低於過去幾年，成本壓力尚未完全消失。杰力能否以高階MOSFET與AI相關產品的成長，抵銷傳統應用與產業景氣的疲弱，是2027年的核心觀察點。"
+        },
+        {
+          "type": "heading",
+          "text": "七、股利政策與投資觀察"
+        },
+        {
+          "type": "paragraph",
+          "text": "杰力自公開發行以來，股利政策大致維持盈餘配發七成上下，並依年度營運狀況調整；原文所列去年配發率為83.66%。公司每股淨值由2021年的46.0元持續增加至2025年的64.1元，期間包含30%的股本增資。2025年本益比15.5倍、殖利率5.2%，原文評述殖利率優於定存，但實際估值與股利吸引力仍須搭配未來獲利、匯率及配息政策觀察。"
+        },
+        {
+          "type": "heading",
+          "text": "八、主要風險與後續追蹤重點"
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "短期需求風險：4Q26同時面臨客戶庫存調節、傳統淡季與部分客戶資金緊張，訂單已經下調。",
+            "營收集中風險：PC及NB占比約82%，AI、伺服器與車用雖成長，但目前占比仍不足以快速改變營收結構。",
+            "成本轉嫁風險：高壓LDO已調價，但其他產品的調價範圍、時程及客戶接受度仍待觀察；若晶圓或其他材料成本上升快於售價轉嫁，毛利率可能承壓。",
+            "基板價格風險：基板高價已影響客戶成本與銷售，2027年此項不利因素仍可能延續。",
+            "匯率與業外波動：2025年稅後獲利受到匯率影響，公司雖改採多元金融配置，仍需留意匯率及金融資產評價變化。",
+            "成長轉型風險：AI、伺服器及車用產品目前仍屬小基期，未來能否順利量產、擴大客戶與提升營收占比，將決定高階MOSFET布局的實際效益。",
+            "後續重點：觀察4Q26庫存調節幅度、晶圓成本與價格轉嫁進度、AI營收占比是否持續提升，以及2027年CPU/GPU架構變化能否帶來實質訂單。"
+          ]
+        },
+        {
+          "type": "quote",
+          "text": "整體而言，杰力短期仍受PC／NB高集中度、4Q26庫存調節與淡季壓力牽制，尚未進入全面成長階段；但高壓LDO調價、成熟製程供給偏緊、高階MOSFET升級，以及AI相關營收逐季增加，為公司維持毛利與尋求中長期成長的主要支撐。"
         }
       ]
     },
     "audit": {
       "status": "passed",
-      "financial_count": 50,
-      "issues": []
+      "issues": [],
+      "blocks": 26
     },
     "usage": {
-      "input_tokens": 2997,
+      "input_tokens": 2833,
       "input_tokens_details": {
-        "cache_write_tokens": 2994,
+        "cache_write_tokens": 2830,
         "cached_tokens": 0
       },
-      "output_tokens": 6673,
+      "output_tokens": 3686,
       "output_tokens_details": {
-        "reasoning_tokens": 365
+        "reasoning_tokens": 128
       },
-      "total_tokens": 9670
+      "total_tokens": 6519
     },
     "previous_version": {
-      "status": "needs_review",
+      "status": "success",
       "fingerprint": "6fa4501ad1853108df6003f7268685f450300bc00d3dd4e8a3ad846072a82e49",
       "category": "法說／訪談",
-      "model": "gpt-4o-mini",
-      "at": "2026-10-26T06:02:19.324919+00:00",
+      "model": "gpt-5.6-luna",
+      "at": "2026-10-26T12:13:33.834197+00:00",
+      "original_id": "line-989d0430b6a71dde3aac",
       "schema": "research-batch-v2",
       "result": {
-        "title": "杰力 (5299.TWO) 2026年10月法說會紀要",
+        "title": "杰力2026年2Q26營運成果與4Q26、2027年展望",
         "summary": [
-          "高壓LDO已漲價且轉嫁範圍將擴大。",
-          "4Q26受客戶庫存調節與淡季影響，部分客戶資金緊張導致訂單下調。",
-          "AI營收占比逐季攀升，2026年1~9月約1.4%，3Q26已逾2%。"
+          "2Q26營收4.03億元，季增4%，EPS 3.04元；毛利率33.2%，較前季下降1.3個百分點。",
+          "4Q26受客戶庫存調節、傳統電子淡季及部分市場客戶資金緊張影響，訂單有所下調；公司未做財務預測。",
+          "高壓LDO等產品已進行價格調整，後續將擴大調整比例與涵蓋範圍，功率元件成本轉嫁氛圍改善。",
+          "AI相關營收占比於2026年1~9月約1.4%，3Q26已超過2%，且每季呈高幅度成長。",
+          "PC及NB仍占主要營收，2026年1~9月占比82%；伺服器及車用占比由2025年的0.7%提升至1.45%，但目前貢獻仍有限。",
+          "2027年正面因素包括CPU與GPU雙架構改變，負面因素包括基板價格仍高；公司將由傳統MOSFET逐步轉向高階MOSFET，以維持營收與獲利。"
         ],
         "companies": [
           {
             "name": "杰力",
             "ticker": "5299.TWO",
             "key_points": [
-              "2Q26營收4.03億(+4% QoQ); 2025營收14.83億(-12% YoY)",
-              "2Q26 EPS 3.04元; 2025 EPS 4.58元",
-              "毛利率33.2%; PC/NB占營收82%; 伺服器+車用1.45%; 配發率83.66%"
+              "高壓LDO已漲價，後續將陸續擴大價格調整比例與涵蓋範圍。",
+              "成熟製程晶圓代工產能利用率約98%，晶圓廠加入許多AI相關產品，2027年產能利用率預期更高。",
+              "伺服器及車用已有營收，但目前貢獻在小個位數，有待突破。",
+              "合作夥伴在車用市場全球市占率超過70%，其模組使用的MOSFET由杰力配合供應。",
+              "公司逐步由傳統MOSFET轉向高階MOSFET，高階產品價格較傳統產品高。"
             ],
             "financials": [
               {
                 "metric": "營收",
                 "period": "2Q26",
-                "value": "4.03",
-                "unit": "億",
+                "value": "4.03億元",
+                "unit": "億元",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
+                "provider": "杰力",
                 "evidence": "2Q26營收4.03億元(+4% QoQ)",
-                "source_column": "I",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "營收季增率",
+                "period": "2Q26",
+                "value": "+4%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2Q26營收4.03億元(+4% QoQ)",
+                "source_column": "U",
                 "qualifier": "exact"
               },
               {
                 "metric": "營收",
                 "period": "2025",
-                "value": "14.83",
-                "unit": "億",
+                "value": "14.83億元",
+                "unit": "億元",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "2025營收14.83億元(-12% YoY)",
-                "source_column": "I",
+                "provider": "杰力",
+                "evidence": "營收14.83億元(-12% YoY)",
+                "source_column": "U",
                 "qualifier": "exact"
               },
               {
-                "metric": "EPS",
-                "period": "2Q26",
-                "value": "3.04",
-                "unit": "元",
-                "actual_or_estimate": "actual",
-                "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "2Q26 EPS為3.04元",
-                "source_column": "J",
-                "qualifier": "exact"
-              },
-              {
-                "metric": "EPS",
+                "metric": "營收年增率",
                 "period": "2025",
-                "value": "4.58",
-                "unit": "元",
+                "value": "-12%",
+                "unit": "%",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "2025 EPS為4.58元",
-                "source_column": "J",
+                "provider": "杰力",
+                "evidence": "營收14.83億元(-12% YoY)",
+                "source_column": "U",
                 "qualifier": "exact"
               },
               {
                 "metric": "毛利率",
                 "period": "2Q26",
-                "value": "33.2",
+                "value": "33.2%",
                 "unit": "%",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "2Q26毛利率33.2%",
-                "source_column": "P",
+                "provider": "杰力",
+                "evidence": "2Q26營收4.03億元(+4% QoQ)，毛利率33.2%(-1.3個百分點QoQ)",
+                "source_column": "U",
                 "qualifier": "exact"
               },
               {
-                "metric": "配發率",
+                "metric": "毛利率季變化",
+                "period": "2Q26",
+                "value": "-1.3個百分點QoQ",
+                "unit": "百分點",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "毛利率33.2%(-1.3個百分點QoQ)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "毛利率",
                 "period": "2025",
-                "value": "83.66",
+                "value": "34.8%",
                 "unit": "%",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "配發率83.66%",
-                "source_column": "P",
+                "provider": "杰力",
+                "evidence": "毛利率由2024年的28.3%提升6.5個百分點至34.8%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "毛利率",
+                "period": "2024",
+                "value": "28.3%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "毛利率由2024年的28.3%提升6.5個百分點至34.8%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "營業利益",
+                "period": "2025",
+                "value": "2.0億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "營業利益2.0億元(+13% YoY)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "營業利益年增率",
+                "period": "2025",
+                "value": "+13%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "營業利益2.0億元(+13% YoY)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "稅後淨利",
+                "period": "2025",
+                "value": "2.33億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2025年稅後淨利2.33億元(-23% YoY)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "稅後淨利年增率",
+                "period": "2025",
+                "value": "-23%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2025年稅後淨利2.33億元(-23% YoY)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "EPS",
+                "period": "2Q26",
+                "value": "3.04元",
+                "unit": "元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2Q26 EPS為3.04元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "EPS",
+                "period": "2025",
+                "value": "4.58元",
+                "unit": "元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "EPS為4.58元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "EPS",
+                "period": "2024",
+                "value": "5.93元",
+                "unit": "元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "較2024年的5.93元減少1.35元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "營業費用",
+                "period": "2Q26",
+                "value": "9,000萬元",
+                "unit": "萬元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "季增9%至9,000萬元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "營業利益",
+                "period": "2Q26",
+                "value": "4,398萬元",
+                "unit": "萬元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "營業利益4,398萬元(-14% QoQ)",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "稅後淨利",
+                "period": "2Q26",
+                "value": "1.55億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "稅後淨利季增84%至1.55億元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "資產總額",
+                "period": "2Q26",
+                "value": "41.4億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2Q26資產總額41.4億元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "現金及金融資產",
+                "period": "2Q26",
+                "value": "31.1億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "其中現金及金融資產31.1億元，占資產總額75%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "現金及金融資產占資產比",
+                "period": "2Q26",
+                "value": "75%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "現金及金融資產31.1億元，占資產總額75%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "負債總額",
+                "period": "2Q26",
+                "value": "8.19億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "負債8.19億元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "權益總額",
+                "period": "2Q26",
+                "value": "33.2億元",
+                "unit": "億元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "權益總額33.2億元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "每股淨值",
+                "period": "2Q26",
+                "value": "65.28元",
+                "unit": "元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2Q26每股淨值65.28元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "每股淨值",
+                "period": "去年同期",
+                "value": "60.68元",
+                "unit": "元",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "高於去年同期的60.68元",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "流動比率",
+                "period": "2Q26",
+                "value": "2.66倍",
+                "unit": "倍",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "流動比率2.66倍",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "速動比率",
+                "period": "2Q26",
+                "value": "2.34倍",
+                "unit": "倍",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "速動比率2.34倍",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "存貨銷售天數",
+                "period": "2Q26",
+                "value": "95.05天",
+                "unit": "天",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "存貨銷售天數",
+                "period": "去年同期",
+                "value": "102.53天",
+                "unit": "天",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
+                "source_column": "U",
                 "qualifier": "exact"
               }
             ],
             "guidance": [
               {
-                "metric": "訂單展望",
+                "metric": "4Q26訂單",
                 "period": "4Q26",
-                "value": "下調",
-                "unit": "",
+                "value": "有所下調",
+                "unit": "qualitative",
                 "actual_or_estimate": "guidance",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "4Q26訂單下調",
-                "source_column": "M",
+                "provider": "杰力",
+                "evidence": "兩項因素使訂單有所下調",
+                "source_column": "U",
                 "qualifier": "qualitative"
               },
               {
-                "metric": "營收展望",
-                "period": "2027",
-                "value": "維持",
-                "unit": "",
+                "metric": "公司財務預測",
+                "period": "4Q26",
+                "value": "未做財務預測",
+                "unit": "qualitative",
                 "actual_or_estimate": "guidance",
                 "source_type": "company",
+                "provider": "杰力",
+                "evidence": "公司未做財務預測",
+                "source_column": "U",
+                "qualifier": "qualitative"
+              },
+              {
+                "metric": "成熟製程晶圓代工產能利用率",
+                "period": "目前",
+                "value": "約98%",
+                "unit": "%",
+                "actual_or_estimate": "guidance",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "成熟製程產能利用率約98%",
+                "source_column": "U",
+                "qualifier": "approximate"
+              },
+              {
+                "metric": "成熟製程晶圓代工產能利用率",
+                "period": "2027",
+                "value": "會更高",
+                "unit": "qualitative",
+                "actual_or_estimate": "guidance",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "2027年產能利用率會更高",
+                "source_column": "U",
+                "qualifier": "qualitative"
+              },
+              {
+                "metric": "營收",
+                "period": "2027",
+                "value": "盡量維持營收與現狀",
+                "unit": "qualitative",
+                "actual_or_estimate": "guidance",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "杰力將盡量維持營收與現狀",
+                "source_column": "U",
+                "qualifier": "qualitative"
+              },
+              {
+                "metric": "產業景氣",
+                "period": "2027",
+                "value": "小幅衰退",
+                "unit": "qualitative",
+                "actual_or_estimate": "estimate",
+                "source_type": "broker",
                 "provider": "國泰證期",
-                "evidence": "2027盡量維持營收",
-                "source_column": "M",
+                "evidence": "研究機構預估2027年仍屬小幅衰退",
+                "source_column": "U",
                 "qualifier": "qualitative"
               }
             ],
             "operating_metrics": [
               {
-                "metric": "庫存天數",
+                "metric": "存貨天數",
                 "period": "2Q26",
-                "value": "95.05",
+                "value": "95.05天",
                 "unit": "天",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "存貨天數95.05天(去年同期102.53)",
-                "source_column": "K",
+                "provider": "杰力",
+                "evidence": "存貨銷售天數由去年同期的102.53天降至95.05天",
+                "source_column": "U",
                 "qualifier": "exact"
               },
               {
-                "metric": "產能利用率",
-                "period": "2026",
-                "value": "98",
+                "metric": "PC及NB營收占比",
+                "period": "9M26",
+                "value": "82%",
                 "unit": "%",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "成熟製程晶圓代工產能利用率約98%",
-                "source_column": "L",
+                "provider": "杰力",
+                "evidence": "2026年1~9月與2025年應用別營收占比比較，PC及NB占比82%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "智慧家居營收占比",
+                "period": "9M26",
+                "value": "9%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "第二大應用智慧家居占比9%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "智慧家居占比成長",
+                "period": "9M26",
+                "value": "約50%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "占比成長約50%",
+                "source_column": "U",
+                "qualifier": "approximate"
+              },
+              {
+                "metric": "伺服器及車用營收占比",
+                "period": "9M26",
+                "value": "1.45%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "伺服器及車用占比由2025年的0.7%提升至1.45%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "伺服器及車用營收占比",
+                "period": "2025",
+                "value": "0.7%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "伺服器及車用占比由2025年的0.7%提升至1.45%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "SMPS營收占比",
+                "period": "9M26",
+                "value": "5%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "SMPS占比5%",
+                "source_column": "U",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "SMPS占比變化",
+                "period": "9M26",
+                "value": "約減少32%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "占比減少約32%",
+                "source_column": "U",
+                "qualifier": "approximate"
+              },
+              {
+                "metric": "AI相關營收占比",
+                "period": "9M26",
+                "value": "約1.4%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "AI相關營收占比2026年1~9月約1.4%",
+                "source_column": "U",
+                "qualifier": "approximate"
+              },
+              {
+                "metric": "AI相關營收占比",
+                "period": "3Q26",
+                "value": "超過2%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "3Q26已超過2%",
+                "source_column": "U",
+                "qualifier": "at_least"
+              },
+              {
+                "metric": "車用合作夥伴全球市占率",
+                "period": "未明確",
+                "value": "超過70%",
+                "unit": "%",
+                "actual_or_estimate": "unknown",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "合作夥伴在車用市場全球市占率超過70%",
+                "source_column": "U",
+                "qualifier": "at_least"
+              },
+              {
+                "metric": "股本增資",
+                "period": "2021至2025",
+                "value": "30%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "期間包含30%的股本增資",
+                "source_column": "U",
                 "qualifier": "exact"
               }
             ],
@@ -2650,11 +2766,11 @@
               {
                 "metric": "本益比",
                 "period": "2025",
-                "value": "15.5",
+                "value": "15.5倍",
                 "unit": "倍",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
+                "provider": "杰力",
                 "evidence": "2025年本益比15.5倍",
                 "source_column": "S",
                 "qualifier": "exact"
@@ -2662,60 +2778,288 @@
               {
                 "metric": "殖利率",
                 "period": "2025",
-                "value": "5.2",
+                "value": "5.2%",
                 "unit": "%",
                 "actual_or_estimate": "actual",
                 "source_type": "company",
-                "provider": "國泰證期",
-                "evidence": "殖利率5.2%",
+                "provider": "杰力",
+                "evidence": "殖利率5.2%，優於定存",
+                "source_column": "S",
+                "qualifier": "exact"
+              },
+              {
+                "metric": "股利配發率",
+                "period": "去年",
+                "value": "83.66%",
+                "unit": "%",
+                "actual_or_estimate": "actual",
+                "source_type": "company",
+                "provider": "杰力",
+                "evidence": "去年配發率為83.66%",
                 "source_column": "S",
                 "qualifier": "exact"
               }
             ],
             "risks": [
-              {
-                "risk": "客戶庫存調節",
-                "impact": "可能影響4Q26訂單",
-                "source": "國泰證期"
-              },
-              {
-                "risk": "基板價格高漲",
-                "impact": "可能影響2027年營收",
-                "source": "國泰證期"
-              }
+              "4Q26面臨客戶庫存調節及傳統電子淡季。",
+              "部分市場客戶因發債等因素資金較緊張，造成訂單下調。",
+              "基板價格仍高漲，今年客戶受基板價格影響，市場單價上漲且銷售狀況不佳，2027年不利因素仍存在。",
+              "成熟製程晶圓成本可能上升，但公司表示以加權平均成本進貨，成本不會立即大幅變動。",
+              "伺服器及車用目前營收貢獻仍有限，且相關占比基期低。"
             ],
             "unstructured_notes": [
-              "AI相關營收占比2026年1~9月約1.4%，3Q26已超過2%。",
-              "成熟製程產能被AI產品吃緊，晶圓漲價氛圍。",
-              "過去以美元定存作為自然避險，但對財報影響過大，2026年改為多元配置。",
-              "2027年或將迎來CPU與GPU雙架構的改變，屬正面因素。"
+              "2025年受地緣政治影響，供應鏈不確定性升高；公司持續開發新的電源開關、電源功率轉換及加強保護元件，以最佳化產品組合。",
+              "2025年業外受匯率波動影響；公司過去以美元定存作為自然避險，2026年改為多元配置，包括海外金融債、國內壽險發行債券、波動較小的ETF及原有定存。",
+              "2Q26營業費用增加，主因獲利增加及章程相關固定酬勞提列等；營業利益較1Q26減少約700萬元，稅後淨利較1Q26增加約7,000萬元。",
+              "2Q26資產增加的主要來源為現金及金融資產多元配置；應收帳款、存貨及固定資產無太大變化。負債增加主要為股東常會通過的股利分派轉列應付股利。",
+              "平均收現日數、負債比及資產周轉率持穩，但原文未提供具體數值。",
+              "股利政策自公開發行以來維持配發七成上下，依每年營運狀況調整。",
+              "伺服器及車用模組使用的MOSFET由杰力配合供應；公司另有開發中的方案及風扇等應用，相關MOSFET單價較高。",
+              "4Q26針對訂單調節，公司表示將爭取訂單追加或成本吸收。",
+              "CPU與GPU雙架構改變被公司視為2027年正面因素；基板價格高漲則為負面因素，兩者影響方向相反。",
+              "原文未提供明確目標價或股票評等。",
+              "來源為國泰證期研究部Call Memo，資料日期為2026-10-21，原文rowIndex為22336。"
             ]
           }
         ]
       },
       "audit": {
-        "status": "needs_review",
-        "financial_count": 12,
-        "issues": [
-          "杰力 營收: 來源欄位不吻合",
-          "杰力 營收: 證據不在 Excel A-W",
-          "杰力 EPS: 來源欄位不吻合",
-          "杰力 EPS: 證據不在 Excel A-W"
-        ]
+        "status": "passed",
+        "financial_count": 50,
+        "issues": []
       },
       "usage": {
-        "prompt_tokens": 2808,
-        "completion_tokens": 1659,
-        "total_tokens": 4467,
-        "prompt_tokens_details": {
-          "cached_tokens": 0,
-          "audio_tokens": 0
+        "input_tokens": 2997,
+        "input_tokens_details": {
+          "cache_write_tokens": 2994,
+          "cached_tokens": 0
         },
-        "completion_tokens_details": {
-          "reasoning_tokens": 0,
-          "audio_tokens": 0,
-          "accepted_prediction_tokens": 0,
-          "rejected_prediction_tokens": 0
+        "output_tokens": 6673,
+        "output_tokens_details": {
+          "reasoning_tokens": 365
+        },
+        "total_tokens": 9670
+      },
+      "previous_version": {
+        "status": "needs_review",
+        "fingerprint": "6fa4501ad1853108df6003f7268685f450300bc00d3dd4e8a3ad846072a82e49",
+        "category": "法說／訪談",
+        "model": "gpt-4o-mini",
+        "at": "2026-10-26T06:02:19.324919+00:00",
+        "schema": "research-batch-v2",
+        "result": {
+          "title": "杰力 (5299.TWO) 2026年10月法說會紀要",
+          "summary": [
+            "高壓LDO已漲價且轉嫁範圍將擴大。",
+            "4Q26受客戶庫存調節與淡季影響，部分客戶資金緊張導致訂單下調。",
+            "AI營收占比逐季攀升，2026年1~9月約1.4%，3Q26已逾2%。"
+          ],
+          "companies": [
+            {
+              "name": "杰力",
+              "ticker": "5299.TWO",
+              "key_points": [
+                "2Q26營收4.03億(+4% QoQ); 2025營收14.83億(-12% YoY)",
+                "2Q26 EPS 3.04元; 2025 EPS 4.58元",
+                "毛利率33.2%; PC/NB占營收82%; 伺服器+車用1.45%; 配發率83.66%"
+              ],
+              "financials": [
+                {
+                  "metric": "營收",
+                  "period": "2Q26",
+                  "value": "4.03",
+                  "unit": "億",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2Q26營收4.03億元(+4% QoQ)",
+                  "source_column": "I",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "營收",
+                  "period": "2025",
+                  "value": "14.83",
+                  "unit": "億",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2025營收14.83億元(-12% YoY)",
+                  "source_column": "I",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "EPS",
+                  "period": "2Q26",
+                  "value": "3.04",
+                  "unit": "元",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2Q26 EPS為3.04元",
+                  "source_column": "J",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "EPS",
+                  "period": "2025",
+                  "value": "4.58",
+                  "unit": "元",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2025 EPS為4.58元",
+                  "source_column": "J",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "毛利率",
+                  "period": "2Q26",
+                  "value": "33.2",
+                  "unit": "%",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2Q26毛利率33.2%",
+                  "source_column": "P",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "配發率",
+                  "period": "2025",
+                  "value": "83.66",
+                  "unit": "%",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "配發率83.66%",
+                  "source_column": "P",
+                  "qualifier": "exact"
+                }
+              ],
+              "guidance": [
+                {
+                  "metric": "訂單展望",
+                  "period": "4Q26",
+                  "value": "下調",
+                  "unit": "",
+                  "actual_or_estimate": "guidance",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "4Q26訂單下調",
+                  "source_column": "M",
+                  "qualifier": "qualitative"
+                },
+                {
+                  "metric": "營收展望",
+                  "period": "2027",
+                  "value": "維持",
+                  "unit": "",
+                  "actual_or_estimate": "guidance",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2027盡量維持營收",
+                  "source_column": "M",
+                  "qualifier": "qualitative"
+                }
+              ],
+              "operating_metrics": [
+                {
+                  "metric": "庫存天數",
+                  "period": "2Q26",
+                  "value": "95.05",
+                  "unit": "天",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "存貨天數95.05天(去年同期102.53)",
+                  "source_column": "K",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "產能利用率",
+                  "period": "2026",
+                  "value": "98",
+                  "unit": "%",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "成熟製程晶圓代工產能利用率約98%",
+                  "source_column": "L",
+                  "qualifier": "exact"
+                }
+              ],
+              "valuations": [
+                {
+                  "metric": "本益比",
+                  "period": "2025",
+                  "value": "15.5",
+                  "unit": "倍",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "2025年本益比15.5倍",
+                  "source_column": "S",
+                  "qualifier": "exact"
+                },
+                {
+                  "metric": "殖利率",
+                  "period": "2025",
+                  "value": "5.2",
+                  "unit": "%",
+                  "actual_or_estimate": "actual",
+                  "source_type": "company",
+                  "provider": "國泰證期",
+                  "evidence": "殖利率5.2%",
+                  "source_column": "S",
+                  "qualifier": "exact"
+                }
+              ],
+              "risks": [
+                {
+                  "risk": "客戶庫存調節",
+                  "impact": "可能影響4Q26訂單",
+                  "source": "國泰證期"
+                },
+                {
+                  "risk": "基板價格高漲",
+                  "impact": "可能影響2027年營收",
+                  "source": "國泰證期"
+                }
+              ],
+              "unstructured_notes": [
+                "AI相關營收占比2026年1~9月約1.4%，3Q26已超過2%。",
+                "成熟製程產能被AI產品吃緊，晶圓漲價氛圍。",
+                "過去以美元定存作為自然避險，但對財報影響過大，2026年改為多元配置。",
+                "2027年或將迎來CPU與GPU雙架構的改變，屬正面因素。"
+              ]
+            }
+          ]
+        },
+        "audit": {
+          "status": "needs_review",
+          "financial_count": 12,
+          "issues": [
+            "杰力 營收: 來源欄位不吻合",
+            "杰力 營收: 證據不在 Excel A-W",
+            "杰力 EPS: 來源欄位不吻合",
+            "杰力 EPS: 證據不在 Excel A-W"
+          ]
+        },
+        "usage": {
+          "prompt_tokens": 2808,
+          "completion_tokens": 1659,
+          "total_tokens": 4467,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
         }
       }
     }
@@ -4495,11 +4839,347 @@
     "error": "Expecting ',' delimiter: line 1 column 911 (char 910)"
   },
   "line-989d0430b6a71dde3aac::gpt-5.6-luna-full-article-v2": {
-    "status": "attempted",
+    "status": "success",
     "fingerprint": "6fa4501ad1853108df6003f7268685f450300bc00d3dd4e8a3ad846072a82e49",
     "category": "法說／訪談",
     "model": "gpt-5.6-luna",
     "at": "2026-10-26T13:36:14.506901+00:00",
-    "original_id": "line-989d0430b6a71dde3aac"
+    "original_id": "line-989d0430b6a71dde3aac",
+    "schema": "research-full-article-v2",
+    "result": {
+      "title": "杰力2Q26獲利回升但4Q26面臨庫存調節，AI與高階MOSFET成為中長期成長支點",
+      "summary": [
+        "杰力2Q26營收4.03億元、EPS 3.04元，稅後淨利較前季增加84%，但毛利率降至33.2%。",
+        "4Q26受客戶庫存調節、傳統淡季及部分客戶資金緊張影響，訂單已下調；高壓LDO漲價與成本轉嫁範圍擴大，有助支撐毛利。",
+        "AI相關營收占比由2026年1～9月約1.4%提升至3Q26逾2%，伺服器與車用目前仍屬小個位數，但高階MOSFET布局持續推進。",
+        "2027年公司以維持營收與現狀為目標，CPU/GPU架構變化為正面因素，基板價格高漲則仍是主要逆風。"
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "國泰證期於2026年10月21日發布杰力（5299.TWO）Call Memo，重點聚焦2Q26營運表現與4Q26展望。杰力2025年受到地緣政治與供應鏈不確定性影響，全年營收下滑，但透過持續開發電源開關、電源功率轉換及保護元件，改善產品組合並提升獲利結構。進入2026年後，公司仍處於傳統PC／NB比重偏高的產業結構，短期業績受季節性、客戶庫存與終端需求影響；另一方面，AI、伺服器、車用及高階MOSFET產品逐步形成新的成長來源。"
+        },
+        {
+          "type": "heading",
+          "text": "一、2Q26營收溫和成長，稅後獲利顯著回升"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2Q26／2026年1～9月",
+            "比較或說明"
+          ],
+          "rows": [
+            [
+              "營收",
+              "4.03億元",
+              "季增4%"
+            ],
+            [
+              "毛利率",
+              "33.2%",
+              "季減1.3個百分點"
+            ],
+            [
+              "營業費用",
+              "9,000萬元",
+              "季增9%，主要受獲利增加及章程相關固定酬勞提列等影響"
+            ],
+            [
+              "營業利益",
+              "4,398萬元",
+              "季減14%，較1Q26減少約700萬元"
+            ],
+            [
+              "稅後淨利",
+              "1.55億元",
+              "季增84%，較1Q26增加約7,000萬元"
+            ],
+            [
+              "EPS",
+              "3.04元",
+              "高於1Q26的1.65元"
+            ],
+            [
+              "存貨銷售天數",
+              "95.05天",
+              "低於去年同期的102.53天"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2Q26營收較前季增加4%，但毛利率因產品組合及成本因素降至33.2%，營業費用則季增9%，使營業利益降至4,398萬元。然而，業外收益改善帶動稅後淨利季增84%至1.55億元，EPS由1Q26的1.65元升至3.04元。從營運資產觀察，存貨銷售天數由去年同期102.53天下降至95.05天，顯示庫存水位較前期改善。"
+        },
+        {
+          "type": "heading",
+          "text": "二、2025年營收承壓，但產品組合優化推升毛利率"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2025年",
+            "比較或背景"
+          ],
+          "rows": [
+            [
+              "營收",
+              "14.83億元",
+              "年減12%，受地緣政治及供應鏈不確定性影響"
+            ],
+            [
+              "毛利率",
+              "34.8%",
+              "較2024年的28.3%提升6.5個百分點"
+            ],
+            [
+              "營業利益",
+              "2.0億元",
+              "年增13%"
+            ],
+            [
+              "稅後淨利",
+              "2.33億元",
+              "年減23%，受匯率波動影響"
+            ],
+            [
+              "EPS",
+              "4.58元",
+              "低於2024年的5.93元"
+            ],
+            [
+              "2025年本益比",
+              "15.5倍",
+              "來源原文所列估值口徑"
+            ],
+            [
+              "殖利率",
+              "5.2%",
+              "原文評述優於定存"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2025年營收雖年減12%，公司仍透過新電源開關、功率轉換及保護元件等產品開發，將毛利率由2024年的28.3%提升至34.8%，營業利益反而年增13%至2.0億元。稅後淨利則降至2.33億元，主要受到匯率波動影響。公司過去以美元定存作為自然避險，但因其對財報波動影響較大，2026年改採多元配置，包括3A等級且流動性佳的海外金融債、國內壽險發行的年息3.78%債券、波動較小的ETF及原有定存，期望提升整體避險穩定性。"
+        },
+        {
+          "type": "heading",
+          "text": "三、資產結構穩健，現金與金融資產占比高"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "項目",
+            "2Q26數據",
+            "重點解讀"
+          ],
+          "rows": [
+            [
+              "資產總額",
+              "41.4億元",
+              "較1Q26增加約2.5億元"
+            ],
+            [
+              "現金及金融資產",
+              "31.1億元",
+              "占資產總額75%，為資產增加主要來源"
+            ],
+            [
+              "負債",
+              "8.19億元",
+              "增加部分主要為股利分派轉列應付股利"
+            ],
+            [
+              "權益總額",
+              "33.2億元",
+              "公司資本結構仍具穩健性"
+            ],
+            [
+              "每股淨值",
+              "65.28元",
+              "高於去年同期的60.68元"
+            ],
+            [
+              "流動比率",
+              "2.66倍",
+              "流動性充足"
+            ],
+            [
+              "速動比率",
+              "2.34倍",
+              "短期償債能力穩健"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2Q26資產總額為41.4億元，其中現金及金融資產合計31.1億元，占總資產75%，主要受多元金融配置增加帶動。應收帳款、存貨及固定資產變化不大；負債增加則主要來自股東常會通過股利分派後轉列的應付股利。每股淨值由去年同期60.68元升至65.28元，流動比率及速動比率分別為2.66倍與2.34倍，整體財務結構與流動性仍屬穩健。"
+        },
+        {
+          "type": "heading",
+          "text": "四、營收仍高度集中PC／NB，AI、伺服器與車用占比上升"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "應用別",
+            "2026年1～9月或近期占比",
+            "與2025年比較／解讀"
+          ],
+          "rows": [
+            [
+              "PC及NB",
+              "82%",
+              "占比變化不到1個百分點，仍是主要營收來源"
+            ],
+            [
+              "智慧家居",
+              "9%",
+              "占比成長約50%，為第二大應用"
+            ],
+            [
+              "伺服器及車用",
+              "1.45%",
+              "高於2025年的0.7%，但基期低、對整體營收貢獻仍有限"
+            ],
+            [
+              "SMPS",
+              "5%",
+              "占比減少約32%"
+            ],
+            [
+              "AI相關營收",
+              "約1.4%；3Q26逾2%",
+              "占比仍低，但2026年各季呈高幅度成長"
+            ],
+            [
+              "其他",
+              "未列示占比",
+              "主要包括網通及工業電腦"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "杰力目前的營收結構仍由PC及NB主導，占比約82%，短期仍容易受到消費電子景氣與換機週期影響。智慧家居占比約9%，較前期成長約50%；伺服器及車用占比則由2025年的0.7%升至1.45%，雖然成長幅度明顯，但由於基期及絕對占比仍低，尚不足以改變整體營收結構。AI相關營收在2026年1～9月約占1.4%，3Q26已超過2%，呈逐季攀升趨勢。"
+        },
+        {
+          "type": "paragraph",
+          "text": "在車用領域，公司合作夥伴的全球市占率超過70%，其模組採用杰力供應的MOSFET。公司亦持續開發其他車用方案及風扇等應用，相關MOSFET單價較傳統產品高。私募的策略意義，則包括協助合作夥伴推進MOSFET模組的成熟與量產。"
+        },
+        {
+          "type": "heading",
+          "text": "五、4Q26短期訂單下修，但高壓LDO漲價有助成本轉嫁"
+        },
+        {
+          "type": "paragraph",
+          "text": "公司未提出正式財務預測。依公司說明，4Q26受到客戶庫存調節與傳統電子淡季影響，部分市場客戶又因發債等因素導致資金較緊，訂單因此有所下調。公司目前針對訂單調節積極爭取追加訂單，並努力降低成本吸收壓力，因此4Q26的營收與毛利率仍取決於客戶庫存去化速度、訂單變化及價格轉嫁進度。"
+        },
+        {
+          "type": "paragraph",
+          "text": "成本轉嫁氛圍正在改善，高壓LDO產品已開始調整價格，後續將逐步擴大調價比例與涵蓋範圍。成熟製程晶圓代工產能利用率約98%，且晶圓廠將更多產能投入AI相關產品，預期2027年產能利用率仍會更高，形成晶圓供給偏緊與漲價環境。不過，公司指出此類成熟製程產品長期調價幅度通常較小，且杰力採加權平均成本進貨，晶圓成本不會立即大幅反映，因此毛利率目前仍處在成本轉嫁的初期，但轉嫁條件正逐步增強。"
+        },
+        {
+          "type": "heading",
+          "text": "六、2027年以維持營收為目標，高階產品與架構變化提供支撐"
+        },
+        {
+          "type": "paragraph",
+          "text": "針對2027年，公司以盡量維持營收與現狀為主要目標。研究機構目前預估杰力所處產業在2027年仍將小幅衰退，且目前尚未看到下修訊號；這屬研究機構預估，並非公司正式財務指引。公司將透過由傳統MOSFET逐步轉向價格較高的高階MOSFET，改善產品組合，以降低產業需求偏弱對營收及獲利的影響。"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "2027年因素",
+            "方向",
+            "說明"
+          ],
+          "rows": [
+            [
+              "CPU與GPU架構變化",
+              "正面",
+              "可能帶動相關電源與功率元件需求"
+            ],
+            [
+              "AI相關營收",
+              "正面",
+              "2026年逐季成長，預期2027年仍有不錯成長"
+            ],
+            [
+              "高階MOSFET滲透",
+              "正面",
+              "產品單價高於傳統MOSFET，有助維持營收與獲利"
+            ],
+            [
+              "基板價格",
+              "負面",
+              "今年已影響客戶成本、產品單價及銷售，明年不利因素仍在"
+            ],
+            [
+              "基板價格漲幅",
+              "相對緩和但仍有壓力",
+              "公司認為明年漲幅或許不會如過去幾年大"
+            ],
+            [
+              "產業景氣",
+              "中性偏負面",
+              "研究機構預估所屬產業仍為小幅衰退"
+            ]
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "2027年展望呈現正負因素並存。CPU與GPU可能迎來雙架構變化，對電源及功率元件需求具有正面意義；AI相關營收也預期延續成長。不過，基板價格高漲仍會壓抑客戶的銷售與採購意願，儘管明年漲幅可能低於過去幾年，成本壓力尚未完全消失。杰力能否以高階MOSFET與AI相關產品的成長，抵銷傳統應用與產業景氣的疲弱，是2027年的核心觀察點。"
+        },
+        {
+          "type": "heading",
+          "text": "七、股利政策與投資觀察"
+        },
+        {
+          "type": "paragraph",
+          "text": "杰力自公開發行以來，股利政策大致維持盈餘配發七成上下，並依年度營運狀況調整；原文所列去年配發率為83.66%。公司每股淨值由2021年的46.0元持續增加至2025年的64.1元，期間包含30%的股本增資。2025年本益比15.5倍、殖利率5.2%，原文評述殖利率優於定存，但實際估值與股利吸引力仍須搭配未來獲利、匯率及配息政策觀察。"
+        },
+        {
+          "type": "heading",
+          "text": "八、主要風險與後續追蹤重點"
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "短期需求風險：4Q26同時面臨客戶庫存調節、傳統淡季與部分客戶資金緊張，訂單已經下調。",
+            "營收集中風險：PC及NB占比約82%，AI、伺服器與車用雖成長，但目前占比仍不足以快速改變營收結構。",
+            "成本轉嫁風險：高壓LDO已調價，但其他產品的調價範圍、時程及客戶接受度仍待觀察；若晶圓或其他材料成本上升快於售價轉嫁，毛利率可能承壓。",
+            "基板價格風險：基板高價已影響客戶成本與銷售，2027年此項不利因素仍可能延續。",
+            "匯率與業外波動：2025年稅後獲利受到匯率影響，公司雖改採多元金融配置，仍需留意匯率及金融資產評價變化。",
+            "成長轉型風險：AI、伺服器及車用產品目前仍屬小基期，未來能否順利量產、擴大客戶與提升營收占比，將決定高階MOSFET布局的實際效益。",
+            "後續重點：觀察4Q26庫存調節幅度、晶圓成本與價格轉嫁進度、AI營收占比是否持續提升，以及2027年CPU/GPU架構變化能否帶來實質訂單。"
+          ]
+        },
+        {
+          "type": "quote",
+          "text": "整體而言，杰力短期仍受PC／NB高集中度、4Q26庫存調節與淡季壓力牽制，尚未進入全面成長階段；但高壓LDO調價、成熟製程供給偏緊、高階MOSFET升級，以及AI相關營收逐季增加，為公司維持毛利與尋求中長期成長的主要支撐。"
+        }
+      ]
+    },
+    "audit": {
+      "status": "passed",
+      "issues": [],
+      "blocks": 26
+    },
+    "usage": {
+      "input_tokens": 2833,
+      "input_tokens_details": {
+        "cache_write_tokens": 2830,
+        "cached_tokens": 0
+      },
+      "output_tokens": 3686,
+      "output_tokens_details": {
+        "reasoning_tokens": 128
+      },
+      "total_tokens": 6519
+    }
   }
 }
