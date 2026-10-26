@@ -1278,10 +1278,155 @@
     "at": "2026-10-26T05:50:05.926645+00:00"
   },
   "line-eb38fe730115b004ab61": {
-    "status": "attempted",
+    "status": "needs_review",
     "fingerprint": "967ccdbf240ba70a2fdc995fba33336ebf5dbab9c061857bd07c56bff01a3d07",
     "category": "法說／訪談",
     "model": "gpt-4o-mini",
-    "at": "2026-10-26T06:02:19.324919+00:00"
+    "at": "2026-10-26T06:02:19.324919+00:00",
+    "schema": "research-batch-v2",
+    "result": {
+      "title": "晟田 2026年第三季法說會紀要",
+      "summary": [
+        "前三季營收15.6億元，YoY增長32.43%，創新高。",
+        "SPO募得近8億元建新廠，預計2027年7月全面量產。",
+        "2027年客供料比重約53%，毛利率結構與今年相近。"
+      ],
+      "companies": [
+        {
+          "name": "晟田",
+          "ticker": "4541.TWO",
+          "key_points": [
+            "前三季營收15.6億元，YoY增長32.43%。",
+            "SPO募得近8億元建新廠，2027年7月全面量產。",
+            "2027年客供料比重約53%，毛利率結構與今年相近。"
+          ],
+          "financials": [
+            {
+              "metric": "營收",
+              "period": "3Q26",
+              "value": "15.6",
+              "unit": "億元",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "前三季營收15.6億元，YoY +32.43%，創新高。",
+              "source_column": "I",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "毛利率",
+              "period": "3Q26",
+              "value": "24",
+              "unit": "%",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "前三季毛利率約24%。",
+              "source_column": "P",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "資本支出",
+              "period": "2026",
+              "value": "7",
+              "unit": "億元",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "董事會已通過7億多元資本支出。",
+              "source_column": "P",
+              "qualifier": "exact"
+            }
+          ],
+          "guidance": [
+            {
+              "metric": "營收比重",
+              "period": "2027",
+              "value": "53",
+              "unit": "%",
+              "actual_or_estimate": "estimate",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "2027年營收比重預估客供料約53%。",
+              "source_column": "M",
+              "qualifier": "exact"
+            }
+          ],
+          "operating_metrics": [
+            {
+              "metric": "客供料營收",
+              "period": "3Q26",
+              "value": "7.5",
+              "unit": "億元",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "前三季客供料營收約7.5億元，YoY約+29%。",
+              "source_column": "I",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "自購料營收",
+              "period": "3Q26",
+              "value": "70",
+              "unit": "%",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "自購料YoY +70%，原因是客戶提前補庫存。",
+              "source_column": "K",
+              "qualifier": "exact"
+            },
+            {
+              "metric": "半導體營收",
+              "period": "3Q26",
+              "value": "3.6",
+              "unit": "億元",
+              "actual_or_estimate": "actual",
+              "source_type": "company",
+              "provider": "國泰證期研究部",
+              "evidence": "半導體營收3.6億元，YoY +26%。",
+              "source_column": "I",
+              "qualifier": "exact"
+            }
+          ],
+          "valuations": [],
+          "risks": [],
+          "unstructured_notes": [
+            "新廠將容納全部LEAP引擎產線，預計2027年4月主結構完工，5月分批移機，7月全面開出。",
+            "舊廠騰出的空間供半導體使用，以因應日本客戶委外生產現行機型的需求。",
+            "自購料以鈦合金鍛造件、高強度鋼材及鎳基合金為主，材料為客戶指定商源，漲跌都與客戶結算，因此不影響毛利率，只影響庫存及現金流量。"
+          ]
+        }
+      ]
+    },
+    "audit": {
+      "status": "needs_review",
+      "financial_count": 7,
+      "issues": [
+        "晟田 營收: 來源欄位不吻合",
+        "晟田 毛利率: 證據不在 Excel A-W",
+        "晟田 資本支出: 證據不在 Excel A-W",
+        "晟田 營收比重: 證據不在 Excel A-W",
+        "晟田 客供料營收: 來源欄位不吻合",
+        "晟田 自購料營收: 來源欄位不吻合",
+        "晟田 半導體營收: 來源欄位不吻合"
+      ]
+    },
+    "usage": {
+      "prompt_tokens": 2325,
+      "completion_tokens": 1126,
+      "total_tokens": 3451,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    }
   }
 }
