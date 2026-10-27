@@ -1,47 +1,47 @@
 {
-  "updated_at": "2026/10/27 13:21",
+  "updated_at": "2026/10/27 13:23",
   "method": "market_cap_weighted",
   "source": "TWSE MIS + retry + correct-market quotes + TDCC share fallback",
   "indices": {
     "twse": {
-      "price": 46020.53,
-      "value": 46020.53,
+      "price": 46046.25,
+      "value": 46046.25,
       "prev_close": 46041.43,
-      "change_pct": -0.0454,
+      "change_pct": 0.0105,
       "date": "20261027",
-      "time": "13:20:55",
+      "time": "13:22:00",
       "source": "twse_mis",
       "live": true
     },
     "tpex": {
-      "price": 380.08,
-      "value": 380.08,
+      "price": 379.33,
+      "value": 379.33,
       "prev_close": 381.69,
-      "change_pct": -0.4218,
+      "change_pct": -0.6183,
       "date": "20261027",
-      "time": "13:20:30",
+      "time": "13:22:00",
       "source": "twse_mis",
       "live": true
     }
   },
   "index_quotes": {
     "twse": {
-      "price": 46020.53,
-      "value": 46020.53,
+      "price": 46046.25,
+      "value": 46046.25,
       "prev_close": 46041.43,
-      "change_pct": -0.0454,
+      "change_pct": 0.0105,
       "date": "20261027",
-      "time": "13:20:55",
+      "time": "13:22:00",
       "source": "twse_mis",
       "live": true
     },
     "tpex": {
-      "price": 380.08,
-      "value": 380.08,
+      "price": 379.33,
+      "value": 379.33,
       "prev_close": 381.69,
-      "change_pct": -0.4218,
+      "change_pct": -0.6183,
       "date": "20261027",
-      "time": "13:20:30",
+      "time": "13:22:00",
       "source": "twse_mis",
       "live": true
     }
@@ -49,26 +49,26 @@
   "sectors": [
     {
       "name": "晶圓代工（台積電）",
-      "change_pct": 0.31,
+      "change_pct": 0.42,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2330",
           "name": "台積電",
-          "price": 2392.5,
-          "change_pct": 0.31,
-          "market_cap": 62043195385297.5,
+          "price": 2395.0,
+          "change_pct": 0.42,
+          "market_cap": 62108026310465.0,
           "weight": 1.0,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "IC 封裝／測試",
-      "change_pct": 0.29,
+      "change_pct": 0.1,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -78,7 +78,7 @@
           "price": 111.75,
           "change_pct": 0.68,
           "market_cap": 63568531671.75,
-          "weight": 0.015162898467702442,
+          "weight": 0.015191801916955893,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -86,12 +86,12 @@
         {
           "ticker": "2449",
           "name": "京元電子",
-          "price": 270.25,
-          "change_pct": 2.95,
-          "market_cap": 346969196439.5,
-          "weight": 0.08276199809363331,
+          "price": 270.0,
+          "change_pct": 2.86,
+          "market_cap": 346648225860.0,
+          "weight": 0.0828430521145673,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -100,7 +100,7 @@
           "price": 249.75,
           "change_pct": 1.32,
           "market_cap": 122419976481.0,
-          "weight": 0.029200637878267086,
+          "weight": 0.029256300003610774,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -108,10 +108,10 @@
         {
           "ticker": "3711",
           "name": "日月光投控",
-          "price": 652.5,
-          "change_pct": -0.23,
-          "market_cap": 2917048414005.0,
-          "weight": 0.6957988137169223,
+          "price": 651.0,
+          "change_pct": -0.46,
+          "market_cap": 2910342555582.0,
+          "weight": 0.695522555770113,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": [
@@ -121,10 +121,10 @@
         {
           "ticker": "6147",
           "name": "頎邦",
-          "price": 208.25,
-          "change_pct": 2.59,
-          "market_cap": 155058272496.75,
-          "weight": 0.03698579754187412,
+          "price": 207.25,
+          "change_pct": 2.09,
+          "market_cap": 154313694957.75,
+          "weight": 0.0368783582886107,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": [
@@ -134,10 +134,10 @@
         {
           "ticker": "6239",
           "name": "力成",
-          "price": 254.0,
-          "change_pct": 2.42,
-          "market_cap": 192823245036.0,
-          "weight": 0.045993815018274244,
+          "price": 254.25,
+          "change_pct": 2.52,
+          "market_cap": 193013031694.5,
+          "weight": 0.04612684401828109,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": [
@@ -147,34 +147,10 @@
         {
           "ticker": "6257",
           "name": "矽格",
-          "price": 230.75,
-          "change_pct": -0.54,
-          "market_cap": 111662768993.75,
-          "weight": 0.02663473867254944,
-          "shares_source": "master",
-          "quote_source": "mis_book",
-          "tags": [
-            "光通封測"
-          ]
-        },
-        {
-          "ticker": "6271",
-          "name": "同欣電",
-          "price": 208.75,
-          "change_pct": -2.91,
-          "market_cap": 43640862510.0,
-          "weight": 0.010409583954196675,
-          "shares_source": "master",
-          "quote_source": "mis_book",
-          "tags": []
-        },
-        {
-          "ticker": "8150",
-          "name": "南茂",
-          "price": 96.9,
-          "change_pct": 1.04,
-          "market_cap": 68268290909.4,
-          "weight": 0.01628392439466754,
+          "price": 231.0,
+          "change_pct": -0.43,
+          "market_cap": 111783747075.0,
+          "weight": 0.026714421403777368,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": [
@@ -182,12 +158,36 @@
           ]
         },
         {
+          "ticker": "6271",
+          "name": "同欣電",
+          "price": 208.25,
+          "change_pct": -3.14,
+          "market_cap": 43536333498.0,
+          "weight": 0.010404445993929935,
+          "shares_source": "master",
+          "quote_source": "mis_book",
+          "tags": []
+        },
+        {
+          "ticker": "8150",
+          "name": "南茂",
+          "price": 96.75,
+          "change_pct": 0.89,
+          "market_cap": 68162612440.5,
+          "weight": 0.01628970937515761,
+          "shares_source": "master",
+          "quote_source": "mis_book",
+          "tags": [
+            "光通封測"
+          ]
+        },
+        {
           "ticker": "3374",
           "name": "精材",
-          "price": 464.0,
-          "change_pct": 0.11,
-          "market_cap": 125913042624.0,
-          "weight": 0.030033833264008797,
+          "price": 463.0,
+          "change_pct": -0.11,
+          "market_cap": 125641678308.0,
+          "weight": 0.030026232149346167,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -198,7 +198,7 @@
           "price": 118.0,
           "change_pct": 0.0,
           "market_cap": 15227591312.0,
-          "weight": 0.0036322125885146694,
+          "weight": 0.0036391362959083116,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -206,10 +206,10 @@
         {
           "ticker": "3265",
           "name": "台星科",
-          "price": 218.5,
-          "change_pct": -3.53,
-          "market_cap": 29773172491.5,
-          "weight": 0.007101746409389383,
+          "price": 218.25,
+          "change_pct": -3.64,
+          "market_cap": 29739107076.75,
+          "weight": 0.007107142669741795,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": [
@@ -220,17 +220,17 @@
     },
     {
       "name": "光通訊元件／模組",
-      "change_pct": 2.86,
+      "change_pct": 2.32,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2455",
           "name": "全新",
-          "price": 465.0,
-          "change_pct": -0.43,
-          "market_cap": 86947300995.0,
-          "weight": 0.10723005365253824,
+          "price": 462.5,
+          "change_pct": -0.96,
+          "market_cap": 86479842387.5,
+          "weight": 0.10720705347005281,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -238,10 +238,10 @@
         {
           "ticker": "3081",
           "name": "聯亞",
-          "price": 2527.5,
-          "change_pct": 6.42,
-          "market_cap": 257473907610.0,
-          "weight": 0.3175364917737545,
+          "price": 2510.0,
+          "change_pct": 5.68,
+          "market_cap": 255691200040.0,
+          "weight": 0.31697444627249266,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -249,10 +249,10 @@
         {
           "ticker": "3105",
           "name": "穩懋",
-          "price": 493.75,
-          "change_pct": 1.59,
-          "market_cap": 209320564600.0,
-          "weight": 0.2581501106506842,
+          "price": 490.75,
+          "change_pct": 0.98,
+          "market_cap": 208048743448.0,
+          "weight": 0.2579131985840778,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -260,10 +260,10 @@
         {
           "ticker": "3234",
           "name": "光環",
-          "price": 170.75,
-          "change_pct": -3.8,
-          "market_cap": 21729592409.0,
-          "weight": 0.02679859332262482,
+          "price": 169.75,
+          "change_pct": -4.37,
+          "market_cap": 21602332717.0,
+          "weight": 0.02677991049396315,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -271,21 +271,21 @@
         {
           "ticker": "3450",
           "name": "聯鈞",
-          "price": 429.25,
-          "change_pct": 1.24,
-          "market_cap": 62533733223.5,
-          "weight": 0.07712137687902497,
+          "price": 427.0,
+          "change_pct": 0.71,
+          "market_cap": 62205950114.0,
+          "weight": 0.07711527259895859,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "4908",
           "name": "前鼎",
-          "price": 199.25,
-          "change_pct": 1.14,
-          "market_cap": 15584718719.75,
-          "weight": 0.019220265670749352,
+          "price": 198.75,
+          "change_pct": 0.89,
+          "market_cap": 15545610266.25,
+          "weight": 0.019271532244135543,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -293,10 +293,10 @@
         {
           "ticker": "4971",
           "name": "IET-KY",
-          "price": 455.25,
-          "change_pct": 1.17,
-          "market_cap": 21481309500.75,
-          "weight": 0.0264923918733793,
+          "price": 454.25,
+          "change_pct": 0.94,
+          "market_cap": 21434123757.75,
+          "weight": 0.02657138575119531,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -307,7 +307,7 @@
           "price": 169.75,
           "change_pct": 2.88,
           "market_cap": 15445525509.75,
-          "weight": 0.019048601970950006,
+          "weight": 0.019147459494400932,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -318,7 +318,7 @@
           "price": 466.0,
           "change_pct": 3.56,
           "market_cap": 66545744582.0,
-          "weight": 0.08206929577131224,
+          "weight": 0.08249521507728999,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -326,10 +326,10 @@
         {
           "ticker": "4991",
           "name": "環宇-KY",
-          "price": 418.75,
-          "change_pct": 0.9,
-          "market_cap": 50820912025.0,
-          "weight": 0.06267623101291042,
+          "price": 417.75,
+          "change_pct": 0.66,
+          "market_cap": 50699548653.0,
+          "weight": 0.06285105376343,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -337,10 +337,10 @@
         {
           "ticker": "6530",
           "name": "創威",
-          "price": 87.85,
-          "change_pct": 0.98,
-          "market_cap": 2964937500.0,
-          "weight": 0.0036565874220719687,
+          "price": 87.8,
+          "change_pct": 0.92,
+          "market_cap": 2963250000.0,
+          "weight": 0.003673472250003226,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -349,17 +349,17 @@
     },
     {
       "name": "光纖連接／精密光學",
-      "change_pct": -1.55,
+      "change_pct": -1.67,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "3008",
           "name": "大立光",
-          "price": 6030.0,
-          "change_pct": -2.35,
-          "market_cap": 788713127910.0,
-          "weight": 0.5751384145765099,
+          "price": 6022.5,
+          "change_pct": -2.47,
+          "market_cap": 787732141432.5,
+          "weight": 0.5751518570046737,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -367,10 +367,10 @@
         {
           "ticker": "3163",
           "name": "波若威",
-          "price": 539.5,
-          "change_pct": -2.26,
-          "market_cap": 51055782115.0,
-          "weight": 0.03723044607916755,
+          "price": 538.0,
+          "change_pct": -2.54,
+          "market_cap": 50913829060.0,
+          "weight": 0.03717403644064303,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -378,32 +378,32 @@
         {
           "ticker": "3363",
           "name": "上詮",
-          "price": 503.0,
-          "change_pct": -0.59,
-          "market_cap": 57161205201.0,
-          "weight": 0.04168258872741513,
+          "price": 502.5,
+          "change_pct": -0.69,
+          "market_cap": 57104384917.5,
+          "weight": 0.04169398619267099,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "3406",
           "name": "玉晶光",
-          "price": 1205.0,
-          "change_pct": 3.88,
-          "market_cap": 135855390915.0,
-          "weight": 0.09906726714385454,
+          "price": 1202.5,
+          "change_pct": 3.66,
+          "market_cap": 135573533257.5,
+          "weight": 0.09898716240261177,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "6426",
           "name": "統新",
-          "price": 316.5,
-          "change_pct": 1.12,
-          "market_cap": 12188098500.0,
-          "weight": 0.008887697440218379,
+          "price": 316.0,
+          "change_pct": 0.96,
+          "market_cap": 12168844000.0,
+          "weight": 0.008884915133045785,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -411,10 +411,10 @@
         {
           "ticker": "6442",
           "name": "光聖",
-          "price": 1382.5,
-          "change_pct": -1.95,
-          "market_cap": 113112765640.0,
-          "weight": 0.08248309099525652,
+          "price": 1377.5,
+          "change_pct": -2.3,
+          "market_cap": 112703677880.0,
+          "weight": 0.0822890500647333,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -422,10 +422,10 @@
         {
           "ticker": "6456",
           "name": "GIS-KY",
-          "price": 97.65,
-          "change_pct": -4.26,
-          "market_cap": 32999821470.000004,
-          "weight": 0.024063838079958294,
+          "price": 97.5,
+          "change_pct": -4.41,
+          "market_cap": 32949130500.0,
+          "weight": 0.02405735731349259,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -433,10 +433,10 @@
         {
           "ticker": "6588",
           "name": "東典光電",
-          "price": 89.44999999999999,
-          "change_pct": 1.65,
-          "market_cap": 3103988796.2499995,
-          "weight": 0.002263463269426125,
+          "price": 89.3,
+          "change_pct": 1.48,
+          "market_cap": 3098783672.5,
+          "weight": 0.002262534546899479,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -444,10 +444,10 @@
         {
           "ticker": "6715",
           "name": "嘉基",
-          "price": 444.25,
-          "change_pct": -7.54,
-          "market_cap": 30330736050.5,
-          "weight": 0.022117511206195796,
+          "price": 442.5,
+          "change_pct": -7.91,
+          "market_cap": 30211256505.0,
+          "weight": 0.02205833603500895,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -455,10 +455,10 @@
         {
           "ticker": "6789",
           "name": "采鈺",
-          "price": 436.75,
-          "change_pct": -0.29,
-          "market_cap": 139066929723.25,
-          "weight": 0.10140915708224366,
+          "price": 437.75,
+          "change_pct": -0.06,
+          "market_cap": 139385342842.25,
+          "weight": 0.1017703030743004,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -466,21 +466,21 @@
         {
           "ticker": "7772",
           "name": "耀穎",
-          "price": 104.0,
-          "change_pct": -8.77,
-          "market_cap": 2755854400.0,
-          "weight": 0.002009599782648176,
+          "price": 104.25,
+          "change_pct": -8.55,
+          "market_cap": 2762479050.0,
+          "weight": 0.0020169863231106378,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "4903",
           "name": "聯光通",
-          "price": 47.475,
-          "change_pct": -2.21,
-          "market_cap": 5001192822.150001,
-          "weight": 0.0036469256171059905,
+          "price": 47.5,
+          "change_pct": -2.16,
+          "market_cap": 5003826415.0,
+          "weight": 0.003653475468809341,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -489,17 +489,17 @@
     },
     {
       "name": "光通封裝／設備／檢測",
-      "change_pct": 0.7,
+      "change_pct": 0.26,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "3055",
           "name": "蔚華科",
-          "price": 146.25,
-          "change_pct": 2.27,
-          "market_cap": 16815081757.5,
-          "weight": 0.051521742807793036,
+          "price": 146.5,
+          "change_pct": 2.45,
+          "market_cap": 16843825487.0,
+          "weight": 0.05183075010121461,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -507,10 +507,10 @@
         {
           "ticker": "6187",
           "name": "萬潤",
-          "price": 1292.5,
-          "change_pct": 2.58,
-          "market_cap": 127004590157.5,
-          "weight": 0.38914457413121367,
+          "price": 1277.5,
+          "change_pct": 1.39,
+          "market_cap": 125530649072.5,
+          "weight": 0.386274941351155,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -518,10 +518,10 @@
         {
           "ticker": "6278",
           "name": "台表科",
-          "price": 280.5,
-          "change_pct": -3.44,
-          "market_cap": 82017738016.5,
-          "weight": 0.2513039701325438,
+          "price": 279.75,
+          "change_pct": -3.7,
+          "market_cap": 81798439251.75,
+          "weight": 0.2517049625572886,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -529,10 +529,10 @@
         {
           "ticker": "6451",
           "name": "訊芯-KY",
-          "price": 350.25,
-          "change_pct": -0.21,
-          "market_cap": 41278223750.25,
-          "weight": 0.12647729331879906,
+          "price": 351.25,
+          "change_pct": 0.07,
+          "market_cap": 41396077351.25,
+          "weight": 0.12738138031762122,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -540,10 +540,10 @@
         {
           "ticker": "6830",
           "name": "汎銓",
-          "price": 470.5,
-          "change_pct": 3.63,
-          "market_cap": 25601605857.5,
-          "weight": 0.07844382629113736,
+          "price": 469.5,
+          "change_pct": 3.41,
+          "market_cap": 25547192242.5,
+          "weight": 0.078612197563473,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -551,10 +551,10 @@
         {
           "ticker": "3498",
           "name": "陽程",
-          "price": 249.5,
-          "change_pct": 4.61,
-          "market_cap": 15287615496.0,
-          "weight": 0.04684155599648106,
+          "price": 249.75,
+          "change_pct": 4.72,
+          "market_cap": 15302933748.0,
+          "weight": 0.04708921589814566,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -562,10 +562,10 @@
         {
           "ticker": "7728",
           "name": "光焱科技",
-          "price": 533.5,
-          "change_pct": -2.47,
-          "market_cap": 7465063303.5,
-          "weight": 0.02287310148791115,
+          "price": 546.0,
+          "change_pct": -0.18,
+          "market_cap": 7639971066.0,
+          "weight": 0.023509233778750332,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -573,19 +573,19 @@
         {
           "ticker": "6706",
           "name": "惠特",
-          "price": 138.75,
-          "change_pct": 0.91,
-          "market_cap": 10898733828.75,
-          "weight": 0.03339393583412084,
+          "price": 139.0,
+          "change_pct": 1.09,
+          "market_cap": 10918371187.0,
+          "weight": 0.03359731843235161,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "IP",
-      "change_pct": -0.32,
+      "change_pct": -0.53,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -595,7 +595,7 @@
           "price": 246.0,
           "change_pct": -9.89,
           "market_cap": 9727578000.0,
-          "weight": 0.0012123908941766137,
+          "weight": 0.0012149575140782646,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -603,10 +603,10 @@
         {
           "ticker": "6643",
           "name": "M31",
-          "price": 426.5,
-          "change_pct": -1.95,
-          "market_cap": 18177498240.0,
-          "weight": 0.0022655416738973895,
+          "price": 426.75,
+          "change_pct": -1.9,
+          "market_cap": 18188153280.0,
+          "weight": 0.002271668599803901,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -614,10 +614,10 @@
         {
           "ticker": "6533",
           "name": "晶心科",
-          "price": 267.75,
-          "change_pct": -5.22,
-          "market_cap": 13561781420.25,
-          "weight": 0.0016902645553420062,
+          "price": 266.5,
+          "change_pct": -5.66,
+          "market_cap": 13498467781.5,
+          "weight": 0.0016859350662288997,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -628,7 +628,7 @@
           "price": 54.2,
           "change_pct": -1.28,
           "market_cap": 5796562630.0,
-          "weight": 0.000722451133276592,
+          "weight": 0.0007239805554007141,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -636,10 +636,10 @@
         {
           "ticker": "3661",
           "name": "世芯-KY",
-          "price": 3515.0,
-          "change_pct": 0.57,
-          "market_cap": 303362475710.0,
-          "weight": 0.037809401598802715,
+          "price": 3497.5,
+          "change_pct": 0.07,
+          "market_cap": 301852136215.0,
+          "weight": 0.037700804972727035,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -647,10 +647,10 @@
         {
           "ticker": "3443",
           "name": "創意",
-          "price": 7477.5,
-          "change_pct": -1.42,
-          "market_cap": 1002074064502.5,
-          "weight": 0.12489290459489295,
+          "price": 7422.5,
+          "change_pct": -2.14,
+          "market_cap": 994703409397.5,
+          "weight": 0.12423671971859397,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -661,7 +661,7 @@
           "price": 143.75,
           "change_pct": -0.86,
           "market_cap": 10341014906.25,
-          "weight": 0.0012888462378695014,
+          "weight": 0.0012915747130008907,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -669,10 +669,10 @@
         {
           "ticker": "3035",
           "name": "智原",
-          "price": 190.75,
-          "change_pct": -0.65,
-          "market_cap": 49699972204.75,
-          "weight": 0.00619432645432087,
+          "price": 191.5,
+          "change_pct": -0.26,
+          "market_cap": 49895384939.5,
+          "weight": 0.006231846493553997,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -680,10 +680,10 @@
         {
           "ticker": "3529",
           "name": "力旺",
-          "price": 2502.5,
-          "change_pct": 0.7,
-          "market_cap": 186902946230.0,
-          "weight": 0.02329453745876242,
+          "price": 2500.0,
+          "change_pct": 0.6,
+          "market_cap": 186716230000.0,
+          "weight": 0.023320531240033797,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -691,10 +691,10 @@
         {
           "ticker": "2454",
           "name": "聯發科",
-          "price": 4002.5,
-          "change_pct": -0.19,
-          "market_cap": 6423822833532.5,
-          "weight": 0.8006293353986589,
+          "price": 3997.5,
+          "change_pct": -0.31,
+          "market_cap": 6415798070467.5,
+          "weight": 0.8013219811265785,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -703,17 +703,17 @@
     },
     {
       "name": "IC 設計",
-      "change_pct": 1.39,
+      "change_pct": 1.33,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2379",
           "name": "瑞昱",
-          "price": 790.5,
-          "change_pct": 2.4,
-          "market_cap": 407512742710.5,
-          "weight": 0.2908623291669083,
+          "price": 790.0,
+          "change_pct": 2.33,
+          "market_cap": 407254986390.0,
+          "weight": 0.290842730413967,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -721,10 +721,10 @@
         {
           "ticker": "6531",
           "name": "愛普*",
-          "price": 822.0,
-          "change_pct": 3.4,
-          "market_cap": 134108545404.0,
-          "weight": 0.09572001017181556,
+          "price": 820.5,
+          "change_pct": 3.21,
+          "market_cap": 133863821781.0,
+          "weight": 0.09559936828655784,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -732,10 +732,10 @@
         {
           "ticker": "5269",
           "name": "祥碩",
-          "price": 1487.5,
-          "change_pct": 1.54,
-          "market_cap": 110307584012.5,
-          "weight": 0.07873206760909339,
+          "price": 1485.0,
+          "change_pct": 1.37,
+          "market_cap": 110122193115.0,
+          "weight": 0.07864419195611648,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -746,7 +746,7 @@
           "price": 523.0,
           "change_pct": 2.15,
           "market_cap": 41294923124.0,
-          "weight": 0.029474262430973504,
+          "weight": 0.02949092974915122,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -754,10 +754,10 @@
         {
           "ticker": "5274",
           "name": "信驊",
-          "price": 16077.5,
-          "change_pct": 0.42,
-          "market_cap": 668549926857.5,
-          "weight": 0.4771776892097864,
+          "price": 16075.0,
+          "change_pct": 0.41,
+          "market_cap": 668445969475.0,
+          "weight": 0.47737328551735564,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -768,7 +768,7 @@
           "price": 129.25,
           "change_pct": -0.58,
           "market_cap": 39276540666.0,
-          "weight": 0.028033641411422786,
+          "weight": 0.028049494076851766,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -777,7 +777,7 @@
     },
     {
       "name": "記憶體",
-      "change_pct": 4.88,
+      "change_pct": 4.64,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -787,7 +787,7 @@
           "price": 102.75,
           "change_pct": 3.27,
           "market_cap": 203635769554.5,
-          "weight": 0.05452649752173541,
+          "weight": 0.05465113860905843,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -795,10 +795,10 @@
         {
           "ticker": "2344",
           "name": "華邦電",
-          "price": 162.75,
-          "change_pct": 5.34,
-          "market_cap": 732375031410.75,
-          "weight": 0.19610427687907486,
+          "price": 162.25,
+          "change_pct": 5.02,
+          "market_cap": 730125031314.25,
+          "weight": 0.19594869985559685,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -806,10 +806,10 @@
         {
           "ticker": "2408",
           "name": "南亞科",
-          "price": 440.25,
-          "change_pct": 6.34,
-          "market_cap": 1518953144833.5,
-          "weight": 0.40672223287976766,
+          "price": 439.25,
+          "change_pct": 6.1,
+          "market_cap": 1515502938939.5,
+          "weight": 0.4067259959270145,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -820,7 +820,7 @@
           "price": 282.25,
           "change_pct": 2.64,
           "market_cap": 121747316768.75,
-          "weight": 0.03259964975992345,
+          "weight": 0.032674168681495606,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -828,32 +828,32 @@
         {
           "ticker": "3006",
           "name": "晶豪科",
-          "price": 250.75,
-          "change_pct": 7.16,
-          "market_cap": 74755556130.75,
-          "weight": 0.02001690889089292,
+          "price": 250.0,
+          "change_pct": 6.84,
+          "market_cap": 74531960250.0,
+          "weight": 0.020002657191999063,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "3260",
           "name": "威剛",
-          "price": 333.75,
-          "change_pct": 1.75,
-          "market_cap": 112294665757.5,
-          "weight": 0.03006856225468627,
+          "price": 333.5,
+          "change_pct": 1.68,
+          "market_cap": 112210549903.0,
+          "weight": 0.03011472065818117,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "4967",
           "name": "十銓",
-          "price": 264.25,
-          "change_pct": 5.7,
-          "market_cap": 26046169614.5,
-          "weight": 0.006974248217996091,
+          "price": 263.75,
+          "change_pct": 5.5,
+          "market_cap": 25996886417.5,
+          "weight": 0.006976964047696426,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -864,7 +864,7 @@
           "price": 1102.5,
           "change_pct": 3.52,
           "market_cap": 108364648927.5,
-          "weight": 0.029016241960416838,
+          "weight": 0.02908256963801125,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -875,7 +875,7 @@
           "price": 105.75,
           "change_pct": 5.75,
           "market_cap": 34753339590.75,
-          "weight": 0.009305722119511509,
+          "weight": 0.009326993893346597,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -883,12 +883,12 @@
         {
           "ticker": "6770",
           "name": "力積電",
-          "price": 69.45,
-          "change_pct": 4.59,
-          "market_cap": 327254015449.2,
-          "weight": 0.08762711630381365,
+          "price": 69.3,
+          "change_pct": 4.37,
+          "market_cap": 326547203320.8,
+          "weight": 0.08763772941329528,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -897,7 +897,7 @@
           "price": 41.675,
           "change_pct": 0.91,
           "market_cap": 2538913889.575,
-          "weight": 0.0006798318498300958,
+          "weight": 0.0006813858645717517,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -905,10 +905,10 @@
         {
           "ticker": "8096",
           "name": "擎亞",
-          "price": 82.65,
-          "change_pct": 1.66,
-          "market_cap": 12343204404.900002,
-          "weight": 0.0033050760476239756,
+          "price": 82.45,
+          "change_pct": 1.41,
+          "market_cap": 12313335791.7,
+          "weight": 0.00330461501220676,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -916,10 +916,10 @@
         {
           "ticker": "8271",
           "name": "宇瞻",
-          "price": 181.5,
-          "change_pct": 2.54,
-          "market_cap": 23524989279.0,
-          "weight": 0.006299164790284749,
+          "price": 181.0,
+          "change_pct": 2.26,
+          "market_cap": 23460182146.0,
+          "weight": 0.006296171193596037,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -927,10 +927,10 @@
         {
           "ticker": "8299",
           "name": "群聯",
-          "price": 1907.5,
-          "change_pct": 1.46,
-          "market_cap": 421872708652.5,
-          "weight": 0.11296267474596049,
+          "price": 1900.0,
+          "change_pct": 1.06,
+          "market_cap": 420213969300.0,
+          "weight": 0.11277572664133866,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -941,7 +941,7 @@
           "price": 145.75,
           "change_pct": 1.92,
           "market_cap": 14160917837.0,
-          "weight": 0.003791795778481965,
+          "weight": 0.0038004633725915705,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -950,7 +950,7 @@
     },
     {
       "name": "半導體設備",
-      "change_pct": -0.28,
+      "change_pct": -0.34,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -960,7 +960,7 @@
           "price": 1957.5,
           "change_pct": -1.14,
           "market_cap": 832418539965.0,
-          "weight": 0.346587154531917,
+          "weight": 0.34676185847473046,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -968,10 +968,10 @@
         {
           "ticker": "2467",
           "name": "志聖",
-          "price": 454.25,
-          "change_pct": 0.5,
-          "market_cap": 73367590957.0,
-          "weight": 0.030547451028322122,
+          "price": 453.25,
+          "change_pct": 0.28,
+          "market_cap": 73206077273.0,
+          "weight": 0.030495567059207442,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -979,21 +979,21 @@
         {
           "ticker": "3131",
           "name": "弘塑",
-          "price": 2010.0,
-          "change_pct": 1.26,
-          "market_cap": 59961562230.0,
-          "weight": 0.02496569482397397,
+          "price": 2017.5,
+          "change_pct": 1.64,
+          "market_cap": 60185299402.5,
+          "weight": 0.025071481798743318,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "3413",
           "name": "京鼎",
-          "price": 274.5,
-          "change_pct": -0.54,
-          "market_cap": 30448750545.0,
-          "weight": 0.012677691934741659,
+          "price": 275.25,
+          "change_pct": -0.27,
+          "market_cap": 30531943852.5,
+          "weight": 0.012718738332743259,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1001,32 +1001,32 @@
         {
           "ticker": "3455",
           "name": "由田",
-          "price": 243.25,
-          "change_pct": -2.11,
-          "market_cap": 14558694937.5,
-          "weight": 0.006061682206523787,
+          "price": 243.0,
+          "change_pct": -2.21,
+          "market_cap": 14543732250.0,
+          "weight": 0.006058504684891955,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "3563",
           "name": "牧德",
-          "price": 652.5,
-          "change_pct": -0.84,
-          "market_cap": 41734459845.0,
-          "weight": 0.017376628449689843,
+          "price": 650.0,
+          "change_pct": -1.22,
+          "market_cap": 41574557700.0,
+          "weight": 0.017318776794571483,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "3580",
           "name": "友威科",
-          "price": 107.25,
-          "change_pct": 2.14,
-          "market_cap": 4233227963.25,
-          "weight": 0.0017625537681194,
+          "price": 107.75,
+          "change_pct": 2.62,
+          "market_cap": 4252963291.75,
+          "weight": 0.0017716633931940601,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1034,10 +1034,10 @@
         {
           "ticker": "3583",
           "name": "辛耘",
-          "price": 592.5,
-          "change_pct": -0.25,
-          "market_cap": 49686246570.0,
-          "weight": 0.02068744746938431,
+          "price": 591.5,
+          "change_pct": -0.42,
+          "market_cap": 49602387926.0,
+          "weight": 0.02066294225345761,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1045,10 +1045,10 @@
         {
           "ticker": "5443",
           "name": "均豪",
-          "price": 99.35,
-          "change_pct": -0.05,
-          "market_cap": 16367579081.4,
-          "weight": 0.0068148321884290005,
+          "price": 99.19999999999999,
+          "change_pct": -0.2,
+          "market_cap": 16342867084.799997,
+          "weight": 0.006807973022043726,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1056,10 +1056,10 @@
         {
           "ticker": "6187",
           "name": "萬潤",
-          "price": 1292.5,
-          "change_pct": 2.58,
-          "market_cap": 127004590157.5,
-          "weight": 0.05287984037096415,
+          "price": 1277.5,
+          "change_pct": 1.39,
+          "market_cap": 125530649072.5,
+          "weight": 0.05229249359312629,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1067,10 +1067,10 @@
         {
           "ticker": "6640",
           "name": "均華",
-          "price": 936.0,
-          "change_pct": 1.08,
-          "market_cap": 27061164000.0,
-          "weight": 0.011267230820538791,
+          "price": 935.5,
+          "change_pct": 1.03,
+          "market_cap": 27046708250.0,
+          "weight": 0.011266888431855646,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1078,10 +1078,10 @@
         {
           "ticker": "6937",
           "name": "天虹",
-          "price": 263.0,
-          "change_pct": -0.94,
-          "market_cap": 17793334169.0,
-          "weight": 0.007408461925329701,
+          "price": 262.75,
+          "change_pct": -1.04,
+          "market_cap": 17776420353.25,
+          "weight": 0.007405150489536399,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1092,7 +1092,7 @@
           "price": 2257.5,
           "change_pct": 1.92,
           "market_cap": 63210000000.0,
-          "weight": 0.026318219724999894,
+          "weight": 0.026331485931475426,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1100,10 +1100,10 @@
         {
           "ticker": "7769",
           "name": "鴻勁",
-          "price": 5272.5,
-          "change_pct": -0.05,
-          "market_cap": 948680925000.0,
-          "weight": 0.39499435268258415,
+          "price": 5275.0,
+          "change_pct": 0.0,
+          "market_cap": 949130750000.0,
+          "weight": 0.39538084149273406,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1111,10 +1111,10 @@
         {
           "ticker": "7822",
           "name": "倍利科",
-          "price": 743.5,
-          "change_pct": -3.06,
-          "market_cap": 33874427290.5,
-          "weight": 0.014104012347570192,
+          "price": 744.0,
+          "change_pct": -3.0,
+          "market_cap": 33897207672.0,
+          "weight": 0.014120611405340435,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1122,10 +1122,10 @@
         {
           "ticker": "3030",
           "name": "德律",
-          "price": 259.75,
-          "change_pct": -1.24,
-          "market_cap": 61357106000.0,
-          "weight": 0.02554674572691203,
+          "price": 259.5,
+          "change_pct": -1.33,
+          "market_cap": 61298052000.0,
+          "weight": 0.025535022842348508,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1134,7 +1134,7 @@
     },
     {
       "name": "散熱",
-      "change_pct": -2.67,
+      "change_pct": -2.84,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -1144,7 +1144,7 @@
           "price": 1507.5,
           "change_pct": -3.37,
           "market_cap": 3915796568467.5,
-          "weight": 0.5955844187656876,
+          "weight": 0.5965808724902442,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1155,7 +1155,7 @@
           "price": 153.25,
           "change_pct": -1.13,
           "market_cap": 43974117274.25,
-          "weight": 0.0066883707106797675,
+          "weight": 0.006699560815215551,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1163,10 +1163,10 @@
         {
           "ticker": "3017",
           "name": "奇鋐",
-          "price": 3145.0,
-          "change_pct": 0.0,
-          "market_cap": 1234947486515.0,
-          "weight": 0.18783291422364085,
+          "price": 3135.0,
+          "change_pct": -0.32,
+          "market_cap": 1231020785445.0,
+          "weight": 0.1875489294179096,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1174,10 +1174,10 @@
         {
           "ticker": "3324",
           "name": "雙鴻",
-          "price": 1337.5,
-          "change_pct": -1.65,
-          "market_cap": 124490269487.5,
-          "weight": 0.01893470804682633,
+          "price": 1332.5,
+          "change_pct": -2.02,
+          "market_cap": 124024885302.5,
+          "weight": 0.018895484734853127,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1185,10 +1185,10 @@
         {
           "ticker": "3338",
           "name": "泰碩",
-          "price": 63.55,
-          "change_pct": -1.32,
-          "market_cap": 5586562360.55,
-          "weight": 0.0008497043802529842,
+          "price": 63.65,
+          "change_pct": -1.16,
+          "market_cap": 5595353174.65,
+          "weight": 0.0008524652954916289,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1196,23 +1196,23 @@
         {
           "ticker": "3483",
           "name": "力致",
-          "price": 84.44999999999999,
-          "change_pct": -8.6,
-          "market_cap": 8364709753.649999,
-          "weight": 0.0012722547531934332,
+          "price": 84.3,
+          "change_pct": -8.77,
+          "market_cap": 8349852365.099999,
+          "weight": 0.0012721197646601977,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "3653",
           "name": "健策",
-          "price": 5870.0,
-          "change_pct": -3.29,
-          "market_cap": 864086763860.0,
-          "weight": 0.13142577864255395,
+          "price": 5840.0,
+          "change_pct": -3.79,
+          "market_cap": 859670647520.0,
+          "weight": 0.1309728572422879,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -1221,7 +1221,7 @@
           "price": 108.0,
           "change_pct": 0.0,
           "market_cap": 9325086768.0,
-          "weight": 0.0014183260763294629,
+          "weight": 0.0014206990334735116,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1229,10 +1229,10 @@
         {
           "ticker": "6805",
           "name": "富世達",
-          "price": 2265.0,
-          "change_pct": -3.0,
-          "market_cap": 155274574440.0,
-          "weight": 0.023616936056290033,
+          "price": 2257.5,
+          "change_pct": -3.32,
+          "market_cap": 154760420220.0,
+          "weight": 0.023578116203809302,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1240,10 +1240,10 @@
         {
           "ticker": "6831",
           "name": "邁科",
-          "price": 398.75,
-          "change_pct": 0.82,
-          "market_cap": 26915625000.0,
-          "weight": 0.0040938099288477525,
+          "price": 398.5,
+          "change_pct": 0.76,
+          "market_cap": 26898750000.0,
+          "weight": 0.004098088208442676,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1251,12 +1251,12 @@
         {
           "ticker": "8996",
           "name": "高力",
-          "price": 1475.0,
-          "change_pct": -5.45,
-          "market_cap": 137914767075.0,
-          "weight": 0.020976545883157463,
+          "price": 1457.5,
+          "change_pct": -6.57,
+          "market_cap": 136278490177.5,
+          "weight": 0.020762350431183,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -1265,7 +1265,7 @@
           "price": 199.75,
           "change_pct": -0.62,
           "market_cap": 48036381372.5,
-          "weight": 0.007306232532540401,
+          "weight": 0.007318456362429393,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1274,7 +1274,7 @@
     },
     {
       "name": "成熟晶圓製程",
-      "change_pct": -0.84,
+      "change_pct": -0.88,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -1284,7 +1284,7 @@
           "price": 122.75,
           "change_pct": -2.19,
           "market_cap": 1542979026102.25,
-          "weight": 0.7100223394996016,
+          "weight": 0.7102533486982542,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1295,7 +1295,7 @@
           "price": 161.25,
           "change_pct": 0.16,
           "market_cap": 302908478460.0,
-          "weight": 0.1393873687795556,
+          "weight": 0.1394327191334427,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1303,19 +1303,19 @@
         {
           "ticker": "6770",
           "name": "力積電",
-          "price": 69.45,
-          "change_pct": 4.59,
-          "market_cap": 327254015449.2,
-          "weight": 0.15059029172084282,
+          "price": 69.3,
+          "change_pct": 4.37,
+          "market_cap": 326547203320.8,
+          "weight": 0.15031393216830302,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "連接線材",
-      "change_pct": -2.41,
+      "change_pct": -2.64,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -1325,7 +1325,7 @@
           "price": 155.75,
           "change_pct": -9.18,
           "market_cap": 27298355299.25,
-          "weight": 0.039780130363924915,
+          "weight": 0.03987592743776645,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1333,10 +1333,10 @@
         {
           "ticker": "3665",
           "name": "貿聯-KY",
-          "price": 1732.5,
-          "change_pct": -7.6,
-          "market_cap": 345769586662.5,
-          "weight": 0.5038676902887473,
+          "price": 1727.5,
+          "change_pct": -7.87,
+          "market_cap": 344771694637.5,
+          "weight": 0.5036234207977518,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1344,10 +1344,10 @@
         {
           "ticker": "8103",
           "name": "瀚荃",
-          "price": 103.0,
-          "change_pct": -1.9,
-          "market_cap": 8078977113.0,
-          "weight": 0.011772971640204839,
+          "price": 103.5,
+          "change_pct": -1.43,
+          "market_cap": 8118195448.5,
+          "weight": 0.011858610860665506,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1358,7 +1358,7 @@
           "price": 124.75,
           "change_pct": -1.38,
           "market_cap": 11240499324.25,
-          "weight": 0.016380053800770917,
+          "weight": 0.01641949965499828,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1366,10 +1366,10 @@
         {
           "ticker": "3533",
           "name": "嘉澤",
-          "price": 1905.0,
-          "change_pct": 6.13,
-          "market_cap": 214378586355.0,
-          "weight": 0.3124000702221842,
+          "price": 1900.0,
+          "change_pct": 5.85,
+          "market_cap": 213815912900.0,
+          "weight": 0.3123304585340509,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1380,7 +1380,7 @@
           "price": 314.25,
           "change_pct": -0.87,
           "market_cap": 38790745974.0,
-          "weight": 0.05652724916368903,
+          "weight": 0.056663376044437094,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1388,10 +1388,10 @@
         {
           "ticker": "6290",
           "name": "良維",
-          "price": 239.75,
-          "change_pct": -0.52,
-          "market_cap": 40674165297.5,
-          "weight": 0.059271834520478774,
+          "price": 239.0,
+          "change_pct": -0.83,
+          "market_cap": 40546925990.0,
+          "weight": 0.059228706670329985,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1400,17 +1400,17 @@
     },
     {
       "name": "功率元件／導線架",
-      "change_pct": -0.44,
+      "change_pct": -0.52,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2351",
           "name": "順德",
-          "price": 198.75,
-          "change_pct": 1.4,
-          "market_cap": 38504644623.75,
-          "weight": 0.1956612832202687,
+          "price": 198.25,
+          "change_pct": 1.15,
+          "market_cap": 38407777593.25,
+          "weight": 0.19532659398541552,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1421,7 +1421,7 @@
           "price": 150.5,
           "change_pct": -1.95,
           "market_cap": 57508296513.5,
-          "weight": 0.2922283065223434,
+          "weight": 0.2924641931341384,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1429,10 +1429,10 @@
         {
           "ticker": "3317",
           "name": "尼克森",
-          "price": 59.9,
-          "change_pct": 0.84,
-          "market_cap": 5391000000.0,
-          "weight": 0.027394356918434008,
+          "price": 59.6,
+          "change_pct": 0.34,
+          "market_cap": 5364000000.0,
+          "weight": 0.02727915843591802,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -1443,7 +1443,7 @@
           "price": 276.75,
           "change_pct": -2.89,
           "market_cap": 14683780190.25,
-          "weight": 0.07461560293888692,
+          "weight": 0.07467583263385985,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1454,7 +1454,7 @@
           "price": 85.35,
           "change_pct": -1.78,
           "market_cap": 8709193034.099998,
-          "weight": 0.04425574892370146,
+          "weight": 0.04429147215253681,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1465,7 +1465,7 @@
           "price": 90.05,
           "change_pct": -0.94,
           "market_cap": 4582552739.05,
-          "weight": 0.023286233598791152,
+          "weight": 0.023305030240398032,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1476,7 +1476,7 @@
           "price": 89.65,
           "change_pct": 0.96,
           "market_cap": 23621473819.9,
-          "weight": 0.1200324772327556,
+          "weight": 0.12012936741665582,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1484,10 +1484,10 @@
         {
           "ticker": "6435",
           "name": "大中",
-          "price": 214.0,
-          "change_pct": 0.47,
-          "market_cap": 8016718200.0,
-          "weight": 0.04073693928497604,
+          "price": 213.75,
+          "change_pct": 0.35,
+          "market_cap": 8007352875.0,
+          "weight": 0.04072219383471824,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1498,7 +1498,7 @@
           "price": 141.75,
           "change_pct": -0.87,
           "market_cap": 4615645497.75,
-          "weight": 0.02345439439330857,
+          "weight": 0.023473326774264346,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1506,10 +1506,10 @@
         {
           "ticker": "8255",
           "name": "朋程",
-          "price": 132.75,
-          "change_pct": -0.56,
-          "market_cap": 13535328192.75,
-          "weight": 0.06877974615476458,
+          "price": 132.5,
+          "change_pct": -0.75,
+          "market_cap": 13509837932.5,
+          "weight": 0.06870563187998557,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1520,7 +1520,7 @@
           "price": 148.25,
           "change_pct": 0.85,
           "market_cap": 17623721762.25,
-          "weight": 0.08955491081176949,
+          "weight": 0.08962719951210926,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1529,7 +1529,7 @@
     },
     {
       "name": "矽晶圓",
-      "change_pct": -1.45,
+      "change_pct": -1.61,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -1539,18 +1539,18 @@
           "price": 137.0,
           "change_pct": -5.52,
           "market_cap": 40176195711.0,
-          "weight": 0.04967367742293263,
+          "weight": 0.04975546831234875,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "3532",
           "name": "台勝科",
-          "price": 408.0,
-          "change_pct": 0.49,
-          "market_cap": 158242106400.0,
-          "weight": 0.19564986701532908,
+          "price": 406.75,
+          "change_pct": 0.18,
+          "market_cap": 157757296025.0,
+          "weight": 0.19537161258064614,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1558,10 +1558,10 @@
         {
           "ticker": "5483",
           "name": "中美晶",
-          "price": 185.0,
-          "change_pct": -0.54,
-          "market_cap": 118626005435.0,
-          "weight": 0.14666868835308586,
+          "price": 184.75,
+          "change_pct": -0.67,
+          "market_cap": 118465700022.25,
+          "weight": 0.14671166045578188,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1569,21 +1569,21 @@
         {
           "ticker": "6182",
           "name": "合晶",
-          "price": 102.75,
-          "change_pct": -1.67,
-          "market_cap": 64250156770.5,
-          "weight": 0.07943862043953663,
+          "price": 102.5,
+          "change_pct": -1.91,
+          "market_cap": 64093830355.0,
+          "weight": 0.0793758216478452,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "6488",
           "name": "環球晶",
-          "price": 809.5,
-          "change_pct": -2.0,
-          "market_cap": 427508060387.5,
-          "weight": 0.5285691467691158,
+          "price": 808.5,
+          "change_pct": -2.12,
+          "market_cap": 426979946662.5,
+          "weight": 0.5287854370033781,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1592,17 +1592,17 @@
     },
     {
       "name": "被動元件",
-      "change_pct": 1.73,
+      "change_pct": 1.23,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2327",
           "name": "國巨",
-          "price": 524.5,
-          "change_pct": 3.45,
-          "market_cap": 1082110878319.0,
-          "weight": 0.6654108410803702,
+          "price": 521.5,
+          "change_pct": 2.86,
+          "market_cap": 1075921492933.0,
+          "weight": 0.6648376607336492,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1613,7 +1613,7 @@
           "price": 114.25,
           "change_pct": -1.08,
           "market_cap": 12416156909.5,
-          "weight": 0.007634934254584492,
+          "weight": 0.007672240743617115,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1621,10 +1621,10 @@
         {
           "ticker": "2472",
           "name": "立隆電",
-          "price": 202.25,
-          "change_pct": -0.12,
-          "market_cap": 33317681458.25,
-          "weight": 0.020487684659839835,
+          "price": 201.5,
+          "change_pct": -0.49,
+          "market_cap": 33194130105.5,
+          "weight": 0.02051144805116677,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1632,21 +1632,21 @@
         {
           "ticker": "2478",
           "name": "大毅",
-          "price": 115.0,
-          "change_pct": -2.95,
-          "market_cap": 16644103985.0,
-          "weight": 0.01023478042184795,
+          "price": 114.75,
+          "change_pct": -3.16,
+          "market_cap": 16607921150.25,
+          "weight": 0.010262432268251648,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "2492",
           "name": "華新科",
-          "price": 374.25,
-          "change_pct": 1.7,
-          "market_cap": 181587886669.5,
-          "weight": 0.11166189234365943,
+          "price": 372.75,
+          "change_pct": 1.29,
+          "market_cap": 180860079508.5,
+          "weight": 0.11175777505173487,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1654,10 +1654,10 @@
         {
           "ticker": "3026",
           "name": "禾伸堂",
-          "price": 709.0,
-          "change_pct": -6.22,
-          "market_cap": 117616235462.0,
-          "weight": 0.0723244907075084,
+          "price": 706.0,
+          "change_pct": -6.61,
+          "market_cap": 117118564508.0,
+          "weight": 0.07237036620926629,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -1665,23 +1665,23 @@
         {
           "ticker": "3090",
           "name": "日電貿",
-          "price": 154.5,
-          "change_pct": -1.28,
-          "market_cap": 44429124675.0,
-          "weight": 0.027320325311193473,
+          "price": 154.75,
+          "change_pct": -1.12,
+          "market_cap": 44501016462.5,
+          "weight": 0.027498243951373968,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "3357",
           "name": "臺慶科",
-          "price": 194.5,
-          "change_pct": 0.78,
-          "market_cap": 22637026235.5,
-          "weight": 0.013919943851153114,
+          "price": 194.25,
+          "change_pct": 0.65,
+          "market_cap": 22607929800.75,
+          "weight": 0.013969981324368967,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -1690,7 +1690,7 @@
           "price": 132.25,
           "change_pct": -2.04,
           "market_cap": 15518326354.5,
-          "weight": 0.009542518053000716,
+          "weight": 0.009589145546207238,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1698,12 +1698,12 @@
         {
           "ticker": "6173",
           "name": "信昌電",
-          "price": 278.5,
-          "change_pct": -5.11,
-          "market_cap": 44818448000.0,
-          "weight": 0.02755972772949546,
+          "price": 277.75,
+          "change_pct": -5.37,
+          "market_cap": 44697752000.0,
+          "weight": 0.027619811552164357,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -1712,7 +1712,7 @@
           "price": 216.25,
           "change_pct": -2.59,
           "market_cap": 19868620527.5,
-          "weight": 0.012217597809245079,
+          "weight": 0.012277296513055385,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1723,7 +1723,7 @@
           "price": 123.75,
           "change_pct": -4.81,
           "market_cap": 10948296397.5,
-          "weight": 0.006732318526891337,
+          "weight": 0.006765214575359179,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1731,10 +1731,10 @@
         {
           "ticker": "8042",
           "name": "金山電",
-          "price": 134.75,
-          "change_pct": -0.55,
-          "market_cap": 17716923801.5,
-          "weight": 0.010894478009893552,
+          "price": 133.0,
+          "change_pct": -1.85,
+          "market_cap": 17486833882.0,
+          "weight": 0.010805533496736987,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1742,19 +1742,19 @@
         {
           "ticker": "6862",
           "name": "三集瑞-KY",
-          "price": 132.0,
-          "change_pct": -2.94,
-          "market_cap": 6600000000.0,
-          "weight": 0.004058467241317014,
+          "price": 131.5,
+          "change_pct": -3.31,
+          "market_cap": 6575000000.0,
+          "weight": 0.004062849983047932,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         }
       ]
     },
     {
       "name": "PCB",
-      "change_pct": -5.03,
+      "change_pct": -5.15,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -1764,7 +1764,7 @@
           "price": 217.0,
           "change_pct": -3.34,
           "market_cap": 267739067813.0,
-          "weight": 0.141233727755197,
+          "weight": 0.14142025474826284,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -1775,7 +1775,7 @@
           "price": 147.25,
           "change_pct": -1.83,
           "market_cap": 26908543926.0,
-          "weight": 0.014194394558017194,
+          "weight": 0.014213141055595211,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1786,7 +1786,7 @@
           "price": 1082.5,
           "change_pct": -2.91,
           "market_cap": 574369057190.0,
-          "weight": 0.302982615562251,
+          "weight": 0.30338276386344154,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1794,10 +1794,10 @@
         {
           "ticker": "3044",
           "name": "健鼎",
-          "price": 520.5,
-          "change_pct": -6.38,
-          "market_cap": 273577869909.0,
-          "weight": 0.14431372572627715,
+          "price": 519.5,
+          "change_pct": -6.56,
+          "market_cap": 273052264011.0,
+          "weight": 0.1442266944882169,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1805,10 +1805,10 @@
         {
           "ticker": "3715",
           "name": "定穎投控",
-          "price": 126.25,
-          "change_pct": -6.13,
-          "market_cap": 35801291230.0,
-          "weight": 0.018885364247230085,
+          "price": 125.75,
+          "change_pct": -6.51,
+          "market_cap": 35659503938.0,
+          "weight": 0.018835413794115637,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1816,21 +1816,21 @@
         {
           "ticker": "5439",
           "name": "高技",
-          "price": 215.0,
-          "change_pct": -2.05,
-          "market_cap": 19989786680.0,
-          "weight": 0.010544714721347445,
+          "price": 214.0,
+          "change_pct": -2.51,
+          "market_cap": 19896810928.0,
+          "weight": 0.010509531138283719,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "5469",
           "name": "瀚宇博",
-          "price": 77.6,
-          "change_pct": -3.24,
-          "market_cap": 37726481600.0,
-          "weight": 0.0199009120147431,
+          "price": 77.55,
+          "change_pct": -3.3,
+          "market_cap": 37702173300.0,
+          "weight": 0.01991435540656001,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1841,7 +1841,7 @@
           "price": 88.1,
           "change_pct": -1.89,
           "market_cap": 43988594300.0,
-          "weight": 0.023204208494664653,
+          "weight": 0.023234854228553974,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1849,10 +1849,10 @@
         {
           "ticker": "8155",
           "name": "博智",
-          "price": 281.75,
-          "change_pct": -3.34,
-          "market_cap": 17572099475.0,
-          "weight": 0.009269372354253368,
+          "price": 281.5,
+          "change_pct": -3.43,
+          "market_cap": 17556507550.0,
+          "weight": 0.009273378705960542,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1863,7 +1863,7 @@
           "price": 51.55,
           "change_pct": 1.08,
           "market_cap": 5843398957.75,
-          "weight": 0.003082422839166223,
+          "weight": 0.0030864937864724055,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1871,29 +1871,29 @@
         {
           "ticker": "4958",
           "name": "臻鼎-KY",
-          "price": 522.5,
-          "change_pct": -7.85,
-          "market_cap": 592200023937.5,
-          "weight": 0.31238854172685276,
+          "price": 521.0,
+          "change_pct": -8.11,
+          "market_cap": 590499928175.0,
+          "weight": 0.3119031187845372,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "PCB 設備",
-      "change_pct": 0.68,
+      "change_pct": 0.75,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2493",
           "name": "揚博",
-          "price": 184.0,
-          "change_pct": -3.16,
-          "market_cap": 23330579736.0,
-          "weight": 0.13522134602567348,
+          "price": 184.75,
+          "change_pct": -2.76,
+          "market_cap": 23425677207.75,
+          "weight": 0.1356776727975834,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1901,10 +1901,10 @@
         {
           "ticker": "6727",
           "name": "亞泰金屬",
-          "price": 415.75,
-          "change_pct": -4.09,
-          "market_cap": 11177096587.75,
-          "weight": 0.06478116113516011,
+          "price": 414.5,
+          "change_pct": -4.38,
+          "market_cap": 11143491366.5,
+          "weight": 0.06454127076191794,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1912,10 +1912,10 @@
         {
           "ticker": "7795",
           "name": "長廣",
-          "price": 406.25,
-          "change_pct": -0.79,
-          "market_cap": 32024078125.0,
-          "weight": 0.18560785879709382,
+          "price": 407.0,
+          "change_pct": -0.61,
+          "market_cap": 32083199500.0,
+          "weight": 0.18582061920585508,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1926,7 +1926,7 @@
           "price": 183.75,
           "change_pct": -3.29,
           "market_cap": 7050487500.0,
-          "weight": 0.04086381138725363,
+          "weight": 0.04083526497889156,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1937,7 +1937,7 @@
           "price": 956.0,
           "change_pct": 3.46,
           "market_cap": 85574897396.0,
-          "weight": 0.4959822234524529,
+          "weight": 0.49563574301877955,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -1948,7 +1948,7 @@
           "price": 162.75,
           "change_pct": -0.76,
           "market_cap": 13379079393.75,
-          "weight": 0.07754359920236603,
+          "weight": 0.0774894292369725,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1964,10 +1964,10 @@
         {
           "ticker": "8021",
           "name": "尖點",
-          "price": 433.75,
-          "change_pct": -9.45,
-          "market_cap": 63799452097.5,
-          "weight": 0.7624374111556668,
+          "price": 433.25,
+          "change_pct": -9.55,
+          "market_cap": 63725908060.5,
+          "weight": 0.7616302566003194,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1975,10 +1975,10 @@
         {
           "ticker": "5498",
           "name": "凱崴",
-          "price": 54.55,
-          "change_pct": -6.59,
-          "market_cap": 10558073129.75,
-          "weight": 0.1261745936553934,
+          "price": 55.05,
+          "change_pct": -5.74,
+          "market_cap": 10654847402.25,
+          "weight": 0.12734309181296652,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -1986,21 +1986,21 @@
         {
           "ticker": "6234",
           "name": "高僑",
-          "price": 46.150000000000006,
-          "change_pct": -5.91,
-          "market_cap": 4632832267.700001,
-          "weight": 0.055364811520725234,
+          "price": 46.1,
+          "change_pct": -6.01,
+          "market_cap": 4627812947.8,
+          "weight": 0.055310037474631785,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "8074",
           "name": "鉅橡",
-          "price": 53.9,
-          "change_pct": -5.6,
-          "market_cap": 4687923717.4,
-          "weight": 0.05602318366821466,
+          "price": 53.6,
+          "change_pct": -6.13,
+          "market_cap": 4661831377.6,
+          "weight": 0.05571661411208222,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2009,7 +2009,7 @@
     },
     {
       "name": "ABF",
-      "change_pct": -3.24,
+      "change_pct": -3.3,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -2019,7 +2019,7 @@
           "price": 1057.5,
           "change_pct": -2.53,
           "market_cap": 1735665862770.0,
-          "weight": 0.4772895457455528,
+          "weight": 0.477651269893407,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2027,10 +2027,10 @@
         {
           "ticker": "3189",
           "name": "景碩",
-          "price": 941.5,
-          "change_pct": -4.51,
-          "market_cap": 496086103940.0,
-          "weight": 0.13641837192230355,
+          "price": 939.5,
+          "change_pct": -4.72,
+          "market_cap": 495032283220.0,
+          "weight": 0.13623175047120173,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2041,7 +2041,7 @@
           "price": 1257.5,
           "change_pct": -0.59,
           "market_cap": 812553099902.5,
-          "weight": 0.2234434105465823,
+          "weight": 0.2236127519411174,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2049,31 +2049,31 @@
         {
           "ticker": "4958",
           "name": "臻鼎-KY",
-          "price": 522.5,
-          "change_pct": -7.85,
-          "market_cap": 592200023937.5,
-          "weight": 0.16284867178556134,
+          "price": 521.0,
+          "change_pct": -8.11,
+          "market_cap": 590499928175.0,
+          "weight": 0.16250422769427386,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "銅箔／CCL",
-      "change_pct": -3.97,
+      "change_pct": -4.31,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "4989",
           "name": "榮科",
-          "price": 65.5,
-          "change_pct": -7.75,
-          "market_cap": 11316860750.0,
-          "weight": 0.0023208071343504204,
+          "price": 65.35,
+          "change_pct": -7.96,
+          "market_cap": 11290944274.999998,
+          "weight": 0.0023236285320298324,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -2082,7 +2082,7 @@
           "price": 414.0,
           "change_pct": -5.59,
           "market_cap": 104571432000.0,
-          "weight": 0.021445004122264192,
+          "weight": 0.02152035800658643,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -2090,10 +2090,10 @@
         {
           "ticker": "1303",
           "name": "南亞",
-          "price": 297.25,
-          "change_pct": -1.25,
-          "market_cap": 2357436717330.25,
-          "weight": 0.48345173394129454,
+          "price": 295.75,
+          "change_pct": -1.74,
+          "market_cap": 2345540484946.75,
+          "weight": 0.4827023020493437,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2101,10 +2101,10 @@
         {
           "ticker": "2383",
           "name": "台光電",
-          "price": 4757.5,
-          "change_pct": -6.16,
-          "market_cap": 1704712699855.0,
-          "weight": 0.34959424554563423,
+          "price": 4745.0,
+          "change_pct": -6.41,
+          "market_cap": 1700233685930.0,
+          "weight": 0.34990089469245894,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2112,10 +2112,10 @@
         {
           "ticker": "6213",
           "name": "聯茂",
-          "price": 743.5,
-          "change_pct": -4.31,
-          "market_cap": 270334531583.0,
-          "weight": 0.05543889983440022,
+          "price": 744.5,
+          "change_pct": -4.18,
+          "market_cap": 270698128801.0,
+          "weight": 0.05570852891744434,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2123,10 +2123,10 @@
         {
           "ticker": "6274",
           "name": "台燿",
-          "price": 1282.5,
-          "change_pct": -9.68,
-          "market_cap": 384057569272.5,
-          "weight": 0.07876067104288606,
+          "price": 1280.0,
+          "change_pct": -9.86,
+          "market_cap": 383308919040.0,
+          "weight": 0.07888335281531245,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2134,10 +2134,10 @@
         {
           "ticker": "6672",
           "name": "騰輝電子-KY",
-          "price": 532.5,
-          "change_pct": -8.35,
-          "market_cap": 43830944572.5,
-          "weight": 0.008988638379170286,
+          "price": 529.0,
+          "change_pct": -8.95,
+          "market_cap": 43542853857.0,
+          "weight": 0.008960934986824248,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2146,17 +2146,17 @@
     },
     {
       "name": "PTFE材料",
-      "change_pct": -2.58,
+      "change_pct": -3.16,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "8039",
           "name": "台虹",
-          "price": 256.75,
-          "change_pct": -3.48,
-          "market_cap": 67731675459.5,
-          "weight": 0.6768283599040267,
+          "price": 255.25,
+          "change_pct": -4.04,
+          "market_cap": 67335969468.5,
+          "weight": 0.6768882737712458,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2164,10 +2164,10 @@
         {
           "ticker": "6269",
           "name": "台郡",
-          "price": 78.55,
-          "change_pct": -0.19,
-          "market_cap": 25436962832.55,
-          "weight": 0.2541862093045231,
+          "price": 78.0,
+          "change_pct": -0.89,
+          "market_cap": 25258855518.0,
+          "weight": 0.2539121845867915,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2175,19 +2175,19 @@
         {
           "ticker": "4939",
           "name": "亞電",
-          "price": 70.3,
-          "change_pct": -2.63,
-          "market_cap": 6903521020.4,
-          "weight": 0.06898543079145021,
+          "price": 70.1,
+          "change_pct": -2.91,
+          "market_cap": 6883880846.799999,
+          "weight": 0.06919954164196268,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "玻纖布／玻纖紗",
-      "change_pct": -4.35,
+      "change_pct": -4.62,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -2197,7 +2197,7 @@
           "price": 64.85,
           "change_pct": -3.35,
           "market_cap": 188587742879.99997,
-          "weight": 0.6101140292944246,
+          "weight": 0.6119501138959395,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2205,10 +2205,10 @@
         {
           "ticker": "1815",
           "name": "富喬",
-          "price": 131.25,
-          "change_pct": -5.58,
-          "market_cap": 80679829387.5,
-          "weight": 0.2610132293789419,
+          "price": 130.25,
+          "change_pct": -6.29,
+          "market_cap": 80065125925.5,
+          "weight": 0.2598040688168104,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2216,10 +2216,10 @@
         {
           "ticker": "5340",
           "name": "建榮",
-          "price": 85.35,
-          "change_pct": -6.11,
-          "market_cap": 16634199827.4,
-          "weight": 0.05381451904454564,
+          "price": 85.05,
+          "change_pct": -6.44,
+          "market_cap": 16575731638.199999,
+          "weight": 0.05378674514578303,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2227,29 +2227,29 @@
         {
           "ticker": "5475",
           "name": "德宏",
-          "price": 182.5,
-          "change_pct": -6.89,
-          "market_cap": 23200680602.5,
-          "weight": 0.07505822228208787,
+          "price": 180.5,
+          "change_pct": -7.91,
+          "market_cap": 22946426568.5,
+          "weight": 0.0744590721414672,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "TGV／Glass",
-      "change_pct": -1.76,
+      "change_pct": -1.87,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2409",
           "name": "友達",
-          "price": 33.875,
-          "change_pct": -4.31,
-          "market_cap": 255657977676.5,
-          "weight": 0.33941944727430795,
+          "price": 33.825,
+          "change_pct": -4.45,
+          "market_cap": 255280622727.90002,
+          "weight": 0.33930297596664727,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2257,10 +2257,10 @@
         {
           "ticker": "3055",
           "name": "蔚華科",
-          "price": 146.25,
-          "change_pct": 2.27,
-          "market_cap": 16815081757.5,
-          "weight": 0.02232422319801354,
+          "price": 146.5,
+          "change_pct": 2.45,
+          "market_cap": 16843825487.0,
+          "weight": 0.02238775529975759,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2268,10 +2268,10 @@
         {
           "ticker": "3481",
           "name": "群創",
-          "price": 46.625,
-          "change_pct": -0.27,
-          "market_cap": 372496325837.625,
-          "weight": 0.49453765603786526,
+          "price": 46.575,
+          "change_pct": -0.37,
+          "market_cap": 372096865970.775,
+          "weight": 0.4945677921912566,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2282,7 +2282,7 @@
           "price": 328.0,
           "change_pct": -0.61,
           "market_cap": 20057628696.0,
-          "weight": 0.026629128914741482,
+          "weight": 0.026659340746911404,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2290,21 +2290,21 @@
         {
           "ticker": "8027",
           "name": "鈦昇",
-          "price": 173.75,
-          "change_pct": -1.28,
-          "market_cap": 19069166055.0,
-          "weight": 0.02531681530611216,
+          "price": 174.0,
+          "change_pct": -1.14,
+          "market_cap": 19096603704.0,
+          "weight": 0.025382006665383854,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "6861",
           "name": "睿生光電",
-          "price": 231.5,
-          "change_pct": -1.49,
-          "market_cap": 9630226375.0,
-          "weight": 0.012785386722666776,
+          "price": 230.5,
+          "change_pct": -1.91,
+          "market_cap": 9588627125.0,
+          "weight": 0.012744601153746099,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2312,32 +2312,32 @@
         {
           "ticker": "6207",
           "name": "雷科",
-          "price": 126.0,
-          "change_pct": -4.18,
-          "market_cap": 11726376984.0,
-          "weight": 0.015568301175705113,
-          "shares_source": "master",
-          "quote_source": "mis_trade",
-          "tags": []
-        },
-        {
-          "ticker": "3535",
-          "name": "晶彩科",
-          "price": 88.9,
-          "change_pct": -2.2,
-          "market_cap": 7027754448.400001,
-          "weight": 0.009330264410813058,
+          "price": 126.25,
+          "change_pct": -3.99,
+          "market_cap": 11749643605.0,
+          "weight": 0.015616888579801612,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
         },
         {
+          "ticker": "3535",
+          "name": "晶彩科",
+          "price": 88.8,
+          "change_pct": -2.31,
+          "market_cap": 7019849212.8,
+          "weight": 0.009330342833262955,
+          "shares_source": "master",
+          "quote_source": "mis_trade",
+          "tags": []
+        },
+        {
           "ticker": "8064",
           "name": "東捷",
-          "price": 116.75,
-          "change_pct": -0.21,
-          "market_cap": 21577482353.0,
-          "weight": 0.028646933690032066,
+          "price": 116.25,
+          "change_pct": -0.64,
+          "market_cap": 21485073435.0,
+          "weight": 0.028556610672043486,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2345,29 +2345,29 @@
         {
           "ticker": "3149",
           "name": "正達",
-          "price": 66.95,
-          "change_pct": -2.41,
-          "market_cap": 19163339787.8,
-          "weight": 0.02544184326974246,
+          "price": 66.9,
+          "change_pct": -2.48,
+          "market_cap": 19149028107.600002,
+          "weight": 0.025451685891189083,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "探針卡／測試介面",
-      "change_pct": -1.24,
+      "change_pct": -1.87,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "6223",
           "name": "旺矽",
-          "price": 4837.5,
-          "change_pct": -1.07,
-          "market_cap": 473984582287.5,
-          "weight": 0.5021664350356955,
+          "price": 4800.0,
+          "change_pct": -1.84,
+          "market_cap": 470310283200.0,
+          "weight": 0.501438536333634,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2375,10 +2375,10 @@
         {
           "ticker": "6510",
           "name": "精測",
-          "price": 2932.5,
-          "change_pct": -4.32,
-          "market_cap": 96564697185.0,
-          "weight": 0.10230617523816393,
+          "price": 2915.0,
+          "change_pct": -4.89,
+          "market_cap": 95988437270.0,
+          "weight": 0.10234158854050257,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2386,10 +2386,10 @@
         {
           "ticker": "6515",
           "name": "穎崴",
-          "price": 4782.5,
-          "change_pct": -0.26,
-          "market_cap": 174297169915.0,
-          "weight": 0.18466041243496936,
+          "price": 4747.5,
+          "change_pct": -0.99,
+          "market_cap": 173021602545.0,
+          "weight": 0.18447331949441959,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2397,10 +2397,10 @@
         {
           "ticker": "7828",
           "name": "創新服務",
-          "price": 1370.0,
-          "change_pct": -0.72,
-          "market_cap": 55476658070.0,
-          "weight": 0.05877515145378356,
+          "price": 1367.5,
+          "change_pct": -0.91,
+          "market_cap": 55375423292.5,
+          "weight": 0.059040535996187256,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2411,7 +2411,7 @@
           "price": 1165.0,
           "change_pct": -1.69,
           "market_cap": 32098850065.0,
-          "weight": 0.03400736164896865,
+          "weight": 0.03422336480731743,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2419,10 +2419,10 @@
         {
           "ticker": "7856",
           "name": "漢測",
-          "price": 3377.5,
-          "change_pct": -0.95,
-          "market_cap": 111457500000.0,
-          "weight": 0.118084464188419,
+          "price": 3367.5,
+          "change_pct": -1.25,
+          "market_cap": 111127500000.0,
+          "weight": 0.11848265482793915,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2441,7 +2441,7 @@
           "price": 246.75,
           "change_pct": 0.71,
           "market_cap": 3473190448134.75,
-          "weight": 0.41120625783561393,
+          "weight": 0.41119065075124395,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2452,7 +2452,7 @@
           "price": 37.575,
           "change_pct": 0.74,
           "market_cap": 165598534434.375,
-          "weight": 0.019605937153371875,
+          "weight": 0.01960519302190628,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2460,21 +2460,21 @@
         {
           "ticker": "2356",
           "name": "英業達",
-          "price": 62.849999999999994,
-          "change_pct": 3.88,
-          "market_cap": 225472807898.09998,
-          "weight": 0.026694715122592333,
+          "price": 63.0,
+          "change_pct": 4.13,
+          "market_cap": 226010929158.0,
+          "weight": 0.026757410060044527,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "2357",
           "name": "華碩",
-          "price": 963.5,
-          "change_pct": 1.85,
-          "market_cap": 715649529780.0,
-          "weight": 0.08472888816698523,
+          "price": 962.5,
+          "change_pct": 1.74,
+          "market_cap": 714906769500.0,
+          "weight": 0.08463773702217946,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2485,9 +2485,9 @@
           "price": 354.0,
           "change_pct": 1.43,
           "market_cap": 237140665644.0,
-          "weight": 0.02807612400076845,
+          "weight": 0.02807505838849307,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -2496,7 +2496,7 @@
           "price": 165.75,
           "change_pct": 1.69,
           "market_cap": 140034914984.25,
-          "weight": 0.016579348071144907,
+          "weight": 0.016578718812034144,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2504,10 +2504,10 @@
         {
           "ticker": "2382",
           "name": "廣達",
-          "price": 325.75,
-          "change_pct": 1.16,
-          "market_cap": 1338059635974.0,
-          "weight": 0.158418751832409,
+          "price": 326.0,
+          "change_pct": 1.24,
+          "market_cap": 1339086542832.0,
+          "weight": 0.158534314539253,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2515,10 +2515,10 @@
         {
           "ticker": "3231",
           "name": "緯創",
-          "price": 189.25,
-          "change_pct": -0.39,
-          "market_cap": 649097645812.5,
-          "weight": 0.07684951858825032,
+          "price": 189.5,
+          "change_pct": -0.26,
+          "market_cap": 649955106375.0,
+          "weight": 0.0769481164768715,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2529,7 +2529,7 @@
           "price": 80.35,
           "change_pct": -0.19,
           "market_cap": 117305674000.24998,
-          "weight": 0.013888333493037355,
+          "weight": 0.013887806369754443,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2537,10 +2537,10 @@
         {
           "ticker": "4938",
           "name": "和碩",
-          "price": 104.5,
-          "change_pct": 0.97,
-          "market_cap": 279611559463.5,
-          "weight": 0.0331044394862695,
+          "price": 104.0,
+          "change_pct": 0.48,
+          "market_cap": 278273705112.0,
+          "weight": 0.032944794591789034,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -2551,7 +2551,7 @@
           "price": 1942.5,
           "change_pct": 5.57,
           "market_cap": 1088188057110.0,
-          "weight": 0.1288353591511,
+          "weight": 0.1288304692831036,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2559,10 +2559,10 @@
         {
           "ticker": "6933",
           "name": "AMAX-KY",
-          "price": 399.25,
-          "change_pct": 5.62,
-          "market_cap": 16996811511.75,
-          "weight": 0.002012327098457125,
+          "price": 398.75,
+          "change_pct": 5.49,
+          "market_cap": 16975525586.25,
+          "weight": 0.0020097306833269622,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2571,7 +2571,7 @@
     },
     {
       "name": "800V HVDC",
-      "change_pct": -2.93,
+      "change_pct": -2.95,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -2581,7 +2581,7 @@
           "price": 251.25,
           "change_pct": -1.66,
           "market_cap": 581922075453.75,
-          "weight": 0.12346446403909307,
+          "weight": 0.12347901232468747,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2592,7 +2592,7 @@
           "price": 1507.5,
           "change_pct": -3.37,
           "market_cap": 3915796568467.5,
-          "weight": 0.830801485293342,
+          "weight": 0.8308993817801924,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2603,7 +2603,7 @@
           "price": 327.75,
           "change_pct": 2.42,
           "market_cap": 50948416632.75,
-          "weight": 0.010809555468914043,
+          "weight": 0.01081082919979146,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2614,7 +2614,7 @@
           "price": 204.75,
           "change_pct": 2.37,
           "market_cap": 13424589564.75,
-          "weight": 0.002848250350812464,
+          "weight": 0.0028485859709430857,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2622,10 +2622,10 @@
         {
           "ticker": "6781",
           "name": "AES-KY",
-          "price": 919.0,
-          "change_pct": 2.8,
-          "market_cap": 78499858820.0,
-          "weight": 0.016655052979041126,
+          "price": 913.0,
+          "change_pct": 2.13,
+          "market_cap": 77987346140.0,
+          "weight": 0.0165482645896909,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2636,7 +2636,7 @@
           "price": 274.5,
           "change_pct": -0.36,
           "market_cap": 21890275078.5,
-          "weight": 0.0046443865841108165,
+          "weight": 0.00464493384977922,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2644,10 +2644,10 @@
         {
           "ticker": "6282",
           "name": "康舒",
-          "price": 41.175,
-          "change_pct": -1.26,
-          "market_cap": 35249946528.375,
-          "weight": 0.007478863475215259,
+          "price": 41.125,
+          "change_pct": -1.38,
+          "market_cap": 35207141493.125,
+          "weight": 0.00747066186646517,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2658,7 +2658,7 @@
           "price": 67.3,
           "change_pct": -0.15,
           "market_cap": 15544109452.3,
-          "weight": 0.0032979418094712747,
+          "weight": 0.0032983304184503143,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -2677,7 +2677,7 @@
           "price": 1087.5,
           "change_pct": -0.23,
           "market_cap": 207263034075.0,
-          "weight": 0.25680394327803074,
+          "weight": 0.25680571909445327,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2688,7 +2688,7 @@
           "price": 126.25,
           "change_pct": -0.59,
           "market_cap": 9222271115.0,
-          "weight": 0.011426618349387305,
+          "weight": 0.011426697365216499,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2696,10 +2696,10 @@
         {
           "ticker": "5536",
           "name": "聖暉*",
-          "price": 757.5,
-          "change_pct": -4.11,
-          "market_cap": 93991304475.0,
-          "weight": 0.11645751366493894,
+          "price": 755.5,
+          "change_pct": -4.37,
+          "market_cap": 93743142615.0,
+          "weight": 0.11615083826625662,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2707,10 +2707,10 @@
         {
           "ticker": "6139",
           "name": "亞翔",
-          "price": 655.5,
-          "change_pct": 2.42,
-          "market_cap": 154419887082.0,
-          "weight": 0.19132999813587642,
+          "price": 657.0,
+          "change_pct": 2.66,
+          "market_cap": 154773250668.0,
+          "weight": 0.19176915030588193,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2721,7 +2721,7 @@
           "price": 585.5,
           "change_pct": -1.93,
           "market_cap": 129002939229.5,
-          "weight": 0.15983778118679828,
+          "weight": 0.1598388864757325,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2732,7 +2732,7 @@
           "price": 251.75,
           "change_pct": 0.7,
           "market_cap": 19586523848.75,
-          "weight": 0.02426817971625407,
+          "weight": 0.024268347532337944,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2740,10 +2740,10 @@
         {
           "ticker": "6667",
           "name": "信紘科",
-          "price": 252.25,
-          "change_pct": 0.1,
-          "market_cap": 12430596975.5,
-          "weight": 0.015401812170004357,
+          "price": 251.75,
+          "change_pct": -0.1,
+          "market_cap": 12405957536.5,
+          "weight": 0.015371389598896251,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2751,12 +2751,12 @@
         {
           "ticker": "6691",
           "name": "洋基工程",
-          "price": 648.5,
-          "change_pct": -2.19,
-          "market_cap": 86605184105.0,
-          "weight": 0.10730593077410941,
+          "price": 648.0,
+          "change_pct": -2.26,
+          "market_cap": 86538410640.0,
+          "weight": 0.1072239382815099,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -2765,7 +2765,7 @@
           "price": 755.5,
           "change_pct": -0.46,
           "market_cap": 75319033073.0,
-          "weight": 0.09332211497992283,
+          "weight": 0.09332276030858191,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2776,7 +2776,7 @@
           "price": 176.5,
           "change_pct": -0.56,
           "market_cap": 6132492500.0,
-          "weight": 0.007598307450971098,
+          "weight": 0.007598359993774694,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2784,19 +2784,19 @@
         {
           "ticker": "6788",
           "name": "華景電",
-          "price": 338.5,
-          "change_pct": -1.74,
-          "market_cap": 13113382695.5,
-          "weight": 0.01624780029370653,
+          "price": 338.0,
+          "change_pct": -1.89,
+          "market_cap": 13094012854.0,
+          "weight": 0.016223912777358507,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "低軌衛星",
-      "change_pct": -1.3,
+      "change_pct": -1.55,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -2806,7 +2806,7 @@
           "price": 217.0,
           "change_pct": -3.34,
           "market_cap": 267739067813.0,
-          "weight": 0.3697881622315734,
+          "weight": 0.37067009276425905,
           "shares_source": "master",
           "quote_source": "mis_trade",
           "tags": []
@@ -2814,12 +2814,12 @@
         {
           "ticker": "2367",
           "name": "燿華",
-          "price": 43.475,
-          "change_pct": -3.28,
-          "market_cap": 30704356783.125,
-          "weight": 0.04240736236246447,
+          "price": 43.35,
+          "change_pct": -3.56,
+          "market_cap": 30616075136.25,
+          "weight": 0.042386281178649454,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -2828,7 +2828,7 @@
           "price": 91.6,
           "change_pct": -5.37,
           "market_cap": 5165535962.4,
-          "weight": 0.007134386722415602,
+          "weight": 0.007151401960124983,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2839,7 +2839,7 @@
           "price": 1287.5,
           "change_pct": -2.46,
           "market_cap": 88676723437.5,
-          "weight": 0.12247597207432433,
+          "weight": 0.12276807255326032,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2847,12 +2847,12 @@
         {
           "ticker": "6285",
           "name": "啟碁",
-          "price": 230.5,
-          "change_pct": 0.22,
-          "market_cap": 111433233249.5,
-          "weight": 0.15390615524080078,
+          "price": 229.75,
+          "change_pct": -0.11,
+          "market_cap": 111070652230.25,
+          "weight": 0.15377124191053337,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -2861,7 +2861,7 @@
           "price": 442.75,
           "change_pct": -5.5,
           "market_cap": 10994154594.5,
-          "weight": 0.015184590937731517,
+          "weight": 0.01522080560261833,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2869,10 +2869,10 @@
         {
           "ticker": "3105",
           "name": "穩懋",
-          "price": 493.75,
-          "change_pct": 1.59,
-          "market_cap": 209320564600.0,
-          "weight": 0.2891033704306899,
+          "price": 490.75,
+          "change_pct": 0.98,
+          "market_cap": 208048743448.0,
+          "weight": 0.28803210403055446,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2881,19 +2881,19 @@
     },
     {
       "name": "工具機／自動化系統",
-      "change_pct": 6.06,
+      "change_pct": 6.14,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "1590",
           "name": "亞德客-KY",
-          "price": 1147.5,
-          "change_pct": 4.32,
-          "market_cap": 229499997705.0,
-          "weight": 0.481232156612752,
+          "price": 1150.0,
+          "change_pct": 4.55,
+          "market_cap": 229999997700.0,
+          "weight": 0.4819216346235722,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -2902,7 +2902,7 @@
           "price": 328.5,
           "change_pct": 9.87,
           "market_cap": 116220750840.0,
-          "weight": 0.24370005720774787,
+          "weight": 0.2435186729655854,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2913,7 +2913,7 @@
           "price": 177.0,
           "change_pct": 9.94,
           "market_cap": 40244292822.0,
-          "weight": 0.0843871373409788,
+          "weight": 0.08432432858692995,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2924,7 +2924,7 @@
           "price": 61.45,
           "change_pct": 7.06,
           "market_cap": 7078224189.8,
-          "weight": 0.01484213126757601,
+          "weight": 0.014831084373443566,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2932,10 +2932,10 @@
         {
           "ticker": "4576",
           "name": "大銀微系統",
-          "price": 221.75,
-          "change_pct": 8.97,
-          "market_cap": 26566059794.0,
-          "weight": 0.05570563126455061,
+          "price": 220.5,
+          "change_pct": 8.35,
+          "market_cap": 26416307484.0,
+          "weight": 0.05535039222049602,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2943,10 +2943,10 @@
         {
           "ticker": "4583",
           "name": "台灣精銳",
-          "price": 387.5,
-          "change_pct": 0.39,
-          "market_cap": 31066398512.5,
-          "weight": 0.06514226624776935,
+          "price": 387.75,
+          "change_pct": 0.45,
+          "market_cap": 31086441350.25,
+          "weight": 0.06513577730415032,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2954,10 +2954,10 @@
         {
           "ticker": "2233",
           "name": "宇隆",
-          "price": 148.5,
-          "change_pct": 2.77,
-          "market_cap": 8952900016.5,
-          "weight": 0.018773086823367632,
+          "price": 148.25,
+          "change_pct": 2.6,
+          "market_cap": 8937827794.25,
+          "weight": 0.01872753314635775,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2968,7 +2968,7 @@
           "price": 62.05,
           "change_pct": 1.72,
           "market_cap": 17272170365.5,
-          "weight": 0.03621753323525781,
+          "weight": 0.03619057677946482,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2977,17 +2977,17 @@
     },
     {
       "name": "半導體材料／耗材",
-      "change_pct": -0.89,
+      "change_pct": -0.98,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "1560",
           "name": "中砂",
-          "price": 829.5,
-          "change_pct": -1.95,
-          "market_cap": 124665103752.0,
-          "weight": 0.204104205135532,
+          "price": 827.5,
+          "change_pct": -2.19,
+          "market_cap": 124364524840.0,
+          "weight": 0.20380666117623233,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -2998,7 +2998,7 @@
           "price": 91.75,
           "change_pct": -1.56,
           "market_cap": 11745794538.25,
-          "weight": 0.019230450108026553,
+          "weight": 0.019248826550678905,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3006,12 +3006,12 @@
         {
           "ticker": "1785",
           "name": "光洋科",
-          "price": 92.1,
-          "change_pct": 0.99,
-          "market_cap": 54887063430.299995,
-          "weight": 0.08986219973755233,
+          "price": 92.15,
+          "change_pct": 1.04,
+          "market_cap": 54916860967.450005,
+          "weight": 0.08999690297900342,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -3020,7 +3020,7 @@
           "price": 103.75,
           "change_pct": -1.19,
           "market_cap": 14875049802.5,
-          "weight": 0.024353729511431204,
+          "weight": 0.024377001713133385,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3028,10 +3028,10 @@
         {
           "ticker": "3680",
           "name": "家登",
-          "price": 507.5,
-          "change_pct": 0.89,
-          "market_cap": 48827432675.0,
-          "weight": 0.07994125087935602,
+          "price": 507.0,
+          "change_pct": 0.8,
+          "market_cap": 48779326830.0,
+          "weight": 0.07993880689398138,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3039,10 +3039,10 @@
         {
           "ticker": "4722",
           "name": "國精化",
-          "price": 188.0,
-          "change_pct": 0.8,
-          "market_cap": 19507833724.0,
-          "weight": 0.03193861615094728,
+          "price": 187.75,
+          "change_pct": 0.67,
+          "market_cap": 19481892455.75,
+          "weight": 0.03192662425164328,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3050,21 +3050,21 @@
         {
           "ticker": "4749",
           "name": "新應材",
-          "price": 704.5,
-          "change_pct": -0.35,
-          "market_cap": 66739303392.5,
-          "weight": 0.10926692442596868,
+          "price": 702.0,
+          "change_pct": -0.71,
+          "market_cap": 66502471230.0,
+          "weight": 0.10898322201441339,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "4764",
           "name": "雙鍵",
-          "price": 158.25,
-          "change_pct": -1.71,
-          "market_cap": 14486531311.5,
-          "weight": 0.02371763925522156,
+          "price": 157.75,
+          "change_pct": -2.02,
+          "market_cap": 14440760280.5,
+          "weight": 0.02366529475669613,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3072,12 +3072,12 @@
         {
           "ticker": "4770",
           "name": "上品",
-          "price": 289.0,
-          "change_pct": -1.03,
-          "market_cap": 23113064000.0,
-          "weight": 0.03784117137824945,
+          "price": 289.25,
+          "change_pct": -0.94,
+          "market_cap": 23133058000.0,
+          "weight": 0.03791009791451177,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
@@ -3086,7 +3086,7 @@
           "price": 247.75,
           "change_pct": -2.84,
           "market_cap": 36588104508.0,
-          "weight": 0.059902777627947955,
+          "weight": 0.059960020175658116,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3094,10 +3094,10 @@
         {
           "ticker": "5234",
           "name": "達興材料",
-          "price": 287.5,
-          "change_pct": -1.37,
-          "market_cap": 29530824412.5,
-          "weight": 0.04834845728521347,
+          "price": 288.25,
+          "change_pct": -1.11,
+          "market_cap": 29607861345.75,
+          "weight": 0.048520905565389176,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3105,21 +3105,21 @@
         {
           "ticker": "8028",
           "name": "昇陽半導體",
-          "price": 248.5,
-          "change_pct": 0.81,
-          "market_cap": 45612239610.0,
-          "weight": 0.07467727238707027,
+          "price": 247.75,
+          "change_pct": 0.51,
+          "market_cap": 45474576915.0,
+          "weight": 0.07452303381025745,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "4768",
           "name": "晶呈科技",
-          "price": 318.5,
-          "change_pct": -0.93,
-          "market_cap": 15351791728.0,
-          "weight": 0.02513426094188292,
+          "price": 318.25,
+          "change_pct": -1.01,
+          "market_cap": 15339741656.0,
+          "weight": 0.02513853154054578,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3127,19 +3127,19 @@
         {
           "ticker": "5434",
           "name": "崇越",
-          "price": 540.5,
-          "change_pct": -1.73,
-          "market_cap": 104861314811.5,
-          "weight": 0.1716810451756002,
+          "price": 541.0,
+          "change_pct": -1.64,
+          "market_cap": 104958318803.0,
+          "weight": 0.17200407065785558,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
     },
     {
       "name": "網通／交換器",
-      "change_pct": -0.11,
+      "change_pct": -0.12,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -3149,7 +3149,7 @@
           "price": 1772.5,
           "change_pct": -0.14,
           "market_cap": 994581472432.5,
-          "weight": 0.9074115541582078,
+          "weight": 0.9075374091656615,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3160,7 +3160,7 @@
           "price": 138.75,
           "change_pct": 0.54,
           "market_cap": 8194697238.75,
-          "weight": 0.0074764744401316745,
+          "weight": 0.007477511402623587,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3168,21 +3168,21 @@
         {
           "ticker": "3596",
           "name": "智易",
-          "price": 159.5,
-          "change_pct": 1.59,
-          "market_cap": 35146514199.5,
-          "weight": 0.03206610414228914,
+          "price": 159.0,
+          "change_pct": 1.27,
+          "market_cap": 35036337039.0,
+          "weight": 0.031970016961267035,
           "shares_source": "master",
-          "quote_source": "mis_trade",
+          "quote_source": "mis_book",
           "tags": []
         },
         {
           "ticker": "5388",
           "name": "中磊",
-          "price": 73.4,
-          "change_pct": -0.81,
-          "market_cap": 22338742582.800003,
-          "weight": 0.020380867416946977,
+          "price": 73.5,
+          "change_pct": -0.68,
+          "market_cap": 22369176837.0,
+          "weight": 0.02041146487694831,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3190,10 +3190,10 @@
         {
           "ticker": "3380",
           "name": "明泰",
-          "price": 32.175,
-          "change_pct": -0.69,
-          "market_cap": 17429791450.5,
-          "weight": 0.01590216044349755,
+          "price": 32.125,
+          "change_pct": -0.85,
+          "market_cap": 17402705527.5,
+          "weight": 0.015879650611500973,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3201,10 +3201,10 @@
         {
           "ticker": "4906",
           "name": "正文",
-          "price": 40.675,
-          "change_pct": -0.43,
-          "market_cap": 18373150986.6,
-          "weight": 0.016762839398926775,
+          "price": 40.575,
+          "change_pct": -0.67,
+          "market_cap": 18327980363.4,
+          "weight": 0.016723946981998524,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3213,17 +3213,17 @@
     },
     {
       "name": "AI 伺服器機構／機殼",
-      "change_pct": 0.43,
+      "change_pct": 0.48,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "2059",
           "name": "川湖",
-          "price": 9777.5,
-          "change_pct": 0.23,
-          "market_cap": 931767121480.0,
-          "weight": 0.8250401036776338,
+          "price": 9787.5,
+          "change_pct": 0.33,
+          "market_cap": 932720092200.0,
+          "weight": 0.8254532069342297,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3231,21 +3231,21 @@
         {
           "ticker": "3013",
           "name": "晟銘電",
-          "price": 89.35,
-          "change_pct": -2.35,
-          "market_cap": 19062330002.8,
-          "weight": 0.016878881384939443,
+          "price": 89.0,
+          "change_pct": -2.73,
+          "market_cap": 18987659432.0,
+          "weight": 0.016803995648202008,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
           "ticker": "3693",
           "name": "營邦",
-          "price": 685.5,
-          "change_pct": 5.95,
-          "market_cap": 29470120737.0,
-          "weight": 0.026094536829789565,
+          "price": 684.5,
+          "change_pct": 5.8,
+          "market_cap": 29427130043.0,
+          "weight": 0.026042881533269675,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3253,12 +3253,12 @@
         {
           "ticker": "5284",
           "name": "jpp-KY",
-          "price": 265.75,
-          "change_pct": 3.4,
-          "market_cap": 14654168007.25,
-          "weight": 0.012975641674077375,
+          "price": 266.0,
+          "change_pct": 3.5,
+          "market_cap": 14667953678.0,
+          "weight": 0.01298107492689416,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -3267,7 +3267,7 @@
           "price": 65.0,
           "change_pct": -1.52,
           "market_cap": 6018138685.0,
-          "weight": 0.005328805503173525,
+          "weight": 0.00532602644550193,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3275,10 +3275,10 @@
         {
           "ticker": "6584",
           "name": "南俊國際",
-          "price": 433.0,
-          "change_pct": -1.81,
-          "market_cap": 30907457730.0,
-          "weight": 0.027367237523328546,
+          "price": 432.0,
+          "change_pct": -2.04,
+          "market_cap": 30836077920.0,
+          "weight": 0.027289794249312507,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3286,10 +3286,10 @@
         {
           "ticker": "8210",
           "name": "勤誠",
-          "price": 776.0,
-          "change_pct": 1.57,
-          "market_cap": 97480457296.0,
-          "weight": 0.08631479340705767,
+          "price": 774.5,
+          "change_pct": 1.37,
+          "market_cap": 97292028577.0,
+          "weight": 0.08610302026258997,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3298,7 +3298,7 @@
     },
     {
       "name": "半導體測試／驗證／量測",
-      "change_pct": 2.32,
+      "change_pct": 2.18,
       "complete": true,
       "missing": [],
       "stocks": [
@@ -3308,7 +3308,7 @@
           "price": 133.0,
           "change_pct": 0.38,
           "market_cap": 11537267343.0,
-          "weight": 0.21805660542574065,
+          "weight": 0.21835512781227914,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3316,10 +3316,10 @@
         {
           "ticker": "3587",
           "name": "閎康",
-          "price": 220.0,
-          "change_pct": 1.62,
-          "market_cap": 15770633120.0,
-          "weight": 0.2980680451726235,
+          "price": 219.75,
+          "change_pct": 1.5,
+          "market_cap": 15752711946.0,
+          "weight": 0.29813692689073423,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3327,10 +3327,10 @@
         {
           "ticker": "6830",
           "name": "汎銓",
-          "price": 470.5,
-          "change_pct": 3.63,
-          "market_cap": 25601605857.5,
-          "weight": 0.4838753494016359,
+          "price": 469.5,
+          "change_pct": 3.41,
+          "market_cap": 25547192242.5,
+          "weight": 0.4835079452969866,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3349,7 +3349,7 @@
           "price": 191.75,
           "change_pct": -0.13,
           "market_cap": 99896423760.25,
-          "weight": 0.15679713412378704,
+          "weight": 0.1568005621263998,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3360,7 +3360,7 @@
           "price": 69.35,
           "change_pct": -0.5,
           "market_cap": 164806161435.4,
-          "weight": 0.25867926824919446,
+          "weight": 0.2586849236663829,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3371,7 +3371,7 @@
           "price": 158.75,
           "change_pct": -0.78,
           "market_cap": 79869111756.25,
-          "weight": 0.1253623238650473,
+          "weight": 0.12536506461905506,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3379,10 +3379,10 @@
         {
           "ticker": "1514",
           "name": "亞力",
-          "price": 98.15,
-          "change_pct": -0.46,
-          "market_cap": 27341708512.300003,
-          "weight": 0.042915465593298674,
+          "price": 98.1,
+          "change_pct": -0.51,
+          "market_cap": 27327779980.199997,
+          "weight": 0.04289454117842998,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3393,7 +3393,7 @@
           "price": 588.5,
           "change_pct": -4.31,
           "market_cap": 204485464716.5,
-          "weight": 0.3209597864530975,
+          "weight": 0.32096680348815176,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3404,7 +3404,7 @@
           "price": 28.225,
           "change_pct": -0.27,
           "market_cap": 60707313669.475006,
-          "weight": 0.09528602171557518,
+          "weight": 0.09528810492158037,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3413,17 +3413,17 @@
     },
     {
       "name": "MCU",
-      "change_pct": -0.75,
+      "change_pct": -1.0,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "4919",
           "name": "新唐",
-          "price": 133.25,
-          "change_pct": -0.93,
-          "market_cap": 60282002452.75,
-          "weight": 0.6572299680740438,
+          "price": 132.75,
+          "change_pct": -1.3,
+          "market_cap": 60055803569.25,
+          "weight": 0.6564229397091218,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3434,9 +3434,9 @@
           "price": 54.1,
           "change_pct": -0.37,
           "market_cap": 12464001620.0,
-          "weight": 0.13588990168679663,
+          "weight": 0.13623423712090432,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         },
         {
@@ -3445,7 +3445,7 @@
           "price": 48.325,
           "change_pct": 0.68,
           "market_cap": 8112659021.150001,
-          "weight": 0.08844899659139946,
+          "weight": 0.08867312011536731,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3453,10 +3453,10 @@
         {
           "ticker": "4952",
           "name": "凌通",
-          "price": 45.9,
-          "change_pct": -0.86,
-          "market_cap": 4994645954.4,
-          "weight": 0.05445457794346567,
+          "price": 45.925,
+          "change_pct": -0.81,
+          "market_cap": 4997366349.799999,
+          "weight": 0.05462229651721444,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3467,7 +3467,7 @@
           "price": 22.075,
           "change_pct": -1.01,
           "market_cap": 900040089.85,
-          "weight": 0.009812768246727178,
+          "weight": 0.009837633109914899,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3475,10 +3475,10 @@
         {
           "ticker": "6716",
           "name": "應廣",
-          "price": 91.4,
-          "change_pct": -1.72,
-          "market_cap": 2764101799.6000004,
-          "weight": 0.030135869141514254,
+          "price": 91.15,
+          "change_pct": -1.99,
+          "market_cap": 2756541346.1000004,
+          "weight": 0.03012959391593566,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3486,10 +3486,10 @@
         {
           "ticker": "6494",
           "name": "九齊",
-          "price": 46.25,
-          "change_pct": -0.32,
-          "market_cap": 1459635662.5,
-          "weight": 0.015913809442818994,
+          "price": 46.225,
+          "change_pct": -0.38,
+          "market_cap": 1458846670.25,
+          "weight": 0.0159455100582601,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3500,7 +3500,7 @@
           "price": 30.725,
           "change_pct": -4.28,
           "market_cap": 744236804.1,
-          "weight": 0.008114108873233982,
+          "weight": 0.008134669453281363,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3509,17 +3509,17 @@
     },
     {
       "name": "電源管理／馬達驅動 IC",
-      "change_pct": 1.55,
+      "change_pct": 1.19,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "6138",
           "name": "茂達",
-          "price": 248.5,
-          "change_pct": 2.26,
-          "market_cap": 18794924750.0,
-          "weight": 0.073665478538209,
+          "price": 248.0,
+          "change_pct": 2.06,
+          "market_cap": 18757108000.0,
+          "weight": 0.07378027944520568,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3527,10 +3527,10 @@
         {
           "ticker": "8081",
           "name": "致新",
-          "price": 266.0,
-          "change_pct": 0.38,
-          "market_cap": 22921771152.0,
-          "weight": 0.08984038315212697,
+          "price": 265.25,
+          "change_pct": 0.09,
+          "market_cap": 22857142098.0,
+          "weight": 0.08990758763606921,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3538,10 +3538,10 @@
         {
           "ticker": "6719",
           "name": "力智",
-          "price": 174.0,
-          "change_pct": -0.57,
-          "market_cap": 18359956086.0,
-          "weight": 0.07196064730270829,
+          "price": 173.75,
+          "change_pct": -0.71,
+          "market_cap": 18333576838.75,
+          "weight": 0.07211433779627038,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3549,10 +3549,10 @@
         {
           "ticker": "6415",
           "name": "矽力*-KY",
-          "price": 480.75,
-          "change_pct": 1.85,
-          "market_cap": 187666978116.75,
-          "weight": 0.7355484489923263,
+          "price": 478.75,
+          "change_pct": 1.43,
+          "market_cap": 186886252258.75,
+          "weight": 0.7351090539180015,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3563,7 +3563,7 @@
           "price": 161.75,
           "change_pct": 1.09,
           "market_cap": 7395210000.0,
-          "weight": 0.028985042014629436,
+          "weight": 0.02908874120445324,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3572,17 +3572,17 @@
     },
     {
       "name": "石英元件",
-      "change_pct": 0.63,
+      "change_pct": 0.37,
       "complete": true,
       "missing": [],
       "stocks": [
         {
           "ticker": "3042",
           "name": "晶技",
-          "price": 171.75,
-          "change_pct": 1.33,
-          "market_cap": 58909042769.25,
-          "weight": 0.7864369060446365,
+          "price": 171.25,
+          "change_pct": 1.03,
+          "market_cap": 58737546283.75,
+          "weight": 0.786226559505315,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3590,10 +3590,10 @@
         {
           "ticker": "2484",
           "name": "希華",
-          "price": 75.15,
-          "change_pct": -2.02,
-          "market_cap": 11980489803.300001,
-          "weight": 0.15993977988596203,
+          "price": 75.0,
+          "change_pct": -2.22,
+          "market_cap": 11956576650.0,
+          "weight": 0.16004376617263966,
           "shares_source": "master",
           "quote_source": "mis_book",
           "tags": []
@@ -3601,12 +3601,12 @@
         {
           "ticker": "8182",
           "name": "加高",
-          "price": 37.525,
-          "change_pct": -1.64,
-          "market_cap": 4016721592.875,
-          "weight": 0.05362331406940151,
+          "price": 37.5,
+          "change_pct": -1.7,
+          "market_cap": 4014045562.5,
+          "weight": 0.05372967432204534,
           "shares_source": "master",
-          "quote_source": "mis_book",
+          "quote_source": "mis_trade",
           "tags": []
         }
       ]
