@@ -37,6 +37,8 @@ jobs:
           git pull --ff-only origin main
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Initialize Telegram delivery baseline (no API)
+        run: python scripts/notify_line_research.py init
       - name: Preview only Yingbang (no API)
         run: python scripts/research_ai_batch.py --mode yingbang_only --limit 1 --dry-run
       - name: Process or reuse only Yingbang
@@ -69,6 +71,12 @@ jobs:
               exit 1
             fi
           fi
+      - name: Notify newly published LINE research on Telegram
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/notify_line_research.py send
       - name: Upload Yingbang processing audit
         if: always()
         uses: actions/upload-artifact@v4
@@ -101,6 +109,9 @@ jobs:
           python -m pip install requests
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Initialize Telegram delivery baseline (no API)
+        if: ${{ inputs.run_mode != 'check' }}
+        run: python scripts/notify_line_research.py init
       - name: Read consistent Sheet snapshot
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
@@ -215,6 +226,13 @@ jobs:
           else
             echo 'No changes'
           fi
+      - name: Notify newly published LINE research on Telegram
+        if: ${{ inputs.run_mode != 'check' }}
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/notify_line_research.py send
       - name: Upload research processing audit
         if: always()
         uses: actions/upload-artifact@v4
