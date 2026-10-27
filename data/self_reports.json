@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-27T15:34+08:00",
+  "updated_at": "2026-10-27T16:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -15,7 +15,7 @@
         "publish_time": "13:32:25",
         "subject": "2002 中鋼 115/10/27 13:32:25 公告本公司115年09月份自結合併營收及稅前損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectionError",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -1456,28 +1456,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 5,
+      "rows": 6,
       "self_reports": 5,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 47,
-          "hits": 5
+          "rows": 65,
+          "hits": 6
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 47,
+          "rows": 65,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 47,
+          "rows": 65,
           "hits": 1
         },
         {
@@ -1516,7 +1516,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -1559,7 +1559,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "1343 旭東環保 115/10/27 15:55:22 公告本公司115年9月份自結財務報告之負債比率、流動 比率及速動比率"
+        }
+      ],
       "error": ""
     },
     "twse": {
