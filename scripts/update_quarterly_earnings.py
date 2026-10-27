@@ -933,8 +933,8 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
             continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
-              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
-              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
+              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元\n\n"
+              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元")
         if x.get('source') == 'news_backup':
             text+='\n來源：當日新聞備援（非官方公告事件）'
         if x.get('eps_news_source'):
