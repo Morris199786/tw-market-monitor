@@ -97092,11 +97092,845 @@
     }
   },
   "line-1f0d3d5c101a716acd78": {
-    "status": "attempted",
+    "status": "success",
     "fingerprint": "0beba87782ab0e7b4e79dd1594952623f85dbbab500468ab0c26046897a8a74d",
     "category": "產業研究",
     "model": "gpt-5.6-luna",
     "at": "2026-10-26T23:50:15.709146+00:00",
-    "original_id": null
+    "original_id": null,
+    "schema": "research-full-article-v2",
+    "result": {
+      "title": "CPO 2028出貨暴增22倍，滲透率仍僅9%：矽光子先受惠，量產關鍵在良率與測試",
+      "summary": [
+        "高盛估CPO光引擎出貨量將由2026年72萬顆增至2028年1,625萬顆，但2028年可插拔模組仍占91%，CPO元年不等於全面放量。",
+        "AI叢集擴大、Scale-Up頻寬需求與EML供給短缺，推動矽光子由CPO未來方案，提前成為1.6T可插拔模組的現行解方。",
+        "CPO真正瓶頸不是光學性能，而是光纖耦合、複合良率與測試產能；OE整合測試需達99%以上良率，台廠設備、耦合與封測供應鏈具切入機會。"
+      ],
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "核心結論：CPO快速成長，但可插拔仍是主流",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "本次永豐金證券專家分享會的核心價值，在於將CPO的「出貨量成長」與「市場滲透率」拆開觀察。高盛2026年9月估計，CPO光引擎出貨量將由2026年的72萬顆，增加至2028年的1,625.2萬顆，約成長22倍；然而，同期CPO滲透率僅由1%升至9%，代表可插拔光模組至2028年仍占約91%。因此，2026年可稱為CPO出貨元年，但尚不能直接等同於CPO全面放量年。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "chart",
+          "text": "",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "bar",
+          "title": "CPO光引擎出貨量預估",
+          "labels": [
+            "2026E",
+            "2027E",
+            "2028E"
+          ],
+          "values": [
+            720,
+            8528,
+            16252
+          ],
+          "unit": "千顆",
+          "note": "高盛2026年9月估計；單位為光引擎顆數，非公司實績。"
+        },
+        {
+          "type": "table",
+          "text": "高盛對CPO市場的量與滲透率估計",
+          "items": [],
+          "columns": [
+            "年度",
+            "CPO光引擎出貨量",
+            "CPO滲透率",
+            "可插拔占比"
+          ],
+          "rows": [
+            [
+              "2026E",
+              "72萬顆",
+              "1%",
+              "資料未提供"
+            ],
+            [
+              "2027E",
+              "852.8萬顆",
+              "6%",
+              "資料未提供"
+            ],
+            [
+              "2028E",
+              "1,625.2萬顆",
+              "9%",
+              "91%"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "若以NVIDIA Quantum-X Q3450每台交換器約72顆光引擎回推，2026年72萬顆約相當於1萬台交換器，與高盛同期交換器預估口徑大致一致。這項換算僅為研究簡報的推估，不代表實際出貨數字。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "需求端：AI互連成為算力擴張的下一個瓶頸",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "AI訓練需要大量GPU同步交換梯度與參數。當叢集由數百顆GPU擴張至數萬甚至十萬顆，單一GPU或網路鏈路失效，都可能使整體叢集效能下降約四成；因此，光互連的可靠度、頻寬密度與功耗，逐漸成為AI資料中心的關鍵限制。節點數增加也會推升連結數量，並與800G、1.6T及後續3.2T的單通道升級共同墊高網路設備BOM。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "不同AI互連場景的頻寬需求倍數",
+          "items": [],
+          "columns": [
+            "互連場景",
+            "相對需求倍數",
+            "主要意義"
+          ],
+          "rows": [
+            [
+              "Scale-Across",
+              "1倍",
+              "跨資料中心連結，作為基準"
+            ],
+            [
+              "Scale-Out",
+              "10倍",
+              "跨機櫃交換，現階段光模組主要應用"
+            ],
+            [
+              "Scale-Up",
+              "100倍",
+              "機櫃內或緊耦合GPU互連，為光連結需求的主要淨增量"
+            ],
+            [
+              "Scale-In",
+              "1,000倍",
+              "封裝內互連，仍屬更前沿的高密度場景"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "倍數為簡報所示的相對頻寬需求，不代表市場規模。"
+        },
+        {
+          "type": "paragraph",
+          "text": "智璞引用資料估計，AI光連結市場規模約由2025年的180億美元，成長至2030年900億美元以上，年複合成長率約40%。其中Scale-Out與Scale-Up占主要市場，而Scale-Up被視為新增光連結需求的核心來源。邊緣運算也不是把需求從雲端移走，而是同時增加南北向資料傳輸、邊緣節點互連，以及雲端東西向的高負載傳輸。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "NVIDIA布局：從雷射、矽光子到互連架構建立供應鏈護城河",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "簡報指出，NVIDIA在2026年上半年對Lumentum、Coherent及Marvell各投入20億美元，並對Ayar Labs投入5億美元，合計65億美元。依簡報解讀，這些布局分別對應光源、矽光子平台、互連架構與技術整合，目的在於鎖定AI光通訊生態的關鍵供應能力，而非單純採購光模組。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "NVIDIA 2026年上半年光通訊布局",
+          "items": [],
+          "columns": [
+            "對象",
+            "金額",
+            "簡報所列合作或供應方向"
+          ],
+          "rows": [
+            [
+              "Lumentum",
+              "20億美元",
+              "多年期策略協議、雷射器產能、矽光子CPO先進雷射元件"
+            ],
+            [
+              "Coherent",
+              "20億美元",
+              "光學製造基地、次世代矽光子、先進雷射與光網路產品"
+            ],
+            [
+              "Marvell",
+              "20億美元",
+              "NVLink Fusion、自訂XPU、矽光子與光學I/O"
+            ],
+            [
+              "Ayar Labs",
+              "5億美元",
+              "光子互連技術整合"
+            ],
+            [
+              "合計",
+              "65億美元",
+              "涵蓋光源、平台、互連架構與整合"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "金額與合作內容依專家簡報整理，並非本研究自行推估。"
+        },
+        {
+          "type": "heading",
+          "text": "矽光子為何提前受惠：EML短缺與成本差距同時推動",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "矽光子將波導、耦合器、調變器與光偵測器整合至矽晶片，透過外部InP雷射提供光源。其優勢不只在於未來CPO的高整合，也包括目前可插拔光模組的成本、功耗與量產擴充能力。麥肯錫估計，2026年800G及1.6T以上EML供給缺口約40%至60%，且缺口可能延續至2027年以後；Lumentum則表示EML、CPO雷射與整體雷射供應均處於短缺狀態。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "1.6TbE矽光方案與傳統可插拔方案的BOM比較",
+          "items": [],
+          "columns": [
+            "組件",
+            "矽光方案",
+            "傳統可插拔方案"
+          ],
+          "rows": [
+            [
+              "光源",
+              "4顆CW雷射，約24美元",
+              "8顆200G EML，約160至200美元"
+            ],
+            [
+              "核心晶片／探測器",
+              "矽光晶片約40至70美元",
+              "探測器約30美元"
+            ],
+            [
+              "DSP",
+              "約130至180美元",
+              "約130至180美元"
+            ],
+            [
+              "TIA與Driver",
+              "約25美元",
+              "約30美元"
+            ],
+            [
+              "PCB／PCBA",
+              "約12至20美元",
+              "約30至40美元"
+            ],
+            [
+              "其他被動元件",
+              "約60美元",
+              "約60至80美元"
+            ],
+            [
+              "總BOM",
+              "約300至350美元",
+              "約450至550美元"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "資料來源口徑為簡報引用的Cignal與凱基；金額為美元估計，不代表所有產品型號。"
+        },
+        {
+          "type": "paragraph",
+          "text": "矽光方案的主要成本優勢來自CW雷射可由多個通道共用，而傳統EML通常每通道需要獨立雷射。簡報引用資料顯示，矽光子在光模組市場的金額比重可能由2025年的28%升至2027年的56%、2028年的62%。此外，高盛預估2027年800G收發器的矽光占比約40%、1.6T約80%，3.2T則可能全面採用矽光子。這些均屬市場預估，並非公司指引。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "CPO導入路徑：功耗牆與密度牆決定時程",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "1.6T可插拔模組的主要問題，不是單純做不出更高速率，而是高速電訊號從ASIC走到前面板時，必須通過約15至30公分的PCB電通道。訊號損耗增加後，需要更強的DSP與SerDes補償，導致模組功耗升高；同時，交換機前面板的插槽與散熱空間有限。CPO將光引擎放在Switch ASIC周邊，使電通道縮短至毫米級，因而降低訊號補償需求。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "不同光互連架構的功耗與導入定位",
+          "items": [],
+          "columns": [
+            "架構",
+            "簡報所列功耗或特徵",
+            "定位"
+          ],
+          "rows": [
+            [
+              "Full-DSP可插拔",
+              "約20至25W",
+              "1.6T既有主流，但功耗壓力較高"
+            ],
+            [
+              "LRO",
+              "約15W",
+              "僅接收端採線性，發射端仍含DSP"
+            ],
+            [
+              "LPO",
+              "約4至10W",
+              "移除模組DSP，保留可插拔與可維修性"
+            ],
+            [
+              "NPO",
+              "約8W",
+              "光引擎靠近ASIC但保留socket，作為產能延伸"
+            ],
+            [
+              "CPO",
+              "約3.5至5.4W",
+              "光引擎與ASIC共同封裝，功耗與密度優勢最大"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "各數值來自不同廠商或研究口徑，不能視為完全同一量測邊界；CPO與NPO量產功耗仍有待實際產品驗證。"
+        },
+        {
+          "type": "paragraph",
+          "text": "LPO可在維持可插拔維修性的前提下降低功耗與延遲，常被視為Full-DSP可插拔與CPO之間的過渡方案。但LPO對主機ASIC、SerDes、訊號校準與互通性的要求更高，且在200G/lane世代已開始承受挑戰，無法根本解決400G/lane以後的散熱問題。簡報估計，3.2T若採8×400G/lane可插拔架構，模組功耗可能達40至60W，高於OSFP-XD約40W的典型散熱上限。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "CPO可能的導入時程與應用場景",
+          "items": [],
+          "columns": [
+            "期間",
+            "技術與產品狀態",
+            "判讀"
+          ],
+          "rows": [
+            [
+              "2026至2027年",
+              "1.6T以可插拔與LPO為主，NPO／CPO並行少量出貨",
+              "CPO是出貨元年，但不是全面放量年"
+            ],
+            [
+              "2027年",
+              "3.2T系統進入驗證，200G/lane×16通道方案並行測試",
+              "為系統驗證與供應鏈認證關鍵年"
+            ],
+            [
+              "2028至2029年",
+              "400G/lane使可插拔功耗與通道損耗快速升高",
+              "CPO在部分Scale-Up與高階Scale-Out場景由可選轉為必要"
+            ],
+            [
+              "2028年以後",
+              "光逐步由交換機間推進至機櫃間及機櫃內",
+              "Scale-Up的CPO用量與價值密度更高"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "時程為專家簡報與業界資料整理，實際採用速度取決於系統驗證、良率與先進封裝產能。"
+        },
+        {
+          "type": "heading",
+          "text": "CPO與NPO：不是路線二選一，而是共同分擔產能",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "CPO將光引擎與Switch ASIC共同放在同一載板上，電氣路徑最短，但需要晶圓級對準、共同封裝與較高的先進封裝產能。NPO則在光引擎下方增加LGA socket，讓光引擎位於ASIC附近但保持較高的可維修性，並可使用較多既有OSAT與PCB製程。兩者的光引擎、FAU與ELS用量大致相同，NPO主要多出socket，因此NPO更像是CPO的產能延伸，而非完全競爭的替代路線。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Lumentum的產業觀察認為，2028年的Scale-Up需求可能需要CPO與NPO同步供應，出貨約各半。這代表供應鏈若只押注單一路線，可能忽略實際系統為解決封裝產能與維修性所採取的混合架構。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "量產關鍵：四道Insertion測試與99%以上OE良率",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "CPO量產的核心障礙逐漸由「能否傳輸」轉向「能否以足夠良率與速度製造」。Insertion 1是PIC與EIC的晶圓級測試，已可達到每顆少於5秒的成熟水準；Insertion 2是OE光引擎模組測試，因測試時間長、缺乏標準化設備，現階段部分廠商會跳過；Insertion 3是OE與ASIC整合於載板後的測試，也是最大瓶頸。若此時才發現OE故障，可能連同價值數萬美元的ASIC一併報廢，因此OE模組良率需要達到99%以上；Insertion 4則是系統級功能測試。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "CPO四道Insertion測試的內容與產業問題",
+          "items": [],
+          "columns": [
+            "階段",
+            "測試內容",
+            "目前狀態與瓶頸"
+          ],
+          "rows": [
+            [
+              "Insertion 1",
+              "PIC／EIC晶圓測試",
+              "相對成熟，簡報引用每顆少於5秒"
+            ],
+            [
+              "Insertion 2",
+              "OE光引擎模組測試",
+              "需雙面探測、同時上電下光並進行精密對光；缺乏標準機台，部分廠商暫時跳過"
+            ],
+            [
+              "Insertion 3",
+              "OE與ASIC整合載板測試",
+              "最大瓶頸；若OE失效會連帶報廢高價ASIC，要求OE良率達99%以上"
+            ],
+            [
+              "Insertion 4",
+              "CPO模組與系統級測試",
+              "確認整體功能、互通性與可靠度，需提升測試並行度"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "測試階段與設備角色依專家簡報整理，實際流程可能隨客戶平台而異。"
+        },
+        {
+          "type": "paragraph",
+          "text": "簡報指出，SiPh測試成本可能占其元件總成本約60%至90%，圖示口徑約75%，顯著高於成熟InP模組約29%的測試成本占比。這是因為SiPh需要光與RF同步測試、每顆晶粒可能都要先對光，且現階段PDK與良率仍在成熟過程。第二道測試的問題不是精度本身，而是產能：若量產規模提升，現有的跳過流程將難以維持，雙面探測、批次對準、多站並測及微透鏡放寬軸向對位等方案，將成為設備投資重點。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "光耦合技術：GC先量產，EC追求低損耗與高頻寬",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "光柵耦合與邊緣耦合比較",
+          "items": [],
+          "columns": [
+            "項目",
+            "GC光柵耦合",
+            "EC邊緣耦合"
+          ],
+          "rows": [
+            [
+              "耦合方向",
+              "由PIC上方垂直耦合",
+              "由PIC側邊水平耦合"
+            ],
+            [
+              "對準容差",
+              "約±10微米；台積電COUPE微透鏡方案約±10微米",
+              "次微米級，封裝難度高"
+            ],
+            [
+              "優勢",
+              "較易量產與晶圓級測試，通道可堆疊",
+              "損耗較低、頻寬較大，單纖可承載多波長"
+            ],
+            [
+              "限制",
+              "具極化與波長選擇性問題，插入損耗較高",
+              "對位精度與良率仍待克服，封裝寬度也受限制"
+            ],
+            [
+              "產業階段",
+              "目前市場主流出貨方案",
+              "長期低損耗與寬頻路線，仍在改善量產性"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "數值與優缺點依簡報引用的業界常見範圍；不同平台與量測條件不可直接互比。"
+        },
+        {
+          "type": "paragraph",
+          "text": "目前GC因易於晶圓級測試與量產，仍是主流出貨方案；EC則以低損耗、寬頻與多波長能力吸引高階應用，但次微米級對位會放大良率壓力。台積電透過內嵌矽微透鏡及背面反射結構，嘗試將光束模場放大，將對準容差由次微米級放寬至微米級；台灣廠商也在雙超穎透鏡FAU、metalens與相關光耦合方案布局。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "供應鏈觀察：價值集中在OE、雷射、耦合與測試",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "CPO光引擎四大環節包括OE光學引擎、ELS外部雷射、FAU光纖陣列及Shuffle Box。簡報估計，OE約占CPO產值55%至70%、ELS約15%至30%、FAU約5%至15%、Shuffle Box約2%至8%；上述為業界估算，並非公開財務拆分。ELS採外置設計主要是為了將雷射移離高熱源，並保留可更換性，但CPO對高功率、低RIN、窄線寬與避免mode hop等規格要求更高。簡報並指出，CPO及部分NPO約有75%採外置雷射，合格供應商目前相對集中於Lumentum與Coherent。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "CPO供應鏈環節與台廠切入方向",
+          "items": [],
+          "columns": [
+            "環節",
+            "簡報列示的代表性廠商或方向",
+            "產業意義"
+          ],
+          "rows": [
+            [
+              "PIC／OE與先進封裝",
+              "台積電COUPE、GlobalFoundries、Tower、聯電等平台",
+              "決定光電整合、製程節點與共同封裝能力"
+            ],
+            [
+              "ELS外部雷射",
+              "Lumentum、Coherent、全新、眾達-KY等",
+              "受惠於雷射短缺與高功率ELS需求，但供應商認證門檻高"
+            ],
+            [
+              "FAU與光耦合",
+              "上詮、波若威、萬潤、合聖、采鈺、光程研創、奇景等",
+              "對位、插損與可拆卸性是量產關鍵"
+            ],
+            [
+              "Shuffle Box與光纖線束",
+              "波若威、太辰光、Corning、Senko等",
+              "光纖數量隨GPU叢集規模同步增加"
+            ],
+            [
+              "測試與耦合設備",
+              "致茂、鴻勁、高明鐵、旺矽、MPI、萬潤等",
+              "集中於Insertion 3與4，受惠於測試標準化與並行化需求"
+            ],
+            [
+              "封裝與模組組裝",
+              "日月光、矽品、Fabrinet等",
+              "承接共同封裝、模組組裝與系統測試需求"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": "名單為簡報整理的方向性供應鏈，不代表完整名單、訂單確認或投資建議。"
+        },
+        {
+          "type": "paragraph",
+          "text": "台積電被簡報視為NVIDIA與Broadcom兩大陣營的共同底座；兩者在雷射來源與模組組裝上有所區隔，但PIC、封裝、耦合及測試等環節存在重疊。對台灣供應鏈而言，較具韌性的切入點可能不是押注CPO或NPO單一路線，而是布局兩種架構共用的光耦合、光纖管理、測試設備與封裝能力。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "重要問答：如何解讀這波矽光子與CPO題材？",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "投資與產業判讀的關鍵問題",
+          "items": [
+            "CPO是否會在2026年全面取代可插拔？不會。高盛估計2028年CPO滲透率仍僅9%，可插拔占91%；2026年至2027年仍以1.6T可插拔與LPO為主。",
+            "矽光子是否要等CPO放量才有需求？不需要。1.6T可插拔模組同樣可採用PIC、EIC與FAU架構，EML短缺反而促使矽光子提前導入。",
+            "CPO最重要的技術門檻是什麼？是複合良率、對位與測試產能，而非單純光學傳輸性能。Insertion 3若未能在OE整合前篩出瑕疵，可能造成高價ASIC一併報廢。",
+            "GC與EC誰會勝出？短期GC較有量產優勢，EC在低損耗與高頻寬具長期潛力；兩者可能依平台、功耗與良率條件並存。",
+            "NPO是否會取代CPO？簡報判斷NPO較接近產能延伸。當共同封裝產能不足或系統需要維修性時，NPO可與CPO共同承接2028年Scale-Up需求。",
+            "應追蹤哪些先行指標？高功率ELS出貨與認證、1.6T及3.2T系統驗證、Insertion 2與3測試設備訂單、光耦合良率、CPO／NPO實際量產功耗，以及大型AI叢集的部署進度。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "風險與觀察重點",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "主要風險",
+          "items": [
+            "滲透率低於出貨量直覺：CPO出貨量可快速成長，但若整體AI光模組市場同步擴大，CPO占比仍可能維持個位數，不能以出貨倍數直接推論全面替代。",
+            "量產良率與測試速度：光學與電子元件的良率是複合相乘關係，通道數增加會放大單點瑕疵；Insertion 2及3若無法標準化與並行測試，可能限制實際出貨。",
+            "先進封裝產能：CPO需要共同封裝與高精度對位，產能若不足，NPO或可插拔方案可能延長並存時間。",
+            "雷射與InP供應集中：EML、CW雷射及高功率ELS仍受InP基板、製程與合格供應商數量限制，供應短缺可能同時帶來漲價與出貨延遲。",
+            "技術路線並存：LPO、NPO、CPO、XPO及OCS等方案可能依不同Scale-Out與Scale-Up場景共存，單一路線的市場預估存在落差風險。",
+            "地緣政治與在地化要求：簡報提及美國供應鏈安全審查可能要求揭露HBOM／SBOM，並研議美國來源零組件比例門檻；非中替代與可追溯性可能成為訂單條件，但也提高製造成本與供應鏈調整壓力。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "整體而言，CPO的中長期方向由AI互連功耗、密度與Scale-Up需求支持，但產業節奏將呈現「矽光子先於CPO放量、可插拔與CPO長期共存、CPO與NPO共同擴張」的樣貌。對供應鏈研究而言，2028年以前更值得觀察的不是單一CPO出貨倍數，而是高功率ELS、光耦合良率、Insertion 2與3測試設備，以及能同時服務可插拔、NPO與CPO的中立型零組件與設備廠商。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        }
+      ]
+    },
+    "audit": {
+      "status": "passed",
+      "issues": [],
+      "blocks": 40
+    },
+    "usage": {
+      "input_tokens": 18220,
+      "input_tokens_details": {
+        "cache_write_tokens": 18217,
+        "cached_tokens": 0
+      },
+      "output_tokens": 6932,
+      "output_tokens_details": {
+        "reasoning_tokens": 139
+      },
+      "total_tokens": 25152
+    }
   }
 }
