@@ -47,6 +47,20 @@ def roc_date(v):
 
 def period_from_text(s, fallback_date=""):
     s = clean(s).replace("年度第", "年第")
+    # MOPS sometimes spells ROC years digit by digit: 一一五年第三季.
+    digits = {'零':'0', '〇':'0', '○':'0', '一':'1', '二':'2', '三':'3',
+              '四':'4', '五':'5', '六':'6', '七':'7', '八':'8', '九':'9'}
+    def convert_roc_year(m):
+        raw = m.group(1)
+        if len(raw) not in (2, 3, 4):
+            return m.group(0)
+        value = int(''.join(digits[ch] for ch in raw))
+        if len(raw) == 4 and not 2000 <= value <= 2099:
+            return m.group(0)
+        if len(raw) in (2, 3) and not 1 <= value <= 199:
+            return m.group(0)
+        return str(value) + '年'
+    s = re.sub(r'([零〇○一二三四五六七八九]{2,4})\s*年', convert_roc_year, s)
     patterns = [
         r"(?:(20\d{2})|(\d{2,3}))\s*年?\s*第?\s*([1-4一二三四])\s*季",
         r"(?:(20\d{2})|(\d{2,3}))\s*Q\s*([1-4])",
@@ -912,7 +926,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
     for x in reports:
         # Historical backfills update the website only; never send Telegram.
         # The actual company announcement date is authoritative, not the crawl date.
-        if x.get('publish_date') != today or (x.get('source') == 'news_backup' and not x.get('official_announcement_date')):
+        if x.get('publish_date') != today:
             continue
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
@@ -921,6 +935,8 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元\n\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元")
+        if x.get('source') == 'news_backup':
+            text+='\n來源：當日新聞備援（非官方公告事件）'
         if x.get('eps_news_source'):
             text+='\nEPS 來源：新聞備援｜'+x['eps_news_source'].get('source_label','')
             text+='\n'+x['eps_news_source'].get('source_url','')
@@ -1153,6 +1169,8 @@ def main():
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
+                event['source']='mops_official'
+                event['official_announcement_date']=x['date']
                 existing=events.get((x['ticker'],period),{})
                 merged={**existing.get('released_metrics',{})}
                 for p,v in event.get('released_metrics',{}).items(): merged[p]={**merged.get(p,{}),**v}
