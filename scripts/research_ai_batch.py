@@ -130,7 +130,7 @@ SYSTEM_PROMPT = '''你是專業台股產業研究分析師。完整閱讀 Excel 
 
 summary 僅供首頁卡片，blocks 必須是獨立完整的 AI 研究全文，不可只重複 summary。按照原文資訊量完整整理背景、營運數據、業務驅動、比較、展望、風險及重要問答；文章短則精簡，長則深入，不得硬湊固定章節或固定表格。數字多且適合比較時主動設計表格；只有敘事時以段落呈現；可以交錯使用表格與文字。表格欄位與列數由你自行決定，絕不固定。
 
-所有視覺化也由你自主選擇：除了 table，必要時可使用 chart 區塊，格式為 {"type":"chart","chart_type":"bar|line|donut","title":"圖表標題","labels":["項目"],"values":[數值],"unit":"單位","note":"資料期間與性質"}。只有數值可比且有明確同單位時才使用圖表；不要虛構數字，也不要把預估與實績混成同一口徑。對於缺少日期、期間或資料無法判定的欄位，不要輸出 unknown，改以文字說明或省略不重要的欄位。數字和單位在同一個儲存格只寫一次。忠於來源，不得虛構。清楚區分公司指引、券商估計、歷史實績及推論；保留期間、單位、約數、範圍和重要條件。若原文沒有的資料，不要補造。避免冗長重複、空泛總結。不要輸出 markdown，只輸出合法 JSON。'''
+所有視覺化由你自主選擇，不必每篇都有圖。chart_type 可選 bar、line、pie、kpi、stacked_bar、waterfall、dual_axis、timeline、flow、scatter、heatmap、donut（donut 為舊資料相容）。圖表共用 chart 區塊，並以 chart_type 指定類型。一般圖表使用 labels、values、unit；多系列圖使用 series=[{"name":"系列","values":[數值],"unit":"單位"}]；KPI 使用 kpi_items=[{"label":"指標","value":"數值","unit":"單位"}]；時間軸使用 events=[{"date":"日期","label":"事件","description":"說明"}]；供應鏈使用 nodes=[{"id":"代碼","label":"名稱","description":"說明"}] 和 links=[{"from":"來源代碼","to":"目標代碼","label":"關係"}]；散布圖使用 points=[{"label":"標的","x":數值,"y":數值}] 及 x_label、y_label；熱力矩陣使用 columns 與 heatmap_rows=[{"label":"項目","values":[數值]}]；瀑布圖可使用 totals=[true/false] 標示總計柱。table 區塊繼續使用 columns、rows。所有欄位均須提供，未使用時填空陣列或空字串。資料必須來自原文，圖表的數字、時間與關係不可臆測；不同單位不得混在同一數列。只有數值可比且有明確同單位時才使用圖表；不要虛構數字，也不要把預估與實績混成同一口徑。對於缺少日期、期間或資料無法判定的欄位，不要輸出 unknown，改以文字說明或省略不重要的欄位。數字和單位在同一個儲存格只寫一次。忠於來源，不得虛構。清楚區分公司指引、券商估計、歷史實績及推論；保留期間、單位、約數、範圍和重要條件。若原文沒有的資料，不要補造。避免冗長重複、空泛總結。不要輸出 markdown，只輸出合法 JSON。'''
 
 
 
@@ -149,14 +149,24 @@ ARTICLE_SCHEMA = {
                 'items':{'type':'array','items':{'type':'string'}},
                 'columns':{'type':'array','items':{'type':'string'}},
                 'rows':{'type':'array','items':{'type':'array','items':{'type':'string'}}},
-                'chart_type':{'type':'string','enum':['bar','line','donut','']},
+                'chart_type':{'type':'string','enum':['bar', 'line', 'pie', 'kpi', 'stacked_bar', 'waterfall', 'dual_axis', 'timeline', 'flow', 'scatter', 'heatmap', 'donut', '']},
                 'title':{'type':'string'},
                 'labels':{'type':'array','items':{'type':'string'}},
                 'values':{'type':'array','items':{'type':'number'}},
                 'unit':{'type':'string'},
                 'note':{'type':'string'},
+                'series':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'name':{'type':'string'},'values':{'type':'array','items':{'type':'number'}},'unit':{'type':'string'}},'required':['name','values','unit']}},
+                'kpi_items':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'label':{'type':'string'},'value':{'type':'string'},'unit':{'type':'string'}},'required':['label','value','unit']}},
+                'events':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'date':{'type':'string'},'label':{'type':'string'},'description':{'type':'string'}},'required':['date','label','description']}},
+                'nodes':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'id':{'type':'string'},'label':{'type':'string'},'description':{'type':'string'}},'required':['id','label','description']}},
+                'links':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'from':{'type':'string'},'to':{'type':'string'},'label':{'type':'string'}},'required':['from','to','label']}},
+                'points':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'label':{'type':'string'},'x':{'type':'number'},'y':{'type':'number'}},'required':['label','x','y']}},
+                'heatmap_rows':{'type':'array','items':{'type':'object','additionalProperties':False,'properties':{'label':{'type':'string'},'values':{'type':'array','items':{'type':'number'}}},'required':['label','values']}},
+                'totals':{'type':'array','items':{'type':'boolean'}},
+                'x_label':{'type':'string'},'y_label':{'type':'string'},
+
             },
-            'required':['type','text','items','columns','rows','chart_type','title','labels','values','unit','note'],
+            'required':['type','text','items','columns','rows','chart_type','title','labels','values','unit','note','series','kpi_items','events','nodes','links','points','heatmap_rows','totals','x_label','y_label'],
         }},
     },
     'required':['title','summary','blocks'],
@@ -247,10 +257,23 @@ def audit(result, row):
     for block in result['blocks']:
         if block.get('type') == 'chart':
             labels, values = block.get('labels'), block.get('values')
-            if (block.get('chart_type') not in ('bar','line','donut') or
-                not isinstance(labels,list) or not isinstance(values,list) or
-                not labels or len(labels)!=len(values) or
-                any(not isinstance(v,(int,float)) or isinstance(v,bool) for v in values)):
+            kind = block.get('chart_type')
+            valid_types = ('bar', 'line', 'pie', 'kpi', 'stacked_bar', 'waterfall', 'dual_axis', 'timeline', 'flow', 'scatter', 'heatmap', 'donut')
+            if kind not in valid_types:
+                return {'status':'needs_review','issues':['AI 圖表類型不支援']}
+            numeric = lambda v: isinstance(v,(int,float)) and not isinstance(v,bool)
+            simple = kind in ('bar','line','pie','donut','waterfall')
+            multi = kind in ('stacked_bar','dual_axis')
+            valid = (not simple or (isinstance(labels,list) and isinstance(values,list) and bool(labels) and len(labels)==len(values) and all(numeric(v) for v in values)))
+            if multi:
+                ss=block.get('series',[])
+                valid = isinstance(labels,list) and bool(labels) and isinstance(ss,list) and bool(ss) and all(isinstance(x,dict) and len(x.get('values',[]))==len(labels) and all(numeric(v) for v in x.get('values',[])) for x in ss)
+            if kind=='kpi': valid=bool(block.get('kpi_items'))
+            if kind=='timeline': valid=bool(block.get('events'))
+            if kind=='flow': valid=bool(block.get('nodes'))
+            if kind=='scatter': valid=bool(block.get('points'))
+            if kind=='heatmap': valid=bool(block.get('columns')) and bool(block.get('heatmap_rows'))
+            if not valid:
                 return {'status':'needs_review','issues':['AI 圖表資料格式不完整']}
     return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
 
