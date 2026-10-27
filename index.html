@@ -166,11 +166,28 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 
 <script src="./assets/app.js?v=20261020-heat-detail-scroll"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
-<script src="./assets/ui_v2.js?v=20261027-home-counts-v11"></script>
+<script src="./assets/ui_v2.js?v=20261027-home-loading-fix1"></script>
+<script>
+/* Home cards: never leave a static loading placeholder on screen.
+   Existing report-count code can still replace these labels with live counts. */
+(function () {
+  function clearStaleLabels() {
+    for (const [id, fallback] of [["reports", "查看最新報告"], ["selfReports", "查看最新公告"]]) {
+      const el = document.querySelector('[data-feature="' + id + '"] .feature-copy small');
+      if (el && /今日資料載入中/.test(el.textContent || "")) el.textContent = fallback;
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", clearStaleLabels, {once:true});
+  else clearStaleLabels();
+  window.addEventListener("load", clearStaleLabels, {once:true});
+  setTimeout(clearStaleLabels, 5000);
+})();
+</script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
 <script src="./assets/feature_sort.js?v=20261004-market-monitor-nav"></script>
 <script src="./assets/broker_report_charts.js?v=20261027-ai-v2"></script>
-<script src="./assets/reports_v2.js?v=20261027-home-counts-v4"></script>
+<script src="./assets/report_dates.js?v=20261027-fix1"></script>
+<script src="./assets/reports_v2.js?v=20261027-date-dependency-fix1"></script>
 <script src="./assets/tw_ratings.js?v=20260930-v1"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/daily_k.js?v=20261013-restored"></script>
