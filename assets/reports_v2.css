@@ -82,3 +82,38 @@ html[data-theme="dark"] .report-deep-highlight{border-color:#6ea8ff !important;b
 .report-target-down{color:#059669 !important;border-color:rgba(5,150,105,.22) !important;background:rgba(5,150,105,.07) !important}
 html[data-theme="dark"] .report-target-up{color:#ff7b7b !important;border-color:rgba(255,123,123,.24) !important;background:rgba(255,123,123,.09) !important}
 html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-color:rgba(101,214,167,.24) !important;background:rgba(101,214,167,.09) !important}
+
+/* Unified research reading typography. Scoped to report content only. */
+:root { --research-font: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif; }
+#researchMergedPanel,#rmReader,.report-v2-card,.report-detail-block {
+  font-family:var(--research-font)!important;
+}
+#researchMergedPanel .rm-title,.report-v2-card .report-title,#rmReaderTitle {
+  font-size:20px!important;font-weight:700!important;line-height:1.5!important;
+}
+#researchMergedPanel .rm-story,.report-v2-card .report-summary,
+.report-detail-block p,.report-detail-block ul,.report-details-body>p,
+#rmReader .rm-ai-paragraph,#rmReader .rm-ai-list,#rmReader .rm-original-text,
+#rmReader .rm-ai-quote {
+  font-family:var(--research-font)!important;font-size:17px!important;
+  line-height:1.75!important;font-weight:400;color:var(--ink,#202733);
+  max-height:none!important;-webkit-line-clamp:unset!important;overflow:visible!important;
+}
+#researchMergedPanel .rm-story {display:block!important;}
+#rmReader .rm-ai-paragraph {margin:0 0 1em!important;}
+#rmReader .rm-ai-heading,#rmReader .rm-section>h3,.report-detail-block .report-subtitle {
+  font-size:18px!important;line-height:1.5!important;font-weight:650!important;
+  color:var(--ink,#202733);margin:1.25em 0 .5em!important;
+}
+#rmReader .rm-section>h3:first-child {margin-top:0!important;}
+#researchMergedPanel .rm-sub,#rmReader .rm-info,.report-v2-card .report-broker {
+  font-size:14px!important;line-height:1.6!important;
+}
+.research-emphasis {
+  font-weight:650;background:linear-gradient(transparent 72%,rgba(237,181,62,.30) 72%);
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+}
+.research-emphasis:has(mark) {background:none;}
+#researchMergedPanel mark,#rmReader mark,.report-v2-card mark,.report-detail-block mark {
+  background:#ffe06a!important;color:#202733!important;border-radius:2px;
+}
