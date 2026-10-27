@@ -225,3 +225,154 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
     font-size: 13px !important;
   }
 }
+
+/* Industry database toolbar consistency (2026-10-27).
+   Research categories: category -> date tools -> search -> count -> cards.
+   CSS-only ordering retains all existing event handlers and data behavior. */
+@media (max-width: 720px) {
+  #researchMergedPanel .rm-toolbar { display:flex !important; flex-direction:column !important; gap:12px !important; }
+  #researchMergedPanel .rm-cats { order:1; }
+  #researchMergedPanel .rm-date-tools { order:2; align-items:center; gap:9px; }
+  #researchMergedPanel .rm-search { order:3; }
+  #researchMergedPanel .rm-meta { order:4; }
+  #researchMergedPanel #rmCalendar { order:5; }
+  #researchMergedPanel .rm-date-tools button,
+  #researchMergedPanel #rmDateToggle,
+  #researchMergedPanel #rmLatest {
+    font-family:var(--research-font) !important;
+    font-size:14px !important;
+    font-weight:600 !important;
+    line-height:1.4 !important;
+    min-height:42px !important;
+    padding:9px 14px !important;
+    border-radius:12px !important;
+    white-space:nowrap;
+  }
+  #researchMergedPanel #rmClear {
+    font-family:var(--research-font) !important;
+    font-size:14px !important;
+    font-weight:600 !important;
+    min-height:42px !important;
+  }
+}
+
+/* 2026-10-27: unified mobile report typography across all industry database
+   categories (broker, industry, morning, meetings/interviews, US research).
+   The research cards are built dynamically; !important intentionally takes
+   precedence over their runtime-injected non-important style rules. */
+@media (max-width:720px) {
+  /* Primary headline: identical scale regardless of category or card renderer. */
+  #researchMergedPanel .rm-card .rm-title,
+  #researchMergedPanel .rm-title,
+  #researchMergedPanel .rm-card .report-title,
+  #reports .report-v2-card .report-title,
+  #rmReaderTitle {
+    font-family:var(--research-font) !important;
+    font-size:16px !important;
+    font-weight:700 !important;
+    line-height:1.48 !important;
+  }
+  /* Broker/source is supporting metadata, not another headline. */
+  #researchMergedPanel .rm-card .report-broker,
+  #researchMergedPanel .rm-card .rm-broker,
+  #researchMergedPanel .rm-broker,
+  #reports .report-v2-card .report-broker {
+    font-size:12px !important;
+    font-weight:600 !important;
+    line-height:1.5 !important;
+  }
+  /* The research body stays readable and consistent. */
+  #researchMergedPanel .rm-card .rm-story,
+  #researchMergedPanel .rm-story,
+  #researchMergedPanel .rm-card .report-summary,
+  #reports .report-v2-card .report-summary,
+  #reports .report-v2-card .report-details-body {
+    font-size:15px !important;
+    font-weight:400 !important;
+    line-height:1.65 !important;
+  }
+  /* Meetings and articles keep paragraph breaks; bullets get similar rhythm. */
+  #researchMergedPanel .rm-story { white-space:pre-line !important; }
+  #reports .report-v2-card .report-summary li,
+  #researchMergedPanel .rm-card .report-summary li {
+    margin-bottom:10px !important;
+    line-height:1.65 !important;
+  }
+  #reports .report-v2-card .report-summary li:last-child,
+  #researchMergedPanel .rm-card .report-summary li:last-child {margin-bottom:0 !important;}
+  #researchMergedPanel .rm-sub,
+  #researchMergedPanel .rm-card .report-meta,
+  #reports .report-v2-card .report-meta,
+  #reports .report-v2-card .report-chip {
+    font-size:12px !important;
+    line-height:1.5 !important;
+  }
+  #reports .report-v2-card .report-chip {font-weight:600 !important;}
+  #reports .report-v2-card .report-chip.report-date,
+  #reports .report-v2-card .report-chip.report-date-chip {font-weight:400 !important;}
+  #researchMergedPanel .rm-date-group>.report-date-head b,
+  #reports .report-date-group>.report-date-head b {font-size:16px !important;}
+  /* Full reader is distinct from the list card, but same across categories. */
+  #rmReader .rm-ai-paragraph,
+  #rmReader .rm-ai-list,
+  #rmReader .rm-original-text,
+  #rmReader .rm-ai-quote,
+  #reports .report-v2-card .report-detail-block p,
+  #reports .report-v2-card .report-detail-block ul,
+  #reports .report-v2-card .report-details-body>p {
+    font-size:16px !important;
+    line-height:1.65 !important;
+  }
+}
+
+/* 2026-10-27: consolidated mobile research layout (previously separate stylesheet) */
+/* 產業資料庫手機版統一視覺：標題 16px、卡片內文 15px、全文 16px。 */
+@media (max-width:720px) {
+  #researchMergedPanel, #reports .report-v2-wrap {font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC',sans-serif!important}
+  #researchMergedPanel .rm-toolbar {gap:10px!important;margin-bottom:14px!important}
+  #researchMergedPanel .rm-date-tools button,
+  #reports .report-v2-wrap .report-date-tools button,
+  #reports .report-v2-wrap .report-filter {font-size:14px!important;font-weight:600!important;line-height:1.35!important;min-height:42px!important;border-radius:12px!important}
+  #researchMergedPanel .rm-search input,
+  #reports #reportSearch {font-size:14px!important;min-height:44px!important;line-height:1.4!important}
+  #researchMergedPanel #rmClear {font-size:14px!important;font-weight:600!important;min-height:42px!important}
+  #researchMergedPanel .rm-meta,
+  #reports .report-history-note {font-size:12px!important;line-height:1.5!important}
+  #researchMergedPanel .rm-title,
+  #researchMergedPanel .rm-card .report-title,
+  #reports .report-v2-card .report-title,
+  #rmReaderTitle {font-size:16px!important;font-weight:700!important;line-height:1.45!important}
+  #researchMergedPanel .rm-card .report-broker,
+  #reports .report-v2-card .report-broker {font-size:12px!important;font-weight:600!important;line-height:1.45!important}
+  #researchMergedPanel .rm-story,
+  #researchMergedPanel .rm-card .report-summary,
+  #reports .report-v2-card .report-summary {font-size:15px!important;line-height:1.65!important;font-weight:400!important}
+  #researchMergedPanel .rm-card .report-summary li+li,
+  #reports .report-v2-card .report-summary li+li {margin-top:10px!important}
+  #researchMergedPanel .rm-sub,
+  #researchMergedPanel .rm-card .report-meta,
+  #reports .report-v2-card .report-meta {font-size:12px!important;line-height:1.5!important}
+  #researchMergedPanel .report-chip,
+  #reports .report-v2-card .report-chip {font-size:12px!important;font-weight:600!important;line-height:1.4!important;max-width:100%;white-space:normal!important;overflow-wrap:anywhere!important;padding:5px 9px!important;height:auto!important}
+  #researchMergedPanel .rm-card,
+  #reports .report-v2-card {padding:13px!important}
+  #researchMergedPanel .rm-date-group>.report-date-head b,
+  #reports .report-date-group>.report-date-head b {font-size:16px!important;font-weight:700!important}
+  #rmReader .rm-ai-paragraph,
+  #rmReader .rm-ai-list,
+  #rmReader .rm-original-text,
+  #reports .report-v2-card .report-detail-block p,
+  #reports .report-v2-card .report-detail-block ul {font-size:16px!important;line-height:1.65!important}
+}
+
+/* 讓摘要有呼吸感，同時避免目標價資訊擠成一大塊。 */
+@media (max-width:720px) {
+  #researchMergedPanel .rm-story,
+  #researchMergedPanel .rm-card .report-summary,
+  #reports .report-v2-card .report-summary {line-height:1.72!important}
+  #researchMergedPanel .rm-card .report-summary li,
+  #reports .report-v2-card .report-summary li {margin-bottom:9px!important}
+  #researchMergedPanel .rm-card .report-target,
+  #reports .report-v2-card .report-target {display:inline-block!important;max-width:100%!important;line-height:1.5!important;overflow-wrap:anywhere!important}
+}
+
