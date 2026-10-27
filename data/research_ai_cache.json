@@ -140817,11 +140817,622 @@
     }
   },
   "line-cf24032fcf22445777e9": {
-    "status": "attempted",
+    "status": "success",
     "fingerprint": "f8fd225492d5f35d0c99f14e54ff4cf565f70e55dd296e674f7ca4138b1b0470",
     "category": "法說／訪談",
     "model": "gpt-5.6-luna",
     "at": "2026-10-27T01:49:47.374549+00:00",
-    "original_id": null
+    "original_id": null,
+    "schema": "research-full-article-v2",
+    "result": {
+      "title": "AI半導體2028年仍有成長支撐：2.5D封裝產能預估增50%，EMIB-T切入10–15%市場",
+      "summary": [
+        "摩根士丹利供應鏈調查認為，2028年CoWoS、CoPoS與Intel EMIB-T整體2.5D封裝產能仍可望成長約50%，高於全球CSP資本支出約12%的增幅。",
+        "CoPoS預估2028年達5–10kWPM，初期主要對應NVIDIA Feynman Ultra；Intel EMIB-T則預估達4–4.5萬片12吋CoWoS等效產能，占2.5D封裝市場約10–15%。",
+        "AI半導體需求不只來自更大型GPU，也擴展至CPU、網路晶片與ASIC。Broadcom旗下AI實驗室客戶已預訂2027年約1.5–3萬片CoWoS晶圓。",
+        "報告估計2027年AI晶片CoWoS需求達250.9萬片、HBM需求最高約44.9bn Gb，AI晶片晶圓消耗對應至少550億美元晶圓TAM。"
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "摩根士丹利2026年9月10日發布的AI供應鏈報告，核心問題是：在雲端服務供應商（CSP）資本支出成長可能放緩的情況下，2028年AI半導體是否仍能維持成長。報告引用供應鏈調查與初步產能假設指出，2028年CoWoS、CoPoS及Intel EMIB-T的整體2.5D封裝產能仍可望成長約50%，因此即使AI資料中心基礎設施支出趨於持平、記憶體價格僅溫和上升，AI半導體需求仍具支撐。這項判斷是研究部門的預估，不是公司正式指引。企業資本支出方面，摩根士丹利美國網路研究分析師預估全球CSP資本支出至2028年成長約12%。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "一、2028年成長關鍵：封裝產能增幅可能高於CSP資本支出",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "報告認為，AI半導體的成長不必完全依賴資料中心外殼、電力與其他基礎設施支出的同步擴張。更大型的計算晶片、單一封裝整合更多記憶體，以及AI應用從GPU延伸至CPU、XPU、網路晶片與客製化ASIC，都可能推升先進封裝需求。換言之，AI伺服器資本支出與AI半導體、先進封裝支出的成長速度可能出現分化。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "主要封裝路線與2028年初步產能假設",
+          "items": [],
+          "columns": [
+            "封裝路線",
+            "技術型態",
+            "2028年產能假設",
+            "主要應用或客戶",
+            "研究解讀"
+          ],
+          "rows": [
+            [
+              "CoWoS",
+              "晶圓級、2.5D",
+              "台積電260kWPM；非台積電陣營110kWPM",
+              "AI GPU、ASIC、CPU與網路晶片",
+              "台積電持續擴產，OSAT亦增加CoWoS-L與CoWoS-R供給"
+            ],
+            [
+              "CoPoS",
+              "面板級、2.5D",
+              "5–10kWPM，換算為12吋CoWoS等效產能",
+              "初期主要對應NVIDIA Feynman Ultra GPU",
+              "台積電桃園正進行試產，後續擴產取決於試產結果"
+            ],
+            [
+              "EMIB-T",
+              "基板級、2.5D",
+              "4–4.5萬片12吋CoWoS等效產能",
+              "MediaTek／Google Humufish及其他大型晶片專案",
+              "預估可生產至少200萬片9倍reticle尺寸基板，占2.5D封裝市場約10–15%"
+            ],
+            [
+              "EMIB-M",
+              "基板級",
+              "2026年平均約110kWPM，2028年約95kWPM",
+              "Trainium3、Trainium4及Intel自有伺服器CPU",
+              "部分產能轉向EMIB-T，因此產能逐步下降；主要用途與EMIB-T不同"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "EMIB-T是本次供應鏈估算中最值得注意的競爭變化。摩根士丹利將EMIB-T產能換算為12吋CoWoS等效口徑，以便與台積電CoWoS比較；一片EMIB-T基板可產出16片9倍reticle尺寸晶片，約為一片CoWoS晶圓可產出晶片數的4倍。研究團隊估計，2028年EMIB-T可達4–4.5萬片等效產能，對應至少200萬片Humufish尺寸基板，約占2.5D封裝市場10–15%。這並不代表EMIB-T與CoWoS在所有產品、良率與商業模式上完全可互換，而是研究部門為了比較供給規模所做的換算。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "二、CoWoS供給：台積電擴產仍是主軸，OSAT擴張速度較初期預期慢",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "CoWoS年末供給能力估計",
+          "items": [],
+          "columns": [
+            "年度",
+            "台積電CoWoS",
+            "非台積電陣營",
+            "合計",
+            "資料性質"
+          ],
+          "rows": [
+            [
+              "2026E",
+              "130kWPM",
+              "80kWPM",
+              "210kWPM",
+              "摩根士丹利估計"
+            ],
+            [
+              "2027E",
+              "200kWPM",
+              "80kWPM",
+              "280kWPM",
+              "摩根士丹利估計"
+            ],
+            [
+              "2028E",
+              "260kWPM",
+              "110kWPM",
+              "370kWPM",
+              "摩根士丹利估計"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "台積電CoWoS產能預估將由2026年的130kWPM、2027年的200kWPM，進一步增加至2028年的260kWPM；2028年擴產重點可能包括美國亞利桑那州AP9／AP10，並可能延伸至AP7。非台積電陣營則預估由2027年底約80kWPM增加至2028年底110kWPM。就個別OSAT而言，ASE／矽品的FoCoS加CoWoS產能預估由2027年底30kWPM增至2028年底50–60kWPM，Amkor則由30kWPM增至55–60kWPM，兩者擴產均聚焦CoWoS-L與CoWoS-R。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "不過，研究團隊指出ASE與Amkor的CoWoS建置速度低於先前預期及客戶原先預測，導致AMD Venice CPU的產能爬坡假設下修。由於OSAT供給較慢，台積電可能需要支援約8萬片CoWoS-L給Venice生產，部分擠壓AI GPU的封裝供給。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "三、需求端：2027年CoWoS需求估計達250.9萬片",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "chart",
+          "text": "",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "line",
+          "title": "全球CoWoS需求：歷史實績與研究估計",
+          "labels": [
+            "2023",
+            "2024",
+            "2025",
+            "2026E",
+            "2027E"
+          ],
+          "values": [
+            117,
+            372,
+            689,
+            1394,
+            2509
+          ],
+          "unit": "千片晶圓",
+          "note": "2023–2025為公司資料與供應鏈資料彙整；2026E–2027E為摩根士丹利估計，口徑為全球主要客戶CoWoS需求。"
+        },
+        {
+          "type": "table",
+          "text": "主要客戶CoWoS需求估計",
+          "items": [],
+          "columns": [
+            "客戶／應用",
+            "2026E",
+            "2027E",
+            "2027年年增率",
+            "重點"
+          ],
+          "rows": [
+            [
+              "NVIDIA",
+              "780k片",
+              "1,222k片",
+              "57%",
+              "仍為最大需求來源，但占全球需求比重由56%降至49%"
+            ],
+            [
+              "Broadcom",
+              "300k片",
+              "484k片",
+              "61%",
+              "AI ASIC需求持續增加，涵蓋Google等相關專案"
+            ],
+            [
+              "AMD",
+              "130k片",
+              "345k片",
+              "165%",
+              "MI455、MI450為主要焦點，MI500後期少量生產"
+            ],
+            [
+              "Marvell",
+              "17k片",
+              "64k片",
+              "276%",
+              "客製化ASIC需求成長較快"
+            ],
+            [
+              "GUC",
+              "14k片",
+              "60k片",
+              "329%",
+              "受客戶ASIC專案拉動"
+            ],
+            [
+              "Microsoft Maia",
+              "約1k片",
+              "5k片",
+              "—",
+              "2027年對應約10–15萬顆晶片的研究估計"
+            ],
+            [
+              "美國AI實驗室客戶",
+              "未列單獨總量",
+              "15–30k片",
+              "—",
+              "由Broadcom支援，為新增ASIC需求線索"
+            ],
+            [
+              "全球合計",
+              "1,394k片",
+              "2,509k片",
+              "80%",
+              "摩根士丹利供應鏈估計"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "需求結構也正在分散。NVIDIA仍是最大CoWoS使用者，但摩根士丹利估計其占全球需求比重將由2026年的56%降至2027年的49%；Broadcom、AMD、Marvell、GUC及各大CSP自研ASIC的需求增長，使GPU以外的客戶占比提高。AMD方面，研究團隊預估2027年CoWoS消耗量年增165%至34.5萬片，其中AI GPU相關生產主要在台積電進行，MI455與MI450可能各達約50–65萬顆；Venice CPU的CoWoS預訂量則由2026年的5萬片增至2027年的21萬片，對應約440萬顆CPU，低於先前估計的560萬顆。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "四、HBM與晶圓價值：AI晶片需求外溢至記憶體與先進製程",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "AI晶片相關消耗量估計",
+          "items": [],
+          "columns": [
+            "項目",
+            "2026E",
+            "2027E",
+            "解讀"
+          ],
+          "rows": [
+            [
+              "CoWoS需求",
+              "約142.1萬片",
+              "約245.4萬片",
+              "報告不同表格因納入項目與四捨五入略有差異；整體需求呈快速成長"
+            ],
+            [
+              "HBM需求",
+              "最高約29.9bn Gb",
+              "最高約44.9bn Gb",
+              "2027年需求由更高晶片出貨量與每顆晶片HBM容量增加共同推動"
+            ],
+            [
+              "AI晶片晶圓消耗",
+              "約1,075k片",
+              "約1,996k片",
+              "涵蓋AI GPU與AI ASIC的計算裸晶需求，不等同CoWoS晶圓數"
+            ],
+            [
+              "晶圓收入TAM",
+              "至少270億美元",
+              "至少550億美元",
+              "摩根士丹利依製程、晶粒尺寸、晶圓價格與估計消耗量推算"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "報告對2027年的估算顯示，AI晶片供應鏈的成長不只反映封裝數量，也反映單顆晶片的記憶體與計算內容增加。研究團隊估計，2027年AI相關HBM需求最高約44.9bn Gb，較2026年約29.9bn Gb增加；AI晶片晶圓消耗則由約107.5萬片增加至約199.6萬片，對應至少550億美元的晶圓收入TAM。上述為摩根士丹利依供應鏈調查與產品假設推算的市場規模，不是台積電或記憶體廠的正式營收指引。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "五、ASIC競爭格局：Broadcom需求增長，Qualcomm／AWS對世芯短期影響有限",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Broadcom方面，摩根士丹利引用近期公司指引與供應鏈查核，指出Broadcom的AI實驗室客戶已預訂2027年約1.5–3萬片CoWoS晶圓。報告另引述相關研究，Broadcom 2027財年營收指引為1,150億美元，並認為2028財年可能再次大幅增加；但這屬外部研究解讀，並非本報告的獨立公司指引。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Qualcomm與AWS宣布ASIC合作後，市場關注其對ASIC設計服務商及世芯的影響。摩根士丹利認為，公開資訊顯示該合作主要聚焦推論，與世芯所涉Trainium4同時涵蓋訓練與推論的定位不同，因此目前預期對世芯的直接影響有限。這項判斷仍取決於後續產品規格、量產時程、設計服務分工及AWS實際採用規模。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "報告同時指出，MediaTek透過NVIDIA NVLink Fusion合作，仍有機會取得第二家AI CSP或AI實驗室客戶，決策可能在2026年第四季作出；若落地，可能成為MediaTek的潛在催化劑。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "六、台積電AI營收與投資含意",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "摩根士丹利估計台積電AI相關營收在2024至2029年可能達約60%的複合年增率，涵蓋通用型AI、客製化ASIC、CoWoS／晶圓測試及AI伺服器CPU。這項估計反映AI營收範圍不應只限於GPU，CPU、網路晶片與ASIC等應用也會消耗先進製程及先進封裝資源。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "報告中的主要投資觀察",
+          "items": [],
+          "columns": [
+            "觀察面向",
+            "研究含意"
+          ],
+          "rows": [
+            [
+              "台積電",
+              "CoWoS持續擴產，CoPoS若試產順利，2028年形成5–10kWPM的新封裝供給；AI相關營收2024–2029年CAGR估計約60%"
+            ],
+            [
+              "OSAT",
+              "ASE／矽品與Amkor持續增加CoWoS-L、CoWoS-R，但擴產速度低於初期預期，可能造成部分客戶排程調整"
+            ],
+            [
+              "Intel封裝",
+              "EMIB-T由2026年約5kWPM等效產能，預估增至2027年15–20kWPM、2028年40–45kWPM，成為2.5D封裝的新競爭供給"
+            ],
+            [
+              "ASIC設計服務",
+              "Broadcom、CSP自研ASIC與MediaTek相關專案推動需求分散；Qualcomm／AWS合作目前被判斷以推論為主"
+            ],
+            [
+              "記憶體與測試",
+              "HBM需求及先進封裝放量將同步推動高頻寬記憶體、晶圓測試與相關設備需求"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "七、風險與需要追蹤的驗證點",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "",
+          "items": [
+            "CoPoS仍處於試產與初期導入階段，2028年5–10kWPM產能假設取決於台積電桃園試產進度、良率與客戶產品驗證；報告也明確表示2029年10–20kWPM的延伸預估可能受試產結果影響。",
+            "EMIB-T的4–4.5萬片12吋CoWoS等效產能是換算口徑，實際市場占有率仍受基板尺寸、晶片尺寸、良率、產品組合及供應鏈執行能力影響，不能直接視為與CoWoS同質的晶圓產能。",
+            "ASE與Amkor的CoWoS擴產較初期預期慢，可能導致AMD Venice等非GPU產品爭取台積電產能，進而限制部分AI GPU產出。",
+            "2028年CSP資本支出若低於研究預估的約12%成長，或AI資料中心建置、電力、網路與記憶體供應出現瓶頸，先進封裝需求可能延後。",
+            "ASIC專案具有較高客戶集中與產品轉換風險；Broadcom、AWS、Google、Meta、Microsoft及MediaTek等專案的量產時間、設計歸屬與實際CoWoS配額仍需逐季驗證。",
+            "報告中的CoWoS需求、HBM用量、晶圓TAM與產能均包含摩根士丹利供應鏈調查及估計，並非所有數字均為公司公告實績；投資人不宜將估計值視為確定訂單或營收。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "八、重要問答",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "",
+          "items": [
+            "問：CSP資本支出若只成長約12%，為何AI半導體仍可能高速成長？答：研究團隊認為，晶片尺寸變大、每顆晶片整合更多HBM，以及CPU、網路晶片與ASIC等應用擴張，能讓AI半導體與先進封裝支出增速高於整體資料中心基礎設施支出。",
+            "問：CoPoS何時形成有意義的供給？答：摩根士丹利預估2028年達5–10kWPM，初期主要對應NVIDIA Feynman Ultra；但目前仍在試產，實際時程與規模取決於試產結果。",
+            "問：EMIB-T是否會取代CoWoS？答：報告將兩者換算為同一等效口徑以比較產能，但兩者在製程、基板、供應鏈及產品適用性上不同。EMIB-T較可能成為大型晶片2.5D封裝的新增競爭路線，而非全面取代CoWoS。",
+            "問：Broadcom的AI需求有多具體？答：供應鏈查核顯示，Broadcom的AI實驗室客戶已預訂2027年約1.5–3萬片CoWoS晶圓；這是供應鏈估計與訂單線索，仍需由後續公司揭露及出貨驗證。",
+            "問：Qualcomm與AWS合作是否會明顯衝擊世芯？答：摩根士丹利目前認為合作主要聚焦推論，而世芯Trainium4同時涵蓋訓練與推論，因此短期直接影響有限；中長期仍需觀察合作產品是否擴大至訓練市場及設計服務分工。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "quote",
+          "text": "整體而言，摩根士丹利的核心結論不是「CSP資本支出仍將無限制上升」，而是即使基礎設施支出增速放緩，AI晶片尺寸、封裝複雜度與應用範圍擴張，仍可能支撐2028年AI半導體及先進封裝維持成長。最重要的驗證點將是CoPoS試產、EMIB-T量產爬坡、OSAT CoWoS擴產速度，以及Broadcom與各CSP ASIC專案是否按計畫放量。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "資料來源：Morgan Stanley《AI Supply Chain: Prelim 2028 AI semis vs. CSP capex growth》及美系外電，2026年9月10日。本文所述2026E–2029E數字多為摩根士丹利研究估計或供應鏈查核結果，應與公司正式公告及後續實際出貨區分。摩根士丹利對相關產業與公司存在研究報告所揭露的業務往來及利益衝突，本文不構成個別投資建議。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        }
+      ]
+    },
+    "audit": {
+      "status": "passed",
+      "issues": [],
+      "blocks": 29
+    },
+    "usage": {
+      "input_tokens": 20745,
+      "input_tokens_details": {
+        "cache_write_tokens": 20742,
+        "cached_tokens": 0
+      },
+      "output_tokens": 5679,
+      "output_tokens_details": {
+        "reasoning_tokens": 316
+      },
+      "total_tokens": 26424
+    }
   }
 }
