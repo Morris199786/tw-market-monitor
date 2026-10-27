@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-27T17:32+08:00",
+  "updated_at": "2026-10-27T18:32+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1456,28 +1456,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 6,
+      "rows": 7,
       "self_reports": 5,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 131,
-          "hits": 6
+          "rows": 201,
+          "hits": 7
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 132,
+          "rows": 201,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 132,
+          "rows": 201,
           "hits": 1
         },
         {
@@ -1564,6 +1564,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "1343 旭東環保 115/10/27 15:55:22 公告本公司115年9月份自結財務報告之負債比率、流動 比率及速動比率"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "7590 怡和國際 115/10/27 17:51:10 公告本公司115年9月份自結財務報告之流動比率、速動比率 及負債比率"
         }
       ],
       "error": ""
