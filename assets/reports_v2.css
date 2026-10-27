@@ -118,8 +118,8 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
   background:#ffe06a!important;color:#202733!important;border-radius:2px;
 }
 
-/* Broker-only typography aligned with the meeting/interview reader.
-   Do not change #researchMergedPanel or #rmReader styles. */
+/* Broker cards match the meeting/interview list card typography.
+   Keep the meeting/interview rules unchanged. */
 #reports .report-v2-card .report-title {
   font-family:var(--research-font)!important;
   font-size:18px!important;
@@ -127,12 +127,24 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
   line-height:1.45!important;
 }
 #reports .report-v2-card .report-summary,
+#reports .report-v2-card .report-details-body {
+  font-family:var(--research-font)!important;
+  font-size:15px!important;
+  line-height:1.65!important;
+  font-weight:400!important;
+}
+#reports .report-v2-card .report-summary li {
+  font-size:inherit!important;
+  line-height:inherit!important;
+  margin-bottom:5px!important;
+}
+/* Expanded analysis follows the meeting/interview reader (16px/1.65). */
 #reports .report-v2-card .report-detail-block p,
 #reports .report-v2-card .report-detail-block ul,
 #reports .report-v2-card .report-details-body>p {
   font-family:var(--research-font)!important;
   font-size:16px!important;
-  line-height:1.7!important;
+  line-height:1.65!important;
   font-weight:400!important;
 }
 #reports .report-v2-card .report-subtitle {
@@ -141,7 +153,11 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
 }
 #reports .report-v2-card .report-broker {
   font-size:14px!important;
+  line-height:1.6!important;
 }
-#reports .report-v2-card .report-meta {
+#reports .report-v2-card .report-meta,
+#reports .report-v2-card .report-chip,
+#reports .report-v2-card .report-details summary {
   font-size:13px!important;
+  line-height:1.5!important;
 }
