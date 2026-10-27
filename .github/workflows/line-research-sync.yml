@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       run_mode:
-        description: 'check=只檢查；sync=同步B欄法說/訪談；ai=同步、解析需要API的文章、更新網頁'
+        description: 'check=只檢查；sync=同步B欄；recover_85=無API恢復#85已成功7篇；ai=增量解析；failed=僅重試一次'
         required: true
         type: choice
-        options: [check, sync, ai, failed, rerun_three, retry_mediatek, yingbang_only]
+        options: [check, sync, recover_85, ai, failed, rerun_three, retry_mediatek, yingbang_only]
         default: check
       max_reports:
         description: 'ai模式本次最多API文章數（1–250）；只處理未嘗試文章'
@@ -52,8 +52,22 @@ jobs:
           git add -- data/research_ai_cache.json data/research_ai_batch_history.json data/research_ai_render.json
           if ! git diff --cached --quiet; then
             git commit -m 'Publish bounded Yingbang-only research result'
-            git pull --rebase origin main
-            git push origin HEAD:main
+            # Retry Git publication only. Do not rerun the paid AI step.
+            pushed=0
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=1
+                break
+              fi
+              echo "Concurrent main update; retry Git push ($attempt/5)"
+              sleep $((attempt * 3))
+            done
+            if [ "$pushed" -ne 1 ]; then
+              echo '::error::Git publication failed after 5 retries; AI results remain checkpointed'
+              exit 1
+            fi
           fi
       - name: Upload Yingbang processing audit
         if: always()
@@ -148,6 +162,27 @@ jobs:
       - name: Republish AI results into research shards
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' || inputs.run_mode == 'yingbang_only' }}
         run: python scripts/sync_line_research.py
+      - name: Verify run 85 recovered successes without paid API
+        if: ${{ inputs.run_mode == 'recover_85' }}
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          cache=json.loads(Path('data/research_ai_cache.json').read_text(encoding='utf-8'))
+          ids=['line-ee26cfa3136d6712ec9a','line-463fc2a3b5752e9842bf',
+               'line-43c001238ef11697fd1a','line-953a5b5fb79b6675372d',
+               'line-0bcec1fb666a5c42d7bb','line-6275a3cae8266c1cf128',
+               'line-5190e40afdbe74a13e70']
+          suffix='::failed-retry-once-v1'
+          missing=[rid for rid in ids if not (
+              isinstance(cache.get(rid),dict) and cache[rid].get('status')=='success'
+              and isinstance(cache[rid].get('result'),dict)
+              and isinstance(cache.get(rid+suffix),dict)
+              and cache[rid+suffix].get('status')=='success')]
+          if missing:
+              raise SystemExit('RECOVERY_ABORT_MISSING_CHECKPOINT: '+', '.join(missing))
+          print('RECOVERY_85_VERIFIED: 7 successful AI results already on main; no API used')
+          PYCODE
       - name: Export research data and AI-direct display without API
         if: ${{ inputs.run_mode != 'check' }}
         run: python scripts/export_research_metrics.py
@@ -161,8 +196,22 @@ jobs:
           done
           if ! git diff --cached --quiet; then
             git commit -m 'Sync B-column meeting research and bounded AI analysis'
-            git pull --rebase origin main
-            git push origin HEAD:main
+            # Retry Git publication only. Do not rerun the paid AI step.
+            pushed=0
+            for attempt in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=1
+                break
+              fi
+              echo "Concurrent main update; retry Git push ($attempt/5)"
+              sleep $((attempt * 3))
+            done
+            if [ "$pushed" -ne 1 ]; then
+              echo '::error::Git publication failed after 5 retries; AI results remain checkpointed'
+              exit 1
+            fi
           else
             echo 'No changes'
           fi
