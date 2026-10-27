@@ -8003,5 +8003,58 @@
         "promoted": true
       }
     ]
+  },
+  {
+    "at": "2026-10-27T07:50:02.467217+00:00",
+    "category": "all",
+    "mode": "failed",
+    "limit": 2,
+    "model": "gpt-5.6-luna",
+    "results": [
+      {
+        "id": "line-4d89a666123ed9dc702e",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 36
+        },
+        "usage": {
+          "input_tokens": 47920,
+          "input_tokens_details": {
+            "cache_write_tokens": 47917,
+            "cached_tokens": 0
+          },
+          "output_tokens": 6248,
+          "output_tokens_details": {
+            "reasoning_tokens": 216
+          },
+          "total_tokens": 54168
+        },
+        "promoted": true
+      },
+      {
+        "id": "line-37b522dcab60e22b5a4b",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 22
+        },
+        "usage": {
+          "input_tokens": 2545,
+          "input_tokens_details": {
+            "cache_write_tokens": 2542,
+            "cached_tokens": 0
+          },
+          "output_tokens": 3297,
+          "output_tokens_details": {
+            "reasoning_tokens": 171
+          },
+          "total_tokens": 5842
+        },
+        "promoted": true
+      }
+    ]
   }
 ]
