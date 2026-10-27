@@ -733,6 +733,13 @@ async function init(){
     rows.sort(compareReportDate);
     buildCompanyAliases(registry);
     loaded=true;render();drawCalendar();if(query)fullTextSearch();
+    // Telegram links use an independent parameter; legacy broker links keep working.
+    const linkedId=new URLSearchParams(window.location.search).get('research_id');
+    if(linkedId){
+      const linked=rows.find(r=>String(r.id)===linkedId && r.source_kind!=='broker');
+      if(linked) await openReader(linked);
+      else meta.textContent='連結的報告尚未發布，請稍後重新整理。';
+    }
   }catch(e){meta.textContent='研究索引載入失敗：'+e.message}
   finally{loading=false}
 }
