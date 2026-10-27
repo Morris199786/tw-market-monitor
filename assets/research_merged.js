@@ -469,7 +469,7 @@ function render() {
         const b=m._liveBroker;
         const bullet=Array.isArray(b.summary)?b.summary:[];
         const target=b.validation_status==='needs_review'?'':(b.target_price_new==null?'':`目標價 ${esc(b.target_price_old!=null?b.target_price_old+' → ':'')}${esc(b.target_price_new)}`);
-        card.innerHTML=`<div class="report-broker">${highlight(b.broker||'券商研究')}</div><div class="report-title">${highlight((b.name||b.title||'券商報告')+(b.ticker?' '+b.ticker:''))}</div><div class="report-meta">${b.rating?`<span class="report-chip">${highlight(b.rating)}</span>`:''}${target?`<span class="report-chip report-target">${target}</span>`:''}<span class="report-chip">報告日期 ${esc(m.date)}</span></div>${bullet.length?`<ul class="report-summary">${bullet.map(x=>`<li>${highlight(x)}</li>`).join('')}</ul>`:''}<details class="report-details"><summary>查看完整摘要</summary><div class="report-details-body">${b.detail?`<p>${highlight(b.detail)}</p>`:''}${['key_points','forecast_changes','risks'].map(k=>Array.isArray(b[k])&&b[k].length?`<ul>${b[k].map((x,i)=>`<li>${researchPoint(x,i)}</li>`).join('')}</ul>`:'').join('')}${b.source_url?`<a href="${esc(b.source_url)}" target="_blank" rel="noopener">查看原始報告</a>`:''}</div></details>`;
+        card.innerHTML=`<div class="report-broker">${highlight(b.broker||'券商研究')}</div><div class="report-title">${highlight((b.name||b.title||'券商報告')+(b.ticker?' '+b.ticker:''))}</div><div class="report-meta">${b.rating?`<span class="report-chip">${highlight(b.rating)}</span>`:''}${target?`<span class="report-chip report-target">${target}</span>`:''}<span class="report-chip">原始日期 ${esc(b.date||m.original_date||m.date)}${brokerDay(b.date||m.original_date)!==m.date?`・歸類 ${esc(m.date)}`:''}</span></div>${bullet.length?`<ul class="report-summary">${bullet.map(x=>`<li>${highlight(x)}</li>`).join('')}</ul>`:''}<details class="report-details"><summary>查看完整摘要</summary><div class="report-details-body">${b.detail?`<p>${highlight(b.detail)}</p>`:''}${['key_points','forecast_changes','risks'].map(k=>Array.isArray(b[k])&&b[k].length?`<ul>${b[k].map((x,i)=>`<li>${researchPoint(x,i)}</li>`).join('')}</ul>`:'').join('')}${b.source_url?`<a href="${esc(b.source_url)}" target="_blank" rel="noopener">查看原始報告</a>`:''}</div></details>`;
         if(hitHTML)card.insertAdjacentHTML('beforeend',hitHTML);
         body.appendChild(card);continue;
       }
@@ -722,14 +722,14 @@ async function init(){
       rows=idx.filter(r=>r.source_kind!=='broker');
       rows.push(...brokerItems.map((b,i)=>({
         id:'live-broker-'+String(b.id||i), source_kind:'broker',market:'TW',report_type:b.report_type,
-        date:brokerDay(b.date),company:b.name||'',ticker:b.ticker||'',
+        date:window.ReportDates.group(b),original_date:b.date,company:b.name||'',ticker:b.ticker||'',
         title:b.title||b.name||'券商報告',source:b.broker||'',broker:b.broker||'',
         story:Array.isArray(b.summary)?b.summary.join(' '):String(b.summary||''),
         detail:b.detail||'',rating:b.rating||'',key_points:b.key_points||[],
         _liveBroker:b
       })));
     } else {rows=idx;}
-    rows=rows.map(r=>({...r,date:brokerDay(r.date)}));
+    rows=rows.map(r=>({...r,original_date:r.original_date||r.date,date:r.source_kind==='broker'&&!r._liveBroker?window.ReportDates.group(r):brokerDay(r.date)}));
     rows.sort(compareReportDate);
     buildCompanyAliases(registry);
     loaded=true;render();drawCalendar();if(query)fullTextSearch();

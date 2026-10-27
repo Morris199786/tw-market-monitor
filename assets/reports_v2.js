@@ -550,53 +550,8 @@
      ========================================================= */
 
   function reportGroupDate(r) {
-    const raw = String(r.date || "").trim();
-
-    const full =
-      raw.match(
-        /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:$|[T\s])/
-      ) ||
-      raw.match(/^(\d{4})(\d{2})(\d{2})$/);
-
-    if (full) {
-      const [, y, m, d] = full;
-
-      const check = new Date(
-        Date.UTC(
-          Number(y),
-          Number(m) - 1,
-          Number(d)
-        )
-      );
-
-      if (
-        check.getUTCFullYear() === Number(y) &&
-        check.getUTCMonth() === Number(m) - 1 &&
-        check.getUTCDate() === Number(d)
-      ) {
-        return (
-          y + "-" +
-          m.padStart(2, "0") + "-" +
-          d.padStart(2, "0")
-        );
-      }
-    }
-
-    const month =
-      raw.match(/^(\d{4})[-/](\d{1,2})$/);
-
-    if (
-      month &&
-      Number(month[2]) >= 1 &&
-      Number(month[2]) <= 12
-    ) {
-      return (
-        month[1] + "-" +
-        month[2].padStart(2, "0")
-      );
-    }
-
-    return "日期未確認";
+    const isBroker = r.source_kind === "broker" || r.broker || r.report_type || r.source_file_id;
+    return isBroker ? window.ReportDates.group(r) : window.ReportDates.original(r.date);
   }
 
   function dateLabel(day) {
@@ -898,7 +853,7 @@
     if (r.date) {
       arr.push(`
         <span class="report-chip report-original-date">
-          報告日期 ${esc(r.date)}
+          原始日期 ${esc(r.date)}${reportGroupDate(r) !== window.ReportDates.original(r.date) ? `・歸類 ${esc(reportGroupDate(r))}` : ""}
         </span>
       `);
     }
