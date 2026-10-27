@@ -265,16 +265,16 @@ def normalize_research_sections(value):
     if not isinstance(value, list):
         return []
     sections = []
-    for item in value[:30]:
+    for item in value:
         if not isinstance(item, dict):
             continue
-        heading = str(item.get("heading") or "").strip()[:100]
+        heading = str(item.get("heading") or "").strip()
         paragraphs = item.get("paragraphs")
         if not isinstance(paragraphs, list):
             continue
         paragraphs = [str(p).strip() for p in paragraphs if isinstance(p, str) and p.strip()]
         if paragraphs:
-            sections.append({"heading": heading, "paragraphs": paragraphs[:30]})
+            sections.append({"heading": heading, "paragraphs": paragraphs})
     return sections
 
 
@@ -327,13 +327,14 @@ def normalize_report(obj: dict, src: dict) -> dict:
         "target_price_old": obj.get("target_price_old"),
         "target_price_new": obj.get("target_price_new"),
         "push_reason": push_reason,  # Preserve complete sentences.
-        "summary": clean_list(obj.get("summary"), 5),
-        "key_points": clean_list(obj.get("key_points"), 8),
+        "summary": clean_list(obj.get("summary"), float("inf")),
+        "key_points": clean_list(obj.get("key_points"), float("inf")),
         "beneficiaries": beneficiaries,
-        "risks": clean_list(obj.get("risks"), 5),
-        "forecast_changes": clean_list(obj.get("forecast_changes"), 6),
+        "risks": clean_list(obj.get("risks"), float("inf")),
+        "forecast_changes": clean_list(obj.get("forecast_changes"), float("inf")),
         "detail": str(obj.get("detail") or "").strip(),
         "research_sections": normalize_research_sections(obj.get("research_sections")),
+        "ai_layout_version": "ai-directed-v2",
         "ai_model": MODEL,
         "ai_processed_at": now_tpe(),
     }
@@ -379,12 +380,12 @@ def analyze_report(src: dict) -> dict:
 5. 如果報告沒有明確寫「上調/下調/初評/維持」評等，不得自行判斷，company 可填 none，產業報告填 sector
 6. target_price_old / target_price_new 只有報告明確寫到時才填數字，否則 null
 7. rating 只有報告明確寫到時才填，否則空字串
-8. summary 3~5 條，每條一句，依重要性交代核心結論、主要依據、關鍵數字與公司影響；重要前提不得省略成確定事實
-9. key_points 最多 8 條，保留產業供需、規格、漲價、產能、EPS/財測等具體數字
+8. summary 由 AI 依報告內容決定條數，每條一句，依重要性交代核心結論、主要依據、關鍵數字與公司影響；重要前提不得省略成確定事實
+9. key_points 由 AI 決定條數，不設程式上限，保留產業供需、規格、漲價、產能、EPS/財測等具體數字
 10. beneficiaries 只列報告明確提到的受惠/首選/推薦關注個股，不能自己增加；reason 寫明受益機制與報告所列成立條件，不得將潛在供應商寫成已取得訂單
 11. risks 只有報告提到或報告文字可直接支持的風險，不可自己想像
 12. forecast_changes 只有明確上修/下修或財測調整才列
-13. detail 依報告實際主題分段，以具體主題作純文字小標，不套用空泛固定標題。一般報告約500~900字；多主題長篇產業報告可約900~1500字，依內容需要取捨，短報告更短。各段連結結論、原因、原文依據、公司影響與成立條件，不重複羅列summary/key_points的數字。只有解釋論點必須時才重述數字，不得為湊字數加入外部資訊
+13. detail 依報告實際主題分段，以具體主題作純文字小標，不套用空泛固定標題。長度由 AI 依資訊密度自行決定，不設定固定字數；短報告可簡短，長篇產業報告須涵蓋所有重要研究脈絡。各段連結結論、原因、原文依據、公司影響與成立條件，不重複羅列summary/key_points的數字。只有解釋論點必須時才重述數字，不得為湊字數加入外部資訊
 14. broker、日期、標題盡量從報告本身辨識；辨識不到可留空
 15. 公司名稱與代號必須依下方已驗證公司對照表，禁止自行翻譯公司中文名稱；只有英文名稱但能唯一對應也可填代號，不得把 ISU Petasys 認成台灣公司
 16. 產業報告若明確提供台灣個股評等或目標價，須在 summary 優先交代；未提供時不得強行填入。評等維持與目標價變動須分開描述，不可把目標價上調當成評等上調；n.a. 為 null，不是現價
@@ -401,8 +402,10 @@ def analyze_report(src: dict) -> dict:
 25. 完成前檢查摘要、重點、完整解析的分工：summary講核心結論，key_points提供關鍵證據，detail解釋原因與各主題連結，beneficiaries逐家公司交代原因；避免同組數字在三處重複堆砌。上述檢查在本次回覆內完成，不要求額外API呼叫
 26. 同一次解析中額外擷取可查證財務數字（營收、EPS、毛利率、營益率、出貨量、產能、占比等），保留年份/季度/單位/實際或預估性質；僅在有原始證據時才視覺化，不得自行計算或推估。
 27. visualizations 為可選陣列，type 可為 table/bar/line/pie/kpi。由 AI 根據報告的資料密度、閱讀效果與實際數字自行決定是否製圖、圖表類型與數量；不必提供 source_excerpt。表格使用 headers、rows；圖表使用 labels、values；KPI 使用 items（label/value/unit）。請在同一次解析中自行核對數字、年度、單位、實際或預估性質，不能憑空捏造；圓餅圖只在資料確實屬於同一母體時使用。
-28. emphasis 為最多 12 個字串，須是 summary/key_points/forecast_changes/detail 中原文完全一致的關鍵短語，供前端繪製琥珀色底線；不要用 markdown 或 HTML 標籤。
-29. research_sections 是完整摘要的閱讀版結構，依報告實際主題自行決定 heading 和 paragraphs，不要硬套固定章節；每段為可直接閱讀的完整文字，不要輸出 Markdown/HTML。與 detail 表達同一份研究內容，不可新增來源未支持的事實、刪去重要數字或改動單位。短報告可只用一個無標題區塊。請在本次同一個 API 回覆內產生，不要要求第二次解析。
+28. emphasis 為 AI 自行選定的字串，須是 summary/key_points/forecast_changes/detail 中原文完全一致的關鍵短語，供前端繪製琥珀色底線；不要用 markdown 或 HTML 標籤。
+29. research_sections 是網站完整摘要的唯一 AI 閱讀版結構；新報告必須提供至少一個含非空 paragraphs 的區塊，禁止省略。AI 自行決定主題數、順序、標題、段落與長度。若內容不足仍提供一個無標題段落。research_sections 是完整摘要的閱讀版結構，依報告實際主題自行決定 heading 和 paragraphs，不要硬套固定章節；每段為可直接閱讀的完整文字，不要輸出 Markdown/HTML。與 detail 表達同一份研究內容，不可新增來源未支持的事實、刪去重要數字或改動單位。短報告可只用一個無標題區塊。請在本次同一個 API 回覆內產生，不要要求第二次解析。
+
+30. 所有要顯示在網站上的研究重點、章節、數字與風險，由 AI 在本次回覆內自行取捨；程式只檢查資料形狀，不使用固定字數或條數裁切。
 
 固定 JSON 欄位：
 {
