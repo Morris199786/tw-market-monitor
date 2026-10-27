@@ -2,7 +2,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 979,
   "version": "2026-10-22-v11-exclude-conference-invitations",
-  "updated_at": "2026-10-27T14:02+08:00",
+  "updated_at": "2026-10-27T14:33+08:00",
   "upcoming": [
     {
       "ticker": "2383",
@@ -746,7 +746,11 @@
     }
   ],
   "diagnostics": {
-    "source_errors": [],
+    "source_errors": [
+      "news/tpex:RuntimeError",
+      "planned_date/4583/2026-10-27:unavailable",
+      "financial/tpex:RuntimeError"
+    ],
     "historical_errors": [],
     "coverage": {
       "2026-10-13~2026-10-27": "ok"
