@@ -725,6 +725,8 @@
   }
 
   function matches(r) {
+    // Industry/theme reports have their own top-level tab; retain original data.
+    if (["sector", "theme"].includes(String(r.report_type || "").trim().toLowerCase())) return false;
     const okFilter =
       currentFilter === "all" ||
       reportAction(r) === currentFilter;
@@ -1389,9 +1391,7 @@
             維持
           </button>
 
-          <button class="report-filter" data-filter="sector" type="button">
-            產業
-          </button>
+
         </div>
       </div>
 

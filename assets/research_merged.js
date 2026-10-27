@@ -10,7 +10,7 @@ const clean = x => {
   const v = String(x ?? '').trim();
   return /^(?:null|none|nan)$/i.test(v) ? '' : v;
 };
-const categories = ['全部','券商報告','早報','法說／訪談','美股'];
+const categories = ['全部','券商報告','產業報告','早報','法說／訪談','美股'];
 let category = '全部', query = '', rows = [], manifest = null;
 let selectedDay = '', calendarMonth = '', searchSeq = 0, searchHits = null;
 let indexRows = []; 
@@ -146,7 +146,11 @@ const marketOf = r => String(r.market || 'TW').toUpperCase();
 const originalType = r => clean(r.original_type).toLowerCase();
 function reportCategory(r) {
   if (marketOf(r) === 'US') return '美股';
-  if (r.source_kind === 'broker') return '券商報告';
+  if (r.source_kind === 'broker') {
+    const type=clean(r._liveBroker?.report_type || r.report_type).toLowerCase();
+    return ['sector','theme'].includes(type) || (!type && clean(r.category)==='產業研究')
+      ? '產業報告' : '券商報告';
+  }
   const c=clean(r.category);
   if (c==='早報') return '早報';
   if (c==='產業研究') return '產業研究';
@@ -519,7 +523,7 @@ async function init(){
     if(live && Array.isArray(live.items)) {
       rows=idx.filter(r=>r.source_kind!=='broker');
       rows.push(...brokerItems.map((b,i)=>({
-        id:'live-broker-'+String(b.id||i), source_kind:'broker',market:'TW',
+        id:'live-broker-'+String(b.id||i), source_kind:'broker',market:'TW',report_type:b.report_type,
         date:brokerDay(b.date),company:b.name||'',ticker:b.ticker||'',
         title:b.title||b.name||'券商報告',source:b.broker||'',broker:b.broker||'',
         story:Array.isArray(b.summary)?b.summary.join(' '):String(b.summary||''),
