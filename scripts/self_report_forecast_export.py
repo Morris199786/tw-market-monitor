@@ -8,6 +8,7 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from self_report_calendar import windows
 
 TZ = ZoneInfo('Asia/Taipei')
 START = '2026-10-21'
@@ -87,11 +88,18 @@ def run(args):
     if not isinstance(verified, dict) or not isinstance(verified.get('days'), dict):
         raise ValueError('Invalid actuals')
     today = dt.datetime.now(TZ).date().isoformat()
-    for target, original in sorted(forecasts.items()):
+    grouped = windows(forecasts)
+    # Preserve old date-based scores for audit; replace them with one score per signal.
+    if settlements and 'legacy_date_settlements' not in ledger:
+        ledger['legacy_date_settlements'] = dict(settlements)
+    settlements = {}
+    ledger['settlements'] = settlements
+    for target, original in sorted(grouped.items()):
         if target < START or target > today:
             continue
         actual = verified['days'].get(target)
-        if not isinstance(actual, dict) or actual.get('complete') is not True:
+        if (not isinstance(actual, dict) or actual.get('complete') is not True
+                or actual.get('window_start') != original['asof']):
             continue
         actuals, daily = {}, {}
         for market in ('twse', 'tpex'):
@@ -117,14 +125,15 @@ def run(args):
         forward[market] = dict(**stats(**totals), settled_days=len(rows))
     settled_dates = sorted(x for x in settlements if x >= START)
     payload = dict(updated_at=dt.datetime.now(TZ).isoformat(timespec='seconds'),
-                   prediction_date=day, asof=rec['asof'], picks=rec['picks'],
+                   prediction_date=day, asof=asof, picks=picks, announcement_asof=prediction.get('announcement_asof', asof),
                    model_version=rec['model_version'],
                    backtest=dict(start=START, end=settled_dates[-1] if settled_dates else None,
                                  twse=forward['twse'], tpex=forward['tpex']),
                    backtest_detail=dict(kind='prospective_only', start=START, forward=forward,
                                         includes_provisional=any(settlements[d].get('provisional', False) for d in settled_dates),
                                         daily=[dict(date=d, provisional=settlements[d].get('provisional', False), **settlements[d]['metrics']) for d in settled_dates]),
-                   pending_dates=sorted(d for d in forecasts if d >= START and d not in settlements),
+                   pending_dates=sorted(d for d in grouped if d >= START and d not in settlements),
+                   evaluation_policy='每個注意交易截止日只計一次；公告觀察窗為截止日之後至下一交易日（含休市公告）；保留原始預測，不以公告後名單回算績效。',
                    forward_forecasts=forecasts, forward_settlements=settlements,
                    source_status=prediction.get('source_status', {}))
     save(args.ledger, ledger)

@@ -10,7 +10,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 from self_report_forecast_export import load, save
 
-def render(site, forecast, day):
+def render(site, forecast, day, include_forecast=True):
     # Use exactly the website's display feed, never diagnostics or raw candidates.
     companies = {}
     for row in sorted(site.get('items', []), key=lambda r: r.get('publish_time') or ''):
@@ -33,7 +33,10 @@ def render(site, forecast, day):
         lines.append(f'{i}. {row.get("name", "")} {row["ticker"]}')
     if not forecast['picks']:
         lines.append('無符合條件公司')
-    blocks.append('\n'.join(lines))
+    if include_forecast:
+        blocks.append('\n'.join(lines))
+    else:
+        blocks.append('自結預測名單未變，沿用前次通知。')
     return '\n\n'.join(blocks)
 
 
@@ -73,11 +76,20 @@ def main():
     p.add_argument('--date', default=dt.datetime.now(ZoneInfo('Asia/Taipei')).date().isoformat())
     p.add_argument('--send', action='store_true')
     a = p.parse_args()
-    text = render(load('data/self_reports.json'), load('data/self_report_forecast.json'), a.date)
+    forecast = load('data/self_report_forecast.json')
+    signal = json.dumps({'asof':forecast['asof'], 'target':forecast['prediction_date'],
+                         'picks':sorted((p['market'],p['ticker']) for p in forecast['picks'])}, sort_keys=True)
+    key = 'forecast:' + hashlib.sha256((os.getenv('TELEGRAM_CHAT_ID','') + signal).encode()).hexdigest()
+    state_path = 'data/self_report_digest_sent.json'
+    state = load(state_path, {'sent':{}})
+    text = render(load('data/self_reports.json'), forecast, a.date, key not in state['sent'])
     Path('self_report_live').mkdir(exist_ok=True)
     Path('self_report_live/telegram_digest.txt').write_text(text, encoding='utf-8')
     if a.send:
-        send(text, 'data/self_report_digest_sent.json')
+        send(text, state_path)
+        state = load(state_path, {'sent':{}})
+        state['sent'][key] = a.date
+        save(state_path, state)
     else:
         print(text)
 

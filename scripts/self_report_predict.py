@@ -15,6 +15,7 @@ import http.client
 import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from self_report_calendar import is_open, next_session
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo('Asia/Taipei')
@@ -191,7 +192,7 @@ def calendar(root, start, end, notices):
     days = {x['date'] for x in obj.get('raw', []) if x.get('index') is not None}
     days.update(p.stem for p in (root / 'data/history/market').glob('????-??-??.json'))
     days.update(x['date'] for x in notices)
-    days = sorted(x for x in days if start <= x <= end)
+    days = sorted(x for x in days if start <= x <= end and is_open(x))
     if len(days) < 20:
         raise ValueError('交易日曆不足20日')
     return days
@@ -259,7 +260,7 @@ def rule_a_select(rows):
     return sorted((r for r in rows if r['market'] == 'twse' and r['n1'] >= 1),
                   key=lambda r: (-r['n5'], -r['n3'], r['ticker']))[:CAP]
 
-def make_rows(cutoff, target, cal, notices, events, master):
+def make_rows(cutoff, target, cal, notices, events, master, announcement_cutoff=None):
     past = [d for d in cal if d <= cutoff]
     windows = {n: set(past[-n:]) for n in (1, 3, 5, 10, 20)}
     by_ticker, prior = collections.defaultdict(list), collections.defaultdict(list)
@@ -269,7 +270,7 @@ def make_rows(cutoff, target, cal, notices, events, master):
                 continue
             by_ticker[x['ticker']].append(x)
     for x in events:
-        if x['date'] <= cutoff:
+        if x['date'] <= (announcement_cutoff or cutoff):
             prior[x['ticker']].append(x)
     pool = set(by_ticker) | {t for t, items in prior.items() if any(x['kind'] == 'voluntary' for x in items)}
     labels = {x['ticker'] for x in events if x['date'] == target and x['kind'] == 'attention'}
@@ -661,17 +662,17 @@ def main():
     events = [x for x in events if x['date'] <= end]
     cal = calendar(args.root, args.start, end, notices)
     cutoff = cal[-1]
+    if next_session(cutoff) <= end:
+        raise ValueError('Trading data stale: expected a completed session after '+cutoff)
     days = [d for d in cal if args.start < d <= end]
     rows = {d: make_rows(cal[cal.index(d)-1], d, cal, notices, events, master)
             for d in days if cal.index(d) > 0}
     summary, daily, picks, training, scores = evaluate(rows, events, rule_a_live=True)
-    future_known = sorted({x['date'] for x in read(args.root / 'data/market_monitor.json').get('raw', [])
-                           if x.get('index') is not None and x['date'] > cutoff})
-    target = args.prediction_date or (future_known[0] if future_known else None)
-    if target and target <= cutoff:
-        raise ValueError('prediction-date must follow cutoff')
+    target = args.prediction_date or next_session(cutoff)
+    if target != next_session(cutoff):
+        raise ValueError('Target does not match the next verified trading session after cutoff')
     provisional = target or (dt.date.fromisoformat(cutoff) + dt.timedelta(days=1)).isoformat()
-    candidates = make_rows(cutoff, provisional, cal, notices, events, master)
+    candidates = make_rows(cutoff, provisional, cal, notices, events, master, announcement_cutoff=end)
     enough = len({r['date'] for r in training}) >= 5 and sum(r['label'] for r in training) >= 15
     forecast = []
     if target or provisional[:7] == cutoff[:7]:
@@ -717,7 +718,7 @@ def main():
                    event_count=sum(args.backtest_start <= e['date'] <= end and e['kind'] == 'attention' for e in events),
                    market_rules=MARKET_RULES)
     obj = dict(version=VERSION, updated_at=now.isoformat(timespec='seconds'),
-               asof=cutoff, prediction_day=target, prediction_window='下一交易日',
+               asof=cutoff, announcement_asof=end, prediction_day=target, prediction_window='下一交易日',
                count=len(forecast), model='twse-rule-A-tpex-original-V17',
                threshold=MIN_PROBABILITY, items=forecast, candidates=forecast,
                source_status=status, evaluation=summary, warnings=warnings)

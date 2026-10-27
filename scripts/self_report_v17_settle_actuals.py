@@ -5,6 +5,7 @@ import datetime as dt
 import re
 from zoneinfo import ZoneInfo
 from self_report_forecast_export import load, save
+from self_report_calendar import windows
 
 TZ = ZoneInfo('Asia/Taipei')
 
@@ -23,7 +24,8 @@ def settle(history, master, ledger, existing, now):
         raise ValueError('History timestamp needs timezone')
     stamp = stamp.astimezone(TZ)
     days = existing.setdefault('days', {})
-    for target in sorted(ledger.get('forecasts', {})):
+    grouped = windows(ledger.get('forecasts', {}))
+    for target, forecast in sorted(grouped.items()):
         if target < '2026-10-21' or target > now.date().isoformat():
             continue
         day = dt.date.fromisoformat(target)
@@ -32,8 +34,15 @@ def settle(history, master, ledger, existing, now):
         if target < str(history.get('monitor_start_date', '')):
             continue
         codes = {'twse': set(), 'tpex': set()}
+        first = {}
         for item in all_items(history):
-            if item.get('publish_date') != target or not attention(item) or item.get('monthly_eps') is None:
+            if not attention(item) or item.get('monthly_eps') is None:
+                continue
+            key = (item.get('ticker'), item.get('monthly_period') or item.get('publish_date'))
+            if key not in first or item.get('publish_date', '') < first[key].get('publish_date', ''):
+                first[key] = item
+        for item in first.values():
+            if not forecast['asof'] < item.get('publish_date', '') <= target:
                 continue
             ticker = str(item.get('ticker') or '').strip()
             if not re.fullmatch(r'[1-9]\d{3}', ticker):
@@ -43,7 +52,7 @@ def settle(history, master, ledger, existing, now):
                 raise ValueError('Unknown market: '+ticker)
             codes[market].add(ticker)
         rec = dict(complete=True, provisional=stamp.date() == day,
-                   source='site_self_reports_history_assumed_complete',
+                   source='site_history_signal_window_v1', window_start=forecast['asof'], original_dates=forecast['original_dates'],
                    verified_at=stamp.isoformat(), **{k: sorted(v) for k,v in codes.items()})
         old = days.get(target)
         if old and old != rec:
