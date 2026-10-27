@@ -117,3 +117,31 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
 #researchMergedPanel mark,#rmReader mark,.report-v2-card mark,.report-detail-block mark {
   background:#ffe06a!important;color:#202733!important;border-radius:2px;
 }
+
+/* Broker-only typography aligned with the meeting/interview reader.
+   Do not change #researchMergedPanel or #rmReader styles. */
+#reports .report-v2-card .report-title {
+  font-family:var(--research-font)!important;
+  font-size:18px!important;
+  font-weight:700!important;
+  line-height:1.45!important;
+}
+#reports .report-v2-card .report-summary,
+#reports .report-v2-card .report-detail-block p,
+#reports .report-v2-card .report-detail-block ul,
+#reports .report-v2-card .report-details-body>p {
+  font-family:var(--research-font)!important;
+  font-size:16px!important;
+  line-height:1.7!important;
+  font-weight:400!important;
+}
+#reports .report-v2-card .report-subtitle {
+  font-size:17px!important;
+  line-height:1.5!important;
+}
+#reports .report-v2-card .report-broker {
+  font-size:14px!important;
+}
+#reports .report-v2-card .report-meta {
+  font-size:13px!important;
+}
