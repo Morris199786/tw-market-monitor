@@ -214,66 +214,49 @@ def received_info(src: dict):
 
 
 def validated_ai_presentation(obj: dict, source_text: str) -> tuple[list, list]:
-    """Optional, conservative visual data; no extra API requests or retries."""
+    """Pass through AI-selected presentation; validate only renderable JSON shapes.
+
+    The AI is responsible for checking source facts and selecting visuals.
+    Do not reject its output using PDF-text exact matching or numeric regexes.
+    This function makes no additional API calls.
+    """
     if not isinstance(obj, dict):
         return [], []
-    source_text = str(source_text or '')
+
     emphasis = []
-    for phrase in obj.get('emphasis', []) if isinstance(obj.get('emphasis'), list) else []:
+    for phrase in obj.get("emphasis", []) if isinstance(obj.get("emphasis"), list) else []:
         if not isinstance(phrase, str):
             continue
         phrase = phrase.strip()
-        # Highlight only exact text already present in the AI's summary/detail.
-        displayed = ' '.join(str(obj.get(k) or '') for k in ('detail',)) + ' '.join(
-            str(v) for k in ('summary','key_points','forecast_changes')
-            for v in (obj.get(k) if isinstance(obj.get(k), list) else []))
-        if 3 <= len(phrase) <= 110 and phrase in displayed and phrase not in emphasis:
+        if phrase and phrase not in emphasis:
             emphasis.append(phrase)
-        if len(emphasis) >= 12:
-            break
+
     visuals = []
-    raw = obj.get('visualizations', [])
+    raw = obj.get("visualizations", [])
     if not isinstance(raw, list):
-        return [], emphasis
-    for v in raw[:6]:
-        if not isinstance(v, dict) or v.get('type') not in ('table','bar','line','pie','kpi'):
+        return visuals, emphasis
+
+    for visual in raw:
+        if not isinstance(visual, dict):
             continue
-        kind = v['type']
-        # Source excerpts MUST be included, with exact numeric tokens in the original PDF text.
-        evidence = str(v.get('source_excerpt') or '').strip()
-        if len(evidence) < 8 or evidence not in source_text:
+        kind = visual.get("type")
+        if kind not in ("table", "bar", "line", "pie", "kpi"):
             continue
-        nums = re.findall(r'(?<![A-Za-z0-9])[-+]?\d[\d,]*(?:\.\d+)?%?', evidence)
-        if not nums:
-            continue
-        allowed = {n.replace(',','').rstrip('%') for n in nums}
-        if kind == 'table':
-            headers, rows = v.get('headers'), v.get('rows')
-            if not isinstance(headers,list) or not isinstance(rows,list) or not headers or not rows:
+        if kind == "table":
+            if not isinstance(visual.get("headers"), list) or not isinstance(visual.get("rows"), list):
                 continue
-            if len(headers)>12 or len(rows)>40 or any(not isinstance(row,list) or len(row)!=len(headers) for row in rows):
+        elif kind == "kpi":
+            if not isinstance(visual.get("items"), list):
                 continue
-            cells = [cell for row in rows for cell in row]
-        elif kind == 'kpi':
-            entries=v.get('items')
-            if not isinstance(entries,list) or not 1<=len(entries)<=8:
-                continue
-            cells=[entry.get('value') for entry in entries if isinstance(entry,dict)]
         else:
-            labels,values=v.get('labels'),v.get('values')
-            if not isinstance(labels,list) or not isinstance(values,list) or not 2<=len(labels)<=24 or len(labels)!=len(values):
+            if not isinstance(visual.get("labels"), list) or not isinstance(visual.get("values"), list):
                 continue
-            cells=values
-        valid=True
-        for cell in cells:
-            if isinstance(cell,bool):
-                valid=False;break
-            if isinstance(cell,(int,float)) or (isinstance(cell,str) and re.fullmatch(r'[-+]?\d[\d,]*(?:\.\d+)?%?',cell.strip())):
-                val=str(cell).replace(',','').rstrip('%')
-                if val not in allowed and not (val.endswith('.0') and val[:-2] in allowed):
-                    valid=False;break
-        if valid:
-            visuals.append({k:v[k] for k in ('type','title','labels','values','unit','series','headers','rows','items','note') if k in v})
+            if len(visual["labels"]) != len(visual["values"]):
+                continue
+        visuals.append({k: visual[k] for k in (
+            "type", "title", "labels", "values", "unit", "series",
+            "headers", "rows", "items", "note"
+        ) if k in visual})
     return visuals, emphasis
 
 
@@ -398,7 +381,7 @@ def analyze_report(src: dict) -> dict:
 24. beneficiaries 完整列出本期正文或投資建議明確點名的受惠/首選公司，不限前8家；按代號去重。summary/detail提到的明確受惠公司應與beneficiaries一致，不能漏掉名單尾端。單純營收表列示、同業比較或歷史推薦不算本期推薦；不同情境的受益理由要保留條件
 25. 完成前檢查摘要、重點、完整解析的分工：summary講核心結論，key_points提供關鍵證據，detail解釋原因與各主題連結，beneficiaries逐家公司交代原因；避免同組數字在三處重複堆砌。上述檢查在本次回覆內完成，不要求額外API呼叫
 26. 同一次解析中額外擷取可查證財務數字（營收、EPS、毛利率、營益率、出貨量、產能、占比等），保留年份/季度/單位/實際或預估性質；僅在有原始證據時才視覺化，不得自行計算或推估。
-27. visualizations 為可選陣列，最多 6 組，type 可為 table/bar/line/pie/kpi。表格使用 headers、rows；圖表使用 labels、values；KPI 使用 items（label/value/unit）。每一組必須提供 source_excerpt：逐字摘錄報告中的原始連續文字（包含所使用的全部數值），不得自行重組。來源不完整就不要輸出圖表。圓餅圖只能用同一母體的明確占比。
+27. visualizations 為可選陣列，type 可為 table/bar/line/pie/kpi。由 AI 根據報告的資料密度、閱讀效果與實際數字自行決定是否製圖、圖表類型與數量；不必提供 source_excerpt。表格使用 headers、rows；圖表使用 labels、values；KPI 使用 items（label/value/unit）。請在同一次解析中自行核對數字、年度、單位、實際或預估性質，不能憑空捏造；圓餅圖只在資料確實屬於同一母體時使用。
 28. emphasis 為最多 12 個字串，須是 summary/key_points/forecast_changes/detail 中原文完全一致的關鍵短語，供前端繪製琥珀色底線；不要用 markdown 或 HTML 標籤。
 
 固定 JSON 欄位：
