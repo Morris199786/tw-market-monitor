@@ -13,13 +13,13 @@ function epsNewsSourceNote(x) {
 
 const featureItems = [
   ["heat", "市場熱力圖", "heat", "red", "19族群・5分鐘"],
-  ["selfReports", "自結公布", "earnings", "amber", "每30分鐘"],
+  ["selfReports", "財報追蹤", "earnings", "amber", "今日資料載入中…"],
   ["flows", "籌碼日報", "flow", "blue", "法人"],
   ["volume", "突然放量", "bolt", "amber", "科技股"],
   ["turnover", "成交排行", "chart", "blue", "TOP30"],
   ["marginLending", "融資／借券", "swap", "violet", "科技股"],
   ["ai", "AI選股", "spark", "green", "每天18:00"],
-  ["reports", "券商報告", "report", "amber", "研究報告"],
+  ["reports", "產業資料庫", "report", "amber", "今日資料載入中…"],
   ["holders", "大戶籌碼", "holders", "violet", "週更"],
   ["monthlyRevenue", "月營收公布", "revenue", "green", "19族群"],
   ["marketMonitor", "大盤監控", "revenue", "blue", "外資／融資燈號"]

@@ -1828,15 +1828,45 @@
         r => reportGroupDate(r) === today
       ).length;
 
-    const feature =
-      document.querySelector(
-        '[data-feature="reports"] .feature-copy small'
-      );
-
-    if (feature) {
-      feature.textContent =
-        `今日發布 ${count} 份`;
-    }
+    // Count today's published records, not API attempts. Failure is not zero.
+    const readHome = async path => {
+      const response = await fetch(path, {cache: "no-store"});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    };
+    const results = await Promise.allSettled([
+      readHome("./data/research_meta.json"),
+      readHome("./data/self_reports.json"),
+      readHome("./data/quarterly_earnings.json"),
+      readHome("./data/quarterly_earnings_recovered.json")
+    ]);
+    const value = i => results[i].status === "fulfilled" ? results[i].value : null;
+    const research = Array.isArray(value(0)) ? value(0) : null;
+    const unique = list => new Set(list.map(r => r.id || r.source_file_id ||
+      JSON.stringify([r.date,r.source,r.broker,r.company,r.name,r.title,r.ticker]))).size;
+    const todayResearch = research?.filter(r => r.source_kind !== "broker" &&
+      String(r.market || "TW").toUpperCase() !== "US" && reportGroupDate(r) === today);
+    const reportCount = unique(items.filter(r => reportGroupDate(r) === today));
+    const industryCount = todayResearch ? unique(todayResearch.filter(r =>
+      r.category === "產業研究" || r.category === "產業報告")) : null;
+    const memoCount = todayResearch ? unique(todayResearch.filter(r =>
+      r.category === "法說／訪談" || (!r.category &&
+      ["call memo", "法說會"].includes(String(r.original_type || "").toLowerCase())))) : null;
+    const morningCount = todayResearch ? unique(todayResearch.filter(r => r.category === "早報")) : null;
+    const setFeature = (id, text) => {
+      const el = document.querySelector(`[data-feature="${id}"] .feature-copy small`);
+      if (el) { el.textContent = text; el.style.whiteSpace = "pre-line"; el.style.lineHeight = "1.5"; }
+    };
+    setFeature("reports", `今日\n報告 ${industryCount === null ? "—" : reportCount + industryCount} 篇\nmemo ${memoCount ?? "—"} 篇・早報 ${morningCount ?? "—"} 篇`);
+    const companiesToday = list => new Set(list.filter(r =>
+      reportGroupDate({date:r.publish_date}) === today).map(r =>
+      String(r.ticker || r.name || "").replace(/\.(TW|TWO)$/i, "")).filter(Boolean)).size;
+    const selfRows = value(1)?.items;
+    const currentQuarterRows = value(2)?.reports;
+    const recovered = value(3)?.reports || [];
+    const quarterMap = new Map();
+    for (const r of [...recovered, ...(currentQuarterRows || [])]) quarterMap.set(`${r.ticker}|${r.period}`, r);
+    setFeature("selfReports", `今日\n自結 ${Array.isArray(selfRows) ? companiesToday(selfRows) : "—"} 家・季報 ${Array.isArray(currentQuarterRows) ? companiesToday([...quarterMap.values()]) : "—"} 家`);
 
     const grid = $(".daily-signal-grid");
 
