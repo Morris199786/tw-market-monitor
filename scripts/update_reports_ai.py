@@ -260,6 +260,24 @@ def validated_ai_presentation(obj: dict, source_text: str) -> tuple[list, list]:
     return visuals, emphasis
 
 
+def normalize_research_sections(value):
+    """Optional AI-generated reading layout; never modifies the original detail."""
+    if not isinstance(value, list):
+        return []
+    sections = []
+    for item in value[:30]:
+        if not isinstance(item, dict):
+            continue
+        heading = str(item.get("heading") or "").strip()[:100]
+        paragraphs = item.get("paragraphs")
+        if not isinstance(paragraphs, list):
+            continue
+        paragraphs = [str(p).strip() for p in paragraphs if isinstance(p, str) and p.strip()]
+        if paragraphs:
+            sections.append({"heading": heading, "paragraphs": paragraphs[:30]})
+    return sections
+
+
 def normalize_report(obj: dict, src: dict) -> dict:
     report_type = str(obj.get("report_type") or "sector").strip().lower()
     if report_type not in ("company", "sector", "theme"):
@@ -315,6 +333,7 @@ def normalize_report(obj: dict, src: dict) -> dict:
         "risks": clean_list(obj.get("risks"), 5),
         "forecast_changes": clean_list(obj.get("forecast_changes"), 6),
         "detail": str(obj.get("detail") or "").strip(),
+        "research_sections": normalize_research_sections(obj.get("research_sections")),
         "ai_model": MODEL,
         "ai_processed_at": now_tpe(),
     }
@@ -383,6 +402,7 @@ def analyze_report(src: dict) -> dict:
 26. 同一次解析中額外擷取可查證財務數字（營收、EPS、毛利率、營益率、出貨量、產能、占比等），保留年份/季度/單位/實際或預估性質；僅在有原始證據時才視覺化，不得自行計算或推估。
 27. visualizations 為可選陣列，type 可為 table/bar/line/pie/kpi。由 AI 根據報告的資料密度、閱讀效果與實際數字自行決定是否製圖、圖表類型與數量；不必提供 source_excerpt。表格使用 headers、rows；圖表使用 labels、values；KPI 使用 items（label/value/unit）。請在同一次解析中自行核對數字、年度、單位、實際或預估性質，不能憑空捏造；圓餅圖只在資料確實屬於同一母體時使用。
 28. emphasis 為最多 12 個字串，須是 summary/key_points/forecast_changes/detail 中原文完全一致的關鍵短語，供前端繪製琥珀色底線；不要用 markdown 或 HTML 標籤。
+29. research_sections 是完整摘要的閱讀版結構，依報告實際主題自行決定 heading 和 paragraphs，不要硬套固定章節；每段為可直接閱讀的完整文字，不要輸出 Markdown/HTML。與 detail 表達同一份研究內容，不可新增來源未支持的事實、刪去重要數字或改動單位。短報告可只用一個無標題區塊。請在本次同一個 API 回覆內產生，不要要求第二次解析。
 
 固定 JSON 欄位：
 {
@@ -402,6 +422,7 @@ def analyze_report(src: dict) -> dict:
   "risks": [],
   "forecast_changes": [],
   "detail": "",
+  "research_sections": [{"heading": "", "paragraphs": []}],
   "emphasis": [],
   "visualizations": []
 }"""
