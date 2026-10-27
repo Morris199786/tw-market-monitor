@@ -149979,11 +149979,563 @@
     }
   },
   "line-b7fb8edc06c899c4fe1d": {
-    "status": "attempted",
+    "status": "success",
     "fingerprint": "9735acfae5cba103f909d037feb2fdecb1876d0dbda5fe428f3b7325b23324eb",
     "category": "法說／訪談",
     "model": "gpt-5.6-luna",
     "at": "2026-10-27T03:15:11.310591+00:00",
-    "original_id": null
+    "original_id": null,
+    "schema": "research-full-article-v2",
+    "result": {
+      "title": "補丁科登錄興櫃前瞻：卡位3D近記憶體，AI業務待2027年量產驗證",
+      "summary": [
+        "補丁科為南亞科持股約35%的記憶體設計服務與IP公司，核心布局為Hybrid Bonding、3D Wafer-on-Wafer及客製化AI記憶體。",
+        "AI業務營收占比由2023年接近0%升至2026年上半年約40%，但目前主要仍為NRE收入，量產及Royalty、Turnkey模式預計自2027年起逐步展開。",
+        "公司預計2026年9月16日以每股740元參考價登錄興櫃；凱基投顧未給予評等，投資重點在技術與客戶專案能否順利量產。"
+      ],
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "補丁科（7947.TWO）為本次資料中的新標的，產業定位為記憶體IP與設計服務。公司預計於2026年9月16日以每股740元參考價登錄興櫃。凱基投顧本次報告未對公司評等，以下內容主要依據2026年9月8日法說會摘要及相關研究資料整理，需區分公司管理層說法、歷史實績與券商觀點。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "一、投資命題：從2.5D封裝走向3D近記憶體整合",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "公司主張，AI運算的瓶頸逐漸由純粹的運算能力轉向Memory Wall，也就是處理器效能成長速度高於DRAM供應資料的能力，導致大量運算週期耗費在等待資料。管理層引用的長期比較顯示，1996年至今CPU、GPU效能約每兩年成長3倍，而DRAM效能約每兩年成長1.6倍，兩者差距持續累積。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "相較現行GPU搭配HBM、透過2.5D或CoWoS進行連結的架構，補丁科聚焦3D Stacked Near Memory，透過Hybrid Bonding將記憶體與處理單元更緊密整合，藉此降低延遲與功耗並提高頻寬。公司主要瞄準AI Inference，而非以HBM為主的AI Training：推論服務更重視Latency、Energy Efficiency、Time to First Token，以及同時服務大量使用者時的容量與成本。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "公司技術與產品布局",
+          "items": [],
+          "columns": [
+            "項目",
+            "定位與技術重點",
+            "主要應用或效益"
+          ],
+          "rows": [
+            [
+              "HiBaLL-M",
+              "以3D Hybrid Bonding及TSV堆疊多層DRAM，再與SoC進行3D整合",
+              "透過多層堆疊提高容量與密度，兼顧頻寬與容量"
+            ],
+            [
+              "HiBaLL-S",
+              "以單層DRAM與SoC直接進行3D整合",
+              "追求接近SRAM的低延遲與能源效率；管理層表示約2GB容量可提供超過2TB/s頻寬，Energy per Bit低於0.5pJ"
+            ],
+            [
+              "DRAM Pieces",
+              "涵蓋標準型DRAM、KGD DRAM及pSRAM",
+              "應用於工業、車用、IoT、Consumer及SoC的SiP方案"
+            ],
+            [
+              "AI Pieces",
+              "以客製化AI記憶體與設計服務為主",
+              "聚焦Cloud與Edge Inference，現階段收入主要來自NRE"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "管理層表示，HiBaLL-S在相同面積下仍有進一步提升頻寬的空間，並稱目前方案可達約10倍頻寬提升，未來可能朝更高倍數優化。不過，這些性能倍數與未來改善幅度屬公司於法說會中的說明，並非本文獨立驗證的量產數據。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "二、技術基礎與南亞科合作關係",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "補丁科成立於2006年1月，總部位於新竹，員工超過90人，研發人員超過70人，其中約65%具碩士或博士學歷；公司資本額約新台幣6.04億元，已取得或申請中的專利超過70件，並通過ISO 9001與ISO 14001認證。公司定位為Fabless DRAM Design & IP Company，過去20年曾使用多種DRAM製程開發產品，並多次完成從First Cut到量產導入。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "公司自2014年投入高頻寬、低延遲DRAM技術，2016年完成相關產品開發，2017年於ISSCC發表研發成果。管理層表示，早期曾開發4Gb DRAM，量測頻寬可達144GB/s；這項長期技術累積，被公司視為後續承接AI客製化記憶體專案的重要基礎。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "南亞科是補丁科最重要的策略合作夥伴及DRAM晶圓代工夥伴，目前持股約35%，為最大股東。雙方2010年曾簽訂投資協議，南亞科當時持股15%；該協議於2017年結束後，雙方仍維持Foundry與Customer合作，南亞科並於2025年再度投資補丁科。現階段合作範圍不僅是製程與客戶關係，也包括技術、專案管理及產品共同開發。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "凱基投顧認為，補丁科是南亞科WoW重要客戶的設計合作夥伴，若南亞科5A新廠產能開出，且相關AI專案於2027至2028年逐步放量，補丁科可能受惠於Royalty與Turnkey收入增加。但此一判斷屬券商的正向看法，實際進度仍取決於客戶認證、製程成熟度、產能及專案量產結果。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "三、補丁科主張的競爭門檻",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "公司認為其競爭力並非單一封裝技術，而是長期DRAM設計、製程理解、3D整合、客戶共同開發及供應鏈協作的組合。主要能力包括：",
+          "items": [
+            "Hybrid Bonding與3D Wafer-on-Wafer設計，將DRAM與Logic製程協同整合。",
+            "Known Good Die、Repair與Testing能力，可降低多層堆疊中單層良率不佳造成的整體損失。",
+            "跨DRAM與先進Logic的介面協同設計，依客戶需求定義特殊記憶體架構，而非單純依照JEDEC標準開發。",
+            "核心技術團隊平均具20年以上經驗，並累積多次從First Cut到量產的開發經驗。",
+            "與客戶在產品初期共同定義Interface與架構，形成較深的技術綁定與客戶黏著度。",
+            "南亞科、邏輯晶圓代工廠、封裝測試廠及AI客戶共同組成的生態系，可能提高新進競爭者的切入難度。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "3D堆疊的良率是量產化關鍵。公司以單片晶圓良率80%為例說明，若未進行篩選與修補，4層堆疊的理論總良率約為41%，8層則約為16.7%。因此，KGD、Repair及Testing能力不只影響技術性能，也直接關係到成本、供貨能力及商業可行性。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "四、營運與財務表現：AI占比提升，但收入仍處開發期",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "公開資料中的主要營運數字",
+          "items": [],
+          "columns": [
+            "指標",
+            "數據",
+            "性質與解讀"
+          ],
+          "rows": [
+            [
+              "AI Pieces營收占比",
+              "2023年接近0%；2026年上半年約40%",
+              "歷史實績；目前主要為NRE收入"
+            ],
+            [
+              "毛利率",
+              "2023年3%；2026年上半年67%",
+              "歷史實績；受DRAM ASP上升及高毛利AI Pieces占比增加帶動"
+            ],
+            [
+              "2026年上半年EPS",
+              "新台幣9.35元",
+              "依目前股本60,363張追溯調整的歷史實績"
+            ],
+            [
+              "員工人數",
+              "超過90人",
+              "公司概況資料"
+            ],
+            [
+              "研發人員",
+              "超過70人",
+              "公司概況資料"
+            ],
+            [
+              "南亞科持股",
+              "約35%",
+              "公司及策略股東關係資料"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "公司表示，過去六季DRAM Pieces與AI Pieces營收均呈成長，DRAM Pieces除受需求增加帶動，也受惠DRAM平均銷售價格上升。2026年上半年毛利率提升至67%，主要原因包括DRAM供需偏緊推升產品需求與ASP，以及高毛利AI Pieces占比增加，進而改善產品組合，帶動稅後淨利與EPS同步改善。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "需要注意的是，AI Pieces目前仍屬Project-based業務，現階段主要收入為NRE，也就是開發階段的一次性或專案型收入。只有當客戶完成設計、驗證並進入量產，收入模式才可能進一步轉向Royalty或Turnkey。因此，AI營收占比上升不等同於量產型經常性收入已經形成。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "五、成長路徑與公司指引",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "AI業務發展階段",
+          "items": [],
+          "columns": [
+            "期間",
+            "階段",
+            "可觀察事項"
+          ],
+          "rows": [
+            [
+              "2023年",
+              "AI營收占比接近0%",
+              "AI業務尚未形成明顯營收貢獻"
+            ],
+            [
+              "2024年",
+              "開始洽談相關專案",
+              "進入客戶需求與方案探索階段"
+            ],
+            [
+              "2025年",
+              "進入設計階段並簽訂AI記憶體設計服務計畫",
+              "開始累積NRE及共同設計成果"
+            ],
+            [
+              "2026年上半年",
+              "AI營收占比約40%",
+              "收入仍以NRE為主；公司毛利率升至67%"
+            ],
+            [
+              "2027年起",
+              "預期陸續量產",
+              "收入模式可能由NRE延伸至Royalty或Turnkey"
+            ],
+            [
+              "2027至2028年",
+              "券商預期相關專案逐步放量",
+              "需觀察客戶認證、南亞科產能及實際出貨"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "管理層看好2026年下半年營收優於上半年，並對2027年維持正向看法，理由包括DRAM供需偏緊趨勢可能延續、既有AI客戶專案持續推進，以及新的潛在客戶仍在洽談中。公司未揭露HiBaLL的個別客戶與專案數量，理由是受到保密協議限制，因此外部投資人目前無法據此判斷專案規模、客戶集中度或量產確定性。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "六、應用市場與供應鏈布局",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "paragraph",
+          "text": "Cloud Inference是公司目前主要瞄準的方向，需求包括低延遲、快速產生第一個Token，以及支援數百萬名同時在線使用者。Edge端則涵蓋AR/VR、智慧型手機、AI PC與機器人，強調裝置端運算、避免雲端往返，並對功耗、延遲與成本有更嚴格要求。管理層表示Cloud與Edge目前均已有專案，部分客戶已進入共同設計階段，另有部分仍在洽談。公司引用的Edge AI市場年成長率約20%至30%，屬管理層對市場的看法。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "table",
+          "text": "主要合作夥伴與分工",
+          "items": [],
+          "columns": [
+            "環節",
+            "合作方或角色",
+            "分工"
+          ],
+          "rows": [
+            [
+              "DRAM製程",
+              "南亞科",
+              "提供DRAM製程，並與補丁科進行技術及專案合作"
+            ],
+            [
+              "先進Logic製程",
+              "由客戶直接接洽Logic Foundry",
+              "實現部分DRAM功能或Interface Circuit"
+            ],
+            [
+              "後段封裝測試",
+              "福懋科、晶兆成",
+              "福懋科為策略合作夥伴；CP由力成集團旗下晶兆成負責"
+            ],
+            [
+              "RDL與SiP方案",
+              "瑞峰半導體",
+              "支援使用RDL的SiP Solution"
+            ],
+            [
+              "客戶端",
+              "AI客戶及SoC客戶",
+              "共同定義架構、Interface並進行驗證與量產導入"
+            ]
+          ],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "七、法說會重要問答整理",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "管理層對關鍵問題的回覆如下：",
+          "items": [
+            "AI記憶體應用：公司目前聚焦AI Inference，Cloud與Edge皆適用，兩大領域均已有進行中的專案。",
+            "HiBaLL專案數與客戶：因簽署NDA，不便揭露個別客戶及專案數量；目前可確認相關專案自2024年洽談、2025年進入設計，預計2027年起陸續量產。",
+            "量產後收入模式：開發階段以NRE為主，量產後依專案採Royalty或Turnkey Solution，預期AI Pieces占比逐年提升。",
+            "2026年下半年與2027年展望：公司認為下半年營收高於上半年機會很高，2027年則受DRAM供需、既有專案及新客戶洽談支撐。",
+            "長期技術方向：3D DRAM仍在探索不同技術路徑，公司認為需同時整合DRAM、先進製程、封裝及客戶共同開發能力，並透過長期Learning Curve累積Know-how。",
+            "上市規劃：公司持續朝上市方向準備，後續將依要求引進獨立董事、設置審計委員會，並強化財務、法務、投資人關係及研發人才配置。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "heading",
+          "text": "八、投資人應關注的風險與驗證指標",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "bullets",
+          "text": "這項成長題材仍處於興櫃前法說及量產前階段，主要風險包括：",
+          "items": [
+            "量產時程風險：公司預期2027年起陸續量產，但目前資料未提供具名客戶、專案數量、明確出貨時程或量產合約規模。",
+            "NRE轉量產風險：AI營收占比雖已達約40%，但主要仍是NRE；Royalty及Turnkey收入能否如期放大，取決於設計驗證、客戶採用及實際出貨。",
+            "良率與成本風險：3D堆疊層數增加會放大單層良率問題，KGD、Repair及Testing能否達到合理成本仍是商業化關鍵。",
+            "供應鏈與股東集中風險：南亞科同時是最大股東、主要DRAM製程夥伴及重要合作方，合作深化有利於技術與產能，但也形成較高的夥伴依賴度。",
+            "技術競爭風險：Hybrid Bonding、WoW及3D堆疊並非補丁科獨有，市場競爭力仍需透過客戶導入、量產良率與實際性能證明。",
+            "市場與估值風險：公司將以每股740元參考價登錄興櫃，資料未提供相應本益比、估值基準或流動性分析，投資人不宜僅以EPS或題材推估合理價值。",
+            "資訊驗證限制：本文依據公司法說內容及單一券商研究資料整理，部分性能、專案進度與市場規模資訊為管理層或券商說法，尚需後續公告與財報驗證。"
+          ],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        },
+        {
+          "type": "quote",
+          "text": "補丁科的核心觀察不是AI營收占比能否短期上升，而是目前的NRE專案能否在2027年後轉化為可持續的Royalty與Turnkey收入。對投資人而言，後續應追蹤具名客戶導入、設計驗證完成、南亞科產能進度、3D堆疊良率，以及量產收入與毛利率是否符合公司指引。",
+          "items": [],
+          "columns": [],
+          "rows": [],
+          "chart_type": "",
+          "title": "",
+          "labels": [],
+          "values": [],
+          "unit": "",
+          "note": ""
+        }
+      ]
+    },
+    "audit": {
+      "status": "passed",
+      "issues": [],
+      "blocks": 29
+    },
+    "usage": {
+      "input_tokens": 9076,
+      "input_tokens_details": {
+        "cache_write_tokens": 9073,
+        "cached_tokens": 0
+      },
+      "output_tokens": 4884,
+      "output_tokens_details": {
+        "reasoning_tokens": 177
+      },
+      "total_tokens": 13960
+    }
   }
 }
