@@ -22,7 +22,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: research-ai-batch
+  group: research-report-processing
   cancel-in-progress: false
 jobs:
   parse:
@@ -30,6 +30,14 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Refresh durable claims and configure checkpoint commits
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git pull --ff-only origin main
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -42,6 +50,7 @@ jobs:
           python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category "$BATCH_CATEGORY" --mode "$BATCH_MODE" --dry-run
       - name: Parse selected research articles
         env:
+          RESEARCH_AI_REMOTE_CHECKPOINT: '1'
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           BATCH_LIMIT: ${{ inputs.limit }}
           BATCH_CATEGORY: ${{ inputs.category }}
@@ -55,4 +64,4 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add data/research_ai_cache.json data/research_ai_batch_history.json data/research_metrics.json
-          git diff --cached --quiet || (git commit -m 'Update research AI batch audit' && git push)
+          git diff --cached --quiet || (git commit -m 'Update research AI batch audit' && git pull --rebase origin main && git push origin HEAD:main)
