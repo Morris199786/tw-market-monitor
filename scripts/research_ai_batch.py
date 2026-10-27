@@ -13,6 +13,8 @@ import re
 import subprocess
 import sys
 import urllib.request
+import urllib.error
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / 'data/research_ai_cache.json'
@@ -160,10 +162,11 @@ ARTICLE_SCHEMA = {
     'required':['title','summary','blocks'],
 }
 
-def parse(text, model):
+def parse(text, model, on_response=None, response_id=None):
     # GPT-5 family: Responses API, no unsupported temperature/JSON-mode settings.
     payload = {
         'model': model,
+        'background': True, 'store': True,
         'instructions': SYSTEM_PROMPT + '\n僅輸出合法 JSON object，不要 markdown。',
         'input': text,
         'text': {'format': {'type': 'json_schema', 'name': 'research_article',
@@ -175,8 +178,44 @@ def parse(text, model):
         headers={'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY'],
                  'Content-Type': 'application/json'},
     )
-    with urllib.request.urlopen(request, timeout=300) as response:
-        data = json.load(response)
+    # Never retry a POST: a disconnected request may already have been billed.
+    if response_id:
+        if on_response:
+            on_response(response_id)
+        data = {'id': response_id, 'status': 'in_progress'}
+    else:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            data = json.load(response)
+        response_id = data.get('id')
+        if not response_id:
+            raise ValueError('RESPONSE_ID_MISSING: no automatic POST retry')
+        if on_response:
+            on_response(response_id)  # Persist before waiting for generation.
+    deadline = time.monotonic() + 1200
+    failures = 0
+    while data.get('status') in ('queued', 'in_progress'):
+        if time.monotonic() >= deadline:
+            raise TimeoutError('BACKGROUND_WAIT_TIMEOUT: response_id=' + response_id)
+        time.sleep(5)
+        poll = urllib.request.Request(
+            'https://api.openai.com/v1/responses/' + response_id,
+            headers={'Authorization': 'Bearer ' + os.environ['OPENAI_API_KEY']})
+        try:
+            with urllib.request.urlopen(poll, timeout=60) as response:
+                data = json.load(response)
+            failures = 0
+        except (OSError, urllib.error.URLError) as exc:
+            # GET retries retrieve the same generation; they never create another.
+            if isinstance(exc, urllib.error.HTTPError) and exc.code not in (408,429,500,502,503,504):
+                raise
+            failures += 1
+            if failures >= 5:
+                raise
+        print('RESPONSE_POLL ' + response_id + ' ' + str(data.get('status')), flush=True)
+    if data.get('status') != 'completed':
+        raise ValueError('RESPONSE_NOT_COMPLETED ' + json.dumps({
+            'id':response_id, 'status':data.get('status'),
+            'error':data.get('error'), 'details':data.get('incomplete_details')}, ensure_ascii=False))
     parts = []
     for item in data.get('output', []):
         if item.get('type') == 'message':
@@ -214,6 +253,27 @@ def audit(result, row):
                 any(not isinstance(v,(int,float)) or isinstance(v,bool) for v in values)):
                 return {'status':'needs_review','issues':['AI 圖表資料格式不完整']}
     return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
+
+
+FAILED_RETRY_SUFFIX = '::failed-retry-once-v1'
+
+
+def retry_used(rid, cache, history):
+    """Claims survive failures, interrupted jobs, source edits and future runs."""
+    if rid + FAILED_RETRY_SUFFIX in cache:
+        return True
+    old = cache.get(rid) or {}
+    if old.get('retry_exhausted') or old.get('attempt_count', 0) >= 2:
+        return True
+    # Respect retries made before this guard was installed.
+    return any(run.get('mode') == 'failed' and
+               any(item.get('id') == rid for item in run.get('results', []))
+               for run in history)
+
+
+def remember_response(cache, key, response_id):
+    cache[key]['response_id'] = response_id
+    checkpoint(cache)
 
 
 YINGBANG_ID = 'line-abf8ae3b2e0a9eae6703'
@@ -262,6 +322,8 @@ def run_yingbang_only(args):
     if YINGBANG_ONCE_KEY in cache:
         status = (cache[YINGBANG_ONCE_KEY] or {}).get('status')
         sys.exit('YINGBANG_BLOCKED_NO_API: one-time claim already exists (' + str(status) + '); no automatic retry')
+    if retry_used(YINGBANG_ID, cache, load(AUDIT, [])):
+        sys.exit('YINGBANG_BLOCKED_NO_API: failed retry already consumed')
     manifest = load(ROOT / 'data/research_manifest.json', {})
     matches = []
     for shard in manifest.get('shards', []):
@@ -300,7 +362,7 @@ def run_yingbang_only(args):
         'model':args.model,'fingerprint':hashlib.sha256(raw.encode()).hexdigest(),'category':row.get('category')}
     checkpoint(cache)  # Must reach origin/main before parse() can spend credit.
     try:
-        result, usage=parse(raw,args.model)
+        result, usage=parse(raw,args.model, lambda response_id: remember_response(cache, YINGBANG_ONCE_KEY, response_id))
         check=audit(result,row)
         status='success' if check['status']=='passed' else 'needs_review'
         cache[YINGBANG_ONCE_KEY].update(status=status,schema=SCHEMA,result=result,audit=check,usage=usage)
@@ -387,6 +449,10 @@ def main():
                 continue
             if args.mode == 'failed' and (not old or old.get('status') not in ('failed','needs_review')):
                 continue
+            if retry_used(row['id'], cache, history):
+                stats['cached'] += 1
+                print('FAILED_RETRY_LOCKED_NO_API ' + row['id'])
+                continue
             entries.append((row, raw, fp))
     entries.sort(key=lambda x: (x[0].get('date',''),x[0].get('id','')), reverse=True)
     stats['eligible'] = len(entries)
@@ -413,21 +479,28 @@ def main():
         sys.exit('RESEARCH_SYNC_REQUIRED: run LINE research sync before paid batch')
     if selected and not os.getenv('OPENAI_API_KEY'):
         sys.exit('OPENAI_API_KEY missing; no calls made')
+    if selected and os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
+        sys.exit('DURABLE_CLAIM_REQUIRED: no API called')
     run = {'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
            'category':args.category,'mode':args.mode,'limit':args.limit,
            'model':args.model,'results':[]}
     for row, raw, fp in selected:
         rid = row['id']
-        trial = args.mode in ('rerun_three','retry_mediatek')
+        trial = args.mode in ('rerun_three','retry_mediatek','failed')
+        previous = cache.get(rid)
         key = (rid + MEDIATEK_RETRY_SUFFIX if args.mode == 'retry_mediatek' else
+               rid + FAILED_RETRY_SUFFIX if args.mode == 'failed' else
                rid + TRIAL_SUFFIX if trial else rid)
         # A trial has a separate immutable claim, leaving the old result untouched.
         cache[key] = {'status':'attempted','fingerprint':fp,
                       'category':row.get('category'),'model':args.model,'at':run['at'],
-                      'original_id':rid if trial else None}
+                      'original_id':rid if trial else None,
+                      'attempt_count':2 if args.mode == 'failed' else 1}
         checkpoint(cache)
         try:
-            result, usage = parse(raw, args.model)
+            result, usage = parse(raw, args.model,
+                lambda response_id: remember_response(cache, key, response_id),
+                response_id=(previous or {}).get('response_id') if args.mode == 'failed' else None)
             check = audit(result, row)
             status = 'success' if check['status'] == 'passed' else 'needs_review'
             cache[key].update({'status':status,'schema':SCHEMA,'result':result,
@@ -443,6 +516,9 @@ def main():
         except Exception as exc:
             cache[key].update({'status':'failed','error':str(exc)[:1000]})
             run['results'].append({'id':rid,'status':'failed','error':str(exc)[:300]})
+        if args.mode == 'failed' and cache[key]['status'] != 'success':
+            cache[key]['retry_exhausted'] = True
+            cache[rid] = {**cache[key], 'previous_version':previous}
         checkpoint(cache)
         print(f"{rid}: {cache[key]['status']}" + (' (trial)' if trial else ''))
     history.append(run)
