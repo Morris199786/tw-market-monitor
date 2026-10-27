@@ -161,3 +161,67 @@ html[data-theme="dark"] .report-target-down{color:#65d6a7 !important;border-colo
   font-size:13px!important;
   line-height:1.5!important;
 }
+
+
+/* 2026-10-27: Industry database mobile typography, all categories.
+   Shared rules cover broker reports, industry reports, morning briefs,
+   meeting/interview articles and the full-text reader. Desktop unchanged. */
+@media (max-width: 720px) {
+  #researchMergedPanel .rm-title,
+  #researchMergedPanel .rm-card .report-title,
+  #reports .report-v2-card .report-title,
+  #rmReaderTitle {
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+  }
+  #researchMergedPanel .rm-story,
+  #researchMergedPanel .rm-card .report-summary,
+  #researchMergedPanel .rm-card .report-details-body,
+  #reports .report-v2-card .report-summary,
+  #reports .report-v2-card .report-details-body {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+  }
+  #researchMergedPanel .rm-story {
+    margin: 6px 0 8px !important;
+    white-space: pre-line !important;
+  }
+  #researchMergedPanel .rm-card .report-summary li,
+  #reports .report-v2-card .report-summary li {
+    line-height: 1.6 !important;
+    margin-bottom: 4px !important;
+  }
+  #researchMergedPanel .rm-sub,
+  #researchMergedPanel .report-meta,
+  #reports .report-v2-card .report-meta,
+  #reports .report-v2-card .report-chip {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+  #researchMergedPanel .rm-card .report-broker,
+  #reports .report-v2-card .report-broker {
+    font-size: 14px !important;
+  }
+  #rmReader .rm-ai-paragraph,
+  #rmReader .rm-ai-list,
+  #rmReader .rm-ai-quote,
+  #rmReader .rm-original-text,
+  #reports .report-v2-card .report-detail-block p,
+  #reports .report-v2-card .report-detail-block ul,
+  #reports .report-v2-card .report-details-body > p {
+    font-size: 16px !important;
+    line-height: 1.65 !important;
+  }
+  #rmReader .rm-ai-paragraph { margin: 0 0 .8em !important; }
+  #rmReader .rm-ai-heading,
+  #rmReader .rm-section > h3,
+  #reports .report-v2-card .report-subtitle {
+    font-size: 17px !important;
+    line-height: 1.5 !important;
+  }
+  #researchMergedPanel .rm-read-more,
+  #researchMergedPanel .rm-card a.rm-read-more {
+    font-size: 13px !important;
+  }
+}
