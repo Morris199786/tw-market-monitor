@@ -295,6 +295,37 @@ def normalize_research_sections(value):
     return sections
 
 
+def normalize_industry_sections(value):
+    """Validate AI-selected industry layout, with no retries or content truncation."""
+    if not isinstance(value, list):
+        return []
+    out = []
+    for section in value:
+        if not isinstance(section, dict) or not isinstance(section.get("blocks"), list):
+            continue
+        blocks = []
+        for b in section["blocks"]:
+            if not isinstance(b, dict):
+                continue
+            kind = b.get("type")
+            if kind == "paragraph" and isinstance(b.get("text"), str) and b["text"].strip():
+                blocks.append({"type": kind, "text": b["text"].strip()})
+            elif kind == "bullets" and isinstance(b.get("items"), list):
+                items = [x.strip() for x in b["items"] if isinstance(x, str) and x.strip()]
+                if items:
+                    blocks.append({"type": kind, "items": items})
+            elif kind == "table":
+                headers, rows = b.get("headers"), b.get("rows")
+                if (isinstance(headers, list) and headers and all(isinstance(x, str) for x in headers)
+                        and isinstance(rows, list) and rows and all(isinstance(row, list)
+                        and len(row) == len(headers) and all(x is None or isinstance(x, (str, int, float)) for x in row) for row in rows)):
+                    blocks.append({"type": kind, "title": str(b.get("title") or ""),
+                                   "headers": headers, "rows": rows, "note": str(b.get("note") or "")})
+        if blocks:
+            out.append({"heading": str(section.get("heading") or ""), "blocks": blocks})
+    return out
+
+
 def normalize_report(obj: dict, src: dict) -> dict:
     report_type = str(obj.get("report_type") or "sector").strip().lower()
     if report_type not in ("company", "sector", "theme"):
@@ -351,6 +382,7 @@ def normalize_report(obj: dict, src: dict) -> dict:
         "forecast_changes": clean_list(obj.get("forecast_changes"), float("inf")),
         "detail": str(obj.get("detail") or "").strip(),
         "research_sections": normalize_research_sections(obj.get("research_sections")),
+        "industry_sections": normalize_industry_sections(obj.get("industry_sections")) if report_type in ("sector", "theme") else [],
         "ai_layout_version": "ai-directed-v2",
         "ai_model": MODEL,
         "ai_processed_at": now_tpe(),
@@ -424,6 +456,10 @@ def analyze_report(src: dict) -> dict:
 
 30. 所有要顯示在網站上的研究重點、章節、數字與風險，由 AI 在本次回覆內自行取捨；程式只檢查資料形狀，不使用固定字數或條數裁切。
 
+31. 僅當 report_type 為 sector/theme（產業報告 PDF）：industry_sections 是展開「完整摘要」的主要閱讀內容，必須提供。它是經你重新組織、去重的完整研究摘要，不能貼上原文或只把長文換行，也不能縮成另一組卡片重點。依原文自行決定主題、順序與區塊，不硬套固定章節。每個主題先交代結論，再解釋原因、證據與條件；一段只處理一個論點，標題必須放 heading，不能黏在正文。保留重要數據、因果、反例、風險與不確定性。
+32. industry_sections 每節使用 heading 與 blocks。block 類型由你依內容選擇：paragraph 用 text；bullets 用 items；table 用 title、headers、rows、note。多公司或技術比較、跨年數據、導入時程適合表格；因果分析適合短段落，並列條件適合條列。表格不強制，沒有可比較資料就不產生。表格每列長度須等於 headers；數值保留公司/範圍、期間、幣別、單位、實際/預估與情境前提，不確定留 null 並註明，不得補造。重要風險也須整合到 industry_sections，網站不會再重複附上其他欄位。
+33. 同一次回覆內核對 industry_sections 覆蓋 detail/key_points/risks 中重要資訊，移除重複敘述。不能只整理前幾頁，不能把預估或驗證中寫成量產事實。不要為同一資訊同時產生表格及重複長段。company 報告不適用上述產業閱讀規則，industry_sections 填 []。不增加 API 呼叫。
+
 固定 JSON 欄位：
 {
   "broker": "",
@@ -443,6 +479,7 @@ def analyze_report(src: dict) -> dict:
   "forecast_changes": [],
   "detail": "",
   "research_sections": [{"heading": "", "paragraphs": []}],
+  "industry_sections": [],
   "emphasis": [],
   "visualizations": []
 }"""
@@ -1018,5 +1055,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
