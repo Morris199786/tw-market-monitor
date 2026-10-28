@@ -154,3 +154,44 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #earningsFilters.earnings-upcoming-filters #earningsFinanceCalendar{width:100%;min-width:0}
 #earningsFilters.earnings-upcoming-filters .self-cal-trigger{width:100%;min-width:0}
 @media(max-width:600px){#earningsFilters.earnings-upcoming-filters{display:flex;gap:8px}#earningsFilters.earnings-upcoming-filters #earningsCompanySearchWrap{flex:1 1 0}#earningsFilters.earnings-upcoming-filters .earnings-date-picker{flex:0 0 42%}#earningsFilters.earnings-upcoming-filters #earningsCompanySearch{font-size:13px}}
+
+/* iPhone Safari: keep all earnings/self-report search fields >=16px to prevent focus zoom. */
+@media (max-width: 900px) {
+  #selfReportSearchInput,
+  #earningsCompanySearch,
+  #earningsUpcomingSearch,
+  #selfReports input[type="search"],
+  #selfReports input[type="text"] {
+    font-size: 16px !important;
+    line-height: 1.4;
+  }
+  #selfReportSearchInput::placeholder,
+  #earningsCompanySearch::placeholder,
+  #earningsUpcomingSearch::placeholder { font-size: 16px !important; }
+}
+
+/* 20261028 unified search/calendar layout: same card for upcoming and reports. */
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search.tw-filter-card {
+  display:flex!important;flex-wrap:nowrap;align-items:center;gap:10px;
+  width:100%;padding:12px;margin:0 0 12px;
+  background:var(--card);border:1px solid var(--line);border-radius:17px;
+  box-shadow:0 5px 22px rgba(0,0,0,.035);
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .earnings-search-field {flex:1 1 55%;min-width:0}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search #earningsCompanySearch {
+  width:100%;min-height:44px;font-size:16px!important;padding:10px 46px 10px 12px;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .earnings-date-picker {
+  display:block;flex:0 1 42%;width:auto;min-width:0;margin:0;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search #earningsFinanceCalendar {width:100%;min-width:0}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .self-cal-trigger {width:100%;min-width:0}
+#quarterlyEarningsPanel #earningsFilters.earnings-upcoming-filters {display:block;margin:0 0 14px}
+#quarterlyEarningsPanel #earningsFilters.earnings-upcoming-filters .earnings-quick {display:flex;width:100%;margin-bottom:0}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search[hidden] {display:none!important}
+@media(max-width:600px) {
+ #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search.tw-filter-card {padding:12px;gap:10px}
+ #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .earnings-search-field {flex:1 1 55%;min-width:0}
+ #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .earnings-date-picker {flex:0 1 42%;min-width:0}
+ #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search #earningsCompanySearch {font-size:16px!important}
+}
