@@ -126,3 +126,12 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #earningsFilters .earnings-quick[hidden] {display:none!important}
 #earningsFinanceCalendar .self-cal-day i {width:6px;height:6px;left:calc(50% - 3px);background:#24bd76}
 #earningsCompanySearchWrap #earningsFinanceCalendar {min-width:0}
+
+/* 財報日期可獨立展開／收合（手機與桌機） */
+#quarterlyEarningsCards .earnings-day-toggle{width:100%;font:inherit;color:var(--ink);cursor:pointer;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;gap:10px;-webkit-appearance:none;appearance:none}
+#quarterlyEarningsCards .earnings-day-toggle>span:first-of-type{margin-left:auto}
+#quarterlyEarningsCards .earnings-day-arrow{font-size:21px;line-height:1;transition:transform .18s ease;color:var(--muted)}
+#quarterlyEarningsCards .earnings-day.is-collapsed .earnings-day-arrow{transform:rotate(-90deg)}
+#quarterlyEarningsCards .earnings-day.is-collapsed .earnings-day-toggle{border-bottom:0}
+#quarterlyEarningsCards .earnings-compact-list[hidden]{display:none!important}
+#quarterlyEarningsCards .earnings-day-toggle:focus-visible{outline:2px solid #3b82f6;outline-offset:-2px}
