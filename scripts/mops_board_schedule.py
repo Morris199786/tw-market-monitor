@@ -17,7 +17,8 @@ PAGE = BASE + '/mops/#/web/t170sb01'
 
 
 def normalize_date(value):
-    m = re.fullmatch(r'\s*(\d{2,4})[/-](\d{1,2})[/-](\d{1,2})\s*', str(value or ''))
+    raw = str(value or '').strip().replace('年', '/').replace('月', '/').replace('日', '').replace('.', '/')
+    m = re.fullmatch(r'(\d{2,4})[/-](\d{1,2})[/-](\d{1,2})', raw)
     if not m:
         return ''
     y, mo, day = map(int, m.groups())
