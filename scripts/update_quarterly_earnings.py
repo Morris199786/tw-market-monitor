@@ -9,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-28-v14-parallel-quarter-periods"
+VERSION = "2026-10-28-v15-explicit-quarter-margin"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -360,6 +360,46 @@ def mops_parallel_quarter_metrics(text, period):
         if -100 <= margin <= 100:
             out['gross_margin'] = margin
     return out
+
+
+def explicit_quarter_gross_margin(text, period):
+    """Read an explicitly reported *single-quarter* gross margin in MOPS tables.
+
+    This is an additive fallback. It requires a matching period column header,
+    refuses YTD-first tables, and never interprets an unlabeled percentage as
+    gross margin. Both ROC/Gregorian years and 01月至09月-style dates work.
+    """
+    flat = unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    flat = re.sub(r'\s+', ' ', flat).replace('～', '~').replace('－', '-')
+    year, q = int(period[:4]), int(period[-1])
+    first, last = 3*q-2, 3*q
+    yy = rf'(?:{year}|{year-1911})'
+    sep = r'(?:[-~/至]|月\s*至)'
+    quarter_header = rf'{yy}\s*年(?:度)?\s*0?{first}\s*{sep}\s*0?{last}\s*月'
+    ytd_header = rf'{yy}\s*年(?:度)?\s*0?1\s*{sep}\s*0?{last}\s*月'
+    quarter_ordinal = rf'{yy}\s*年(?:度)?\s*第?\s*(?:{q}|{"一二三四"[q-1]})\s*季\s*(?:單季|當季)'
+    singles = list(re.finditer(r'(?:' + quarter_header + r'|' + quarter_ordinal + r')', flat, re.I))
+    if not singles:
+        return {}
+    # A YTD header before the quarter header means column zero is cumulative.
+    ytd = list(re.finditer(ytd_header, flat, re.I))
+    first_single = singles[0]
+    if ytd and ytd[0].start() < first_single.start():
+        return {}
+    # Restrict search to the table following the relevant column heading.
+    body = flat[first_single.end():]
+    # Match labels only, never percentages in surrounding prose or notes.
+    labels = r'(?:合併|綜合)?\s*(?:營業|銷貨)?\s*毛利率|毛利百分比'
+    value = r'([+-]?\d{1,3}(?:\.\d{1,4})?)\s*%?'
+    margins = []
+    for m in re.finditer(r'(?<![\w])(?:' + labels + r')\s*[:：]?\s*' + value, body, re.I):
+        # A row may contain Q3 and YTD values; take only its first column.
+        v = num(m.group(1))
+        if v is not None and -100 <= v <= 100:
+            margins.append(v)
+    if not margins or len(set(margins)) != 1:
+        return {}
+    return {'gross_margin': margins[0]}
 
 
 def announcement_period_metrics(text, period):
@@ -1217,6 +1257,9 @@ def main():
                 values=direct_quarter_metrics(text,period)
                 values.update(announcement_period_metrics(text,period))
                 values.update(mops_parallel_quarter_metrics(text,period))
+                # Additive fallback: never overwrite a previously parsed margin.
+                if values.get('gross_margin') is None:
+                    values.update(explicit_quarter_gross_margin(text,period))
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
