@@ -1,4 +1,4 @@
-name: Test MOPS t170sb01 v2 (isolated)
+name: Test MOPS t170sb01 (isolated)
 on:
   workflow_dispatch:
     inputs:
@@ -24,18 +24,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
-        run: python -m pip install 'requests>=2.31,<3' 'beautifulsoup4>=4.12,<5'
-      - name: Probe MOPS new API and inspect frontend scripts
+      - name: Install browser dependencies
+        run: |
+          python -m pip install 'playwright>=1.55,<2'
+          python -m playwright install --with-deps chromium
+      - name: Inspect real MOPS browser requests and page
         env:
           ROC_YEAR: ${{ inputs.roc_year }}
           SEASON: ${{ inputs.season }}
-        run: python scripts/test_mops_t170sb01_v2.py --year "$ROC_YEAR" --season "$SEASON" --out mops_t170sb01_probe_v2
-      - name: Upload diagnostics even when probe fails
+        run: python scripts/test_mops_t170sb01.py --year "$ROC_YEAR" --season "$SEASON" --out mops_t170sb01_probe
+      - name: Upload diagnostics even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mops-t170sb01-probe-v2
-          path: mops_t170sb01_probe_v2/
+          name: mops-t170sb01-probe
+          path: mops_t170sb01_probe/
           if-no-files-found: warn
           retention-days: 7
