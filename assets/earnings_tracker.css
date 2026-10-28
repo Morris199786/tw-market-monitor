@@ -135,3 +135,10 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsCards .earnings-day.is-collapsed .earnings-day-toggle{border-bottom:0}
 #quarterlyEarningsCards .earnings-compact-list[hidden]{display:none!important}
 #quarterlyEarningsCards .earnings-day-toggle:focus-visible{outline:2px solid #3b82f6;outline-offset:-2px}
+
+/* 即將開財報：依公司名稱／股票代號查詢排程 */
+#quarterlyEarningsPanel .earnings-lookup-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
+#quarterlyEarningsPanel .earnings-lookup-date{font-size:14px;font-weight:750;text-align:right;line-height:1.6}
+#quarterlyEarningsPanel .earnings-lookup-date.is-unannounced{color:var(--muted)}
+#quarterlyEarningsPanel .earnings-lookup-date.is-scheduled{color:var(--ink)}
+@media(max-width:600px){#quarterlyEarningsPanel .earnings-lookup-row{align-items:flex-start;flex-direction:column;gap:7px}#quarterlyEarningsPanel .earnings-lookup-date{text-align:left}}
