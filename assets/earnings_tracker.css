@@ -262,3 +262,12 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsPanel .earnings-reconcile-row small{color:var(--muted)}
 #quarterlyEarningsPanel .earnings-reconcile-hint{font-size:12px;line-height:1.6;color:var(--muted);margin:10px 0 0}
 @media(max-width:600px){#quarterlyEarningsPanel .earnings-reconcile-row{align-items:flex-start;flex-direction:column;gap:4px}}
+
+/* 2026-10-28: finance filters, reconciliation, compact paging; scoped to earnings only */
+#quarterlyEarningsPanel .earnings-load-more-wrap{display:flex;justify-content:center;margin:12px 0 20px}
+#quarterlyEarningsPanel .earnings-load-more{display:inline-flex!important;width:auto!important;max-width:100%;min-height:38px;padding:8px 18px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+#quarterlyEarningsPanel .earnings-updated{font-size:12px;overflow-wrap:anywhere}
+#earningsFinanceCalendar .self-cal-trigger{cursor:pointer;min-width:166px}
+#quarterlyEarningsPanel .earnings-reconcile-row{gap:12px;flex-wrap:wrap}
+#quarterlyEarningsPanel .earnings-reconcile-day summary{cursor:pointer}
+@media(max-width:700px){#quarterlyEarningsPanel .earnings-load-more{font-size:12px}#earningsFinanceCalendar{width:100%;max-width:100%}#earningsFinanceCalendar .self-cal-trigger{width:100%}}
