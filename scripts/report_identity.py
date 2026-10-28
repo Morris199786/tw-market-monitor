@@ -1,5 +1,6 @@
 """Evidence-based Taiwan company identity and per-company price-target audit."""
 import copy
+import collections
 import json
 import re
 import hashlib
@@ -8,7 +9,7 @@ import unicodedata
 from pathlib import Path
 from report_presentation import enrich_upside
 
-VERSION = "2026-10-10-identity-target-tp"
+VERSION = "2026-10-28-identity-alias-guard-v1"
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = {
     "2383": {"name": "台光電", "aliases": ["Elite Material", "Elite Materials", "Elite Material Co., Ltd.", "EMC"]},
@@ -98,7 +99,8 @@ def registry(refresh=False):
     if refresh:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-        _retry_fixed_target_conflicts_once()
+        # Do not reset legacy audit claims when refreshing the company registry.
+        # A registry update must never trigger an old paid report retry.
     return out
 
 
@@ -131,28 +133,67 @@ _ALIAS_CACHE = {}
 _PATTERN_CACHE = {}
 
 
+def _alias_key(alias):
+    return unicodedata.normalize("NFKC", str(alias)).casefold().strip()
+
+
+def _alias_variants(alias):
+    """Only normalize dotted *initialisms*; never erase arbitrary punctuation."""
+    value = unicodedata.normalize("NFKC", str(alias)).strip()
+    variants = {value}
+    # Preserve dotted acronyms literally: T.S.M.C. and TSMC belong to
+    # different issuers in the source registry; do not merge them.
+    return variants
+
+
 def alias_hits(text, companies):
-    key = (id(companies), hashlib.sha256(text.encode()).digest())
-    if key in _ALIAS_CACHE:
-        return set(_ALIAS_CACHE[key])
+    """Return only unambiguous company aliases; ambiguous spellings need ticker evidence.
+
+    Dotted acronyms are considered alongside undotted forms when checking
+    collisions. Longer aliases take priority; generic substring hits are avoided.
+    """
+    if not text:
+        return set()
+    cache_key = (id(companies), hashlib.sha256(text.encode()).digest())
+    if cache_key in _ALIAS_CACHE:
+        return set(_ALIAS_CACHE[cache_key])
     if id(companies) not in _PATTERN_CACHE:
-        names = {}
-        for t, m in companies.items():
-            for alias in [m.get("name", "")] + m.get("aliases", []):
-                if alias:
-                    names.setdefault(alias.casefold(), set()).add(t)
-        terms = [(r"(?<![\w])" if alias.isascii() else "") + re.escape(alias) +
-                 (r"(?![\w])" if alias.isascii() else "")
-                 for alias in sorted(names, key=len, reverse=True)]
-        _PATTERN_CACHE[id(companies)] = (re.compile("|".join(terms), re.I), names)
-    pattern, names = _PATTERN_CACHE[id(companies)]
+        owners = collections.defaultdict(set)
+        spellings = collections.defaultdict(set)
+        for ticker, meta in companies.items():
+            for alias in [meta.get("name", "")] + meta.get("aliases", []):
+                if not isinstance(alias, str) or not alias.strip():
+                    continue
+                for variant in _alias_variants(alias):
+                    key = _alias_key(variant)
+                    owners[key].add(ticker)
+                    spellings[key].add(variant)
+        unique = {key: next(iter(ids)) for key, ids in owners.items() if len(ids) == 1}
+        # A dotted/undotted variant collision is ambiguous even when its
+        # original spelling was unique.
+        terms = []
+        for key, ticker in unique.items():
+            for spelling in spellings[key]:
+                boundary = spelling.isascii()
+                left = r"(?<![\w])" if boundary else ""
+                right = r"(?![\w])" if boundary else ""
+                terms.append((len(spelling), left + re.escape(spelling) + right, key))
+        terms.sort(key=lambda row: -row[0])
+        pattern = re.compile("|".join("(?:" + row[1] + ")" for row in terms), re.I) if terms else None
+        _PATTERN_CACHE[id(companies)] = (pattern, owners, unique)
+    pattern, owners, unique = _PATTERN_CACHE[id(companies)]
     hits = set()
-    for match in pattern.finditer(text):
-        word = match.group()
-        if len(word) <= 3 and word.isascii() and word != word.upper():
-            continue
-        hits.update(names[word.casefold()])
-    _ALIAS_CACHE[key] = frozenset(hits)
+    if pattern:
+        for match in pattern.finditer(unicodedata.normalize("NFKC", text)):
+            word = match.group()
+            key = _alias_key(word)
+            if len(word) <= 3 and word.isascii() and word != word.upper():
+                continue
+            if key in unique:
+                hits.add(unique[key])
+    if len(_ALIAS_CACHE) > 256:
+        _ALIAS_CACHE.clear()
+    _ALIAS_CACHE[cache_key] = frozenset(hits)
     return hits
 
 
