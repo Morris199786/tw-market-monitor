@@ -13,6 +13,7 @@ import fitz  # PyMuPDF
 FOLDER = '1CLtRfuqr9uC_Sak0VSgYdlhogzG8K2ma'
 API = 'https://www.googleapis.com/drive/v3/files'
 OUTPUT = Path('data/business_reports.json')
+PARSER_VERSION = 'date-v3-20261029'
 TOKEN = os.environ.get('ACCESS_TOKEN', '')
 
 BROKERS = ('華南投顧', '康和投顧', '凱基', '元大', '永豐', '群益', '富邦', '國泰', '統一', '元富', '第一金', '兆豐', '台新', '中信', '摩根士丹利', '高盛', '瑞銀', '花旗', '大和', '野村', '美銀', '麥格理', '國票', '合庫', '玉山', '華南', '康和')
@@ -86,11 +87,20 @@ def report_date(pdf_text, filename, created):
     for line in top.splitlines()[:20]:
         if re.search(r'預估|forecast|estimate|FY\d|營收|EPS', line, re.I):
             continue
-        d = parse_dates(line)
+        d = [v for v in parse_dates(line) if 2020 <= int(v[:4]) <= date.today().year + 1 and not re.fullmatch(r'\s*[1-9]\d{5}\s*', line)]
         if d:
             return d[0], 'pdf'
     # PDF 若沒有可辨識日期，退回檔名；最後才使用 Drive 建立日。
-    d = parse_dates(filename)
+    # 檔名中的 300124 等六位數可能是股票代號，不能視為 2030/01/24。
+    stem = re.sub(r'\.pdf$', '', filename, flags=re.I)
+    d = []
+    for m in re.finditer(r'(?<!\d)(?:20\d{6}|1\d{6}|\d{6})(?!\d)', stem):
+        raw = m.group()
+        if len(raw) == 6 and raw[:2] not in ('25', '26', '27'):
+            continue
+        for candidate in parse_dates(raw):
+            if 2020 <= int(candidate[:4]) <= date.today().year + 1:
+                d.append(candidate)
     if d:
         return d[-1], 'filename'
     return created[:10], 'drive_created'
@@ -106,13 +116,13 @@ def identity(filename):
         tail = stem[code.end():].lstrip(' -_()（）')
         match = re.match(r'([\u4e00-\u9fffA-Za-z][\u4e00-\u9fffA-Za-z\-KY]*)', tail)
         if match and match.group(1) not in ('takeaway',):
-            company = match.group(1)
+            company = match.group(1).rstrip('-_')
         if not company:
             before = stem[:code.start()].rstrip(' -_()（）')
             before = before[len(broker):].strip(' -_()（）') if broker else before
             match = re.search(r'([\u4e00-\u9fff]{2,8})$', before)
             if match:
-                company = match.group(1)
+                company = match.group(1).rstrip('-_')
     return ticker, company, broker
 
 def main():
@@ -130,7 +140,7 @@ def main():
         previous = old.get(fid, {})
         modified = f.get('modifiedTime', '')
         ticker, company, broker = identity(name)
-        if previous.get('modified_time') == modified and previous.get('filename') == name and previous.get('date_source'):
+        if previous.get('modified_time') == modified and previous.get('filename') == name and previous.get('date_source') and previous.get('parser_version') == PARSER_VERSION:
             dt = previous['date']
             source = previous['date_source']
             count_cached += 1
@@ -146,7 +156,7 @@ def main():
             else:
                 count_fallback += 1
         rows.append({'id': fid, 'filename': name, 'title': re.sub(r'\.pdf$', '', name, flags=re.I),
-                     'date': dt, 'date_source': source, 'ticker': ticker, 'company': company,
+                     'date': dt, 'date_source': source, 'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
                      'broker': broker, 'modified_time': modified,
                      'url': f'https://drive.google.com/file/d/{fid}/view',
                      'preview_url': f'https://drive.google.com/file/d/{fid}/preview'})
