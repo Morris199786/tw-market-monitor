@@ -1222,6 +1222,7 @@ def main():
     errors=backfill_history(by,set(targets),targets)
     save_financial_history(by)
     events = {key: x for key, x in events.items() if not invalid_quarterly_news(x)}
+    planned_before_release = list(upcoming.values())
     for key,x in events.items():
         cur=single_metrics(by,x['ticker'],x['period']);prevp=previous(x['period']);prev=single_metrics(by,x['ticker'],prevp)
         verified=x.get('released_metrics',{})
@@ -1263,9 +1264,28 @@ def main():
     for x in upcoming.values():
         pp=previous(x['period']);pm=single_metrics(by,x['ticker'],pp)
         x.update(prev_period=pp,prev_eps=pm['eps'],prev_gross_margin=pm['gross_margin'])
+    # Preserve the expected-company roster even after an actual report removes
+    # the company from `upcoming`.  This is display-only: it never changes
+    # announcement classification, EPS values or Telegram deduplication.
+    expected_roster = {}
+    for row in event_history.get('expected_roster', []) + old.get('expected_roster', []):
+        ticker, period, planned = str(row.get('ticker', '')), str(row.get('period', '')), str(row.get('planned_date', ''))
+        if ticker and period and re.fullmatch(r'\d{4}-\d{2}-\d{2}', planned):
+            expected_roster[(ticker, period, planned)] = dict(row)
+    for row in planned_before_release + list(event_history.get('upcoming', [])):
+        ticker, period, planned = str(row.get('ticker', '')), str(row.get('period', '')), str(row.get('planned_date', ''))
+        if ticker and period and re.fullmatch(r'\d{4}-\d{2}-\d{2}', planned):
+            expected_roster[(ticker, period, planned)] = {
+                'ticker': ticker, 'name': row.get('name') or uni.get(ticker) or ticker,
+                'period': period, 'planned_date': planned,
+            }
+    # Keep a bounded historical window; never fabricate dates for missing rows.
+    cutoff = (now.date() - timedelta(days=120)).isoformat()
+    expected_roster_rows = sorted((x for x in expected_roster.values() if x['planned_date'] >= cutoff),
+                                  key=lambda x: (x['planned_date'], x['ticker'], x['period']))
     ups=sorted(upcoming.values(),key=lambda x:(x['planned_date'],x['ticker']))
     reports=sorted(events.values(),key=lambda x:(x['publish_date'],x.get('publish_time','')),reverse=True)
-    result=dict(universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
+    result=dict(expected_roster=expected_roster_rows,universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
     save_json(DATA/'quarterly_earnings_events.json',result)
     save_json(OUT,result)
     notify_earnings(ups, reports, now_tpe(), bool(SOURCE_ERRORS))
