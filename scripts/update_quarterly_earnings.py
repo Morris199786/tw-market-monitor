@@ -9,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-28-v16-pending-mops-margin-recovery"
+VERSION = "2026-10-28-v18-additive-today-news"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -556,6 +556,79 @@ def announcement_period_metrics(text, period):
         margin=numbers['gross']/numbers['revenue']*100
         if -100<=margin<=100: out['gross_margin']=margin
     return out
+
+
+def explicit_date_range_quarter_eps(text, period):
+    """Additive: parse a clearly identified single-quarter EPS in MOPS 7/1-9/30 tables.
+
+    Reject YTD-first layouts and never derive EPS from net income or shares.
+    """
+    flat = unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    flat = re.sub(r'\s+', ' ', flat).replace('～', '~').replace('－', '-')
+    year, q = int(period[:4]), int(period[-1])
+    first, last = 3*q-2, 3*q
+    yy = rf'(?:{year}|{year-1911})'
+    sep = r'(?:[-~/至]|月\s*至)'
+    date_range = rf'{yy}\s*年(?:度)?\s*0?{first}\s*(?:月)?\s*(?:/\s*0?1)?\s*{sep}\s*0?{last}\s*(?:月)?\s*(?:/\s*(?:28|29|30|31))?'
+    single = re.search(date_range, flat, re.I)
+    if not single:
+        return {}
+    ytd = re.search(rf'{yy}\s*年(?:度)?\s*0?1\s*(?:月)?\s*(?:/\s*0?1)?\s*{sep}\s*0?{last}\s*(?:月)?\s*(?:/\s*(?:28|29|30|31))?', flat, re.I)
+    if ytd and ytd.start() < single.start() and (first != 1):
+        return {}
+    # Only financial rows following the matching quarter header.
+    body = flat[single.end():]
+    label = r'(?:合併)?(?:基本)?每股(?:稅後)?(?:盈餘|純益|損益)(?:\s*\([^)]*\))?'
+    number = r'([（(]?\s*[+-]?\d[\d,]*(?:\.\d+)?\s*[）)]?)'
+    found = []
+    for m in re.finditer(label + r'\s*[:：]?\s*' + number, body, re.I):
+        v = num(m.group(1))
+        if v is not None and -1000 <= v <= 1000:
+            found.append(v)
+    return {'eps': found[0]} if found and len(set(found)) == 1 else {}
+
+
+def today_planned_source_candidates(ticker, name, period, today, fetcher=None):
+    """Opt-in, fail-closed RSS discovery for today's scheduled earnings only.
+
+    RSS snippets are leads, not evidence: two independent named publishers must
+    agree on an explicit single-quarter actual margin. Never use forecast text.
+    """
+    import xml.etree.ElementTree as ET
+    from urllib.parse import quote
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlparse
+    q = int(period[-1]); year = int(period[:4])
+    query = f'{ticker} {name} {year} 第{q}季 單季 毛利率 法說 財報'
+    url = 'https://news.google.com/rss/search?q=' + quote(query) + '&hl=zh-TW&gl=TW&ceid=TW:zh-Hant'
+    try:
+        if fetcher is None:
+            def fetcher(u):
+                with urlopen(Request(u,headers={'User-Agent':'Mozilla/5.0'}),timeout=8) as response:
+                    return response.read(250000)
+        root=ET.fromstring(fetcher(url))
+    except Exception as exc:
+        SOURCE_ERRORS.append('today_news_discovery/'+ticker+':'+type(exc).__name__)
+        return None
+    matched={}
+    for item in root.findall('.//item')[:30]:
+        title=clean(item.findtext('title'))
+        desc=clean(re.sub(r'<[^>]+>', ' ', item.findtext('description') or ''))
+        text=title+' '+desc
+        publisher=clean(item.findtext('source'))
+        if not publisher or not (ticker in text or name in text): continue
+        if not re.search(rf'(?:{year}|{year-1911})\s*年?\s*(?:第?\s*{q}\s*季|Q\s*{q})|(?:第?\s*{q}\s*季|Q\s*{q})',text,re.I): continue
+        if re.search(r'預估|預期|預測|估計|估算|財測|展望|預計|上看|有望|forecast|guidance',text,re.I): continue
+        if re.search(r'累計|前三季|前[一二三四]季|1\s*[-~至]\s*9月',text): continue
+        m=re.search(r'(?:單季|當季|第\s*'+str(q)+r'\s*季|Q\s*'+str(q)+r').{0,60}?毛利率\s*(?:為|達|約|:|：)?\s*(\d{1,2}(?:\.\d+)?)\s*%',text,re.I)
+        if not m: continue
+        value=float(m.group(1))
+        if not 0 <= value <= 100: continue
+        matched.setdefault(value,{})[publisher]={'publisher':publisher,'url':clean(item.findtext('link')),'evidence':text[:250]}
+    for value,sources in matched.items():
+        if len(sources)>=2:
+            return {'gross_margin':value,'gross_margin_source':{'source_label':'當日財報新聞交叉驗證','sources':list(sources.values())[:3]},'gross_margin_validation':'today_planned_two_sources'}
+    return None
 
 
 def direct_quarter_metrics(text, period):
@@ -1356,6 +1429,9 @@ def main():
                 values=direct_quarter_metrics(text,period)
                 values.update(announcement_period_metrics(text,period))
                 values.update(mops_parallel_quarter_metrics(text,period))
+                # Additive fallback: never overwrite any existing official EPS.
+                if values.get('eps') is None:
+                    values.update(explicit_date_range_quarter_eps(text,period))
                 # Additive fallback: never overwrite a previously parsed margin.
                 if values.get('gross_margin') is None:
                     values.update(explicit_quarter_gross_margin(text,period))
@@ -1414,6 +1490,21 @@ def main():
         if recovered:
             event.setdefault('released_metrics', {}).setdefault(period, {}).update(recovered)
             print('MOPS margin recovered:', event.get('ticker'), period, recovered, flush=True)
+    # Additive EPS recovery for cached official announcements with an explicit
+    # single-quarter date range. No changes to the original margin recovery.
+    for key, event in events.items():
+        period = event.get('period')
+        if not period or event.get('source') != 'mops_official':
+            continue
+        if event.get('released_metrics', {}).get(period, {}).get('eps') is not None:
+            continue
+        # Existing official cache can contain the detail; no network request
+        # or synthetic values are used in this conservative fallback.
+        raw_detail = event.get('detail') or event.get('raw_detail') or ''
+        if raw_detail:
+            recovered_eps = explicit_date_range_quarter_eps(raw_detail, period)
+            if recovered_eps:
+                event.setdefault('released_metrics', {}).setdefault(period, {}).update(recovered_eps)
     # Both current and prior quarter need their preceding YTD period
     periods=set()
     for x in list(upcoming.values())+list(events.values()):
@@ -1471,6 +1562,23 @@ def main():
     for x in upcoming.values():
         pp=previous(x['period']);pm=single_metrics(by,x['ticker'],pp)
         x.update(prev_period=pp,prev_eps=pm['eps'],prev_gross_margin=pm['gross_margin'])
+    # Additive source discovery: ONLY today's explicitly scheduled companies,
+    # ONLY missing margins, ONLY after an actual release. Never override MOPS.
+    today_planned_keys={(str(z.get('ticker')),str(z.get('period')))
+        for z in (planned_before_release + event_history.get('upcoming', []) + old.get('upcoming', [])
+                  + event_history.get('expected_roster', []) + old.get('expected_roster', []))
+        if z.get('planned_date') == today}
+    for key,x in events.items():
+        if key not in today_planned_keys or x.get('gross_margin') is not None:
+            continue
+        if x.get('publish_date') != today:
+            continue
+        candidate=today_planned_source_candidates(x['ticker'],x['name'],x['period'],today)
+        if candidate:
+            x['gross_margin']=candidate['gross_margin']
+            x['gross_margin_news_source']=candidate['gross_margin_source']
+            x['gross_margin_validation']=candidate['gross_margin_validation']
+            x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
     # Preserve the expected-company roster even after an actual report removes
     # the company from `upcoming`.  This is display-only: it never changes
     # announcement classification, EPS values or Telegram deduplication.
