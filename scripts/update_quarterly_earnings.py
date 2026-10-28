@@ -29,7 +29,7 @@ def num(v):
     s = unicodedata.normalize("NFKC", clean(v)).replace(",", "").replace("−", "-").replace("－", "-")
     if s in ("", "-", "--", "N/A", "nan", "None"):
         return None
-    if re.fullmatch(r"\(\s*[\d,.]+\s*\)", s): s = "-" + s[1:-1].strip()
+    if re.fullmatch(r"[（(]\s*[\d,.]+\s*[）)]", s): s = "-" + s[1:-1].strip()
     try:
         result=float(s)
         return result if math.isfinite(result) else None
@@ -824,7 +824,7 @@ def event_cumulative(x, period):
     if not re.search(r'累計',text): return None
     def find(labels):
         for label in labels:
-            m=re.search(label+r'\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*([+-]?[\d,]+(?:\.\d+)?)',text)
+            m=re.search(label+r'\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*([+-]?[\d,]+(?:\.\d+)?|[（(]\s*[\d,]+(?:\.\d+)?\s*[）)])',text)
             if m: return num(m.group(1))
         return None
     eps=find([r'(?:截至本期止)?累計基本每股盈餘(?:[（(]損失[）)])?',r'基本每股盈餘(?:[（(]損失[）)])?'])
