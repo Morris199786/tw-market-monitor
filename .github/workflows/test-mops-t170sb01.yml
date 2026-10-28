@@ -1,14 +1,14 @@
-name: Test MOPS t170sb01 (isolated)
+name: Test MOPS t170sb01 v2 (isolated)
 on:
   workflow_dispatch:
     inputs:
       roc_year:
-        description: 'ROC year, e.g. 115 for 2026'
+        description: 'ROC year (115 = 2026)'
         required: true
         default: '115'
         type: string
       season:
-        description: 'Quarter (1-4)'
+        description: 'Quarter'
         required: true
         default: '3'
         type: choice
@@ -18,24 +18,24 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install standalone test dependencies
+      - name: Install dependencies
         run: python -m pip install 'requests>=2.31,<3' 'beautifulsoup4>=4.12,<5'
-      - name: Probe official MOPS endpoints without modifying site data
+      - name: Probe MOPS new API and inspect frontend scripts
         env:
           ROC_YEAR: ${{ inputs.roc_year }}
           SEASON: ${{ inputs.season }}
-        run: python scripts/test_mops_t170sb01.py --year "$ROC_YEAR" --season "$SEASON" --out mops_t170sb01_probe
-      - name: Upload diagnostic JSON and candidate HTML/CSV
+        run: python scripts/test_mops_t170sb01_v2.py --year "$ROC_YEAR" --season "$SEASON" --out mops_t170sb01_probe_v2
+      - name: Upload diagnostics even when probe fails
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mops-t170sb01-probe
-          path: mops_t170sb01_probe/
+          name: mops-t170sb01-probe-v2
+          path: mops_t170sb01_probe_v2/
           if-no-files-found: warn
           retention-days: 7
