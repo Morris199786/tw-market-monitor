@@ -9,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-28-v15-explicit-quarter-margin"
+VERSION = "2026-10-28-v16-pending-mops-margin-recovery"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -400,6 +400,105 @@ def explicit_quarter_gross_margin(text, period):
     if not margins or len(set(margins)) != 1:
         return {}
     return {'gross_margin': margins[0]}
+
+
+def supplementary_quarter_margin(text, period):
+    """Additional conservative fallback for MOPS single-quarter gross margin.
+
+    Only inspect the row-major section after a verified single-quarter header.
+    Do not use cumulative-first tables, standalone percentages, or annual totals.
+    """
+    flat = unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    flat = re.sub(r'\s+', ' ', flat).replace('～', '~').replace('－', '-')
+    year, q = int(period[:4]), int(period[-1])
+    first, last = 3*q-2, 3*q
+    yy = rf'(?:{year}|{year-1911})'
+    sep = r'(?:[-~/至]|月\s*至)'
+    single = rf'{yy}\s*年(?:度)?\s*0?{first}\s*{sep}\s*0?{last}\s*月'
+    cumulative = rf'{yy}\s*年(?:度)?\s*0?1\s*{sep}\s*0?{last}\s*月'
+    sm = re.search(single, flat)
+    if not sm:
+        return {}
+    cm = re.search(cumulative, flat)
+    if cm and cm.start() < sm.start():
+        return {}
+    body = flat[sm.end():]
+    # First, accept only explicitly labelled gross-margin rows.
+    labels = r'(?:合併|綜合)?\s*(?:營業|銷貨)?\s*毛利(?:率|百分比)|毛利百分比'
+    number = r'([+-]?\d{1,3}(?:\.\d{1,5})?)\s*%?'
+    matches = []
+    for m in re.finditer(r'(?:' + labels + r')\s*[:：]?\s*' + number, body, re.I):
+        value = num(m.group(1))
+        if value is not None and -100 <= value <= 100:
+            matches.append(value)
+    if matches and len(set(matches)) == 1:
+        return {'gross_margin': matches[0]}
+    # Otherwise compute from first-column gross profit and sales figures.
+    # The row must contain TWO numeric columns if the header has YTD too.
+    if not cm or cm.start() < sm.start():
+        return {}
+    row_number = r'([（(]?\s*[+-]?\d[\d,]*(?:\.\d+)?\s*[）)]?)'
+    rows = {
+        'revenue': r'(?:合併)?(?:營業|銷貨)收入(?:淨額|合計)?',
+        'gross': r'(?:合併)?(?:營業|銷貨)毛利(?:淨額|合計)?',
+    }
+    found = {}
+    for key, label in rows.items():
+        vals=[]
+        for m in re.finditer(label + r'\s*[:：]?\s*' + row_number + r'\s+' + row_number, body):
+            v=num(m.group(1))
+            if v is not None: vals.append(v)
+        if len(set(vals)) == 1 and vals:
+            found[key]=vals[0]
+    if found.get('revenue', 0)>0 and 'gross' in found:
+        margin=found['gross']/found['revenue']*100
+        if -100 <= margin <= 100:
+            return {'gross_margin': margin}
+    return {}
+
+
+def recover_pending_mops_margin(event):
+    """Refetch a cached official release with missing margin; never use AI.
+
+    A successful workflow may have retained the EPS from a prior run while
+    dropping the raw MOPS detail, so adding a parser alone cannot repair it.
+    """
+    if event.get('source') != 'mops_official' or not event.get('period'):
+        return {}
+    if event.get('released_metrics', {}).get(event['period'], {}).get('gross_margin') is not None:
+        return {}
+    url=event.get('source_url','')
+    if not url.startswith(('https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?',
+                           'https://mops.twse.com.tw/mops/web/ajax_t05sr01_1?')):
+        return {}
+    from urllib.parse import urlsplit, parse_qs
+    parsed=urlsplit(url)
+    args={k:v[-1] for k,v in parse_qs(parsed.query).items()}
+    if args.get('COMPANY_ID') != event.get('ticker'):
+        return {}
+    page=None
+    for method in ('post','get'):
+        try:
+            response=(S.post(parsed.scheme+'://'+parsed.netloc+parsed.path,data=args,timeout=(6,15))
+                      if method=='post' else S.get(url,timeout=(6,15)))
+            response.raise_for_status()
+            response.encoding='utf-8'
+            candidate=clean(re.sub(r'<[^>]+>',' ',re.sub(r'<script\b[^>]*>.*?</script>',
+                                 '',response.text,flags=re.S|re.I)))
+            if event['ticker'] in candidate and ('毛利' in candidate):
+                page=candidate
+                break
+        except Exception:
+            continue
+    if not page:
+        return {}
+    period=event['period']
+    for parser in (announcement_period_metrics, mops_parallel_quarter_metrics,
+                   explicit_quarter_gross_margin, supplementary_quarter_margin):
+        result=parser(page,period)
+        if result.get('gross_margin') is not None:
+            return {'gross_margin':result['gross_margin']}
+    return {}
 
 
 def announcement_period_metrics(text, period):
@@ -1260,6 +1359,8 @@ def main():
                 # Additive fallback: never overwrite a previously parsed margin.
                 if values.get('gross_margin') is None:
                     values.update(explicit_quarter_gross_margin(text,period))
+                if values.get('gross_margin') is None:
+                    values.update(supplementary_quarter_margin(text,period))
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
@@ -1300,6 +1401,19 @@ def main():
     for key,x in news_eps.items():
         if key not in events and report_visible(x,now,calendars):
             events[key] = dict(x, released_metrics={})
+    # Fill missing margin in already-cached MOPS announcements. A new parser
+    # cannot help if the release is not returned by today's announcement scan.
+    for key, event in events.items():
+        period=event.get('period')
+        if not period or event.get('source') != 'mops_official':
+            continue
+        released=event.get('released_metrics', {}).get(period, {})
+        if released.get('gross_margin') is not None:
+            continue
+        recovered=recover_pending_mops_margin(event)
+        if recovered:
+            event.setdefault('released_metrics', {}).setdefault(period, {}).update(recovered)
+            print('MOPS margin recovered:', event.get('ticker'), period, recovered, flush=True)
     # Both current and prior quarter need their preceding YTD period
     periods=set()
     for x in list(upcoming.values())+list(events.values()):
