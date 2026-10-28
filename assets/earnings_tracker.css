@@ -281,3 +281,15 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsPanel .earnings-updated{color:#17855c;font-weight:650}
 #quarterlyEarningsPanel #earningsFinanceCalendar .self-cal-trigger>span:first-child{display:inline!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #quarterlyEarningsPanel #earningsFinanceCalendar .self-cal-trigger{min-width:0!important}
+
+/* 當日公布財報：金色外框，不填色；不影響其他日期及預計名單 */
+#quarterlyEarningsPanel .earnings-report-row.earnings-published-today {
+  border:2px solid #d6a533 !important;
+  border-radius:14px;
+  background:var(--card);
+  box-shadow:0 0 0 1px rgba(214,165,51,.12);
+}
+html[data-theme="dark"] #quarterlyEarningsPanel .earnings-report-row.earnings-published-today {
+  border-color:#e6bd55 !important;
+  box-shadow:0 0 0 1px rgba(230,189,85,.18);
+}
