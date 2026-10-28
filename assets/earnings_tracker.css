@@ -271,3 +271,13 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
 #quarterlyEarningsPanel .earnings-reconcile-row{gap:12px;flex-wrap:wrap}
 #quarterlyEarningsPanel .earnings-reconcile-day summary{cursor:pointer}
 @media(max-width:700px){#quarterlyEarningsPanel .earnings-load-more{font-size:12px}#earningsFinanceCalendar{width:100%;max-width:100%}#earningsFinanceCalendar .self-cal-trigger{width:100%}}
+
+/* 2026-10-28: reconciliation collapsed summary and readable calendar trigger */
+#quarterlyEarningsPanel .earnings-reconcile>summary.earnings-reconcile-summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:36px;color:var(--ink)}
+#quarterlyEarningsPanel .earnings-reconcile>summary.earnings-reconcile-summary::-webkit-details-marker{display:none}
+#quarterlyEarningsPanel .earnings-reconcile>summary.earnings-reconcile-summary b{font-size:15px}
+#quarterlyEarningsPanel .earnings-reconcile>summary.earnings-reconcile-summary span{font-size:12px;color:var(--muted);text-align:right}
+#quarterlyEarningsPanel .earnings-reconcile[open]>summary.earnings-reconcile-summary{margin-bottom:12px}
+#quarterlyEarningsPanel .earnings-updated{color:#17855c;font-weight:650}
+#quarterlyEarningsPanel #earningsFinanceCalendar .self-cal-trigger>span:first-child{display:inline!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#quarterlyEarningsPanel #earningsFinanceCalendar .self-cal-trigger{min-width:0!important}
