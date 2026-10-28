@@ -9,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-28-v13-parallel-quarter-mops"
+VERSION = "2026-10-28-v13-preliminary-table"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -29,7 +29,7 @@ def num(v):
     s = unicodedata.normalize("NFKC", clean(v)).replace(",", "").replace("−", "-").replace("－", "-")
     if s in ("", "-", "--", "N/A", "nan", "None"):
         return None
-    if re.fullmatch(r"[（(]\s*[\d,.]+\s*[）)]", s): s = "-" + s[1:-1].strip()
+    if re.fullmatch(r"\(\s*[\d,.]+\s*\)", s): s = "-" + s[1:-1].strip()
     try:
         result=float(s)
         return result if math.isfinite(result) else None
@@ -313,51 +313,6 @@ def valid_cached_earnings_report(x):
     return not is_investor_invitation(subject)
 
 
-def mops_parallel_quarter_metrics(text, period):
-    """Extract explicit single-quarter figures from MOPS side-by-side Q/YTD tables.
-
-    Require a same-year single-quarter AND cumulative column header in that
-    order; never treat the YTD column as single-quarter figures.
-    """
-    flat = unicodedata.normalize('NFKC', html.unescape(str(text or '')))
-    flat = re.sub(r'\s+', ' ', flat)
-    year, q = int(period[:4]), int(period[-1])
-    roc = year - 1911
-    q_zh = '一二三四'[q-1]
-    year_pat = rf'(?:{year}|{roc})'
-    single = rf'{year_pat}\s*年(?:度)?\s*第?\s*(?:{q}|{q_zh})\s*季'
-    cumulative = rf'{year_pat}\s*年(?:度)?\s*(?:前\s*(?:{q}|{q_zh})\s*季|1\s*[-~至/]\s*{3*q}\s*月)'
-    header = re.search(single + r'\s+' + cumulative, flat)
-    if not header:
-        return {}
-    # Only the table following the matched headers is eligible.
-    body = flat[header.end():]
-    # The announcement commonly includes dashed separator rows and units.
-    number = r'([（(]?\s*[+-]?\d[\d,]*(?:\.\d+)?\s*[）)]?)'
-    patterns = {
-        'eps': r'(?:稅後\s*EPS|(?:稅後\s*)?(?:基本)?每股(?:稅後)?(?:盈餘|純益|損益)(?:\s*\([^)]*\))?)',
-        'revenue': r'(?:合併)?營業收入(?:淨額|合計)?',
-        'gross': r'(?:合併)?營業毛利(?:\s*\([^)]*\))?',
-    }
-    result = {}
-    for key, label in patterns.items():
-        # Keep the two financial columns on the same line/short row. A table
-        # with additional prose or missing values must not be guessed.
-        m = re.search(label + r'\s*[:：]?\s*' + number + r'\s*(?:元)?\s+' + number, body)
-        if m:
-            value = num(m.group(1))
-            if value is not None:
-                result[key] = value
-    out = {}
-    if 'eps' in result:
-        out['eps'] = result['eps']
-    if result.get('revenue', 0) > 0 and 'gross' in result:
-        margin = result['gross'] / result['revenue'] * 100
-        if -100 <= margin <= 100:
-            out['gross_margin'] = margin
-    return out
-
-
 def announcement_period_metrics(text, period):
     """Read period-labelled MOPS financial rows, without relying on fixed wording.
 
@@ -370,7 +325,7 @@ def announcement_period_metrics(text, period):
     first,last=3*quarter-2,3*quarter
     yy=rf'(?:{year}|{year-1911})'
     single_headers=[
-        rf'{yy}\s*年?\s*{first}\s*[-~至/]\s*{last}\s*月',
+        rf'{yy}\s*年?\s*0?{first}\s*(?:[-~至/]|月\s*至)\s*0?{last}\s*月',
         rf'{yy}\s*年(?:度)?\s*第?{quarter}\s*季\s*(?:單季|當季)',
     ]
     # A quarter mentioned only in the title is NOT evidence that the figures
@@ -378,7 +333,7 @@ def announcement_period_metrics(text, period):
     if not any(re.search(p,flat,re.I) for p in single_headers): return {}
     # Detect the order of period columns. A current quarter must precede the
     # next cumulative column, or appear alone. Reject ambiguous headers.
-    cum_pat=rf'{yy}\s*年?\s*1\s*[-~至/]\s*{last}\s*月'
+    cum_pat=rf'{yy}\s*年?\s*0?1\s*(?:[-~至/]|月\s*至)\s*0?{last}\s*月'
     sh=[m for pat in single_headers for m in re.finditer(pat,flat,re.I)]
     cm=list(re.finditer(cum_pat,flat,re.I))
     if not sh or (cm and min(m.start() for m in cm)<min(m.start() for m in sh)):
@@ -387,9 +342,9 @@ def announcement_period_metrics(text, period):
     # Match each financial label and stop at the next label to prevent pulling
     # a number from an unrelated row.
     labels={
-        'eps':r'基本每股(?:盈餘|純益)(?:\s*\([^)]*\))*',
+        'eps':r'(?:合併)?基本每股(?:盈餘|純益)(?:\s*\([^)]*\))*',
         'revenue':r'(?:合併)?營業收入(?:淨額|合計)?',
-        'gross':r'(?:合併)?營業毛利(?:\s*\([^)]*\))?',
+        'gross':r'(?:合併)?營業毛利(?:淨額|合計)?(?:\s*\([^)]*\))?',
     }
     any_label=re.compile('|'.join(r'(?:'+x+r')' for x in labels.values()),re.I)
     numbers={}
@@ -869,7 +824,7 @@ def event_cumulative(x, period):
     if not re.search(r'累計',text): return None
     def find(labels):
         for label in labels:
-            m=re.search(label+r'\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*([+-]?[\d,]+(?:\.\d+)?|[（(]\s*[\d,]+(?:\.\d+)?\s*[）)])',text)
+            m=re.search(label+r'\s*(?:[（(][^）)]*[）)])?\s*[:：]\s*([+-]?[\d,]+(?:\.\d+)?)',text)
             if m: return num(m.group(1))
         return None
     eps=find([r'(?:截至本期止)?累計基本每股盈餘(?:[（(]損失[）)])?',r'基本每股盈餘(?:[（(]損失[）)])?'])
@@ -1212,7 +1167,6 @@ def main():
             if report_visible(event,now,calendars):
                 values=direct_quarter_metrics(text,period)
                 values.update(announcement_period_metrics(text,period))
-                values.update(mops_parallel_quarter_metrics(text,period))
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
