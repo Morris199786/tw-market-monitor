@@ -195,3 +195,56 @@ details[open] .earnings-chevron{transform:rotate(90deg)}
  #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search .earnings-date-picker {flex:0 1 42%;min-width:0}
  #quarterlyEarningsPanel #earningsCompanySearchWrap.earnings-upcoming-search #earningsCompanySearch {font-size:16px!important}
 }
+
+/* iOS Safari focus zoom fix: actual computed input font must stay >=16px. */
+@media (hover:none) and (pointer:coarse) {
+  #selfReports #selfReportSearchInput,
+  #selfReports #earningsCompanySearch,
+  #selfReports input[type="search"],
+  #selfReports input[type="text"] {
+    font-size:16px !important;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    transform:none;
+  }
+  #selfReports .earnings-search-field,
+  #selfReports .self-report-search-wrap {min-width:0;}
+}
+
+/* V8: 財報／即將開財報統一搜尋＋月曆單列卡片，快速日期按鈕獨立下一列。 */
+#quarterlyEarningsPanel #earningsCompanySearchWrap.tw-filter-card {
+  display:flex!important; flex-direction:row!important; flex-wrap:nowrap!important;
+  align-items:center!important; gap:10px!important; width:100%;
+  box-sizing:border-box; padding:12px!important; margin:0 0 12px!important;
+  background:var(--card)!important; border:1px solid var(--line)!important;
+  border-radius:17px!important;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap.tw-filter-card[hidden]{display:none!important}
+#quarterlyEarningsPanel #earningsCompanySearchWrap .earnings-search-field {
+  flex:1 1 56%!important; min-width:0!important; width:auto!important;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap #earningsCompanySearch {
+  display:block; width:100%!important; min-width:0!important;
+  box-sizing:border-box; font-size:16px!important; min-height:46px;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap .earnings-date-picker {
+  display:block!important; flex:0 1 42%!important; min-width:0!important;
+  width:auto!important; margin:0!important; padding:0!important;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap .earnings-date-picker > span {display:none!important}
+#quarterlyEarningsPanel #earningsCompanySearchWrap #earningsFinanceCalendar {
+  display:block; width:100%!important; min-width:0!important;
+}
+#quarterlyEarningsPanel #earningsCompanySearchWrap .self-cal-trigger {
+  width:100%!important; min-width:0!important; box-sizing:border-box;
+  padding:9px 8px!important; font-size:14px!important; white-space:nowrap;
+}
+#quarterlyEarningsPanel #earningsFilters {display:block!important; margin:0 0 14px!important}
+#quarterlyEarningsPanel #earningsFilters .earnings-quick {width:100%; margin:0!important}
+#quarterlyEarningsPanel #earningsFilters .earnings-quick[hidden]{display:none!important}
+#quarterlyEarningsPanel .earnings-date-picker input[type=date] {display:none!important}
+@media(max-width:600px){
+ #quarterlyEarningsPanel #earningsCompanySearchWrap.tw-filter-card {gap:8px!important;padding:11px!important}
+ #quarterlyEarningsPanel #earningsCompanySearchWrap .earnings-search-field {flex:1 1 55%!important}
+ #quarterlyEarningsPanel #earningsCompanySearchWrap .earnings-date-picker {flex:0 1 43%!important}
+}
