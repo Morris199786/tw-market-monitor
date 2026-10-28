@@ -1,5 +1,6 @@
 from sources import *
 from eps_news_backup import current_items, sanitize_news_margin, verified_margin, invalid_quarterly_news
+from mops_board_schedule import fetch_board_schedule
 import os, re, html, math, unicodedata, time
 from html.parser import HTMLParser
 from urllib.parse import urlencode
@@ -8,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-22-v11-exclude-conference-invitations"
+VERSION = "2026-10-28-v12-mops-board-primary"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -1180,6 +1181,20 @@ def main():
                 if row:
                     prev=by.get((x['ticker'],period),{})
                     by[(x['ticker'],period)]={**prev,**{k:v for k,v in row.items() if v is not None}}
+    # Official MOPS t170sb01 is authoritative for expected board dates.
+    # Existing announcements and IR dates above remain fallbacks when a
+    # company is missing from the official schedule or an API call fails.
+    board_rows, board_errors, board_successes = fetch_board_schedule(now.date())
+    for error in board_errors:
+        SOURCE_ERRORS.append('mops_board_schedule:' + error)
+    for row in board_rows:
+        if row['ticker'] not in uni or row['planned_date'] < today:
+            continue
+        row = dict(row)
+        row['name'] = uni[row['ticker']]
+        upcoming[(row['ticker'], row['period'])] = row
+    print('MOPS board schedule:', len(board_rows), 'records;',
+          ', '.join(board_successes), 'errors:', len(board_errors), flush=True)
     for x in ir_upcoming:
         upcoming.setdefault((x['ticker'],x['period']),x)
     for x in ir_reports:
