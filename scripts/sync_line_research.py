@@ -445,6 +445,10 @@ def main():
     # Full text publication is explicitly authorized by the owner of this website.
     # Keep original broker reports unchanged; broker cards link back to the legacy renderer.
     cache=load_json(ROOT / 'data/research_ai_cache.json')
+    from meeting_identity import reuse_and_select
+    data['items'] = reuse_and_select(ROOT, cache, data['items'])
+    if os.getenv('LINE_SYNC_DRY_RUN') != '1':
+        write_json_atomic(ROOT / 'data/research_ai_cache.json', cache)
     from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes, same_dedicated, multi_broker_source, broker_name
     matcher=Matcher(brokers,load_json(ROOT/'data/report_inbox.json').get('items',[]))
     kept=[]; suppressed=[]; seen_content={}; seen_documents={}
@@ -616,4 +620,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 

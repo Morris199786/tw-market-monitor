@@ -421,6 +421,10 @@ def main():
     manifest = load(ROOT / 'data/research_manifest.json', {})
     if not manifest.get('shards'):
         sys.exit('research_manifest.json missing or empty; sync first')
+    from meeting_identity import event_index, event_key
+    all_rows = [r for shard in manifest['shards'] for r in load(ROOT / 'data/research_shards' / shard['file'], {}).get('items', [])]
+    events = event_index(ROOT, cache, all_rows)
+    event_seen = set()
     entries, seen = [], set()
     stats = {'shard_rows':0,'line_rows':0,'required':0,'duplicate_text':0,
              'cached':0,'eligible':0,'by_category':{},'by_route':{},
@@ -454,6 +458,19 @@ def main():
                 stats['duplicate_text'] += 1
                 continue
             seen.add(fp)
+            ek = event_key(row)
+            if ek:
+                prior = events.get(ek)
+                if prior and (args.mode != 'failed' or prior[1].get('status') == 'success'):
+                    stats['cached'] += 1
+                    continue
+                if prior and prior[0].split('::')[0] != row['id']:
+                    # Retry only the original failed article, never a replacement broker.
+                    stats['cached'] += 1
+                    continue
+                if ek in event_seen:
+                    continue
+                event_seen.add(ek)
             old = cache.get(row['id'])
             if args.mode == 'retry_mediatek' and row['id'] != MEDIATEK_ID:
                 continue
@@ -516,6 +533,7 @@ def main():
                rid + TRIAL_SUFFIX if trial else rid)
         # A trial has a separate immutable claim, leaving the old result untouched.
         cache[key] = {'status':'attempted','fingerprint':fp,
+                      'meeting_event_key':event_key(row),
                       'category':row.get('category'),'model':args.model,'at':run['at'],
                       'original_id':rid if trial else None,
                       'attempt_count':2 if args.mode == 'failed' else 1}
@@ -555,3 +573,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

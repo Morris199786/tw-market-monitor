@@ -37,8 +37,16 @@ def category(row):
 def published(root):
     cache = read(root, 'data/research_ai_cache.json')
     rendered = read(root, 'data/research_ai_render.json').get('items', {})
+    from meeting_identity import event_index, event_key
+    rows = read(root, 'data/research_meta.json')
+    events = event_index(root, cache, rows)
+    ledger = read(root, LEDGER) if (root / LEDGER).exists() else {'deliveries': {}}
+    known = {cache[rid].get('meeting_event_key') for rid in ledger['deliveries'] if rid in cache and isinstance(cache[rid], dict)}
     result = {}
-    for row in read(root, 'data/research_meta.json'):
+    for row in rows:
+        key = event_key(row)
+        if key and key in known:
+            continue
         rid = str(row.get('id', ''))
         if not rid.startswith('line-') or not category(row):
             continue
@@ -46,6 +54,8 @@ def published(root):
         content = rendered.get(rid, {}).get('content', {})
         if entry.get('status') == 'success' and content.get('blocks'):
             result[rid] = dict(row, telegram_summary=content.get("summary", []))
+            if key:
+                known.add(key)
     return result
 
 
@@ -215,4 +225,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
