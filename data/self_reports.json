@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T14:06+08:00",
+  "updated_at": "2026-10-28T14:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1469,28 +1469,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 2,
+      "rows": 4,
       "self_reports": 2,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 29,
-          "hits": 2
+          "rows": 39,
+          "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 29,
+          "rows": 39,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 29,
+          "rows": 40,
           "hits": 1
         },
         {
@@ -1776,7 +1776,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3008",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1784,7 +1784,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3010",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2076,7 +2076,18 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "6462 神盾 115/10/28 14:13:15 公告本公司115年9月份自結個體財務報告之流動比率、 速動比率及銀行可使用融資額度情形"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "8291 尚茂 115/10/28 14:13:36 公告115年09月自結個別財務報告之流動比率、速動比率及 負債比率"
+        }
+      ],
       "error": ""
     },
     "twse": {
