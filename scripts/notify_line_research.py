@@ -45,7 +45,7 @@ def published(root):
         entry = cache.get(rid, {})
         content = rendered.get(rid, {}).get('content', {})
         if entry.get('status') == 'success' and content.get('blocks'):
-            result[rid] = row
+            result[rid] = dict(row, telegram_summary=content.get("summary", []))
     return result
 
 
@@ -120,24 +120,70 @@ def send_telegram(text, url):
     return result['result']['message_id']
 
 
+def compact(value, limit):
+    text = re.sub(r'\s+', ' ', str(value or '')).strip()
+    return text if len(text) <= limit else text[:limit - 1] + '…'
+
+
+def digest_entry(rid, row, number):
+    summary = row.get('telegram_summary', [])
+    if isinstance(summary, list):
+        summary = next((x for x in summary if isinstance(x, str) and x.strip()), '')
+    if not isinstance(summary, str):
+        summary = ''
+    name = compact(row.get('company') or row.get('title') or '公司未標示', 100)
+    date = compact(row.get('date'), 20)
+    text = f"{number}. {name}｜{date}"
+    if summary:
+        text += '\n重點：' + compact(summary, 200)
+    return text + '\n閱讀完整報告：' + link(rid)
+
+
+def batches(rows, state):
+    pending = [(rid, row) for rid, row in rows.items() if rid not in state['deliveries']]
+    meetings = [(rid, row) for rid, row in pending if category(row) == '法說／訪談']
+    chunks, current = [], []
+    for rid, row in meetings:
+        entry = digest_entry(rid, row, len(current) + 1)
+        # Conservative UTF-16 budget leaves room for the heading and emoji.
+        if current and len(('\n\n'.join(x[1] for x in current) + '\n\n' + entry).encode('utf-16-le')) // 2 > 3600:
+            chunks.append(current)
+            current = []
+            entry = digest_entry(rid, row, 1)
+        current.append((rid, entry))
+    if current:
+        chunks.append(current)
+    for i, chunk in enumerate(chunks, 1):
+        heading = f'📊 法說／訪談彙整｜新增 {len(meetings)} 篇'
+        if len(chunks) > 1:
+            heading += f'（{i}/{len(chunks)}）'
+        yield [x[0] for x in chunk], heading + '\n\n' + '\n\n'.join(x[1] for x in chunk), SITE + '#reports'
+    # Preserve existing morning-report delivery behavior.
+    for rid, row in pending:
+        if category(row) != '法說／訪談':
+            yield [rid], message(row), link(rid)
+
+
 def deliver(rows, state, save, send):
-    for rid, row in rows.items():
-        if rid in state['deliveries']:
-            continue
-        record = {'status': 'claimed', 'at': now(), 'text': message(row), 'url': link(rid)}
-        state['deliveries'][rid] = record
-        save(state)  # Must be durable on main BEFORE network delivery.
+    for ids, text, url in batches(rows, state):
+        for rid in ids:
+            state['deliveries'][rid] = {
+                'status': 'claimed', 'at': now(), 'text': text,
+                'url': link(rid), 'batch_ids': ids,
+            }
+        save(state)  # Claim every member durably BEFORE sending this digest.
         try:
-            mid = send(record['text'], record['url'])
+            mid = send(text, url)
         except Exception as exc:
-            # Do not print exception strings: HTTP errors can contain the bot token.
-            record.update(status='uncertain', error_type=type(exc).__name__)
+            for rid in ids:
+                state['deliveries'][rid].update(status='uncertain', error_type=type(exc).__name__)
             save(state)
             raise RuntimeError('Telegram delivery unconfirmed; claim retained, no automatic resend') from None
-        record.update(status='sent', message_id=mid, sent_at=now())
+        for rid in ids:
+            state['deliveries'][rid].update(status='sent', message_id=mid, sent_at=now())
         save(state)
-        print('TELEGRAM_SENT', rid)
-        time.sleep(1.1)  # Single-chat pacing, without automatic HTTP retries.
+        print('TELEGRAM_SENT', ','.join(ids))
+        time.sleep(1.1)
 
 
 def main():
@@ -148,9 +194,8 @@ def main():
     path = ROOT / LEDGER
     if args.mode == 'preview':
         state = read(ROOT, LEDGER) if path.exists() else {'deliveries': {}}
-        for rid, row in rows.items():
-            if rid not in state['deliveries']:
-                print(message(row), link(rid))
+        for ids, text, url in batches(rows, state):
+            print(text, url)
         return
     if not path.exists():
         if args.mode != 'init':
@@ -170,3 +215,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
