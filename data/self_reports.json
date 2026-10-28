@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-28T17:11+08:00",
+  "updated_at": "2026-10-28T17:36+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -28,7 +28,7 @@
         "publish_time": "16:15:37",
         "subject": "5301 寶得利 115/10/28 16:15:37 公告本公司月底自結合併財務報告之財務比率",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectionError",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -1554,21 +1554,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 136,
+          "rows": 171,
           "hits": 14
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 136,
+          "rows": 171,
           "hits": 2
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 136,
+          "rows": 172,
           "hits": 2
         },
         {
@@ -1735,7 +1735,7 @@
           "mode": "company_rescue",
           "ticker": "2408",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1815,7 +1815,7 @@
           "mode": "company_rescue",
           "ticker": "2891",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1983,7 +1983,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -2030,7 +2030,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6908",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2094,7 +2094,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8249",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
