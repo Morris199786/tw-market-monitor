@@ -1,98 +1,124 @@
 #!/usr/bin/env python3
-"""Isolated MOPS t170sb01 endpoint probe. No production files, APIs or Telegram."""
+"""Read-only MOPS t170sb01 discovery probe. Never touches production data.
+
+Pass criteria: actual company code + board-meeting date in a matching response.
+HTTP 200 or MOPS business code 200 alone is NOT a pass.
+"""
 import argparse
 import csv
-import io
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
-
+from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
-BASES = ('https://mops.twse.com.tw', 'https://mopsov.twse.com.tw')
-PATHS = ('/mops/web/ajax_t170sb01', '/mops/web/t170sb01', '/mops/api/t170sb01')
-DATE = re.compile(r'(?:20\d{2}|1\d{2})[年/.-]\s*\d{1,2}[月/.-]\s*\d{1,2}')
-KEYWORDS = ('董事會', '財務報告', '預計召開', '公司代號', '召開日期', '財報')
+ROOT = 'https://mops.twse.com.tw'
+PAGE = ROOT + '/mops/'
+API = ROOT + '/mops/api/t170sb01'
+TICKER = re.compile(r'(?<!\d)\d{4}(?!\d)')
+DATE = re.compile(r'(?:20\d{2}|1\d{2})\s*[年/.-]\s*(?:0?[1-9]|1[0-2])\s*[月/.-]\s*(?:[0-2]?\d|3[01])')
+FIELDS = ('董事會', '召開日期', '財報', '財務報告', '公司代號')
 
 
-def parse_response(content, content_type):
-    soup = BeautifulSoup(content, 'html.parser')
-    tables = []
-    for table in soup.find_all('table'):
-        rows = []
-        for tr in table.find_all('tr'):
-            cells = [c.get_text(' ', strip=True) for c in tr.find_all(['th', 'td'])]
-            if cells:
-                rows.append(cells)
-        if rows:
-            tables.append(rows)
-    text = soup.get_text(' ', strip=True)
-    valid = any(k in text for k in KEYWORDS) and bool(tables)
-    # Never treat HTTP 200 SPA shell, captcha, or error page as valid data.
-    return {'table_count': len(tables), 'table_row_counts': [len(t) for t in tables],
-            'date_matches': DATE.findall(text)[:15], 'has_relevant_table': valid,
-            'text_preview': text[:650], 'tables': tables}
+def summarize(response):
+    s = response.text
+    obj = None
+    try: obj = response.json()
+    except ValueError: pass
+    text = BeautifulSoup(s, 'html.parser').get_text(' ', strip=True)
+    if obj is not None:
+        text = json.dumps(obj, ensure_ascii=False)
+    codes = sorted(set(TICKER.findall(text)))[:25]
+    dates = DATE.findall(text)[:25]
+    # Data must be tied to the target page, not a generic SPA shell.
+    meaningful = bool(codes and dates and any(k in text for k in FIELDS))
+    return {'http': response.status_code, 'url': response.url,
+            'content_type': response.headers.get('Content-Type', ''),
+            'bytes': len(response.content), 'json_code': obj.get('code') if isinstance(obj, dict) else None,
+            'company_codes_sample': codes, 'dates_sample': dates,
+            'relevant_terms': [k for k in FIELDS if k in text],
+            'candidate': meaningful, 'preview': text[:700]}
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument('--out', default='mops_t170sb01_probe')
-    ap.add_argument('--year', default='115', help='ROC year')
-    ap.add_argument('--season', default='3')
-    ap.add_argument('--timeout', type=int, default=18)
-    args = ap.parse_args()
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
-    sess = requests.Session()
-    sess.headers.update({'User-Agent': 'Mozilla/5.0 (compatible; MOPS-calendar-diagnostic/1.0)',
-                         'Referer': 'https://mops.twse.com.tw/mops/#/web/t170sb01',
-                         'Accept': 'text/html,application/json,*/*'})
-    attempts = []
-    payloads = [
-        {'encodeURIComponent': '1', 'step': '1', 'firstin': '1', 'TYPEK': 'sii', 'year': args.year, 'season': args.season},
-        {'TYPEK': 'sii', 'year': args.year, 'season': args.season},
-        {'year': args.year, 'season': args.season},
+    p = argparse.ArgumentParser()
+    p.add_argument('--year', default='115')
+    p.add_argument('--season', default='3')
+    p.add_argument('--out', default='mops_t170sb01_probe_v2')
+    p.add_argument('--timeout', type=int, default=14)
+    args = p.parse_args()
+    out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
+    session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*', 'Referer': PAGE + '#/web/t170sb01',
+        'Origin': ROOT})
+    records = []
+    def attempt(label, method, url, **kwargs):
+        row = {'label': label, 'method': method, 'requested_url': url, 'params': kwargs.get('params'), 'body': kwargs.get('json') or kwargs.get('data')}
+        try:
+            r = session.request(method, url, timeout=args.timeout, **kwargs)
+            row.update(summarize(r))
+            if row['candidate']:
+                (out / f'candidate_{len(records):02d}.txt').write_text(r.text[:500000], encoding='utf-8')
+            print(label, row.get('http'), 'candidate=', row.get('candidate'), 'code=', row.get('json_code'), 'bytes=', row.get('bytes'), flush=True)
+            return r
+        except requests.RequestException as e:
+            row['error'] = str(e)[:400]
+            print(label, 'ERROR', row['error'], flush=True)
+            return None
+        finally:
+            records.append(row)
+    # Session initialization and dynamic bundle discovery. Never execute JavaScript.
+    home = attempt('homepage', 'GET', PAGE)
+    if home is not None:
+        soup = BeautifulSoup(home.text, 'html.parser')
+        scripts = [urljoin(PAGE, t['src']) for t in soup.select('script[src]') if t.get('src')]
+        scripts = [s for s in scripts if s.startswith(ROOT)][:12]
+        assets = []
+        for i, url in enumerate(scripts):
+            try:
+                r = session.get(url, timeout=args.timeout)
+                matches = []
+                for m in list(re.finditer(r't170sb01', r.text, re.I))[:8]:
+                    matches.append(r.text[max(0, m.start()-350):m.end()+350])
+                assets.append({'url': url, 'http': r.status_code, 'bytes': len(r.content), 'matches': matches})
+                if matches:
+                    print('JS REFERENCE:', url, flush=True)
+            except requests.RequestException as e:
+                assets.append({'url': url, 'error': str(e)[:250]})
+        (out/'js_discovery.json').write_text(json.dumps(assets, ensure_ascii=False, indent=2), encoding='utf-8')
+    attempt('page_route', 'GET', ROOT+'/mops/web/t170sb01')
+    # Probe several common MOPS parameter conventions; no assumption any is authoritative.
+    y, q = args.year, args.season
+    bodies = [
+        {'year': y, 'season': q, 'TYPEK': 'sii'},
+        {'year': y, 'season': q},
+        {'year': y, 'season': q, 'type': 'sii'},
+        {'year': y, 'quarter': q, 'TYPEK': 'sii'},
+        {'year': y, 'season': q, 'typeK': 'sii'},
+        {'year': y, 'season': q, 'step': '1', 'firstin': '1', 'TYPEK': 'sii'},
+        {'year': str(int(y)+1911), 'season': q, 'TYPEK': 'sii'},
     ]
-    for base in BASES:
-        for path in PATHS:
-            for method in ('GET', 'POST'):
-                for idx, payload in enumerate(payloads if method == 'POST' else ({},)):
-                    url = base + path
-                    item = {'url': url, 'method': method, 'payload': payload, 'attempt': idx}
-                    try:
-                        r = sess.request(method, url, data=payload if method == 'POST' else None,
-                                         timeout=args.timeout, allow_redirects=True)
-                        item.update(status=r.status_code, final_url=r.url,
-                                    content_type=r.headers.get('Content-Type', ''),
-                                    bytes=len(r.content))
-                        parsed = parse_response(r.text, item['content_type'])
-                        item.update({k: v for k, v in parsed.items() if k != 'tables'})
-                        if parsed['has_relevant_table']:
-                            stem = f'candidate_{len(attempts):02d}'
-                            (out / (stem + '.html')).write_text(r.text, encoding='utf-8')
-                            with (out / (stem + '.csv')).open('w', newline='', encoding='utf-8-sig') as f:
-                                w = csv.writer(f)
-                                for i, table in enumerate(parsed['tables']):
-                                    w.writerow([f'TABLE {i + 1}'])
-                                    w.writerows(table)
-                        print(f"{r.status_code} {method} {url} rows={item['table_row_counts']} relevant={item['has_relevant_table']}")
-                    except requests.RequestException as e:
-                        item['error'] = str(e)[:350]
-                        print(f'ERROR {method} {url}: {item["error"]}')
-                    attempts.append(item)
-    result = {'checked_at_utc': datetime.now(timezone.utc).isoformat(),
-              'target': 'MOPS t170sb01', 'year_roc': args.year, 'season': args.season,
-              'verified': any(x.get('has_relevant_table') for x in attempts),
-              'note': 'A matching HTML table is a candidate, not proof of correct period or complete coverage. Check CSV and compare MOPS manually.',
-              'attempts': attempts}
-    (out / 'result.json').write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
-    print('RESULT:', 'CANDIDATE FOUND - inspect CSV' if result['verified'] else 'NO VERIFIED TABLE; inspect result.json')
-    print('Saved:', out / 'result.json')
-    # Diagnostic only; never fail workflow solely because site blocks automated access.
-
+    for i, body in enumerate(bodies):
+        attempt(f'api_post_json_{i}', 'POST', API, json=body)
+        attempt(f'api_post_form_{i}', 'POST', API, data=body)
+    for i, body in enumerate(bodies[:4]):
+        attempt(f'api_get_{i}', 'GET', API, params=body)
+    candidates = [x for x in records if x.get('candidate')]
+    result = {'checked_at_utc': datetime.now(timezone.utc).isoformat(), 'year_roc': y, 'season': q,
+              'candidate_count': len(candidates), 'status': 'CANDIDATE_NEEDS_MANUAL_VALIDATION' if candidates else 'NO_DATA',
+              'warning': 'Candidate means ticker/date/keywords present, not yet proof of exact quarter or completeness.',
+              'attempts': records}
+    (out/'result.json').write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
+    with (out/'attempts.csv').open('w', newline='', encoding='utf-8-sig') as f:
+        w=csv.writer(f); w.writerow(['label','http','json_code','bytes','candidate','preview'])
+        for x in records: w.writerow([x.get('label'),x.get('http'),x.get('json_code'),x.get('bytes'),x.get('candidate'),x.get('preview','')[:180]])
+    print('RESULT:', result['status'], 'records:', len(records), flush=True)
+    # Strict: no false-green workflows when API returns 406 or SPA placeholder.
+    return 0 if candidates else 2
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
