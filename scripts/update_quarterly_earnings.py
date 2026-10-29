@@ -11,7 +11,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-29-v20-scheduled-news-official-formats"
+VERSION = "2026-10-29-v21-formal-report-title"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -288,7 +288,16 @@ def is_report_subject(s):
         and re.search(r"(?:合併)?(?:損益|財務業績|財務結果|營運結果|營運成果|財報|財務報告|財務報表)", s)
         and re.search(r"公告|公布|發布|揭露|自結|結算|通過|決議|說明會摘要|法說會摘要", s)
     )
-    return formal or quarterly
+    # Some official MOPS titles are noun-only, e.g. 6861's
+    # "睿生光電115年第三季合併財務報告". Preserve the guards above
+    # and accept only a dated, complete financial-report title, not an
+    # invitation, filing deadline, correction, or a report-related notice.
+    noun_only = bool(
+        period_from_text(s)
+        and re.search(r"(?:合併|個體|個別)?財務(?:報告|報表)[。.]?$", s)
+        and not re.search(r"預定|預訂|擬|將提|將公布|將發布|通知|議程|審議|提案|草案|申報期限|延後|延期|延遲|未公布|未發布|未公告|未完成|補充|說明|查核|核閱|會計師", s)
+    )
+    return formal or quarterly or noun_only
 
 
 def is_result_candidate(subject):
@@ -1705,6 +1714,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
