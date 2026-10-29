@@ -11,7 +11,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-22-v34-abnormal-price-self-report"
+VERSION = "2026-10-29-v35-additive-cumulative-self-report"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -280,6 +280,73 @@ def _find_quarter_period(text):
             return f"{_ad_year(m.group(1))}-Q{_quarter_num(m.group(2))}"
 
     return None
+
+
+# Additive parser for voluntary YTD self-reports; legacy parsing is unchanged.
+def _cumulative_self_report_period(text):
+    m = re.search(
+        r"(?<!\d)(\d{2,4})\s*年\s*前\s*([1-4一二三四])\s*季\s*(?:累計|自結|合併|損益|財務|資訊|[\s、，])*",
+        text,
+    )
+    if not m or not re.search(r"自結|自行結算", text):
+        return None
+    return f"{_ad_year(m.group(1))}-Q{_quarter_num(m.group(2))}"
+
+
+def _cumulative_self_report_eps(text):
+    # Accept only a clearly labelled cumulative EPS, not an arbitrary EPS
+    # from a comparison or subsidiary paragraph.
+    patterns = (
+        r"(?:累計\s*)?(?:基本)?每股(?:稅後)?(?:盈餘|純益|損益)\s*[：:]?\s*(?:新臺幣|新台幣)?\s*([+-]?[\d,]+(?:\.\d+)?)\s*元?",
+        r"(?:累計\s*)?EPS\s*[：:]?\s*([+-]?[\d,]+(?:\.\d+)?)\s*元?",
+    )
+    for pattern in patterns:
+        matches = re.findall(pattern, text, re.I)
+        if matches:
+            return _number(matches[0])
+    return None
+
+
+def enrich_cumulative_self_reports(items):
+    """Add Q1-Q4 voluntary YTD announcements without touching legacy EPS.
+
+    A Q2/Q3/Q4 value is emitted only with an official previous cumulative
+    quarter available. Never relabel a cumulative EPS as a single quarter.
+    """
+    candidates = []
+    for item in items:
+        if item.get('match_reason') != 'direct_self_report' or item.get('source') == 'news_backup':
+            continue
+        if item.get('monthly_eps') is not None or item.get('quarter_eps') is not None:
+            continue
+        text = '\n'.join((str(item.get('subject') or ''), str(item.get('detail') or '')))
+        period = _cumulative_self_report_period(text)
+        eps = _cumulative_self_report_eps(text) if period else None
+        if period and eps is not None:
+            candidates.append((item, period, eps))
+    if not candidates:
+        return
+    history = _load_quarterly_eps_rows()
+    for item, period, cumulative in candidates:
+        quarter = int(period[-1])
+        if quarter == 1:
+            single = cumulative
+        else:
+            ticker = str(item.get('ticker') or '')
+            previous = history.get((ticker, f"{period[:4]}-Q{quarter-1}"))
+            prev_cumulative = _number(previous.get('cum_eps')) if previous else None
+            if prev_cumulative is None:
+                # Missing official H1/Q1/Q3 baseline: retain as diagnostic,
+                # do not publish a fabricated single-quarter EPS.
+                item['cumulative_eps_pending'] = cumulative
+                item['cumulative_period_pending'] = period
+                continue
+            single = round(cumulative - prev_cumulative, 6)
+        item['quarter_period'] = period
+        item['quarter_eps'] = single
+        item['eps_parse_status'] = 'cumulative_self_report'
+        item['eps_parse_reason'] = ''
+        item['cumulative_self_report'] = True
 
 
 def _eps_cells(section):
@@ -2300,7 +2367,9 @@ def push_text(item):
         ),
     ]
 
-    if item.get("match_reason") == "direct_self_report":
+    if item.get("cumulative_self_report"):
+        lines.append(f"{item.get('quarter_period')} 單季 EPS：{item['quarter_eps']:.2f} 元（累計自結換算）")
+    elif item.get("match_reason") == "direct_self_report":
         monthly_period = item.get("monthly_period")
         monthly_label = (
             f"{monthly_period} 單月 EPS"
@@ -2383,8 +2452,8 @@ def valid_eps_item(item):
         == "direct_self_report"
     ):
         return (
-            item.get("monthly_eps")
-            is not None
+            item.get("monthly_eps") is not None
+            or (item.get("cumulative_self_report") is True and item.get("quarter_eps") is not None)
         )
 
     return (
@@ -2600,6 +2669,8 @@ def main():
 
         if new_score >= old_score:
             item.update(parsed)
+
+    enrich_cumulative_self_reports(all_candidates)
 
     # Voluntary self-reports use only values published in the announcement.
     # Missing comparison / prior-quarter values remain unpublished.
