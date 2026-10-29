@@ -9,7 +9,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-28-v18-additive-today-news"
+VERSION = "2026-10-29-v19-additive-parallel-margin"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -457,6 +457,53 @@ def supplementary_quarter_margin(text, period):
     return {}
 
 
+def mops_airtac_parallel_margin_fallback(text, period):
+    """Additive fallback for quarter-first, YTD-second MOPS tables with ratio columns.
+
+    Require an explicit paired period header and financial rows; do not infer
+    single-quarter margin from YTD figures or unlabeled percentages.
+    """
+    flat = unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    flat = re.sub(r'\s+', ' ', flat)
+    year, quarter = int(period[:4]), int(period[-1])
+    if quarter not in (1, 2, 3, 4):
+        return {}
+    year_pat = rf'(?:{year}|{year - 1911})'
+    q_pat = rf'(?:{quarter}|{"一二三四"[quarter - 1]})'
+    # Example: 2026年第三季及前三季度 (also 第三季及前三季).
+    paired = (rf'{year_pat}\s*年(?:度)?\s*第?\s*{q_pat}\s*季'
+              rf'\s*(?:及|與|和|、|暨)\s*前\s*{q_pat}\s*季(?:度)?')
+    header = re.search(paired, flat)
+    if not header:
+        return {}
+    # Only examine the first table after the paired header. Its first column
+    # represents the current quarter, before ratios and YTD columns.
+    body = flat[header.end():header.end() + 4500]
+    row_num = r'([（(]?\s*[+-]?\d[\d,]*(?:\.\d+)?\s*[）)]?)'
+    row_labels = {
+        'revenue': r'(?:合併)?(?:營業|銷貨)收入(?:淨額|合計)?',
+        'gross': r'(?:合併)?(?:營業|銷貨)毛利(?:淨額|合計)?',
+    }
+    vals = {}
+    for key, label in row_labels.items():
+        matches = list(re.finditer(label + r'\s*[:：]?\s*' + row_num, body))
+        if not matches:
+            return {}
+        # Multiple currency tables are allowed, but each must independently
+        # yield the same gross margin; avoid selecting arbitrary columns.
+        vals[key] = [num(m.group(1)) for m in matches[:2]]
+    margins = []
+    for revenue, gross in zip(vals['revenue'], vals['gross']):
+        if revenue is None or gross is None or revenue <= 0:
+            continue
+        ratio = gross / revenue * 100
+        if 0 <= ratio <= 100:
+            margins.append(ratio)
+    if not margins or max(margins) - min(margins) > 0.03:
+        return {}
+    return {'gross_margin': round(margins[0], 4)}
+
+
 def recover_pending_mops_margin(event):
     """Refetch a cached official release with missing margin; never use AI.
 
@@ -494,7 +541,8 @@ def recover_pending_mops_margin(event):
         return {}
     period=event['period']
     for parser in (announcement_period_metrics, mops_parallel_quarter_metrics,
-                   explicit_quarter_gross_margin, supplementary_quarter_margin):
+                    explicit_quarter_gross_margin, supplementary_quarter_margin,
+                    mops_airtac_parallel_margin_fallback):
         result=parser(page,period)
         if result.get('gross_margin') is not None:
             return {'gross_margin':result['gross_margin']}
@@ -1437,6 +1485,9 @@ def main():
                     values.update(explicit_quarter_gross_margin(text,period))
                 if values.get('gross_margin') is None:
                     values.update(supplementary_quarter_margin(text,period))
+                # Additive only: retain all existing EPS/margin decisions.
+                if values.get('gross_margin') is None:
+                    values.update(mops_airtac_parallel_margin_fallback(text, period))
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
