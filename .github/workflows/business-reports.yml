@@ -1,19 +1,23 @@
 name: Sync business reports index
+
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/30 * * * *'
+
 permissions:
   contents: write
   id-token: write
+
 concurrency:
   group: business-reports-index
   cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: google-github-actions/auth@v3
         id: auth
         with:
@@ -21,33 +25,44 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
       - name: Install PDF text extractor
         run: python -m pip install 'PyMuPDF>=1.24,<2'
+
       - name: Index Drive PDFs without AI
         env:
           ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: python scripts/update_business_reports.py
+
       - name: Commit index only when changed
         shell: bash
         run: |
           set -euo pipefail
+
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
           git add data/business_reports.json
+
           if git diff --cached --quiet; then
             echo 'Business reports index unchanged.'
             exit 0
           fi
+
           git commit -m 'Update business reports index'
+
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git rebase origin/main
+
             if git push origin HEAD:main; then
               echo 'Business reports index pushed successfully.'
               exit 0
             fi
+
             echo "Push conflict due to concurrent updates; retry ${attempt}/5"
             sleep 3
           done
+
           echo 'Unable to push after 5 attempts.' >&2
           exit 1
