@@ -857,7 +857,7 @@
     if (r.date) {
       arr.push(`
         <span class="report-chip report-original-date">
-          原始日期 ${esc(r.date)}${reportGroupDate(r) !== window.ReportDates.original(r.date) ? `・歸類 ${esc(reportGroupDate(r))}` : ""}
+          報告日期 ${esc(r.date)}
         </span>
       `);
     }
@@ -1469,7 +1469,7 @@
         <span></span>
 
         <span>
-          依報告發布日期分組・歷史報告永久保留
+          外資報告日期歸類採T+1
         </span>
       </div>
 
@@ -2026,4 +2026,5 @@
     boot();
   }
 })();
+
 

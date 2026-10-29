@@ -489,7 +489,7 @@ function render() {
         const b=m._liveBroker;
         const bullet=Array.isArray(b.summary)?b.summary:[];
         const target=b.validation_status==='needs_review'?'':(b.target_price_new==null?'':`目標價 ${esc(b.target_price_old!=null?b.target_price_old+' → ':'')}${esc(b.target_price_new)}`);
-        card.innerHTML=`<div class="report-broker">${highlight(b.broker||'券商研究')}</div><div class="report-title">${highlight((b.name||b.title||'券商報告')+(b.ticker?' '+b.ticker:''))}</div><div class="report-meta">${b.rating?`<span class="report-chip">${highlight(b.rating)}</span>`:''}${target?`<span class="report-chip report-target">${target}</span>`:''}<span class="report-chip">原始日期 ${esc(b.date||m.original_date||m.date)}${brokerDay(b.date||m.original_date)!==m.date?`・歸類 ${esc(m.date)}`:''}</span></div>${bullet.length?`<ul class="report-summary">${bullet.map(x=>`<li>${highlight(x)}</li>`).join('')}</ul>`:''}<details class="report-details"><summary>查看完整摘要</summary><div class="report-details-body">${window.IndustrySummary?.applies(b) ? window.IndustrySummary.render(b, highlight) : `${b.detail?`<p>${highlight(b.detail)}</p>`:''}${['key_points','forecast_changes','risks'].map(k=>Array.isArray(b[k])&&b[k].length?`<ul>${b[k].map((x,i)=>`<li>${researchPoint(x,i)}</li>`).join('')}</ul>`:'').join('')}`}${b.source_url?`<a href="${esc(b.source_url)}" target="_blank" rel="noopener">查看原始報告</a>`:''}</div></details>`;
+        card.innerHTML=`<div class="report-broker">${highlight(b.broker||'券商研究')}</div><div class="report-title">${highlight((b.name||b.title||'券商報告')+(b.ticker?' '+b.ticker:''))}</div><div class="report-meta">${b.rating?`<span class="report-chip">${highlight(b.rating)}</span>`:''}${target?`<span class="report-chip report-target">${target}</span>`:''}<span class="report-chip">報告日期 ${esc(b.date||m.original_date||m.date)}</span></div>${bullet.length?`<ul class="report-summary">${bullet.map(x=>`<li>${highlight(x)}</li>`).join('')}</ul>`:''}<details class="report-details"><summary>查看完整摘要</summary><div class="report-details-body">${window.IndustrySummary?.applies(b) ? window.IndustrySummary.render(b, highlight) : `${b.detail?`<p>${highlight(b.detail)}</p>`:''}${['key_points','forecast_changes','risks'].map(k=>Array.isArray(b[k])&&b[k].length?`<ul>${b[k].map((x,i)=>`<li>${researchPoint(x,i)}</li>`).join('')}</ul>`:'').join('')}`}${b.source_url?`<a href="${esc(b.source_url)}" target="_blank" rel="noopener">查看原始報告</a>`:''}</div></details>`;
         if(hitHTML)card.insertAdjacentHTML('beforeend',hitHTML);
         body.appendChild(card);continue;
       }
@@ -781,4 +781,5 @@ panel.querySelector('#rmCalendar').addEventListener('click',e=>{
 });
 sync();
 })();
+
 
