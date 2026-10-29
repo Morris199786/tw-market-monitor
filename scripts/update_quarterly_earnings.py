@@ -1255,10 +1255,17 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元")
         if x.get('source') == 'news_backup':
             text+='\n來源：當日新聞備援（非官方公告事件）'
+        # Telegram links: preserve both distinct sources, but show identical URLs once.
         if x.get('eps_news_source'):
             text+='\nEPS 來源：新聞備援｜'+x['eps_news_source'].get('source_label','')
-            text+='\n'+x['eps_news_source'].get('source_url','')
-        if x.get('source_url'): text+='\n'+x['source_url']
+        _telegram_source_urls = [
+            (x.get('eps_news_source') or {}).get('source_url'),
+            x.get('source_url'),
+        ]
+        for _telegram_source_url in dict.fromkeys(
+            url for url in _telegram_source_urls if url
+        ):
+            text+='\n'+_telegram_source_url
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
             text+='\n\nEPS 含累計差額推算值'
