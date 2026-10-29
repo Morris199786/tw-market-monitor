@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-29T14:40+08:00",
+  "updated_at": "2026-10-29T15:11+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-22-v34-abnormal-price-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -28,7 +28,7 @@
         "publish_time": "14:25:40",
         "subject": "6967 汎瑋材料 115/10/29 14:25:40 公告本公司115年第三季合併自結損益",
         "source": "mops_ajax",
-        "source_error": "",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -1625,28 +1625,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 9,
+      "rows": 10,
       "self_reports": 7,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 47,
-          "hits": 9
+          "rows": 57,
+          "hits": 10
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 47,
+          "rows": 57,
           "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 47,
+          "rows": 58,
           "hits": 4
         },
         {
@@ -1876,7 +1876,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2491",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1884,7 +1884,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2498",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1948,10 +1948,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2906",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -1964,10 +1963,9 @@
         {
           "mode": "company_rescue",
           "ticker": "3016",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectTimeout"
         },
         {
           "mode": "company_rescue",
@@ -2012,7 +2010,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3481",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2020,7 +2018,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3592",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2236,7 +2234,7 @@
         {
           "mode": "company_rescue",
           "ticker": "7827",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2276,7 +2274,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8438",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2322,6 +2320,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "4139 馬光-KY 115/10/29 14:03:41 公告本公司115年9月份自結合併財務報告之 負債比率、流動比率及速動比率"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3523 迎輝 115/10/29 14:50:14 公告本公司115年9月份自結合併財務報告之公告流動比率、 速動比率及負債比率"
         }
       ],
       "error": ""
