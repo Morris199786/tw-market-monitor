@@ -1,6 +1,8 @@
 from sources import *
 from eps_news_backup import current_items, sanitize_news_margin, verified_margin, invalid_quarterly_news
 from mops_board_schedule import fetch_board_schedule
+from quarterly_earnings_extensions import cumulative_period, cumulative_table, narrative_metrics, scheduled_news
+from eps_news_backup import parse_article
 import os, re, html, math, unicodedata, time
 from html.parser import HTMLParser
 from urllib.parse import urlencode
@@ -9,7 +11,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-29-v19-additive-parallel-margin"
+VERSION = "2026-10-29-v20-scheduled-news-official-formats"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -78,6 +80,9 @@ def period_from_text(s, fallback_date=""):
                 int(qtxt) if qtxt.isdigit() else 0,
             )
             return f"{y}-Q{q}"
+
+    extra_period = cumulative_period(s)
+    if extra_period: return extra_period
 
     annual=re.search(r"(?:(20\d{2})|(\d{2,3}))\s*年(?:度)?(?:合併|個體|個別)?財務(?:報告|報表)", s)
     if annual:
@@ -512,7 +517,8 @@ def recover_pending_mops_margin(event):
     """
     if event.get('source') != 'mops_official' or not event.get('period'):
         return {}
-    if event.get('released_metrics', {}).get(event['period'], {}).get('gross_margin') is not None:
+    existing=event.get('released_metrics', {}).get(event['period'], {})
+    if all(existing.get(k) is not None for k in ('eps','gross_margin')):
         return {}
     url=event.get('source_url','')
     if not url.startswith(('https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?',
@@ -532,7 +538,7 @@ def recover_pending_mops_margin(event):
             response.encoding='utf-8'
             candidate=clean(re.sub(r'<[^>]+>',' ',re.sub(r'<script\b[^>]*>.*?</script>',
                                  '',response.text,flags=re.S|re.I)))
-            if event['ticker'] in candidate and ('毛利' in candidate):
+            if event['ticker'] in candidate and ('毛利' in candidate or '每股' in candidate):
                 page=candidate
                 break
         except Exception:
@@ -540,13 +546,15 @@ def recover_pending_mops_margin(event):
     if not page:
         return {}
     period=event['period']
+    recovered=narrative_metrics(page,period)
     for parser in (announcement_period_metrics, mops_parallel_quarter_metrics,
                     explicit_quarter_gross_margin, supplementary_quarter_margin,
                     mops_airtac_parallel_margin_fallback):
         result=parser(page,period)
         if result.get('gross_margin') is not None:
-            return {'gross_margin':result['gross_margin']}
-    return {}
+            recovered['gross_margin']=result['gross_margin']
+            break
+    return {k:v for k,v in recovered.items() if existing.get(k) is None}
 
 
 def announcement_period_metrics(text, period):
@@ -1488,6 +1496,8 @@ def main():
                 # Additive only: retain all existing EPS/margin decisions.
                 if values.get('gross_margin') is None:
                     values.update(mops_airtac_parallel_margin_fallback(text, period))
+                for field,value in narrative_metrics(text,period).items():
+                    values.setdefault(field,value)
                 if values: event['released_metrics']={period:values}
                 event['release_type']='quarterly_preliminary' if re.search(r'自結|自行結算|未經.*核閱',subject) else 'financial_report'
                 event['source_label']='公開資訊觀測站'
@@ -1499,6 +1509,11 @@ def main():
                 event['released_metrics']=merged
                 events[(x['ticker'],period)]={**existing,**event}
                 row=event_cumulative(x,period)
+                table_values=cumulative_table(text,period)
+                if table_values:
+                    row=row or dict(ticker=x['ticker'],period=period,source='board_announcement',source_url=x.get('source_url',''))
+                    for field,value in table_values.items():
+                        if row.get(field) is None: row[field]=value
                 if row:
                     prev=by.get((x['ticker'],period),{})
                     by[(x['ticker'],period)]={**prev,**{k:v for k,v in row.items() if v is not None}}
@@ -1535,7 +1550,7 @@ def main():
         if not period or event.get('source') != 'mops_official':
             continue
         released=event.get('released_metrics', {}).get(period, {})
-        if released.get('gross_margin') is not None:
+        if all(released.get(k) is not None for k in ('eps','gross_margin')):
             continue
         recovered=recover_pending_mops_margin(event)
         if recovered:
@@ -1613,6 +1628,31 @@ def main():
     for x in upcoming.values():
         pp=previous(x['period']);pm=single_metrics(by,x['ticker'],pp)
         x.update(prev_period=pp,prev_eps=pm['eps'],prev_gross_margin=pm['gross_margin'])
+    # Additional discovery for today's expected but absent/incomplete quarter.
+    # Existing news collection and MOPS precedence remain unchanged.
+    planned_for_news=(planned_before_release + old.get('upcoming', [])
+        + event_history.get('upcoming', []) + old.get('expected_roster', [])
+        + event_history.get('expected_roster', []))
+    extra_news=scheduled_news(planned_for_news,events,
+        {t:{'name':name} for t,name in uni.items()},now,S,parse_article,SOURCE_ERRORS)
+    for key,candidate in extra_news.items():
+        x=events.get(key)
+        if x is None:
+            x=dict(candidate,released_metrics={})
+            pp=previous(x['period']);pm=single_metrics(by,x['ticker'],pp)
+            x.update(prev_period=pp,prev_eps=pm['eps'],prev_gross_margin=pm['gross_margin'])
+            events[key]=x
+        for field in ('eps','gross_margin'):
+            if x.get(field) is None and candidate.get(field) is not None:
+                x[field]=candidate[field]
+                if field=='eps':
+                    x['eps_basis']='news_reported_single'
+                    x['eps_news_source']={k:candidate.get(k) for k in ('source_label','source_url','evidence')}
+                else:
+                    x['gross_margin_news_source']=candidate.get('gross_margin_source')
+                    x['gross_margin_validation']=candidate.get('gross_margin_validation')
+        x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
+        upcoming.pop(key,None)
     # Additive source discovery: ONLY today's explicitly scheduled companies,
     # ONLY missing margins, ONLY after an actual release. Never override MOPS.
     today_planned_keys={(str(z.get('ticker')),str(z.get('period')))
@@ -1658,6 +1698,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
