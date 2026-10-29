@@ -42,10 +42,11 @@ def published(root):
     events = event_index(root, cache, rows)
     ledger = read(root, LEDGER) if (root / LEDGER).exists() else {'deliveries': {}}
     known = {cache[rid].get('meeting_event_key') for rid in ledger['deliveries'] if rid in cache and isinstance(cache[rid], dict)}
+    delivered_meetings = {event_key(r) for r in rows if str(r.get('id')) in ledger['deliveries'] and event_key(r)}
     result = {}
     for row in rows:
         key = event_key(row)
-        if key and key in known:
+        if key and (key in known or any(__import__('meeting_identity')._same_event(key, k) for k in delivered_meetings)):
             continue
         rid = str(row.get('id', ''))
         if not rid.startswith('line-') or not category(row):
