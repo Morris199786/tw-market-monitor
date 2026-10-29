@@ -11,7 +11,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-29-v21-formal-report-title"
+VERSION = "2026-10-29-v22-targeted-official-recovery"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -1459,6 +1459,99 @@ def largan_ir_events(universe, now):
     return upcoming,released
 
 
+def targeted_scheduled_announcements(schedule, news, universe, now):
+    """Additive official recovery when bulk feeds missed a scheduled release.
+
+    Only due roster companies are queried. A returned detail must identify the
+    company, announcement date and fiscal quarter before entering normal parsing.
+    No synthetic sequence numbers, financial values or notification writes.
+    """
+    from update_self_reports import parse_rows, extract_detail_params, mops_headers
+    from concurrent.futures import ThreadPoolExecutor
+    today = now.date()
+    cutoff = (today-timedelta(days=14)).isoformat()
+    found = {(x.get('ticker'), period_from_text(x.get('subject','')))
+             for x in news if is_quarterly_release(x.get('subject',''), announcement_text(x))
+             and clean(str(x.get('raw',{}).get('說明','')))}
+    targets = {}
+    for row in schedule:
+        ticker, period, planned = row.get('ticker'), row.get('period'), row.get('planned_date','')
+        if ticker not in universe or not cutoff <= planned <= today.isoformat(): continue
+        if not re.fullmatch(r'20\d{2}-Q[1-4]',str(period)): continue
+        if (ticker,period) in found: continue
+        targets[(ticker,period)] = (ticker,period,planned)
+
+    def query(target):
+        ticker, expected, planned = target
+        # Use a private session per worker; never share mutable Session state.
+        import requests
+        session = requests.Session()
+        errors = []; recovered = []
+        try:
+            for base in ('https://mopsov.twse.com.tw','https://mops.twse.com.tw'):
+                try:
+                    # The scheduled day can precede today; query each relevant
+                    # month so late retries still retrieve the missed release.
+                    cursor = datetime.strptime(planned,'%Y-%m-%d').date()
+                    while cursor <= today:
+                        import calendar
+                        end=min(today,cursor.replace(day=calendar.monthrange(cursor.year,cursor.month)[1]))
+                        payload=dict(firstin='1',step='1',off='1',TYPEK='all',
+                            year=str(cursor.year-1911),month=str(cursor.month),
+                            b_date=str(cursor.day),e_date=str(end.day),
+                            co_id=ticker,queryName='co_id',keyword4='')
+                        response=session.post(base+'/mops/web/ajax_t05st01',data=payload,headers=mops_headers(),timeout=(4,10))
+                        response.raise_for_status();response.encoding='utf-8'
+                        page=response.text
+                        if re.search(r'查無資料|查無所需資料',page):
+                            cursor=end+timedelta(days=1);continue
+                        if not ('主旨' in page and ('發言日期' in page or '公司代號' in page)):
+                            raise ValueError('announcement schema unavailable')
+                        for row in parse_rows(page):
+                            match=re.match(r'\s*(\d{4})\s+(.*?)\s+((?:\d{3}|20\d{2})/\d{1,2}/\d{1,2})\s+(\d{1,2}:\d{2}:\d{2})\s+(.+)',row['text'])
+                            if not match: continue
+                            code,name,day,clock,title=match.groups()
+                            iso=roc_date(day)
+                            if code != ticker or not planned <= iso <= today.isoformat(): continue
+                            if not is_result_candidate(title) or period_from_text(title)!=expected: continue
+                            params=extract_detail_params(row['attrs'],ticker,iso,clock)
+                            if not re.fullmatch(r'\d+',str(params.get('seq_no',''))):
+                                errors.append('missing_sequence');continue
+                            dp=dict(firstin='true',TYPEK='all',step='1',COMPANY_ID=ticker,
+                                    SPOKE_DATE=iso.replace('-',''),SPOKE_TIME=clock.replace(':',''),SEQ_NO=params['seq_no'])
+                            if params.get('skey'): dp['skey']=params['skey']
+                            detail=session.post(base+'/mops/web/ajax_t05sr01_1',data=dp,headers=mops_headers(),timeout=(4,10))
+                            detail.raise_for_status();detail.encoding='utf-8'
+                            body=re.sub(r'<script\b[^>]*>.*?</script>','',detail.text,flags=re.S|re.I)
+                            body=clean(re.sub('<[^>]+>',' ',body))
+                            if not re.search(r'(?<!\d)'+re.escape(ticker)+r'(?!\d)',body): raise ValueError('detail company mismatch')
+                            if not any(roc_date(d)==iso for d in re.findall(r'(?:\d{3}|20\d{2})/\d{1,2}/\d{1,2}',body)):
+                                raise ValueError('detail date mismatch')
+                            if period_from_text(body)!=expected: raise ValueError('detail period mismatch')
+                            if not re.search(r'每股.*(?:盈餘|純益)|營業收入|營業毛利',body): raise ValueError('detail metrics missing')
+                            if not is_quarterly_release(title,body): continue
+                            recovered.append(dict(ticker=ticker,name=name,date=iso,time=clock,
+                                subject=title,raw={'說明':body},source_url=base+'/mops/web/ajax_t05sr01_1?'+urlencode(dp)))
+                        cursor=end+timedelta(days=1)
+                    if recovered: break
+                except Exception as exc:
+                    errors.append(type(exc).__name__+':'+str(exc)[:100])
+        finally:
+            session.close()
+        return ticker, expected, recovered, errors
+
+    out=[]
+    # Bounded concurrency limits load; requests have finite connection/read timeouts.
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        for ticker,period,rows,errors in pool.map(query,targets.values()):
+            out.extend(rows)
+            status='recovered' if rows else ('failed' if errors else 'not_found')
+            print('MOPS targeted:',ticker,period,status,'rows',len(rows),flush=True)
+            if errors and not rows:
+                SOURCE_ERRORS.append('targeted_mops/'+ticker+'/'+period+':'+(';'.join(errors))[:250])
+    return out
+
+
 def main():
     SOURCE_ERRORS.clear()
     save_json(DATA/'earnings_calendar.json',load_json(DATA/'earnings_calendar.json',{'years':{}}))
@@ -1477,6 +1570,15 @@ def main():
         merged_events[(row.get('ticker'),row.get('period'))]=dict(row)
     event_history={**event_history,'reports':list(merged_events.values())}
     news=fetch_news()+historical_mops_news()+daily_mops_news()+cached_official_announcements(now)
+    board_rows, board_errors, board_successes = fetch_board_schedule(now.date())
+    recovery_roster = board_rows + old.get('expected_roster',[]) + event_history.get('upcoming',[])
+    completed_keys = {(r.get('ticker'), r.get('period'))
+                      for r in event_history.get('reports',[])
+                      if r.get('eps') is not None and r.get('gross_margin') is not None
+                      and valid_cached_earnings_report(r) and not invalid_quarterly_news(r)}
+    recovery_roster = [r for r in recovery_roster
+                       if (r.get('ticker'),r.get('period')) not in completed_keys]
+    news += targeted_scheduled_announcements(recovery_roster, news, uni, now)
     by=merge_history(financial_snapshot());upcoming={};events={};calendars={}
     ir_upcoming,ir_reports=largan_ir_events(uni,now)
     for x in event_history.get('upcoming',[]):
@@ -1536,7 +1638,6 @@ def main():
     # Official MOPS t170sb01 is authoritative for expected board dates.
     # Existing announcements and IR dates above remain fallbacks when a
     # company is missing from the official schedule or an API call fails.
-    board_rows, board_errors, board_successes = fetch_board_schedule(now.date())
     for error in board_errors:
         SOURCE_ERRORS.append('mops_board_schedule:' + error)
     for row in board_rows:
@@ -1714,6 +1815,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
