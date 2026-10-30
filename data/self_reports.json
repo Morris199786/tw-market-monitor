@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30T14:40+08:00",
+  "updated_at": "2026-10-30T15:05+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1612,28 +1612,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 1,
+      "rows": 2,
       "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 38,
-          "hits": 1
+          "rows": 56,
+          "hits": 2
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 38,
+          "rows": 56,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 38,
+          "rows": 56,
           "hits": 1
         },
         {
@@ -1791,7 +1791,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2317",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1815,7 +1815,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2330",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1959,9 +1959,10 @@
         {
           "mode": "company_rescue",
           "ticker": "2610",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 3,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -1982,7 +1983,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2636",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1998,9 +1999,10 @@
         {
           "mode": "company_rescue",
           "ticker": "2881",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:HTTPError;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -2021,7 +2023,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2891",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2286,7 +2288,7 @@
           "mode": "company_rescue",
           "ticker": "6467",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2350,7 +2352,7 @@
           "mode": "company_rescue",
           "ticker": "6873",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2433,7 +2435,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "8472 納維康 115/10/30 14:53:27 公告115年09月自結合併財務報告負債比率.流動比率.速動比率"
+        }
+      ],
       "error": ""
     },
     "twse": {
