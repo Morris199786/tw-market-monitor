@@ -1,4 +1,4 @@
-"""業務報告：從 Drive 同步 PDF 索引；採 Drive 建檔日（台灣時間）歸類，不使用 AI。"""
+"""業務報告：從 Drive 同步 PDF 索引；優先使用 Gmail 收件日期，不使用 AI。"""
 import io
 import json
 import os
@@ -14,7 +14,7 @@ import fitz  # PyMuPDF
 FOLDER = '1CLtRfuqr9uC_Sak0VSgYdlhogzG8K2ma'
 API = 'https://www.googleapis.com/drive/v3/files'
 OUTPUT = Path('data/business_reports.json')
-PARSER_VERSION = 'business-v4-20261030'
+PARSER_VERSION = 'business-v5-gmail-date-20261031'
 TOKEN = os.environ.get('ACCESS_TOKEN', '')
 
 BROKERS = ('華南投顧', '康和投顧', '凱基', '元大', '永豐', '群益', '富邦', '國泰', '統一', '元富', '第一金', '兆豐', '台新', '中信', '摩根士丹利', '高盛', '瑞銀', '花旗', '大和', '野村', '美銀', '麥格理', '國票', '合庫', '玉山', '華南', '康和')
@@ -173,6 +173,18 @@ def drive_date(created):
         raise ValueError('Drive createdTime must include timezone')
     return value.astimezone(ZoneInfo('Asia/Taipei')).date().isoformat()
 
+def gmail_date_from_description(description):
+    """從 Drive 描述欄讀取 Apps Script 寫入的 Gmail 原始收件日期。"""
+    match = re.search(r'^gmail_received_date=(\d{4}-\d{2}-\d{2})\s*$',
+                      str(description or ''), flags=re.M)
+    if not match:
+        return None
+    try:
+        value = date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
+    return value.isoformat() if 2020 <= value.year <= date.today().year + 1 else None
+
 def main():
     old = {}
     if OUTPUT.exists():
@@ -190,9 +202,11 @@ def main():
         previous = old.get(fid, {})
         ticker, company, broker = identity(name)
         created = f.get('createdTime', '')
-        dt = drive_date(created)  # Fail rather than silently write an incorrect date.
+        gmail_date = gmail_date_from_description(f.get('description', ''))
+        dt = gmail_date or drive_date(created)
+        source = 'gmail_received' if gmail_date else 'drive_created'
         row = {'id': fid, 'filename': name, 'title': re.sub(r'\.pdf$', '', name, flags=re.I),
-               'date': dt, 'date_source': 'drive_created', 'created_time': created,
+               'date': dt, 'date_source': source, 'created_time': created,
                'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
                'broker': broker, 'modified_time': f.get('modifiedTime', ''),
                'url': f'https://drive.google.com/file/d/{fid}/view',
@@ -206,7 +220,7 @@ def main():
     rows.sort(key=lambda r: (r['date'], r['filename']), reverse=True)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps({'items': rows}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'Indexed {len(rows)} PDFs; excluded invitations={excluded}. Grouped by Drive createdTime (Asia/Taipei). No AI API.')
+    print(f'Indexed {len(rows)} PDFs; excluded invitations={excluded}. Grouped by Gmail received date when available, otherwise Drive createdTime. No AI API.')
     for row in rows:
         print(f"{row['date']} [{row['date_source']}] {row['broker']} {row['ticker']} {row['company']} | {row['filename']}")
 
