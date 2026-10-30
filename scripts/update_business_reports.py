@@ -1,11 +1,12 @@
-"""業務報告：從 Drive 同步 PDF 索引；從 PDF 首頁擷取報告日期，不使用 AI。"""
+"""業務報告：從 Drive 同步 PDF 索引；採 Drive 建檔日（台灣時間）歸類，不使用 AI。"""
 import io
 import json
 import os
 import re
 import urllib.parse
 import urllib.request
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -13,7 +14,7 @@ import fitz  # PyMuPDF
 FOLDER = '1CLtRfuqr9uC_Sak0VSgYdlhogzG8K2ma'
 API = 'https://www.googleapis.com/drive/v3/files'
 OUTPUT = Path('data/business_reports.json')
-PARSER_VERSION = 'date-v3-20261029'
+PARSER_VERSION = 'business-v4-20261030'
 TOKEN = os.environ.get('ACCESS_TOKEN', '')
 
 BROKERS = ('華南投顧', '康和投顧', '凱基', '元大', '永豐', '群益', '富邦', '國泰', '統一', '元富', '第一金', '兆豐', '台新', '中信', '摩根士丹利', '高盛', '瑞銀', '花旗', '大和', '野村', '美銀', '麥格理', '國票', '合庫', '玉山', '華南', '康和')
@@ -105,25 +106,72 @@ def report_date(pdf_text, filename, created):
         return d[-1], 'filename'
     return created[:10], 'drive_created'
 
+# Fallbacks for filename-only reports; the repository stock catalog extends this map.
+COMPANIES = {'2379':'瑞昱','6274':'台燿','3711':'日月光投控','2308':'台達電',
+ '1590':'亞德客-KY','8058':'耐特','2303':'聯電','2383':'台光電','7769':'鴻勁',
+ '5289':'宜鼎','3037':'欣興','6510':'精測','3081':'聯亞','3105':'穩懋',
+ 'VRT':'Vertiv','FLEX':'Flex','VFC':'VF Corporation'}
+
+def company_catalog():
+    names = dict(COMPANIES)
+    path = Path('data/stock_detail.json')
+    if path.exists():
+        data = json.loads(path.read_text(encoding='utf-8'))
+        for code, row in data.get('stocks', {}).items():
+            if isinstance(row, dict) and row.get('name'):
+                names[str(code)] = row['name']
+    return names
+
 def identity(filename):
     stem = re.sub(r'\.pdf$', '', filename, flags=re.I)
-    broker = next((b for b in BROKERS if stem.startswith(b)), '')
-    # 僅 4 碼台股代號；避免把 2026 年份誤認為股票。
-    code = re.search(r'(?<!\d)([1-9]\d{3})(?!\d)', stem)
-    ticker = code.group(1) if code and not 2000 <= int(code.group(1)) <= 2099 else ''
-    company = ''
-    if ticker:
-        tail = stem[code.end():].lstrip(' -_()（）')
-        match = re.match(r'([\u4e00-\u9fffA-Za-z][\u4e00-\u9fffA-Za-z\-KY]*)', tail)
-        if match and match.group(1) not in ('takeaway',):
-            company = match.group(1).rstrip('-_')
-        if not company:
-            before = stem[:code.start()].rstrip(' -_()（）')
-            before = before[len(broker):].strip(' -_()（）') if broker else before
-            match = re.search(r'([\u4e00-\u9fff]{2,8})$', before)
-            if match:
-                company = match.group(1).rstrip('-_')
-    return ticker, company, broker
+    broker = next((b for b in BROKERS + ('福邦',) if b in stem), '')
+    if stem.startswith('JPM_'):
+        broker = 'J.P. Morgan'
+    names = company_catalog()
+    # Remove dates before looking for codes (a year must not hide a later ticker).
+    clean = re.sub(r'(?<!\d)20\d{2}[_/.-]\d{1,2}[_/.-]\d{1,2}(?!\d)', '', stem)
+    pairs = []
+    for m in re.finditer(r'(?<!\d)([1-9]\d{3})(?!\d)', clean):
+        code = m.group(1)
+        if 2000 <= int(code) <= 2099:
+            continue
+        name = names.get(code, '')
+        if not name:
+            tail = clean[m.end():].lstrip(' -_()（）')
+            after = re.match(r'([\u4e00-\u9fff]+(?:-KY)?)', tail)
+            before = re.search(r'([\u4e00-\u9fff]+(?:-KY)?)\s*[(（]?$', clean[:m.start()])
+            name = after.group(1) if after else before.group(1) if before else ''
+        pairs.append((code, name))
+    # China codes are six digits and carry an explicit company name.
+    cn = re.match(r'(\d{6})_([\u4e00-\u9fff]+)_', stem)
+    us = re.search(r'daily story_([A-Z]+)_', stem)
+    named = re.match(r'(.+?)\s*[(（]([A-Z]+)(?: US)?\s*[)）]', stem)
+    if cn:
+        pairs = [(cn.group(1), cn.group(2))]
+    elif us:
+        pairs = [(us.group(1), names.get(us.group(1), us.group(1)))]
+    elif named:
+        name = re.sub(r'^美股點評\d+-', '', named.group(1)).strip()
+        pairs = [(named.group(2), name)]
+    elif stem.startswith(('WuXi AppTec_', 'Fosun Pharma_')):
+        pairs = [('', stem.split('_')[0])]
+    elif stem.startswith('JPM_'):
+        for token, name in [('Seagate','Seagate'), ('Guidewire_Software','Guidewire Software'),
+                            ('Block_Inc','Block Inc.'), ('American_Tower','American Tower')]:
+            if stem.startswith('JPM_' + token + '_'):
+                pairs = [('', name)]
+                break
+    elif 'Bloom Eenergy' in stem:
+        pairs = [('', 'Bloom Energy')]
+    return ('、'.join(dict.fromkeys(c for c,n in pairs if c)),
+            '、'.join(dict.fromkeys(n for c,n in pairs if n)), broker)
+
+def drive_date(created):
+    # Never substitute the PDF date or modification time for the received-file date.
+    value = datetime.fromisoformat(created.replace('Z', '+00:00'))
+    if value.tzinfo is None:
+        raise ValueError('Drive createdTime must include timezone')
+    return value.astimezone(ZoneInfo('Asia/Taipei')).date().isoformat()
 
 def main():
     old = {}
@@ -133,39 +181,35 @@ def main():
         except (ValueError, KeyError, TypeError):
             pass
     rows = []
-    count_pdf = count_cached = count_fallback = 0
+    excluded = 0
     for f in list_files():
-        fid = f['id']
-        name = f['name']
+        fid, name = f['id'], f['name']
+        if '邀請' in name:
+            excluded += 1
+            continue
         previous = old.get(fid, {})
-        modified = f.get('modifiedTime', '')
         ticker, company, broker = identity(name)
-        if previous.get('modified_time') == modified and previous.get('filename') == name and previous.get('date_source') and previous.get('parser_version') == PARSER_VERSION:
-            dt = previous['date']
-            source = previous['date_source']
-            count_cached += 1
-        else:
-            try:
-                pdf_text = extract_pdf_text(fid)
-                dt, source = report_date(pdf_text, name, f.get('createdTime', ''))
-            except Exception as exc:
-                print(f'WARNING: PDF {name}: {exc}; fallback to filename/Drive date')
-                dt, source = report_date('', name, f.get('createdTime', ''))
-            if source == 'pdf':
-                count_pdf += 1
-            else:
-                count_fallback += 1
-        rows.append({'id': fid, 'filename': name, 'title': re.sub(r'\.pdf$', '', name, flags=re.I),
-                     'date': dt, 'date_source': source, 'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
-                     'broker': broker, 'modified_time': modified,
-                     'url': f'https://drive.google.com/file/d/{fid}/view',
-                     'preview_url': f'https://drive.google.com/file/d/{fid}/preview'})
+        created = f.get('createdTime', '')
+        dt = drive_date(created)  # Fail rather than silently write an incorrect date.
+        row = {'id': fid, 'filename': name, 'title': re.sub(r'\.pdf$', '', name, flags=re.I),
+               'date': dt, 'date_source': 'drive_created', 'created_time': created,
+               'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
+               'broker': broker, 'modified_time': f.get('modifiedTime', ''),
+               'url': f'https://drive.google.com/file/d/{fid}/view',
+               'preview_url': f'https://drive.google.com/file/d/{fid}/preview'}
+        # Preserve previously extracted report dates separately from the grouping date.
+        if previous.get('report_date'):
+            row['report_date'] = previous['report_date']
+        elif previous.get('date_source') in ('pdf', 'filename'):
+            row['report_date'] = previous.get('date', '')
+        rows.append(row)
     rows.sort(key=lambda r: (r['date'], r['filename']), reverse=True)
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps({'items': rows}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'Indexed {len(rows)} PDFs; PDF date={count_pdf}, cached={count_cached}, filename/Drive fallback={count_fallback}. No AI API.')
+    print(f'Indexed {len(rows)} PDFs; excluded invitations={excluded}. Grouped by Drive createdTime (Asia/Taipei). No AI API.')
     for row in rows:
         print(f"{row['date']} [{row['date_source']}] {row['broker']} {row['ticker']} {row['company']} | {row['filename']}")
 
 if __name__ == '__main__':
     main()
+
