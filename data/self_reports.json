@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30T13:08+08:00",
+  "updated_at": "2026-10-30T13:37+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1606,21 +1606,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 14,
+          "rows": 16,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 14,
+          "rows": 16,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 14,
+          "rows": 16,
           "hits": 0
         },
         {
@@ -1655,14 +1655,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 14,
+          "rows": 16,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 14,
+          "rows": 16,
           "hits": 0
         },
         {
@@ -1683,8 +1683,7 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mops.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mops.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2016,7 +2015,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2610",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2296,7 +2295,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6141",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
