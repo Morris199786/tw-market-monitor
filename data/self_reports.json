@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30T19:08+08:00",
+  "updated_at": "2026-10-30T19:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1638,28 +1638,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 12,
+      "rows": 13,
       "self_reports": 4,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 265,
-          "hits": 12
+          "rows": 272,
+          "hits": 13
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 265,
+          "rows": 272,
           "hits": 2
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 265,
+          "rows": 272,
           "hits": 2
         },
         {
@@ -1873,7 +1873,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2376",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1881,7 +1881,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2382",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2201,7 +2201,7 @@
         {
           "mode": "company_rescue",
           "ticker": "4968",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2493,6 +2493,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "3625 西勝 115/10/30 16:56:19 公告本公司115年09月份自結合併財務報表之流動比率、 速動比率及負債比率。"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3522 御嵿 115/10/30 19:21:13 公告本公司115年09月自結合併財務報告之負債比率、 流動比率及速動比率。"
         }
       ],
       "error": ""
