@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-10-30T16:07+08:00",
+  "updated_at": "2026-10-30T16:39+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1625,28 +1625,34 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 8,
+      "rows": 9,
       "self_reports": 3,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 118,
-          "hits": 8
+          "rows": 144,
+          "hits": 9
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 118,
+          "rows": 144,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 118,
+          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mopsov.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mopsov.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 147,
           "hits": 1
         },
         {
@@ -1668,7 +1674,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1229",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1733,7 +1739,7 @@
           "mode": "company_rescue",
           "ticker": "1626",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -1860,7 +1866,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2376",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1892,10 +1898,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2409",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -1924,7 +1929,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2449",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1956,10 +1961,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2492",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -2197,7 +2201,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -2465,6 +2469,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "4804 大略-KY 115/10/30 15:44:32 公告本公司115年09月份自結財務報表之自結負債比率、 自結流動比率及自結速動比率"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "2760 巨宇翔 115/10/30 16:28:51 公告115年09月份自結財務報告之負債比率、流動比率及速動比率 、預估未來三個月現金收支情形及銀行可使用融資額度情形"
         }
       ],
       "error": ""
