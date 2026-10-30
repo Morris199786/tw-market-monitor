@@ -3256,7 +3256,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 983,
   "version": "2026-10-29-v22-targeted-official-recovery",
-  "updated_at": "2026-10-30T22:06+08:00",
+  "updated_at": "2026-10-30T22:36+08:00",
   "upcoming": [
     {
       "ticker": "1802",
@@ -10614,8 +10614,8 @@
       "period": "2026-Q3",
       "publish_date": "2026-10-28",
       "publish_time": "18:37:28",
-      "subject": "公告本公司115年第三季合併自結損益(每股面額0.4元)",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6548&SPOKE_DATE=20261028&SPOKE_TIME=183728&SEQ_NO=2",
+      "subject": "6548 長科* 115/10/28 18:37:28 公告本公司115年第三季合併自結損益(每股面額0.4元)",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6548&SPOKE_DATE=20261028&SPOKE_TIME=183728&SEQ_NO=2&skey=6548202610282",
       "retention_status": "reporting_quarter",
       "released_metrics": {
         "2026-Q3": {
@@ -12232,14 +12232,26 @@
     "source_errors": [
       "announcement_scan/2026-10-16~2026-10-30:ValueError:announcement schema unavailable",
       "daily_mops:ConnectTimeout",
+      "targeted_mops/2481/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/3026/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6123/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
-      "targeted_mops/6933/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3711/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
-      "targeted_mops/3406/2026-Q3:ValueError:announcement schema unavailable",
-      "mops_board_schedule:2026-Q3/otc:URLError:<urlopen error [Errno 111] Connection refused>"
+      "targeted_mops/6548/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/6123/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/6933/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3711/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3406/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "mops_board_schedule:2026-Q3/sii:JSONDecodeError:Expecting value: line 1 column 1 (char 0)",
+      "mops_board_schedule:2026-Q3/otc:JSONDecodeError:Expecting value: line 1 column 1 (char 0)",
+      "mops_board_schedule:2026-Q2/sii:JSONDecodeError:Expecting value: line 1 column 1 (char 0)",
+      "mops_board_schedule:2026-Q2/otc:JSONDecodeError:Expecting value: line 1 column 1 (char 0)"
     ],
-    "historical_errors": [],
+    "historical_errors": [
+      "twse/2026-Q1: ValueError",
+      "tpex/2026-Q1: ValueError",
+      "twse/2026-Q2: ValueError",
+      "tpex/2026-Q2: ValueError",
+      "twse/2026-Q3: ValueError",
+      "tpex/2026-Q3: ValueError"
+    ],
     "coverage": {
       "2026-10-16~2026-10-30": "failed"
     },
