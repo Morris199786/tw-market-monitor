@@ -1478,7 +1478,7 @@ def targeted_scheduled_announcements(schedule, news, universe, now):
         ticker, period, planned = row.get('ticker'), row.get('period'), row.get('planned_date','')
         if ticker not in universe or not cutoff <= planned <= today.isoformat(): continue
         if not re.fullmatch(r'20\d{2}-Q[1-4]',str(period)): continue
-        if (ticker,period) in found: continue
+        if (ticker,period) in found and not row.get('force_margin_recovery'): continue
         targets[(ticker,period)] = (ticker,period,planned)
 
     def query(target):
@@ -1578,7 +1578,33 @@ def main():
                       and valid_cached_earnings_report(r) and not invalid_quarterly_news(r)}
     recovery_roster = [r for r in recovery_roster
                        if (r.get('ticker'),r.get('period')) not in completed_keys]
-    news += targeted_scheduled_announcements(recovery_roster, news, uni, now)
+    # A news-backed EPS does not mean the official gross margin was retrieved.
+    # Revisit recently published, incomplete reports even after they leave the
+    # board/upcoming roster. Keep the targeted 14-day bound and verify the
+    # ticker, quarter and announcement date in targeted_scheduled_announcements.
+    margin_recovery = []
+    cutoff_date = (now.date() - timedelta(days=14)).isoformat()
+    for report in event_history.get('reports', []):
+        ticker, period = report.get('ticker'), report.get('period')
+        published = report.get('publish_date') or report.get('official_announcement_date') or ''
+        if ((ticker, period) in completed_keys or ticker not in uni or
+                not re.fullmatch(r'20\d{2}-Q[1-4]', str(period)) or
+                not cutoff_date <= published <= today or
+                report.get('eps') is None or report.get('gross_margin') is not None or
+                not valid_cached_earnings_report(report)):
+            continue
+        margin_recovery.append({'ticker': ticker, 'period': period,
+                                'planned_date': published, 'force_margin_recovery': True})
+    # Deduplicate per ticker/period; prefer forced recovery so a cached news
+    # announcement cannot suppress the official detail query.
+    recovery_targets = {}
+    for row in recovery_roster + margin_recovery:
+        key = (row.get('ticker'), row.get('period'))
+        if key not in recovery_targets or row.get('force_margin_recovery'):
+            recovery_targets[key] = row
+    print('MOPS missing-margin recovery targets:',
+          [(r['ticker'], r['period']) for r in margin_recovery], flush=True)
+    news += targeted_scheduled_announcements(list(recovery_targets.values()), news, uni, now)
     by=merge_history(financial_snapshot());upcoming={};events={};calendars={}
     ir_upcoming,ir_reports=largan_ir_events(uni,now)
     for x in event_history.get('upcoming',[]):
