@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-10-30T21:09+08:00",
+  "updated_at": "2026-10-30T21:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 238,
+    "candidate_count": 239,
     "parsed_count": 106,
-    "parse_failed_count": 125,
+    "parse_failed_count": 126,
     "parse_failed": [
+      {
+        "ticker": "8171",
+        "name": "天宇",
+        "publish_date": "2026-10-30",
+        "publish_time": "21:16:34",
+        "subject": "8171 天宇 115/10/30 21:16:34 公告本公司115年9月份自結應收帳款餘額(含已逾期及未逾期) 、占資產及股本比例",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "4749",
         "name": "新應材",
@@ -1638,34 +1651,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 14,
-      "self_reports": 4,
+      "rows": 16,
+      "self_reports": 5,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 281,
-          "hits": 14
+          "rows": 289,
+          "hits": 16
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 281,
+          "rows": 289,
           "hits": 2
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mopsov.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mopsov.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 281,
+          "rows": 289,
           "hits": 2
         },
         {
@@ -1895,7 +1902,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2387",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1903,7 +1910,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2395",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1975,9 +1982,10 @@
         {
           "mode": "company_rescue",
           "ticker": "2492",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -1998,7 +2006,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2630",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2014,7 +2022,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2832",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2030,8 +2038,8 @@
         {
           "mode": "company_rescue",
           "ticker": "2886",
-          "base": "https://mops.twse.com.tw",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2438,7 +2446,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8271",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2508,6 +2516,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "6734 安盛生 115/10/30 20:09:56 公告本公司115年9月份自結財務報告之負債比率、 流動比率、速動比率、預估未來三個月現金收支情形及銀行 可使用融資額度情形"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "5321 美而快 115/10/30 21:23:23 公告本公司115年09月份自結合併財務報表之負債比率、 流動比率及速動比率"
         }
       ],
       "error": ""
