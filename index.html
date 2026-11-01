@@ -92,6 +92,7 @@ html[data-theme="dark"] .mobile-page-nav-item.active{background:#303c4b!importan
 html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!important;border-color:#343c45!important;color:#d5dbe2!important}
 </style>
 <link rel="stylesheet" href="./assets/broker_eps_comparison.css?v=20261022-1">
+<link rel="stylesheet" href="./assets/etf_flow.css?v=20261101-2">
 </head>
 <body>
 <header><div class="head">
@@ -108,6 +109,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <button class="nav" data-p="ai">AI選股</button>
 <button class="nav" data-p="holders">大戶籌碼</button>
 <button class="nav" data-p="monthlyRevenue">月營收公布</button>
+<button class="nav" data-p="etfFlow">ETF Flow</button>
 <button class="nav" data-p="marketMonitor">大盤監控</button>
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
@@ -115,7 +117,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">產業資料庫</option>
 <option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
-<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="marketMonitor">大盤監控</option>
+<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option>
 </select>
 <div id="mobilePageNav" class="mobile-page-nav">
 <button id="mobilePageNavToggle" class="mobile-page-nav-toggle" type="button" aria-expanded="false">總覽</button>
@@ -162,6 +164,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 
 <div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
 </section>
+<section id="etfFlow" class="page"></section>
 </main>
 
 <script src="./assets/app.js?v=20261020-heat-detail-scroll"></script>
@@ -293,6 +296,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/research_safari_table_fix.js?v=20261027-safari-text-v1"></script>
 
 <script defer src="./assets/research_ai_layout_fix.js?v=20261026-source-audit-v5"></script>
+<script defer src="./assets/etf_flow.js?v=20261101-2"></script>
 </body>
 </html>
 
