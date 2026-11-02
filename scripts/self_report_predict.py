@@ -164,7 +164,7 @@ def reports(path, master, markets):
         month = x.get('monthly_period')
         month = month if re.fullmatch(r'20\d\d-(0[1-9]|1[0-2])', str(month or '')) else None
         attention_event = reason == 'attention_trading' and bool(re.search(r'注意交易|注意股|達公[布佈]注意', subject))
-        voluntary = reason == 'direct_self_report' and bool(re.search(r'自結|自編|自行結算', subject))
+        voluntary = reason == 'direct_self_report' and bool(re.search(r'自結|自編|自行結算', subject) or (month and x.get('monthly_eps') is not None))
         excluded = None
         if market not in markets:
             excluded = '非本次上市上櫃範圍'
@@ -280,13 +280,12 @@ def make_rows(cutoff, target, cal, notices, events, master, announcement_cutoff=
             continue
         hist = sorted(by_ticker[ticker], key=lambda x: x['date'])
         history = prior[ticker]
-        # TWSE A cooldown: historical events known by cutoff only.
-        # OTC is deliberately untouched.
-        if master[ticker]['market'] == 'twse':
-            target_date = dt.date.fromisoformat(target)
-            if any(0 <= (target_date - dt.date.fromisoformat(x['date'])).days <= 30
-                   for x in history):
-                continue
+        # Both markets: exclude confirmed self-reports published in the last 30 calendar days.
+        # Use announcement dates known by cutoff, never future events.
+        target_date = dt.date.fromisoformat(target)
+        if any(0 <= (target_date - dt.date.fromisoformat(x['date'])).days <= 30
+               for x in history):
+            continue
         # Hard exclusion for BOTH markets: once the latest target-month EPS/self-report
         # has been announced by cutoff, the company cannot announce it again.
         # This uses only filings known as of cutoff, never future labels.
@@ -703,7 +702,7 @@ def main():
             otc = choose([r for r in forecast if r['market'] == 'tpex'])
             forecast = [r for r in forecast if r['market'] == 'twse'] + otc
     warnings = [
-        '上市A規則：排除純第10～13款注意及近30日已公布自結；上櫃仍僅排除已公布目標月份自結',
+        '上市與上櫃：近30日已公布自結一律排除；上市A另排除純第10～13款注意',
         '上市A依近5日/3日注意次數排序、不使用機率；上櫃維持V17>=10%；各自0至10檔' ,
         '上市A以歷史注意紀錄規則選股；上櫃維持原本按日期順序訓練的V17模型',
         '只有注意交易觸發的自結計入命中及召回率；自主公告不計入',
