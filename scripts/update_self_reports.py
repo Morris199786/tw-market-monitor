@@ -27,6 +27,7 @@ SITE_URL = "https://morris199786.github.io/tw-market-monitor/"
 
 SEARCH_KEYWORDS = (
     "注意交易",
+    "公布交易資訊標準",  # MOPS alternate title without 「注意」
     "財務業務",
     "近期財務",
     "自結",
@@ -67,6 +68,9 @@ ATTENTION_KEYWORDS = (
     "有價證券達公布注意交易資訊標準",
     "注意交易資訊標準",
     "注意交易",
+    "公布交易資訊標準",  # e.g. 4741 2026/10/30 notice
+    "達公布交易資訊標準",
+    "多次達公布交易資訊標準",
 )
 
 EXCLUDE_SUBJECT_KEYWORDS = (
