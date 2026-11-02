@@ -16,7 +16,7 @@ def attention(item):
     if item.get('source') == 'news_backup':
         return False  # News is not an official attention-trading announcement.
     subject = str(item.get('subject') or '')
-    return bool(re.search(r'注意交易|注意股|達公[布佈]注意', subject))
+    return bool(re.search(r'注意交易|注意股|達公[布佈]注意|(?:多次)?達公[布佈]交易資訊標準|公[布佈]交易資訊標準', re.sub(r'\s+', '', subject)))
 
 def settle(history, master, ledger, existing, now):
     stamp = dt.datetime.fromisoformat(history['updated_at'])
@@ -51,10 +51,21 @@ def settle(history, master, ledger, existing, now):
             if market not in codes:
                 raise ValueError('Unknown market: '+ticker)
             codes[market].add(ticker)
+        # Preserve manually confirmed additions across automated reruns.
+        # Manual additions are explicitly recorded in the verified actuals JSON.
+        old = days.get(target)
+        if old:
+            for market in ('twse', 'tpex'):
+                codes[market].update(str(x) for x in old.get('manual_verified_' + market, []))
         rec = dict(complete=True, provisional=stamp.date() == day,
                    source='site_history_signal_window_v1', window_start=forecast['asof'], original_dates=forecast['original_dates'],
                    verified_at=stamp.isoformat(), **{k: sorted(v) for k,v in codes.items()})
-        old = days.get(target)
+        if old:
+            for market in ('twse', 'tpex'):
+                if old.get('manual_verified_' + market):
+                    rec['manual_verified_' + market] = old['manual_verified_' + market]
+            if old.get('manual_verification_note'):
+                rec['manual_verification_note'] = old['manual_verification_note']
         if old and old != rec:
             existing.setdefault('revisions', {}).setdefault(target, []).append(old)
         days[target] = rec
