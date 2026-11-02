@@ -80,11 +80,11 @@
     },
     "tpex": {
       "predictions": 16,
-      "hits": 12,
-      "actual": 13,
-      "precision": 0.75,
-      "recall": 0.9230769230769231,
-      "f1": 0.8275862068965517,
+      "hits": 13,
+      "actual": 14,
+      "precision": 0.8125,
+      "recall": 0.9285714285714286,
+      "f1": 0.8666666666666667,
       "settled_days": 6
     }
   },
@@ -103,11 +103,11 @@
       },
       "tpex": {
         "predictions": 16,
-        "hits": 12,
-        "actual": 13,
-        "precision": 0.75,
-        "recall": 0.9230769230769231,
-        "f1": 0.8275862068965517,
+        "hits": 13,
+        "actual": 14,
+        "precision": 0.8125,
+        "recall": 0.9285714285714286,
+        "f1": 0.8666666666666667,
         "settled_days": 6
       }
     },
@@ -281,12 +281,14 @@
         },
         "tpex": {
           "predictions": 1,
-          "hits": 0,
-          "actual": 0,
-          "precision": 0.0,
-          "recall": null,
-          "f1": 0.0,
-          "hit_tickers": [],
+          "hits": 1,
+          "actual": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "4741"
+          ],
           "missed_tickers": []
         }
       }
@@ -1199,7 +1201,9 @@
     "2026-10-30": {
       "actuals": {
         "twse": [],
-        "tpex": []
+        "tpex": [
+          "4741"
+        ]
       },
       "metrics": {
         "twse": {
@@ -1214,17 +1218,19 @@
         },
         "tpex": {
           "predictions": 1,
-          "hits": 0,
-          "actual": 0,
-          "precision": 0.0,
-          "recall": null,
-          "f1": 0.0,
-          "hit_tickers": [],
+          "hits": 1,
+          "actual": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "4741"
+          ],
           "missed_tickers": []
         }
       },
       "provisional": true,
-      "source": "site_history_signal_window_v1",
+      "source": "site_history_signal_window_v1_plus_manual_4741",
       "verified_at": "2026-10-30T22:03:00+08:00"
     }
   },
