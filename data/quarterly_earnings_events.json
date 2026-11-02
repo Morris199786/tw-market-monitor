@@ -3340,7 +3340,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 983,
   "version": "2026-10-29-v22-targeted-official-recovery",
-  "updated_at": "2026-11-02T13:03+08:00",
+  "updated_at": "2026-11-02T13:34+08:00",
   "upcoming": [
     {
       "ticker": "1802",
@@ -12497,36 +12497,39 @@
   "diagnostics": {
     "source_errors": [
       "announcement_scan/2026-10-19~2026-10-31:ValueError:announcement schema unavailable",
-      "targeted_mops/1802/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/2498/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/3026/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/3029/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/3704/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/4960/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6112/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6278/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6908/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "announcement_scan/2026-11-01~2026-11-02:ValueError:announcement schema unavailable",
       "targeted_mops/3628/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/3684/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3718/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/4772/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/5228/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6123/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/6123/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=10);ValueError:announcement schema unavailable",
       "targeted_mops/6185/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/6207/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/6895/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "targeted_mops/6997/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/6997/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/7704/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/2481/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/1802/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/2498/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3029/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3704/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/4960/2026-Q3:ValueError:announcement schema unavailable;ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
+      "targeted_mops/6112/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/6278/2026-Q3:ValueError:announcement schema unavailable;ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
+      "targeted_mops/6908/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3026/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/6933/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/3711/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/3406/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
-      "mops_board_schedule:2026-Q2/sii:URLError:<urlopen error timed out>"
+      "mops_board_schedule:2026-Q3/sii:URLError:<urlopen error [Errno 111] Connection refused>"
     ],
     "historical_errors": [
       "twse/2026-Q1: ValueError"
     ],
     "coverage": {
       "2026-10-19~2026-10-31": "failed",
-      "2026-11-01~2026-11-02": "ok"
+      "2026-11-01~2026-11-02": "failed"
     },
     "calendar_errors": []
   },
