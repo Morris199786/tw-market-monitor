@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-03T20:37+08:00",
+  "updated_at": "2026-11-03T21:04+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1710,21 +1710,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 304,
+          "rows": 305,
           "hits": 7
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 304,
+          "rows": 305,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 304,
+          "rows": 305,
           "hits": 0
         },
         {
@@ -1759,14 +1759,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 304,
+          "rows": 305,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 304,
+          "rows": 305,
           "hits": 0
         },
         {
@@ -1807,7 +1807,8 @@
             },
             {
               "market": "tpex",
-              "error": "RuntimeError('GET failed: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O: 403 Client Error: Forbidden for url: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O')"
+              "rows": 64,
+              "ticker_pool": 0
             }
           ],
           "tickers": 64
@@ -1911,7 +1912,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2247",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2339,10 +2340,10 @@
       "error": ""
     },
     "tpex": {
-      "ok": false,
-      "rows": 0,
+      "ok": true,
+      "rows": 64,
       "self_reports": 0,
-      "error": "RuntimeError('GET failed: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O: 403 Client Error: Forbidden for url: https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap04_O')"
+      "error": ""
     }
   },
   "items": [
