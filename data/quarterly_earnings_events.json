@@ -4744,7 +4744,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 983,
   "version": "2026-10-29-v22-targeted-official-recovery",
-  "updated_at": "2026-11-03T20:05+08:00",
+  "updated_at": "2026-11-03T20:37+08:00",
   "upcoming": [
     {
       "ticker": "3558",
@@ -16891,7 +16891,7 @@
       "publish_date": "2026-10-27",
       "publish_time": "15:57:45",
       "subject": "公告本公司董事會通過115年第三季合併財報",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3718&SPOKE_DATE=20261027&SPOKE_TIME=155745&SEQ_NO=3&skey=3718202610273",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3718&SPOKE_DATE=20261027&SPOKE_TIME=155745&SEQ_NO=3",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -17047,7 +17047,7 @@
       "publish_date": "2026-10-23",
       "publish_time": "16:06:26",
       "subject": "本公司115年第三季財務報告業經董事會決議通過",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7765&SPOKE_DATE=20261023&SPOKE_TIME=160626&SEQ_NO=3&skey=7765202610233",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/t05st01?co_id=7765&year=115",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -17185,7 +17185,7 @@
       "publish_date": "2026-10-23",
       "publish_time": "12:09:53",
       "subject": "公告本公司董事會通過民國115年第三季合併財務報告",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6486&SPOKE_DATE=20261023&SPOKE_TIME=120953&SEQ_NO=3&skey=6486202610233",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/t05st01?co_id=6486&year=115",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -17644,19 +17644,22 @@
   ],
   "diagnostics": {
     "source_errors": [
+      "news/tpex:RuntimeError",
+      "detail/6486/2026-10-23",
+      "detail/7765/2026-10-23",
+      "detail/5508/2026-10-27",
       "planned_date/4583/2026-10-27:unavailable",
-      "planned_date/8131/2026-10-27:unavailable",
-      "detail/2329/2026-10-28",
       "announcement_scan/2026-10-20~2026-10-31:ValueError:announcement schema unavailable",
       "announcement_scan:time_budget",
       "daily_mops:ConnectTimeout",
       "targeted_mops/3026/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/6933/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3558/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
+      "targeted_mops/3558/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/3628/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6233/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/3711/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3406/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable"
+      "targeted_mops/3406/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable",
+      "financial/tpex:RuntimeError"
     ],
     "historical_errors": [],
     "coverage": {
