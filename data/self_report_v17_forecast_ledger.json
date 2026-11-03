@@ -756,6 +756,24 @@
           ]
         }
       ]
+    },
+    "2026-11-04": {
+      "asof": "2026-11-03",
+      "model_version": "2026-10-21-listed-rule-A-otc-original",
+      "picks": [
+        {
+          "ticker": "9110",
+          "name": "越南控-DR",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        }
+      ]
     }
   },
   "settlements": {
@@ -806,7 +824,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-10-22": {
       "actuals": {
@@ -850,7 +868,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-10-27": {
       "actuals": {
@@ -895,7 +913,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-10-28": {
       "actuals": {
@@ -936,7 +954,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-10-29": {
       "actuals": {
@@ -976,7 +994,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-10-30": {
       "actuals": {
@@ -1011,7 +1029,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     },
     "2026-11-02": {
       "actuals": {
@@ -1048,9 +1066,52 @@
           "missed_tickers": []
         }
       },
+      "provisional": false,
+      "source": "site_history_signal_window_v1",
+      "verified_at": "2026-11-03T22:04:00+08:00"
+    },
+    "2026-11-03": {
+      "actuals": {
+        "twse": [
+          "3321",
+          "6672"
+        ],
+        "tpex": [
+          "6697",
+          "8291"
+        ]
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 3,
+          "hits": 2,
+          "actual": 2,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "hit_tickers": [
+            "3321",
+            "6672"
+          ],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 3,
+          "hits": 2,
+          "actual": 2,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8,
+          "hit_tickers": [
+            "6697",
+            "8291"
+          ],
+          "missed_tickers": []
+        }
+      },
       "provisional": true,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-02T23:59:00+08:00"
+      "verified_at": "2026-11-03T22:04:00+08:00"
     }
   },
   "revisions": {
