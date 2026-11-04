@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-04T17:12+08:00",
+  "updated_at": "2026-11-04T17:47+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1762,21 +1762,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 254,
+          "rows": 328,
           "hits": 3
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 255,
+          "rows": 328,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 256,
+          "rows": 328,
           "hits": 0
         },
         {
@@ -1811,20 +1811,21 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7b4e1a7d6180>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 256,
+          "rows": 329,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7b4e1a7d70b0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mopsov.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mopsov.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -1866,7 +1867,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1104",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1890,7 +1891,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1305",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1906,7 +1907,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1437",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1962,7 +1963,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1616",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -1970,7 +1971,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1626",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2026,7 +2027,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2108",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2091,7 +2092,7 @@
           "mode": "company_rescue",
           "ticker": "2323",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 5,
           "hits": 0,
           "error": ""
         },
@@ -2163,7 +2164,7 @@
           "mode": "company_rescue",
           "ticker": "2408",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 4,
+          "rows": 5,
           "hits": 0,
           "error": ""
         },
@@ -2194,7 +2195,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2466",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2202,7 +2203,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2472",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2354,7 +2355,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3168",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2395,7 +2396,7 @@
           "mode": "company_rescue",
           "ticker": "3711",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 3,
+          "rows": 6,
           "hits": 0,
           "error": ""
         },
@@ -2435,7 +2436,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
