@@ -774,6 +774,72 @@
           ]
         }
       ]
+    },
+    "2026-11-05": {
+      "asof": "2026-11-04",
+      "model_version": "2026-10-21-listed-rule-A-otc-original",
+      "picks": [
+        {
+          "ticker": "2360",
+          "name": "致茂",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "3532",
+          "name": "台勝科",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "7750",
+          "name": "新代",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "8996",
+          "name": "高力",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "8272",
+          "name": "全景軟體",
+          "market": "tpex",
+          "probability": 0.22368470577141014,
+          "reasons": [
+            "最近注意交易距今0交易日",
+            "近3日注意3次、近5日注意3次、近20日注意3次",
+            "保留原有前日注意、近5日注意3次及舊模型評分",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        }
+      ]
     }
   },
   "settlements": {
@@ -824,7 +890,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-10-22": {
       "actuals": {
@@ -868,7 +934,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-10-27": {
       "actuals": {
@@ -913,7 +979,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-10-28": {
       "actuals": {
@@ -954,7 +1020,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-10-29": {
       "actuals": {
@@ -994,7 +1060,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-10-30": {
       "actuals": {
@@ -1029,7 +1095,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-11-02": {
       "actuals": {
@@ -1068,7 +1134,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     },
     "2026-11-03": {
       "actuals": {
@@ -1109,9 +1175,40 @@
           "missed_tickers": []
         }
       },
+      "provisional": false,
+      "source": "site_history_signal_window_v1",
+      "verified_at": "2026-11-04T22:06:00+08:00"
+    },
+    "2026-11-04": {
+      "actuals": {
+        "twse": [],
+        "tpex": []
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 1,
+          "hits": 0,
+          "actual": 0,
+          "precision": 0.0,
+          "recall": null,
+          "f1": 0.0,
+          "hit_tickers": [],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 0,
+          "hits": 0,
+          "actual": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null,
+          "hit_tickers": [],
+          "missed_tickers": []
+        }
+      },
       "provisional": true,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-03T22:04:00+08:00"
+      "verified_at": "2026-11-04T22:06:00+08:00"
     }
   },
   "revisions": {
