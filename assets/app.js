@@ -2805,60 +2805,101 @@ function heatTableStyles(){
   `;
   document.head.appendChild(stl);
 }
-/* 昨日：由既有 data/daily_k/{ticker}.json 的日K計算上一交易日漲跌幅。
-   同一股票同一天最多讀取一次，並行上限 6，避免每次排序重複抓取。 */
+/* 昨日優先使用已載入的歷史收盤價；缺值才查個股日K。
+   有限重試、逾時與分批重畫，避免等待所有請求或手動點擊。 */
 const heatYesterdayCache = new Map();
+const heatYesterdayFailures = new Map();
 let heatYesterdayLoading = false;
 let heatYesterdayLoadedDate = "";
+let heatYesterdayPaintTimer = null;
+let heatYesterdayRetryTimer = null;
 function heatTaiwanDate(){
-  return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const get=k=>parts.find(p=>p.type===k).value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+function heatYesterdayFromBars(bars,today){
+  const rows=(bars||[]).filter(b=>/^\d{4}-\d{2}-\d{2}$/.test(String(b.time))&&b.time<today)
+    .sort((a,b)=>a.time.localeCompare(b.time));
+  if(rows.length<2)return null;
+  // 不跳過缺價的交易日，避免把兩日漲跌當成單日。
+  const previous=heatValidNumber(rows[rows.length-2].close),close=heatValidNumber(rows[rows.length-1].close);
+  return previous!==null&&previous>0&&close!==null&&close>0?(close/previous-1)*100:null;
+}
+function heatYesterdayBulk(stock,today){
+  const d=heatDetailData?.stocks?.[String(stock?.ticker||"")];
+  const dates=heatDetailData?.dates_by_period?.["20"],prices=d?.prices;
+  // 僅使用當天或前一天的快照；其他日期交回原日K備援。
+  const yesterday=new Date(Date.parse(today+"T00:00:00Z")-86400000).toISOString().slice(0,10);
+  const asOf=heatDetailData?.as_of_date;
+  if(asOf!==today&&asOf!==yesterday)return null;
+  if(!Array.isArray(dates)||!Array.isArray(prices)||dates.length!==prices.length||dates[dates.length-1]!==asOf)return null;
+  return heatYesterdayFromBars(dates.map((time,i)=>({time,close:prices[i]})),today);
 }
 function heatYesterdayStock(stock){
-  const ticker=String(stock?.ticker||"");
-  const cached=heatYesterdayCache.get(ticker);
-  if(cached!==undefined)return cached;
-  const d=heatDetailData?.stocks?.[ticker];
-  const v=d?.yesterday_change_pct ?? d?.prev_day_change_pct ?? stock?.yesterday_change_pct;
-  return heatValidNumber(v);
+  const today=heatTaiwanDate();
+  const bulk=heatYesterdayBulk(stock,today);
+  if(bulk!==null)return bulk;
+  if(heatYesterdayLoadedDate!==today)return null;
+  const cached=heatYesterdayCache.get(String(stock?.ticker||""));
+  return cached===undefined?null:cached;
+}
+function heatYesterdayPaint(){
+  if(heatYesterdayPaintTimer!==null)return;
+  heatYesterdayPaintTimer=setTimeout(()=>{
+    heatYesterdayPaintTimer=null;
+    if(cache.heat&&document.querySelector("#heatGrid")&&
+       (!window.getHeatmapDisplayMode||window.getHeatmapDisplayMode()==="price"))renderHeat(cache.heat);
+  },150);
 }
 async function heatLoadYesterday(sectors){
   const today=heatTaiwanDate();
-  if(heatYesterdayLoadedDate!==today){
-    heatYesterdayCache.clear();heatYesterdayLoadedDate=today;
-  }
   if(heatYesterdayLoading)return;
-  const tickers=[...new Set(sectors.flatMap(sec=>(sec.stocks||[]).map(x=>String(x.ticker||""))))]
-    .filter(t=>t&&!heatYesterdayCache.has(t));
+  if(heatYesterdayLoadedDate!==today){
+    heatYesterdayCache.clear();heatYesterdayFailures.clear();heatYesterdayLoadedDate=today;
+    clearTimeout(heatYesterdayRetryTimer);heatYesterdayRetryTimer=null;
+  }
+  const stocks=new Map(sectors.flatMap(sec=>(sec.stocks||[]).map(x=>[String(x.ticker||""),x])));
+  const tickers=[...stocks.keys()].filter(t=>{
+    const failure=heatYesterdayFailures.get(t);
+    return t&&heatYesterdayBulk(stocks.get(t),today)===null&&!heatYesterdayCache.has(t)&&
+      (!failure||(failure.attempts<3&&Date.now()>=failure.retryAt));
+  });
   if(!tickers.length)return;
   heatYesterdayLoading=true;
   let next=0;
   const worker=async()=>{
     while(next<tickers.length){
       const ticker=tickers[next++];
-      let value=null;
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),8000);
       try{
-        const response=await fetch("./data/daily_k/"+encodeURIComponent(ticker)+".json?v="+today,{cache:"force-cache"});
-        if(response.ok){
-          const data=await response.json();
-          const bars=(Array.isArray(data.bars)?data.bars:[])
-            .filter(b=>/^\d{4}-\d{2}-\d{2}$/.test(String(b.time))&&b.time<=today&&Number(b.close)>0)
-            .sort((a,b)=>a.time.localeCompare(b.time));
-          // 若日K已含今天，跳過今天；否則最後一根就是上一交易日
-          const last=bars.length-1;
-          const y=last>=0&&bars[last].time===today?last-1:last;
-          if(y>=1){
-            const prev=Number(bars[y-1].close),close=Number(bars[y].close);
-            if(prev>0&&close>0)value=(close/prev-1)*100;
-          }
+        const response=await fetch("./data/daily_k/"+encodeURIComponent(ticker)+".json?v="+today,{cache:heatYesterdayFailures.has(ticker)?"reload":"force-cache",signal:controller.signal});
+        if(!response.ok)throw new Error("HTTP "+response.status);
+        const data=await response.json();
+        const value=heatYesterdayFromBars(Array.isArray(data.bars)?data.bars:[],today);
+        if(value===null)throw new Error("缺少前兩個交易日收盤價");
+        if(today===heatTaiwanDate()){
+          heatYesterdayCache.set(ticker,value);heatYesterdayFailures.delete(ticker);
         }
-      }catch(e){console.debug("昨日K線無法取得",ticker,e);}
-      heatYesterdayCache.set(ticker,value);
+      }catch(e){
+        const attempts=(heatYesterdayFailures.get(ticker)?.attempts||0)+1;
+        heatYesterdayFailures.set(ticker,{attempts,retryAt:Date.now()+15000});
+        console.debug("昨日K線無法取得",ticker,e);
+      }finally{clearTimeout(timeout);heatYesterdayPaint();}
     }
   };
   try{await Promise.all(Array.from({length:Math.min(6,tickers.length)},worker));}
   finally{
     heatYesterdayLoading=false;
-    if(cache.heat&&document.querySelector("#heatGrid"))renderHeat(cache.heat);
+    heatYesterdayPaint();
+    const pending=[...heatYesterdayFailures.values()].filter(x=>x.attempts<3);
+    if(pending.length&&heatYesterdayRetryTimer===null){
+      heatYesterdayRetryTimer=setTimeout(()=>{
+        heatYesterdayRetryTimer=null;
+        if(cache.heat)void heatLoadYesterday(cache.heat.sectors||[]);
+      },Math.max(0,Math.min(...pending.map(x=>x.retryAt))-Date.now()));
+    }
   }
 }
 function heatYesterdaySector(sec){
@@ -3577,6 +3618,7 @@ async function init() {
 }
 
 init();
+
 
 
 
