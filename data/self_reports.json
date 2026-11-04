@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-04T18:59+08:00",
+  "updated_at": "2026-11-04T19:39+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1762,30 +1762,26 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 392,
+          "rows": 404,
           "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978c74e30>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 404,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5ad80>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 404,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5b2c0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
           "rows": 0,
           "hits": 0
@@ -1806,16 +1802,23 @@
         },
         {
           "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5b9e0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 392,
+          "rows": 404,
           "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x73eb8418ce30>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -1835,7 +1838,8 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7aa978b5ba40>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -1871,7 +1875,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1216",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2127,7 +2131,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2385",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2135,14 +2139,15 @@
         {
           "mode": "company_rescue",
           "ticker": "2388",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 7,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "2397",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2198,7 +2203,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2474",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2478,7 +2483,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5907",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
