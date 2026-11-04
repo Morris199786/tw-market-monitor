@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-04T18:26+08:00",
+  "updated_at": "2026-11-04T18:59+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -1755,36 +1755,33 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 3,
+      "rows": 4,
       "self_reports": 3,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 376,
-          "hits": 3
+          "rows": 392,
+          "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 376,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978c74e30>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 377,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5ad80>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5b2c0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -1811,14 +1808,13 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 377,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x7aa978b5b9e0>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 377,
+          "rows": 392,
           "hits": 0
         },
         {
@@ -1839,8 +1835,7 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7aa978b5ba40>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -1876,7 +1871,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1216",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2115,14 +2110,6 @@
         },
         {
           "mode": "company_rescue",
-          "ticker": "2352",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
-          "hits": 0,
-          "error": ""
-        },
-        {
-          "mode": "company_rescue",
           "ticker": "2356",
           "base": "https://mopsov.twse.com.tw",
           "rows": 0,
@@ -2140,7 +2127,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2385",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2148,15 +2135,14 @@
         {
           "mode": "company_rescue",
           "ticker": "2388",
-          "base": "https://mopsov.twse.com.tw",
-          "rows": 7,
+          "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
           "ticker": "2397",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2229,7 +2215,7 @@
           "mode": "company_rescue",
           "ticker": "2528",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2253,7 +2239,7 @@
           "mode": "company_rescue",
           "ticker": "2881",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2492,7 +2478,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5907",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2604,7 +2590,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6962",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2699,12 +2685,18 @@
         },
         {
           "mode": "company_rescue_summary",
-          "targets": 104,
+          "targets": 103,
           "rescued": 0,
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "2352 佳世達 115/11/04 18:39:32 佳世達115年10月份自結合併營收"
+        }
+      ],
       "error": ""
     },
     "twse": {
