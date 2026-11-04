@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-11-04T14:38+08:00",
+  "updated_at": "2026-11-04T15:11+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 252,
+    "candidate_count": 253,
     "parsed_count": 114,
-    "parse_failed_count": 131,
+    "parse_failed_count": 132,
     "parse_failed": [
+      {
+        "ticker": "2637",
+        "name": "慧洋-KY",
+        "publish_date": "2026-11-04",
+        "publish_time": "14:35:00",
+        "subject": "2637 慧洋-KY 115/11/04 14:35:00 補充公告本公司115年10月份自結盈餘",
+        "source": "mops_ajax",
+        "source_error": "",
+        "eps_parse_status": "failed",
+        "eps_parse_reason": "eps_values_not_parsed",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "2466",
         "name": "冠西電",
@@ -1716,28 +1729,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 1,
+      "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 58,
+          "rows": 99,
+          "hits": 1
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 99,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 59,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 59,
+          "rows": 99,
           "hits": 0
         },
         {
@@ -1772,14 +1785,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 59,
+          "rows": 99,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 59,
+          "rows": 99,
           "hits": 0
         },
         {
@@ -2109,7 +2122,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2388",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2126,7 +2139,7 @@
           "mode": "company_rescue",
           "ticker": "2408",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -2317,7 +2330,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3168",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2333,7 +2346,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3416",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2341,7 +2354,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3592",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2349,7 +2362,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3661",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2429,7 +2442,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5484",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2485,7 +2498,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6257",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2573,7 +2586,7 @@
         {
           "mode": "company_rescue",
           "ticker": "7610",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2582,7 +2595,7 @@
           "mode": "company_rescue",
           "ticker": "7710",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 3,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -2629,7 +2642,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8996",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""

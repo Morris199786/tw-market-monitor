@@ -1,17 +1,35 @@
 {
-  "updated_at": "2026-11-04T14:32+08:00",
+  "updated_at": "2026-11-04T15:02+08:00",
   "source": "Google News RSS",
   "parser_version": "single-period-v10-verified-q3-margin-and-h1-guard",
   "coverage": "僅今日預計開財報且官方 EPS 或毛利率不完整公司；先一般新聞、仍缺才富聯網；最近3天新聞",
   "search_counts": {
-    "general": 72,
-    "money_link": 144
+    "general": 65,
+    "money_link": 130
   },
   "scheduled_count": 79,
-  "gap_count": 72,
+  "gap_count": 65,
   "source_errors": [],
   "conflict_count": 0,
-  "items": [],
+  "items": [
+    {
+      "ticker": "3019",
+      "name": "亞光",
+      "market": "twse",
+      "kind": "quarterly",
+      "period": "2026-Q3",
+      "eps": 3.0,
+      "publish_date": "2026-11-04",
+      "publish_time": "14:45:46",
+      "subject": "亞光Q3純益8.39億元EPS達3元創高 前3季每股賺5.98元",
+      "source": "news_backup",
+      "source_label": "新聞備援｜鉅亨網",
+      "source_url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE5zSl9jNVR4Zm85S2VYelFibVNZNkFTdFRveE01QmpZeG5mZzZJZTFpSWdYWlcyRml1LURNV3U3UFF3OElTQjZCdmpvbnh5TGM?oc=5",
+      "evidence": "Q3純益8.39億元EPS達3元",
+      "eps_basis": "news_reported_single",
+      "release_type": "financial_report"
+    }
+  ],
   "audit": [
     {
       "title": "旺宏前三季大賺逾一個股本，Q3 毛利率飆破70% 寫歷史新高- 股市爆料同學會 - CMoney",
@@ -19,6 +37,30 @@
       "result": "no_unambiguous_single_period_eps",
       "published_at": "2026-11-01T09:50:41+08:00",
       "publisher": "CMoney",
+      "metrics": []
+    },
+    {
+      "title": "亞光Q3純益8.39億元EPS達3元創高 前3季每股賺5.98元 - 鉅亨網",
+      "url": "https://news.google.com/rss/articles/CBMiT0FVX3lxTE5zSl9jNVR4Zm85S2VYelFibVNZNkFTdFRveE01QmpZeG5mZzZJZTFpSWdYWlcyRml1LURNV3U3UFF3OElTQjZCdmpvbnh5TGM?oc=5",
+      "result": "accepted",
+      "published_at": "2026-11-04T14:45:46+08:00",
+      "publisher": "鉅亨網",
+      "metrics": [
+        {
+          "ticker": "3019",
+          "period": "2026-Q3",
+          "eps": 3.0,
+          "gross_margin": null,
+          "gross_margin_evidence": null
+        }
+      ]
+    },
+    {
+      "title": "亞光前3季獲利達2025全年91% 4Q26加速CPO、AI應用布局 - DIGITIMES",
+      "url": "https://news.google.com/rss/articles/CBMia0FVX3lxTE1FRUtGUndNQUQyRnJhV0xjQlc4MFd5N09fclliR3AyMk5MNjFMTUdqNld3R0s5VWVWRWp2QzBnNndva2hFcTh5WE5yMXhKZ2VhU2V4cG0xV05WNUpxMGIxT3R2VnY1c0VSWEVj?oc=5",
+      "result": "no_unambiguous_single_period_eps",
+      "published_at": "2026-11-04T14:19:00+08:00",
+      "publisher": "DIGITIMES",
       "metrics": []
     },
     {
@@ -30,11 +72,19 @@
       "metrics": []
     },
     {
-      "title": "亞光前3季獲利達2025全年91% 4Q26加速CPO、AI應用布局 - DIGITIMES",
-      "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxNUW4wT0RrUWxrSWowTTU2dWc1ZlZqanlXd0VOV0hDUUFJd3Q2anZ5YkIzbmRNVWVTem10TkN6dGxrU3d3Nl84b2hiekdXVVJQMW1Tekdpdl91RWJCTmdxY3RsdDVSM0FjTzRlMnBvMThDOERBR0xWSEpFM1lnc0lzUUZ2c2NjSG9Kbkc5R0xERVJsa3ZocVh1Rg?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:19:00+08:00",
-      "publisher": "DIGITIMES",
+      "title": "宏達電第3季每股賺0.26元 新品歐美上市挹注 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBtLTAyTGJ2UUttWnFYTTN4SHBfQmF5c1JnTkNyV29iOXBmUDBLZmJueEozOWR0TTNlSkdKaHVKT0R5d1hDZG9DVHpTY2RxMi1iU2tDWHN3aGNoUdIBX0FVX3lxTFB5ZXY4Qm9BVFk5Y0djVXNvOUZOZnE4RDhLWU11cXgwUy1MMFg4ZVA4b01uaVVnbjVRNjZ3bUp3Z2gybUtuMGprdGpiNVR5Yzd5c0szMEh1eW9wSDVPaDdv?oc=5",
+      "result": "accepted",
+      "published_at": "2026-11-02T20:37:15+08:00",
+      "publisher": "經濟日報",
+      "metrics": []
+    },
+    {
+      "title": "AI與高階半導體拉貨 捷迅第三季EPS 3.52元創近三年新高 | 鏡週刊 - LINE TODAY",
+      "url": "https://news.google.com/rss/articles/CBMiVkFVX3lxTFBmNWJMaXo2WUxjbTJmYnUyOFkwdHVBODFFUk9ZSEVCZFJhX1A2OFo2RUo0WUNNR3dFQk4wYnRITUtGOC1PSTR3Yk1pYWg0VVQxd1NMdVFn?oc=5",
+      "result": "accepted",
+      "published_at": "2026-11-04T14:15:46+08:00",
+      "publisher": "LINE TODAY",
       "metrics": []
     },
     {
@@ -42,14 +92,6 @@
       "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE0zcklFOXJIM2pXdnlzRHRCOVZ5M1czYW5vOXhrcnRGdjc1X3JudnRzSE04NnVhd2NXNGdWVkR0S3JTNnR1bFhyUU1DUFBRSC0teGctY21ING9jQdIBX0FVX3lxTE02SzNqcVBVenVMeF9WVS10NXFwZnh5TWVqVklBWDNSZEpoamh5NzFQQlhvT0JWZTNVLXNHNmVnOHJDeXRqYUp5ZUtkaU9HdmhRWGhjX1ZwcEdzUWVYX2tB?oc=5",
       "result": "no_unambiguous_single_period_eps",
       "published_at": "2026-11-02T19:21:46+08:00",
-      "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "宏達電第3季每股賺0.26元 新品歐美上市挹注 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBtLTAyTGJ2UUttWnFYTTN4SHBfQmF5c1JnTkNyV29iOXBmUDBLZmJueEozOWR0TTNlSkdKaHVKT0R5d1hDZG9DVHpTY2RxMi1iU2tDWHN3aGNoUdIBX0FVX3lxTFB5ZXY4Qm9BVFk5Y0djVXNvOUZOZnE4RDhLWU11cXgwUy1MMFg4ZVA4b01uaVVnbjVRNjZ3bUp3Z2gybUtuMGprdGpiNVR5Yzd5c0szMEh1eW9wSDVPaDdv?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-02T20:37:15+08:00",
       "publisher": "經濟日報",
       "metrics": []
     },
@@ -70,14 +112,6 @@
       "metrics": []
     },
     {
-      "title": "【1104台股盤前】加權長黑破半年線、櫃買暴跌失守年線！外資提款破千億宣洩恐慌，急跌抄底鎖定地板股【禾伸堂】、【志聖】、【信邦】｜豐雲學堂2026 年 11 月 - 永豐金證券",
-      "url": "https://news.google.com/rss/articles/CBMizAVBVV95cUxPRE5XMEV6Z29NbFVObm1GbWdFbThLeGNyWTFCMk9wOGlzb1lpR195SWFpbXBtd1Q3SnNTTkNFcTdnYzdXeTBza2xyTTYwTVByNURkWTZUZDhBblprY2NPWks5dEU1eVgzanBiNXdSekc4OXhpZ2RUMkRSR3dOMmFxRGVkV0FGSTQzV0wtT1hUQmJtXzlRQUlua3Z2OWxUa3NCYXZWSXIwLTJSclU4MzNVbTA0bWNfTUgzTjdmQ1BQRFBJZnVuNC1sdExxeElBdkRET1dtV2haQmdGNmZ6bWJCamhtaGdtWmpOTWcyYVkyeGdRU0dBck5IeWtFbmpPbHRpSWYtQV9rSExaU1RkbnRyX0lrZUdsOFVfUE5mcS13RldkTTBVTUI3eUV5YnREajdBLUo3dlZVQ0oxQlozZERTRzAzZURxMk1XcEZRVUwyTTBXTjVBbjdoU2ZtNW5jLVdHNnJxOE8wSTZuVExTQ0dlTnNwQmNtWU9DamswZkxlekRhQ0ZWRlNzQW9ObnFYVmZZVmdzOGZxX1EyMHJkMVdrTlZLU0NLV2d5dHRsUHl1SzBJc3BhdmlPdEJ5TjhSVXFCaE1BY2lkdUQ4U2NZZjlySlI3Xzc3RE1tNTlXLW5WT3ZNSzZYS0hNRzFfVDY5eGM3ZU5HbFMwMFZwYUFGa3poTTdNWjJWNWhGbjFwcWRkeTNEQTl5TGN5V2ZPcVVGOWZkS0ZRSld2STZWYlJydFBtYXdiNVFZV0JicGVyd0l6UjhZMjJDVmRpbmt4eGp4X0x0a1dYWEhSTVpBZ1d0UG1Dek1iUkZ1czl6bC13OHJscERDQjZENUI4YUs3U1FVWjdQNjJ1STZTVkV0Y2JTeFBvTHJCWWVIQWdVWjNCc2JXQXZGcEZfTEF0QmRTSWxhRGo0Y3FIeFhEVElRdkp5a1ZnbHAwYW5zLWowQjAzNA?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T08:21:51+08:00",
-      "publisher": "永豐金證券",
-      "metrics": []
-    },
-    {
       "title": "被動元件氣虛！ 禾伸堂下殺逼近跌停　華新科跌半根 - ETtoday財經雲",
       "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE02dV90Y3VyUlZtWjFjMTV1c3hLVjM3aUQ5WUwtaGRlR3A0bVFTUkFnNTFpR2NlVDdJZ3llNkJJcU14Wm5GMFQwSFNWNlJvYU52NmfSAVBBVV95cUxQX1N1Q3dXTHNTV2drdW5SVUdScW0wd3Z6MnVWMHZDQ0M4alQxUDhzUV9fWWxzWnVjNy1aLVc2MllBMVVHLUtiSWQwZm9Lb05HQQ?oc=5",
       "result": "ambiguous_company",
@@ -86,19 +120,11 @@
       "metrics": []
     },
     {
-      "title": "【即時新聞】禾伸堂(3026)最新賺逾一股本，近日爆量急殺還能卡位嗎？ - CMoney投資網誌",
-      "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOVXJ6SWxVMWtVWjRGUzNraUlkbXZnYmtQV0ducE5ETkJJWUN2eDBkNlA0LXNFMWlRYzhpODNQRVdha2RXUnlWN01EdmZ4VFFlWTlEdVJaSFhJbjVpTDdpbHUzTWNsTjlrb3FVZTdoeDhsUnV0Mjhhc0lENWxSWUR5NVpzc2dIMnFtWE5rZmJIVTE?oc=5",
+      "title": "是方三利器 搶 AI 商機 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE1OM3VHeTR5RUI4T2hDMUhTSDd2LTZXQUpCb0tMY3lLcXd1dERldzZqS1U1X0pKc09md3VrTGg0cFNSWUV1bkt0SURCdVhMZTR2Y3FiTmw0SEU0ajjSAWBBVV95cUxNMHdFMm1BZFZEMHF4U1ZSdklJcXNXQnhsZ1pCdUdTano1cVU5cnhFdThIdjBzbGN4WVJ6R2M1WENsN25CTjMwbk03b3dYLVJxR2QzNHBTYnd6VG1id25Uemo?oc=5",
       "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T10:52:52+08:00",
-      "publisher": "CMoney投資網誌",
-      "metrics": []
-    },
-    {
-      "title": "【1103台股盤後】加權長黑破半年線、櫃買暴跌失守年線！外資提款破千億宣洩恐慌，急跌抄底鎖定地板股【禾伸堂】、【志聖】、【信邦】｜豐雲學堂2026 年 11 月 - 永豐金證券",
-      "url": "https://news.google.com/rss/articles/CBMizAVBVV95cUxNajZZc0lrWFlKRnptTHdTVkdEOTNlczUzYVlMZTg0ZzBzUXFseW9odHNFUFZYVGZySGF1eFN4RUE4cWM1QmRKZ3JNQlRVSkpmQjdfOWhSMWUxeUQ3VVB5TGxKWVF2d3oyOUpaQmxncHgyemlNTl9nVFNuVGF1azRQYVdCcHQ5eDJuNjN3QkxyX2JPaldMb3JHUUFza2c3WTVDZFJyNy1vTi1pbXJYV25jOVdfeTJ5Tzd3dGVVMHVPdFAzcU1uVm5hVDNiSlNaekJSSjVaUXhYaHRQM1dub2otc2Q2ZVVNNDFFSnpTNWVLQUNKbTRvaEtGdHNEZ3B2UG5qWkxOSkRXQmR4ZWV0aWc3YXVZbU9BTnpzN19CdHlkNVEyY2I2VkRmRkZiSEdhZENBMkV0ZURCNmpfWFlHd01fNjdfY1MwZnlWTUNjRjJ3T2x3OVN6UmJMeTJmd1NtSU9ZX3hfS0h4ZjJnbnZ2VVBNRlZUbGdYeFd6WmFZOFhpaEJJRTQtTzFpMFlDRXVCS2o0WGRwSjg3ZXJIN2RudzdjdFhraFJOWnZxR3RVcl9vWGNHbHBQZm51ekF6dnRhRnl0aUZNOXFFbjRYSVViS0V0Y0dGZXQtNjJtT05uazE3Y0JmVXVUY29aTW1vUWszN1ZtTEFMeEI4a3BjU05oOWROdlB6V2FmcGt0Nm5hNGJYU0NxZllQSzNPd24ySl9rbl9GWUdGWHE4WXVVUFpXR3VibmtxWUIybXRSYWpzMWVJQktJTldEYVJQakVpcW1zd3prZDFjZlA0emlId1BNbkx5SmFQMEdqal9lX2lnbTZrd3VIaW1VTXI0MTA3V0FMWTJRdjZSY2VISVB5QWJHVFZtTGpLaTJqcXd1a0ZJWGc0ZDZZYldnLW0wU0JiRWs1dm41ekpITENDeGRrUWZoOFlkVGVtd000NFZxN21wMQ?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T17:18:10+08:00",
-      "publisher": "永豐金證券",
+      "published_at": "2026-11-04T00:43:58+08:00",
+      "publisher": "經濟日報",
       "metrics": []
     },
     {
@@ -110,26 +136,18 @@
       "metrics": []
     },
     {
-      "title": "MLCC 龍頭國巨何時漲？台股7月重挫後禾伸堂、信昌電股價一度反彈翻倍漲 為何僅他跌不停？ - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBZWHV1ZmZVcUNGYW9WYk05TXFnV1VvYzMwUERSRV9jRWd3VUtYMHJoaWNIQl9IMDliLVdzRFdJa1Y5aTFTSDN5WHpiM3JqWjdjRGlFT0JtV2lmUdIBX0FVX3lxTFBxNlBiRHFTOWFqVUkwZ3BlUE1Id0V5VnpRTEJHdUNxaGYtalNSTU9nVy1ZcEU0d0pvMEU0Sy1ZZGxVdWNiR3dMWEhNUjBPekdETUc5RVRjT01rUkxlVnh3?oc=5",
+      "title": "大世科9月 EPS 0.47元 碩禾0.42元 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9GRk04ZE1ZdEFYRFlKa1JYN2p3Sk5uWUJRNnlzNDI0UXNPeGFYbDNKSG5KWGNEZkVQTXoycXZaY2hHU3dtOXUxR1IyQW9rNTVUbTlrOVdJNDVWU1nSAWBBVV95cUxOUVpZRXdISWlyZUV2aTk2a29kZ1hCTG1lUWV0S1NMWVpZbHJnUEUtM3BQaldCSzk0bEZjVVY4eUstNWJXQU95YU0zbzFUYTJrYTlKQl8xY2NvU1hXdGMyWDg?oc=5",
       "result": "ambiguous_company",
       "published_at": "2026-11-03T16:00:00+08:00",
       "publisher": "經濟日報",
       "metrics": []
     },
     {
-      "title": "大世科9月 EPS 0.47元 碩禾0.42元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiW0FVX3lxTE9GRk04ZE1ZdEFYRFlKa1JYN2p3Sk5uWUJRNnlzNDI0UXNPeGFYbDNKSG5KWGNEZkVQTXoycXZaY2hHU3dtOXUxR1IyQW9rNTVUbTlrOVdJNDVWU1nSAWBBVV95cUxOUVpZRXdISWlyZUV2aTk2a29kZ1hCTG1lUWV0S1NMWVpZbHJnUEUtM3BQaldCSzk0bEZjVVY4eUstNWJXQU95YU0zbzFUYTJrYTlKQl8xY2NvU1hXdGMyWDg?oc=5",
+      "title": "MLCC 龍頭國巨何時漲？台股7月重挫後禾伸堂、信昌電股價一度反彈翻倍漲 為何僅他跌不停？ - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTFBZWHV1ZmZVcUNGYW9WYk05TXFnV1VvYzMwUERSRV9jRWd3VUtYMHJoaWNIQl9IMDliLVdzRFdJa1Y5aTFTSDN5WHpiM3JqWjdjRGlFT0JtV2lmUdIBX0FVX3lxTFBxNlBiRHFTOWFqVUkwZ3BlUE1Id0V5VnpRTEJHdUNxaGYtalNSTU9nVy1ZcEU0d0pvMEU0Sy1ZZGxVdWNiR3dMWEhNUjBPekdETUc5RVRjT01rUkxlVnh3?oc=5",
       "result": "ambiguous_company",
-      "published_at": "2026-11-02T16:00:00+08:00",
-      "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "穩懋股價上看7字頭 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9mZ1pGRk1sWGpFdGFKMnJjb1ZIWElWMWZpWmlQY0JwbFNwaFg2bXdiaXJYTHpoVUkzUzJCT25fR1poUGtIWk40OEhGQmN2VjU2SzBPd1NTcFRoZ9IBX0FVX3lxTE9VMnFjSGhIZklTMzFfNW9BRjdNS0dVM3B5SC1laXo2N3I2WHcwXzJRdVI3emp2NTYtZTd3RWN0cE84WjQ5ZmFINjZkWEFfOHF4V0Q1NlNwMU8yRzdhY19N?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T00:40:33+08:00",
+      "published_at": "2026-11-03T16:00:00+08:00",
       "publisher": "經濟日報",
       "metrics": []
     },
@@ -142,11 +160,19 @@
       "metrics": []
     },
     {
-      "title": "3026 禾伸堂- 說國巨第三季沒有逃命波要發三千份雞排現在躲起來的林鈺凱- 股市爆料同學會 - CMoney",
-      "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE1raWNHdVNvTVFIRFVaMkVXQVQxb3oxYjIySTNhVXpmVUVBLXhFOGFMRmR2QjIxd0R2RG80bk5IM0dvY1U5S2pFalRvY3dpVVVUVlQ3bmdXeF8?oc=5",
+      "title": "【即時新聞】禾伸堂(3026)最新賺逾一股本，近日爆量急殺還能卡位嗎？ - CMoney投資網誌",
+      "url": "https://news.google.com/rss/articles/CBMikAFBVV95cUxOVXJ6SWxVMWtVWjRGUzNraUlkbXZnYmtQV0ducE5ETkJJWUN2eDBkNlA0LXNFMWlRYzhpODNQRVdha2RXUnlWN01EdmZ4VFFlWTlEdVJaSFhJbjVpTDdpbHUzTWNsTjlrb3FVZTdoeDhsUnV0Mjhhc0lENWxSWUR5NVpzc2dIMnFtWE5rZmJIVTE?oc=5",
       "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T09:46:05+08:00",
-      "publisher": "CMoney",
+      "published_at": "2026-11-03T10:52:52+08:00",
+      "publisher": "CMoney投資網誌",
+      "metrics": []
+    },
+    {
+      "title": "穩懋股價上看7字頭 - 經濟日報",
+      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE9mZ1pGRk1sWGpFdGFKMnJjb1ZIWElWMWZpWmlQY0JwbFNwaFg2bXdiaXJYTHpoVUkzUzJCT25fR1poUGtIWk40OEhGQmN2VjU2SzBPd1NTcFRoZ9IBX0FVX3lxTE9VMnFjSGhIZklTMzFfNW9BRjdNS0dVM3B5SC1laXo2N3I2WHcwXzJRdVI3emp2NTYtZTd3RWN0cE84WjQ5ZmFINjZkWEFfOHF4V0Q1NlNwMU8yRzdhY19N?oc=5",
+      "result": "no_unambiguous_single_period_eps",
+      "published_at": "2026-11-02T00:40:33+08:00",
+      "publisher": "經濟日報",
       "metrics": []
     },
     {
@@ -155,62 +181,6 @@
       "result": "no_unambiguous_single_period_eps",
       "published_at": "2026-11-01T21:41:14+08:00",
       "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "11／2台股雷達｜市場觀望富喬、華經、同欣電股價強勢原因一次看- 證券 - 工商時報",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE9GWWhyMmNiWWxfOVg0UVBYbmFBSV84TU1uSUtwTTRZek5WY09sdy1pV0J3Tm5HT1lOTFVoWmN6ZVREMVg4RVkwS1JVOXIyT2hGMmlCSXJoTDdOaGNNNi13?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T19:15:00+08:00",
-      "publisher": "工商時報",
-      "metrics": []
-    },
-    {
-      "title": "熱門股／外資最高喊7300元！聯發科法說後一度站回4字頭收復5日線| 產經 - 非凡新聞台",
-      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPSUJDNkFoZTVteUUybEpBRFV6aTVMdjRjbTNldS03MUtldVJzQW1aeDh6Ul9zRkpzcTFEZEtRU0RfTzZfeEVMcnpNVktHYzdKRU42VVZ5akoydi0xamR1eDBqaTFEQkJvUFVfNDg1UUEyeUpPOGYxVHZvd18xc0tsRVJLVmpqSXlHcFRVRHRZb0c3QQ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T12:53:35+08:00",
-      "publisher": "非凡新聞台",
-      "metrics": []
-    },
-    {
-      "title": "台達電股價腰斬　跌出上市公司市值第3名遭鴻海超車 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE5faXVDNkprUnVPWjU0YTZwMzYtWDk4ZmZ4OGhZcVdQNEExdGdvbjFqOWVTRzBHbDkwNW03Um9zM3hiWkNQUXQxR05iQjZ0RzMxemNRXzRsREExQUlzRDBIUVdQRHE3YUxDOVpoZ2ZlLVhhRlNiOVR3aTlVY9IBX0FVX3lxTFBnZE9SckZCUk1KdTQzSHhVTXlIRFBLTksyUjRHU2ZveEk3bV90WFRoOTVaUk8yelhIQWt0RkV6VDVCUi03WUl2RXVQNUoxcEVCZi1iZXJrWXYxUG9TdGRj?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T15:00:43+08:00",
-      "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "4.4萬點保衛戰！法人點名「12檔」有支撐 - 鏡週刊Mirror Media",
-      "url": "https://news.google.com/rss/articles/CBMiXEFVX3lxTE1PR2JlVHJsXzRUTlNoYU83WVZHd01VSDJVbGlOeGVUbVZEX0RIV3MxeFpxQUVjVlhuZjFDX0J3RWN1d0dQd1NPVlluMFFrWkFXQWlCNE9LTk9iUWtC0gFiQVVfeXFMT0lEVVZfVUV3bVlwNVRSUHBlOTJiSGMwdEhhVjlmQWhNQVd0eWlSb3NSZVIxclBWU2w2aTFVRDYtX0NwWHZBOFZWVHhOYnJaRXMzdnNPMXFIcEYybE03MDdCTWc?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T06:30:00+08:00",
-      "publisher": "鏡週刊Mirror Media",
-      "metrics": []
-    },
-    {
-      "title": "台股收盤下跌667點失守季線 台積電收低10元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiWkFVX3lxTE5EcFZrQlhGOTdMNjUxdUJhQ1N0ZTF4SkJLNUd1emdPV2hRV3Ruem52R3MzZHBtVjJhMGNSb3lPNXJBblpxYW5Pc2NIRzdGeVV2WEloOWxKLTZBQdIBX0FVX3lxTFAyc2F4aHM3QjNabEJXeUlFTTNrcklUVUVjNWVRVm9hdGxPdnFQb1BWOHpqTmdYVDFNVVY3S0dJY0tCQk15enVuMEZKR1hvdGI4RHZGNGRUbzA0alVaSGtZ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T16:00:00+08:00",
-      "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "台股狂殺1612點！外資單日提款1073億只有「這幾檔」存活？ 台玻、鴻海等「16檔」逆勢獲買超逾5億 - FTNN 新聞網",
-      "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE13cFhMc3czOE8zVGlBQlNMbndBSXRWMjZIUzZyU3hGSkozckdSYWs4a25odEFFbGJyZXRSdFZubXNZQ29JOVZXSk9EYw?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T06:51:00+08:00",
-      "publisher": "FTNN 新聞網",
-      "metrics": []
-    },
-    {
-      "title": "聯發科「5480殺到3915元」　法人揭4大利空 - ETtoday財經雲",
-      "url": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE4xSjhMY0dEajJvMWVXQ1FDV3hwLTNVMHVnQUxNSEsyYUFaTEl0M2dZZkJEMDNlZlYtVmlKUlFCRXdBUmRJdkY5S3VJdUllOTZOZUHSAVBBVV95cUxQUDVYMHprWF9OV3hoUlV3ZGRVNzlWYWNIaVBFUHFrUE93M1FBNTZxNGtaRFpqZmZuNDlRcnVHWXNybDEzdlZKd0ZDSDdHQW1EUQ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-01T08:11:00+08:00",
-      "publisher": "ETtoday財經雲",
       "metrics": []
     },
     {
@@ -278,6 +248,22 @@
       "metrics": []
     },
     {
+      "title": "熱門股／外資最高喊7300元！聯發科法說後一度站回4字頭收復5日線| 產經 - 非凡新聞台",
+      "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxPSUJDNkFoZTVteUUybEpBRFV6aTVMdjRjbTNldS03MUtldVJzQW1aeDh6Ul9zRkpzcTFEZEtRU0RfTzZfeEVMcnpNVktHYzdKRU42VVZ5akoydi0xamR1eDBqaTFEQkJvUFVfNDg1UUEyeUpPOGYxVHZvd18xc0tsRVJLVmpqSXlHcFRVRHRZb0c3QQ?oc=5",
+      "result": "no_unambiguous_single_period_eps",
+      "published_at": "2026-11-02T12:53:35+08:00",
+      "publisher": "非凡新聞台",
+      "metrics": []
+    },
+    {
+      "title": "《盤前掃瞄-基本面》台廠迎MLCC外溢訂單；研華Q3 EPS創高 - 富聯網",
+      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNZEM0cnBHd05OLVpwSkd6MXNvWTdzbjV4SlNuU1RaNERSUDdDUU0yNlNFblZlRkJZa0hXU090Z0R0MDVXS2pCYWxXQ3BrSGJ6RHBvLVpzUEdDUGtSX0dzc1V4bUFNWUNXb0g2bUIwdXRfLVZuLTYzQ25DczR4Q1V2UHlUVHJ0VGhu?oc=5",
+      "result": "no_unambiguous_single_period_eps",
+      "published_at": "2026-11-02T08:01:00+08:00",
+      "publisher": "富聯網",
+      "metrics": []
+    },
+    {
       "title": "《盤前掃瞄-基本面》台廠迎MLCC外溢訂單；研華Q3 EPS創高 - 富聯網",
       "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQYVpqOTcwaF80SmZ2YmQyeXlqS0dCUjYxcTdKUC1GRVB2SUY1WllIM29WQTlGMGZKTjl6cFByOGNLMnZSYjFOa3lJZ3ZDYl8zYmZhVTZRbXlJTExWek5aTGxfRS1WQzg3RkZmOGZXaFR4RDJVc200emI2TmNUMUk2ODFZMzZacFps?oc=5",
       "result": "no_unambiguous_single_period_eps",
@@ -318,779 +304,11 @@
       "metrics": []
     },
     {
-      "title": "財報：邑昇(5291)115/01/01～115/09/30歸屬母公司淨利8436萬元，EPS 2.08元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQcE5BR0V4dTBzTnI3U0FwV3UycVhoLXp5aU1sSGNEbkpodmdYY1paS3U3NXVkWTRqSWhjNFhZalhmbjB5Z2RJbmFEZV9BcVBiLU9aazNmR3YxOEFSNS0xUU85Yl9Bblp3Qjc4VWdjRnk5QzVndExqOUdTU09iRjcxN20xWTNvOUdY?oc=5",
+      "title": "財報：全譜(6228)115/1/1-115/9/30歸屬母公司淨損1229萬元，EPS -0.46元 - 富聯網",
+      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPWVoyNkpINkg5RHYxWXFvWkx1VTIwa29IcmNBOVFpV1FQdDhHbERSc0Y5X0hUOTVMa1Fhc2dSWms1R3E1TnJ5cm1rZ2hOWHZ0cmxTeHhZYjQ0LTItV1RLZGl3d0lLenZVRHpTSWw2c3p4a1J1QzF3a09GeXFieFlSSWFTRkY4bjVq?oc=5",
       "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:27:00+08:00",
+      "published_at": "2026-11-04T14:54:00+08:00",
       "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "華邦電第三季毛利率衝70.6% EPS達7.58元 前三季賺15.32元 - 經濟日報",
-      "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE5pNW9PLUxzdUM4UmJHQy1kMDh3d09QQkVfMVQ1QmNKdEdjeUwycGh5ZEdvTmIzWjkzZlp1b3BsNWNHSXhCLXlHV0UtS2hXRExkWjhCT3NZc1ZtbUJKVDNF0gFfQVVfeXFMTmk1b08tTHN1QzhSYkdDLWQwOHd3T1BCRV8xVDVCY0p0R2N5TDJwaHlkR29OYjNaOTNmWnVvcGw1Y0dJeEIteUdXRS1LaFdETGRaOEJPc1lzVm1tQkpUM0U?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-03T16:23:09+08:00",
-      "publisher": "經濟日報",
-      "metrics": []
-    },
-    {
-      "title": "反攻失敗摔下4萬2！盤中這9檔慘跌逾9%、穩懋、精誠跟「矽晶圓大廠」等5檔跌停 - FTNN 新聞網",
-      "url": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE5CT2FpVE5Dd0JMVXJFNXdMaFZTN3J0WE53aGFvczVfbGJlRWM2NTA0MVNDN0hCcmZ3RThNY25MLXFYbFhacXNEd0Y1SQ?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T10:53:00+08:00",
-      "publisher": "FTNN 新聞網",
-      "metrics": []
-    },
-    {
-      "title": "Palantir Q3營收狂飆96%、美國商業客戶首度超越政府，股價卻逆勢下跌？ - 理財周刊",
-      "url": "https://news.google.com/rss/articles/CBMib0FVX3lxTE03OUVtblNIVGl6Q3gzSHlLX3V6MFdvTVZLODFKaVJQSnJkc1RFZHZiWEFWX194c25WRlQwc0E2VDBrZFRUTnZCS05janFNTVB1YjlQY2taMS1BNVNlZkp0LUpmZWtYS2MyNlpsVkNfNA?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T10:14:37+08:00",
-      "publisher": "理財周刊",
-      "metrics": []
-    },
-    {
-      "title": "《興櫃股》新聿科Q3財報董事會 11月10日召開 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNeTZqM2hSVFU0WkxYanphcEw3eUhMTHRKN3BndE5ra0xUWkdRY2h4SlEzUFZEaTZ1MGt0OWVrUGgxUTNsVmdBVTZNV1Rhd054YzBXTDZPZUxIUW55b3Iwa2ZuM0hrN1h2eUkyLXh4T081UXdMcjFOSjVpeWhSVWlTZUUzT3NJZkhC?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T16:05:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：華邦電Q3賺超過354億，加快與加大擴廠步調，啟動高雄Module B設置 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPbFhUQm1yY0FVVlZvejl6TWhSOHNFNk9tdXhMMGxCbmVOcm5hTl9TOEVJQ2Y2MEM5TlVsUm81OVE3c1pmSGc0UE9MVC1GNjJRd3ZKb1pkV3BHQmhVYkdfMlFhbUg0cWJQaEJSUnVkOWtmTlpqQkFFVlhjc2FiZDZMNDBQVXFNbmNQ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T17:09:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》華邦電Q3三率三升 前三季EPS達15.32元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNUkpNOXFBbWJEeElnNWxfS3pwZ2xVTENxd1VORWlUaF9GbzBMU1ZtS1VocVJuNVB0WGZMTUk5VWdGcmNaU2pjeEljeXE4endkM3hnNDZNeGxmcXh5SENKbUhiSEJ0VnZsQmw3T2FSZ2lRc21zZkx3YjYtR0FUUXJkRXRBNG1lZ0x6?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T15:19:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：出售台中廠房認列利益，明基醫Q3 EPS 15.05元，前三季EPS達16.65元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQSTBJZkxIeTNORllObTNSelNIZVNPQnM1aTc4eTVmbkVUVlVxdFFZMXRfVmJHMDhyVmloV3hUVlBjMHpkOHlGRHhoeDE1dkl1ZmV3TTRNQlVWcEFrMHZZaFBlZnRHeG12TFUtVzU1NVlONERMT214d1ptdFRMMy1Hd042VjUxVldK?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-03T12:58:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《其他股》鼎基Q3獲利翻倍登同期高 EPS2.28元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNcnRNSEZzYldVc3ZOSjVmOGJRMS1na3E1ZHlTczVPTVVuXzF3eUUyekRHblVLeEppQU96N1VPWDhpVmJ4X2JLMklZY3Zpa0RxNW10MktjNnNKZ05wVmxkQXdvcUFnMUpOWnZkS1VzMllaQmhMUzdnYUNYQ3J4M0Nsb0pRVU5YZ2ZS?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T11:01:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《大陸產業》貴州茅台Q3營收、利潤雙成長 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPZVduRnl4clk2cTRMTmd5UHdjN25WQUdfMVRpZnF0ZXpyLWI2ZHg3cXluUkNrbV9pc1R1RG44alpEbFZVVk9TMTJHak54NUo3azd6Rk9RemZNS1JjWDdvd2lIZzZTU0dxNVFJcnEwWFh3amdtNV8zcmNTVHdOZXUwTG5LYmtjcG94?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T14:08:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "△個股：群電前三季EPS 3.4元，通訊電源帶動，Q4營收有望接近Q3、毛利微回溫 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPTEhWQ2JDMlZsZ2I3bWhTNUVKTGxBZ3Z3bFdOb1lQNXZWbmdOUkNRUlVZNE1RbnBMLWF1blF6TlhncGFoYXFMZFdGaUdOQWFjVFlYNVNUUWJLRGVaUjRWdk80ZUdfNXRXUkQ0bEFyNWdJYVRBZnBVX3BQdE1DM1RmZF9rZ3EtTG9k?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:55:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》明遠精密Q3獲利寫次高 前3季跳增1.28倍登峰 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOd2lmY0RSQ0JLYjVzbVZKVml3MlprcU5ibEkzNGhTM0haV1duN201SXoyNXBFc0Rwb0lNZmxjVXcxdGV0c1FZQmh3WENrZWwxV2dNWTNDeGZmLWgycTU4NnBSVG8tbU01YjBHdHRpT29zbFJZMWc4QTIybWFqZ0JNZXlrTHMtTGpS?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T15:53:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：華固(2548)115/1/1～115/9/30歸屬母公司淨利12億9602萬元，EPS 3.86元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNQi1VeHIxbW16QS1vRHc1eEY0V0ZMNXBNS2ltUjUyUVVlNHRBTWZvbF9QLUJKaUhNM21uclNaWHdYSVRfYVRQbUwxM21oa3BPU3B2TmcyVExlRVcxSE9wUXFramRIZ21YdDZMUTI5ZTdNNWZtYTdKaExGT19MU0Q4QjZCLWt1bHVr?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:57:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電零組》群電Q3每股賺0.36元 Q4拚持穩 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQNDdOUnFaMmJidWFQT3U2VGgwZmVEMUNPdDBmMVpXT2F1R2t4b2sxV0NQbG5IYVpMTWY5OHFmNXg5SnVVbXdUbmJIT191OVBQVUVhM3RBWGN0WlRYZWpSN1RuUUtPb0JFYzR2ZTY3VGRUbDNqRURvMFI1c0c4dEhFQ0RsTUpLcXhm?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T13:47:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：威鋒電子(6756)115年前三季歸屬母公司淨利1億3440萬元，EPS 1.92元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOdU42cFVCS0tHTXdRNjAzTzUtbjNwQmNLckZuVE5sbGZNS0NVMFFobFI5WDhtX0JoZ2t4VmRRTnlSR1pYVmFEZmFrTVdMUkRudXF0MXIxXzVfSnVxTGc1NVpCajRsa1o0Z3NBYVFBQkZYN2tpa1dhWU4wYk5US0lpQXNRd2tJa3Rt?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:58:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：宏碁智新(7794)115/1/1-115/9/30歸屬母公司淨利5712萬元，EPS 2.13元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQLXZoNGFqTkJVNkszeTAtLURZRU4wcUlIdUtnTWRKYzl4cHdVQW5BQ01WdEdHNS12THVxWTFQMVExYzVtUjZLTjNZNFBEVzUzWXV5UWZMMFlWeEIxME9TaHFEUHRrT0RQY1g1WG5hMmZqSmhWc083ZENaX0VnNGpkNldCSmNaRWNK?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T17:06:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：東生華Q3獲利爆發，EPS 2.64元創新高，前三季EPS 4.84元刷新紀錄 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNMnhta3c5U083MWw3aWlKWG1IZjFubWNiVFRqTHZCR3c4UUpvclNfZmpsMk9NMUI3N0FGcXFjWFFyT0pJaG9WMV9aS29qV3hGSjNzdXpVQ2pRMlQ4Mk91UGdBUEJYS29neUhsb29INmJNcV9DcE1lUUV5TG9CMFpNZzRYRnA2aTB6?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T11:15:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：同泰(3321)股價遭警示，自結9月歸屬母公司淨利886萬元，EPS 0.1元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPQkNadGx2cGowbk1BdGpmWnhsSHBoUFhsZVk3MnIydHFLaUpaQXFqTFlXcV9zMGdsYmVBMUVRdFZvZERKR0ViemlySkNpLWpTMndmQTN4bzFHQ0JQc3Q5c05xN0lWci02a3RaM0pYYXZUUGJ5RG9Da0VCcUpKbXVsZlpzWHR3MU9r?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-03T15:06:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：希華(2484)115/1/1～115/9/30歸屬母公司淨利2億1891萬元，EPS 1.37元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOdGg2OHphdkVzZUhuQ19CNXdRNHp6UzMtUDY0NHAzUWxKWXJ6WGtZU3pNYnZKa25PUFJaSVRrTEllOTM3Y2lJRUUwaE1OM0JpUjRrcms1Znp5YjI3d2VSajZKbzJpSFFiemVhWGVVS3hSOWFwTlZoeHdLcXVjZFhhXzhJSi1lSTlL?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:49:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：信錦(1582)前三季EPS 1.67元，低軌衛星新品陸續量產，長線成長可期 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNMXVIcjN4SlAtc3g3NWFZSUw1akJkNHNNOFBzeDk4OG14TnVrOThjXzExcmNzSVJoa09ndmR3N2N5TGNfWEsyekwyLTYzN0VFQ0tVN1lQR2dLZHhLQ21GSkR2VjZ5alR1M21wdlVMQVhPOTRyZkpPZW5tNENNNlhEWnd3eW85REd6?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T12:07:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》景碩Q3營運衝新高 前3季每股賺8.38元寫次高 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPcDlQLVJHdWwzVkpGTHpwV0Ixc09fS2F0X0xzLWJCNGkyR1NoeXRVVUg5Y2h2a21hYkxZZzVWUEpjWGZia3IxalJjTURuUmlYdi0wYWlSeUR6RDVnZjBxOWxUSlpqV2pDZmFDRTIzUUp2NW1ZUXR0bERlNkZTMy1FemdPc2E4TkU1?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T09:38:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "△個股：富世達Q3伺服器業務佔比衝破八成，獲利激增，前三季大賺逾四個股本 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOdWUwVEtmQkxQT29mQWlLRTRSSThFNWFTejE0bHhZNkV5MjZoamo2THhUZ0hsdG5Sakh1MUt5ZkZQVXJhNk5aLTNlZG9ZS1JrU1hjbzdhVmh4NEZaVXRmaXNiLVB0bkU5eHFZOEtzQ05HZ1pwUXAyeC1wMHhLaTRQMWtwVURSamZK?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:59:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：叡揚(6752)115/1/1～115/9/30歸屬母公司淨利1億8593萬元，EPS 4.86元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOSy1YdlRCa09JNzNSaFNja0RFTUQwMkR6d3UtVDFzOW5xMHR6bmRkTEp5SjFoWVdqOFlrRVN4STVZdDRVTEZaN2NqSG5vNkstU05RN0c1RS01LTltanY1Q2VPM2xMa0F6ZUxWYURjaTlpakxOdmRTTkNzT2VtOGhld0FmUEFhdjBX?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "△個股：永擎(7711)Q3大賺近兩股本，一魚三吃，集團三劍客衝漲停 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPS1h2cDBvRXlQUFNnTmNVV0hBeEhVcHZNYmhnM0dUMXVjbGlUVHFfbnZ5QjEwMTNnQ1EycUw3SDZVVFJhTU9pNDBEOUZGQUNWbUQxdDBhTGx6TEJ2bnRKWWJPOV9JclRmWjYxUHBUUWtaZzlxaWZtbnEtNUtpU3YwRG9zMTNxWTNL?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T11:36:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：達方(8163)第三季EPS 0.31元，E-Bike逐步重返成長軌道 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQV3h5alVHbDk2TTRZR1hUOTdEb0hWZUhzbXlTaGhHZnVYUEFvNUg3QXdTeEt2UlY2ZHBRMlhjMTE1UlRxNFJLX21IVlJHckJSd3QtS0duOHFtZmV2TlB1Z3Fva0l2ekp4b2paTkwyakVFN0h3aFowM2lfOTVjdk4yXzQxREhGeUEz?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T08:08:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：聯詠115/1/1-115/9/30歸屬母公司淨利161億7160萬元，EPS 26.58元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOTklCcXJhc3hreFJwUC13TDRXUHRpZ1BPS0ppUXEtdnlfa3VzejVfVWF5cWxjWnRpdWlIOUdxdXVNS284YllsSnEybzAtVnFBcHVjYk9BWEFremt1VElOMXljRTNWM08xbVNwU1I4Y3ZFdEdqRm4zSWZrbkpydWhXc09NOUQ3QXlD?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:57:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：遠雄來(2712)115/1/1-115/9/30歸屬母公司淨利830萬元，EPS 0.08元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQR0V5bmJtMnF4YjVHTGMwTzFqX3djbXlib3kzMkFOVzU3a3ZYVlh3VFE0eU1CUmtDV1RPYmg1NW5nRUpNLVlnV0QzOGhjcDlOOGt0Z0trN2VkNG9ZZ09zOWNZSGN2bl9pejZSTGNjcGRmc00yUEstRmhVT1pDVHdkM1FTTHRUZmx1?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:21:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：驊宏資(6148)115/1/1～115/9/30歸屬母公司淨利2215萬元，EPS 0.48元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQM0NvUWZ3ZVRMM3Zod2JMRlJ0cHU1emVFMEN1VXZia1NyeWFzLTNiY005eWVFWEprdUhBZGFLcTRGZWNCR001bjlBQ0Vnd0Uyb2w5b2RLaC15eEpwNktGTXRVa0F1MWJlS3dPN0RRMUlydjZQbG9tNzU4dUdHclpZLUo0U2hNSVhQ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:55:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電週邊》賺贏歷年全年 永擎Q3 EPS 19.81元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOQ1lsRTZYUC1hbkVHdWl6cXhhby0tYWlzTHRCOWRhMXNJQjNUdmM3RFhoNkJyeUp6Z1VrX1pEekdibGxCaTYtNXJhcWstc05wVl8zOFM5QTJTTkdrNkZFcHRFMjI0WTRhbzQ3eUhLYWpWRFJXSWpkQXpTUDNIQXh0bWhHOHRnZU4w?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T07:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《航運股》捷迅三引擎催動 前3季每股盈餘6.31元超越去年全年 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOMG5uNDRrQllMc2xVaHduUmpOSl9vbDhkQjNkVVdmZzBPWEx0c1hrSG01Z2VSaVFTa0VvbUU2RnE2NGpSQnVyaVd1TS1iS1RnNll6UkxnRVJheF9uSmRyWlVCNmg3NTdGSVZqWGVVb1AtV2Q2MUxzOWVrM2lGbm5zV0swN0w4WXIy?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T17:20:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電週邊》美超微帶旺麗臺Q3獲利 買盤湧入股價強鎖漲停 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNSnp6aGpIS3JSVGw4SFI1N2x5akVLb0psTE4tNmZIcDI5a3pEanpaU3BnbGtwT3QwR2ZTTXFZMXBqaEpMZ0dtTVktcklFWEtIOXVaNmNxT1BnaF9pTWdyb2JLZWdyaHBPMUFfeW9kTHZOejRvUUo3U1ZiTUNpZTVac2tWZ2Z4bU9f?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T11:22:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "△個股：ASP提升，聚陽10月業績年增逾15%，獲利成長可期，殖利率估逾7% - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPNkdmQXR1RzVMai0zajZrLXFZUE5iVDNnQzkzTmZBWDlMTUk2ekd3M3Q4MHZzNGJ6TnBvNFYxNU1UaU9PNlY0Q1p0X2ZUbUpkb2tZZ1hlOFNvQjdMb1d6LW5Nb1lnVndmcDIzQzNFQ0VQcGxibWJMWlBydC12X29OLUltdUZuVzNz?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T12:40:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "經濟日報晨訊 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPY09ZaXFaNHRSYkNfVkREQUpYOFVaLWtSWENQN2dTSGQ2azZZMzhNckt0WWl6UUVucE5tNUQ1bzlRSmNfV0d3c3kyM1I2dHdCeEtYQ1Z2NXJsQnVMR3F6TWg5dlJxb2I5aW9YUzYxWEktMWJab2gtcHUtRy1GWHF0eFo5aFRzSXh4?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T07:06:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "興櫃：車麗屋啟動加盟，明年上看百家，兩年內完成東南亞佈局，明年Q3轉上櫃 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxONzlBYzhyb0lZaHVXWVhhckJka0hhaTVBVVRDYlQzYVMwd243QWVrLXQycnNRUUFYa3RIVEtpZ2JkMURzNkVpZHFwUWxHcFJTUjN6eVZSdndKUW9IaHlfN0cxUTBUZEJYLXZXX3paWEk1MHM4MzhieUxrdU5qYy1oN2VSQmlPemV5?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T13:09:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "△焦點股：傳AMD顯卡11月將再度漲價，撼訊(6150)股價一度強攻 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNdUlORjdpUU1qejJkeFNQbnIydTcwUVZlNHZIVjhfaHlpcmFoejB1LW4xMWxGbF9URzJFc3FXSWdFZzFzRDd4SjV2YTZrUmZtczdmQ0JuZXpfV2VvZ1lZTXd4WHh3dVRDSXJtQ3Y0Z1dJUjBZaGNOTWdVbVNxNXhPZ0wxM2p4dGxD?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T12:47:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：正基(6546)115/1/1～115/9/30歸屬母公司淨利2億660萬元，EPS 3.09元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQSFZ1S0ZLZHM0SHkxQlV3aFlobnVqcUhPNmNsZTVJVTlyX0xlWWtWem11TGFsU0JoSEdoY3pNeWFiY3d4VzREYUt3NXRVWHdJSW1wV2lyZ1NkVGstZlNPdUhBc0xzRlE2UE5mVFFCVDdxall5N3BvcHhYV0l0bUZMQmRHVDJlMlN6?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:47:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：大億(1521)115/01/01～115/09/30歸屬母公司淨利9000萬元，EPS 1.18元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQLS1yRXV4WUVaeXFTN0tMcmdOQVM1TDd0STFsV1JvWFpxNlVWbVFEbGJrU3ZXakVfUDl0bmR6ZWpneHBEbmdkUDRpT0VLcnUzeVNfODlXc0M2VlBkWmtMdlh0Rk9qQkZGd0xOdzJfenRVckxMWUVhcUpIMS1ndW5tQkZsWjZEVHBZ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:15:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：盈正(3628)115/01/01～115/09/30歸屬母公司淨利1億8萬元，EPS 2.22元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNc25oTlhOenRNUUtpazl2UDBLT3JsX1RmY0NIY1kzTVR2b0hxU0NFaDFGWVI4WTA3bmI0U3JPc3l2ZUNRTDdKc1AxamhiNnN6Zl94cXZuaEtpWWdlQkplZmV3RVBGdzBqaW56X1c0VlhyQnRGbVFmNTVoVVM4eUlLb1JKZTIxeHJ5?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T15:16:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：原相(3227)115/1/1～115/9/30歸屬母公司淨利14億4566萬元，EPS 9.79元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQeU9KNWJYaUF4U2NFZ1VlZEhRWE5OQ0E1ZURCTk82SjFvM0hWS3hIRXdFYXdjdEpTRXdqMDR6cXI0LU96TldnNElld0t3b3VEd0hPblBwcVBVRTM0OXJHN2Mtdlh6SXB4MXFWU1hOS25KX0kzYk5xR2VEYmFMR1NNN2Y4R3hHRWQt?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:47:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：合勤控(3704)Q4營收拚季增，三引擎拉升2027年營運看俏 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQS250OEptMV9hbTROWEMzTENmMnhrcGZUTEg2RDFqeEhEMWFVa3JXZWNTWlktaTB6UGt1WGpfNGR6bkMxR0dkM1JUMXlnV0lmSVhEeGhnQlFZX21JNG1rbGk0a0U1Y0VlOFp5WWNFQnBhVEtyeWxBak1PSVQySWpyVWhWQXE1YTlt?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T09:30:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：榮昌(3684)115/01/01～115/09/30歸屬母公司淨利7815萬元，EPS 2.59元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNUTlXc0JHNHNhUmlVdnFMRkVOd1pscHFQdl9jblpYSmszNTdDbV8wMkRhNmtkQzlwRzRsd3hqU0xuVGl4UHduQUR4N2FYWjcxN0k0VUwySVk0ZjFJNWI2al8wcE5lZ3JTTHBBM29PellDdXZqUV9lanZJamc1QlVpTE52Z3JYcm5Z?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T15:11:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：波力-KY(8467)115/1/1-115/9/30歸屬母公司淨利3億675萬元，EPS 6.33元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNOEttQzZyaWhDQVZkRG9ORDNOZm1OY01EVWZrcWFqdU56VDVQVWdtRDJKSHNYQ3IzajdxRlBaQTJSUndIajlicEVfOXNHRU9FMlZCMm9yclRMRW1SYndjdkoxWU9fWXhpcWJaYW05RUNPNTVHVk5DdXdiQ3ZxMmViZGN2NVFjOG9u?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:13:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：宏觀(6568)115/1/1～115/9/30歸屬母公司淨利1億904萬元，EPS 3.57元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOVlBGeXFDcDJPQWNYMkttQmJhdldZQWJzVlBPelBsYlY1blhxVF9aWFZOUkx4MFhHdm1NeU83YWk1QWJQZGhxRHFXV2VZNWZHWkl1QVZnU0VYVG9WYm9YaWR5WmFxb0JUSTgtT1pXSmprUWNUTEk4Y1ljNU1wT0tRM05SUjJFN1Vh?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:35:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：德勝(8048)115/1/1～115/9/30歸屬母公司淨利1億4075萬元，EPS 2.37元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQd1l1N2dOXzJWa29mQzlRZ3RKOFlxcHRyQUMzcUJtdWRFMFB3XzZrMkVWX3FUbzIyOGJpdGJwZGVXNHRhS1ZmTEliY1JWY2tUNTdKQjZPMzM3ZFJmNTUxbGstS3Qxb3BzMnFoY3h4R2lmZmFIYktReEFYbDdCOUttZk52aWVBczE3?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:46:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "工商時報晨訊 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNX0RoNEdRcVk4U0xwUHgwTGtnNTZ3TDREZ1dOTDNVQlhfTnhwd25EcTktdlliWDhQeml3YzFoX0p1ZHZNQTZ3UFRrbnVZblZ4aDM4bzM3amxCdG1kMjBrRnFkc0QwYlNGbkVDdTFLRDY3bC1IUHpRN0h3enRYTmRVQXdQNUxnWE9q?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:06:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：駐龍(4572)115/1/1～115/9/30歸屬母公司淨利1億9124萬元，EPS 4.78元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQalBuR1dZNVFyS201VXhtbnA5d0pGcjF0MGRSU29OTXpDX0FHaXJPWWkxYmIwejEzMUVFSERyOWpqQW9QeXJ4MnJpcUJfZ0lxY0h1enl3SVFmMFBEbmNMSEtIb0ZpanhUeWhaT3BsTlVSR1VXUzZjdjl4aWZ0SGhDeVotYU9fb1Vu?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:15:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：騰輝電子-KY(6672)股價遭警示，自結9月本期淨利2.22億元，EPS 2.7元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQY0c4UFVwWFRWclFVczdPQTJ6M1NvOVVlZEJKNVNsNmhydlJrelI0MkFUTDZWRzF1NzBPUzNhZ1N5elJRV2daYU1XakNxb3pjYmFXWXA4ZXlYdjd3YTN6TTI0OGs3NGt0MXAwVEpSUmtmLVk2MHozMTczQ0JQc3FyektLZzlsUG5V?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T07:00:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：冠西電(2466)股價遭警示，自結9月虧損900萬元，單月EPS -0.05元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPVlhtazEtQUJkOTd2emVBMXhaSDRJUFpndkRRUEJiSXM3cVBYTEFCMFBsSXJBOVJtUkNlTnpXNzRfNU9DNDNWM05kei1jNnZhXzMxLTVocHVxdTNXUTZOWk1zb1did2M5WkFLRmhhVlh6T0NOenU1UzlhcjBVU3E3R190dENtNGp4?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-03T15:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《各報要聞》台股反攻 半導體三本柱扛重任 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNcThYVUpZRkh2OGtHZnlXaDdiX3pRUGJ5cXBkRDl3M0FaaHk3WUdqZUhieHRuaWhnVVdFUUxEV2xKY3hPd3pzVS1zM3ZxWWczd1ZoNVFEUW5DakZJeThwZDBqSHlTN1IweGxCMi1lRTFGdmtXUXBlY1dCU21pdmVUbkZ1MU9oV25a?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T07:49:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "港股：中國政策利多、港Q3經濟看好，恆指週二走升0.57%，四大類股悉數上揚 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOaUVhOV9Nbmh0RzJCS1lZZXVPUVFjS05SMGtIVjE2czNzT1R5Y25GN05yb09qNVN3ZnhCZUtWci0wamw0bFVlTXV2akJpdmNaY2VBejFkQWs0eXJ6U3ZZV3pCSEMyWFBrajc3WjhvQlYxdDRtaktVMTI2T0NkR3F4YUkxV3NPeWFw?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T16:34:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》華邦電Q4成長估趨緩 明後年缺貨加劇 土洋目標價2降1平 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOdFNTOVhCOWhXdGZjYXZYQmhvbVhiakdQUVlCYklnZVFzYmpiemRQRlpFazlpVGRhaDdfbVc5aUpEd2R5aWdQejNFZk5IYjVKQVN3RXUyOVYzY3BneXNCVnQzUjZVeVNudW13dW1QMXJIcVNiYUlTczlmbkxJWG9IdGFpQktxb003?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T11:29:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：越峰(8121)115/1/1-115/9/30歸屬母公司淨損3764萬元，EPS -0.18元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOS3FBdWxNZHRZNUF2bWliQXNuTndDZGQwaUY3M2dsYWFETUhoTWx4bnM5X0t0NUFnUFpjblVEQkNXVUw2TU5nb2Y1VVMtUEpYajJDVG9KbXlQa2paeWIxb1k1VW8xM0RINHg3TWZ2Z2lva1k1enlDcWlOZExndDZkWEt1anQxbENO?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:50:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "晶豪科上季大賺 Q4產品價格續揚 [工商時報] - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxNa1BTT21WampJRG02NTViTnI5MU4zR19lbDBQTXF5MHRZUElvTm9KUUlvYmxuc3BOMXF4VG1abXlUQmRHMlItQzNCXy1zWFdMdDAtNm5OYzdTSWxpMTlWMFh3aEhQQTJzTTVlbkYzbFRITVppUHlwa0dGSzE0VFFXRjJVSDFLZw?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T10:27:51+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電零組》信錦前三季EPS1.67元 低軌衛星新品推動Q4營運看增 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNdks4N3R4eTl4WE1nRHZVZHFzMzh2STZZdWJDY24tMDhSRFdBUjhLZlE5c2hrN2UwX2hzaDEwZDcwSHRXa2FjQVhzektlOUdYcnAwbUdCTVM0Tm5JYU1mSDdfTXBLbk5hUzdGQmtKNmxvTmk0T3pzWm9hdzYzblpFZTNoeldBMTJq?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:55:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電週邊》融程電前3季淨利、EPS齊創新高 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOUVFRZVVmcUVWZDRTMlRHSWVvM0oxVnctU3JIUVpPLTBRQmxwOTg3V2t6UTk4d3JiRjNrWS1QRHBNRUJraXZRR0ZvSlZKSFZaajQ4YVNOZGNxUUU3aGZ4UUdoaUZJc2MxelZGeWFXbUhDOW4tRC1oSFNZTDFTRkROMGNBYmVwYTN6?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T17:02:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《資服股》邁達特前三季每股盈餘1.78元 年成長48％ - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQQ3VKUU1uVmY4R3ZtN3VjTzJ0V1FYWEY0RUEwRkJFNnJMYnRucFE0Q0pyd2NTNlYwOVFyN3Y3ZTQySWRRYkFJWm03dWk0NkNxdThaT0xuZEdtbUdDZ0owU2JVeUdHVDAwTE1EZjV1eDR0cEwxdWpEWnhDV2FESklXSXB4U09neEdG?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T09:07:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電零組》奇鋐獲外資喊價4815元 難敵台股重挫收黑 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPOGpNdlBvdGkyLXBnb0t4NnFiYlNOMERhM29uLW1vWFIwUUhzVFhIWDEyNmF5SjJPWW1RWWJmS05EUGhEZnV6N29QNmM5UUxJNVBHaE9vUkxENmcyTkZVVHhiNkt5cDFYY2d0Q3dmNlFDMWQxREV4ZElwUHBhb0ZQSVZqSVB2R0Zh?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T14:07:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》南亞科 10月營收連12月創新高 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPMnNTX1VtUG9EM3RKeWRMb2hxeG4zbER4Z1JOeFJVazZveTFZNVNzaXBtR3NmdUhVd2pXeElEUm94Z0FON21oYU56Z1hyNDRBSFd3NUN0R3pEeVl1MF8yNUVOUFFUYjA5azVfWVdoZkRlWV9zUnVLQ2U5TDlZSm9OTW92djFyQkpo?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "環球晶 Q3 獲利減六成 EPS 3.13 元 [經濟日報] - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxQbjEwejFyS29NaXBlazV2MHkxTjhrV05rNW9RNHV4YkJSUndveDRMUzNqR1pHeUhWZEJXN2gwM1JwVktwUVdEYzRWX2ZZVXNPMFZzLVRDQ0RSVTNYbENxRDVEeTVpLVdWd1RvcWpNaG96YUx0UEtEd1NicEhEWmFOMlRnbXJBZw?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T09:22:42+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "晶技 第三季每股賺2.08元 [工商時報] - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxQMll4RElVbnNjaWlnc2NDUmZtMEEtek4zMlBRamxOLTZiOXNSbkxpT2wyOXN3bmZmZXc0azFKcjdFd0RBVkFZc2VSdmd4VjNJakZLX1ZORkMxeUVxNHlSa3ptVjRueU9YY3VxVFBSc1lCUGdPbnVoQ2c0TGFNQUZwSnE1c1A1UQ?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-03T10:33:03+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》達發 衝AI光通訊 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPTVlBeWZPbGh3bDcxdENFOUNFZVZhT005ai1vYkhQTGxxUURlbnJzbVRZQ2xDa0drbGUyMmxHUjhJbUtKT3dnbkxfaXE2UjVWdjRaTU45Y3REMi1JcG5JRU50ekNlN2pMeHZncDV2RnI4enRTVUNhV1FsWDdRSGx3SzVSUURHamhM?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：航太巨頭交機潮與維修需求強勁，豐達科前三季EPS 6.54元創近年新高 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQbGFkNEZydG9QZEIzaUU3RVlibDI3cTZLOURKVkJPWW9naEUwNEZ0emxZSVdqOHVzMUczMU9XanhwcFgwUmdFZTRzcVk3bHhBQm5DbXJHcE11RDc5aXlDWE5wOXR1Qy13NVRjTlprZnotUkdlYUU0U1JtS0ZQaFg1cVNzNE5pcW04?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-02T07:04:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》環宇Q4、明年營運續上攻 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOYjBKeV9jWlQyY0JzckZpblQ1cFhtUEF1WGhlTnQ5MjVFZjA1VWFuMEk5OUhfNDQzZXU0cllxTU04WXdxcGFIbDdITHBGcEd6VXlybmxkTzBWcFJoR204UWVQMEJDZWdNWnVsejVGSW1OZU9kWTZVRUJmU2JBUkZJV3BKTUs0Zmt3?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T07:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "興櫃：華芸科技(7801)115/1/1～115/9/30歸屬母公司淨利3334萬元，EPS 1.82元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNUGFXdjhWOVhTVGR1MW5YajF6cTJMUTRITEdFRjMtdzdMV2pwTE1iaUhCMmMyT3hmZHI5V0J0REUyV0VoMjBuYjI4OVRjMXpCRWlJbnVkRTFWY3A3cmxnOVRHMlVNWFMzT2RVTVpmdW90VXN0Q0Y5a1dPbHAzNHFEVl9hWGdwNVVt?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T07:04:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《數雲端》宏碁資訊前三季EPS14.17元 直逼去年全年水準 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPcDhkLWZmYndfRmFndGFqZEZ2RG5ldnpLV1RWM21QaHRYdFY0MFFkU05FeGFLZGhKQUM1LW8wRVpJSDRwNHJFRkYzczVINkpFanBNNjhZUVR2ZllFOERUN0JKNnFvaS1Xd0p5eGxkX1JZdFRReHlpZHBoT0lhSUlZNkE2WVI5MjJk?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T08:11:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《大陸產業》油價續漲 陸航企獲利陷低谷 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNYWZZcHFnZTBhX0E2Z2pLZXF1U25yZC1TOHVVREJuX3NzSTUzNG9PRDgxNmE4RlYzbkpOcW92V3F5V2FRMXdpUWVfWk9SazBJUERVMmdwa1RPU0plVUNXLXF2QmhUUlcxd1FGMG8teVhPOGpNQzRrS1NPemtBZWRqRzFxZTZObU80?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T08:43:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《鋼鐵股》豐達科 前三季獲利暴增7成 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOQ3Z6Uk9GTHpuaDY1R2pPekZjdWNyc1A4Y3ZDWGRaZnpkQ1J1UmVkWjlsYkF6UzE1UkFTZUF3SjR6YkVSd0VTOUo1aXRJbnNmLTcxTG5Hd3dqUW5FWXZuYVE0QmpHSmY5NFRUNVI1SUlfT21uQTN5bXFoYmcxQXhGbW0xaV9jSWxz?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:56:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《類股》內資＋國家隊力挺 16檔拚反攻 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPd3U5N042SHNSTFlpNk96MTF3WDJjVHRFdXc3dmpPRENEZG5ZNXlqamdxSEp1Yk5NZTJXZkJXbGs2dXRyWUQ2cDNSNEZ5S09sTWMwZTRiclo1TlZ2bURSLV9xUTNqMXZYVFZKbENseWxxWVpWM3IxLUM5dXJpRUxwbEM0bnN5eDdi?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T08:16:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：瑞鼎(3592)前三季每股賺12.46元，估第四季營運放緩 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQVnhmRW1ZY0Qwd1dNN0VlalY0YkdobWhBTzQyMWhsSjZ4WDFhdkc1UkR5NlE4dmdTLW5Fc01hVnZuUnFRRl9KeS1MQlg0VmRnZHB5b0NJd3lHbnhoQzJFRWJBajdQZWU2VWVuZXhWSkJ0b3VYU0xTTmpzYk0yRVJzWGFjWFBzczlJ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T08:38:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：進泰電子(3465)115/1/1-115/9/30歸屬母公司淨損4057萬元，EPS -1.10元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOU1dOUEpIVXRLeV9Dc3VaY3NtQk1yUUhCR2pyR3pneU1DQk5PV01PNjdKZlFuMjdkaEFyRXk5akc2S29pU0duMHBjd3MwSUxQN0E2SnJ2dHhReXFoNWtVTmNLRnBNZVpUbzRSak5IbXh3OTJkam1OYVJCZG1LTWppS3M1SUl4NU9N?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T16:35:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《盤中解析》台股反彈失利再探低 43K關卡失守 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNRW9hbGJOeElDQ3ZjcnQxYnZQZkxjVV9ISnhhV243c2JkY1VzS1lWR1lNcEZUQTZvbnJ5Y05NNG1oaU9KOE50Q2V0M2JqUXNjdDhEd094RktPZ2dkUDlyWUdreTk0QXBOb0dsbzU2SE1aaDlsSEtfbU1YbmsxaWtmMzlNZFhiX2xo?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T11:01:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》華邦電 砸731億擴產 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPdndWeVFvRjdiTXQ5X2FaSGZzNmwyMTFsNGJMYXBrSmVtaDZxM0VUSVpubnFXXzlpOTY2T1dNRl8tSXpBZzJ2ZFhjUEJFdlNBcXdPd29JSTItSGpCczRuRWFvNXZRSVUwNWdkQ0RTVkh4dFliN0VpUnJYQ1pLbnNCa0tKWUg2RDgy?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:53:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電零組》信邦10月營收登峰 3大高階客製化新品陸續投產 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOQ1pmZG9XYWFGZ1B6SWEyMDdBaHZQTkw0Z2ZuUktYdVZ3clhBRG8yV2djMHJ6Q1dzT3cxcXlRbkszbHV3bURMSllXNzZrV3ctVktaTldmM2QwM1JKQzV6dlRRbHZrNGFaN01jUV9vOUk3Q2ZjUnlTSHNEMkgwNmR6U0pGVk9BU1Zk?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T15:51:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "南亞科10月營收連12月創高 [經濟日報] - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxPMklRRmVBRHRyaElHWWRSTW5fc2lBcHRMb1RkdUZIaTV3VDBSd3FudmMzV1JqaE14UEVlNXdVOEhFWnN5RTJXSnNFUklhNGVtZ0hiQ2R3anlFVS1lM2hHUTFHNjdYa2tPZDBRMm5RMkNRQmhNZzZzcWkwR285ZzBsQ0tGeDE0QQ?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T09:32:44+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《航運股》三大利多加持 貨櫃三雄 股價逆勢揚帆 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQazdseEpMQkMyWldLR3FlUVlHbVhfMllsZ2tCbmdyM21Rc0g1ZUVuNkhrX1RRQ01ld19jbEdleFpEQW1ORTlpcUQ0cHdZRlNQN2FyUXN0WUZkY0I1NjJNTzNHZHV5Tm5hMHhwcFdqaFBrMEljSl8xOVdzLWZYcExTSVZmazF0ZWdm?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T08:16:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《電零組》富世達 前三季賺逾四個股本 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNMGMwWFM1dkM0TnBtd04xMGVqcWkyQlVoRE9KWG15eVZpWWUxMExUSDFiR2xtWnRYbER4VEZpeHc0UGh6U1BUVEw0bkpPNHBpN1Q0dU54dGxmYWlodDV2MF9qUDRQQzFWeGtUVGxvS2dRa3BnaE8wVHhNS0dkblY1cTB5b2RCank0?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:55:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：騰雲(6870)股價遭警示，自結9月歸屬母公司淨利4100萬元，EPS 1.44元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPM3RTV2hPbVRJdDlZTkVfSWYtS2tnYVB2WVBuNXR6bGV6X0ctZElnOGpaSzVsbEFydGZER09ZTVBrU2RQVEFNZTNVeDJRQVFSa1BCUEFUTTNvbXZzb1VPVHZjbkNSZktCOE13d3dqM04zd0N5T2JTZ1R2aS04Y1NhMFJFMmJBcTYx?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T07:00:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《盤前掃瞄-國外消息》晶片類股反彈；費半大漲 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPZmJJckdaOWZteGVsMWRnTjlnYlZZQlJ1djRaVjNpTXFaUUVGbTlkLW1kbGZlc1lGVFlQcDBwb1FmaWdoQlZCZDZmcWtIMlpZLWtyQVQ5NGVmSDFlUXJubC1tcS1SSVBZTEs5U1FyZEt1TG5EYUxPeE5rZFlQOERrSTRSazR6Vmtt?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T08:11:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《半導體》環球晶徐秀蘭：半導體迎新超級循環 SOI擴產洽談長約 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOSEY5cGVPeS1yNzh0bTFOSlJzVEdLOXZBTnRKQUl1TE14ZEdYTlZmNTAtQ01ZTF9JQk92bUNjV2tZSm51QU5iZG05ejNJY2J4REFNcnJIUW1DdzlYNjVndndPRFNpOTRYUm51bUJOam9FZ195X0hxX3huUGtzVVRubVlmdVZOelBy?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:53:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：尚茂(8291)股價遭警示，自結9月本期淨損274萬元，EPS-0.32元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNRm9OUi1WMFZCNGFHdXhNUV9ISGV5NjM5ejZhS3phVV9OUDdFSTNKUTlhcy1tWFlkWXl1WTNYeGZtMEl5OXNZa1ZhSlJRUldlYlB4OW5NRDAzRHE5bzV4SlpwbzZKTXNOdVVUTlktbzlPdkkyWFZiMFBUVlZUbFZzVjV6VTJZbjVU?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T07:00:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《產業》新應材、汎瑋 前三季賺贏去年 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOWTY2OEloMEEtQWNhUmszN3VKUFN5aXlIUjFHb1dmNnoyMUltTTRVZDI4UkVEWHQwMWlxdHlLanBMMi04M0JhZ2F2dlVNbk5ZajYxeU1WN0dPc0RzakhMdXRTZ285S1ZybE1sMndlUnVMYUZOVDVGR2hVUnhxS1FaS3pRSksycUdj?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T07:55:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《熱門族群》記憶體怎麼了？南亞科殺破400關 華邦電跟著崩 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQU1lpUC1jaHpLQkhhUHliM3NMaS1nQ2VMNEREb0F3dVZ3ZHduR0FwLVhzUnA0RWFKTDM2RFo0bWdMZldvYlNpV0RtaGdzZVlfR3dVdmhoeDltSWpXVmdyUHJYRlNXSE9IMzAwSjZZcTRraV83aWo2WlBxMnFSaTFaV0t3MTVzZHRw?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T11:02:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《興櫃股》華芸科技11月19日辦上櫃業績發表會 前三季每股盈餘1.82元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOZXJJMVNhTW5XOXl5MWc0eHRnbGg3NFRQTjV1clI2N1psdFNDWVNDTlBEX3NGZ0d2MnB2MjI5Wk1BQUFvZi1BY3J5LUxTZXBwcHNGVjdDbDd1MjczTWlLU1MxbWFXVk41cm9YUmJxaFBpanhDekItUTY4eE5qekNiby1Hajgxb0NS?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-04T10:00:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：東捷資訊(6697)股價遭警示，自結9月獲利700萬元，單月EPS 0.2元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNaGhIUFc1RW9aekJtMUxuYjFhWkx1QzdwbWVzNE1HSDNjdDZIN0lQUUN6ZXIyMUlyYW9LYUpHdGdTQWlkWjAzUy1SZGF2OEhVYS05Wmp1OUVrWlJoUlV0RGREZWgtVWpiOVgzUXlzdEc5a1c0UkVHWDZUS25yc1NVMDc3Uy1CNEVm?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-04T07:00:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《基金》馬斯克唱旺記憶體 009829卡位三星電子與SK海力士 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOVnRrczJjNUY5SkVQZm02T0pUTE4tLXVjZmRrcjRxZmdwOENqUTZZSlZfSm5DVGNBVmhLVXFRRXJOLVl1bXRJY21raWVWajF2aS03amhVTEMwZmxUOURKTWpGQ0EyUEZzNnV0WFJpZ29nQ3hpem9BeTJqX3VwSTh2cTE3VENYb3c1?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T16:02:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：精誠金融(7819)115/1/1～115/9/30歸屬母公司淨利31萬元，EPS 0.01元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPYktGbkIwaVBLM1lqOGstYWc3UGRRalN5Vk1JbWF2cEpBb3lGX1lVZ254TDNaRDZsd196X3BxV0c0NDZiVnh1QUw4WUpQSWJfSGFWQ0J6VnM0RnNTdHpqeVpFQW8xa1Zvb3o5Y0ZXdTBQWlVMV2dSOEJPSnlOek5CZm9uNEZrUG9a?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T15:33:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "美股：英特爾上週五崩跌近29%創52年最慘，費半急殺7.2%，晶片股全面遭血洗 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPNTRVSW1UMHJQbmltU0stR3dGcjVHZmRCTl9zVzEtcXdLczBuRkN0M2QtT2g3alFsUVdINE44MTJKa0Z0MmNCZEsyd3p3Vi14bWNtN0pNeDNXdWZHYURhUHVWSFdlWk1EUFEzSG5BTjBlX3dIVVZhakVGVjdFR2o3TzY4eUxzWk1o?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T07:31:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：嘉晶(3016)115/1/1～115/9/30歸屬母公司淨利5億2474萬元，EPS 1.81元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxNeDBvQ1VhSUFNdHBfVnI0aXAzckZ4UkRpZmpKY3FiOFBOSkVvS0hjLWh1aVoxak90aGY3RS15TDA0U2xUMGlvTUswZDlJQ0J5emNCdXV6b282RHh6MTJwRlBpal8zSC01YklEM1lxTDc2LXpNY25VX1M1ZG11STd1YlVGVUVZQ1h5?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T07:03:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "盈餘：大世科(8099)股價遭警示，自結9月歸屬母公司淨利4700萬元，EPS 0.47元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQVElTMXJkcVdWRnRuZTdWY2s3RjhfT1kwbHktU3djSmRocUZKVzVNTzRuajdVTEFGeFNhaTByaTJNSmFHQlhfRE9LdkxOLTRtOVZoWGtNNTk1TEE4Sm9FV3RRSnRlcHdhVnlzR2VDX3hnSjVCdk03ellXV0lFRV9QYTdfa1o0dGp6?oc=5",
-      "result": "accepted",
-      "published_at": "2026-11-02T15:11:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "個股：業外損失拖累，邁達特(6112)Q3轉虧，前三季EPS 1.78元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQZFRyN0FYMkxsZVZTcnJFaHcwT3I5cVdEelVOckZYTUZUZ0NJcF8tWmxmWlVaVTJwZEJVXy1YSUtrdXc3RWVzOTB6ZnZ5M1dYem5LYmp0d2lTUk8xYnNaN2g0cjJ0cmtpcUhfX19ZTVBRcnAyaHFhTm4zYjBJVXRUd2g0bmpZdXZL?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T09:42:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：精誠金融(7819)115/1/1～115/9/30歸屬母公司淨利31萬元，EPS 0.01元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQcWJDSklSTXB1TVdGcHQzV2V4NFN5aW10b2dVT1dzbXRXTXNhbmN0UGNLU0hUQjVtdk14QTR4cVY1Mi1zd3BoTFJlbVhSTVBvWVJPZ1lDYzlHN3hCT09XTG9iaThJOWw5dEx1RWdNcFlfSDRoYXZFTHhqY181dUNwNU1MTFh5cGhP?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T15:33:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "《今日焦點新聞》美期中選舉逼近、美股重挫 台股多空戰三情境推演 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQc1M2UTB5bEdONTdRNmh5QlVLbkF3OHBKcUYtWFNEcmJNZ2NlSDdERnkyTTJqai13LUZ0ZlhWY0Z6OVVDN0NSUE5ZX2Noc2FzbmVXc2pSWklwNnJvMGNpbGtlRmxWNmozMFRneXNxa2hxcXlpVjRtREt4dmQ1bmpnSjJSTURKc1k3?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T08:11:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "美股：Reddit財報優但仍遭血洗，股價上週五狂瀉29.22%創上市最慘 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxOZlJmVVhXNFgwY0hEaHFYWHNieHN4Z09ja3VBOU9VS1d6ckxfTmU4c1R5UlBTd2E0OFRaU2NTYWE1LTRRa2JJQVY0QVFlN1Rnc2ZiSnIwWWlpYmpMcG40YmVuVnBwQWliN0pVZ3NtUW9SZW5CQW14ZDBRb0t3MXNEVk9PV1lhRjRS?oc=5",
-      "result": "ambiguous_company",
-      "published_at": "2026-11-02T08:34:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：立益(1443)115/1/1-115/9/30歸屬母公司淨利1億9482萬元，EPS 1.44元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxObkNaT01FV0FhNHdYSk5VMVBYcmxfOE9JSzZwQW5lLXFZX0sxTTZjcXhMeEZURmJvNzA0NkQydk5PUVpYWnU5cVVTSjNHTmczdVZPd0t0Z0gyWU9sMXk1M1FzSHdwVEtXZF9zWEFzc0RkdFpFM2cxR19TMkJZTkNRSW5fN2VQQ0M1?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:14:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：群電(6412)115/1/1-115/9/30歸屬母公司淨利13億6281萬元，EPS 3.4元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxObjdUekZZN1lKNmZJOExDZ25sZGFmRFR0X1lVdHRhMHVUNTVuUXJTdUJwSmtVcGVvMmVXSzB4QTFHVDlCMUdvZm5GY0hMY2NWUWNFdFotakZycFBpRWRYb2FuRkF6YmxPWGNrbm56enhOMUx3V0xYa09KVTg0cWRFNkstSjgwSUxf?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T13:36:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "財報：大綜(3147)115/1/1～115/9/30歸屬母公司淨利7億5740萬元，EPS 17.35元 - 富聯網",
-      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxQTTFJZ09WVTc4eV9CcnFRenZOVUJrOFc4UFhyYWtKRllLUU92dDN1dVpzN25FNzZTMF9xd0IwRWFLZ244RVV2R2gzV1ExM3AtemRfSGVjelZRZHY0MUFjblQ5XzJJYmYzR2dYdkhicV9ycF9RS2ZXNXBoY1JNNVdWeVhVa0hEaGxq?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-04T14:16:00+08:00",
-      "publisher": "富聯網",
-      "metrics": []
-    },
-    {
-      "title": "輝創首登米蘭EICMA，智慧騎乘技術拓展國際二輪市場 - 財訊快報",
-      "url": "https://news.google.com/rss/articles/CBMihgFBVV95cUxONXdmSkg0RTJLelZ3cHpZa0ZGUUYyTVBucklRcDJVaGRTek8yc0xYcVJxeENUUjQ1cGF1dUZKWElIM3RkZFVNdHhldWxMaU9Da2lWQjZhcHRvV1Z1bHRraU03SzJ1OWFwWGxnVTFqT3hhSzBQSWVoZXRJSTlmWUJsWDhkQ25SZw?oc=5",
-      "result": "no_unambiguous_single_period_eps",
-      "published_at": "2026-11-03T11:07:00+08:00",
-      "publisher": "財訊快報",
       "metrics": []
     },
     {
@@ -1179,6 +397,14 @@
       "result": "ambiguous_company",
       "published_at": "2026-11-03T16:38:00+08:00",
       "publisher": "FTNN 新聞網",
+      "metrics": []
+    },
+    {
+      "title": "財報：昕奇雲端115/01/01-115/09/30歸屬母公司淨利1億2936萬元，EPS 4.29元 - 富聯網",
+      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPS1d5ckJkRDBUUHFHVzFVMVlrbHhuTkRWNWdfcDRNOTNJRENuaTBuRC1lVUl4S0FsdEh0NmRYRm9sUzAzejU4Q0E0Z19sakpVdE9ITXdhM0Q2VDA1bWVxb0VQeUw4ZWctQU4xUXQzYXBud1FCX0NFeGdsWHpubU4tbHNKajZZYm9f?oc=5",
+      "result": "no_unambiguous_single_period_eps",
+      "published_at": "2026-11-04T14:46:00+08:00",
+      "publisher": "富聯網",
       "metrics": []
     },
     {
