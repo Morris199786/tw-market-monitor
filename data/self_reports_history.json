@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-11-04T22:35+08:00",
+  "updated_at": "2026-11-05T08:14+08:00",
   "version": "2026-10-29-v35-additive-cumulative-self-report",
   "monitor_start_date": "2026-09-26",
-  "candidate_count": 256,
+  "candidate_count": 257,
   "parsed_count": 114,
-  "parse_failed_count": 135,
+  "parse_failed_count": 136,
   "parse_failed": [
     {
       "ticker": "7742",
@@ -14,6 +14,19 @@
       "subject": "7742 天弘化 115/11/04 20:12:47 更正申報115年7月、9月單月及7至9月累計營業收入資訊。",
       "source": "mops_ajax",
       "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+      "eps_parse_status": "unrecognized_layout",
+      "eps_parse_reason": "eps_label_not_found",
+      "monthly_eps": null,
+      "quarter_eps": null
+    },
+    {
+      "ticker": "2352",
+      "name": "佳世達",
+      "publish_date": "2026-11-04",
+      "publish_time": "18:39:32",
+      "subject": "佳世達115年10月份自結合併營收",
+      "source": "twse_openapi",
+      "source_error": "",
       "eps_parse_status": "unrecognized_layout",
       "eps_parse_reason": "eps_label_not_found",
       "monthly_eps": null,
@@ -1788,7 +1801,31 @@
       "eps_parse_reason": "eps_label_not_found"
     },
     {
-      "market": "",
+      "market": "twse",
+      "ticker": "2352",
+      "name": "佳世達",
+      "publish_date": "2026-11-04",
+      "publish_time": "18:39:32",
+      "subject": "佳世達115年10月份自結合併營收",
+      "detail": "佳世達115年10月份自結合併營收\n出表日期 1151105\n發言日期 1151104\n發言時間 183932\n公司代號 2352\n公司名稱 佳世達\n主旨 佳世達115年10月份自結合併營收\n符合條款 第51款\n事實發生日 1151104\n說明 1.事實發生日:115/11/04 2.公司名稱:佳世達科技股份有限公司 3.與公司關係(請輸入本公司或子公司):本公司 4.相互持股比例:不適用 5.發生緣由:公告本公司115年10月份自結合併營收 6.因應措施:不適用 7.其他應敘明事項(若事件發生或決議之主體係屬公開發行以上公司，本則重大訊息同時 符合證券交易法施行細則第7條第9款所定對股東權益或證券價格有重大影響之事項): 佳世達115年10月自結合併營收為新台幣193.90億元， 較去年同期成長13.47%，較上月減少1.85%。 累計115年1至10月合併營收為新台幣1,804.26億元，較去年同期成長4.39%。",
+      "source": "twse_openapi",
+      "source_url": "",
+      "source_error": "",
+      "match_reason": "direct_self_report",
+      "eps": null,
+      "monthly_eps": null,
+      "monthly_eps_yoy": null,
+      "monthly_period": null,
+      "quarter_eps": null,
+      "quarter_eps_yoy": null,
+      "quarter_period": null,
+      "monthly_eps_yoy_text": null,
+      "quarter_eps_yoy_text": null,
+      "eps_parse_status": "unrecognized_layout",
+      "eps_parse_reason": "eps_label_not_found"
+    },
+    {
+      "market": "twse",
       "ticker": "2838",
       "name": "聯邦銀",
       "publish_date": "2026-11-04",
@@ -1836,7 +1873,7 @@
       "eps_parse_reason": "eps_label_not_found"
     },
     {
-      "market": "",
+      "market": "twse",
       "ticker": "2637",
       "name": "慧洋-KY",
       "publish_date": "2026-11-04",
