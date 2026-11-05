@@ -127,12 +127,25 @@ YUANTA_NAMES = {'2059':'川湖','2395':'研華','6488':'環球晶','4991':'環�
                 '6805':'富世達','6526':'達發','2454':'聯發科','2301':'光寶科',
                 '3443':'創意','2002':'中鋼'}
 
+KGI_FILE = re.compile(r'^(daily[ _-]+story|takeaway)_([0-9]{4}|[A-Z]{1,5})_20\d\d_\d\d_\d\d_[CE](?:_(TW|US))?\.pdf$', re.I)
+KGI_NAMES = {'7953':'峻佳裝修','3704':'合勤控','2467':'志聖','6269':'台郡',
+             '6515':'穎崴','3533':'嘉澤','3189':'景碩', **YUANTA_NAMES}
+KGI_US = {'AAPL':'蘋果 Apple','SNDK':'晟碟 SanDisk','INTC':'英特爾 Intel',
+          'VRT':'維諦 Vertiv','FLEX':'偉創力 Flex','VFC':'威富 VF Corporation'}
+
 def identity(filename):
     stem = re.sub(r'\.pdf$', '', filename, flags=re.I)
     broker = next((b for b in BROKERS + ('福邦',) if b in stem), '')
     if stem.startswith('JPM_'):
         broker = 'J.P. Morgan'
     names = company_catalog()
+    kgi = KGI_FILE.fullmatch(filename)
+    if kgi:
+        code = kgi[2].upper()
+        if code.isdigit() and (kgi[3] or 'TW').upper() == 'TW':
+            return code, names.get(code) or KGI_NAMES.get(code, ''), '凱基投顧'
+        if code.isalpha() and (kgi[3] or '').upper() == 'US':
+            return code, KGI_US.get(code, names.get(code, code)), '凱基投顧'
     yuanta = YUANTA_TW.search(stem)
     if yuanta:
         code = yuanta.group(1)
@@ -223,6 +236,10 @@ def main():
                'broker': broker, 'modified_time': f.get('modifiedTime', ''),
                'url': f'https://drive.google.com/file/d/{fid}/view',
                'preview_url': f'https://drive.google.com/file/d/{fid}/preview'}
+        if broker == '凱基投顧' and KGI_FILE.fullmatch(name):
+            category = '重點整理' if name.lower().startswith('takeaway') else '個股研究'
+            label = f'{company}（{ticker}）' if company and company != ticker else ticker
+            row['title'] = f'{label}｜{category}'
         # Preserve previously extracted report dates separately from the grouping date.
         if previous.get('report_date'):
             row['report_date'] = previous['report_date']
@@ -238,5 +255,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
