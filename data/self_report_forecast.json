@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-11-04T22:07:04+08:00",
-  "prediction_date": "2026-11-05",
-  "asof": "2026-11-04",
+  "updated_at": "2026-11-05T22:11:34+08:00",
+  "prediction_date": "2026-11-06",
+  "asof": "2026-11-05",
   "picks": [
     {
-      "ticker": "2360",
-      "name": "致茂",
+      "ticker": "2471",
+      "name": "資通",
       "market": "twse",
       "probability": null,
       "reasons": [
@@ -16,8 +16,8 @@
       ]
     },
     {
-      "ticker": "3532",
-      "name": "台勝科",
+      "ticker": "3189",
+      "name": "景碩",
       "market": "twse",
       "probability": null,
       "reasons": [
@@ -28,8 +28,8 @@
       ]
     },
     {
-      "ticker": "7750",
-      "name": "新代",
+      "ticker": "4919",
+      "name": "新唐",
       "market": "twse",
       "probability": null,
       "reasons": [
@@ -40,8 +40,8 @@
       ]
     },
     {
-      "ticker": "8996",
-      "name": "高力",
+      "ticker": "5284",
+      "name": "jpp-KY",
       "market": "twse",
       "probability": null,
       "reasons": [
@@ -52,40 +52,76 @@
       ]
     },
     {
-      "ticker": "8272",
-      "name": "全景軟體",
+      "ticker": "6209",
+      "name": "今國光",
+      "market": "twse",
+      "probability": null,
+      "reasons": [
+        "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+        "近3日注意1次、近5日注意1次",
+        "近30日未公布自結",
+        "預測月份2026-10尚未公告EPS／自結"
+      ]
+    },
+    {
+      "ticker": "6451",
+      "name": "訊芯-KY",
+      "market": "twse",
+      "probability": null,
+      "reasons": [
+        "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+        "近3日注意1次、近5日注意1次",
+        "近30日未公布自結",
+        "預測月份2026-10尚未公告EPS／自結"
+      ]
+    },
+    {
+      "ticker": "5013",
+      "name": "強新",
       "market": "tpex",
-      "probability": 0.22368470577141014,
+      "probability": 0.2288776942746188,
       "reasons": [
         "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意3次",
+        "近3日注意3次、近5日注意3次、近20日注意6次",
+        "保留原有前日注意、近5日注意3次及舊模型評分",
+        "預測月份2026-10尚未公告EPS／自結"
+      ]
+    },
+    {
+      "ticker": "8042",
+      "name": "金山電",
+      "market": "tpex",
+      "probability": 0.2261187114654668,
+      "reasons": [
+        "最近注意交易距今0交易日",
+        "近3日注意2次、近5日注意3次、近20日注意6次",
         "保留原有前日注意、近5日注意3次及舊模型評分",
         "預測月份2026-10尚未公告EPS／自結"
       ]
     }
   ],
-  "announcement_asof": "2026-11-04",
+  "announcement_asof": "2026-11-05",
   "model_version": "2026-10-21-listed-rule-A-otc-original",
   "backtest": {
     "start": "2026-10-21",
-    "end": "2026-11-04",
+    "end": "2026-11-05",
     "twse": {
-      "predictions": 22,
+      "predictions": 26,
       "hits": 9,
       "actual": 11,
-      "precision": 0.4090909090909091,
+      "precision": 0.34615384615384615,
       "recall": 0.8181818181818182,
-      "f1": 0.5454545454545454,
-      "settled_days": 9
+      "f1": 0.4864864864864865,
+      "settled_days": 10
     },
     "tpex": {
-      "predictions": 23,
-      "hits": 18,
-      "actual": 19,
-      "precision": 0.782608695652174,
-      "recall": 0.9473684210526315,
-      "f1": 0.8571428571428571,
-      "settled_days": 9
+      "predictions": 24,
+      "hits": 19,
+      "actual": 20,
+      "precision": 0.7916666666666666,
+      "recall": 0.95,
+      "f1": 0.8636363636363636,
+      "settled_days": 10
     }
   },
   "backtest_detail": {
@@ -93,22 +129,22 @@
     "start": "2026-10-21",
     "forward": {
       "twse": {
-        "predictions": 22,
+        "predictions": 26,
         "hits": 9,
         "actual": 11,
-        "precision": 0.4090909090909091,
+        "precision": 0.34615384615384615,
         "recall": 0.8181818181818182,
-        "f1": 0.5454545454545454,
-        "settled_days": 9
+        "f1": 0.4864864864864865,
+        "settled_days": 10
       },
       "tpex": {
-        "predictions": 23,
-        "hits": 18,
-        "actual": 19,
-        "precision": 0.782608695652174,
-        "recall": 0.9473684210526315,
-        "f1": 0.8571428571428571,
-        "settled_days": 9
+        "predictions": 24,
+        "hits": 19,
+        "actual": 20,
+        "precision": 0.7916666666666666,
+        "recall": 0.95,
+        "f1": 0.8636363636363636,
+        "settled_days": 10
       }
     },
     "includes_provisional": true,
@@ -352,7 +388,7 @@
       },
       {
         "date": "2026-11-04",
-        "provisional": true,
+        "provisional": false,
         "twse": {
           "predictions": 1,
           "hits": 0,
@@ -373,11 +409,37 @@
           "hit_tickers": [],
           "missed_tickers": []
         }
+      },
+      {
+        "date": "2026-11-05",
+        "provisional": true,
+        "twse": {
+          "predictions": 4,
+          "hits": 0,
+          "actual": 0,
+          "precision": 0.0,
+          "recall": null,
+          "f1": 0.0,
+          "hit_tickers": [],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 1,
+          "hits": 1,
+          "actual": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "8272"
+          ],
+          "missed_tickers": []
+        }
       }
     ]
   },
   "pending_dates": [
-    "2026-11-05"
+    "2026-11-06"
   ],
   "evaluation_policy": "每個注意交易截止日只計一次；公告觀察窗為截止日之後至下一交易日（含休市公告）；保留原始預測，不以公告後名單回算績效。",
   "forward_forecasts": {
@@ -1220,6 +1282,108 @@
           ]
         }
       ]
+    },
+    "2026-11-06": {
+      "asof": "2026-11-05",
+      "model_version": "2026-10-21-listed-rule-A-otc-original",
+      "picks": [
+        {
+          "ticker": "2471",
+          "name": "資通",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "3189",
+          "name": "景碩",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "4919",
+          "name": "新唐",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "5284",
+          "name": "jpp-KY",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "6209",
+          "name": "今國光",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "6451",
+          "name": "訊芯-KY",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "5013",
+          "name": "強新",
+          "market": "tpex",
+          "probability": 0.2288776942746188,
+          "reasons": [
+            "最近注意交易距今0交易日",
+            "近3日注意3次、近5日注意3次、近20日注意6次",
+            "保留原有前日注意、近5日注意3次及舊模型評分",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "8042",
+          "name": "金山電",
+          "market": "tpex",
+          "probability": 0.2261187114654668,
+          "reasons": [
+            "最近注意交易距今0交易日",
+            "近3日注意2次、近5日注意3次、近20日注意6次",
+            "保留原有前日注意、近5日注意3次及舊模型評分",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        }
+      ]
     }
   },
   "forward_settlements": {
@@ -1270,7 +1434,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-10-22": {
       "actuals": {
@@ -1314,7 +1478,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-10-27": {
       "actuals": {
@@ -1359,7 +1523,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-10-28": {
       "actuals": {
@@ -1400,7 +1564,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-10-29": {
       "actuals": {
@@ -1440,7 +1604,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-10-30": {
       "actuals": {
@@ -1475,7 +1639,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-11-02": {
       "actuals": {
@@ -1514,7 +1678,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-11-03": {
       "actuals": {
@@ -1557,7 +1721,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     },
     "2026-11-04": {
       "actuals": {
@@ -1586,22 +1750,57 @@
           "missed_tickers": []
         }
       },
+      "provisional": false,
+      "source": "site_history_signal_window_v1",
+      "verified_at": "2026-11-05T22:10:00+08:00"
+    },
+    "2026-11-05": {
+      "actuals": {
+        "twse": [],
+        "tpex": [
+          "8272"
+        ]
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 4,
+          "hits": 0,
+          "actual": 0,
+          "precision": 0.0,
+          "recall": null,
+          "f1": 0.0,
+          "hit_tickers": [],
+          "missed_tickers": []
+        },
+        "tpex": {
+          "predictions": 1,
+          "hits": 1,
+          "actual": 1,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "hit_tickers": [
+            "8272"
+          ],
+          "missed_tickers": []
+        }
+      },
       "provisional": true,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-04T22:06:00+08:00"
+      "verified_at": "2026-11-05T22:10:00+08:00"
     }
   },
   "source_status": {
     "twse": {
       "ok": true,
-      "rows": 1453,
-      "source": "https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate=20260701&endDate=20261104",
+      "rows": 1477,
+      "source": "https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate=20260701&endDate=20261105",
       "offline": false
     },
     "tpex": {
       "ok": true,
-      "rows": 1464,
-      "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=2026/07/01&endDate=2026/11/04&response=json",
+      "rows": 1485,
+      "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=2026/07/01&endDate=2026/11/05&response=json",
       "offline": false
     }
   }
