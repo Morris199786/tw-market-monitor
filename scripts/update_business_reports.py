@@ -122,12 +122,24 @@ def company_catalog():
                 names[str(code)] = row['name']
     return names
 
+YUANTA_TW = re.compile(r'(?<!\w)([1-9]\d{3})\s+TT\s*[-–—]\s*Yuanta\b', re.I)
+YUANTA_NAMES = {'2059':'川湖','2395':'研華','6488':'環球晶','4991':'環宇-KY',
+                '6805':'富世達','6526':'達發','2454':'聯發科','2301':'光寶科',
+                '3443':'創意','2002':'中鋼'}
+
 def identity(filename):
     stem = re.sub(r'\.pdf$', '', filename, flags=re.I)
     broker = next((b for b in BROKERS + ('福邦',) if b in stem), '')
     if stem.startswith('JPM_'):
         broker = 'J.P. Morgan'
     names = company_catalog()
+    yuanta = YUANTA_TW.search(stem)
+    if yuanta:
+        code = yuanta.group(1)
+        name = names.get(code, '')
+        if not re.search(r'[\u3400-\u9fff]', name):
+            name = YUANTA_NAMES.get(code) or re.sub(r'\s*\(ID\)\s*$', '', stem[:yuanta.start()].strip(), flags=re.I)
+        return code, name, '元大投顧'
     # Remove dates before looking for codes (a year must not hide a later ticker).
     clean = re.sub(r'(?<!\d)20\d{2}[_/.-]\d{1,2}[_/.-]\d{1,2}(?!\d)', '', stem)
     pairs = []
@@ -205,7 +217,7 @@ def main():
         gmail_date = gmail_date_from_description(f.get('description', ''))
         dt = gmail_date or drive_date(created)
         source = 'gmail_received' if gmail_date else 'drive_created'
-        row = {'id': fid, 'filename': name, 'title': re.sub(r'\.pdf$', '', name, flags=re.I),
+        row = {'id': fid, 'filename': name, 'title': (f'{company}（{ticker}）｜個股研究' if YUANTA_TW.search(name) else re.sub(r'\.pdf$', '', name, flags=re.I)),
                'date': dt, 'date_source': source, 'created_time': created,
                'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
                'broker': broker, 'modified_time': f.get('modifiedTime', ''),
@@ -226,4 +238,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
