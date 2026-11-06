@@ -11,7 +11,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-10-29-v22-targeted-official-recovery"
+VERSION = "2026-11-06-quarter-basis"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -870,72 +870,108 @@ def merge_history(snapshot):
 
     return by
 
+def safe_margin(gross, revenue):
+    if gross is None or revenue is None or revenue <= 0 or gross > revenue:
+        return None
+    return 100 * gross / revenue
+
+
 def single_metrics(by, t, p):
-    r = by.get((t, p))
-
-    if not r:
-        return {
-            "eps": None,
-            "gross_margin": None,
-        }
-
-    q = int(p[-1])
-
-    rev = r.get("cum_revenue")
-    gp = r.get("cum_gross")
-    ceps = r.get("cum_eps")
-
-    if q == 1:
-        srev = rev
-        sgp = gp
-        seps = ceps
-
+    r = by.get((t, p), {})
+    rev, gp = r.get('cum_revenue'), r.get('cum_gross')
+    eps = r.get('single_eps')
+    if p.endswith('Q1'):
+        if eps is None:
+            eps = r.get('cum_eps')
     else:
-        pp = previous(p)
-        pr = by.get((t, pp))
+        prior = by.get((t, previous(p)), {})
+        def delta(value, key):
+            base = prior.get(key)
+            return value - base if value is not None and base is not None else None
+        rev, gp = delta(rev, 'cum_revenue'), delta(gp, 'cum_gross')
+    direct = r.get('official_quarter_facts') or {}
+    if direct.get('eps') is not None:
+        eps = direct['eps']
+    # As originally published by Wiwynn (before the stock dividend).
+    # https://www.wiwynn.com/zh/news/wiwynn-reports-second-quarter-2026-financial-results
+    if (t,p)==('6669','2026-Q2') and eps is None:
+        eps = 80.43
+    gm = direct.get('gross_margin')
+    return dict(eps=eps, gross_margin=gm if gm is not None else safe_margin(gp, rev),
+                eps_basis='reported_single' if eps is not None else None)
 
-        if not pr:
-            return {
-                "eps": r.get('single_eps'),
-                "gross_margin": None,
-            }
 
-        srev = (
-            rev - pr.get("cum_revenue")
-            if (
-                rev is not None
-                and pr.get("cum_revenue") is not None
-            )
-            else None
-        )
+def filing_quarter_facts(raw, ticker, period):
+    """Only undimensioned, current-company, standalone-quarter monetary facts."""
+    import calendar
+    import xml.etree.ElementTree as ET
+    from collections import defaultdict
+    year, q = int(period[:4]), int(period[-1])
+    start = f'{year}-{3*q-2:02}-01'
+    end = f'{year}-{3*q:02}-{calendar.monthrange(year,3*q)[1]:02}'
+    root = ET.fromstring(raw)
+    def tag(el):
+        return el.tag.split('}')[-1].lower()
+    contexts = set()
+    units = {}
+    for el in root.iter():
+        if tag(el) == 'context':
+            d = {tag(c): (c.text or '').strip() for c in el.iter()}
+            if (d.get('identifier'), d.get('startdate'), d.get('enddate')) == (ticker,start,end) and not {'segment','scenario'}.intersection(d):
+                contexts.add(el.get('id'))
+        elif tag(el) == 'unit':
+            measures = [c.text.strip().split(':')[-1].lower() for c in el.iter() if tag(c)=='measure' and c.text]
+            units[el.get('id')] = tuple(measures)
+    amounts = defaultdict(set)
+    tags = {'basicearningslosspershare':'eps','basicearningspershare':'eps',
+            'revenue':'rev','operatingrevenue':'rev','operatingrevenues':'rev',
+            'grossprofit':'gp','grossprofitlossfromoperations':'gp','grossprofitloss':'gp'}
+    for el in root.iter():
+        if tag(el) != 'nonfraction' or el.get('contextRef') not in contexts:
+            continue
+        k = tags.get(el.get('name','').split(':')[-1].lower())
+        if not k or units.get(el.get('unitRef')) != (('twd','shares') if k=='eps' else ('twd',)):
+            continue
+        v = num(''.join(el.itertext()))
+        if v is None:
+            continue
+        if el.get('sign')=='-':
+            v = -abs(v)
+        v *= 10 ** int(el.get('scale','0'))
+        if math.isfinite(v):
+            amounts[k].add(v)
+    def one(k):
+        return next(iter(amounts[k])) if len(amounts[k])==1 else None
+    return {k:v for k,v in dict(eps=one('eps'),gross_margin=safe_margin(one('gp'),one('rev'))).items() if v is not None}
 
-        sgp = (
-            gp - pr.get("cum_gross")
-            if (
-                gp is not None
-                and pr.get("cum_gross") is not None
-            )
-            else None
-        )
 
-        seps = r.get("single_eps")
-        if seps is None and ceps is not None and pr.get("cum_eps") is not None:
-            seps = round(ceps-pr["cum_eps"], 6)
+def backfill_quarter_facts(by, events, upcoming):
+    """Bound each run and rotate unfiled reports so they do not block others."""
+    pending = {}
+    for x in list(upcoming.values()) + list(events.values()):
+        t,p = x['ticker'],x['period']
+        for key in ([(t,p)] if (t,p) in events else []) + [(t,previous(p))]:
+            row = by.get(key,{})
+            metrics = single_metrics(by,*key)
+            released = x.get('released_metrics',{}).get(key[1],{})
+            if all(metrics.get(k) is not None or released.get(k) is not None for k in ('eps','gross_margin')):
+                continue
+            urgent = key in {('6669','2026-Q3'), ('3587','2026-Q3')}
+            pending[key] = (row.get('quarter_lookup_at',''), 0 if urgent else 1 if key in events else 2)
+    for (t,p),_ in sorted(pending.items(), key=lambda kv:(kv[1],-int(kv[0][1][:4]+kv[0][1][-1]),kv[0][0]))[:12]:
+        row = by.setdefault((t,p),dict(ticker=t,period=p))
+        row['quarter_lookup_at'] = now_tpe().isoformat(timespec='minutes')
+        url='https://mopsov.twse.com.tw/server-java/t164sb01'
+        try:
+            res=S.get(url,params={'step':'3','SYEAR':p[:4],'file_name':f'tifrs-fr1-m1-ci-cr-{t}-{p.replace("-","")}.html'},timeout=(4,8))
+            res.raise_for_status()
+            facts=filing_quarter_facts(res.content,t,p)
+            if facts:
+                row['official_quarter_facts']=facts
+                row['quarter_filing_url']=res.url
+        except Exception as exc:
+            print('quarter filing pending',t,p,type(exc).__name__,flush=True)
 
-    gm = (
-        sgp / srev * 100
-        if (
-            sgp is not None
-            and srev not in (None, 0)
-        )
-        else None
-    )
-
-    return {
-        "eps": seps,
-        "gross_margin": gm,
-        "eps_basis": "reported_single" if q==1 or r.get("single_eps") is not None else "cumulative_difference",
-    }
 
 def f(v, s=""):
     return (
@@ -1727,6 +1763,7 @@ def main():
         if (x['ticker'],x['period']) in events: required.append(x['period'])
         for p in required: targets.setdefault(p,set()).add(x['ticker'])
     errors=backfill_history(by,set(targets),targets)
+    backfill_quarter_facts(by,events,upcoming)
     save_financial_history(by)
     events = {key: x for key, x in events.items() if not invalid_quarterly_news(x)}
     planned_before_release = list(upcoming.values())
@@ -1739,7 +1776,16 @@ def main():
         if prevp in verified:
             prev.update({k:v for k,v in verified[prevp].items() if v is not None})
             if verified[prevp].get('eps') is not None: prev['eps_basis']='reported_single'
-        fallback = news_eps.get(key) or (sanitize_news_margin(x) if x.get('source') == 'news_backup' else None)
+        for period, dest in ((x['period'],cur),(prevp,prev)):
+            facts = by.get((x['ticker'],period),{}).get('official_quarter_facts',{})
+            dest.update({k:v for k,v in facts.items() if k in ('eps','gross_margin') and v is not None})
+            if facts.get('eps') is not None:
+                dest['eps_basis']='reported_single'
+        fallback = news_eps.get(key)
+        if not fallback and x.get('source') == 'news_backup':
+            fallback = dict(sanitize_news_margin(x) or {})
+            if x.get('eps_basis') != 'news_reported_single':
+                fallback.pop('eps',None)
         # Rebuild news-margin provenance only from the validated fallback below.
         for field in ('gross_margin_news_source', 'gross_margin_validation', 'gross_margin_source', 'gross_margin_evidence'):
             x.pop(field, None)
@@ -1813,6 +1859,12 @@ def main():
             x['gross_margin_news_source']=candidate['gross_margin_source']
             x['gross_margin_validation']=candidate['gross_margin_validation']
             x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
+    # Validate the final published values too (including cached release/news data).
+    for x in events.values():
+        for k in ('gross_margin','prev_gross_margin'):
+            if x.get(k) is not None and (num(x[k]) is None or num(x[k]) > 100):
+                x[k] = None
+        x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
     # Preserve the expected-company roster even after an actual report removes
     # the company from `upcoming`.  This is display-only: it never changes
     # announcement classification, EPS values or Telegram deduplication.
@@ -1841,6 +1893,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
