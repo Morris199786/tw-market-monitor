@@ -12,7 +12,7 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-11-09-ytd-eps-wiwynn-basis-verified"
+VERSION = "2026-11-09-ytd-eps-wiwynn-margin-guard"
 QUARTER_LOOKUP_VERSION = "2026-11-09-v2"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
@@ -897,10 +897,37 @@ def enforce_verified_quarter_eps(metrics, ticker, period):
     return metrics
 
 
+def valid_margin(value):
+    """Percentage-level sanity check; never publish a mathematically impossible gross margin."""
+    value = num(value)
+    return value is not None and -100 <= value <= 100
+
+
 def safe_margin(gross, revenue):
-    if gross is None or revenue is None or revenue <= 0 or gross > revenue:
+    """Compute quarter margin only from a usable same-unit gross/revenue pair."""
+    gross, revenue = num(gross), num(revenue)
+    if gross is None or revenue is None or revenue <= 0:
         return None
-    return 100 * gross / revenue
+    margin = 100 * gross / revenue
+    return round(margin, 6) if valid_margin(margin) else None
+
+
+def ytd_margin_consistent(by, ticker, period):
+    """Reject a quarter derived from decreasing positive YTD revenue/gross.
+
+    This happens for 3587 2026-Q3: published 9M revenue/gross are both
+    below the previous published 6M totals. A single-quarter ratio inferred
+    from those two snapshots is not reliable. An independently verified
+    direct single-quarter value can still be used.
+    """
+    if period.endswith('Q1'):
+        return True
+    now, prev = by.get((ticker, period), {}), by.get((ticker, previous(period)), {})
+    for field in ('cum_revenue', 'cum_gross'):
+        current, prior = num(now.get(field)), num(prev.get(field))
+        if current is not None and prior is not None and current < prior and prior >= 0:
+            return False
+    return True
 
 
 def single_metrics(by, t, p):
@@ -933,8 +960,12 @@ def single_metrics(by, t, p):
         eps = direct['eps']
         eps_basis = 'reported_single'
     gm = direct.get('gross_margin')
+    if not valid_margin(gm):
+        gm = None
+    if gm is None and ytd_margin_consistent(by, t, p):
+        gm = safe_margin(gp, rev)
     return enforce_verified_quarter_eps(
-        dict(eps=eps, gross_margin=gm if gm is not None else safe_margin(gp, rev),
+        dict(eps=eps, gross_margin=gm,
              eps_basis=eps_basis), t, p)
 
 
@@ -1998,11 +2029,16 @@ def main():
             enforce_verified_quarter_eps(prior_result, x['ticker'], x['prev_period'])
             x['prev_eps'] = prior_result['eps']
 
-    # Validate the final published values too (including cached release/news data).
+    # Check final values AFTER every official/cache/news merge and BEFORE JSON/Telegram.
+    # Do not discard valid EPS when the margin is bad.
     for x in events.values():
-        for k in ('gross_margin','prev_gross_margin'):
-            if x.get(k) is not None and (num(x[k]) is None or num(x[k]) > 100):
+        for k in ('gross_margin', 'prev_gross_margin'):
+            if x.get(k) is not None and not valid_margin(x[k]):
+                print('Rejected invalid published gross margin:', x.get('ticker'), x.get('period'), k, x[k], flush=True)
                 x[k] = None
+                if k == 'gross_margin':
+                    x.pop('gross_margin_news_source', None)
+                    x.pop('gross_margin_validation', None)
         x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
     # Preserve the expected-company roster even after an actual report removes
     # the company from `upcoming`.  This is display-only: it never changes
