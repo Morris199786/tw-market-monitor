@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-09T08:03+08:00",
+  "updated_at": "2026-11-09T08:34+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2167,12 +2167,6 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer')))"
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算",
           "rows": 0,
           "hits": 0
         },
@@ -2182,6 +2176,12 @@
           "keyword": "自行結算",
           "rows": 0,
           "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算",
+          "error": "ConnectionError(ReadTimeoutError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Read timed out.\"))"
         },
         {
           "mode": "direct_self_report_keyword",
