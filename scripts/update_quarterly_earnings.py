@@ -12,8 +12,8 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-11-09-eps-recovery"
-QUARTER_LOOKUP_VERSION = "2026-11-09-v1"
+VERSION = "2026-11-09-ytd-eps-wiwynn-basis-verified"
+QUARTER_LOOKUP_VERSION = "2026-11-09-v2"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -872,6 +872,31 @@ def merge_history(snapshot):
 
     return by
 
+# Verified, period-specific standalone results. 2026-09-02 stock-dividend
+# changed Wiwynn's weighted-average share basis. Its pre-dividend H1 YTD
+# EPS (156.38) must not be subtracted from post-dividend Q3 YTD (94.04).
+# Sources: https://www.wiwynn.com/zh/investors (2026 Q2 and Q3 releases).
+# This is intentionally narrow: do not silently change other issuers' EPS.
+VERIFIED_COMPANY_QUARTER_EPS = {
+    ('6669', '2026-Q2'): 80.43,
+    ('6669', '2026-Q3'): 41.46,
+}
+
+
+def verified_single_quarter_eps(ticker, period):
+    return VERIFIED_COMPANY_QUARTER_EPS.get((str(ticker), str(period)))
+
+
+def enforce_verified_quarter_eps(metrics, ticker, period):
+    """Prevent cached/incorrect YTD subtraction from overruling issuer release."""
+    verified = verified_single_quarter_eps(ticker, period)
+    if verified is not None:
+        metrics['eps'] = verified
+        metrics['eps_basis'] = 'issuer_verified_single'
+        metrics.pop('eps_news_source', None)
+    return metrics
+
+
 def safe_margin(gross, revenue):
     if gross is None or revenue is None or revenue <= 0 or gross > revenue:
         return None
@@ -879,28 +904,38 @@ def safe_margin(gross, revenue):
 
 
 def single_metrics(by, t, p):
+    """Use issuer single-quarter EPS first, or a same-year YTD difference.
+
+    Exception: corporate actions can cause YTD EPS to be restated using a
+    different share denominator across successive filings. For such periods,
+    only an independently verified single-quarter figure is acceptable.
+    """
     r = by.get((t, p), {})
     rev, gp = r.get('cum_revenue'), r.get('cum_gross')
     eps = r.get('single_eps')
+    eps_basis = 'reported_single' if eps is not None else None
     if p.endswith('Q1'):
-        if eps is None:
-            eps = r.get('cum_eps')
+        if eps is None and r.get('cum_eps') is not None:
+            eps = r['cum_eps']
+            eps_basis = 'cumulative_q1'
     else:
         prior = by.get((t, previous(p)), {})
         def delta(value, key):
             base = prior.get(key)
             return value - base if value is not None and base is not None else None
         rev, gp = delta(rev, 'cum_revenue'), delta(gp, 'cum_gross')
+        if eps is None and r.get('cum_eps') is not None and prior.get('cum_eps') is not None:
+            if verified_single_quarter_eps(t, p) is None:
+                eps = round(r['cum_eps'] - prior['cum_eps'], 2)
+                eps_basis = 'cumulative_difference'
     direct = r.get('official_quarter_facts') or {}
     if direct.get('eps') is not None:
         eps = direct['eps']
-    # As originally published by Wiwynn (before the stock dividend).
-    # https://www.wiwynn.com/zh/news/wiwynn-reports-second-quarter-2026-financial-results
-    if (t,p)==('6669','2026-Q2') and eps is None:
-        eps = 80.43
+        eps_basis = 'reported_single'
     gm = direct.get('gross_margin')
-    return dict(eps=eps, gross_margin=gm if gm is not None else safe_margin(gp, rev),
-                eps_basis='reported_single' if eps is not None else None)
+    return enforce_verified_quarter_eps(
+        dict(eps=eps, gross_margin=gm if gm is not None else safe_margin(gp, rev),
+             eps_basis=eps_basis), t, p)
 
 
 class QuarterInlineParser(HTMLParser):
@@ -1947,6 +1982,22 @@ def main():
             x['gross_margin_news_source']=candidate['gross_margin_source']
             x['gross_margin_validation']=candidate['gross_margin_validation']
             x['data_status']='complete' if all(x.get(k) is not None for k in ('eps','gross_margin','prev_eps','prev_gross_margin')) else 'pending_financial_data'
+    # Official company releases supersede stale cached MOPS/news-derived YTD
+    # subtraction. Apply AFTER all merge and news fallbacks, including reports
+    # populated from the old JSON, and keep the prior-quarter EPS consistent.
+    for x in events.values():
+        enforce_verified_quarter_eps(x, x['ticker'], x['period'])
+        if x.get('prev_period'):
+            prior_result = {'eps': x.get('prev_eps'), 'eps_basis': x.get('prev_eps_basis')}
+            enforce_verified_quarter_eps(prior_result, x['ticker'], x['prev_period'])
+            x['prev_eps'] = prior_result['eps']
+            x['prev_eps_basis'] = prior_result['eps_basis']
+    for x in upcoming.values():
+        if x.get('prev_period'):
+            prior_result = {'eps': x.get('prev_eps')}
+            enforce_verified_quarter_eps(prior_result, x['ticker'], x['prev_period'])
+            x['prev_eps'] = prior_result['eps']
+
     # Validate the final published values too (including cached release/news data).
     for x in events.values():
         for k in ('gross_margin','prev_gross_margin'):
