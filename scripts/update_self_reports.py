@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-09-v38-mops-eps-layouts-additive"
+VERSION = "2026-11-09-v39-attention-only-site"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -2538,7 +2538,7 @@ def notify_self_report_batch(fresh, saved, all_candidates, telegram_sent, today)
     for item in fresh:
         full_item = saved.get(identity(item), item)
         base_key = identity(full_item)
-        if (not valid_eps_item(full_item)
+        if (not attention_report_for_site(full_item) or not valid_eps_item(full_item)
                 or str(full_item.get('publish_date') or '') != today
                 or base_key in telegram_sent):
             continue
@@ -2670,6 +2670,24 @@ def valid_eps_item(item):
     )
 
 
+def attention_report_for_site(item):
+    """Only attention-triggered financial self-reports belong to the prediction page.
+
+    Keep unrelated voluntary monthly self-report filings in history and
+    diagnostics for other consumers; never promote them to prediction cards.
+    """
+    subject = compact_text(item.get('subject', ''))
+    attention_subject = re.search(
+        r'注意交易|注意股|達公[布佈]注意|(?:多次)?達公[布佈]交易資訊標準|公[布佈]交易資訊標準',
+        subject,
+    )
+    return bool(
+        attention_subject
+        and item.get('match_reason') == 'attention_trading'
+        and (valid_eps_item(item) or visible_unparsed_self_report(item))
+    )
+
+
 def visible_unparsed_self_report(item):
     """Website-only: show official self-report notices with unreadable EPS.
 
@@ -2681,7 +2699,7 @@ def visible_unparsed_self_report(item):
     return bool(
         not valid_eps_item(item)
         and item.get('source') == 'mops_ajax'
-        and item.get('match_reason') in ('attention_trading', 'direct_self_report')
+        and item.get('match_reason') == 'attention_trading'
         and item.get('publish_date')
         and re.search(r'財務業務資訊|財務資訊|自結損益', detail)
         and re.search(EPS_WORD, detail, re.I)
@@ -2932,7 +2950,7 @@ def main():
     display_items = [
         item
         for item in all_candidates
-        if valid_eps_item(item) or visible_unparsed_self_report(item)
+        if attention_report_for_site(item)
     ]
 
     parse_failed = [

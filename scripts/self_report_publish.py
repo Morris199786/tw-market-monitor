@@ -51,8 +51,7 @@ def publish(state_only=False):
                            parse_failed_count=len(failed), candidate_count=len(items))
             # Keep confirmed financial announcements visible even when EPS parsing fails.
             # Match the collector's site-export policy, but do not broaden Telegram.
-            visible = [x for x in items if collector.valid_eps_item(x)
-                       or collector.visible_unparsed_self_report(x)]
+            visible = [x for x in items if collector.attention_report_for_site(x)]
             site = dict(original[sp], items=visible, updated_at=stamp)
             site['diagnostics'] = {**site.get('diagnostics', {}), 'parse_failed': failed,
                                    'parse_failed_count': len(failed), 'parsed_count': sum(collector.valid_eps_item(x) for x in items)}
