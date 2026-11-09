@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-11-09T13:33+08:00",
+  "updated_at": "2026-11-09T14:08+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 288,
+    "candidate_count": 289,
     "parsed_count": 118,
-    "parse_failed_count": 163,
+    "parse_failed_count": 164,
     "parse_failed": [
+      {
+        "ticker": "6005",
+        "name": "群益證",
+        "publish_date": "2026-11-09",
+        "publish_time": "14:00:45",
+        "subject": "6005 群益證 115/11/09 14:00:45 公告本公司115年10月份合併自結損益",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "4912",
         "name": "聯德控股-KY",
@@ -2132,99 +2145,29 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 2,
+      "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 10,
-          "hits": 0
+          "rows": 48,
+          "hits": 2
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 10,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 10,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
+          "rows": 48,
+          "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 10,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 10,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
+          "rows": 48,
+          "hits": 1
         },
         {
           "mode": "openapi_rescue_pool",
@@ -2236,7 +2179,7 @@
             },
             {
               "market": "tpex",
-              "rows": 3,
+              "rows": 2,
               "ticker_pool": 0
             }
           ],
@@ -2281,7 +2224,13 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3005 神基 115/11/09 14:02:39 新聞稿-神基十月自結合併營收為35.23億元，年增5.54%"
+        }
+      ],
       "error": ""
     },
     "twse": {
@@ -2292,7 +2241,7 @@
     },
     "tpex": {
       "ok": true,
-      "rows": 3,
+      "rows": 2,
       "self_reports": 0,
       "error": ""
     }
