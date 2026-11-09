@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-09-v36-mops-eps-row-visible-unparsed"
+VERSION = "2026-11-09-v37-mops-parenthetical-halfyear-eps"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -443,38 +443,44 @@ def _extract_horizontal_eps(text):
 
 
 def _recover_mops_financial_eps_row(text):
-    """Additive rescue for attention disclosures with EPS mentioned before the table.
+    """Additive MOPS attention-table recovery; legacy successful results win.
 
-    Require the official financial-information section, month/quarter headers,
-    and a contiguous EPS row with both monthly and quarterly figures. Never
-    scan arbitrary narrative numbers or replace successful legacy parsing.
+    Locate the actual financial information section even when the heading has
+    a parenthetical regulatory explanation. Only accept an adjacent EPS data
+    row preceded by separate recent-month and recent-quarter column headings.
     """
     data = normalize_for_parse(text)
-    section_start = re.search(r"(?:財務業務資訊|財務資訊)\s*[:：]", data)
+    # Some new MOPS notices use 財務業務資訊（...規定...）: instead of 財務業務資訊:
+    # Match the heading alone; numeric EPS still requires a verified table row.
+    section_start = re.search(r'(?:財務業務資訊|財務資訊)(?![\u4e00-\u9fff])', data)
     if not section_start:
         return {}
     section = data[section_start.end():]
+    # Limit accidental matching to the actual disclosure table, not later notes.
+    end = re.search(r'(?:\n|\s)(?:4|5|6|7|8|9|10)\s*[.、]\s*(?:有無|其他|完整財務|補充說明)', section)
+    if end:
+        section = section[:end.start()]
     for marker in reversed(list(re.finditer(EPS_WORD, section, re.I))):
         header = section[:marker.start()]
-        # A legal/regulatory EPS mention is not a data row. The reporting
-        # month and quarter must appear in the table header before this row.
         if not (re.search(MONTH_WORD, header, re.I) and
                 re.search(QUARTER_WORD, header, re.I)):
             continue
+        # Restrict each candidate to an EPS line with contiguous numeric cells.
         horizontal = _extract_horizontal_eps(section[marker.start():])
-        if not horizontal:
+        if not horizontal or horizontal.get('monthly_eps') is None or horizontal.get('quarter_eps') is None:
             continue
-        if horizontal.get('monthly_eps') is None or horizontal.get('quarter_eps') is None:
-            continue
-        # Restrict periods to the table header. Preserve existing periods if
-        # already recognized; this helper never guesses dates from the title.
         report_month = _find_month_period(header)
-        # Several MOPS layouts have a four-quarter range in the header;
-        # remove that before looking for the previous single quarter.
         cleaned_header = re.sub(
-            r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季\s*(?:至|~|～)\s*"
-            r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季", '', header)
+            r'\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季\s*(?:至|~|～)\s*'
+            r'\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季', '', header)
         report_quarter = _find_quarter_period(cleaned_header)
+        if not report_quarter:
+            # MOPS recent-quarter column sometimes labels Q2 as 上半年.
+            # Apply only within a clearly labelled 最近一季 comparison table,
+            # never to a stand-alone cumulative half-year EPS statement.
+            half = re.search(r'(?<!\d)(\d{2,4})\s*年\s*(上半年|下半年)', cleaned_header)
+            if half and re.search(QUARTER_WORD, cleaned_header, re.I):
+                report_quarter = f'{_ad_year(half.group(1))}-Q{2 if half.group(2)=="上半年" else 4}'
         if not (report_month and report_quarter):
             continue
         horizontal['monthly_period'] = report_month
