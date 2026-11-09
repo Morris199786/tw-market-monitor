@@ -12,8 +12,8 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-11-09-ytd-eps-wiwynn-margin-guard"
-QUARTER_LOOKUP_VERSION = "2026-11-09-v2"
+VERSION = "2026-11-09-official-ytd-margin-recovery"
+QUARTER_LOOKUP_VERSION = "2026-11-09-v3"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -565,7 +565,11 @@ def recover_pending_mops_margin(event):
         if result.get('gross_margin') is not None:
             recovered['gross_margin']=result['gross_margin']
             break
-    return {k:v for k,v in recovered.items() if existing.get(k) is None}
+    cumulative=official_announcement_ytd(page,period)
+    if cumulative:
+        # Private return key: not published directly as a single-quarter metric.
+        recovered['_official_ytd']=cumulative
+    return {k:v for k,v in recovered.items() if k=='_official_ytd' or existing.get(k) is None}
 
 
 def announcement_period_metrics(text, period):
@@ -912,6 +916,27 @@ def safe_margin(gross, revenue):
     return round(margin, 6) if valid_margin(margin) else None
 
 
+def verified_official_over_100_margin(by, ticker, period, margin):
+    # Allow narrow >100% only when BOTH YTD periods are sourced from MOPS.
+
+    # Negative quarterly COGS can create a genuine gross margin >100%.
+    # Never grant this exception to scraped news or a lone unpaired metric.
+    if not (100 < margin <= 105) or period.endswith('Q1'):
+        return False
+    current=by.get((ticker,period),{})
+    prior=by.get((ticker,previous(period)),{})
+    if current.get('source') not in ('board_announcement','mops_t163sb04','mops_official'):
+        return False
+    if prior.get('source') not in ('board_announcement','mops_t163sb04','mops_official'):
+        return False
+    if not ytd_margin_consistent(by,ticker,period):
+        return False
+    rev=num(current.get('cum_revenue')); prev_rev=num(prior.get('cum_revenue'))
+    gp=num(current.get('cum_gross')); prev_gp=num(prior.get('cum_gross'))
+    return (None not in (rev,prev_rev,gp,prev_gp) and rev>prev_rev>=0
+            and gp>=prev_gp>=0 and abs(100*(gp-prev_gp)/(rev-prev_rev)-margin)<0.005)
+
+
 def ytd_margin_consistent(by, ticker, period):
     """Reject a quarter derived from decreasing positive YTD revenue/gross.
 
@@ -964,6 +989,10 @@ def single_metrics(by, t, p):
         gm = None
     if gm is None and ytd_margin_consistent(by, t, p):
         gm = safe_margin(gp, rev)
+        if gm is None and rev is not None and gp is not None and num(rev) and num(rev)>0:
+            candidate=round(100*num(gp)/num(rev),6)
+            if verified_official_over_100_margin(by,t,p,candidate):
+                gm=candidate
     return enforce_verified_quarter_eps(
         dict(eps=eps, gross_margin=gm,
              eps_basis=eps_basis), t, p)
@@ -1304,6 +1333,31 @@ def historical_mops_news():
     return out
 
 
+def official_announcement_ytd(text, period):
+    """Extract only same-year 1/1-to-quarter-end board-announcement YTD.
+
+    MOPS uses e.g. "1月1日累計至本期止營業毛利(毛損)(仟元):...".
+    Do not treat the values as a single quarter or mix EPS units with NTD 1,000s.
+    """
+    raw=unicodedata.normalize('NFKC', html.unescape(str(text or '')))
+    raw=re.sub(r'\s+', ' ', raw).replace('臺','台')
+    q=int(period[-1]); ending=f'{3*q:02d}'
+    # A 1/1~9/30 narrative in the current Q3 release is unambiguously YTD.
+    range_match=re.search(r'(?:1月1日|01/01|1/1)(?:累計至本期止|累計至本期|起至|[-~～至])',raw)
+    if not range_match or not ('累計' in raw or ending+'/30' in raw):
+        return {}
+    def take(label):
+        # Use only explicitly cumulative labelled financial rows, with a unit.
+        pat=(r'(?:1月1日)?累計至本期止'+label+
+             r'(?:\([^)]*\))*\(?(?:仟|千)元\)?[:：]([+\-]?[\d,]+(?:\.\d+)?|\([\d,]+(?:\.\d+)?\))')
+        values={num(m.group(1)) for m in re.finditer(pat,raw)}
+        values.discard(None)
+        return next(iter(values)) if len(values)==1 else None
+    rev=take(r'(?:合併)?營業收入(?:淨額)?')
+    gross=take(r'(?:合併)?營業毛利(?:\(毛損\))?')
+    return {k:v for k,v in (('cum_revenue',rev),('cum_gross',gross)) if v is not None}
+
+
 def event_cumulative(x, period):
     text=announcement_text(x)
     # Board-result announcements explicitly report YTD, not single-quarter values
@@ -1318,6 +1372,9 @@ def event_cumulative(x, period):
     gross=find([r'(?:報導期間)?累計營業毛利(?:[（(]毛損[）)])?',r'營業毛利(?:[（(]毛損[）)])?'])
     if not re.search(r"(?:單位.{0,8}[千仟]元|營業收入.{0,12}[千仟]元)",text):
         revenue=gross=None
+    official=official_announcement_ytd(text,period)
+    if official.get('cum_revenue') is not None: revenue=official['cum_revenue']
+    if official.get('cum_gross') is not None: gross=official['cum_gross']
     if eps is None and revenue is None: return None
     return dict(ticker=x['ticker'],period=period,market=x.get('market',''),cum_eps=eps,cum_revenue=revenue,cum_gross=gross,source='board_announcement',source_url=x.get('source_url',''))
 
@@ -1887,8 +1944,16 @@ def main():
             continue
         recovered=recover_pending_mops_margin(event)
         if recovered:
-            event.setdefault('released_metrics', {}).setdefault(period, {}).update(recovered)
-            print('MOPS margin recovered:', event.get('ticker'), period, recovered, flush=True)
+            cumulative=recovered.pop('_official_ytd',{})
+            if cumulative:
+                old_row=by.get((event['ticker'],period),{})
+                by[(event['ticker'],period)]={**old_row,**cumulative,
+                    'ticker':event['ticker'],'period':period,'source':'board_announcement',
+                    'source_url':event.get('source_url','')}
+                print('MOPS official YTD recovered:',event['ticker'],period,cumulative,flush=True)
+            if recovered:
+                event.setdefault('released_metrics', {}).setdefault(period, {}).update(recovered)
+                print('MOPS margin recovered:', event.get('ticker'), period, recovered, flush=True)
     # Additive EPS recovery for cached official announcements with an explicit
     # single-quarter date range. No changes to the original margin recovery.
     for key, event in events.items():
@@ -2033,7 +2098,10 @@ def main():
     # Do not discard valid EPS when the margin is bad.
     for x in events.values():
         for k in ('gross_margin', 'prev_gross_margin'):
-            if x.get(k) is not None and not valid_margin(x[k]):
+            metric_period=x.get('period') if k=='gross_margin' else x.get('prev_period')
+            accepted_exception=(metric_period and verified_official_over_100_margin(
+                by,x.get('ticker'),metric_period,num(x.get(k)) or 0))
+            if x.get(k) is not None and not valid_margin(x[k]) and not accepted_exception:
                 print('Rejected invalid published gross margin:', x.get('ticker'), x.get('period'), k, x[k], flush=True)
                 x[k] = None
                 if k == 'gross_margin':
