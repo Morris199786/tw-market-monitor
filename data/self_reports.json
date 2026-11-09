@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-09T20:41+08:00",
+  "updated_at": "2026-11-09T21:05+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-10-29-v35-additive-cumulative-self-report",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -236,7 +236,7 @@
         "publish_time": "14:00:45",
         "subject": "6005 群益證 115/11/09 14:00:45 公告本公司115年10月份合併自結損益",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:detail_validation_failed;https://mops.twse.com.tw:ConnectTimeout",
         "eps_parse_status": "unrecognized_layout",
         "eps_parse_reason": "eps_label_not_found",
         "monthly_eps": null,
@@ -2373,21 +2373,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 587,
+          "rows": 590,
           "hits": 26
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 587,
+          "rows": 590,
           "hits": 7
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 587,
+          "rows": 590,
           "hits": 7
         },
         {
@@ -2409,7 +2409,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1904",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
