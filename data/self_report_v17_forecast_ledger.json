@@ -1196,7 +1196,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-10-22": {
       "actuals": {
@@ -1240,7 +1240,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-10-27": {
       "actuals": {
@@ -1285,7 +1285,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-10-28": {
       "actuals": {
@@ -1326,7 +1326,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-10-29": {
       "actuals": {
@@ -1366,7 +1366,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-10-30": {
       "actuals": {
@@ -1401,7 +1401,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-02": {
       "actuals": {
@@ -1440,11 +1440,12 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-03": {
       "actuals": {
         "twse": [
+          "2466",
           "3321",
           "6672"
         ],
@@ -1457,15 +1458,17 @@
         "twse": {
           "predictions": 3,
           "hits": 2,
-          "actual": 2,
+          "actual": 3,
           "precision": 0.6666666666666666,
-          "recall": 1.0,
-          "f1": 0.8,
+          "recall": 0.6666666666666666,
+          "f1": 0.6666666666666666,
           "hit_tickers": [
             "3321",
             "6672"
           ],
-          "missed_tickers": []
+          "missed_tickers": [
+            "2466"
+          ]
         },
         "tpex": {
           "predictions": 3,
@@ -1483,7 +1486,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-04": {
       "actuals": {
@@ -1514,11 +1517,15 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-05": {
       "actuals": {
-        "twse": [],
+        "twse": [
+          "2360",
+          "7750",
+          "8996"
+        ],
         "tpex": [
           "8272"
         ]
@@ -1526,12 +1533,16 @@
       "metrics": {
         "twse": {
           "predictions": 4,
-          "hits": 0,
-          "actual": 0,
-          "precision": 0.0,
-          "recall": null,
-          "f1": 0.0,
-          "hit_tickers": [],
+          "hits": 3,
+          "actual": 3,
+          "precision": 0.75,
+          "recall": 1.0,
+          "f1": 0.8571428571428571,
+          "hit_tickers": [
+            "2360",
+            "7750",
+            "8996"
+          ],
           "missed_tickers": []
         },
         "tpex": {
@@ -1549,11 +1560,17 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-06": {
       "actuals": {
-        "twse": [],
+        "twse": [
+          "3189",
+          "4919",
+          "5284",
+          "6209",
+          "6451"
+        ],
         "tpex": [
           "5013",
           "8042"
@@ -1562,12 +1579,18 @@
       "metrics": {
         "twse": {
           "predictions": 6,
-          "hits": 0,
-          "actual": 0,
-          "precision": 0.0,
-          "recall": null,
-          "f1": 0.0,
-          "hit_tickers": [],
+          "hits": 5,
+          "actual": 5,
+          "precision": 0.8333333333333334,
+          "recall": 1.0,
+          "f1": 0.9090909090909091,
+          "hit_tickers": [
+            "3189",
+            "4919",
+            "5284",
+            "6209",
+            "6451"
+          ],
           "missed_tickers": []
         },
         "tpex": {
@@ -1586,11 +1609,21 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     },
     "2026-11-09": {
       "actuals": {
-        "twse": [],
+        "twse": [
+          "2426",
+          "2455",
+          "3376",
+          "3450",
+          "4722",
+          "6426",
+          "6533",
+          "6887",
+          "8039"
+        ],
         "tpex": [
           "3379",
           "6015",
@@ -1600,13 +1633,24 @@
       "metrics": {
         "twse": {
           "predictions": 10,
-          "hits": 0,
-          "actual": 0,
-          "precision": 0.0,
-          "recall": null,
-          "f1": 0.0,
-          "hit_tickers": [],
-          "missed_tickers": []
+          "hits": 6,
+          "actual": 9,
+          "precision": 0.6,
+          "recall": 0.6666666666666666,
+          "f1": 0.631578947368421,
+          "hit_tickers": [
+            "2426",
+            "2455",
+            "3376",
+            "3450",
+            "4722",
+            "6426"
+          ],
+          "missed_tickers": [
+            "6533",
+            "6887",
+            "8039"
+          ]
         },
         "tpex": {
           "predictions": 3,
@@ -1625,7 +1669,7 @@
       },
       "provisional": true,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-09T22:09:00+08:00"
+      "verified_at": "2026-11-09T22:58:00+08:00"
     }
   },
   "revisions": {
