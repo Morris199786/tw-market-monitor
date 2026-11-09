@@ -18,6 +18,27 @@ def attention(item):
     subject = str(item.get('subject') or '')
     return bool(re.search(r'注意交易|注意股|達公[布佈]注意|(?:多次)?達公[布佈]交易資訊標準|公[布佈]交易資訊標準', re.sub(r'\s+', '', subject)))
 
+def confirmed_actual(item):
+    """Require an actual attention-triggered financial disclosure, not merely a notice.
+
+    Preserve already parsed EPS items; accept an unparsed official filing only
+    when its downloaded detail includes a single-month financial table. Parsed
+    diagnostics without source detail are not sufficient proof of publication.
+    """
+    if not attention(item):
+        return False
+    if item.get('monthly_eps') is not None:
+        return True
+    if item.get('source') != 'mops_ajax' or item.get('source_error'):
+        return False
+    detail = str(item.get('detail') or '')
+    return bool(
+        re.search(r'財務業務資訊|財務資訊', detail)
+        and re.search(r'最近一月|最近一個月|單月|\(月\)', detail)
+        and re.search(r'營業收入|營收', detail)
+        and re.search(r'每股(?:稅後|基本)?(?:盈餘|損益)|EPS', detail, re.I)
+    )
+
 def settle(history, master, ledger, existing, now):
     stamp = dt.datetime.fromisoformat(history['updated_at'])
     if stamp.tzinfo is None:
@@ -36,7 +57,7 @@ def settle(history, master, ledger, existing, now):
         codes = {'twse': set(), 'tpex': set()}
         first = {}
         for item in all_items(history):
-            if not attention(item) or item.get('monthly_eps') is None:
+            if not confirmed_actual(item):
                 continue
             key = (item.get('ticker'), item.get('monthly_period') or item.get('publish_date'))
             if key not in first or item.get('publish_date', '') < first[key].get('publish_date', ''):

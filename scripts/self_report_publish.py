@@ -49,9 +49,13 @@ def publish(state_only=False):
             history = dict(local, items=items, parse_failed=failed, updated_at=stamp,
                            parsed_count=sum(collector.valid_eps_item(x) for x in items),
                            parse_failed_count=len(failed), candidate_count=len(items))
-            site = dict(original[sp], items=[x for x in items if collector.valid_eps_item(x)], updated_at=stamp)
+            # Keep confirmed financial announcements visible even when EPS parsing fails.
+            # Match the collector's site-export policy, but do not broaden Telegram.
+            visible = [x for x in items if collector.valid_eps_item(x)
+                       or collector.visible_unparsed_self_report(x)]
+            site = dict(original[sp], items=visible, updated_at=stamp)
             site['diagnostics'] = {**site.get('diagnostics', {}), 'parse_failed': failed,
-                                   'parse_failed_count': len(failed), 'parsed_count': len(site['items'])}
+                                   'parse_failed_count': len(failed), 'parsed_count': sum(collector.valid_eps_item(x) for x in items)}
             exporter.save(ROOT/hp, history)
             exporter.save(ROOT/sp, site)
             ledger = original['data/self_report_v17_forecast_ledger.json']
