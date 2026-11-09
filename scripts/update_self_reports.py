@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-09-v37-mops-parenthetical-halfyear-eps"
+VERSION = "2026-11-09-v38-mops-eps-layouts-additive"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -489,6 +489,97 @@ def _recover_mops_financial_eps_row(text):
     return {}
 
 
+def _recover_mops_eps_layouts(text):
+    """Verified EPS-row fallback for MOPS attention-trading financial tables.
+
+    Handles numeric/parenthesized growth, text growth, and absent growth columns.
+    Requires a real EPS row, a preceding 最近一月/最近一季 table header,
+    reporting month and quarter; never converts trailing rolling-4Q EPS to Q3.
+    No network, hard-coded ticker or stock value, and no change to legacy parsers.
+    """
+    data = normalize_for_parse(text)
+    heading = re.search(r'財務業務資訊|財務資訊', data)
+    if not heading:
+        return {}
+    section = data[heading.end():]
+    # Stop before the numbered legal-disclosure notes, which often contain EPS.
+    stop = re.search(r'\s[5-9]\s*[.、]\s*(?:有無|完整財務|其他)', section)
+    if stop:
+        section = section[:stop.start()]
+    # The last EPS data row belongs to the financial-information table.
+    # Ignore the earlier regulatory notice about par-value comparability.
+    markers = list(re.finditer(r'每股\s*(?:稅後)?\s*(?:基本)?\s*(?:盈餘|損益)(?:\s*[（(]\s*(?:虧損|元|新台幣元)\s*[）)])?|EPS', section, re.I))
+    for marker in reversed(markers):
+        header = section[:marker.start()]
+        if not (re.search(MONTH_WORD, header, re.I) and
+                re.search(QUARTER_WORD, header, re.I)):
+            continue
+        month = _find_month_period(header)
+        # Prefer current-year quarter explicitly in the recent-quarter table.
+        current_year = int(month[:4]) if month else None
+        quarters = [(int(y), str(q)) for y, q in re.findall(
+            r'(?<!\d)(\d{2,4})\s*年?\s*第?\s*([1-4一二三四])\s*季', header)]
+        quarter = next((f'{_ad_year(y)}-Q{_quarter_num(q)}'
+                        for y, q in reversed(quarters)
+                        if _ad_year(y) == current_year), None)
+        if quarter is None:
+            half = re.search(r'(?<!\d)(\d{2,4})\s*年\s*(上半年|下半年)', header)
+            if half and _ad_year(half.group(1)) == current_year:
+                quarter = f'{current_year}-Q{2 if half.group(2)=="上半年" else 4}'
+        if not month or not quarter:
+            continue
+        # Extract precisely the EPS row; do not consume subsequent legal notes.
+        tail = section[marker.end():]
+        tail = re.sub(r'^\s*(?:[（(]\s*元\s*[）)]|元)\s*', '', tail)
+        row = re.split(r'\s[5-9]\s*[.、]\s*(?:有無|完整財務|其他)', tail, maxsplit=1)[0]
+        row = row[:160]
+        # Matches parentheses negative EPS and negative percentages, plus text YoY.
+        token_rx = (r'\(\s*[+-]?\d+(?:\.\d+)?\s*%?\s*\)\s*%?'
+                    r'|[+-]?\d[\d,]*(?:\.\d+)?\s*%?'
+                    r'|虧轉盈|盈轉虧|由虧轉盈|由盈轉虧|轉虧為盈|轉盈為虧'
+                    r'|不適用|無法計算|N/?A')
+        tokens = []
+        for m in re.finditer(token_rx, row, re.I):
+            # Only a contiguous numeric row; a stray (元) is permitted afterward.
+            if row[:m.start()].strip(' \t\n|/｜') and not tokens:
+                break
+            if tokens and row[prior_end:m.start()].strip(' \t\n|/｜'):
+                break
+            tokens.append(m.group().strip())
+            prior_end = m.end()
+            if len(tokens) >= 5:
+                break
+        def value(token):
+            return _number(token)
+        def yoy(token):
+            token = token.replace(' ', '')
+            if token.startswith('(') and token.endswith(')'):
+                token = '-' + token[1:-1]
+            if token.endswith('%'):
+                token = token[:-1]
+            number = _number(token, growth=True)
+            if number is not None:
+                return number, f'{number:+.2f}%'
+            return None, token
+        if len(tokens) == 5:
+            monthly, quarter_eps = value(tokens[0]), value(tokens[2])
+            my, mytext = yoy(tokens[1]); qy, qytext = yoy(tokens[3])
+        elif len(tokens) == 3:
+            # No year-over-year growth columns in EPS row; month/Q/rolling-4Q.
+            monthly, quarter_eps = value(tokens[0]), value(tokens[1])
+            my = qy = None
+            mytext = qytext = None
+        else:
+            continue
+        if monthly is None or quarter_eps is None:
+            continue
+        return dict(monthly_eps=monthly, quarter_eps=quarter_eps,
+                    monthly_eps_yoy=my, monthly_eps_yoy_text=mytext,
+                    quarter_eps_yoy=qy, quarter_eps_yoy_text=qytext,
+                    monthly_period=month, quarter_period=quarter)
+    return {}
+
+
 def _slice_semantic_sections(text):
     markers = []
 
@@ -754,6 +845,29 @@ def extract_metrics(text):
         for key, value in repaired.items():
             if out.get(key) is None and value is not None:
                 out[key] = value
+
+    # Strict verified official-table rescue. This supplements missing values;
+    # if a legacy parser assigned the *monthly* EPS to the quarter column,
+    # correct that misalignment only when the complete table independently
+    # confirms both numbers and reporting periods.
+    verified_table = _recover_mops_eps_layouts(text)
+    if verified_table:
+        for prefix in ('monthly', 'quarter'):
+            old_eps = out.get(prefix + '_eps')
+            confirmed = verified_table[prefix + '_eps']
+            if old_eps is None:
+                for suffix in ('eps', 'period', 'eps_yoy', 'eps_yoy_text'):
+                    out[prefix + '_' + suffix] = verified_table.get(prefix + '_' + suffix)
+            elif (prefix == 'quarter' and
+                  old_eps == verified_table['monthly_eps'] and
+                  old_eps != confirmed):
+                for suffix in ('eps', 'period', 'eps_yoy', 'eps_yoy_text'):
+                    out[prefix + '_' + suffix] = verified_table.get(prefix + '_' + suffix)
+        # Correct mislabelled periods only if independently confirmed row EPS
+        # matches; don't rewrite any different valid EPS number.
+        for prefix in ('monthly', 'quarter'):
+            if out.get(prefix + '_eps') == verified_table[prefix + '_eps']:
+                out[prefix + '_period'] = verified_table[prefix + '_period']
 
     out["eps"] = out["monthly_eps"]
 
