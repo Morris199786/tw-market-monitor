@@ -5,7 +5,7 @@ import datetime as dt
 import hashlib
 import json
 import os
-import urllib.request
+from report_digest import send_digest
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from self_report_forecast_export import load, save
@@ -53,23 +53,20 @@ def send(text, state_path):
     # Ignore refresh timestamp for duplicate detection.
     stable = '\n'.join(s for s in text.splitlines() if not s.startswith('彙整今日公告；'))
     digest = hashlib.sha256((chat+'\n'+stable).encode()).hexdigest()
-    for i, part in enumerate(chunks(text)):
-        key = f'{digest}:{i}'
-        if key in state['sent']:
-            continue
-        request = urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',
-            data=json.dumps({'chat_id': chat, 'text': part}).encode(),
-            headers={'Content-Type': 'application/json'})
-        try:
-            with urllib.request.urlopen(request, timeout=30) as response:
-                result = json.load(response)
-            if not result.get('ok'):
-                raise RuntimeError('Telegram rejected digest')
-        except Exception:
-            # Never print token-bearing URLs; ambiguous sends are not auto-retried.
-            raise SystemExit('Telegram delivery unconfirmed; inspect chat before retrying') from None
-        state['sent'][key] = result['result']['message_id']
-        save(state_path, state)
+    key = f'{digest}:single'
+    legacy_keys = [f'{digest}:{i}' for i, _ in enumerate(chunks(text))]
+    if key in state['sent'] or (legacy_keys and all(k in state['sent'] for k in legacy_keys)):
+        return
+    # An interrupted legacy split resumes only its unsent remainder, as one message.
+    if any(k in state['sent'] for k in legacy_keys):
+        pending = [part for i, part in enumerate(chunks(text)) if f'{digest}:{i}' not in state['sent']]
+        text = ''.join(pending)
+    if not send_digest(token, chat, '📌 盤後自結與預測彙整', [text],
+                       'https://morris199786.github.io/tw-market-monitor/?page=selfReports'):
+        raise SystemExit('Telegram delivery unconfirmed; inspect chat before retrying')
+    state['sent'][key] = True
+    save(state_path, state)
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -95,3 +92,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

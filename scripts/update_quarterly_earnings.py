@@ -1,3 +1,4 @@
+from report_digest import send_digest
 from sources import *
 from eps_news_backup import current_items, sanitize_news_margin, verified_margin, invalid_quarterly_news
 from mops_board_schedule import fetch_board_schedule
@@ -1250,14 +1251,19 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
     sent=set(load_json(SENT,{'ids':[]}).get('ids',[]))
     def checkpoint():
         save_json(SENT,{'updated_at':now.isoformat(timespec='minutes'),'ids':sorted(sent)})
-    def deliver(key, text):
-        if key in sent: return True
-        try:
-            if not tg(text): return False
-        except Exception as exc:
-            print('Telegram delivery failed:',type(exc).__name__)
-            return False
-        sent.add(key);checkpoint();return True
+    def deliver_batch(keys, title, entries):
+        if not entries:
+            return True
+        ok = send_digest(
+            os.getenv('TELEGRAM_BOT_TOKEN', '').strip(),
+            os.getenv('TELEGRAM_CHAT_ID', '').strip(),
+            title, entries,
+            'https://morris199786.github.io/tw-market-monitor/?page=selfReports',
+        )
+        if ok:
+            sent.update(keys)
+            checkpoint()
+        return ok
 
     today=now.date().isoformat()
     digest_key='morning|'+today
@@ -1268,24 +1274,20 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         # No empty messages. Incomplete sources are not interpreted as no announcements
         if due:
             remaining=[x for x in due if f"morning-item|{today}|{x['ticker']}|{x['period']}" not in sent]
-            ok=True
-            for offset in range(0,len(remaining),35):
-                part=remaining[offset:offset+35]
-                text='📅 今日預計開財報｜'+today+'\n'
-                text+='\n'.join(f"• {x['name']} {x['ticker']}｜{x['period']}" for x in part)
-                text+='\n\n依公司公告的財報董事會或季度法說日期整理，未公告時間者不預設為盤後'
-                if source_incomplete: text+='\n部分來源未完成，以上為已確認名單'
-                try: delivered=tg(text)
-                except Exception as exc:
-                    print('Telegram morning delivery failed:',type(exc).__name__);delivered=False
-                if not delivered:
-                    ok=False;break
-                for x in part: sent.add(f"morning-item|{today}|{x['ticker']}|{x['period']}")
+            entries=[f"• {x['name']} {x['ticker']}｜{x['period']}" for x in remaining]
+            if entries:
+                entries.append('依公司公告的財報董事會或季度法說日期整理，未公告時間者不預設為盤後')
+                if source_incomplete:
+                    entries.append('部分來源未完成，以上為已確認名單')
+            keys=[f"morning-item|{today}|{x['ticker']}|{x['period']}" for x in remaining]
+            if deliver_batch(keys, '📅 今日預計開財報｜'+today, entries):
+                sent.add(digest_key)
                 checkpoint()
-            if ok: sent.add(digest_key);checkpoint()
         elif not source_incomplete:
             sent.add(digest_key);checkpoint()
 
+    report_keys=[]
+    report_entries=[]
     for x in reports:
         # Historical backfills update the website only; never send Telegram.
         # The actual company announcement date is authoritative, not the crawl date.
@@ -1293,11 +1295,11 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
             continue
         # Keep legacy ID format so already delivered reports are not sent again
         key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
-        if (key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
+        if (key in report_keys or key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
             continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
-              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'])} 元\n\n"
-              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'])} 元")
+              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'],' 元')}\n\n"
+              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'],' 元')}")
         if x.get('source') == 'news_backup':
             text+='\n來源：當日新聞備援（非官方公告事件）'
         # Telegram links: preserve both distinct sources, but show identical URLs once.
@@ -1314,7 +1316,9 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
             text+='\n\nEPS 含累計差額推算值'
-        deliver(key,text)
+        report_keys.append(key)
+        report_entries.append(text)
+    deliver_batch(report_keys, f'📊 財報公布彙整｜{today}｜{len(report_entries)} 筆', report_entries)
     checkpoint()
 
 
@@ -1893,6 +1897,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 

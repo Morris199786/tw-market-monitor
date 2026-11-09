@@ -48,3 +48,4 @@ def rating_entry(item):
         line += f"｜評等 {item['rating']}"
     return line
 
+

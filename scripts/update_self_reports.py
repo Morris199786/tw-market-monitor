@@ -1,3 +1,4 @@
+from report_digest import send_digest
 from sources import *
 from eps_news_backup import monthly_fallback
 
@@ -2363,6 +2364,39 @@ def enrich_direct_self_report_quarter_eps(items):
                 item["quarter_eps_yoy"] = yoy
                 item["quarter_eps_yoy_text"] = f"{yoy:+.2f}%"
 
+def notify_self_report_batch(fresh, saved, all_candidates, telegram_sent, today):
+    """One notification per update, preserving the existing durable reservations."""
+    candidates = {}
+    for item in fresh:
+        full_item = saved.get(identity(item), item)
+        base_key = identity(full_item)
+        if (not valid_eps_item(full_item)
+                or str(full_item.get('publish_date') or '') != today
+                or base_key in telegram_sent):
+            continue
+        candidates[base_key] = full_item
+    if not candidates:
+        return telegram_sent
+    seed = prepare_delivery(all_candidates)
+    if seed is None:
+        return telegram_sent
+    pending = []
+    entries = []
+    for key, item in candidates.items():
+        # Render before reserving; malformed items must not consume a delivery ID.
+        entry = push_text(item)
+        if reserve_delivery(item, seed):
+            pending.append(key)
+            entries.append(entry)
+    if entries and send_digest(
+            os.getenv('TELEGRAM_BOT_TOKEN', '').strip(),
+            os.getenv('TELEGRAM_CHAT_ID', '').strip(),
+            f'📌 自結公布彙整｜{today}｜{len(entries)} 筆',
+            entries, SITE_URL + '?' + urlencode({'page': 'selfReports', 'date': today})):
+        telegram_sent.update(pending)
+    return telegram_sent
+
+
 def push_text(item):
     lines = [
         (
@@ -2755,73 +2789,9 @@ def main():
     now = now_tpe()
     today = now.date().isoformat()
 
-    delivery_seed_state = prepare_delivery(all_candidates)
-
-    for item in fresh:
-        full_item = saved.get(
-            identity(item),
-            item,
-        )
-
-        if not valid_eps_item(
-            full_item
-        ):
-            continue
-
-        base_key = identity(
-            full_item
-        )
-
-        if (
-            str(
-                full_item.get(
-                    "publish_date"
-                )
-                or ""
-            )
-            != today
-        ):
-            continue
-
-        if base_key in telegram_sent:
-            continue
-
-        page_url = (
-            SITE_URL
-            + "?"
-            + urlencode({
-                "page": "selfReports",
-                "ticker": (
-                    full_item.get("ticker")
-                    or ""
-                ),
-                "date": (
-                    full_item.get(
-                        "publish_date"
-                    )
-                    or ""
-                ),
-                "time": (
-                    full_item.get(
-                        "publish_time"
-                    )
-                    or ""
-                ),
-            })
-        )
-
-        # If reservation fails, stop before contacting Telegram.
-        if delivery_seed_state is None or not reserve_delivery(full_item, delivery_seed_state):
-            continue
-
-        if send_telegram(
-            "自結公布",
-            push_text(full_item),
-            page_url,
-        ):
-            telegram_sent.add(
-                base_key
-            )
+    telegram_sent = notify_self_report_batch(
+        fresh, saved, all_candidates, telegram_sent, today
+    )
 
     updated_at = (
         now_tpe().isoformat(
@@ -3007,5 +2977,6 @@ if __name__ == "__main__":
         commit_generated_data()
     else:
         main()
+
 
 
