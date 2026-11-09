@@ -12,7 +12,8 @@ from pathlib import Path
 
 SOURCE_ERRORS = []
 
-VERSION = "2026-11-06-quarter-basis"
+VERSION = "2026-11-09-eps-recovery"
+QUARTER_LOOKUP_VERSION = "2026-11-09-v1"
 DATA = ROOT / "data"
 OUT = DATA / "quarterly_earnings.json"
 SENT = DATA / "quarterly_earnings_sent.json"
@@ -902,81 +903,137 @@ def single_metrics(by, t, p):
                 eps_basis='reported_single' if eps is not None else None)
 
 
+class QuarterInlineParser(HTMLParser):
+    """Read inline XBRL from XML or HTML without relying on context ID names."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.contexts = {}; self.units = {}; self.facts = []
+        self.current = None; self.stack = []
+    def handle_starttag(self, tag, attrs):
+        local = tag.split(':')[-1].lower(); attrs = dict(attrs)
+        if self.current is None and local in ('context', 'unit', 'nonfraction'):
+            self.current = {'kind':local, 'attrs':attrs, 'values':{}, 'text':[], 'dimensions':False}
+            self.stack = []
+        if self.current is not None:
+            self.stack.append(local)
+            if local in ('segment','scenario','explicitmember','typedmember'):
+                self.current['dimensions'] = True
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag,attrs); self.handle_endtag(tag)
+    def handle_data(self, data):
+        if self.current is not None:
+            self.current['text'].append(data)
+            if self.stack:
+                key=self.stack[-1]
+                self.current['values'].setdefault(key,[]).append(data)
+    def handle_endtag(self, tag):
+        local=tag.split(':')[-1].lower()
+        if self.current is None: return
+        if local == self.current['kind']:
+            obj=self.current
+            if local == 'context': self.contexts[obj['attrs'].get('id')]=obj
+            elif local == 'unit': self.units[obj['attrs'].get('id')]=obj
+            else: self.facts.append(obj)
+            self.current=None;self.stack=[]
+        elif local in self.stack:
+            self.stack=self.stack[:len(self.stack)-1-self.stack[::-1].index(local)]
+
+
 def filing_quarter_facts(raw, ticker, period):
-    """Only undimensioned, current-company, standalone-quarter monetary facts."""
+    """Accept only exact company, single-quarter dates, basic EPS and TWD/share units."""
     import calendar
-    import xml.etree.ElementTree as ET
     from collections import defaultdict
-    year, q = int(period[:4]), int(period[-1])
-    start = f'{year}-{3*q-2:02}-01'
-    end = f'{year}-{3*q:02}-{calendar.monthrange(year,3*q)[1]:02}'
-    root = ET.fromstring(raw)
-    def tag(el):
-        return el.tag.split('}')[-1].lower()
-    contexts = set()
-    units = {}
-    for el in root.iter():
-        if tag(el) == 'context':
-            d = {tag(c): (c.text or '').strip() for c in el.iter()}
-            if (d.get('identifier'), d.get('startdate'), d.get('enddate')) == (ticker,start,end) and not {'segment','scenario'}.intersection(d):
-                contexts.add(el.get('id'))
-        elif tag(el) == 'unit':
-            measures = [c.text.strip().split(':')[-1].lower() for c in el.iter() if tag(c)=='measure' and c.text]
-            units[el.get('id')] = tuple(measures)
-    amounts = defaultdict(set)
-    tags = {'basicearningslosspershare':'eps','basicearningspershare':'eps',
-            'revenue':'rev','operatingrevenue':'rev','operatingrevenues':'rev',
-            'grossprofit':'gp','grossprofitlossfromoperations':'gp','grossprofitloss':'gp'}
-    for el in root.iter():
-        if tag(el) != 'nonfraction' or el.get('contextRef') not in contexts:
-            continue
-        k = tags.get(el.get('name','').split(':')[-1].lower())
-        if not k or units.get(el.get('unitRef')) != (('twd','shares') if k=='eps' else ('twd',)):
-            continue
-        v = num(''.join(el.itertext()))
-        if v is None:
-            continue
-        if el.get('sign')=='-':
-            v = -abs(v)
-        v *= 10 ** int(el.get('scale','0'))
-        if math.isfinite(v):
-            amounts[k].add(v)
-    def one(k):
-        return next(iter(amounts[k])) if len(amounts[k])==1 else None
-    return {k:v for k,v in dict(eps=one('eps'),gross_margin=safe_margin(one('gp'),one('rev'))).items() if v is not None}
+    year,q=int(period[:4]),int(period[-1])
+    start=f'{year}-{3*q-2:02}-01'
+    end=f'{year}-{3*q:02}-{calendar.monthrange(year,3*q)[1]:02}'
+    parser=QuarterInlineParser()
+    parser.feed(raw.decode('utf-8-sig',errors='replace') if isinstance(raw,bytes) else raw)
+    def value(obj,k):return ''.join(obj['values'].get(k,[])).strip()
+    contexts={key for key,obj in parser.contexts.items()
+              if not obj['dimensions'] and
+              (value(obj,'identifier'),value(obj,'startdate'),value(obj,'enddate')) == (str(ticker),start,end)}
+    units={key:tuple(v.strip().split(':')[-1].lower() for v in obj['values'].get('measure',[]) if v.strip())
+           for key,obj in parser.units.items()}
+    tags={'basicearningslosspershare':'eps','basicearningspershare':'eps',
+          'revenue':'rev','operatingrevenue':'rev','operatingrevenues':'rev',
+          'grossprofit':'gp','grossprofitlossfromoperations':'gp','grossprofitloss':'gp'}
+    amounts=defaultdict(set)
+    for obj in parser.facts:
+        a=obj['attrs'];k=tags.get(a.get('name','').split(':')[-1].lower())
+        if (not k or a.get('contextref') not in contexts or
+                a.get('xsi:nil','').lower() in ('true','1') or
+                units.get(a.get('unitref')) != (('twd','shares') if k=='eps' else ('twd',))): continue
+        # Unknown transformations must not silently change the numeric value.
+        fmt=a.get('format','').split(':')[-1].lower()
+        if fmt not in ('','numdotdecimal','num-dot-decimal','numcommadot','zerodash','fixed-zero'):continue
+        v=0.0 if fmt in ('zerodash','fixed-zero') else num(''.join(obj['text']))
+        if v is None:continue
+        try:v *= 10 ** int(a.get('scale','0'))
+        except (ValueError,OverflowError):continue
+        if a.get('sign')=='-':v=-abs(v)
+        if math.isfinite(v):amounts[k].add(v)
+    def one(k):return next(iter(amounts[k])) if len(amounts[k])==1 else None
+    return {k:v for k,v in {'eps':one('eps'),'gross_margin':safe_margin(one('gp'),one('rev'))}.items() if v is not None}
 
 
 def backfill_quarter_facts(by, events, upcoming):
-    """Bound each run and rotate unfiled reports so they do not block others."""
-    pending = {}
-    for x in list(upcoming.values()) + list(events.values()):
-        t,p = x['ticker'],x['period']
-        for key in ([(t,p)] if (t,p) in events else []) + [(t,previous(p))]:
-            row = by.get(key,{})
-            metrics = single_metrics(by,*key)
-            released = x.get('released_metrics',{}).get(key[1],{})
-            if all(metrics.get(k) is not None or released.get(k) is not None for k in ('eps','gross_margin')):
-                continue
-            urgent = key in {('6669','2026-Q3'), ('3587','2026-Q3')}
-            pending[key] = (row.get('quarter_lookup_at',''), 0 if urgent else 1 if key in events else 2)
-    for (t,p),_ in sorted(pending.items(), key=lambda kv:(kv[1],-int(kv[0][1][:4]+kv[0][1][-1]),kv[0][0]))[:12]:
-        row = by.setdefault((t,p),dict(ticker=t,period=p))
-        row['quarter_lookup_at'] = now_tpe().isoformat(timespec='minutes')
-        url='https://mopsov.twse.com.tw/server-java/t164sb01'
-        try:
-            res=S.get(url,params={'step':'3','SYEAR':p[:4],'file_name':f'tifrs-fr1-m1-ci-cr-{t}-{p.replace("-","")}.html'},timeout=(4,8))
-            res.raise_for_status()
-            facts=filing_quarter_facts(res.content,t,p)
-            if facts:
-                row['official_quarter_facts']=facts
-                row['quarter_filing_url']=res.url
-        except Exception as exc:
-            print('quarter filing pending',t,p,type(exc).__name__,flush=True)
+    """Today's current/prior quarters first; bounded retries with persisted outcomes."""
+    now=now_tpe();today=now.date().isoformat();pending={}
+    for x in list(events.values())+list(upcoming.values()):
+        t,p=x['ticker'],x['period'];published=x.get('publish_date') or ''
+        is_released=(t,p) in events
+        priority=0 if is_released and published==today else 1 if is_released else 2
+        for key in ([(t,p)] if is_released else [])+[(t,previous(p))]:
+            row=by.get(key,{})
+            metrics=single_metrics(by,*key)
+            released=x.get('released_metrics',{}).get(key[1],{})
+            if all(metrics.get(k) is not None or released.get(k) is not None for k in ('eps','gross_margin')):continue
+            # A changed parser must get a fresh attempt; otherwise wait 30 minutes.
+            stamp=row.get('quarter_lookup_at','')
+            if row.get('quarter_lookup_version')==QUARTER_LOOKUP_VERSION and stamp:
+                try:
+                    if 0 <= (now-datetime.fromisoformat(stamp)).total_seconds() < 1800:continue
+                except (ValueError,TypeError):pass
+            rank=(priority,stamp,0 if key[1]==p else 1,t,key[1])
+            if key not in pending or rank<pending[key]:pending[key]=rank
+    # Reserve a few slots for older entries while giving new announcements priority.
+    ranked=sorted(pending,key=pending.get)
+    urgent=[k for k in ranked if pending[k][0]==0]
+    backlog=[k for k in ranked if pending[k][0]!=0]
+    selected=urgent[:40]+backlog[:max(8,48-min(40,len(urgent)))]
+    started=time.monotonic()
+    for t,p in selected:
+        if time.monotonic()-started>110:break
+        row=by.setdefault((t,p),dict(ticker=t,period=p))
+        row.update(quarter_lookup_at=now.isoformat(timespec='minutes'),quarter_lookup_version=QUARTER_LOOKUP_VERSION)
+        errors=[];facts={};source=''
+        for host in ('mopsov.twse.com.tw','mops.twse.com.tw'):
+            if time.monotonic()-started>110:break
+            url=f'https://{host}/server-java/t164sb01'
+            try:
+                # Keep the official YYYYQn filename, not a cumulative-report endpoint.
+                res=S.get(url,params={'step':'3','SYEAR':p[:4],
+                    'file_name':f'tifrs-fr1-m1-ci-cr-{t}-{p.replace("-","")}.html'},timeout=(3,6))
+                res.raise_for_status()
+                parsed=filing_quarter_facts(res.content,t,p)
+                if parsed:
+                    facts.update(parsed);source=res.url
+                    if facts.get('eps') is not None:break
+                else:errors.append('no_matching_single_quarter_facts')
+            except Exception as exc:errors.append(type(exc).__name__)
+        if facts:
+            # Never erase another verified field when this response is partial.
+            row.setdefault('official_quarter_facts',{}).update(facts)
+            row['quarter_filing_url']=source
+        row['quarter_lookup_status']='complete' if row.get('official_quarter_facts',{}).get('eps') is not None else 'pending'
+        row['quarter_lookup_errors']=errors
+        if row['quarter_lookup_status']=='pending':
+            print('quarter filing pending',t,p,','.join(errors),flush=True)
 
 
 def f(v, s=""):
     return (
-        "待官方公布"
+        "單季資料待補"
         if v is None
         else f"{float(v):.2f}{s}"
     )
@@ -1246,11 +1303,22 @@ def save_financial_history(by):
     save_json(HISTORY,{'version':VERSION,'updated_at':now_tpe().isoformat(timespec='minutes'),'rows':sorted(by.values(),key=lambda x:(x['period'],x['ticker']))})
 
 
-def notify_earnings(upcoming, reports, now, source_incomplete=False):
+def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_reports=None):
     """Shared cron runner, Taiwan time; successful deliveries are checkpointed separately."""
-    sent=set(load_json(SENT,{'ids':[]}).get('ids',[]))
+    state=load_json(SENT,{'ids':[]})
+    sent=set(state.get('ids',[]))
+    snapshots=dict(state.get('report_metrics',{}))
+    fields=('eps','prev_eps','gross_margin','prev_gross_margin')
+    def report_key(x):return f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
+    # Seed previously delivered snapshots before the new data overwrites the old feed.
+    for x in previous_reports or []:
+        if not all(x.get(k) for k in ('ticker','period','publish_date')):continue
+        key=report_key(x)
+        if key in sent and key not in snapshots:
+            snapshots[key]={k:x.get(k) for k in fields}
     def checkpoint():
-        save_json(SENT,{'updated_at':now.isoformat(timespec='minutes'),'ids':sorted(sent)})
+        save_json(SENT,{**state,'updated_at':now.isoformat(timespec='minutes'),
+                        'ids':sorted(sent),'report_metrics':snapshots})
     def deliver_batch(keys, title, entries):
         if not entries:
             return True
@@ -1288,18 +1356,32 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
 
     report_keys=[]
     report_entries=[]
+    delivered_snapshots={}
     for x in reports:
-        # Historical backfills update the website only; never send Telegram.
-        # The actual company announcement date is authoritative, not the crawl date.
-        if x.get('publish_date') != today:
-            continue
-        # Keep legacy ID format so already delivered reports are not sent again
-        key=f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
-        if (key in report_keys or key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent)) or all(x.get(k) is None for k in ('gross_margin','eps')):
-            continue
+        published=x.get('publish_date') or ''
+        if not published or published>today:continue
+        key=report_key(x)
+        already=(key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent))
+        supplement=False
+        if already:
+            prior=snapshots.get(key)
+            cutoff=(now.date()-timedelta(days=14)).isoformat()
+            # Only fill missing values in a previously delivered report; no historical blast.
+            supplement=bool(prior is not None and cutoff<=published and
+                            any(prior.get(k) is None and x.get(k) is not None for k in fields))
+            if not supplement:continue
+            import hashlib, json
+            values={k:x.get(k) for k in fields}
+            delivery_key=key+'|supplement|'+hashlib.sha256(json.dumps(values,sort_keys=True).encode()).hexdigest()[:16]
+        else:
+            if published!=today:continue
+            delivery_key=key
+        if delivery_key in sent or delivery_key in report_keys or all(x.get(k) is None for k in ('gross_margin','eps')):continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'],' 元')}\n\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'],' 元')}")
+        if supplement:
+            text='🔄 資料補齊更新\n'+text
         if x.get('source') == 'news_backup':
             text+='\n來源：當日新聞備援（非官方公告事件）'
         # Telegram links: preserve both distinct sources, but show identical URLs once.
@@ -1316,9 +1398,11 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False):
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
             text+='\n\nEPS 含累計差額推算值'
-        report_keys.append(key)
+        report_keys.append(delivery_key)
         report_entries.append(text)
-    deliver_batch(report_keys, f'📊 財報公布彙整｜{today}｜{len(report_entries)} 筆', report_entries)
+        delivered_snapshots[key]={k:x.get(k) for k in fields}
+    if deliver_batch(report_keys, f'📊 財報公布／補齊彙整｜{today}｜{len(report_entries)} 筆', report_entries):
+        snapshots.update(delivered_snapshots)
     checkpoint()
 
 
@@ -1893,10 +1977,11 @@ def main():
     result=dict(expected_roster=expected_roster_rows,universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
     save_json(DATA/'quarterly_earnings_events.json',result)
     save_json(OUT,result)
-    notify_earnings(ups, reports, now_tpe(), bool(SOURCE_ERRORS))
+    notify_earnings(ups, reports, now_tpe(), bool(SOURCE_ERRORS), old.get('reports',[]))
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
