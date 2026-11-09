@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-10-29-v35-additive-cumulative-self-report"
+VERSION = "2026-11-09-v36-mops-eps-row-visible-unparsed"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -442,6 +442,47 @@ def _extract_horizontal_eps(text):
     }
 
 
+def _recover_mops_financial_eps_row(text):
+    """Additive rescue for attention disclosures with EPS mentioned before the table.
+
+    Require the official financial-information section, month/quarter headers,
+    and a contiguous EPS row with both monthly and quarterly figures. Never
+    scan arbitrary narrative numbers or replace successful legacy parsing.
+    """
+    data = normalize_for_parse(text)
+    section_start = re.search(r"(?:財務業務資訊|財務資訊)\s*[:：]", data)
+    if not section_start:
+        return {}
+    section = data[section_start.end():]
+    for marker in reversed(list(re.finditer(EPS_WORD, section, re.I))):
+        header = section[:marker.start()]
+        # A legal/regulatory EPS mention is not a data row. The reporting
+        # month and quarter must appear in the table header before this row.
+        if not (re.search(MONTH_WORD, header, re.I) and
+                re.search(QUARTER_WORD, header, re.I)):
+            continue
+        horizontal = _extract_horizontal_eps(section[marker.start():])
+        if not horizontal:
+            continue
+        if horizontal.get('monthly_eps') is None or horizontal.get('quarter_eps') is None:
+            continue
+        # Restrict periods to the table header. Preserve existing periods if
+        # already recognized; this helper never guesses dates from the title.
+        report_month = _find_month_period(header)
+        # Several MOPS layouts have a four-quarter range in the header;
+        # remove that before looking for the previous single quarter.
+        cleaned_header = re.sub(
+            r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季\s*(?:至|~|～)\s*"
+            r"\d{2,4}\s*年?\s*第?\s*[1-4一二三四]\s*季", '', header)
+        report_quarter = _find_quarter_period(cleaned_header)
+        if not (report_month and report_quarter):
+            continue
+        horizontal['monthly_period'] = report_month
+        horizontal['quarter_period'] = report_quarter
+        return horizontal
+    return {}
+
+
 def _slice_semantic_sections(text):
     markers = []
 
@@ -700,6 +741,13 @@ def extract_metrics(text):
         if out.get(prefix+"_eps") is None and explicit.get(prefix+"_eps") is not None:
             for suffix in ("eps", "period", "eps_yoy", "eps_yoy_text"):
                 out[prefix+"_"+suffix] = explicit.get(prefix+"_"+suffix)
+
+    # Rescue only missing values. Existing successful layouts remain authoritative.
+    if out.get('monthly_eps') is None or out.get('quarter_eps') is None:
+        repaired = _recover_mops_financial_eps_row(text)
+        for key, value in repaired.items():
+            if out.get(key) is None and value is not None:
+                out[key] = value
 
     out["eps"] = out["monthly_eps"]
 
@@ -2502,6 +2550,24 @@ def valid_eps_item(item):
     )
 
 
+def visible_unparsed_self_report(item):
+    """Website-only: show official self-report notices with unreadable EPS.
+
+    Explicit financial information must be present in fetched MOPS detail.
+    Do not turn unrelated attention-trading notices into self-report cards.
+    Telegram delivery still uses valid_eps_item, unchanged.
+    """
+    detail = item.get('detail') or ''
+    return bool(
+        not valid_eps_item(item)
+        and item.get('source') == 'mops_ajax'
+        and item.get('match_reason') in ('attention_trading', 'direct_self_report')
+        and item.get('publish_date')
+        and re.search(r'財務業務資訊|財務資訊|自結損益', detail)
+        and re.search(EPS_WORD, detail, re.I)
+    )
+
+
 def diagnostic_entry(item):
     return {
         "ticker": item.get("ticker", ""),
@@ -2746,7 +2812,7 @@ def main():
     display_items = [
         item
         for item in all_candidates
-        if valid_eps_item(item)
+        if valid_eps_item(item) or visible_unparsed_self_report(item)
     ]
 
     parse_failed = [
