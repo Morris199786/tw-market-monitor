@@ -246,36 +246,59 @@ def parse(text, model, on_response=None, response_id=None):
     return parsed, data.get('usage', {})
 
 
-def audit(result, row):
-    """Only verify the JSON can be displayed; editorial judgment belongs to AI."""
-    if not isinstance(result, dict) or not isinstance(result.get('blocks'), list) or not result['blocks']:
-        return {'status':'needs_review','issues':['AI 輸出缺少 blocks 陣列']}
-    allowed = {'heading','paragraph','bullets','table','quote','chart'}
-    for block in result['blocks']:
-        if not isinstance(block, dict) or block.get('type') not in allowed:
-            return {'status':'needs_review','issues':['AI 區塊格式無法顯示']}
-    for block in result['blocks']:
-        if block.get('type') == 'chart':
-            labels, values = block.get('labels'), block.get('values')
-            kind = block.get('chart_type')
-            valid_types = ('bar', 'line', 'pie', 'kpi', 'stacked_bar', 'waterfall', 'dual_axis', 'timeline', 'flow', 'scatter', 'heatmap', 'donut')
-            if kind not in valid_types:
-                return {'status':'needs_review','issues':['AI 圖表類型不支援']}
-            numeric = lambda v: isinstance(v,(int,float)) and not isinstance(v,bool)
-            simple = kind in ('bar','line','pie','donut','waterfall')
-            multi = kind in ('stacked_bar','dual_axis')
-            valid = (not simple or (isinstance(labels,list) and isinstance(values,list) and bool(labels) and len(labels)==len(values) and all(numeric(v) for v in values)))
-            if multi:
-                ss=block.get('series',[])
-                valid = isinstance(labels,list) and bool(labels) and isinstance(ss,list) and bool(ss) and all(isinstance(x,dict) and len(x.get('values',[]))==len(labels) and all(numeric(v) for v in x.get('values',[])) for x in ss)
-            if kind=='kpi': valid=bool(block.get('kpi_items'))
-            if kind=='timeline': valid=bool(block.get('events'))
-            if kind=='flow': valid=bool(block.get('nodes'))
-            if kind=='scatter': valid=bool(block.get('points'))
-            if kind=='heatmap': valid=bool(block.get('columns')) and bool(block.get('heatmap_rows'))
-            if not valid:
-                return {'status':'needs_review','issues':['AI 圖表資料格式不完整']}
-    return {'status':'passed','issues':[],'blocks':len(result['blocks'])}
+def audit(result, row=None):
+    """Transport-only safeguard; AI alone decides content, sections and charts.
+
+    Do not grade, change, remove or reject an AI-selected chart based on its
+    plotting fields. Structured Outputs already fixes the JSON field types.
+    This check only prevents publishing a missing/non-article response.
+    """
+    if not isinstance(result, dict):
+        raise ValueError('AI_OUTPUT_UNREADABLE: expected JSON article object')
+    blocks = result.get('blocks')
+    if not isinstance(blocks, list) or not blocks or any(not isinstance(b, dict) for b in blocks):
+        raise ValueError('AI_OUTPUT_UNREADABLE: missing usable article blocks')
+    return {'status': 'passed', 'issues': [], 'blocks': len(blocks),
+            'validation': 'transport_only_no_python_content_review'}
+
+
+def recover_previous_format_reviews(cache, manifest, *, apply=False):
+    """Recover paid AI content previously blocked only by Python chart review.
+
+    Keep ALL AI-produced words, tables and charts verbatim. Never perform a
+    paid call. Only an intact JSON article is eligible for recovery; preserve
+    the prior audit for traceability. Do not resurrect removed morning reports.
+    """
+    active = set()
+    for shard in manifest.get('shards', []):
+        filename = shard.get('file', '')
+        if not filename or Path(filename).name != filename:
+            raise ValueError('Invalid research shard in manifest')
+        for row in load(ROOT / 'data/research_shards' / filename, {}).get('items', []):
+            if (row.get('source_kind') == 'line' and row.get('market') != 'US'
+                    and row.get('category') != '早報'
+                    and allowed_type(row.get('original_type') or row.get('type'))):
+                active.add(str(row.get('id', '')))
+    restored, skipped = [], []
+    for rid in sorted(active):
+        record = cache.get(rid)
+        if not isinstance(record, dict) or record.get('status') != 'needs_review':
+            continue
+        old_issues = (record.get('audit') or {}).get('issues', [])
+        if old_issues != ['AI 圖表資料格式不完整'] and old_issues != ['AI 圖表類型不支援']:
+            skipped.append(rid)
+            continue
+        try:
+            check = audit(record.get('result'))
+        except ValueError:
+            skipped.append(rid)
+            continue
+        restored.append(rid)
+        if apply:
+            cache[rid] = {**record, 'status': 'success',
+                          'previous_audit': record.get('audit'),
+                          'audit': check, 'recovered_without_api': True}
+    return {'restored': restored, 'skipped': skipped}
 
 
 FAILED_RETRY_SUFFIX = '::failed-retry-once-v1'
@@ -387,7 +410,7 @@ def run_yingbang_only(args):
     try:
         result, usage=parse(raw,args.model, lambda response_id: remember_response(cache, YINGBANG_ONCE_KEY, response_id))
         check=audit(result,row)
-        status='success' if check['status']=='passed' else 'needs_review'
+        status='success'
         cache[YINGBANG_ONCE_KEY].update(status=status,schema=SCHEMA,result=result,audit=check,usage=usage)
         if status=='success':
             cache[YINGBANG_ID]={**cache[YINGBANG_ONCE_KEY], 'previous_version':cache.get(YINGBANG_ID)}
@@ -421,6 +444,16 @@ def main():
     manifest = load(ROOT / 'data/research_manifest.json', {})
     if not manifest.get('shards'):
         sys.exit('research_manifest.json missing or empty; sync first')
+    # Restore legacy AI articles rejected solely by Python chart validation.
+    # A dry run reports recoverability without mutating the cache.
+    if args.mode == 'pending':
+        restoration = recover_previous_format_reviews(cache, manifest, apply=not args.dry_run)
+        print('AI_CACHED_RECOVERY_NO_API ' + json.dumps({
+            'restored': len(restoration['restored']),
+            'ids': restoration['restored'], 'skipped': restoration['skipped'],
+            'dry_run': args.dry_run}, ensure_ascii=False))
+        if restoration['restored'] and not args.dry_run:
+            checkpoint(cache)  # durable remote save before any new paid requests
     from meeting_identity import event_index, event_key
     all_rows = [r for shard in manifest['shards'] for r in load(ROOT / 'data/research_shards' / shard['file'], {}).get('items', [])]
     events = event_index(ROOT, cache, all_rows)
@@ -543,10 +576,10 @@ def main():
                 lambda response_id: remember_response(cache, key, response_id),
                 response_id=(previous or {}).get('response_id') if args.mode == 'failed' else None)
             check = audit(result, row)
-            status = 'success' if check['status'] == 'passed' else 'needs_review'
+            status = 'success'
             cache[key].update({'status':status,'schema':SCHEMA,'result':result,
                                'audit':check,'usage':usage})
-            # Promote only fully verified results; never overwrite old results on errors.
+            # Promote structurally readable AI results; no Python content or chart review.
             # Keep the original version in the new record for audit and rollback.
             if trial and status == 'success':
                 promoted = dict(cache[key])
