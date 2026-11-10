@@ -27,7 +27,7 @@ def category(row):
     if str(row.get('market', 'TW')).upper() == 'US' or row.get('source_kind') == 'broker':
         return ''
     value = row.get('category', '')
-    if value in ('早報', '法說／訪談'):
+    if value == '法說／訪談':
         return value
     if not value and str(row.get('original_type', '')).lower() in ('法說會', 'call memo'):
         return '法說／訪談'
@@ -61,13 +61,7 @@ def published(root):
 
 
 def message(row):
-    if category(row) == '早報':
-        source = re.split(r'[（(]', str(row.get('source') or ''), maxsplit=1)[0].strip()
-        name = source or str(row.get('company') or '券商').strip()
-        name = re.sub(r'(投資)?早報$', '', name).strip()
-        label = name + '早報'
-    else:
-        label = str(row.get('company') or row.get('title') or '公司未標示').strip() + ' 法說/訪談'
+    label = str(row.get('company') or row.get('title') or '公司未標示').strip() + ' 法說/訪談'
     return f"{row.get('date', '')} {label}"
 
 
@@ -177,10 +171,6 @@ def batches(rows, state):
         if len(chunks) > 1:
             heading += f'（{i}/{len(chunks)}）'
         yield [x[0] for x in chunk], heading + '\n\n' + '\n\n'.join(x[1] for x in chunk), SITE + '#reports'
-    # Preserve existing morning-report delivery behavior.
-    for rid, row in pending:
-        if category(row) != '法說／訪談':
-            yield [rid], message(row), link(rid)
 
 
 def deliver(rows, state, save, send):
