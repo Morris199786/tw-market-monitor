@@ -36,38 +36,69 @@ jobs:
         id: daily
         continue-on-error: true
         run: python scripts/update_all.py
-      - name: Commit updated data even if AI selection failed
+      - name: Commit only this run's changed data; never overwrite concurrent publishers
+        shell: bash
         run: |
-          set -e
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm -rf /tmp/generated-data
-          mkdir -p /tmp/generated-data
-          cp -a data/. /tmp/generated-data/
-          success=false
-          for i in 1 2 3 4 5; do
-            git fetch origin main
-            git reset --hard origin/main
-            rm -rf data
-            mkdir -p data
-            cp -a /tmp/generated-data/. data/
-            git add data
-            if git diff --cached --quiet; then
-              echo "No data changes"
-              success=true
-              break
+
+          # Record the exact checkout that generated these files. The daily
+          # job may publish only files it actually changed, not the whole data/.
+          base=$(git rev-parse HEAD)
+          generated=$(mktemp -d)
+          trap 'rm -rf "$generated"' EXIT
+          paths=()
+          while IFS= read -r -d '' path; do
+            if [[ -f "$path" ]]; then
+              paths+=("$path")
+              cp --parents -- "$path" "$generated"
             fi
-            git commit -m "data: daily close update"
-            if git push origin HEAD:main; then
-              success=true
-              break
-            fi
-            sleep 3
-          done
-          if [ "$success" != "true" ]; then
-            echo "::error::Could not push daily data after five attempts"
-            exit 1
+          done < <(
+            { git diff --name-only -z --diff-filter=ACMR -- data/;
+              git ls-files --others --exclude-standard -z -- data/; } | sort -zu
+          )
+
+          if (( ${#paths[@]} == 0 )); then
+            echo 'No daily data changes to publish.'
+            exit 0
           fi
+          printf 'Daily-generated files: %s\n' "${paths[*]}"
+
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin main
+            git reset --hard origin/main
+            published=0
+            conflicts=0
+            for path in "${paths[@]}"; do
+              # Compare each remote file to the original checkout. If another
+              # workflow modified the SAME file, do not revert its new data.
+              original=$(git rev-parse "$base:$path" 2>/dev/null || true)
+              current=$(git rev-parse "HEAD:$path" 2>/dev/null || true)
+              if [[ "$original" != "$current" ]]; then
+                echo "::warning file=$path::A concurrent workflow updated this file; skipping stale daily output."
+                conflicts=$((conflicts + 1))
+                continue
+              fi
+              mkdir -p -- "$(dirname "$path")"
+              cp -- "$generated/$path" "$path"
+              git add -- "$path"
+              published=$((published + 1))
+            done
+
+            if git diff --cached --quiet; then
+              echo "No non-conflicting data changes; skipped $conflicts concurrent files."
+              exit 0
+            fi
+            git commit -m 'data: daily close update (changed files only)'
+            if git push origin HEAD:main; then
+              echo "Daily data published; candidate files=$published, protected concurrent files=$conflicts."
+              exit 0
+            fi
+            echo "Push conflicted; re-checking live data ($attempt/5)."
+          done
+          echo '::error::Could not publish daily data after five retries'
+          exit 1
       - name: Report partial update failure
         if: steps.daily.outcome == 'failure'
         run: |
