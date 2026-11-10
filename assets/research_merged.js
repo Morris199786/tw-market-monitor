@@ -587,7 +587,7 @@ function rawTexts(r) {
 }
 let aiDirectPromise;
 function loadAiDirect(){
-  return aiDirectPromise ||= fetchJSON('./data/research_ai_render.json').then(x=>x.items||{}).catch(()=>({}));
+  return aiDirectPromise ||= fetchJSON('./data/research_ai_render.json').then(x=>x.items||{}).catch(e=>{console.warn('[research reader] global AI JSON unavailable; use AI embedded in report shard',e);return {};});
 }
 // Only short, explicitly authored bullet points receive emphasis. Keep the
 // complete sentence (including dates, forecast qualifiers and risks).
@@ -655,8 +655,15 @@ function renderAiDirect(entry){
 function detail(r,m,direct={}) {
   const info=`<div class="rm-info">${esc(r.date||m.date)} · ${esc(r.source||m.source)} · ${esc(r.original_type||m.original_type||'')}</div>`;
   const raw=rawTexts(r);
-  const modelHtml=renderAiDirect(direct[r.id]);
-  const missing=section('AI 研究整理','<p class="rm-ai-paragraph">這篇尚無 AI 完整研究文章；網站不會使用 Python 或固定表格代替模型撰寫。</p>');
+  // 20261110-AI-SHARD-FALLBACK-V1
+  // The sync job stores the actual AI-authored article in each immutable shard.
+  // A missing/stale/oversized global render JSON must not hide this paid article.
+  // Never invent or rewrite research content: render only a saved AI result.
+  const directHtml=renderAiDirect(direct[r.id]);
+  const shardHtml=(r.ai_research && typeof r.ai_research==='object')
+    ? renderAiDirect({content:r.ai_research}) : '';
+  const modelHtml=shardHtml || directHtml;
+  const missing=section('AI 研究整理',`<p class="rm-ai-paragraph">${m.ai_processed?'AI 全文資料暫時無法載入，請重新整理頁面。':'這篇尚未完成 AI 解析；可查看下方 Excel 原文。'}</p>`);
   const original=raw.length?`<details class="rm-source-details"><summary>查看 Excel 研究原文</summary>${raw.map((t,i)=>section(raw.length>1?`原文 ${i+1}`:'研究原文',`<div class="rm-original-text">${highlight(readableProse(t,r))}</div>`)).join('')}</details>`:'';
   return info+(modelHtml||missing)+original;
 }
