@@ -1,0 +1,59 @@
+name: Resend Nov 10 earnings as 4 Telegram messages (once)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: self-reports
+  cancel-in-progress: false
+
+jobs:
+  resend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install requests
+        run: python -m pip install requests
+      - name: Verify exact 39 entries without sending
+        run: python scripts/resend_earnings_20261110.py --dry-run
+      - name: Resend 39 as 10 + 10 + 10 + 9 text messages
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/resend_earnings_20261110.py
+      - name: Commit the one-time replay ledger even after a partial failure
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f data/earnings_replay_20261110.json ]; then
+            echo 'No replay state produced.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/earnings_replay_20261110.json
+          if git diff --cached --quiet; then
+            echo 'Replay ledger unchanged.'
+            exit 0
+          fi
+          git commit -m 'Record one-time Nov 10 Telegram replay progress'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              echo 'Replay ledger committed.'
+              exit 0
+            fi
+            sleep 3
+          done
+          exit 1
