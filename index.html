@@ -111,13 +111,14 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <button class="nav" data-p="monthlyRevenue">月營收公布</button>
 <button class="nav" data-p="etfFlow">ETF Flow</button>
 <button class="nav" data-p="marketMonitor">大盤監控</button>
+<button class="nav" data-p="brokerResearch">券商研究中心</button>
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
 <select id="mobileNav" aria-label="切換分頁">
 <option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">產業資料庫</option>
 <option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
-<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option>
+<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option><option value="brokerResearch">券商研究中心</option>
 </select>
 <div id="mobilePageNav" class="mobile-page-nav">
 <button id="mobilePageNavToggle" class="mobile-page-nav-toggle" type="button" aria-expanded="false">總覽</button>
@@ -165,6 +166,13 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
 </section>
 <section id="etfFlow" class="page"></section>
+<section id="brokerResearch" class="page">
+  <div class="hero"><div><div class="kicker">BROKER RESEARCH VISUALIZATION</div><h1>券商研究中心</h1><p>個股 EPS 預估、券商比較與原始研究報告</p></div><span class="badge">測試版 · 唯讀</span></div>
+  <div class="card" style="padding:10px;margin-bottom:12px">
+    <div id="brokerResearchLoadStatus" class="muted" style="padding:8px">開啟分頁後載入券商研究資料</div>
+    <iframe id="brokerResearchFrame" title="券商研究中心" loading="lazy" style="display:block;width:100%;height:1450px;min-height:750px;border:0;border-radius:12px;background:#0d1522" referrerpolicy="same-origin"></iframe>
+  </div>
+</section>
 </main>
 
 <script src="./assets/app.js?v=20261104-yesterday-bulk-v1"></script>
@@ -297,6 +305,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 
 <script defer src="./assets/research_ai_layout_fix.js?v=20261026-source-audit-v5"></script>
 <script defer src="./assets/etf_flow.js?v=20261101-2"></script>
+<script defer src="./assets/broker_research_nav.js?v=20261111-v2"></script>
 </body>
 </html>
 
