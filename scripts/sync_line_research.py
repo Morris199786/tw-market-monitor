@@ -462,6 +462,13 @@ def main():
         return
     brokers = load_all_brokers()
     data, stats = transform(values, brokers, today)
+    # Exclude morning digests from website publication and AI candidates.
+    # The original Google Sheet and existing paid AI cache remain untouched.
+    morning_count = sum(r.get('category') == '早報' for r in data['items'])
+    data['items'] = [r for r in data['items'] if r.get('category') != '早報']
+    data['count'] = len(data['items'])
+    stats['excluded_morning_reports'] = morning_count
+    stats['kept'] = len(data['items'])
     print(json.dumps(stats, ensure_ascii=False))
     from collections import Counter
     print('LINE_CATEGORY_COUNTS '+json.dumps(dict(Counter(r['category'] for r in data['items'])),ensure_ascii=False))
@@ -471,6 +478,9 @@ def main():
     cache=load_json(ROOT / 'data/research_ai_cache.json')
     from meeting_identity import reuse_and_select
     data['items'] = reuse_and_select(ROOT, cache, data['items'])
+    # Reused historical records must not reintroduce a morning report.
+    data['items'] = [r for r in data['items'] if r.get('category') != '早報']
+    data['count'] = len(data['items'])
     if os.getenv('LINE_SYNC_DRY_RUN') != '1':
         write_json_atomic(ROOT / 'data/research_ai_cache.json', cache)
     from research_dedup import Matcher, content_key, excel_document_key, excel_rating_duplicate, codes, same_dedicated, multi_broker_source, broker_name
