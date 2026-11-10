@@ -130,15 +130,6 @@ def compact(value, limit):
     return text if len(text) <= limit else text[:limit - 1] + '…'
 
 
-def meeting_date_label(row):
-    """Do not present Sheet A or publication date as a confirmed meeting day."""
-    event_day = str(row.get('meeting_date') or '').strip()
-    report_day = compact(row.get('date'), 20)
-    if re.fullmatch(r'20\d{2}-\d{2}-\d{2}', event_day):
-        return f'法說／訪談日期：{event_day}｜資料日期：{report_day}'
-    return f'資料日期：{report_day}（法說／訪談日期未確認）'
-
-
 def digest_entry(rid, row, number):
     summary = row.get('telegram_summary', [])
     if isinstance(summary, list):
@@ -146,7 +137,8 @@ def digest_entry(rid, row, number):
     if not isinstance(summary, str):
         summary = ''
     name = compact(row.get('company') or row.get('title') or '公司未標示', 100)
-    text = f"{number}. {name}｜{meeting_date_label(row)}"
+    date = compact(row.get('date'), 20)
+    text = f"{number}. {name}｜資料日期：{date}"
     if summary:
         text += '\n重點：' + compact(summary, 200)
     return text + '\n閱讀完整報告：' + link(rid)
@@ -159,7 +151,7 @@ def batches(rows, state):
     for rid, row in meetings:
         entry = digest_entry(rid, row, len(current) + 1)
         # Conservative UTF-16 budget leaves room for the heading and emoji.
-        if current and len(('📊 法說／訪談彙整｜新增 ' + str(len(meetings)) + ' 篇\n\n' + '\n\n'.join(x[1] for x in current) + '\n\n' + entry).encode('utf-16-le')) // 2 > 3600:
+        if current and len(('\n\n'.join(x[1] for x in current) + '\n\n' + entry).encode('utf-16-le')) // 2 > 3600:
             chunks.append(current)
             current = []
             entry = digest_entry(rid, row, 1)
