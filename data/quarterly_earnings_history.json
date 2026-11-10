@@ -1,6 +1,6 @@
 {
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-10T22:17+08:00",
+  "updated_at": "2026-11-10T23:11+08:00",
   "rows": [
     {
       "ticker": "1101",
@@ -25289,7 +25289,7 @@
       "cum_revenue": 133069.0,
       "cum_gross": 3258.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -25422,14 +25422,17 @@
       "cum_revenue": 128510.0,
       "cum_gross": 118185.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "official_quarter_facts": {
         "eps": -0.15
       },
       "quarter_filing_url": "https://mopsov.twse.com.tw/server-java/t164sb01?step=3&SYEAR=2026&file_name=tifrs-fr1-m1-ci-cr-3664-2026Q2.html",
       "quarter_lookup_status": "complete",
-      "quarter_lookup_errors": []
+      "quarter_lookup_errors": [
+        "ReadTimeout",
+        "HTTPError"
+      ]
     },
     {
       "ticker": "3665",
@@ -25682,17 +25685,14 @@
       "cum_gross": 1606143.0,
       "cum_eps": 2.11,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "official_quarter_facts": {
         "eps": 4.05
       },
       "quarter_filing_url": "https://mopsov.twse.com.tw/server-java/t164sb01?step=3&SYEAR=2026&file_name=tifrs-fr1-m1-ci-cr-3712-2026Q2.html",
       "quarter_lookup_status": "complete",
-      "quarter_lookup_errors": [
-        "ConnectTimeout",
-        "HTTPError"
-      ]
+      "quarter_lookup_errors": []
     },
     {
       "ticker": "3713",
@@ -25742,7 +25742,7 @@
     {
       "ticker": "3718",
       "period": "2026-Q2",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -30425,7 +30425,7 @@
       "cum_gross": -21921.0,
       "cum_eps": 0.11,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -30585,13 +30585,10 @@
       "cum_revenue": 61350.0,
       "cum_gross": -71934.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "complete",
-      "quarter_lookup_errors": [
-        "ConnectTimeout",
-        "HTTPError"
-      ],
+      "quarter_lookup_errors": [],
       "official_quarter_facts": {
         "eps": -1.27
       },
@@ -32558,11 +32555,11 @@
       "cum_revenue": 208043.0,
       "cum_gross": -19980.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -33618,7 +33615,7 @@
       "cum_gross": 36242.0,
       "cum_eps": -1.69,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -34561,7 +34558,7 @@
       "cum_revenue": 2550.0,
       "cum_gross": -4760.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -35760,13 +35757,22 @@
     {
       "ticker": "1303",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
         "no_matching_single_quarter_facts",
         "HTTPError"
       ]
+    },
+    {
+      "ticker": "1307",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 2.04,
+      "cum_revenue": 8719673.0,
+      "cum_gross": 2542891.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "1321",
@@ -36116,7 +36122,7 @@
     {
       "ticker": "1590",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -37162,7 +37168,7 @@
     {
       "ticker": "2402",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -38808,7 +38814,7 @@
       "cum_gross": 11250.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3259&SPOKE_DATE=20261105&SPOKE_TIME=171855&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -39152,7 +39158,7 @@
     {
       "ticker": "3406",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -41452,7 +41458,7 @@
       "cum_gross": 3591.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6103&SPOKE_DATE=20261106&SPOKE_TIME=164818&SEQ_NO=2",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -41553,7 +41559,7 @@
     {
       "ticker": "6121",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -42412,7 +42418,7 @@
       "cum_gross": -18327.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6405&SPOKE_DATE=20261106&SPOKE_TIME=160046&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -43999,7 +44005,7 @@
     {
       "ticker": "6933",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -44078,11 +44084,11 @@
     {
       "ticker": "6967",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "ReadTimeout",
         "HTTPError"
       ]
     },
@@ -45082,7 +45088,7 @@
       "cum_gross": -8620.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8291&SPOKE_DATE=20261105&SPOKE_TIME=150413&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-10T22:15+08:00",
+      "quarter_lookup_at": "2026-11-10T23:09+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
