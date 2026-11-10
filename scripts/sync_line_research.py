@@ -253,6 +253,31 @@ def is_us_research(row):
     return False
 
 
+# Python-only layout for US call memos; no paid AI and no generated finance facts.
+# Preserve text verbatim, only normalize whitespace and split into labeled sections.
+US_SOURCE_SECTIONS = (
+    ('story','研究重點'), ('revenue','營收與營運'), ('eps','獲利與 EPS'),
+    ('inventory','庫存'), ('utilization','產能與稼動率'), ('guidance','公司展望'),
+    ('trend','產業趨勢'), ('rating_target','評等與目標價'), ('numbers','關鍵數據'),
+    ('dividend_current','股利'), ('dividend_next','下期股利'),
+    ('dividend_policy','股利政策'), ('full_text','完整研究原文'),
+    ('full_text_2','研究補充 2'), ('full_text_3','研究補充 3'),
+)
+
+def python_us_research(row):
+    sections=[]
+    previous=set()
+    for key,title in US_SOURCE_SECTIONS:
+        value=normalize_display(clean_display(row.get(key)))
+        value=str(value or '').strip()
+        # Repeated exact source text is shown only once. No factual interpretation.
+        if not value or value in previous:
+            continue
+        previous.add(value)
+        sections.append({'field':key,'title':title,'text':value})
+    return {'version':'source-only-v1','method':'python','sections':sections}
+
+
 def transform(values, brokers, today):
     if not values or not values[0]:
         raise ValueError('Empty sheet; refuse to overwrite existing data')
@@ -288,6 +313,9 @@ def transform(values, brokers, today):
         row['source_kind'] = 'line'
         row['market'] = 'US' if is_us_research(row) else 'TW'
         row['display'] = {k: normalize_display(clean_display(row.get(k))) for k in ('story','revenue','eps','inventory','utilization','guidance','trend','rating_target','numbers','dividend_current','dividend_next','dividend_policy','full_text','full_text_2','full_text_3')}
+        if row['market'] == 'US':
+            row['python_research'] = python_us_research(row)
+            row['api_route'] = 'python'
         row['possible_broker_duplicates'] = broker_candidates(row, brokers)
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)

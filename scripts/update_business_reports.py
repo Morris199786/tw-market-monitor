@@ -8,13 +8,14 @@ import urllib.request
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
+from functools import lru_cache
 
 import fitz  # PyMuPDF
 
 FOLDER = '1CLtRfuqr9uC_Sak0VSgYdlhogzG8K2ma'
 API = 'https://www.googleapis.com/drive/v3/files'
 OUTPUT = Path('data/business_reports.json')
-PARSER_VERSION = 'business-v5-gmail-date-20261031'
+PARSER_VERSION = 'business-v6-company-registry-20261110'
 TOKEN = os.environ.get('ACCESS_TOKEN', '')
 
 BROKERS = ('華南投顧', '康和投顧', '凱基', '元大', '永豐', '群益', '富邦', '國泰', '統一', '元富', '第一金', '兆豐', '台新', '中信', '摩根士丹利', '高盛', '瑞銀', '花旗', '大和', '野村', '美銀', '麥格理', '國票', '合庫', '玉山', '華南', '康和')
@@ -110,16 +111,29 @@ def report_date(pdf_text, filename, created):
 COMPANIES = {'2379':'瑞昱','6274':'台燿','3711':'日月光投控','2308':'台達電',
  '1590':'亞德客-KY','8058':'耐特','2303':'聯電','2383':'台光電','7769':'鴻勁',
  '5289':'宜鼎','3037':'欣興','6510':'精測','3081':'聯亞','3105':'穩懋',
- 'VRT':'Vertiv','FLEX':'Flex','VFC':'VF Corporation'}
+ 'VRT':'Vertiv','FLEX':'Flex','VFC':'VF Corporation',
+ '4438':'廣越','9921':'巨大','8464':'億豐'}
 
+@lru_cache(maxsize=1)
 def company_catalog():
+    """Resolve all TW stock names from the canonical registry; never infer names from numbers."""
     names = dict(COMPANIES)
-    path = Path('data/stock_detail.json')
-    if path.exists():
-        data = json.loads(path.read_text(encoding='utf-8'))
-        for code, row in data.get('stocks', {}).items():
-            if isinstance(row, dict) and row.get('name'):
-                names[str(code)] = row['name']
+    for path in (Path('data/stock_detail.json'), Path('data/report_company_registry.json')):
+        if not path.is_file():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            continue
+        stocks = data.get('stocks', {}) if isinstance(data, dict) else {}
+        if isinstance(stocks, dict):
+            for code, row in stocks.items():
+                if isinstance(row, dict) and row.get('name'):
+                    names[str(code)] = str(row['name']).strip()
+        if path.name == 'report_company_registry.json' and isinstance(data, dict):
+            for code, row in data.items():
+                if re.fullmatch(r'\d{4,6}', str(code)) and isinstance(row, dict) and row.get('name'):
+                    names[str(code)] = str(row['name']).strip()
     return names
 
 YUANTA_TW = re.compile(r'(?<!\w)([1-9]\d{3})\s+TT\s*[-–—]\s*Yuanta\b', re.I)
