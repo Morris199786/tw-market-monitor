@@ -192,6 +192,29 @@ def original_date(row):
     return row['date'], 'sheet'
 
 
+def explicit_meeting_date(row):
+    """Extract a clearly stated meeting day; never guess from a report/import date.
+
+    Scan the article introduction and period field for explicitly labelled call
+    dates or 'held on' wording. If no unambiguous day exists, return ''.
+    """
+    iso = r'20\d{2}[-/年]\d{1,2}[-/月]\d{1,2}日?'
+    patterns = (
+        rf'(?:法說會?|法人說明會|訪談|電話會議|業績說明會)\s*(?:舉行|召開|日期|時間|於)\s*[:：]?\s*({iso})',
+        rf'(?:於|在)?\s*({iso})\s*(?:舉行|召開|舉辦|進行)?\s*(?:法說會?|法人說明會|訪談|電話會議|業績說明會)',
+        rf'(?:meeting date|earnings call date|conference call date)\s*[:：]\s*({iso})',
+    )
+    for key in ('period', 'story', 'full_text', 'full_text_2'):
+        sample = str(row.get(key) or '')[:2200]
+        for pattern in patterns:
+            match = re.search(pattern, sample, re.I)
+            if match:
+                d = parse_date(match.group(1))
+                if d:
+                    return d.isoformat()
+    return ''
+
+
 def clean_display(value):
     """Conservative presentation cleanup; never alter underlying financial numbers."""
     if isinstance(value, list):
@@ -260,6 +283,7 @@ def transform(values, brokers, today):
         row.update(enrich(row))
         row['api_route'] = api_route(row)
         row['python_qa'] = quality(row) if row['market'] == 'TW' and row['category'] in ('法說／訪談','產業研究') else {'requires_ai': False, 'issues': []}
+        row['meeting_date'] = explicit_meeting_date(row)
         row['date'], row['date_source'] = original_date(row)
         row['source_kind'] = 'line'
         row['market'] = 'US' if is_us_research(row) else 'TW'
@@ -533,8 +557,8 @@ def main():
            'newly_suppressed_count':sum(bool(x['newly_suppressed']) for x in suppressed),
            'newly_suppressed_reports':[x for x in suppressed if x['newly_suppressed']],
            'candidates':[{'sheet_row_number':r['sheet_row_number'],'id':r['id'],
-             'matches':r['possible_broker_duplicates']} for r in data['items']
-             if r['possible_broker_duplicates']],
+             'matches':r.get('possible_broker_duplicates', [])} for r in data['items']
+             if r.get('possible_broker_duplicates')],
            'note':'同券商同股票三天內專屬個股報告去重；產業／多檔報告不依公司日期合併。'}
     if os.getenv('LINE_SYNC_DRY_RUN') == '1':
         print(json.dumps({'merged':len(merged),'line':len(data['items']),
@@ -573,6 +597,8 @@ def main():
                 rid = str(record.get('id') or f'{filename}:{offset}')
                 metadata = {'id':rid, 'file':filename, 'date':str(record.get('date') or '')[:10],
                             'category':record.get('category','市場情報'),
+                            'meeting_date':record.get('meeting_date') or '',
+                            'date_source':record.get('date_source') or '',
                             'api_route':record.get('api_route','none'),
                             'company':record.get('company') or record.get('name') or '',
                             'title':(record.get('ai_research') or {}).get('title') or record.get('display_title') or record.get('title') or '',
