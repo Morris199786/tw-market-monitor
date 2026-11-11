@@ -81,7 +81,32 @@ def actuals(data):
 
 def compare(root=ROOT):
     data = root / 'data'
-    forecasts = load(data / 'broker_eps_forecasts.json', {'items': []}).get('items', [])
+    # Keep the legacy EPS JSON (including sealed historical forecasts).
+    # Supplement only missing report+quarter pairs from the ONE-SHOT AI data.
+    # No calls to the model and no PDF reads in this comparison action.
+    forecasts = list(load(data / 'broker_eps_forecasts.json', {'items': []}).get('items', []))
+    known = {(str(x.get('report_id')), str(x.get('period'))) for x in forecasts}
+    ai_added = 0
+    from broker_eps_pipeline import ai_eps_rows
+    for report in load(data / 'reports.json', {'items': []}).get('items', []):
+        if not isinstance(report, dict):
+            continue
+        rid = str(report.get('source_file_id') or report.get('id') or '')
+        ticker = str(report.get('ticker') or '')
+        broker = str(report.get('broker') or '')
+        report_day = valid_date(report.get('date'))
+        if not rid or not TICKER.fullmatch(ticker) or not broker or not report_day:
+            continue
+        rows, _ = ai_eps_rows(report)
+        for row in rows:
+            key = (rid, row['period'])
+            if key in known:
+                continue
+            forecasts.append({'report_id':rid, 'ticker':ticker, 'broker':broker,
+                              'report_date':report_day, 'source_url':report.get('source_url') or '',
+                              'period':row['period'], 'eps':row['eps']})
+            known.add(key)
+            ai_added += 1
     by_key = {}
     for f in forecasts:
         ticker, period = str(f.get('ticker') or ''), str(f.get('period') or '')
@@ -90,7 +115,7 @@ def compare(root=ROOT):
             continue
         by_key.setdefault((ticker, period), []).append((f, day, eps))
     matches = {}
-    audit = {'forecasts': len(forecasts), 'valid_forecasts': sum(map(len, by_key.values())),
+    audit = {'direct_ai_forecasts_added': ai_added, 'forecasts': len(forecasts), 'valid_forecasts': sum(map(len, by_key.values())),
              'dated_actuals': 0, 'potential_same_ticker_period': 0,
              'excluded_late': 0, 'matches': 0}
     for a in actuals(data):
