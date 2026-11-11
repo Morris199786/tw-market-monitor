@@ -558,9 +558,11 @@ def main():
         state["telegram_attempted_ids"] = sorted(attempted)
         save_json(STATE_PATH, state)
         commit_claim_before_external_call("Telegram ratings digest")
-        if send_digest(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, "台股評等",
+        rating_title = f"📌 台股評等｜{now_tpe()[:10]}｜共 {len(pending)} 筆"
+        if send_digest(TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, rating_title,
                        [rating_entry(item) for item in pending.values()],
-                       SITE_URL + "?page=reports&mode=ratings"):
+                       SITE_URL + "?page=reports&mode=ratings",
+                       max_entries=1000, compact=True):
             telegram_sent.update(pending)
             state["telegram_ids"] = list(telegram_sent)[-5000:]
             save_json(STATE_PATH, state)

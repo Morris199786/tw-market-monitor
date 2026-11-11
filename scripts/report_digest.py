@@ -1,4 +1,4 @@
-"""Telegram grouped digests (up to 10 entries per message; never send TXT).
+"""Telegram grouped digests (10 entries by default; compact mode uses character limits).
 
 Used by earnings and ratings notifications. Standard messages preserve one category
 and keep their original content, except redundant long Google News RSS URLs.
@@ -45,10 +45,14 @@ def split_text(text, max_units):
     return chunks
 
 
-def make_batches(title, entries, max_entries=GROUP_SIZE):
+def make_batches(title, entries, max_entries=GROUP_SIZE, *, compact=False):
     """Return safe Telegram plain-text messages, respecting both size limits."""
     if max_entries < 1:
         raise ValueError('max_entries must be positive')
+    # Broker report instant digests should split only when Telegram size requires it.
+    broker_digest = title.startswith("券商報告彙整｜")
+    if broker_digest:
+        max_entries = max(max_entries, len(entries))
     clean_entries = [readable_entry(x) for x in entries if str(x).strip()]
     batches = []
     current = []
@@ -56,25 +60,30 @@ def make_batches(title, entries, max_entries=GROUP_SIZE):
     item_budget = TELEGRAM_LIMIT - prefix_budget - 8
     if item_budget < 100:
         raise ValueError('title too long')
+    separator = '\n' if compact else '\n\n'
     for item in clean_entries:
         parts = split_text(item, item_budget) if utf16_len(item) > item_budget else [item]
         for part in parts:
-            joined = '\n\n'.join(current + [part])
+            joined = separator.join(current + [part])
             if current and (len(current) >= max_entries or utf16_len(joined) + prefix_budget > TELEGRAM_LIMIT):
                 batches.append(current)
                 current = []
             current.append(part)
     if current:
         batches.append(current)
-    return [f'{title}｜第 {i}/{len(batches)} 則\n\n' + '\n\n'.join(parts)
-            for i, parts in enumerate(batches, 1)]
+    messages = [(title if (compact or broker_digest) and len(batches) == 1 else f'{title}｜第 {i}/{len(batches)} 則')
+                + '\n\n' + separator.join(parts)
+                for i, parts in enumerate(batches, 1)]
+    if any(utf16_len(message) > TELEGRAM_LIMIT for message in messages):
+        raise ValueError('Telegram batch exceeds character limit')
+    return messages
 
 
-def send_messages(token, chat_id, title, entries, url, *, on_sent=None):
+def send_messages(token, chat_id, title, entries, url, *, on_sent=None, max_entries=GROUP_SIZE, compact=False):
     """Send grouped texts; callback persists each successful group if provided."""
     if not token or not chat_id or not entries:
         return False
-    batches = make_batches(title, entries)
+    batches = make_batches(title, entries, max_entries=max_entries, compact=compact)
     for i, text in enumerate(batches, 1):
         data = {
             'chat_id': chat_id,
@@ -98,8 +107,8 @@ def send_messages(token, chat_id, title, entries, url, *, on_sent=None):
     return True
 
 
-def send_digest(token, chat_id, title, entries, url):
-    return send_messages(token, chat_id, title, entries, url)
+def send_digest(token, chat_id, title, entries, url, *, max_entries=GROUP_SIZE, compact=False):
+    return send_messages(token, chat_id, title, entries, url, max_entries=max_entries, compact=compact)
 
 
 def rating_entry(item):

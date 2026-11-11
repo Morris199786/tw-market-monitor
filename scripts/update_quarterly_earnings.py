@@ -1442,7 +1442,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
     def checkpoint():
         save_json(SENT,{**state,'updated_at':now.isoformat(timespec='minutes'),
                         'ids':sorted(sent),'report_metrics':snapshots})
-    def deliver_batch(keys, title, entries):
+    def deliver_batch(keys, title, entries, *, compact=False, max_entries=None):
         if not entries:
             return True
         ok = send_digest(
@@ -1450,6 +1450,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
             os.getenv('TELEGRAM_CHAT_ID', '').strip(),
             title, entries,
             'https://morris199786.github.io/tw-market-monitor/?page=selfReports',
+            max_entries=(max_entries if max_entries is not None else (1000 if compact else 10)), compact=compact,
         )
         if ok:
             sent.update(keys)
@@ -1465,13 +1466,10 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
         # No empty messages. Incomplete sources are not interpreted as no announcements
         if due:
             remaining=[x for x in due if f"morning-item|{today}|{x['ticker']}|{x['period']}" not in sent]
-            entries=[f"• {x['name']} {x['ticker']}｜{x['period']}" for x in remaining]
-            if entries:
-                entries.append('依公司公告的財報董事會或季度法說日期整理，未公告時間者不預設為盤後')
-                if source_incomplete:
-                    entries.append('部分來源未完成，以上為已確認名單')
+            entries=[f"• {x['name']} {x['ticker']}" for x in remaining]
             keys=[f"morning-item|{today}|{x['ticker']}|{x['period']}" for x in remaining]
-            if deliver_batch(keys, '📅 今日預計開財報｜'+today, entries):
+            title=f'📅 今日預計開財報｜{today}｜共 {len(due)} 家公司'
+            if deliver_batch(keys, title, entries, compact=True):
                 sent.add(digest_key)
                 checkpoint()
         elif not source_incomplete:
@@ -1524,7 +1522,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
         report_keys.append(delivery_key)
         report_entries.append(text)
         delivered_snapshots[key]={k:x.get(k) for k in fields}
-    if deliver_batch(report_keys, f'📊 財報公布／補齊彙整｜{today}｜{len(report_entries)} 筆', report_entries):
+    if deliver_batch(report_keys, f'📊 財報公布｜{today}｜{len(report_entries)} 筆', report_entries, max_entries=1000):
         snapshots.update(delivered_snapshots)
     checkpoint()
 
