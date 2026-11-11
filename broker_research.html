@@ -264,10 +264,21 @@ function extract(r){const out=[];
  const obj=r[k];if(!obj)continue;
  const items=Array.isArray(obj)?obj:Object.entries(obj).map(([key,value])=>({key,value}));
  for(const x of items){if(!x||typeof x!=='object')continue;
- if(x.period||x.year||x.quarter){let p=x.period||x.year||x.quarter;for(const [key,val] of Object.entries(x)){const mk=metric(key);if(mk)add(out,r,mk,p,val,'structured',x.unit||'')}continue}
+ if(x.period||x.year||x.quarter){let p=x.period||x.year||x.quarter;
+ // First-pass AI financial_forecasts uses {period, metric, value, type, source, scope}.
+ // Keep only company-scope broker forecasts; never mix consensus/actual/guidance.
+ if(x.metric&&Object.prototype.hasOwnProperty.call(x,'value')){
+  if(String(x.type||'forecast').toLowerCase()!=='forecast'||String(x.source||'broker').toLowerCase()!=='broker'||String(x.scope||'company').toLowerCase()!=='company')continue;
+  const mk=metric(x.metric);if(mk)add(out,r,mk,p,x.value,'structured',x.unit||'');continue;
+ }
+ for(const [key,val] of Object.entries(x)){const mk=metric(key);if(mk)add(out,r,mk,p,val,'structured',x.unit||'')}continue}
  if(x.key&&period(x.key)&&x.value&&typeof x.value==='object'){for(const [key,v] of Object.entries(x.value)){let mk=metric(key);if(mk)add(out,r,mk,x.key,v,'structured','')}continue}
  if(x.key&&metric(x.key)&&x.value&&typeof x.value==='object'){for(const [pp,v] of Object.entries(x.value)){add(out,r,metric(x.key),pp,v,'structured','')}continue}
  }
+ }
+ // Single-shot AI quarterly_eps is an independent structured forecast field.
+ for(const q of (Array.isArray(r.quarterly_eps)?r.quarterly_eps:[])){
+  if(q&&String(q.type||'forecast').toLowerCase()==='forecast'&&String(q.source||'broker').toLowerCase()==='broker')add(out,r,'eps',q.period,q.eps,'structured','元/股');
  }
  for(const v of (Array.isArray(r.visualizations)?r.visualizations:[])){if(v.type==='table')fromTable(out,r,v);else if(['bar','line'].includes(v.type)&&Array.isArray(v.labels)){let mk=metric(v.title||v.unit||'');if(mk){v.labels.forEach((p,i)=>add(out,r,mk,p,v.values?.[i],'chart',v.unit||''));for(const series of (v.series||[])){let sm=metric(series.name);if(sm)v.labels.forEach((p,i)=>add(out,r,sm,p,series.values?.[i],'chart',v.unit||''))}}}}
  return out.filter(x=>x.ticker&&x.broker&&x.date);
