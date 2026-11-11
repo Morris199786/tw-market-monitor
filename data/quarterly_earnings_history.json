@@ -1,6 +1,6 @@
 {
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-11T14:21+08:00",
+  "updated_at": "2026-11-11T15:43+08:00",
   "rows": [
     {
       "ticker": "1101",
@@ -25289,11 +25289,11 @@
       "cum_revenue": 133069.0,
       "cum_gross": 3258.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -25422,7 +25422,7 @@
       "cum_revenue": 128510.0,
       "cum_gross": 118185.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "official_quarter_facts": {
         "eps": -0.15
@@ -25430,7 +25430,7 @@
       "quarter_filing_url": "https://mopsov.twse.com.tw/server-java/t164sb01?step=3&SYEAR=2026&file_name=tifrs-fr1-m1-ci-cr-3664-2026Q2.html",
       "quarter_lookup_status": "complete",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "ConnectionError",
         "HTTPError"
       ]
     },
@@ -25685,7 +25685,7 @@
       "cum_gross": 1606143.0,
       "cum_eps": 2.11,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "official_quarter_facts": {
         "eps": 4.05
@@ -25693,8 +25693,7 @@
       "quarter_filing_url": "https://mopsov.twse.com.tw/server-java/t164sb01?step=3&SYEAR=2026&file_name=tifrs-fr1-m1-ci-cr-3712-2026Q2.html",
       "quarter_lookup_status": "complete",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
-        "HTTPError"
+        "ConnectionError"
       ]
     },
     {
@@ -25745,11 +25744,11 @@
     {
       "ticker": "3718",
       "period": "2026-Q2",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "ReadTimeout",
         "HTTPError"
       ]
     },
@@ -30428,7 +30427,7 @@
       "cum_gross": -21921.0,
       "cum_eps": 0.11,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -30588,13 +30587,10 @@
       "cum_revenue": 61350.0,
       "cum_gross": -71934.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "complete",
-      "quarter_lookup_errors": [
-        "ConnectTimeout",
-        "HTTPError"
-      ],
+      "quarter_lookup_errors": [],
       "official_quarter_facts": {
         "eps": -1.27
       },
@@ -32561,11 +32557,11 @@
       "cum_revenue": 208043.0,
       "cum_gross": -19980.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -33621,7 +33617,7 @@
       "cum_gross": 36242.0,
       "cum_eps": -1.69,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -34564,11 +34560,11 @@
       "cum_revenue": 2550.0,
       "cum_gross": -4760.0,
       "source": "mops_t163sb04",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -35725,6 +35721,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "1234",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 1.13,
+      "cum_revenue": 7129959.0,
+      "cum_gross": 2070541.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "1236",
       "market": "twse",
       "period": "2026-Q3",
@@ -35769,7 +35774,12 @@
       "quarter_lookup_errors": [
         "no_matching_single_quarter_facts",
         "HTTPError"
-      ]
+      ],
+      "market": "twse",
+      "cum_eps": 10.07,
+      "cum_revenue": 247840286.0,
+      "cum_gross": 47406927.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "1307",
@@ -35778,6 +35788,15 @@
       "cum_eps": 2.04,
       "cum_revenue": 8719673.0,
       "cum_gross": 2542891.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1319",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 4.36,
+      "cum_revenue": 17373964.0,
+      "cum_gross": 5613601.0,
       "source": "mops_t163sb04"
     },
     {
@@ -35801,11 +35820,11 @@
     {
       "ticker": "1336",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 0.82,
       "cum_revenue": 2211708.0,
       "cum_gross": 315377.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1336&SPOKE_DATE=20261109&SPOKE_TIME=163844&SEQ_NO=1&skey=1336202611091",
       "quarter_lookup_at": "2026-11-09T18:29+08:00",
       "quarter_lookup_version": "2026-11-09-v1",
@@ -35861,6 +35880,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "1419",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 12.7,
+      "cum_revenue": 4025710.0,
+      "cum_gross": 1027955.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "1423",
       "market": "twse",
       "period": "2026-Q3",
@@ -35876,6 +35904,15 @@
       "cum_eps": 0.64,
       "cum_revenue": 20372029.0,
       "cum_gross": 2112966.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1435",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": -0.76,
+      "cum_revenue": 4486.0,
+      "cum_gross": 2823.0,
       "source": "mops_t163sb04"
     },
     {
@@ -35957,6 +35994,15 @@
       "cum_eps": 0.92,
       "cum_revenue": 4304208.0,
       "cum_gross": 280023.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1457",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.77,
+      "cum_revenue": 2157454.0,
+      "cum_gross": 131344.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36123,6 +36169,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "1539",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.3,
+      "cum_revenue": 858250.0,
+      "cum_gross": 82944.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "1560",
       "period": "2026-Q3",
       "market": "twse",
@@ -36191,7 +36246,7 @@
     {
       "ticker": "1590",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -36215,6 +36270,15 @@
       "cum_eps": 1.87,
       "cum_revenue": 1182597.0,
       "cum_gross": 488736.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1599",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.83,
+      "cum_revenue": 1878981.0,
+      "cum_gross": 421041.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36362,12 +36426,31 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "1727",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 0.99,
+      "cum_revenue": 1902088.0,
+      "cum_gross": 321549.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1727&SPOKE_DATE=20261111&SPOKE_TIME=143522&SEQ_NO=1&skey=1727202611091"
+    },
+    {
       "ticker": "1730",
       "market": "twse",
       "period": "2026-Q3",
       "cum_eps": 3.73,
       "cum_revenue": 1880999.0,
       "cum_gross": 943129.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1731",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 1.43,
+      "cum_revenue": 1277496.0,
+      "cum_gross": 801372.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36440,6 +36523,15 @@
       "cum_eps": 1.05,
       "cum_revenue": 744013.0,
       "cum_gross": 295225.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1783",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 2.44,
+      "cum_revenue": 632257.0,
+      "cum_gross": 443573.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36516,6 +36608,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "1813",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.16,
+      "cum_revenue": 215602.0,
+      "cum_gross": -13359.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "1815",
       "period": "2026-Q3",
       "market": "",
@@ -36533,6 +36634,15 @@
       "cum_eps": 4.08,
       "cum_revenue": 2027885.0,
       "cum_gross": 768305.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "1903",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.21,
+      "cum_revenue": 113107.0,
+      "cum_gross": 72296.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36699,6 +36809,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "2063",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 1.07,
+      "cum_revenue": 703022.0,
+      "cum_gross": 150074.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "2064",
       "market": "tpex",
       "period": "2026-Q3",
@@ -36759,6 +36878,15 @@
       "cum_eps": 2.52,
       "cum_revenue": 33028574.0,
       "cum_gross": 4908477.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "2104",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": -1.55,
+      "cum_revenue": 10563517.0,
+      "cum_gross": -735448.0,
       "source": "mops_t163sb04"
     },
     {
@@ -36852,6 +36980,15 @@
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2233&SPOKE_DATE=20261104&SPOKE_TIME=164553&SEQ_NO=1",
       "quarter_lookup_at": "2026-11-06T20:05+08:00"
+    },
+    {
+      "ticker": "2235",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.67,
+      "cum_revenue": 417881.0,
+      "cum_gross": 64158.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "2247",
@@ -37128,6 +37265,15 @@
       "quarter_lookup_at": "2026-11-06T20:39+08:00"
     },
     {
+      "ticker": "2355",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 2.42,
+      "cum_revenue": 13108768.0,
+      "cum_gross": 1993867.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "2356",
       "market": "twse",
       "period": "2026-Q3",
@@ -37196,7 +37342,7 @@
       "cum_eps": -0.74,
       "cum_revenue": 12579450.0,
       "cum_gross": 920933.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2367&year=115"
     },
     {
@@ -37206,7 +37352,7 @@
       "cum_eps": 28.41,
       "cum_revenue": 73159351.0,
       "cum_gross": 26578313.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2368&year=115"
     },
     {
@@ -37251,6 +37397,16 @@
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2379&SPOKE_DATE=20261028&SPOKE_TIME=183355&SEQ_NO=1&skey=2379202610281",
       "quarter_lookup_at": "2026-11-06T21:16+08:00"
+    },
+    {
+      "ticker": "2382",
+      "period": "2026-Q3",
+      "market": "twse",
+      "cum_eps": 20.03,
+      "cum_revenue": 2961358288.0,
+      "cum_gross": 143800264.0,
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2382&SPOKE_DATE=20261111&SPOKE_TIME=144233&SEQ_NO=1&skey=2382202611091"
     },
     {
       "ticker": "2383",
@@ -37310,7 +37466,7 @@
     {
       "ticker": "2402",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -37582,6 +37738,16 @@
       "quarter_lookup_at": "2026-11-06T22:22+08:00"
     },
     {
+      "ticker": "2453",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 2.4,
+      "cum_revenue": 5336568.0,
+      "cum_gross": 1335290.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2453&SPOKE_DATE=20261111&SPOKE_TIME=144115&SEQ_NO=1&skey=2453202611111"
+    },
+    {
       "ticker": "2454",
       "period": "2026-Q3",
       "market": "",
@@ -37645,6 +37811,16 @@
       "quarter_lookup_at": "2026-11-06T22:22+08:00"
     },
     {
+      "ticker": "2460",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 0.3,
+      "cum_revenue": 3746305.0,
+      "cum_gross": 372078.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2460&SPOKE_DATE=20261111&SPOKE_TIME=143414&SEQ_NO=1&skey=2460202611111"
+    },
+    {
       "ticker": "2462",
       "period": "2026-Q3",
       "market": "twse",
@@ -37694,6 +37870,16 @@
       "cum_gross": 206160.0,
       "source": "board_announcement",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2468&year=115"
+    },
+    {
+      "ticker": "2471",
+      "period": "2026-Q3",
+      "market": "twse",
+      "cum_eps": 3.08,
+      "cum_revenue": 732697.0,
+      "cum_gross": 324947.0,
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2471&SPOKE_DATE=20261111&SPOKE_TIME=141116&SEQ_NO=1&skey=2471202611111"
     },
     {
       "ticker": "2472",
@@ -38030,6 +38216,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "2641",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 1.67,
+      "cum_revenue": 1749017.0,
+      "cum_gross": 697474.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "2643",
       "market": "tpex",
       "period": "2026-Q3",
@@ -38045,6 +38240,15 @@
       "cum_eps": 7.15,
       "cum_revenue": 15235760.0,
       "cum_gross": 3789122.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "2702",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.41,
+      "cum_revenue": 1145357.0,
+      "cum_gross": 1024231.0,
       "source": "mops_t163sb04"
     },
     {
@@ -38125,6 +38329,13 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "2832",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 4.61,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "2836",
       "market": "twse",
       "period": "2026-Q3",
@@ -38179,6 +38390,15 @@
       "cum_eps": -0.15,
       "cum_revenue": 340425.0,
       "cum_gross": 128960.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "2929",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": -0.83,
+      "cum_revenue": 1384439.0,
+      "cum_gross": 210236.0,
       "source": "mops_t163sb04"
     },
     {
@@ -38344,7 +38564,7 @@
       "cum_eps": 1.49,
       "cum_revenue": 360847.0,
       "cum_gross": 237987.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3025&year=115"
     },
     {
@@ -38531,6 +38751,15 @@
       "quarter_lookup_at": "2026-11-09T08:19+08:00"
     },
     {
+      "ticker": "3052",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.96,
+      "cum_revenue": 2985389.0,
+      "cum_gross": 295309.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "3054",
       "period": "2026-Q3",
       "market": "twse",
@@ -38645,6 +38874,16 @@
       "quarter_lookup_at": "2026-11-09T08:49+08:00"
     },
     {
+      "ticker": "3092",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": -3.41,
+      "cum_revenue": 1174762.0,
+      "cum_gross": 91155.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3092&SPOKE_DATE=20261111&SPOKE_TIME=144445&SEQ_NO=1&skey=3092202611111"
+    },
+    {
       "ticker": "3093",
       "period": "2026-Q3",
       "market": "",
@@ -38664,6 +38903,15 @@
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3094&SPOKE_DATE=20261106&SPOKE_TIME=152649&SEQ_NO=1",
       "quarter_lookup_at": "2026-11-09T08:49+08:00"
+    },
+    {
+      "ticker": "3105",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 8.12,
+      "cum_revenue": 15706314.0,
+      "cum_gross": 4884501.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "3118",
@@ -38761,6 +39009,16 @@
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3152&SPOKE_DATE=20261027&SPOKE_TIME=170959&SEQ_NO=1&skey=3152202610271",
       "quarter_lookup_at": "2026-11-09T08:49+08:00"
+    },
+    {
+      "ticker": "3158",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 5.86,
+      "cum_revenue": 864217.0,
+      "cum_gross": 566688.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3158&SPOKE_DATE=20261111&SPOKE_TIME=144935&SEQ_NO=1&skey=3158202611111"
     },
     {
       "ticker": "3163",
@@ -39001,7 +39259,7 @@
       "cum_gross": 11250.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3259&SPOKE_DATE=20261105&SPOKE_TIME=171855&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -39041,6 +39299,15 @@
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3265&SPOKE_DATE=20261104&SPOKE_TIME=154207&SEQ_NO=1",
       "quarter_lookup_at": "2026-11-09T14:03+08:00"
+    },
+    {
+      "ticker": "3266",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.26,
+      "cum_revenue": 1581473.0,
+      "cum_gross": 312249.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "3272",
@@ -39258,11 +39525,11 @@
     {
       "ticker": "3363",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": -1.24,
       "cum_revenue": 1410739.0,
       "cum_gross": 72011.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3363&SPOKE_DATE=20261105&SPOKE_TIME=163208&SEQ_NO=1",
       "quarter_lookup_at": "2026-11-09T14:38+08:00"
     },
@@ -39345,7 +39612,7 @@
     {
       "ticker": "3406",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -39501,7 +39768,8 @@
       "cum_eps": 0.36,
       "cum_revenue": 6161793.0,
       "cum_gross": 946140.0,
-      "source": "mops_t163sb04"
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3483&SPOKE_DATE=20261111&SPOKE_TIME=143550&SEQ_NO=1&skey=3483202611111"
     },
     {
       "ticker": "3485",
@@ -39524,6 +39792,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "3490",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 4.85,
+      "cum_revenue": 202507.0,
+      "cum_gross": 46076.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "3491",
       "period": "2026-Q3",
       "source": "board_announcement",
@@ -39540,7 +39817,8 @@
       "cum_eps": 0.6,
       "cum_revenue": 653600.0,
       "cum_gross": 170611.0,
-      "source": "mops_t163sb04"
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3492&SPOKE_DATE=20261111&SPOKE_TIME=135208&SEQ_NO=1"
     },
     {
       "ticker": "3498",
@@ -39637,11 +39915,11 @@
     {
       "ticker": "3523",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": -1.38,
       "cum_revenue": 56845.0,
       "cum_gross": -29468.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3523&SPOKE_DATE=20261110&SPOKE_TIME=140425&SEQ_NO=1"
     },
     {
@@ -39818,7 +40096,7 @@
       "cum_eps": 3.38,
       "cum_revenue": 945483.0,
       "cum_gross": 473125.0,
-      "source": "mops_t163sb04",
+      "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3556&SPOKE_DATE=20261104&SPOKE_TIME=155337&SEQ_NO=1",
       "quarter_lookup_at": "2026-11-09T17:19+08:00"
     },
@@ -40031,6 +40309,16 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "3630",
+      "period": "2026-Q3",
+      "market": "tpex",
+      "cum_eps": -0.99,
+      "cum_revenue": 1759958.0,
+      "cum_gross": 267097.0,
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3630&SPOKE_DATE=20261111&SPOKE_TIME=143757&SEQ_NO=1&skey=3630202611111"
+    },
+    {
       "ticker": "3631",
       "period": "2026-Q3",
       "market": "",
@@ -40073,11 +40361,11 @@
     {
       "ticker": "3661",
       "period": "2026-Q3",
-      "market": "",
+      "market": "twse",
       "cum_eps": 75.94,
       "cum_revenue": 37877562.0,
       "cum_gross": 9462133.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3661&SPOKE_DATE=20261106&SPOKE_TIME=142023&SEQ_NO=1"
     },
     {
@@ -40139,6 +40427,16 @@
       "cum_gross": 1053023.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3679&SPOKE_DATE=20261029&SPOKE_TIME=161728&SEQ_NO=1&skey=3679202610291"
+    },
+    {
+      "ticker": "3680",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 12.54,
+      "cum_revenue": 6885241.0,
+      "cum_gross": 3051216.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3680&SPOKE_DATE=20261111&SPOKE_TIME=141235&SEQ_NO=1&skey=3680202611091"
     },
     {
       "ticker": "3684",
@@ -40424,6 +40722,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "4406",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": -0.61,
+      "cum_revenue": 122132.0,
+      "cum_gross": -6129.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "4417",
       "market": "tpex",
       "period": "2026-Q3",
@@ -40457,6 +40764,15 @@
       "cum_eps": 6.41,
       "cum_revenue": 15351046.0,
       "cum_gross": 2212895.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "4503",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 3.25,
+      "cum_revenue": 425085.0,
+      "cum_gross": 124246.0,
       "source": "mops_t163sb04"
     },
     {
@@ -40570,6 +40886,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "4555",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 0.8,
+      "cum_revenue": 1429835.0,
+      "cum_gross": 454082.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "4557",
       "market": "twse",
       "period": "2026-Q3",
@@ -40603,7 +40928,8 @@
       "cum_eps": 4.06,
       "cum_revenue": 3096619.0,
       "cum_gross": 1229241.0,
-      "source": "mops_t163sb04"
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4576&SPOKE_DATE=20261111&SPOKE_TIME=135410&SEQ_NO=1"
     },
     {
       "ticker": "4577",
@@ -40671,6 +40997,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "4706",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.71,
+      "cum_revenue": 888441.0,
+      "cum_gross": 170083.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "4711",
       "market": "tpex",
       "period": "2026-Q3",
@@ -40706,6 +41041,15 @@
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4722&year=115"
     },
     {
+      "ticker": "4726",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": -1.17,
+      "cum_revenue": 708102.0,
+      "cum_gross": -49754.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "4729",
       "period": "2026-Q3",
       "market": "",
@@ -40714,6 +41058,15 @@
       "cum_gross": 188101.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4729&SPOKE_DATE=20261106&SPOKE_TIME=160920&SEQ_NO=1"
+    },
+    {
+      "ticker": "4737",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": -2.75,
+      "cum_revenue": 1307600.0,
+      "cum_gross": 430053.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "4743",
@@ -40886,11 +41239,11 @@
     {
       "ticker": "4931",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 6.23,
       "cum_revenue": 3274016.0,
       "cum_gross": 748919.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4931&SPOKE_DATE=20261110&SPOKE_TIME=141259&SEQ_NO=1"
     },
     {
@@ -41032,6 +41385,15 @@
       "cum_gross": 963512.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4968&SPOKE_DATE=20261029&SPOKE_TIME=170834&SEQ_NO=1&skey=4968202610291"
+    },
+    {
+      "ticker": "4971",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 3.58,
+      "cum_revenue": 907654.0,
+      "cum_gross": 369631.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "4972",
@@ -41225,7 +41587,7 @@
       "cum_eps": 0.88,
       "cum_revenue": 568348.0,
       "cum_gross": 285540.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=5222&year=115"
     },
     {
@@ -41250,11 +41612,11 @@
     {
       "ticker": "5236",
       "period": "2026-Q3",
-      "market": "",
+      "market": "twse",
       "cum_eps": 8.1,
       "cum_revenue": 1667025.0,
       "cum_gross": 1003889.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5236&SPOKE_DATE=20261103&SPOKE_TIME=160610&SEQ_NO=1"
     },
     {
@@ -41274,7 +41636,7 @@
       "cum_eps": 78.66,
       "cum_revenue": 8881048.0,
       "cum_gross": 4519184.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=5269&year=115"
     },
     {
@@ -41395,6 +41757,16 @@
       "cum_gross": 254499.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5315&SPOKE_DATE=20261109&SPOKE_TIME=171917&SEQ_NO=1&skey=5315202611091"
+    },
+    {
+      "ticker": "5328",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 0.58,
+      "cum_revenue": 810620.0,
+      "cum_gross": 191227.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5328&SPOKE_DATE=20261111&SPOKE_TIME=134556&SEQ_NO=1"
     },
     {
       "ticker": "5340",
@@ -41574,6 +41946,15 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5457&SPOKE_DATE=20261110&SPOKE_TIME=180115&SEQ_NO=1&skey=5457202611101"
     },
     {
+      "ticker": "5460",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.25,
+      "cum_revenue": 226521.0,
+      "cum_gross": 80044.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "5465",
       "period": "2026-Q3",
       "market": "",
@@ -41708,6 +42089,24 @@
       "cum_gross": 9169229.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5536&SPOKE_DATE=20261109&SPOKE_TIME=200307&SEQ_NO=2&skey=5536202611092"
+    },
+    {
+      "ticker": "5547",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 2.04,
+      "cum_revenue": 1987732.0,
+      "cum_gross": 245090.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "5548",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 1.32,
+      "cum_revenue": 2009284.0,
+      "cum_gross": 208352.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "5601",
@@ -41911,7 +42310,7 @@
       "cum_eps": 0.62,
       "cum_revenue": 8647744.0,
       "cum_gross": -1035432.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=6116&year=115"
     },
     {
@@ -41937,11 +42336,11 @@
     {
       "ticker": "6121",
       "period": "2026-Q3",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ReadTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -41995,13 +42394,23 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6133&SPOKE_DATE=20261106&SPOKE_TIME=163600&SEQ_NO=4"
     },
     {
-      "ticker": "6138",
+      "ticker": "6134",
       "period": "2026-Q3",
       "market": "",
+      "cum_eps": 0.78,
+      "cum_revenue": 1911212.0,
+      "cum_gross": 428618.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6134&SPOKE_DATE=20261111&SPOKE_TIME=140056&SEQ_NO=1&skey=6134202611111"
+    },
+    {
+      "ticker": "6138",
+      "period": "2026-Q3",
+      "market": "tpex",
       "cum_eps": 11.32,
       "cum_revenue": 6017241.0,
       "cum_gross": 2312662.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6138&SPOKE_DATE=20261111&SPOKE_TIME=133815&SEQ_NO=1&skey=6138202611111"
     },
     {
@@ -42023,6 +42432,15 @@
       "cum_gross": 1365117.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6143&SPOKE_DATE=20261106&SPOKE_TIME=202426&SEQ_NO=1"
+    },
+    {
+      "ticker": "6144",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.0,
+      "cum_revenue": 114825.0,
+      "cum_gross": 46192.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "6146",
@@ -42047,11 +42465,11 @@
     {
       "ticker": "6148",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 0.48,
       "cum_revenue": 402219.0,
       "cum_gross": 99734.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6148&SPOKE_DATE=20261103&SPOKE_TIME=164635&SEQ_NO=1"
     },
     {
@@ -42222,6 +42640,15 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6183&SPOKE_DATE=20261105&SPOKE_TIME=162940&SEQ_NO=1"
     },
     {
+      "ticker": "6184",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 2.08,
+      "cum_revenue": 1626976.0,
+      "cum_gross": 860384.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "6185",
       "market": "tpex",
       "period": "2026-Q3",
@@ -42250,6 +42677,16 @@
       "cum_gross": 1634437.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6188&SPOKE_DATE=20261029&SPOKE_TIME=152809&SEQ_NO=1&skey=6188202610291"
+    },
+    {
+      "ticker": "6189",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 2.85,
+      "cum_revenue": 22787523.0,
+      "cum_gross": 2096101.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6189&SPOKE_DATE=20261111&SPOKE_TIME=143328&SEQ_NO=2&skey=6189202611112"
     },
     {
       "ticker": "6191",
@@ -42640,21 +43077,21 @@
     {
       "ticker": "6269",
       "period": "2026-Q3",
-      "market": "",
+      "market": "twse",
       "cum_eps": -4.83,
       "cum_revenue": 16988535.0,
       "cum_gross": 818836.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6269&SPOKE_DATE=20261104&SPOKE_TIME=165105&SEQ_NO=1"
     },
     {
       "ticker": "6270",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 1.41,
       "cum_revenue": 2709396.0,
       "cum_gross": 241174.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6270&SPOKE_DATE=20261104&SPOKE_TIME=162006&SEQ_NO=1"
     },
     {
@@ -42825,11 +43262,11 @@
       "cum_gross": -18327.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6405&SPOKE_DATE=20261106&SPOKE_TIME=160046&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
-        "ConnectTimeout",
+        "no_matching_single_quarter_facts",
         "HTTPError"
       ]
     },
@@ -42920,17 +43357,17 @@
       "cum_eps": 5.02,
       "cum_revenue": 578192.0,
       "cum_gross": 290299.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=6426&year=115"
     },
     {
       "ticker": "6432",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 1.66,
       "cum_revenue": 903261.0,
       "cum_gross": 199018.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6432&SPOKE_DATE=20261105&SPOKE_TIME=184819&SEQ_NO=2"
     },
     {
@@ -43036,7 +43473,7 @@
       "cum_eps": -0.2,
       "cum_revenue": 646534.0,
       "cum_gross": 148115.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=6477&year=115"
     },
     {
@@ -43529,6 +43966,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "6625",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 6.16,
+      "cum_revenue": 3246656.0,
+      "cum_gross": 664626.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "6637",
       "market": "tpex",
       "period": "2026-Q3",
@@ -43766,6 +44212,16 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6695&SPOKE_DATE=20261106&SPOKE_TIME=172815&SEQ_NO=1"
     },
     {
+      "ticker": "6697",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 2.5,
+      "cum_revenue": 1057538.0,
+      "cum_gross": 164283.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6697&SPOKE_DATE=20261111&SPOKE_TIME=134521&SEQ_NO=1"
+    },
+    {
       "ticker": "6698",
       "period": "2026-Q3",
       "market": "twse",
@@ -43952,6 +44408,15 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "6768",
+      "market": "twse",
+      "period": "2026-Q3",
+      "cum_eps": 3.4,
+      "cum_revenue": 15277424.0,
+      "cum_gross": 2564012.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "6770",
       "period": "2026-Q3",
       "market": "",
@@ -44080,11 +44545,11 @@
     {
       "ticker": "6825",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 0.74,
       "cum_revenue": 490823.0,
       "cum_gross": 146203.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6825&SPOKE_DATE=20261110&SPOKE_TIME=152937&SEQ_NO=1"
     },
     {
@@ -44202,6 +44667,16 @@
       "cum_gross": 675294.0,
       "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6861&SPOKE_DATE=20261029&SPOKE_TIME=153622&SEQ_NO=1&skey=6861202610291"
+    },
+    {
+      "ticker": "6862",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 3.43,
+      "cum_revenue": 1494631.0,
+      "cum_gross": 524810.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6862&SPOKE_DATE=20261111&SPOKE_TIME=144256&SEQ_NO=1&skey=6862202611111"
     },
     {
       "ticker": "6863",
@@ -44347,6 +44822,16 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "6906",
+      "period": "2026-Q3",
+      "market": "twse",
+      "cum_eps": 1.2,
+      "cum_revenue": 231265.0,
+      "cum_gross": 195223.0,
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6906&SPOKE_DATE=20261111&SPOKE_TIME=141317&SEQ_NO=1&skey=6906202611111"
+    },
+    {
       "ticker": "6907",
       "period": "2026-Q3",
       "market": "tpex",
@@ -44464,7 +44949,13 @@
       "quarter_lookup_errors": [
         "ConnectTimeout",
         "HTTPError"
-      ]
+      ],
+      "market": "",
+      "cum_eps": 13.6,
+      "cum_revenue": 8710726.0,
+      "cum_gross": 1445028.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6933&SPOKE_DATE=20261111&SPOKE_TIME=142310&SEQ_NO=1&skey=6933202611051"
     },
     {
       "ticker": "6937",
@@ -44523,6 +45014,15 @@
       "cum_gross": 551259.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6953&SPOKE_DATE=20261110&SPOKE_TIME=150917&SEQ_NO=1"
+    },
+    {
+      "ticker": "6961",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 2.42,
+      "cum_revenue": 3486805.0,
+      "cum_gross": 473697.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "6962",
@@ -44610,6 +45110,16 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7556&SPOKE_DATE=20261110&SPOKE_TIME=170806&SEQ_NO=1&skey=7556202611101"
     },
     {
+      "ticker": "7631",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 8.51,
+      "cum_revenue": 1397893.0,
+      "cum_gross": 400732.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7631&SPOKE_DATE=20261111&SPOKE_TIME=142514&SEQ_NO=1&skey=7631202611101"
+    },
+    {
       "ticker": "7642",
       "market": "tpex",
       "period": "2026-Q3",
@@ -44680,11 +45190,11 @@
     {
       "ticker": "7712",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 6.07,
       "cum_revenue": 1277310.0,
       "cum_gross": 438055.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7712&SPOKE_DATE=20261110&SPOKE_TIME=160029&SEQ_NO=2&skey=7712202611092"
     },
     {
@@ -44842,6 +45352,16 @@
       "cum_eps": 0.53,
       "cum_revenue": 293243.0,
       "cum_gross": 86720.0,
+      "source": "mops_t163sb04",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7772&SPOKE_DATE=20261111&SPOKE_TIME=135715&SEQ_NO=1"
+    },
+    {
+      "ticker": "7777",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.28,
+      "cum_revenue": 85250.0,
+      "cum_gross": 85250.0,
       "source": "mops_t163sb04"
     },
     {
@@ -44962,11 +45482,11 @@
     {
       "ticker": "7828",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 8.7,
       "cum_revenue": 954288.0,
       "cum_gross": 753972.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7828&SPOKE_DATE=20261110&SPOKE_TIME=192628&SEQ_NO=1&skey=7828202611101"
     },
     {
@@ -45051,11 +45571,11 @@
     {
       "ticker": "8040",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 0.66,
       "cum_revenue": 689874.0,
       "cum_gross": 302365.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8040&SPOKE_DATE=20261023&SPOKE_TIME=135333&SEQ_NO=1&skey=8040202610231"
     },
     {
@@ -45196,6 +45716,15 @@
       "cum_gross": 307936.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8074&SPOKE_DATE=20261110&SPOKE_TIME=164223&SEQ_NO=1&skey=8074202611101"
+    },
+    {
+      "ticker": "8076",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.55,
+      "cum_revenue": 1993281.0,
+      "cum_gross": 656251.0,
+      "source": "mops_t163sb04"
     },
     {
       "ticker": "8081",
@@ -45582,7 +46111,7 @@
       "cum_gross": -8620.0,
       "source": "board_announcement",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8291&SPOKE_DATE=20261105&SPOKE_TIME=150413&SEQ_NO=1",
-      "quarter_lookup_at": "2026-11-11T14:19+08:00",
+      "quarter_lookup_at": "2026-11-11T15:40+08:00",
       "quarter_lookup_version": "2026-11-09-v3",
       "quarter_lookup_status": "pending",
       "quarter_lookup_errors": [
@@ -45687,11 +46216,11 @@
     {
       "ticker": "8416",
       "period": "2026-Q3",
-      "market": "",
+      "market": "tpex",
       "cum_eps": 10.6,
       "cum_revenue": 1327546.0,
       "cum_gross": 713257.0,
-      "source": "board_announcement",
+      "source": "mops_t163sb04",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8416&SPOKE_DATE=20261109&SPOKE_TIME=160711&SEQ_NO=2"
     },
     {
@@ -45704,12 +46233,30 @@
       "source": "mops_t163sb04"
     },
     {
+      "ticker": "8423",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 0.9,
+      "cum_revenue": 318829.0,
+      "cum_gross": 95871.0,
+      "source": "mops_t163sb04"
+    },
+    {
       "ticker": "8432",
       "market": "tpex",
       "period": "2026-Q3",
       "cum_eps": 4.84,
       "cum_revenue": 1173707.0,
       "cum_gross": 627882.0,
+      "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "8435",
+      "market": "tpex",
+      "period": "2026-Q3",
+      "cum_eps": 3.98,
+      "cum_revenue": 507056.0,
+      "cum_gross": 247504.0,
       "source": "mops_t163sb04"
     },
     {
@@ -45906,6 +46453,16 @@
       "cum_revenue": 2231283.0,
       "cum_gross": 322949.0,
       "source": "mops_t163sb04"
+    },
+    {
+      "ticker": "8932",
+      "period": "2026-Q3",
+      "market": "",
+      "cum_eps": 1.6,
+      "cum_revenue": 1960598.0,
+      "cum_gross": 1252263.0,
+      "source": "board_announcement",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8932&SPOKE_DATE=20261111&SPOKE_TIME=142442&SEQ_NO=1&skey=8932202611111"
     },
     {
       "ticker": "8935",
