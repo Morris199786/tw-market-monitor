@@ -101,6 +101,32 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 #reports .report-mode-tabs { position:relative; z-index:2; pointer-events:auto; }
 #reports .report-mode-tab { pointer-events:auto; touch-action:manipulation; cursor:pointer; }
 </style>
+<style id="home-pulse-summary-layout-20261111">
+  /* 首頁功能圖示只保留名稱，數據統一放在下方今日異動 */
+  #featureRail .feature-card .feature-copy small { display:none!important; }
+  #marketPulse .market-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #marketPulse .daily-signal-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  #marketPulse .daily-signal-item.pulse-research-signal,
+  #marketPulse .daily-signal-item.pulse-earnings-signal { min-width:0; align-items:flex-start; text-align:left; }
+  #marketPulse .pulse-signal-copy { flex:1 1 auto; min-width:0; display:block; }
+  #marketPulse .pulse-signal-stats { display:grid; gap:3px; font-size:13px!important; font-weight:600!important; line-height:1.55!important; white-space:normal; }
+  #marketPulse .pulse-signal-stats span { display:block; overflow-wrap:anywhere; }
+  #marketPulse .pulse-signal-stats b { font:inherit; font-weight:800; }
+  #marketPulse .pulse-research-signal { grid-column:1 / -1; }
+  #marketPulse .pulse-earnings-signal { grid-column:1 / -1; }
+  #marketPulse .daily-signal-item.pulse-research-signal i,
+  #marketPulse .daily-signal-item.pulse-earnings-signal i { margin-left:auto; align-self:center; }
+  @media(min-width:680px){
+    #marketPulse .pulse-research-signal { grid-column:auto; }
+    #marketPulse .pulse-earnings-signal { grid-column:auto; }
+    #marketPulse .daily-signal-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  }
+  @media(max-width:600px){
+    #marketPulse .market-overview-grid { grid-template-columns:minmax(0,1fr); }
+    #marketPulse .daily-signal-item.pulse-research-signal,
+    #marketPulse .daily-signal-item.pulse-earnings-signal { min-height:100px; }
+  }
+</style>
 </head>
 <body>
 <header><div class="head">
@@ -183,7 +209,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 
 <script src="./assets/app.js?v=20261104-yesterday-bulk-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
-<script src="./assets/ui_v2.js?v=20261111-nav-merged-v2"></script>
+<script src="./assets/ui_v2.js?v=20261111-home-pulse-v5"></script>
 <script>
 /* Home cards: never leave a static loading placeholder on screen.
    Existing report-count code can still replace these labels with live counts. */
@@ -205,7 +231,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/broker_report_charts.js?v=20261027-ai-v2"></script>
 <script src="./assets/report_dates.js?v=20261031-fixed-upload-t1-v3"></script>
 <script src="./assets/industry_summary.js?v=20261028-industry-layout-v1"></script>
-<script src="./assets/reports_v2.js?v=20261111-counts-v3"></script>
+<script src="./assets/reports_v2.js?v=20261111-home-pulse-v5"></script>
 <script src="./assets/tw_ratings.js?v=20261111-tabs-click-fix-v3"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/daily_k.js?v=20261013-restored"></script>
@@ -310,7 +336,10 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   const sourcePaths = [
     './data/reports.json',
     './data/business_reports.json',
-    './data/research_meta.json'
+    './data/research_meta.json',
+    './data/self_reports.json',
+    './data/quarterly_earnings.json',
+    './data/quarterly_earnings_recovered.json'
   ];
   const twToday = () => new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'
@@ -339,8 +368,8 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   }
   let requestNumber = 0;
   async function refreshResearchCounts() {
-    const target = document.querySelector('[data-feature="reports"] .feature-copy small');
-    if (!target) return;
+    const pulse = document.getElementById('marketPulse');
+    if (!pulse) return;
     const seq = ++requestNumber;
     const day = twToday();
     const result = await Promise.allSettled(sourcePaths.map(getJson));
@@ -364,9 +393,36 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
       return dateOnly(r)===day &&
         (category==='法說／訪談' || type==='法說會' || type==='call memo');
     }));
-    target.style.whiteSpace='pre-line';
-    target.style.lineHeight='1.5';
-    target.textContent=`今日\n券商報告 ${brokerCount} 篇\n業務報告 ${businessCount} 篇\nmemo ${memoCount} 篇`;
+    // 三種研究資料的篇數直接顯示在「今日異動」，避免圖示卡片互相覆寫。
+    for (const [selector, count] of [
+      ['[data-pulse-broker]', brokerCount],
+      ['[data-pulse-business]', businessCount],
+      ['[data-pulse-memo]', memoCount]
+    ]) {
+      const el = pulse.querySelector(selector);
+      if (el) el.textContent=String(count);
+    }
+    // 今日自結／季報家數，按財報追蹤原有公告日去重（而非每日報告筆數）。
+    const selfData=getItems(3);
+    const quarterlyData=result[4].status==='fulfilled' ? result[4].value : null;
+    const recoveredData=result[5].status==='fulfilled' ? result[5].value : null;
+    const companyKey = r => String(r.ticker || r.name || '').replace(/\.(?:TW|TWO)$/i,'').trim();
+    const todayCompanies = list => new Set(list.filter(r => reportDay({date:r.publish_date})===day)
+      .map(companyKey).filter(Boolean)).size;
+    const selfCount=selfData===null ? '—' : todayCompanies(selfData);
+    const quarterRows=Array.isArray(quarterlyData?.reports) ? quarterlyData.reports : null;
+    const recoveredRows=Array.isArray(recoveredData?.reports) ? recoveredData.reports : [];
+    const quarterMap=new Map();
+    for (const r of [...recoveredRows, ...(quarterRows || [])])
+      quarterMap.set(`${r.ticker}|${r.period}`,r);
+    const quarterCount=quarterRows===null ? '—' : todayCompanies([...quarterMap.values()]);
+    for(const [selector, count] of [
+      ['[data-pulse-self-companies]',selfCount],
+      ['[data-pulse-quarter-companies]',quarterCount]
+    ]) {
+      const el=pulse.querySelector(selector);
+      if(el) el.textContent=String(count);
+    }
   }
   function run() { refreshResearchCounts().catch(err => console.warn('home research counts failed',err)); }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', run, {once:true});
