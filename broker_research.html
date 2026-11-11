@@ -11,6 +11,7 @@
 
 /* Per-stock data availability, not a fixed global blacklist. */
 .financial-unified .uf-no-data{display:none!important}
+ .uf-eps-unit{font-size:11px;color:#84909f;font-weight:500;white-space:nowrap}
 </style><style>
 /* Research V4: condensed mobile-first layout */
 body{padding:16px 17px 28px!important;max-width:1150px}
@@ -373,12 +374,12 @@ function render(){
  for(const r of allP){const prev=byBroker.get(r.broker);if(!prev||r.date>prev.date)byBroker.set(r.broker,r)}
  const latest=[...byBroker.values()].sort((a,b)=>b.value-a.value),mx=Math.max(...latest.map(x=>Math.abs(x.value)),1);
  const actual=actuals.filter(x=>String(x.ticker)===t&&x.period===selected&&met==='eps'&&kind==='quarter').sort((a,b)=>String(b.publish_date||'').localeCompare(String(a.publish_date||'')))[0];
- $('uf-actual').textContent=actual?'該季實際 EPS：'+format(actual.eps)+'（'+(actual.kind==='quarterly'?'正式財報':'自結')+'）':'';
+ $('uf-actual').textContent=actual?'該季實際 EPS：'+format(actual.eps)+' 元/股'+'（'+(actual.kind==='quarterly'?'正式財報':'自結')+'）':'';
  $('uf-count').textContent=`${new Set(rows.map(r=>r.broker)).size} 家券商`;
- $('uf-chart').innerHTML=latest.map(r=>`<div class="uf-line"><span>${esc(r.broker)}</span><div class="uf-bar"><i style="width:${Math.abs(r.value)/mx*100}%"></i></div><strong>${format(r.value)}</strong></div>`).join('');
- $('uf-table').innerHTML=latest.length?`<div class="uf-scroll"><table><thead><tr><th>券商</th><th>${esc(selected)}</th><th>日期</th><th>來源</th></tr></thead><tbody>${latest.map(x=>`<tr><td>${esc(x.broker)}</td><td>${format(x.value)} ${esc(x.unit)}</td><td>${esc(x.date)}</td><td>${x.url?`<a target="_blank" rel="noopener noreferrer" href="${esc(x.url)}">PDF</a>`:'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
+ $('uf-chart').innerHTML=latest.map(r=>`<div class="uf-line"><span>${esc(r.broker)}</span><div class="uf-bar"><i style="width:${Math.abs(r.value)/mx*100}%"></i></div><strong>${format(r.value)}${met==='eps'?'<small class="uf-eps-unit"> 元/股</small>':''}</strong></div>`).join('');
+ $('uf-table').innerHTML=latest.length?`<div class="uf-scroll"><table><thead><tr><th>券商</th><th>${esc(selected)}</th><th>日期</th><th>來源</th></tr></thead><tbody>${latest.map(x=>`<tr><td>${esc(x.broker)}</td><td>${format(x.value)} ${met==='eps'?'元/股':esc(x.unit)}</td><td>${esc(x.date)}</td><td>${x.url?`<a target="_blank" rel="noopener noreferrer" href="${esc(x.url)}">PDF</a>`:'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
  const history=rows.slice().sort((a,b)=>b.date.localeCompare(a.date));
- $('uf-changes').innerHTML=history.length?`<div class="uf-scroll"><table><thead><tr><th>日期</th><th>券商</th><th>期間</th><th>數值</th></tr></thead><tbody>${history.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.broker)}</td><td>${esc(x.period)}</td><td>${format(x.value)}</td></tr>`).join('')}</tbody></table></div>`:'';
+ $('uf-changes').innerHTML=history.length?`<div class="uf-scroll"><table><thead><tr><th>日期</th><th>券商</th><th>期間</th><th>數值</th></tr></thead><tbody>${history.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.broker)}</td><td>${esc(x.period)}</td><td>${format(x.value)}${met==='eps'?' 元/股':''}</td></tr>`).join('')}</tbody></table></div>`:'';
  updateReports();resize();
 }
 function resize(){try{if(window.frameElement&&window.parent.location.origin===location.origin)window.frameElement.style.height=(document.documentElement.scrollHeight+26)+'px'}catch{}}
