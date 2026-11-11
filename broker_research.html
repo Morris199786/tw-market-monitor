@@ -8,6 +8,9 @@
 .tp-section{margin:25px 0 8px}.tp-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}.tp-title-row h2{font-size:22px}.tp-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:15px}.tp-kpi{background:#fff;border:1px solid #e9edf2;border-radius:15px;padding:17px 19px;min-width:0;box-shadow:0 3px 13px rgba(19,33,55,.035)}.tp-kpi small{display:block;color:#818997;font-size:12px;margin-bottom:6px}.tp-kpi b{font-size:25px;color:#232c38;letter-spacing:-.03em;display:block;font-variant-numeric:tabular-nums}.tp-kpi em{display:block;font-size:11px;font-style:normal;color:#969eaa}.tp-list{display:flex;flex-direction:column;gap:10px}.tp-row{display:grid;grid-template-columns:minmax(110px,1.15fr) minmax(100px,2fr) 90px 90px;align-items:center;gap:14px;padding:11px 4px;border-bottom:1px solid #eef1f5}.tp-row:last-child{border:0}.tp-label{min-width:0;font-size:13px;color:#4b596a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tp-bar{height:14px;background:#eef2f6;border-radius:12px;overflow:hidden}.tp-bar>i{display:block;height:100%;background:#277ecb;border-radius:12px}.tp-val{font-weight:750;color:#212936;text-align:right;font-variant-numeric:tabular-nums}.tp-day{font-size:11px;color:#8d97a4;text-align:right}.tp-history{display:grid;gap:11px}.tp-hitem{border-bottom:1px solid #edf1f5;padding:8px 2px 15px}.tp-hitem:last-child{border:0}.tp-hhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}.tp-hhead b{font-size:14px}.tp-change{font-weight:730;font-variant-numeric:tabular-nums}.tp-up{color:#c83d51}.tp-down{color:#168368}.tp-flat{color:#6f7887}.tp-dates{font-size:12px;color:#8792a0;margin:7px 0;line-height:1.6}.tp-step{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;margin:3px 6px 3px 0;background:#f5f8fc;border:1px solid #ecf0f6;border-radius:9px;font-size:12px}.tp-step a{font-weight:700}.tp-step small{color:#8591a1}.tp-alert{font-size:12px;color:#906b26;background:#fff9ec;border:1px solid #f0deb8;padding:12px 14px;border-radius:10px;line-height:1.7;margin-bottom:13px}.tp-mini{color:#8b94a2;font-size:12px;line-height:1.7}.tp-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tp-controls select{border:1px solid #dce3ed;background:#fff;border-radius:9px;padding:9px 10px;font-size:13px;color:#3c4b5b;max-width:210px}.tp-spark{display:block;width:100%;height:auto;min-width:0}.tp-timeline{display:grid;gap:11px}.tp-date-line{display:flex;align-items:center;gap:9px;font-size:12px;color:#83909e}.tp-dot{width:9px;height:9px;border-radius:50%;background:#2181d3}.tp-info{background:#f4f8ff;color:#42617e;border:1px solid #e5eef9;border-radius:11px;padding:12px 14px;font-size:12px;line-height:1.7}.tp-focus{border-left:3px solid #2385d5;padding-left:10px}.tp-error{color:#b23c3c}
 @media(max-width:850px){.tp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.tp-row{grid-template-columns:minmax(85px,1fr) minmax(72px,1.5fr) 66px;gap:8px}.tp-day{grid-column:1/-1;text-align:left;margin-top:-8px}}
 @media(max-width:520px){.tp-kpi{padding:13px}.tp-kpi b{font-size:21px}.tp-title-row h2{font-size:20px}.tp-row{font-size:12px}.tp-label{font-size:12px}}
+
+/* Per-stock data availability, not a fixed global blacklist. */
+.financial-unified .uf-no-data{display:none!important}
 </style><style>
 /* Research V4: condensed mobile-first layout */
 body{padding:16px 17px 28px!important;max-width:1150px}
@@ -60,7 +63,24 @@ body{padding:16px 17px 28px!important;max-width:1150px}
 #financialUnified .uf-details summary{font-weight:700;cursor:pointer}
 #financialUnified .uf-errors{padding:12px;margin:10px 0;border:1px solid #f3d39d;background:#fff9ec;border-radius:12px;font-size:12px}
 @media(max-width:600px){#financialUnified .uf-overview{padding:13px}#financialUnified .uf-line{grid-template-columns:minmax(85px,1fr) minmax(80px,1.4fr) 65px;gap:8px}#financialUnified .uf-heading h2{font-size:20px}}
-</style></head><body>
+</style><script>
+/* Broker display-name aliases only. No changes to saved research data. */
+window.__brokerName=function(value){
+  const name=String(value??'').trim();
+  return /(?:\bbofa\b|merrill\s+lynch|bank\s+of\s+america)/i.test(name)?'BofA Research':name;
+};
+</script>
+<style>
+/* Mobile-first history: no hidden columns or horizontally cropped broker names. */
+.br-history-list{display:grid;gap:9px}
+.br-history-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 12px;align-items:center;padding:14px 15px;border:1px solid #e4e9f1;border-radius:12px;background:#fff;min-width:0}
+.br-history-broker{color:#26354b;font-size:14px;font-weight:700;min-width:0;overflow-wrap:anywhere;word-break:normal;grid-column:1/-1}
+.br-history-date{font-size:12px;color:#738296;font-variant-numeric:tabular-nums}
+.br-history-link{font-size:12px;font-weight:700;white-space:nowrap}
+.br-history-empty{padding:30px 12px;text-align:center;color:#8492a2}
+@media(max-width:520px){.br-history-item{padding:13px}.br-history-broker{font-size:14px}}
+</style>
+</head><body>
 <div class="top"><div><h1>券商研究中心</h1></div></div>
 <div class="status" id="status" role="status">正在讀取網站券商與財報資料…</div>
 <div class="controls"><div class="field"><label for="search">搜尋個股（代號／名稱）</label><input autocomplete="off" id="search" list="stocks" placeholder="例如 2454、聯發科、台光電"/><datalist id="stocks"></datalist></div><div class="field"><label for="ticker">目前公司</label><select id="ticker"></select></div><div class="field"><label for="period">比較季度</label><select id="period"></select></div></div><div class="company"><div><h2 id="companyTitle">—</h2><div class="company-meta" id="companyMeta">正在載入公司資料</div></div></div><div aria-label="券商研究分析分類" class="research-tabs" role="tablist"><button aria-selected="true" class="research-tab active" data-tab="views" role="tab" type="button">券商觀點</button><button aria-selected="false" class="research-tab" data-tab="target" role="tab" type="button">目標價</button><button aria-selected="false" class="research-tab" data-tab="eps" role="tab" type="button">券商財測</button><button aria-selected="false" class="research-tab" data-tab="reports" role="tab" type="button">歷史報告</button></div><div class="research-panel active" id="panel-views" role="tabpanel"><div class="views-head"><div><h2>券商最新觀點</h2><p>各家核心研究論點、財測調整與前次看法變化</p></div><div class="views-count" id="view-count"></div></div><div class="view-filters"><label>券商 <select id="view-broker"><option value="all">全部券商</option></select></label><label>主題 <select id="view-topic"><option value="all">全部題材</option></select></label></div><div class="topic-summary" id="view-topics"></div><div class="view-grid" id="view-cards"><div class="v-empty">載入券商觀點中…</div></div></div><div class="research-panel" id="panel-target" role="tabpanel"><section aria-label="券商目標價研究" class="tp-section">
@@ -94,7 +114,7 @@ function render(){const fs=forecasts.filter(r=>r.ticker===ticker),p=$('period').
 $('companyTitle').innerHTML=`${esc(nameFor(ticker))} <span class="code">${esc(ticker)}</span>`;$('companyMeta').textContent=`收錄 ${reports.length} 份報告 · 最近 ${reports[0]?.report_date||'—'} · ${new Set(fs.map(r=>r.broker)).size} 家券商`;
 $('s-reports').textContent=reports.length;$('s-brokers').textContent=new Set(fs.map(x=>x.broker)).size;$('s-median').textContent=fmt(median(trusted.map(r=>r.eps)));$('s-actual').textContent=actual?fmt(actual.eps):'—';$('s-actual-note').textContent=actual?`${actual.kind==='quarterly'?'正式財報':'自結公告'} · ${actual.date||actual.period}`:'尚無同季度公告';
 const flagged=rows.filter(isFlagged);$('s-median-note').textContent=flagged.length?`排除 ${flagged.length} 筆待核預估`:'可比較的最新預估';$('quality').hidden=!flagged.length;$('quality').innerHTML=flagged.length?`<b>資料品質提醒：</b>${esc(p)} 有 ${flagged.length} 家券商的預估值與已公告季 EPS 差距顯著，已暫停列入比較與共識統計。請點擊矩陣中的原始報告核對季度／年度定義。`:'';
-renderChart(fs,p,actual);renderBars(rows);renderHistory(fs,p);renderMatrix(latest,fs);renderActuals();renderReports(reports);resizeIframe();}
+renderChart(fs,p,actual);renderBars(rows);renderHistory(fs,p);renderMatrix(latest,fs);renderActuals();resizeIframe();}
 function renderChart(fs,p,actual){const rows=fs.filter(x=>x.period===p&&!isFlagged(x)).sort((a,b)=>a.report_date.localeCompare(b.report_date)),groups=[...new Set(rows.map(x=>x.broker))],dates=[...new Set(rows.map(x=>x.report_date))].sort();if(!rows.length){$('lineChart').innerHTML='<div class="empty">此季度尚無可驗證的預估時間序列。可在下方矩陣核對原始報告。</div>';return}let vals=rows.map(x=>x.eps);if(actual)vals.push(actual.eps);const min=Math.min(...vals),max=Math.max(...vals),pad=Math.max((max-min)*.18,Math.abs(max)*.08,.5),low=min-pad,high=max+pad,W=1000,H=280,L=68,R=35,T=22,B=48;let xAt=d=>L+(dates.length===1?.5:dates.indexOf(d)/(dates.length-1))*(W-L-R),yAt=v=>T+(high-v)/(high-low)*(H-T-B);let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="各券商 EPS 預估時間序列">`;for(let i=0;i<4;i++){let value=low+(high-low)*i/3,y=yAt(value);svg+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#e9edf2"/><text x="${L-9}" y="${y+4}" text-anchor="end" class="axis">${fmt(value)}</text>`}dates.forEach((d,i)=>{if(i===0||i===dates.length-1||i%Math.max(1,Math.floor(dates.length/5))===0)svg+=`<text x="${xAt(d)}" y="${H-15}" text-anchor="middle" class="axis">${esc(d.slice(5))}</text>`});const palette=['#1c83d4','#2f9c88','#8165bd','#d59b34','#4e6a93','#cc6a84'];groups.forEach((g,i)=>{const a=rows.filter(x=>x.broker===g),color=palette[i%palette.length];if(a.length>1)svg+=`<polyline fill="none" stroke="${color}" stroke-width="2.6" points="${a.map(v=>`${xAt(v.report_date)},${yAt(v.eps)}`).join(' ')}"/>`;a.forEach(v=>svg+=`<circle cx="${xAt(v.report_date)}" cy="${yAt(v.eps)}" r="5" fill="${color}"><title>${esc(g)} ${esc(v.report_date)} EPS ${fmt(v.eps)}</title></circle>`)});if(actual){const y=yAt(actual.eps);svg+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#d34253" stroke-width="2" stroke-dasharray="5 5"/><circle cx="${W-R}" cy="${y}" r="5" fill="#d34253"><title>實際 EPS ${fmt(actual.eps)}</title></circle>`}svg+='</svg>';$('lineChart').innerHTML=svg+`<div class="legend" style="padding:8px 5px">${groups.map((g,i)=>`<span><span class="dot" style="background:${palette[i%palette.length]}"></span>${esc(g)}</span>`).join('')}</div>`}
 function renderBars(rows){const r=rows.slice().sort((a,b)=>b.eps-a.eps),valid=r.filter(x=>!isFlagged(x)),max=Math.max(...valid.map(x=>Math.abs(x.eps)),1);$('bars').innerHTML=r.length?r.map(x=>{let flag=isFlagged(x);return `<div class="barrow"><span class="barname" title="${esc(x.broker)}">${esc(x.broker)}</span><div class="track"><div class="fill ${flag?'flagged':''}" style="width:${flag?0:Math.min(Math.abs(x.eps)/max*100,100)}%"></div></div><div class="number ${flag?'warn':''}">${flag?'待核':fmt(x.eps)}</div><span class="smalltag">${flag?`<a href="${safeUrl(x.source_url)}" target="_blank" rel="noopener noreferrer">原始 ${fmt(x.eps)}</a>`:esc(x.report_date.slice(5))}</span></div>`}).join(''):'<div class="empty">此季度沒有券商預估</div>'}
 function renderHistory(fs,p){const brokers=[...new Set(fs.map(x=>x.broker))];let entries=brokers.map(b=>{let a=fs.filter(x=>x.broker===b&&x.period===p).sort((x,y)=>y.report_date.localeCompare(x.report_date));if(!a.length)return '';const newest=a[0],old=a[1];return `<div class="entry"><div class="entrytitle"><span>${esc(b)}</span><span>${isFlagged(newest)?'<span class="warn">待核</span>':fmt(newest.eps)}</span></div><div class="entrysub">${esc(newest.report_date)} 最新發布 · ${old&&!isFlagged(newest)&&!isFlagged(old)?`前次 ${fmt(old.eps)} → 本次 ${fmt(newest.eps)}（${newest.eps-old.eps>=0?'+':''}${fmt(newest.eps-old.eps)}）`:'缺少可比較的前次預估'}<div><a href="${safeUrl(newest.source_url)}" target="_blank" rel="noopener noreferrer">查看原始報告</a></div></div></div>`}).filter(Boolean);$('history').innerHTML=entries.length?entries.join(''):'<div class="empty">尚無可比較的修正紀錄</div>'}
@@ -105,7 +125,7 @@ function load(url){return fetch(url+'?v='+Math.floor(Date.now()/300000),{cache:'
 function initActuals(quarterly,self){const m=new Map();const put=(r,period,eps,kind)=>{if(!isQuarter(period)||eps==null||eps===''||!Number.isFinite(+eps))return;const t=String(r.ticker||'');if(!t)return;const item={ticker:t,period,eps:+eps,kind,date:r.publish_date||''},key=t+'|'+period,old=m.get(key);if(!old||kind==='quarterly'&&old.kind!=='quarterly'||kind===old.kind&&item.date>old.date)m.set(key,item);if(r.name)names.set(t,r.name)};
 for(const r of self.items||[])put(r,r.quarter_period,r.quarter_eps,'self');for(const r of quarterly.reports||[])put(r,r.period,r.eps,'quarterly');actualMap=m;for(const r of quarterly.expected_roster||[])if(r.name&&!names.has(String(r.ticker)))names.set(String(r.ticker),r.name)}
 function resizeIframe(){try{if(window.frameElement&&window.parent.location.origin===window.location.origin)window.frameElement.style.height=(document.documentElement.scrollHeight+18)+'px'}catch{}}
-Promise.all([load('./data/broker_eps_forecasts.json'),load('./data/quarterly_earnings.json'),load('./data/self_reports.json'),load('./data/master.json').catch(()=>null)]).then(([f,q,s,master])=>{initActuals(q,s);for(const [code,stock] of Object.entries(master?.stocks||{})){if(stock&&stock.name)names.set(String(code),String(stock.name))}generated=f.generated_at||'';forecasts=(f.items||[]).map(r=>({...r,ticker:String(r.ticker||''),eps:r.eps===null||r.eps===undefined||r.eps===""?NaN:Number(r.eps)})).filter(r=>r.ticker&&r.broker&&isQuarter(r.period)&&Number.isFinite(r.eps)&&r.report_date);let codes=[...new Set(forecasts.map(x=>x.ticker))].sort();$('ticker').innerHTML=codes.map(t=>`<option value="${esc(t)}">${esc(nameFor(t))}　${esc(t)}</option>`).join('');$('stocks').innerHTML=codes.flatMap(t=>[`<option value="${esc(t)}">`,names.has(t)?`<option value="${esc(nameFor(t))}">`:'' ]).join('');ticker=codes.includes('2454')?'2454':codes[0];$('ticker').value=ticker;renderSelect();$('status').textContent=`已讀取 ${forecasts.length} 筆券商 EPS 資料，涵蓋 ${codes.length} 檔股票；資料產生時間 ${generated||'未標示'}。所有來源均為現有網站 JSON。`;resizeIframe()}).catch(e=>{$('status').classList.add('error');$('status').textContent='資料載入失敗：'+e.message+'。請確認 HTML 與 data/ 位於同一網站根目錄。';resizeIframe()});
+Promise.all([load('./data/broker_eps_forecasts.json'),load('./data/quarterly_earnings.json'),load('./data/self_reports.json'),load('./data/master.json').catch(()=>null)]).then(([f,q,s,master])=>{initActuals(q,s);for(const [code,stock] of Object.entries(master?.stocks||{})){if(stock&&stock.name)names.set(String(code),String(stock.name))}generated=f.generated_at||'';forecasts=(f.items||[]).map(r=>({...r,broker:window.__brokerName(r.broker),ticker:String(r.ticker||''),eps:r.eps===null||r.eps===undefined||r.eps===""?NaN:Number(r.eps)})).filter(r=>r.ticker&&r.broker&&isQuarter(r.period)&&Number.isFinite(r.eps)&&r.report_date);let codes=[...new Set(forecasts.map(x=>x.ticker))].sort();$('ticker').innerHTML=codes.map(t=>`<option value="${esc(t)}">${esc(nameFor(t))}　${esc(t)}</option>`).join('');$('stocks').innerHTML=codes.flatMap(t=>[`<option value="${esc(t)}">`,names.has(t)?`<option value="${esc(nameFor(t))}">`:'' ]).join('');ticker=codes.includes('2454')?'2454':codes[0];$('ticker').value=ticker;renderSelect();$('status').textContent=`已讀取 ${forecasts.length} 筆券商 EPS 資料，涵蓋 ${codes.length} 檔股票；資料產生時間 ${generated||'未標示'}。所有來源均為現有網站 JSON。`;resizeIframe()}).catch(e=>{$('status').classList.add('error');$('status').textContent='資料載入失敗：'+e.message+'。請確認 HTML 與 data/ 位於同一網站根目錄。';resizeIframe()});
 $('ticker').addEventListener('change',e=>{ticker=e.target.value;renderSelect()});$('period').addEventListener('change',render);$('showFlagged').addEventListener('click',()=>{showAll=!showAll;render()});$('search').addEventListener('change',e=>{let q=e.target.value.trim().toLowerCase();let code=[...$('ticker').options].map(x=>x.value).find(t=>t===q||nameFor(t).toLowerCase()===q);if(code){ticker=code;$('ticker').value=code;renderSelect()}else if(q){$('status').textContent='找不到符合的個股，請使用股票代號或完整公司名稱。'}});if('ResizeObserver'in window)new ResizeObserver(resizeIframe).observe(document.body);window.addEventListener('load',resizeIframe);
 })();
 </script><script>
@@ -152,7 +172,7 @@ function show(){
 function drawHistory(rows,byBroker){let choice=$('tp-broker-filter').value;let brokers=choice==='all'?[...byBroker.keys()].sort((a,b)=>a.localeCompare(b,'zh-Hant')):[choice];let list=brokers.map(b=>({broker:b,rows:(byBroker.get(b)||[]).filter(x=>!x.dubious).sort((a,c)=>a.reportDate.localeCompare(c.reportDate))})).filter(x=>x.rows.length);let allPts=choice==='all'?[]:list[0]?.rows||[];$('tp-chart').innerHTML=choice==='all'?'<div class="tp-mini">選擇單一券商，即可查看目標價歷次變化曲線；避免將不同券商的數字連成同一條線。</div>':trend(allPts);
  $('tp-history').innerHTML=list.length?list.map(({broker,rows})=>{let last=rows.at(-1),prev=rows.at(-2),diff=prev?last.current-prev.current:null,percent=prev?diff/prev.current*100:null;return `<div class="tp-hitem"><div class="tp-hhead"><b>${esc(broker)}</b><span class="tp-change ${diff==null?'tp-flat':diff>0?'tp-up':diff<0?'tp-down':'tp-flat'}">${diff==null?'僅 1 份目標價':`${diff>0?'+':''}${fmt(diff)}（${percent>0?'+':''}${percent.toFixed(1)}%）`}</span></div><div class="tp-dates">最新 ${esc(last.reportDate)} · ${rows.length} 個不同報告日期</div><div>${rows.map(x=>`<span class="tp-step"><small>${esc(x.reportDate.slice(5))}</small>${x.url==='#'?fmt(x.current):`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${fmt(x.current)}</a>`}</span>`).join('')}</div></div>`}).join(''):'<div class="empty">沒有可比較的歷次目標價</div>';
 }
-async function init(){try{const res=await fetch('./data/reports.json?v='+Math.floor(Date.now()/300000),{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const json=await res.json();if(!Array.isArray(json.items))throw Error('reports.json 缺少 items 陣列');let items=[],invalid=[];for(let i=0;i<json.items.length;i++){const r=json.items[i];let p=price(r?.target_price_new),ticker=tkr(r?.ticker||r?.stock_code||r?.stock_id||r?.code);if(p==null)continue;let n=normalize(r,i);if(n)items.push(n);else if(ticker)invalid.push({ticker})}window.__brokerResearchSourceReports=json.items;document.dispatchEvent(new Event("broker-reports-ready"));state.items=items;state.invalid=invalid;state.loaded=true;show();}catch(e){state.failed=true;$('tp-status').classList.add('error');$('tp-status').textContent='目標價資料讀取失敗：'+e.message+'（EPS 資料仍可正常使用）';}}
+async function init(){try{const res=await fetch('./data/reports.json?v='+Math.floor(Date.now()/300000),{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const json=await res.json();if(!Array.isArray(json.items))throw Error('reports.json 缺少 items 陣列');let items=[],invalid=[];for(let i=0;i<json.items.length;i++){const r=json.items[i];let p=price(r?.target_price_new),ticker=tkr(r?.ticker||r?.stock_code||r?.stock_id||r?.code);if(p==null)continue;let n=normalize(r,i);if(n)items.push(n);else if(ticker)invalid.push({ticker})}window.__brokerResearchSourceReports=json.items.map(r=>({...r,broker:window.__brokerName(r.broker)}));document.dispatchEvent(new Event("broker-reports-ready"));state.items=items;state.invalid=invalid;state.loaded=true;show();}catch(e){state.failed=true;$('tp-status').classList.add('error');$('tp-status').textContent='目標價資料讀取失敗：'+e.message+'（EPS 資料仍可正常使用）';}}
 $('tp-broker-filter').addEventListener('change',()=>{const ticker=$('ticker').value,rows=uniqSorted(state.items.filter(x=>x.ticker===ticker)),map=new Map();for(const r of rows){if(!map.has(r.broker))map.set(r.broker,[]);map.get(r.broker).push(r)}drawHistory(rows,map)});
 $('ticker').addEventListener('change',()=>{if(state.loaded)show()});
 // Existing search changes the ticker directly; observe its value after search selection.
@@ -287,25 +307,84 @@ function uniqueReports(rows){let map=new Map();for(const r of rows){let id=Strin
 function reportRows(t){let list=uniqueReports(all.filter(r=>code(r.ticker||r.stock_code||r.code)===t&&r.broker));let known=new Set(list.map(r=>String(r.source_file_id||r.report_id||r.id||'')));for(const r of extraEPS.filter(x=>code(x.ticker)===t)){if(known.has(r.report_id))continue;known.add(r.report_id);list.push({...r,date:r.report_date,source_file_id:r.report_id})}return list.sort((a,b)=>date(b.date||b.report_date).localeCompare(date(a.date||a.report_date)))}
 function ensureOptions(){const select=$('ticker'),list=$('stocks');if(!select)return;const codes=[...new Set(all.map(r=>code(r.ticker||r.stock_code||r.code)).filter(Boolean))];let existing=new Set([...select.options].map(o=>o.value));for(const t of codes){if(!existing.has(t)){const o=document.createElement('option');o.value=t;o.textContent=(stockNames.get(t)||t)+'　'+t;select.add(o);existing.add(t)}else if(stockNames.has(t)){let o=[...select.options].find(x=>x.value===t);if(o)o.textContent=stockNames.get(t)+'　'+t}}
  if(list){const known=new Set([...list.options].map(o=>o.value));for(const t of codes){let name=stockNames.get(t);for(const x of [t,name])if(x&&!known.has(x)){const opt=document.createElement('option');opt.value=x;list.append(opt);known.add(x)}}}}
-function updateReports(){const t=$('ticker')?.value||'';if(!t)return;const rows=reportRows(t);$('reports').innerHTML=rows.length?`<div class="uf-scroll"><table><thead><tr><th>日期</th><th>券商</th><th>研究內容</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(date(r.date||r.report_date))}</td><td>${esc(r.broker)}</td><td>${url(r)?`<a href="${esc(url(r))}" target="_blank" rel="noopener noreferrer">原始 PDF</a>`:'—'}</td></tr>`).join('')}</tbody></table></div>`:'<p>尚無研究紀錄</p>';const names=rows.map(x=>x.name||'').filter(x=>x&&!/^\d{4}$/.test(x));if(names.length&&$('companyTitle')){const h=$('companyTitle');if(h.textContent.trim().replace(/\s+/g,'')===t+t)h.innerHTML=esc(names[0])+' <span class="code">'+esc(t)+'</span>'}}
+function updateReports(){
+ const t=$('ticker')?.value||'';
+ if(!t)return;
+ // The full one-shot report JSON is the source of truth for historical reports.
+ // Already-published EPS ledger records are added only if their report ID is absent.
+ const rows=reportRows(t);
+ const count=rows.length;
+ const brokers=new Set(rows.map(r=>window.__brokerName(r.broker)).filter(Boolean));
+ const latest=rows.length?date(rows[0].date||rows[0].report_date):'—';
+ const meta=$('companyMeta');
+ if(meta)meta.textContent=`收錄 ${count} 份報告 · 最近 ${latest} · ${brokers.size} 家券商`;
+ const title=$('companyTitle');
+ const names=rows.map(r=>r.name||'').filter(n=>n&&!/^\d{4}$/.test(n));
+ if(title&&names.length){title.innerHTML=esc(names[0])+' <span class="code">'+esc(t)+'</span>';}
+ const target=$('reports');
+ if(!target)return;
+ target.innerHTML=rows.length?'<div class="br-history-list">'+rows.map(r=>{
+   const day=esc(date(r.date||r.report_date));
+   const broker=esc(window.__brokerName(r.broker)||'未標示券商');
+   const link=url(r);
+   const pdf=link?`<a class="br-history-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">原始 PDF ↗</a>`:'<span class="muted micro">無 PDF 連結</span>';
+   return `<article class="br-history-item"><div class="br-history-broker">${broker}</div><div class="br-history-date">${day}</div>${pdf}</article>`;
+ }).join('')+'</div>':'<div class="br-history-empty">目前沒有歷史券商研究報告</div>';
+}
 function combined(){let a=all.flatMap(extract);for(const r of extraEPS)add(a,{...r,date:r.report_date},'eps',r.period,r.eps,'eps_json','新台幣元');const m=new Map();for(const x of a){const k=[x.ticker,x.broker,x.date,x.reportId,x.metric,x.kind,x.period].join('|');const prev=m.get(k);if(!prev||x.source==='structured'||(prev.source==='eps_json'&&x.source!=='eps_json'))m.set(k,x)}return [...m.values()]}
-function render(){if(!ready)return;const t=$('ticker')?.value,k=$('uf-kind').value,met=$('uf-metric').value;
- const rows=combined().filter(r=>r.ticker===t&&r.metric===met&&(k==='annual'?['annual','fiscal_year'].includes(r.kind):['quarter','fiscal_quarter'].includes(r.kind)));
- const periods=[...new Set(rows.map(r=>r.period))].sort();const ps=$('uf-period');const prior=ps.value;ps.innerHTML=periods.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');ps.value=periods.includes(prior)?prior:periods.at(-1)||'';
- const selected=ps.value,allP=rows.filter(r=>r.period===selected),byBroker=new Map();for(const r of allP){const prev=byBroker.get(r.broker);if(!prev||r.date>prev.date)byBroker.set(r.broker,r)}const latest=[...byBroker.values()].sort((a,b)=>b.value-a.value);const mx=Math.max(...latest.map(x=>Math.abs(x.value)),1);
- const actual=actuals.filter(x=>String(x.ticker)===t&&x.period===selected&&met==='eps'&&k==='quarter').sort((a,b)=>String(b.publish_date||'').localeCompare(String(a.publish_date||'')))[0];$('uf-actual').textContent=actual?'該季實際 EPS：'+format(actual.eps)+'（'+(actual.kind==='quarterly'?'正式財報':'自結')+'）':'';
+// Build finance controls from the chosen stock's actually available, structured numbers.
+// Re-evaluate on stock and annual/quarter changes; no fixed unavailable options.
+const financeMetricOrder=['eps','revenue','gross_margin','operating_margin','operating_income','net_income'];
+const financeKindLabels={annual:'年度',quarter:'季度'};
+function selectOnlyAvailable(select, choices, prior, fallback){
+ const wanted=choices.map(x=>x.value);
+ const signature=wanted.join('|');
+ if(select.dataset.availableSignature!==signature){
+  select.innerHTML=choices.map(x=>`<option value="${esc(x.value)}">${esc(x.label)}</option>`).join('');
+  select.dataset.availableSignature=signature;
+ }
+ const next=wanted.includes(prior)?prior:(wanted.includes(fallback)?fallback:wanted[0]||'');
+ select.value=next;
+ return next;
+}
+function render(){
+ if(!ready)return;
+ const t=$('ticker')?.value||'';
+ const stockRows=combined().filter(r=>r.ticker===t&&metricLabels[r.metric]&&Number.isFinite(r.value)&&r.broker&&r.period);
+ const kindSelect=$('uf-kind'),metricSelect=$('uf-metric'),periodSelect=$('uf-period');
+ const kinds=[...new Set(stockRows.map(r=>r.kind==='annual'||r.kind==='fiscal_year'?'annual':r.kind==='quarter'||r.kind==='fiscal_quarter'?'quarter':null).filter(Boolean))];
+ const kind=selectOnlyAvailable(kindSelect,['annual','quarter'].filter(k=>kinds.includes(k)).map(k=>({value:k,label:financeKindLabels[k]})),kindSelect.value,'annual');
+ const kindRows=stockRows.filter(r=>kind==='annual'?['annual','fiscal_year'].includes(r.kind):['quarter','fiscal_quarter'].includes(r.kind));
+ const metrics=[...new Set(kindRows.map(r=>r.metric))];
+ const met=selectOnlyAvailable(metricSelect,financeMetricOrder.filter(m=>metrics.includes(m)).map(m=>({value:m,label:metricLabels[m]})),metricSelect.value,'eps');
+ const rows=kindRows.filter(r=>r.metric===met);
+ const periods=[...new Set(rows.map(r=>r.period))].sort();
+ const selected=selectOnlyAvailable(periodSelect,periods.map(p=>({value:p,label:p})),periodSelect.value,periods.at(-1)||'');
+ const hasData=rows.length>0;
+ for(const el of [kindSelect,metricSelect,periodSelect]){el.disabled=!hasData;el.closest('label')?.classList.toggle('uf-no-data',!hasData)}
+ $('uf-period-note').textContent=selected&&rows.some(r=>r.period===selected&&r.kind.startsWith('fiscal'))?'包含財年標記，請核對財年':'';
+ $('uf-status').textContent=hasData?'':'此個股目前沒有可比較的結構化券商財測';
+ if(!hasData){
+  $('uf-count').textContent='0 家券商';$('uf-actual').textContent='';
+  $('uf-chart').innerHTML='';$('uf-table').innerHTML='';$('uf-changes').innerHTML='';
+  updateReports();resize();return;
+ }
+ const allP=rows.filter(r=>r.period===selected),byBroker=new Map();
+ for(const r of allP){const prev=byBroker.get(r.broker);if(!prev||r.date>prev.date)byBroker.set(r.broker,r)}
+ const latest=[...byBroker.values()].sort((a,b)=>b.value-a.value),mx=Math.max(...latest.map(x=>Math.abs(x.value)),1);
+ const actual=actuals.filter(x=>String(x.ticker)===t&&x.period===selected&&met==='eps'&&kind==='quarter').sort((a,b)=>String(b.publish_date||'').localeCompare(String(a.publish_date||'')))[0];
+ $('uf-actual').textContent=actual?'該季實際 EPS：'+format(actual.eps)+'（'+(actual.kind==='quarterly'?'正式財報':'自結')+'）':'';
  $('uf-count').textContent=`${new Set(rows.map(r=>r.broker)).size} 家券商`;
- $('uf-period-note').textContent=selected?(rows.some(r=>r.period===selected&&r.kind.startsWith('fiscal'))?'包含財年標記，請核對財年':''):'—';
- $('uf-status').textContent=rows.length?'':'目前原始 JSON 尚無此項已結構化財測';
  $('uf-chart').innerHTML=latest.map(r=>`<div class="uf-line"><span>${esc(r.broker)}</span><div class="uf-bar"><i style="width:${Math.abs(r.value)/mx*100}%"></i></div><strong>${format(r.value)}</strong></div>`).join('');
  $('uf-table').innerHTML=latest.length?`<div class="uf-scroll"><table><thead><tr><th>券商</th><th>${esc(selected)}</th><th>日期</th><th>來源</th></tr></thead><tbody>${latest.map(x=>`<tr><td>${esc(x.broker)}</td><td>${format(x.value)} ${esc(x.unit)}</td><td>${esc(x.date)}</td><td>${x.url?`<a target="_blank" rel="noopener noreferrer" href="${esc(x.url)}">PDF</a>`:'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
- let history=rows.slice().sort((a,b)=>b.date.localeCompare(a.date));$('uf-changes').innerHTML=history.length?`<div class="uf-scroll"><table><thead><tr><th>日期</th><th>券商</th><th>期間</th><th>數值</th></tr></thead><tbody>${history.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.broker)}</td><td>${esc(x.period)}</td><td>${format(x.value)}</td></tr>`).join('')}</tbody></table></div>`:'<p>尚無可比較紀錄</p>';
+ const history=rows.slice().sort((a,b)=>b.date.localeCompare(a.date));
+ $('uf-changes').innerHTML=history.length?`<div class="uf-scroll"><table><thead><tr><th>日期</th><th>券商</th><th>期間</th><th>數值</th></tr></thead><tbody>${history.map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.broker)}</td><td>${esc(x.period)}</td><td>${format(x.value)}</td></tr>`).join('')}</tbody></table></div>`:'';
  updateReports();resize();
 }
 function resize(){try{if(window.frameElement&&window.parent.location.origin===location.origin)window.frameElement.style.height=(document.documentElement.scrollHeight+26)+'px'}catch{}}
 function init(){const d=window.__brokerResearchSourceReports;if(Array.isArray(d))all=d;for(const r of all){const t=code(r.ticker||r.stock_code||r.code);if(t&&r.name&&!/^\d{4}$/.test(r.name))stockNames.set(t,String(r.name))}ready=true;ensureOptions();setTimeout(ensureOptions,700);render()}
 document.addEventListener('broker-reports-ready',()=>{all=window.__brokerResearchSourceReports||[];init()});
 $('uf-kind').addEventListener('change',render);$('uf-metric').addEventListener('change',render);$('uf-period').addEventListener('change',render);
-$('ticker').addEventListener('change',()=>setTimeout(render,30));$('search').addEventListener('change',()=>setTimeout(render,60));
-Promise.all([fetch('./data/broker_eps_forecasts.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({items:[]})),fetch('./data/master.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({stocks:{}})),fetch('./data/quarterly_earnings.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({reports:[]}))]).then(([j,master,q])=>{extraEPS=j.items||[];for(const [t,v] of Object.entries(master.stocks||{}))if(v.name)stockNames.set(t,String(v.name));actuals=q.reports||[];init()});
+$('ticker').addEventListener('change',()=>{setTimeout(render,30);setTimeout(updateReports,90)});$('search').addEventListener('change',()=>setTimeout(render,60));
+Promise.all([fetch('./data/broker_eps_forecasts.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({items:[]})),fetch('./data/master.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({stocks:{}})),fetch('./data/quarterly_earnings.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({reports:[]}))]).then(([j,master,q])=>{extraEPS=(j.items||[]).map(r=>({...r,broker:window.__brokerName(r.broker)}));for(const [t,v] of Object.entries(master.stocks||{}))if(v.name)stockNames.set(t,String(v.name));actuals=q.reports||[];init()});
 })();</script></body></html>
