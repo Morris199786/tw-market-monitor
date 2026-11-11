@@ -11576,5 +11576,60 @@
     "limit": 10,
     "model": "gpt-5.6-luna",
     "results": []
+  },
+  {
+    "at": "2026-11-11T12:02:15.187661+00:00",
+    "category": "all",
+    "mode": "pending",
+    "limit": 10,
+    "model": "gpt-5.6-luna",
+    "results": [
+      {
+        "id": "line-d3cc102de0c87ec71cd7",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 15,
+          "validation": "transport_only_no_python_content_review"
+        },
+        "usage": {
+          "input_tokens": 4577,
+          "input_tokens_details": {
+            "cache_write_tokens": 4574,
+            "cached_tokens": 0
+          },
+          "output_tokens": 3683,
+          "output_tokens_details": {
+            "reasoning_tokens": 267
+          },
+          "total_tokens": 8260
+        },
+        "promoted": false
+      },
+      {
+        "id": "line-b7f954f0a35197306a53",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 28,
+          "validation": "transport_only_no_python_content_review"
+        },
+        "usage": {
+          "input_tokens": 4167,
+          "input_tokens_details": {
+            "cache_write_tokens": 2787,
+            "cached_tokens": 1377
+          },
+          "output_tokens": 5613,
+          "output_tokens_details": {
+            "reasoning_tokens": 220
+          },
+          "total_tokens": 9780
+        },
+        "promoted": false
+      }
+    ]
   }
 ]
