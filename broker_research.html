@@ -91,10 +91,33 @@ window.__brokerName=function(value){
 .br-history-empty{padding:30px 12px;text-align:center;color:#8492a2}
 @media(max-width:520px){.br-history-item{padding:13px}.br-history-broker{font-size:14px}}
 </style>
-</head><body>
+<style>
+/* Broad-direction views only. Other tabs and datasets unchanged. */
+#panel-views .view-grid{display:block}
+#panel-views .big-section{background:#fff;border:1px solid #e5ebf3;border-radius:17px;padding:17px 19px;margin:14px 0;min-width:0}
+#panel-views .big-section-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#panel-views .big-section-head h3{margin:0;font-size:21px;color:#1e314a}
+#panel-views .big-section-head span{color:#7c899a;font-size:12px}
+#panel-views .big-broker{border-top:1px solid #e9edf3;padding:14px 0 6px}
+#panel-views .big-broker>header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:0 0 9px}
+#panel-views .big-broker>header strong{font-size:16px;color:#203754}
+#panel-views .big-broker time{font-size:12px;color:#8a96a6}
+#panel-views .big-evidence{padding:5px 0 12px}
+#panel-views .big-evidence p{margin:0 0 7px;font-size:14px;line-height:1.85;color:#37485e;overflow-wrap:anywhere}
+#panel-views .big-attribution{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:11px;color:#8995a5}
+#panel-views .big-attribution strong{color:#5e738c;font-size:11px}
+#panel-views .big-attribution a{color:#176eb6;font-weight:700;text-decoration:none}
+#panel-views .big-broker details{margin:5px 0 0}
+#panel-views details summary{cursor:pointer;color:#386c9e;font-size:12px;font-weight:700}
+#panel-views .big-empty{font-size:13px;color:#9ba6b2;padding:16px 0}
+#panel-views .big-change{border-top:1px solid #e7ecf3;padding:14px 0}
+#panel-views .big-change-head{font-size:13px;color:#43566e}
+#panel-views .big-history{margin-top:16px}
+@media(max-width:600px){#panel-views .big-section{padding:14px}#panel-views .big-evidence p{font-size:13px}#panel-views .big-section-head h3{font-size:19px}}
+</style></head><body>
 <div class="top"><div><h1>券商研究中心</h1></div></div>
 <div class="status" id="status" role="status">正在讀取網站券商與財報資料…</div>
-<div class="controls"><div class="field"><label for="search">搜尋個股（代號／名稱）</label><input autocomplete="off" id="search" list="stocks" placeholder="例如 2454、聯發科、台光電"/><datalist id="stocks"></datalist></div><div class="field"><label for="ticker">目前公司</label><select id="ticker"></select></div><div class="field"><label for="period">比較季度</label><select id="period"></select></div></div><div class="company"><div><h2 id="companyTitle">—</h2><div class="company-meta" id="companyMeta">正在載入公司資料</div></div></div><div aria-label="券商研究分析分類" class="research-tabs" role="tablist"><button aria-selected="true" class="research-tab active" data-tab="views" role="tab" type="button">券商觀點</button><button aria-selected="false" class="research-tab" data-tab="target" role="tab" type="button">目標價</button><button aria-selected="false" class="research-tab" data-tab="eps" role="tab" type="button">券商財測</button><button aria-selected="false" class="research-tab" data-tab="reports" role="tab" type="button">歷史報告</button></div><div class="research-panel active" id="panel-views" role="tabpanel"><div class="views-head"><div><h2>跨券商觀點統整</h2><p>共同討論、各家著重點與歷次變化；逐筆保留券商、日期及來源</p></div><div class="views-count" id="view-count"></div></div><div class="view-filters"><label>券商 <select id="view-broker"><option value="all">全部券商</option></select></label><label>主題 <select id="view-topic"><option value="all">全部議題</option></select></label></div><div class="topic-summary" id="view-topics"></div><div class="view-grid" id="view-cards"><div class="v-empty">載入券商觀點中…</div></div></div><div class="research-panel" id="panel-target" role="tabpanel"><section aria-label="券商目標價研究" class="tp-section">
+<div class="controls"><div class="field"><label for="search">搜尋個股（代號／名稱）</label><input autocomplete="off" id="search" list="stocks" placeholder="例如 2454、聯發科、台光電"/><datalist id="stocks"></datalist></div><div class="field"><label for="ticker">目前公司</label><select id="ticker"></select></div><div class="field"><label for="period">比較季度</label><select id="period"></select></div></div><div class="company"><div><h2 id="companyTitle">—</h2><div class="company-meta" id="companyMeta">正在載入公司資料</div></div></div><div aria-label="券商研究分析分類" class="research-tabs" role="tablist"><button aria-selected="true" class="research-tab active" data-tab="views" role="tab" type="button">券商觀點</button><button aria-selected="false" class="research-tab" data-tab="target" role="tab" type="button">目標價</button><button aria-selected="false" class="research-tab" data-tab="eps" role="tab" type="button">券商財測</button><button aria-selected="false" class="research-tab" data-tab="reports" role="tab" type="button">歷史報告</button></div><div class="research-panel active" id="panel-views" role="tabpanel"><div class="views-head"><div><h2>跨券商大方向統整</h2><p>現況、未來展望與觀點變化；每則標明券商、日期與來源</p></div><div class="views-count" id="view-count"></div></div><div class="view-filters"><label>券商 <select id="view-broker"><option value="all">全部券商</option></select></label><label>論述方向 <select id="view-topic"><option value="all">全部論述</option></select></label></div><div class="topic-summary" id="view-topics"></div><div class="view-grid" id="view-cards"><div class="v-empty">載入券商觀點中…</div></div></div><div class="research-panel" id="panel-target" role="tabpanel"><section aria-label="券商目標價研究" class="tp-section">
 <div class="tp-title-row"><div><h2>券商目標價研究</h2></div></div>
 <div aria-live="polite" class="status" id="tp-status">正在載入券商歷史目標價…</div>
 <div class="tp-kpis"><div class="tp-kpi"><small>最新目標價中位數</small><b id="tp-med">—</b><em>僅採已驗證、可比較的券商最新值</em></div><div class="tp-kpi"><small>最高目標價</small><b id="tp-high">—</b><em id="tp-high-note">—</em></div><div class="tp-kpi"><small>最低目標價</small><b id="tp-low">—</b><em id="tp-low-note">—</em></div><div class="tp-kpi"><small>有目標價券商</small><b id="tp-brokers">—</b><em id="tp-total">資料庫尚在載入</em></div></div>
@@ -214,97 +237,87 @@ function normalized(r,i){if(!r||typeof r!=='object')return null;
 function selectTab(which){selectedTab=which;for(const b of document.querySelectorAll('.research-tab')){const active=b.dataset.tab===which;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))}for(const p of document.querySelectorAll('.research-panel'))p.classList.toggle('active',p.id==='panel-'+which);resize()}
 function resize(){requestAnimationFrame(()=>{try{if(window.frameElement&&window.parent.location.origin===location.origin)window.frameElement.style.height=(document.documentElement.scrollHeight+24)+'px'}catch{}})}
 for(const b of document.querySelectorAll('.research-tab'))b.addEventListener('click',()=>selectTab(b.dataset.tab));
-// Evidence-first, zero-API synthesis: derive topics from the report texts themselves.
-const genericWords=new Set(('研究 報告 公司 我們 預估 預期 認為 顯示 表示 可能 目前 近期 相關 主要 最新 持續 預測 評估 維持 上修 下修 目標 股價 元 新台幣 台幣 百萬元 百萬 億元 成長 增加 降低 提升 減少 變化 今年 明年 去年 第一 第二 第三 第四 季度 全年 年度 本季 下季 本年 明年 本次 前次 本文 整體 未來 其中 影響 因此 由於 儘管 雖然 以及 並且 若是 這樣 部分 預估值 大幅 有望 比較 資料 當前 指出 進一步 新增').split(' '));
-function tokenize(text){
- const s=clean(text).replace(/20\d{2}(?:Q[1-4])?/gi,' ').replace(/\d+(?:\.\d+)?(?:%|元)?/g,' ');
- const bits=[];
- if(typeof Intl!=='undefined'&&Intl.Segmenter){
-  const segmenter=new Intl.Segmenter('zh-Hant',{granularity:'word'});
-  for(const part of segmenter.segment(s)){if(part.isWordLike)bits.push(part.segment)}
- }else{
-  bits.push(...(s.match(/[A-Za-z][A-Za-z0-9.\-]{1,}|[\u3400-\u9FFF]{2,6}/g)||[]));
+// Broad-direction synthesis. Evidence and attribution only; no new AI calls.
+const OUTLOOK=/(?:展望|未來|預估|預測|預計|預期|估計|推估|看好|有望|可望|有機會|將會|將於|明年|後年|下半年|下一季|下季|成長動能|成長空間|預期成長|目標價|風險|若|可能|有待|仍需|不確定|預期出貨|量產|導入|擴產|CAPEX|202[7-9]\s*年|202[7-9]\s*[-/]?Q[1-4]|(?:[1-4]Q(?:2[7-9]|20(?:27|28|29)))|(?:2[7-9]Q[1-4]))/i;
+const CURRENT=/(?:現況|目前|現階段|最新|當前|已經|已|截至|本季|上季|第三季|第二季|首季|財報|實績|實際|已公告|月營收|接單|訂單|稼動率|產能利用率|出貨量|營收達|獲利|產品組合|2026[-/]?Q[1-3]|[1-3]Q26)/i;
+function clauses(value){
+ const texts=Array.isArray(value)?value:[value];const out=[];
+ for(const value of texts){const raw=clean(value);if(!raw)continue;
+  // Keep attribution and figures intact; split broad paragraphs, never infer absent content.
+  const pieces=raw.split(/(?:[。；;]\s*|\n+)/).map(s=>s.trim()).filter(Boolean);
+  for(const piece of pieces){
+   if(piece.length<12)continue;
+   // Long single excerpts remain linked to the original PDF; prevent mobile overflow.
+   out.push(piece.length>410?piece.slice(0,409)+'…':piece);
+  }
  }
- const out=new Set();
- for(let x of bits){x=x.trim().toUpperCase();if(x.length<2||x.length>25||/^\d+$/.test(x)||genericWords.has(x)||/[\u3400-\u9FFF]/.test(x)&&x.length===2&&['我們','公司','股票','數據','報告','獲利','預期','業務','目前'].includes(x))continue;out.add(x)}
- return [...out];
+ return out;
 }
-function statements(r){
- const source=[...r.summary,...r.changes];
- if(source.length===0&&r.detail)source.push(...r.detail.split(/[。；;\n]+/).slice(0,12));
- const out=[],seen=new Set();
- for(const line of source){
-  let text=clean(line).replace(/^[-•●\d.）)\s]+/,'');
-  if(text.length>560)text=text.slice(0,560);
-  if(text.length<10)continue;
-  const key=text.replace(/[\s，。！？、；:：,.;!?]/g,'').toLowerCase();
-  if(seen.has(key)||out.some(y=>y.text.includes(text)||text.includes(y.text)))continue;
-  seen.add(key);out.push({text,broker:r.broker,date:r.date,url:r.url,id:r.id,rating:r.rating,report:r,tokens:tokenize(text)});
- }
- return out.slice(0,11);
+function classify(text,origin){
+ if(origin==='changes')return 'future';
+ if(OUTLOOK.test(text))return 'future';
+ if(CURRENT.test(text))return 'current';
+ // Unlabeled report observations are treated as a reported current viewpoint,
+ // not as a newly inferred future forecast.
+ return 'current';
 }
-function compareData(rows,all){
- const current=rows.flatMap(statements),wordBrokers=new Map();
- for(const st of current)for(const w of st.tokens){if(!wordBrokers.has(w))wordBrokers.set(w,new Set());wordBrokers.get(w).add(st.broker)}
- const candidateWords=[...wordBrokers].filter(([w,b])=>b.size>=2&&w.length>=2).sort((a,b)=>b[1].size-a[1].size||b[0].length-a[0].length).slice(0,36);
- // A group represents shared discussion, not necessarily agreement or disagreement.
- const groups=new Map(),assigned=new Set();
- for(const word of candidateWords){
-  const members=current.filter(st=>!assigned.has(st)&&st.tokens.includes(word[0]));
-  const brokers=new Set(members.map(x=>x.broker));if(brokers.size<2)continue;
-  groups.set(word[0],members);members.forEach(x=>assigned.add(x));
-  if(groups.size>=9)break;
+function evidenceOf(r){
+ const seen=new Set(),out=[];
+ const sources=[...clauses(r.summary).map(text=>({text,origin:'summary'})),
+  ...clauses(r.changes).map(text=>({text,origin:'changes'}))];
+ // Detail is only a source-text fallback when the first-pass summary is absent.
+ if(!sources.length)sources.push(...clauses(r.detail).slice(0,10).map(text=>({text,origin:'detail'})));
+ for(const item of sources){const key=item.text.replace(/[\s，。、；：:,.!?！?]/g,'').toLowerCase();if(seen.has(key))continue;seen.add(key);
+  out.push({text:item.text,kind:classify(item.text,item.origin),broker:r.broker,date:r.date,url:r.url,id:r.id});
  }
- const singles=current.filter(st=>!assigned.has(st));
- const changes=[];
- const byBroker=new Map();for(const item of all){if(!byBroker.has(item.broker))byBroker.set(item.broker,[]);byBroker.get(item.broker).push(item)}
- for(const [broker,list] of byBroker){if(list.length<2)continue;const sorted=list.slice().sort((a,b)=>b.date.localeCompare(a.date)),a=sorted[0],b=sorted.find(x=>x.date<a.date);if(!b)continue;
-  const old=new Set(statements(b).map(x=>x.text.replace(/[\s，。！？、；:：,.;!?]/g,'')));
-  const newer=statements(a).filter(x=>!old.has(x.text.replace(/[\s，。！？、；:：,.;!?]/g,'')));
-  if(newer.length)changes.push({broker,old:b.date,now:a.date,items:newer.slice(0,2),url:a.url});
- }
- return {groups:[...groups].map(([name,items])=>({name,items,brokers:new Set(items.map(x=>x.broker)).size})),singles,changes,current};
+ return out;
 }
-function srcLine(st){return `<div class="synth-source"><div class="synth-person"><b>${esc(st.broker)}</b><time datetime="${esc(st.date)}">${esc(st.date)}</time></div><p>${esc(st.text)}</p>${st.url?`<a href="${esc(st.url)}" target="_blank" rel="noopener noreferrer">原始 PDF ↗</a>`:'<small>此筆未附 PDF 連結</small>'}</div>`}
+function markLine(item){return `<div class="big-evidence"><p>${esc(item.text)}</p><div class="big-attribution"><strong>${esc(item.broker)}</strong><time datetime="${esc(item.date)}">${esc(item.date)}</time>${item.url?`<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">PDF 來源 ↗</a>`:'<span>未提供 PDF 連結</span>'}</div></div>`}
+function brokerBlock(r,kind){
+ const evidence=evidenceOf(r).filter(x=>x.kind===kind),chosen=evidence.slice(0,3);
+ if(!chosen.length)return '';
+ return `<article class="big-broker"><header><strong>${esc(r.broker)}</strong><time datetime="${esc(r.date)}">${esc(r.date)}</time></header>${chosen.map(markLine).join('')}${evidence.length>3?`<details><summary>展開其餘 ${evidence.length-3} 則論述</summary>${evidence.slice(3).map(markLine).join('')}</details>`:''}</article>`;
+}
+function oldChanges(all,broker){
+ const sorted=all.filter(x=>x.broker===broker).sort((a,b)=>b.date.localeCompare(a.date));
+ if(sorted.length<2)return '';
+ const newest=sorted[0],prev=sorted.find(x=>x.date<newest.date);if(!prev)return '';
+ const old=new Set(evidenceOf(prev).map(x=>x.text.replace(/\s/g,'')));
+ const added=evidenceOf(newest).filter(x=>!old.has(x.text.replace(/\s/g,''))).slice(0,2);
+ if(!added.length)return '';
+ return `<article class="big-change"><div class="big-change-head"><b>${esc(broker)}</b>　<time>${esc(prev.date)} → ${esc(newest.date)}</time></div>${added.map(markLine).join('')}</article>`;
+}
 function render(){
  if(!ready)return;
- const code=$('ticker')?.value||'';const all=records.filter(x=>x.code===code).sort((a,b)=>b.date.localeCompare(a.date));
+ const t=$('ticker')?.value||'',all=records.filter(x=>x.code===t).sort((a,b)=>b.date.localeCompare(a.date));
  const latest=new Map();for(const r of all)if(!latest.has(r.broker))latest.set(r.broker,r);
  const rows=[...latest.values()].sort((a,b)=>b.date.localeCompare(a.date)||a.broker.localeCompare(b.broker));
- const filter=$('view-broker'),prior=filter.value;
- filter.innerHTML='<option value="all">全部券商</option>'+rows.map(r=>`<option value="${esc(r.broker)}">${esc(r.broker)}</option>`).join('');
- filter.value=rows.some(r=>r.broker===prior)?prior:'all';
- drawSynthesis(rows,all);
+ const bSel=$('view-broker'),prior=bSel.value;
+ bSel.innerHTML='<option value="all">全部券商</option>'+rows.map(x=>`<option value="${esc(x.broker)}">${esc(x.broker)}</option>`).join('');
+ bSel.value=rows.some(x=>x.broker===prior)?prior:'all';
+ drawBigPicture(rows,all);
 }
-function drawSynthesis(rows,all){
- const broker=$('view-broker').value;
- const filtered=broker==='all'?rows:rows.filter(x=>x.broker===broker);
- // Keep the full-company topic taxonomy when a single broker is selected.
- const whole=compareData(rows,all);
- const topics=whole.groups.map(x=>x.name);
- const topicSel=$('view-topic'),old=topicSel.value;
- topicSel.innerHTML='<option value="all">全部議題</option>'+topics.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
- topicSel.value=topics.includes(old)?old:'all';
- const activeTopic=topicSel.value;
- const groups=whole.groups.map(g=>({...g,items:g.items.filter(x=>broker==='all'||x.broker===broker)})).filter(g=>g.items.length&&(activeTopic==='all'||activeTopic===g.name));
- const single=whole.singles.filter(x=>broker==='all'||x.broker===broker);
- const changes=whole.changes.filter(x=>broker==='all'||x.broker===broker);
- $('view-count').textContent=`${rows.length} 家券商 · ${whole.groups.length} 個跨券商議題`;
- $('view-topics').innerHTML=whole.groups.length?whole.groups.map(g=>`<button type="button" class="topic-chip" data-topic="${esc(g.name)}">${esc(g.name)}<b>${g.brokers} 家</b></button>`).join(''):'';
- $('view-topics').querySelectorAll('[data-topic]').forEach(btn=>btn.addEventListener('click',()=>{topicSel.value=btn.dataset.topic;drawSynthesis(rows,all)}));
- const evidence=groups.map(g=>{
-  const dedup=new Map();for(const item of g.items){const prev=dedup.get(item.broker);if(!prev||item.date>prev.date)dedup.set(item.broker,item)}
-  const examples=[...dedup.values()].sort((a,b)=>b.date.localeCompare(a.date));
-  return `<section class="synth-issue"><div class="synth-issue-head"><h3>${esc(g.name)}</h3><span>${examples.length} 家券商提及</span></div><p class="synth-disclaimer">以下整理同一議題的各家論述；共同提及不代表立場一致。每筆可追溯報告日期與來源。</p>${examples.map(srcLine).join('')}${g.items.length>examples.length?`<details><summary>同議題其他已儲存論述（${g.items.length-examples.length}）</summary>${g.items.filter(x=>!examples.includes(x)).map(srcLine).join('')}</details>`:''}</section>`;
- }).join('');
- let html=`<div class="synth-intro"><b>跨券商觀點統整</b><p>依這檔股票現有報告的實際內容形成議題，不預設產業分類。每個論述保留券商、日期及原始 PDF；目前僅呈現有證據的比較，不將「提及」當成「看好」。</p></div>`;
- if(evidence)html+=`<div class="synth-section-title">多家券商共同討論的議題</div>${evidence}`;
- if(activeTopic==='all'&&single.length){
-  const unique=new Map();for(const x of single)if(!unique.has(x.broker))unique.set(x.broker,[]);for(const x of single)unique.get(x.broker).push(x);
-  html+=`<details class="synth-panel"><summary>各券商獨有／尚無可比較的論述（${single.length} 則）</summary><p class="synth-disclaimer">僅有一家提到，不等於其他券商反對。下列每筆保留原始出處。</p>${[...unique.values()].flatMap(x=>x.slice(0,3)).map(srcLine).join('')}</details>`;
+function drawBigPicture(rows,all){
+ const selected=$('view-broker').value;
+ const filtered=selected==='all'?rows:rows.filter(x=>x.broker===selected);
+ const viewSel=$('view-topic'),keep=viewSel.value;
+ viewSel.innerHTML='<option value="all">全部論述</option><option value="current">現況</option><option value="future">未來展望</option>';
+ viewSel.value=['current','future'].includes(keep)?keep:'all';
+ const part=viewSel.value;
+ const counts={current:0,future:0};for(const r of filtered)for(const x of evidenceOf(r))counts[x.kind]++;
+ $('view-count').textContent=`${filtered.length} 家券商`;
+ $('view-topics').innerHTML=''; // Remove keyword chips; the broad directions drive the layout.
+ let html=`<div class="synth-intro"><b>跨券商大方向統整</b><p>統一以「現況」及「未來展望」整理這檔股票的已儲存研究內容。逐筆保留券商與日期；以下為來源論述整理，不代表系統判定券商立場一致。</p></div>`;
+ for(const section of [{kind:'current',heading:'現況',desc:'公司目前營運表現、已發生的變化及各家券商觀察。'},{kind:'future',heading:'未來展望',desc:'券商對後續營運、成長、預測與潛在風險的判斷。'}]){
+  if(part!=='all'&&part!==section.kind)continue;
+  const cards=filtered.map(r=>brokerBlock(r,section.kind)).filter(Boolean);
+  html+=`<section class="big-section"><div class="big-section-head"><h3>${section.heading}</h3><span>${cards.length} 家券商</span></div><p class="synth-disclaimer">${section.desc}</p>${cards.length?cards.join(''):'<p class="big-empty">現有 JSON 中沒有可歸入此方向的論述。</p>'}</section>`;
  }
- if(activeTopic==='all'&&changes.length){html+=`<details class="synth-panel"><summary>同一券商不同日期的觀點變化（${changes.length} 家）</summary><p class="synth-disclaimer">這裡顯示摘要文字新增或改寫的論述，不等於已確認上修／下修或改變評等。</p>${changes.map(c=>`<div class="synth-change"><b>${esc(c.broker)}</b> <time>${esc(c.old)} → ${esc(c.now)}</time>${c.items.map(srcLine).join('')}</div>`).join('')}</details>`}
- if(!groups.length&&(!single.length||activeTopic!=='all'))html+=`<div class="v-empty">${filtered.length?'沒有符合此議題的可追溯論述。':'目前沒有可比較的券商觀點。'}</div>`;
+ if(part==='all'){
+  const changes=[...new Set(filtered.map(x=>x.broker))].map(b=>oldChanges(all,b)).filter(Boolean);
+  if(changes.length)html+=`<details class="synth-panel big-history"><summary>同券商前後觀點變化（${changes.length} 家）</summary><p class="synth-disclaimer">僅表示最新與前次摘要文字不同；不能據此直接認定立場或財測已上修、下修。</p>${changes.join('')}</details>`;
+ }
+ if(!filtered.length)html='<div class="v-empty">此公司目前沒有可用的券商研究觀點。</div>';
  $('view-cards').innerHTML=html;resize();
 }
 $('view-broker').addEventListener('change',render);
