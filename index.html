@@ -93,6 +93,14 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </style>
 <link rel="stylesheet" href="./assets/broker_eps_comparison.css?v=20261022-1">
 <link rel="stylesheet" href="./assets/etf_flow.css?v=20261101-2">
+<style id="research-mode-visibility-fix-v3">
+#reports #reportList[hidden],
+#reports #twRatingsPanel[hidden],
+#reports #brokerResearch[hidden],
+#reports #researchMergedPanel[hidden] { display:none!important; }
+#reports .report-mode-tabs { position:relative; z-index:2; pointer-events:auto; }
+#reports .report-mode-tab { pointer-events:auto; touch-action:manipulation; cursor:pointer; }
+</style>
 </head>
 <body>
 <header><div class="head">
@@ -197,8 +205,8 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/broker_report_charts.js?v=20261027-ai-v2"></script>
 <script src="./assets/report_dates.js?v=20261031-fixed-upload-t1-v3"></script>
 <script src="./assets/industry_summary.js?v=20261028-industry-layout-v1"></script>
-<script src="./assets/reports_v2.js?v=20261111-nav-v2"></script>
-<script src="./assets/tw_ratings.js?v=20261111-visual-tab-v2"></script>
+<script src="./assets/reports_v2.js?v=20261111-counts-v3"></script>
+<script src="./assets/tw_ratings.js?v=20261111-tabs-click-fix-v3"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/daily_k.js?v=20261013-restored"></script>
 <script src="./assets/heatmap_sector_filter.js?v=20261013-large-trend"></script>
@@ -296,27 +304,76 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </script>
 <script src="./assets/broker_eps_comparison.js?v=20261022-compare-v3"></script>
 <script src="./assets/broker_gm_comparison.js?v=20261111-gm-v1"></script>
-<script src="./assets/research_merged.js?v=20261111-memo-v2"></script>
-<script id="homepage-memo-counter-v2">
+<script src="./assets/research_merged.js?v=20261111-counts-v3"></script>
+<script id="homepage-research-counts-v3">
 (()=>{'use strict';
-  async function refreshMemoCount(){
-    const target=document.querySelector('[data-feature="reports"] .feature-copy small');
-    if(!target)return;
-    try{
-      const response=await fetch('./data/research_meta.json',{cache:'no-store'});
-      if(!response.ok)throw new Error('index unavailable');
-      const entries=await response.json();
-      if(!Array.isArray(entries))throw new Error('invalid index');
-      const memos=entries.filter(r=>{
-        const type=String(r.original_type||'').trim().toLowerCase();
-        const category=String(r.category||'').trim();
-        return type==='法說會'||type==='call memo'||category==='法說／訪談';
-      }).length;
-      target.textContent=`memo ${memos} 篇`;
-    }catch(e){target.textContent='memo — 篇';}
+  const sourcePaths = [
+    './data/reports.json',
+    './data/business_reports.json',
+    './data/research_meta.json'
+  ];
+  const twToday = () => new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date());
+  function reportDay(r) {
+    // 同資料庫券商報告分組採用的 ReportDates 邏輯。
+    try {
+      const v = window.ReportDates?.group?.(r);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(v || ''))) return v;
+    } catch (_) {}
+    return String(r?.date || r?.publish_date || '').trim().replaceAll('/', '-').slice(0,10);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshMemoCount,{once:true});
-  else refreshMemoCount();
+  function dateOnly(r) {
+    return String(r?.date || r?.publish_date || '').trim().replaceAll('/', '-').slice(0,10);
+  }
+  function uniqCount(records) {
+    const seen = new Set();
+    records.forEach((r,i) => seen.add(String(r.id || r.source_file_id || r.file_id || r.url ||
+      JSON.stringify([r.date, r.title, r.ticker, r.broker, i]))));
+    return seen.size;
+  }
+  async function getJson(url) {
+    const response = await fetch(url, {cache:'no-store'});
+    if (!response.ok) throw new Error(url + ' HTTP ' + response.status);
+    return response.json();
+  }
+  let requestNumber = 0;
+  async function refreshResearchCounts() {
+    const target = document.querySelector('[data-feature="reports"] .feature-copy small');
+    if (!target) return;
+    const seq = ++requestNumber;
+    const day = twToday();
+    const result = await Promise.allSettled(sourcePaths.map(getJson));
+    if (seq !== requestNumber) return;
+    const getItems = (index, arrayRoot=false) => {
+      if (result[index].status !== 'fulfilled') return null;
+      const data=result[index].value;
+      return arrayRoot ? (Array.isArray(data) ? data : null)
+        : (Array.isArray(data?.items) ? data.items : null);
+    };
+    const reports=getItems(0), business=getItems(1), research=getItems(2,true);
+    // 券商報告分頁：排除獨立的產業／主題報告分類。
+    const brokerCount=reports === null ? '—' : uniqCount(reports.filter(r =>
+      !['sector','theme'].includes(String(r.report_type||'').toLowerCase()) && reportDay(r)===day));
+    // 業務報告使用資料庫內的「歸類日期」欄位，而非 Gmail 收件時間。
+    const businessCount=business === null ? '—' : uniqCount(business.filter(r => dateOnly(r)===day));
+    const memoCount=research === null ? '—' : uniqCount(research.filter(r => {
+      if (String(r.market||'TW').toUpperCase()==='US') return false;
+      const type=String(r.original_type||'').trim().toLowerCase();
+      const category=String(r.category||'').trim();
+      return dateOnly(r)===day &&
+        (category==='法說／訪談' || type==='法說會' || type==='call memo');
+    }));
+    target.style.whiteSpace='pre-line';
+    target.style.lineHeight='1.5';
+    target.textContent=`今日\n券商報告 ${brokerCount} 篇\n業務報告 ${businessCount} 篇\nmemo ${memoCount} 篇`;
+  }
+  function run() { refreshResearchCounts().catch(err => console.warn('home research counts failed',err)); }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', run, {once:true});
+  else run();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden) run();});
+  window.addEventListener('focus',run);
+  setInterval(()=>{if(!document.hidden) run();},5*60*1000);
 })();
 </script>
 
