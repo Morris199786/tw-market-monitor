@@ -28,6 +28,10 @@ def valid_date(value):
     except ValueError:
         return ''
 
+def gm_valid_date(value):
+    """Normalize broker report dates for gross margin without changing EPS logic."""
+    return valid_date(str(value or '')[:10].replace('/', '-'))
+
 def number(value):
     if isinstance(value, bool) or value is None or str(value).strip() == '':
         return None
@@ -151,6 +155,111 @@ def compare(root=ROOT):
     print('API calls=0; PDF parses=0')
     return output
 
+
+
+def parse_quarter(value):
+    """Recognize explicit *quarter* periods only; never turn an annual figure into a quarter."""
+    value = str(value or '').strip().upper().replace(' ', '')
+    patterns = (
+        r'(20\d{2})-Q([1-4])(?:E|F)?',   # 2026-Q4 / 2026-Q4E
+        r'([1-4])Q(20\d{2}|\d{2})(?:E|F)?', # 3Q26 / 4Q2026E
+        r'Q([1-4])(20\d{2}|\d{2})(?:E|F)?', # Q326 / Q4'26 (without apostrophe)
+        r'(20\d{2})\u5e74\u7b2c?([\u4e00-\u56db1-4])\u5b63(?:\u5ea6)?',
+    )
+    for i, pattern in enumerate(patterns):
+        m = re.fullmatch(pattern, value)
+        if not m:
+            continue
+        if i == 0 or i == 3:
+            year, q = m.groups()
+            if i == 3:
+                q = {'\u4e00':'1','\u4e8c':'2','\u4e09':'3','\u56db':'4'}.get(q, q)
+        else:
+            q, year = m.groups()
+            if len(year) == 2:
+                year = '20' + year
+        return f'{year}-Q{q}'
+    return ''
+
+
+def table_margin_value(cell):
+    """Accept an unambiguous percentage cell only, never ranges, deltas or text explanations."""
+    if isinstance(cell, bool):
+        return None
+    if isinstance(cell, (int, float)):
+        value = number(cell)
+    else:
+        s = str(cell or '').strip().replace(',', '')
+        if not re.fullmatch(r'\d+(?:\.\d+)?\s*%?', s):
+            return None
+        value = number(s.rstrip('%').strip())
+    return value if value is not None and 0 <= value <= 100 else None
+
+
+def quarter_mentions(text):
+    """Look for a unique explicit fiscal quarter within a title or header."""
+    s = str(text or '').upper()
+    spans = re.findall(r'20\d{2}-Q[1-4]|[1-4]Q(?:20)?\d{2}|20\d{2}\u5e74\u7b2c?[\u4e00-\u56db1-4]\u5b63', s)
+    periods = {p for fragment in spans if (p := parse_quarter(fragment))}
+    return next(iter(periods)) if len(periods) == 1 else ''
+
+
+def table_gm_forecasts(report):
+    """Read pre-parsed AI visualization tables; require explicit broker estimate provenance.
+
+    Supported: (A) quarter-per-row tables with GM column and forecast row;
+    (B) metric-per-row tables with quarter-specific broker-estimate column.
+    Never infer quarter from report date or a single annual estimate.
+    """
+    for table in report.get('visualizations') or []:
+        if not isinstance(table, dict) or table.get('type') != 'table':
+            continue
+        headers = table.get('headers') or []
+        rows = table.get('rows') or []
+        if not isinstance(headers, list) or not isinstance(rows, list):
+            continue
+        headers = [str(h or '').strip() for h in headers]
+        gm_cols = [i for i,h in enumerate(headers) if re.search(r'\u6bdb\u5229\u7387|gross\s*margin', h, re.I)]
+        # A: period in first cell, GM in designated column, explicitly labeled forecast.
+        for row in rows:
+            if not isinstance(row, list) or not row:
+                continue
+            period = parse_quarter(row[0])
+            if period and gm_cols:
+                hint = ' '.join(str(x or '') for x in row)
+                # Disallow historical/actual/consensus even when an E suffix occurs elsewhere.
+                marked_forecast = (bool(re.search(r'\u5238\u5546\u9810\u4f30|\u5206\u6790\u5e2b\u9810\u4f30|\u6295\u9867\u9810\u4f30', hint))
+                                   or bool(re.fullmatch(r'.*(?:E|F)', str(row[0]).strip().upper())))
+                marked_actual = bool(re.search(r'\u5be6\u969b|\u5be6\u7e3e|\u6b77\u53f2|\u5171\u8b58|consensus', hint, re.I))
+                if marked_forecast and not marked_actual:
+                    for i in gm_cols:
+                        if i < len(row) and (v := table_margin_value(row[i])) is not None:
+                            yield period, v, f'table:{table.get("title") or ""}'
+            # B: metric in first cell, explicit quarterly forecast in column header.
+            if not re.search(r'\u6bdb\u5229\u7387|gross\s*margin', str(row[0]), re.I):
+                continue
+            title_quarter = quarter_mentions(table.get('title'))
+            for i, header in enumerate(headers[1:], start=1):
+                if i >= len(row):
+                    continue
+                if not re.search(r'\u9810\u4f30|estimate|forecast|\u9810\u6e2c', header, re.I):
+                    continue
+                if re.search(r'\u5171\u8b58|consensus|\u516c\u53f8\u6307\u5f15|guidance|\u5be6\u969b|\u5be6\u7e3e', header, re.I):
+                    continue
+                period = quarter_mentions(header) or title_quarter
+                if not period:
+                    continue
+                # Do not use '2026 Q4 company guidance' as broker forecast.
+                # A specific broker must be named in the header or table description.
+                named_broker = str(report.get('broker') or '').lower() in header.lower()
+                explicit_broker = bool(re.search(r'\u5238\u5546\u9810\u4f30|\u6295\u9867\u9810\u4f30|\u5206\u6790\u5e2b\u9810\u4f30', header))
+                short_broker = bool(re.search(r'\b(?:citi|morgan stanley|goldman sachs|daiwa|ubs|clsa)\b', header, re.I))
+                if not (named_broker or explicit_broker or short_broker):
+                    continue
+                if (v := table_margin_value(row[i])) is not None:
+                    yield period, v, f'table:{table.get("title") or ""}'
+
+
 def compare_gross_margin(root=ROOT):
     """Compare only QUARTERLY actual gross margins to same-quarter broker AI estimates.
 
@@ -162,13 +271,14 @@ def compare_gross_margin(root=ROOT):
     seen_forecasts = set()
     report_count = 0
     ambiguous = 0
+    table_candidates = 0
     for report in load(data / 'reports.json', {'items': []}).get('items', []):
         if not isinstance(report, dict):
             continue
         rid = str(report.get('source_file_id') or report.get('id') or '')
         ticker = str(report.get('ticker') or '')
         broker = str(report.get('broker') or '')
-        report_day = valid_date(report.get('date'))
+        report_day = gm_valid_date(report.get('date'))
         if not rid or not TICKER.fullmatch(ticker) or not broker or not report_day:
             continue
         candidates = {}
@@ -195,6 +305,17 @@ def compare_gross_margin(root=ROOT):
                 conflicts.add(period)
             else:
                 candidates[period] = value
+        # Use saved tables only to fill structured forecast gaps. On disagreement
+        # between two saved AI fields, omit the ambiguous report-quarter.
+        table_added = 0
+        for period, value, evidence in table_gm_forecasts(report):
+            if period in candidates:
+                if abs(candidates[period] - value) > 0.011:
+                    conflicts.add(period)
+            else:
+                candidates[period] = value
+                table_added += 1
+        table_candidates += table_added
         for period, estimate in candidates.items():
             if period in conflicts:
                 ambiguous += 1
@@ -253,6 +374,7 @@ def compare_gross_margin(root=ROOT):
         dest.write_text(content, encoding='utf-8')
     print('Gross margin audit:', json.dumps({
         'broker_quarter_forecasts': report_count, 'ambiguous_forecasts': ambiguous,
+        'table_forecast_candidates': table_candidates,
         'dated_quarterly_actuals': dated_actuals, 'excluded_late': excluded_late,
         'matches': len(output['items'])}, ensure_ascii=False))
     return output
