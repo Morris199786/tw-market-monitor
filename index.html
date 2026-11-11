@@ -106,19 +106,17 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <button class="nav" data-p="volume">突然放量</button>
 <button class="nav" data-p="turnover">成交排行</button>
 <button class="nav" data-p="marginLending">融資／借券</button>
-<button class="nav" data-p="ai">AI選股</button>
 <button class="nav" data-p="holders">大戶籌碼</button>
-<button class="nav" data-p="monthlyRevenue">月營收公布</button>
 <button class="nav" data-p="etfFlow">ETF Flow</button>
 <button class="nav" data-p="marketMonitor">大盤監控</button>
-<button class="nav" data-p="brokerResearch">券商研究中心</button>
+<button class="nav" data-p="ai">AI選股</button>
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
 <select id="mobileNav" aria-label="切換分頁">
 <option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">產業資料庫</option>
 <option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
-<option value="turnover">成交排行</option><option value="marginLending">融資／借券</option><option value="ai">AI選股</option>
-<option value="holders">大戶籌碼</option><option value="monthlyRevenue">月營收公布</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option><option value="brokerResearch">券商研究中心</option>
+<option value="turnover">成交排行</option><option value="marginLending">融資／借券</option>
+<option value="holders">大戶籌碼</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option><option value="ai">AI選股</option>
 </select>
 <div id="mobilePageNav" class="mobile-page-nav">
 <button id="mobilePageNavToggle" class="mobile-page-nav-toggle" type="button" aria-expanded="false">總覽</button>
@@ -128,7 +126,13 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <main>
 <section id="home" class="page active"><div class="hero"><div><div class="kicker">MARKET DASHBOARD</div><h1>台股市場監測</h1><p>法人籌碼、量價、大戶、AI 選股、自結與月營收監測</p></div><div class="badges"><span class="badge live">GitHub 自動更新</span></div></div><div id="featureRail" class="feature-rail"></div><div id="homeCards" class="grid four"></div><div class="section"><h2>目前強勢族群</h2><span>市值加權</span></div><div id="topSectors" class="grid three"></div></section>
 <section id="heat" class="page"><div class="hero"><div><div class="kicker">SECTOR HEATMAP</div><h1>市場熱力圖</h1><p>自訂產業鏈族群｜市值加權｜紅漲綠跌｜可直接下拉選族群</p></div><div class="badges"><span class="badge live">盤中每 2 分鐘</span><span id="heatTime" class="badge"></span></div></div><div id="heatGrid" class="heatgrid"></div></section>
-<section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>產業資料庫</h1><p>券商報告、法說／訪談與美股研究</p></div><span class="badge">每 30 分鐘同步</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">資料庫</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div></section>
+<section id="reports" class="page"><div class="hero"><div><div class="kicker">BROKER RESEARCH</div><h1>產業資料庫</h1><p>券商報告、法說／訪談與美股研究</p></div><span class="badge">每 30 分鐘同步</span></div><div class="report-mode-tabs" role="tablist" aria-label="券商報告分類"><button id="reportModeReports" class="report-mode-tab active" type="button" data-report-mode="reports">資料庫</button><button id="reportModeRatings" class="report-mode-tab" type="button" data-report-mode="ratings">台股評等</button><button id="reportModeVisual" class="report-mode-tab" type="button" data-report-mode="visual">視覺化</button></div><div id="reportList" class="card"></div><div id="twRatingsPanel" class="tw-ratings-panel" hidden><div id="twRatingsStatus" class="status"></div><div id="twRatingsList"></div></div><div id="brokerResearch" class="broker-research-embedded" hidden>
+  <div class="hero"><div><div class="kicker">BROKER RESEARCH VISUALIZATION</div><h1>券商研究中心</h1><p>個股 EPS 預估、券商比較與原始研究報告</p></div><span class="badge">測試版 · 唯讀</span></div>
+  <div class="card" style="padding:10px;margin-bottom:12px">
+    <div id="brokerResearchLoadStatus" class="muted" style="display:none" hidden></div>
+    <iframe id="brokerResearchFrame" title="券商研究中心" loading="lazy" style="display:block;width:100%;height:400px;min-height:0px;border:0;border-radius:12px;background:#0d1522" referrerpolicy="same-origin"></iframe>
+  </div>
+</div></section>
 <section id="selfReports" class="page">
 <div class="hero"><div><div class="kicker">EARNINGS TRACKER</div><h1>財報追蹤</h1><p>自結公布｜盤後可能公布自結｜即將開財報｜季度財報</p></div><div class="badges"><span id="selfWeekBadge" class="badge"></span></div></div>
 <div id="selfWeekTabs" class="week-strip"></div>
@@ -145,7 +149,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="marginLending" class="page"><div class="hero"><div><div class="kicker">MARGIN / SECURITIES LENDING</div><h1>融資／借券賣出異動</h1><p>融資與借券賣出｜先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p></div><div class="badges"><span class="badge">盤後更新</span><span id="mlDate" class="badge"></span></div></div><div class="toolbar"><div class="tabs"><button class="tab active" data-ml-kind="margin">融資增加</button><button class="tab" data-ml-kind="borrow">借券賣出增加</button></div><div class="tabs"><button class="tab active" data-ml-market="twse">上市</button><button class="tab" data-ml-market="tpex">上櫃</button></div></div><div id="mlStatus" class="status"></div><div id="mlLogic"></div><div id="mlCards" class="grid three"></div></section>
 <section id="ai" class="page"><div class="hero"><div><div class="kicker">AI PICKS</div><h1>AI選股</h1><p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p></div><span class="badge">每天 18:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-aim="twse">上市</button><button class="tab" data-aim="tpex">上櫃</button></div></div><div id="aiStatus" class="status"></div><div id="aiCards" class="grid three"></div></section>
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
-<section id="monthlyRevenue" class="page"><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
+<section id="monthlyRevenue" class="page" hidden><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
 <section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>2024 年起每日外資資金與融資相對大盤增幅</p></div></div>
 <div class="mm-tools"><label>年份 <select data-mm-year aria-label="大盤監控年份"></select></label><label>月份 <select data-mm-month aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
 <div class="status" data-mm-status>開啟分頁後載入資料</div>
@@ -166,24 +170,18 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
 </section>
 <section id="etfFlow" class="page"></section>
-<section id="brokerResearch" class="page">
-  <div class="hero"><div><div class="kicker">BROKER RESEARCH VISUALIZATION</div><h1>券商研究中心</h1><p>個股 EPS 預估、券商比較與原始研究報告</p></div><span class="badge">測試版 · 唯讀</span></div>
-  <div class="card" style="padding:10px;margin-bottom:12px">
-    <div id="brokerResearchLoadStatus" class="muted" style="display:none" hidden></div>
-    <iframe id="brokerResearchFrame" title="券商研究中心" loading="lazy" style="display:block;width:100%;height:400px;min-height:0px;border:0;border-radius:12px;background:#0d1522" referrerpolicy="same-origin"></iframe>
-  </div>
-</section>
+
 </main>
 
 <script src="./assets/app.js?v=20261104-yesterday-bulk-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
-<script src="./assets/ui_v2.js?v=20261027-heat-37-2min"></script>
+<script src="./assets/ui_v2.js?v=20261111-nav-merged-v2"></script>
 <script>
 /* Home cards: never leave a static loading placeholder on screen.
    Existing report-count code can still replace these labels with live counts. */
 (function () {
   function clearStaleLabels() {
-    for (const [id, fallback] of [["reports", "查看最新報告"], ["selfReports", "查看最新公告"]]) {
+    for (const [id, fallback] of [["reports", "memo 讀取中…"], ["selfReports", "查看最新公告"]]) {
       const el = document.querySelector('[data-feature="' + id + '"] .feature-copy small');
       if (el && /今日資料載入中/.test(el.textContent || "")) el.textContent = fallback;
     }
@@ -195,12 +193,12 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 })();
 </script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
-<script src="./assets/feature_sort.js?v=20261004-market-monitor-nav"></script>
+<script src="./assets/feature_sort.js?v=20261111-ai-last-v2"></script>
 <script src="./assets/broker_report_charts.js?v=20261027-ai-v2"></script>
 <script src="./assets/report_dates.js?v=20261031-fixed-upload-t1-v3"></script>
 <script src="./assets/industry_summary.js?v=20261028-industry-layout-v1"></script>
-<script src="./assets/reports_v2.js?v=20261028-industry-layout-v1"></script>
-<script src="./assets/tw_ratings.js?v=20260930-v1"></script>
+<script src="./assets/reports_v2.js?v=20261111-nav-v2"></script>
+<script src="./assets/tw_ratings.js?v=20261111-visual-tab-v2"></script>
 <script src="./assets/font_scale_v2.js?v=20260929-fontscale-v2"></script>
 <script src="./assets/daily_k.js?v=20261013-restored"></script>
 <script src="./assets/heatmap_sector_filter.js?v=20261013-large-trend"></script>
@@ -214,7 +212,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script>
 (function () {
   const params = new URLSearchParams(window.location.search);
-  const target = params.get("page");
+  const target = ["monthlyRevenue", "brokerResearch"].includes(params.get("page")) ? "reports" : params.get("page");
   if (!target) return;
   const section = document.getElementById(target);
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
@@ -298,7 +296,30 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </script>
 <script src="./assets/broker_eps_comparison.js?v=20261022-compare-v3"></script>
 <script src="./assets/broker_gm_comparison.js?v=20261111-gm-v1"></script>
-<script src="./assets/research_merged.js?v=20261110-research-unified-v2"></script>
+<script src="./assets/research_merged.js?v=20261111-memo-v2"></script>
+<script id="homepage-memo-counter-v2">
+(()=>{'use strict';
+  async function refreshMemoCount(){
+    const target=document.querySelector('[data-feature="reports"] .feature-copy small');
+    if(!target)return;
+    try{
+      const response=await fetch('./data/research_meta.json',{cache:'no-store'});
+      if(!response.ok)throw new Error('index unavailable');
+      const entries=await response.json();
+      if(!Array.isArray(entries))throw new Error('invalid index');
+      const memos=entries.filter(r=>{
+        const type=String(r.original_type||'').trim().toLowerCase();
+        const category=String(r.category||'').trim();
+        return type==='法說會'||type==='call memo'||category==='法說／訪談';
+      }).length;
+      target.textContent=`memo ${memos} 篇`;
+    }catch(e){target.textContent='memo — 篇';}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshMemoCount,{once:true});
+  else refreshMemoCount();
+})();
+</script>
+
 <script src="./assets/business_reports.js?v=20261110-research-unified-v2"></script>
 <script src="./assets/business_report_titles.js?v=20261110-research-unified-v2"></script>
 
@@ -317,25 +338,6 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   iframe.style.minHeight='0px';iframe.style.height=Math.ceil(height)+'px';
  });
 })();</script>
-<script defer src="./assets/broker_research_nav.js?v=20261111-allfixed-v1"></script>
+<script defer src="./assets/broker_research_nav.js?v=20261111-embedded-v2"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
