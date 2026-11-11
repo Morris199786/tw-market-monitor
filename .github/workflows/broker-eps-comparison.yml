@@ -1,8 +1,6 @@
 name: Publish broker EPS comparison
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_run:
     workflows: ["Broker reports Drive inbox"]
     types: [completed]
@@ -31,12 +29,12 @@ jobs:
         run: |
           python -m py_compile scripts/broker_eps_fallback.py scripts/broker_eps_pipeline.py scripts/broker_eps_compare.py scripts/broker_eps_safe_publish.py
           PYTHONPATH=scripts python - <<'PY'
-          from broker_eps_fallback import extract
-          from broker_eps_pipeline import normalize, publish_new
+          from broker_eps_pipeline import normalize, publish_new, ai_eps_rows
           from broker_eps_compare import compare
           from broker_eps_safe_publish import main
           assert normalize([{'period':'2026-Q3','eps':1.25}]) == [{'period':'2026-Q3','eps':1.25}]
-          print('Offline EPS modules imported and validated; no API calls')
+          assert ai_eps_rows({'financial_forecasts':[{'period':'2027-Q1','metric':'eps','value':2.5,'type':'forecast','source':'broker'},{'period':'2027','metric':'eps','value':42.1,'type':'forecast','source':'broker'},{'period':'2027-Q2','metric':'eps','value':99,'type':'forecast','source':'consensus'}]})[0] == [{'period':'2027-Q1','eps':2.5}]
+          print('Offline AI forecast publication validated; no API calls or PDF reparse')
           PY
       - name: Refuse unsealed baseline
         run: |
