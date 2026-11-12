@@ -20,18 +20,20 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install read-only importer dependencies
-        run: python -m pip install google-api-python-client google-auth openpyxl
-      - name: Build from source Sheet
+        run: python -m pip install google-api-python-client google-auth openpyxl requests
+      - name: Collect TWSE/TPEx official turnover-based market averages
+        run: python scripts/update_etf_market_prices.py --backfill-days 18
+      - name: Build from source Sheet with official market averages
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT }}
           ETFFLOW_SHEET_ID: 1BzgyIoIo_Fq8GhLKU3smRaVv5XjD7BMskgsxckTPIl8
-        run: python scripts/update_etf_flow.py
+        run: python scripts/update_etf_flow.py --market-csv /tmp/etf-flow-market.csv
       - name: Commit validated data only
         run: |
           git add data/etf-flow-v2
           if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'Update active ETF Flow from Sheets'
+          git commit -m 'Update active ETF Flow and official TWSE/TPEx averages'
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
