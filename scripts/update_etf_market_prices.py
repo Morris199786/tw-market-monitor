@@ -148,7 +148,7 @@ def historical_day(day, market):
     if market == 'TWSE':
         raw = get_json(TWSE_HIST, {'response':'json','date':day.strftime('%Y%m%d'),'type':'ALLBUT0999'})
     else:
-        raw = get_json(TPEX_HIST, {'date':day.strftime('%Y/%m/%d'), 'response':'json','id':''})
+        raw = get_json(TPEX_HIST, {'date':day.strftime('%Y/%m/%d'), 'response':'json', 'type':'EW', 'id':''})
     return parse_historical_table(raw,d,market)
 
 
@@ -161,7 +161,7 @@ def merge(dst, src, valid_codes, today):
         slot = dst.setdefault(parsed, {})
         for c,v in values.items():
             if c in valid_codes and isinstance(v,(int,float)) and 0 < v < 100000:
-                if slot.get(c) != v:
+                if c not in slot:
                     slot[c] = v
                     added += 1
     return added
@@ -185,29 +185,77 @@ def run(args):
     records = {d:{c:v for c,v in row.items() if c in codes} for d,row in records.items() if isinstance(row,dict)}
     count = 0
     fetched = []
+    # Use the current TPEx snapshot to identify the OTC universe.
+    # Older snapshots with TWSE data but no OTC data must still be backfilled.
+    tpex_codes = set()
     for market, fn in [('TWSE',twse_latest),('TPEx',tpex_latest)]:
         try:
             got = fn()
             count += merge(records, got, codes, today.isoformat())
+            if market == 'TPEx':
+                tpex_codes = {code for day_rows in got.values() for code in day_rows if code in codes}
             fetched.append(market)
             print(f'{market}: {[ (d,len(v)) for d,v in got.items() ]}', flush=True)
         except Exception as e:
             print(f'WARNING: {market} latest not available: {type(e).__name__}: {e}', flush=True)
-    # First import only: seed recent history from official date-scoped endpoints.
-    # On subsequent days use latest daily snapshots and preserve the accumulated dates.
-    if args.backfill_days and len(records) < 3:
-        for offset in range(1,args.backfill_days+1):
-            day = today-dt.timedelta(days=offset)
-            if day.weekday()>=5:
-                continue
-            for market in ('TWSE','TPEx'):
+    # Incrementally fill missing dates AND partially covered OTC dates.
+    # A calendar date may already contain hundreds of TWSE prices while all
+    # TPEx stocks (e.g., 5274 / 6488) are missing; date-only checks miss this.
+    if args.backfill_days > 0:
+        earliest_hold = min((date_iso(f.get('earliest')) for f in meta.get('funds', [])
+                             if f.get('region') == 'TW' and date_iso(f.get('earliest'))), default=None)
+        start = dt.date.fromisoformat(earliest_hold) if earliest_hold else None
+        saved_days = {dt.date.fromisoformat(d) for d, vals in records.items()
+                      if date_iso(d) == d and vals}
+        candidates = []
+        if saved_days:
+            newest = max(saved_days)
+            for offset in range(1, min(args.backfill_days, 30) + 1):
+                day = today - dt.timedelta(days=offset)
+                if day.weekday() >= 5 or (start and day < start) or day > newest:
+                    continue
+                existing = records.get(day.isoformat(), {})
+                # Refresh when the date is missing, or OTC coverage is much
+                # lower than the current official OTC reference universe.
+                otc_seen = sum(c in existing for c in tpex_codes)
+                missing_otc = bool(tpex_codes) and otc_seen < len(tpex_codes) * .80
+                if not existing or missing_otc:
+                    candidates.append(day)
+            oldest = min(saved_days)
+            for offset in range(1, args.backfill_days + 1):
+                day = oldest - dt.timedelta(days=offset)
+                if start and day < start:
+                    break
+                if day.weekday() < 5 and day not in saved_days:
+                    candidates.append(day)
+        else:
+            for offset in range(1, args.backfill_days + 1):
+                day = today - dt.timedelta(days=offset)
+                if start and day < start:
+                    break
+                if day.weekday() < 5:
+                    candidates.append(day)
+        # Keep each run bounded; records are merged without overwriting prices
+        # on dates which are already populated.
+        for day in list(dict.fromkeys(candidates))[:10]:
+            day_key = day.isoformat()
+            existing = records.get(day_key, {})
+            before = len(existing)
+            # On OTC-only gaps, do not re-download populated TWSE data.
+            markets = ('TWSE', 'TPEx') if not existing else ('TPEx',)
+            for market in markets:
                 try:
-                    got = historical_day(day,market)
-                    count += merge(records,got,codes,today.isoformat())
-                    print(f'{market} historical {day}: {sum(map(len,got.values()))} matched', flush=True)
+                    got = historical_day(day, market)
+                    count += merge(records, got, codes, today.isoformat())
+                    matched = sum(map(len, got.values()))
+                    print(f'{market} historical {day}: {matched} matched', flush=True)
+                    if market == 'TPEx' and tpex_codes and not matched:
+                        print(f'WARNING: TPEx historical query returned no matches for {day}', flush=True)
                 except Exception as e:
-                    print(f'WARNING: {market} historical {day}: {type(e).__name__}: {e}',flush=True)
+                    print(f'WARNING: {market} historical {day}: {type(e).__name__}: {e}', flush=True)
                 time.sleep(0.15)
+            after = len(records.get(day_key, {}))
+            print(f'BACKFILL {day}: {before} -> {after} covered stocks', flush=True)
     if not records:
         raise RuntimeError('TWSE/TPEx official average prices unavailable; no market prices will be published')
     # Keep market snapshots useful for long historical ETF ranges; no old-date truncation.
