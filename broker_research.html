@@ -167,6 +167,17 @@ window.__brokerName=function(value){
  #uf-table .uf-scroll{overflow:visible}.uf-heading{flex-wrap:wrap;gap:7px}#uf-count{font-size:12px}
  .rev-value{font-size:20px}#uf-trend svg{min-width:480px}
 }
+</style><style>
+/* Adaptive mobile research: page owns vertical scrolling; charts fit available width. */
+[hidden]{display:none!important}
+html,body{min-height:0!important;height:auto!important;overflow-y:hidden!important;overflow-x:hidden!important}
+.research-panel,.uf-overview,.rev-card,.card{min-width:0;max-height:none!important;overflow-y:visible!important}
+#uf-trend{overflow:visible!important}#uf-trend svg{min-width:0!important;width:100%!important;height:auto!important}
+.view-more{max-height:none!important;overflow:visible!important}
+#financialUnified .uf-line{margin:4px 0!important;padding:7px 0!important;row-gap:4px!important}
+.sparse-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid #e8edf3;font-size:13px}
+.sparse-row>div{flex:1;min-width:100px}.sparse-row small{display:block;font-size:11px;color:#7b8796;margin-top:3px}.sparse-row strong small{display:inline}.sparse-row>a{font-size:12px}
+@media(max-width:630px){.rev-card{margin-top:12px}.rev-toolbar h3{font-size:16px}#tp-compare .tp-row{padding:7px 0!important;gap:4px!important}}
 </style></head><body>
 <script id="broker-resize-v2">(()=>{'use strict';
  let raf=0,last=0;
@@ -183,6 +194,7 @@ window.__brokerName=function(value){
     window.parent.postMessage({type:'broker-research-resize-v2',height},location.origin==='null'?'*':location.origin);
   }}catch{}
  }
+ if(window.parent===window){document.documentElement.style.setProperty('overflow-y','auto','important');document.addEventListener('DOMContentLoaded',()=>document.body.style.setProperty('overflow-y','auto','important'));}
  window.__resizeBrokerFrame=()=>{if(!raf)raf=requestAnimationFrame(measure)};
  const observer=new ResizeObserver(window.__resizeBrokerFrame);
  const watch=()=>{document.querySelectorAll('.research-panel,.controls,.company,.research-tabs').forEach(el=>observer.observe(el))};
@@ -209,7 +221,7 @@ window.__brokerName=function(value){
 </section></div><div class="research-panel" id="panel-eps" role="tabpanel"><section class="financial-unified" id="financialUnified"><div class="uf-heading"><h2>券商財測比較</h2><span class="uf-sub" id="uf-count"></span></div>
 <div class="uf-toolbar"><label>期間類型<select id="uf-kind"><option value="annual">年度</option><option value="quarter">季度</option></select></label><label>財務指標<select id="uf-metric"><option value="eps">EPS</option><option value="revenue">營收</option><option value="gross_margin">毛利率</option><option value="operating_margin">營業利益率</option><option value="operating_income">營業利益</option><option value="net_income">淨利</option></select></label></div>
 <div class="uf-overview"><div class="uf-quick"><label>可用期間<select id="uf-period"></select></label><span id="uf-period-note"></span></div><label id="uf-basis-label">期間口徑<select id="uf-basis"><option value="calendar">曆年</option><option value="fiscal">財年（FY）</option></select></label><div class="uf-sub" id="uf-status"></div><div class="uf-sub" id="uf-actual"></div><div class="uf-chart" id="uf-chart"></div><details id="uf-detail"><summary id="uf-detail-summary">查看各券商數值、日期與來源</summary><div class="uf-table" id="uf-table"></div></details></div>
-<section class="rev-card" aria-label="財測修正趨勢"><div class="rev-toolbar"><h3>同期間財測修正趨勢</h3><select id="uf-trend-broker" aria-label="趨勢圖券商"></select></div><p id="uf-revision-note"></p><div id="uf-trend"></div></section><section class="rev-card"><h3>各券商最新報告變化</h3><p class="rev-meta">比較目前所選期間、指標及口徑的最近兩個有效報告日期；只呈現數字變化，不推論調整原因。</p><div class="rev-grid" id="uf-revision-cards"></div></section><details class="uf-details"><summary>完整歷次財測數據</summary><div id="uf-changes"></div></details>
+<section class="rev-card" aria-label="財測修正趨勢"><div class="rev-toolbar"><h3>同一券商對同一年度／季度的預估變化</h3><select id="uf-trend-broker" aria-label="趨勢圖券商"></select></div><p id="uf-revision-note"></p><div id="uf-trend"></div></section><section class="rev-card"><h3>各券商最新報告變化</h3><p class="rev-meta">比較目前所選期間、指標及口徑的最近兩個有效報告日期；只呈現數字變化，不推論調整原因。</p><div class="rev-grid" id="uf-revision-cards"></div></section><details class="uf-details"><summary>完整歷次財測數據</summary><div id="uf-changes"></div></details>
 <div class="uf-errors" hidden="" id="uf-errors"></div></section><section aria-label="個股摘要" class="stats"><div class="stat"><div class="lbl">券商報告筆數</div><strong id="s-reports">—</strong><div class="foot">具有 EPS 預估的報告</div></div><div class="stat"><div class="lbl">研究券商數</div><strong id="s-brokers">—</strong><div class="foot">目前資料庫收錄</div></div><div class="stat"><div class="lbl">該季預估中位數</div><strong id="s-median">—</strong><div class="foot" id="s-median-note">僅計入可比較數字</div></div><div class="stat"><div class="lbl">該季實際 EPS</div><strong id="s-actual">—</strong><div class="foot" id="s-actual-note">以正式財報優先</div></div></section><div class="alert" hidden="" id="quality"></div><div class="card"><div class="cardhead"><div><h2>EPS 預估與公告時間軸</h2><small>顯示研究發布日期與 EPS 預估；不是股價或目標價走勢</small></div><div class="legend"><span><span class="dot" style="background:#1b86d8"></span>券商預估</span><span><span class="dot" style="background:#d34253"></span>正式公告 EPS</span></div></div><div class="chartwrap" id="lineChart"></div></div><div class="two"><div class="card"><div class="cardhead"><div><h2>各家券商最新 EPS 預估</h2><small>同一季度、同一券商只保留最新報告</small></div></div><div id="bars"></div></div><div class="card"><div class="cardhead"><div><h2>歷次預估修正</h2><small>依券商發布日期新 → 舊顯示</small></div></div><div class="timeline" id="history"></div></div></div><div class="card"><div class="cardhead"><div><h2>券商季度 EPS 矩陣</h2><small>點擊數字可檢視原始報告。資料疑慮會標記「待核」</small></div><div class="inline-tools"><button aria-pressed="false" class="toggle" id="showFlagged">隱藏疑慮數值：開</button></div></div><div class="scroll" id="matrix"></div><div class="sectionnote">預估採原始 JSON 的季度標籤；標記疑慮不代表已證實解析錯誤。不同季度與年度數字不可混算，來源 PDF 應優先核對。</div></div><div class="card"><div class="cardhead"><div><h2>財報實績對照</h2><small>同季度 EPS，僅顯示有正式公告的結果</small></div></div><div class="scroll" id="actuals"></div></div></div><div class="research-panel" id="panel-reports" role="tabpanel"><div class="views-head"><div><h2>完整歷史研究報告</h2><p>按日期查看各家券商的原始研究</p></div></div><div class="card"><div class="cardhead"><div><h2>歷次券商報告</h2><small>依日期排序，每份報告保留原始 PDF</small></div></div><div class="scroll" id="reports"></div></div></div>
 <div class="divider"></div>
 <script>
@@ -280,9 +292,9 @@ function show(){
  $('tp-compare').innerHTML=latest.length?latest.map(x=>`<div class="tp-row"><div class="tp-label" title="${esc(x.broker)}">${esc(x.broker)}</div><div class="tp-bar"><i style="width:${Math.max(2,Math.min(100,x.current/max*100))}%"></i></div><div class="tp-val">${x.url==='#'?fmt(x.current):`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${fmt(x.current)}</a>`}</div><div class="tp-day">${esc(x.reportDate)}</div></div>`).join(''):'<div class="empty">這家公司目前沒有可驗證的券商目標價；不會補上示意數字。</div>';
  const filter=$('tp-broker-filter'),before=filter.value;filter.innerHTML='<option value="all">所有券商</option>'+[...byBroker.keys()].sort((a,b)=>a.localeCompare(b,'zh-Hant')).map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');filter.value=[...byBroker.keys()].includes(before)?before:'all';drawHistory(rows,byBroker);
  $('tp-table').innerHTML=rows.length?`<table><thead><tr><th>日期</th><th>券商</th><th>舊目標價</th><th>新目標價</th><th>調整幅度</th><th>原始報告</th></tr></thead><tbody>${rows.map(x=>{let d=x.previous==null?null:x.current-x.previous,p=d!=null?100*d/x.previous:null;return `<tr><td>${esc(x.reportDate)}</td><td>${esc(x.broker)}${x.dubious?'<small class="tp-error">待核對</small>':''}</td><td>${fmt(x.previous)}</td><td><b>${fmt(x.current)}</b></td><td class="${d==null?'tp-flat':d>0?'tp-up':d<0?'tp-down':'tp-flat'}">${p==null?'未提供':`${p>0?'+':''}${p.toFixed(2)}%`}</td><td>${x.url==='#'?'—':`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">PDF ↗</a>`}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">尚未有目標價修正明細。</div>';
- try{if(window.frameElement&&window.parent.location.origin===location.origin)window.frameElement.style.height=(document.documentElement.scrollHeight+25)+'px'}catch{}
+ window.__resizeBrokerFrame?.();
 }
-function drawHistory(rows,byBroker){let choice=$('tp-broker-filter').value;let brokers=choice==='all'?[...byBroker.keys()].sort((a,b)=>a.localeCompare(b,'zh-Hant')):[choice];let list=brokers.map(b=>({broker:b,rows:(byBroker.get(b)||[]).filter(x=>!x.dubious).sort((a,c)=>a.reportDate.localeCompare(c.reportDate))})).filter(x=>x.rows.length);let allPts=choice==='all'?[]:list[0]?.rows||[];$('tp-chart').innerHTML=choice==='all'?'<div class="tp-mini">選擇單一券商，即可查看目標價歷次變化曲線；避免將不同券商的數字連成同一條線。</div>':trend(allPts);
+function drawHistory(rows,byBroker){let choice=$('tp-broker-filter').value;let brokers=choice==='all'?[...byBroker.keys()].sort((a,b)=>a.localeCompare(b,'zh-Hant')):[choice];let list=brokers.map(b=>({broker:b,rows:(byBroker.get(b)||[]).filter(x=>!x.dubious).sort((a,c)=>a.reportDate.localeCompare(c.reportDate))})).filter(x=>x.rows.length);let allPts=choice==='all'?[]:list[0]?.rows||[];$('tp-chart').innerHTML=choice==='all'?'<div class="tp-mini">選擇單一券商，即可查看目標價歷次變化曲線；避免將不同券商的數字連成同一條線。</div>':allPts.length>=3?trend(allPts):'<div class="tp-mini">目前不足三個不同報告日期，請查看下方數值與前後變化。</div>';
  $('tp-history').innerHTML=list.length?list.map(({broker,rows})=>{let last=rows.at(-1),prev=rows.at(-2),diff=prev?last.current-prev.current:null,percent=prev?diff/prev.current*100:null;return `<div class="tp-hitem"><div class="tp-hhead"><b>${esc(broker)}</b><span class="tp-change ${diff==null?'tp-flat':diff>0?'tp-up':diff<0?'tp-down':'tp-flat'}">${diff==null?'僅 1 份目標價':`${diff>0?'+':''}${fmt(diff)}（${percent>0?'+':''}${percent.toFixed(2)}%）`}</span></div><div class="tp-dates">最新 ${esc(last.reportDate)} · ${rows.length} 個不同報告日期</div><div>${rows.map(x=>`<span class="tp-step"><small>${esc(x.reportDate.slice(5))}</small>${x.url==='#'?fmt(x.current):`<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${fmt(x.current)}</a>`}</span>`).join('')}</div></div>`}).join(''):'<div class="empty">沒有可比較的歷次目標價</div>';
 }
 async function init(){try{const res=await fetch('./data/reports.json?v='+Math.floor(Date.now()/300000),{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const json=await res.json();if(!Array.isArray(json.items))throw Error('reports.json 缺少 items 陣列');let items=[],invalid=[];for(let i=0;i<json.items.length;i++){const r=json.items[i];let p=price(r?.target_price_new),ticker=tkr(r?.ticker||r?.stock_code||r?.stock_id||r?.code);if(p==null)continue;let n=normalize(r,i);if(n)items.push(n);else if(ticker)invalid.push({ticker})}window.__brokerResearchSourceReports=json.items.map(r=>({...r,broker:window.__brokerName(r.broker)}));document.dispatchEvent(new Event("broker-reports-ready"));state.items=items;state.invalid=invalid;state.loaded=true;show();}catch(e){state.failed=true;$('tp-status').classList.add('error');$('tp-status').textContent='目標價資料讀取失敗：'+e.message+'（EPS 資料仍可正常使用）';}}
@@ -585,13 +597,19 @@ function comparableHistory(input) {
 }
 function renderRevisions(input,met,selected) {
  const {rows,conflicts}=comparableHistory(input);
+ const trendSection=$('uf-trend').closest('section');
+ const changesSection=$('uf-revision-cards').closest('section');
+ const counts=new Map();for(const r of rows)counts.set(r.broker,(counts.get(r.broker)||0)+1);
+ const eligible=new Set([...counts].filter(([,n])=>n>=3).map(([b])=>b));
+ trendSection.hidden=eligible.size===0;
+ changesSection.hidden=![...counts.values()].some(n=>n>=2);
  const unit=met==='eps'?'元／股':['gross_margin','operating_margin'].includes(met)?'%':'億元';
  const brokers=[...new Set(rows.map(x=>x.broker))].sort();
  const filter=$('uf-trend-broker'),prior=filter.value;
- filter.innerHTML='<option value="all">全部券商</option>'+brokers.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
- filter.value=brokers.includes(prior)?prior:'all';
- $('uf-revision-note').textContent=`固定比較 ${selected} ${metricLabels[met]}（${unit}）；橫軸為報告日期。`+(conflicts.length?` ${conflicts.length} 組同券商同日數字不一致，暫不納入曲線與修正摘要。`:'');
- const cards=brokers.map(b=>{
+ filter.innerHTML='<option value="all">全部券商</option>'+brokers.filter(b=>eligible.has(b)).map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('');
+ filter.value=eligible.has(prior)?prior:'all';
+ $('uf-revision-note').textContent=`固定比較 ${selected} ${metricLabels[met]}（${unit}）；橫軸是報告發布日期；每條線代表一家券商先後發布的預估，並非公司逐季實績。僅顯示至少三個不同報告日期的券商。`+(conflicts.length?` ${conflicts.length} 組同券商同日數字不一致，暫不納入曲線與修正摘要。`:'');
+ const cards=brokers.filter(b=>counts.get(b)>=2).map(b=>{
   const history=rows.filter(x=>x.broker===b),last=history.at(-1),prev=history.at(-2);
   if(!prev)return `<article class="rev-item"><b>${esc(b)}</b><div class="rev-value">${format(last.value)} <small>${unit}</small></div><div class="rev-meta">${esc(last.date)} · 僅一個有效報告日期，無前次可比</div>${revisionLink(last,'本次 PDF')}</article>`;
   const change=last.value-prev.value;
@@ -603,11 +621,11 @@ function renderRevisions(input,met,selected) {
  });
  $('uf-revision-cards').innerHTML=cards.join('')||'<div class="empty">本期間沒有可比較的有效日期資料。</div>';
  const draw=()=>{
-  const picked=filter.value==='all'?rows:rows.filter(x=>x.broker===filter.value);
+  const picked=rows.filter(x=>eligible.has(x.broker)&&(filter.value==='all'||x.broker===filter.value));
   const host=$('uf-trend');
-  if(!picked.length){host.innerHTML='<div class="empty">尚無有效財測資料</div>';return;}
+  if(!picked.length){host.innerHTML='';resize();return;}
   const groups=[...new Set(picked.map(x=>x.broker))];
-  const W=680,H=300,L=72,R=24,T=25,B=48;
+  const W=Math.max(300,Math.min(680,host.clientWidth||340)),H=240,L=58,R=25,T=25,B=44;
   const ds=picked.map(x=>Date.parse(x.date+'T00:00:00Z')),start=Math.min(...ds),end=Math.max(...ds);
   const vals=picked.map(x=>x.value),lo=Math.min(...vals),hi=Math.max(...vals),pad=Math.max((hi-lo)*.15,Math.abs(hi)*.04,.1);
   const bottom=lo-pad,top=hi+pad;
@@ -665,7 +683,11 @@ function render(){
  const periods=[...new Set(rows.map(r=>r.period))].sort();
  const selectionKey=['broker-period-v1',t,kind,met,basis].join(':');
  const nextYear=String(Number(new Intl.DateTimeFormat('en',{year:'numeric',timeZone:'Asia/Taipei'}).format(new Date()))+1);
- const fallback=kind==='annual'?(periods.includes(nextYear)?nextYear:(periods.find(p=>p>=nextYear)||periods.at(-1)||'')):(periods.at(-1)||'');
+ const rankedPeriods=periods.slice().sort((a,b)=>{
+ const count=p=>new Set(rows.filter(r=>r.period===p).map(r=>r.broker)).size;
+ return count(b)-count(a)||(kind==='annual'?Number(b===nextYear)-Number(a===nextYear):0)||b.localeCompare(a);
+ });
+ const fallback=rankedPeriods[0]||'';
  const selected=selectOnlyAvailable(periodSelect,periods.map(p=>({value:p,label:p})),savedPeriod(selectionKey),fallback);
  const hasData=rows.length>0;
  for(const el of [kindSelect,metricSelect,periodSelect]){el.disabled=!hasData;el.closest('label')?.classList.toggle('uf-no-data',!hasData)}
@@ -686,6 +708,10 @@ function render(){
  const span=barMax-barMin||1,zero=(0-barMin)/span*100;
  $('uf-chart').innerHTML=latest.map(r=>{const left=(Math.min(0,r.value)-barMin)/span*100,width=Math.abs(r.value)/span*100;
  return `<div class="uf-line"><span>${esc(r.broker)}</span><div class="uf-bar"><span class="uf-zero" style="left:${zero}%"></span><i style="left:${left}%;width:${width}%;background:${r.value<0?'#8599ac':'#2d87c9'}"></i></div><strong>${format(r.value)}<small class="uf-eps-unit"> ${met==='eps'?'元/股':['revenue','net_income','operating_income'].includes(met)?'億元':'%'}</small></strong></div>`}).join('');
+ if(latest.length<=2){
+   const unit=met==='eps'?'元／股':['revenue','net_income','operating_income'].includes(met)?'億元':'%';
+   $('uf-chart').innerHTML='<div class="sparse-forecast">'+latest.map(r=>`<div class="sparse-row"><div><b>${esc(r.broker)}</b><small>${esc(r.date)}</small></div><strong>${format(r.value)} <small>${unit}</small></strong>${revisionLink(r,'原始報告')}</div>`).join('')+'</div><p class="rev-meta">'+(latest.length===1?'本期間僅一家券商提供數值，顯示單筆預估，不代表市場共識。':'本期間僅兩家券商提供數值，直接列出比較，不推論市場共識。')+'</p>';
+ }
  renderRevisions(allP,met,selected);
  $('uf-table').innerHTML=latest.length?`<div class="uf-scroll"><table><thead><tr><th>券商</th><th>${esc(selected)}</th><th>日期</th><th>來源</th></tr></thead><tbody>${latest.map(x=>`<tr><td data-label="券商">${esc(x.broker)}</td><td data-label="${esc(selected)}">${format(x.value)} ${met==='eps'?'元/股':['revenue','operating_income','net_income'].includes(met)?'億元':esc(x.unit)}</td><td data-label="報告日期">${esc(x.date)}</td><td data-label="來源">${x.url?`<a target="_blank" rel="noopener noreferrer" href="${esc(x.url)}">PDF</a>`:'—'}</td></tr>`).join('')}</tbody></table></div>`:'';
  const history=rows.slice().sort((a,b)=>b.date.localeCompare(a.date));
@@ -699,3 +725,4 @@ $('uf-kind').addEventListener('change',render);$('uf-metric').addEventListener('
 $('ticker').addEventListener('change',()=>{setTimeout(render,30);setTimeout(updateReports,90)});$('search').addEventListener('change',()=>setTimeout(render,60));
 Promise.all([fetch('./data/broker_eps_forecasts.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({items:[]})),fetch('./data/master.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({stocks:{}})),fetch('./data/quarterly_earnings.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({reports:[]}))]).then(([j,master,q])=>{extraEPS=(j.items||[]).map(r=>({...r,broker:window.__brokerName(r.broker)}));for(const [t,v] of Object.entries(master.stocks||{}))if(v.name)stockNames.set(t,String(v.name));actuals=q.reports||[];init()});
 })();</script><script>(()=>{const normalize=()=>{for(const el of document.querySelectorAll('#tp-compare .tp-label,#uf-chart .uf-line>span,#uf-table td[data-label="券商"],.rev-item b')){if(/^BofA\s*[（(]BofA[）)]$/i.test(el.textContent.trim()))el.textContent='BofA';}};document.addEventListener('broker-reports-ready',()=>setTimeout(normalize,100));new MutationObserver(normalize).observe(document.body,{subtree:true,childList:true});normalize();})();</script></body></html>
+

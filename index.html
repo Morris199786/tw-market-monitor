@@ -450,10 +450,11 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   if(e.data?.type!=='broker-research-resize-v2')return;
   const height=Number(e.data.height);
   if(!Number.isFinite(height)||height<300||height>60000)return;
-  iframe.style.minHeight='0px';iframe.style.height=Math.ceil(height)+'px';
+  const next=Math.ceil(height)+'px';iframe.style.minHeight='0px';if(iframe.style.height!==next)iframe.style.height=next;
  });
 })();</script>
-<script defer src="./assets/broker_research_nav.js?v=20261112-bofa-alias-v1"></script>
+<script defer src="./assets/broker_research_nav.js?v=20261112-adaptive-v5"></script>
 </body>
 </html>
+
 
