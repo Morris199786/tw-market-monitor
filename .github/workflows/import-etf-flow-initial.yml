@@ -95,4 +95,17 @@ jobs:
             exit 0
           fi
           git commit -m 'Import ETF Flow initial JSON data'
-          git push origin HEAD:main
+          # Remote main can advance while extracting 1,034 JSON files.
+          # Rebase our import commit on the current main; never force-push.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              echo 'ETF Flow initial JSON import pushed successfully.'
+              exit 0
+            fi
+            echo "Main advanced during push (attempt ${attempt}); retrying safely."
+            sleep 3
+          done
+          echo 'Unable to push after 3 safe attempts; no force push was used.' >&2
+          exit 1
