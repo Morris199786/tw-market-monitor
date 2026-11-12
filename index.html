@@ -137,20 +137,20 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <button class="nav" data-p="reports">產業資料庫</button>
 <button class="nav" data-p="selfReports">財報追蹤</button>
 <button class="nav" data-p="flows">籌碼日報</button>
+<button class="nav" data-p="etfFlow">主動式ETF</button>
 <button class="nav" data-p="volume">突然放量</button>
 <button class="nav" data-p="turnover">成交排行</button>
 <button class="nav" data-p="marginLending">融資／借券</button>
 <button class="nav" data-p="holders">大戶籌碼</button>
-<button class="nav" data-p="etfFlow">ETF Flow</button>
 <button class="nav" data-p="marketMonitor">大盤監控</button>
 <button class="nav" data-p="ai">AI選股</button>
 </nav>
 <div id="clock" class="clock"></div><div class="header-actions"></div>
 <select id="mobileNav" aria-label="切換分頁">
 <option value="home">總覽</option><option value="heat">市場熱力圖</option><option value="reports">產業資料庫</option>
-<option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="volume">突然放量</option>
+<option value="selfReports">財報追蹤</option><option value="flows">籌碼日報</option><option value="etfFlow">主動式ETF</option><option value="volume">突然放量</option>
 <option value="turnover">成交排行</option><option value="marginLending">融資／借券</option>
-<option value="holders">大戶籌碼</option><option value="etfFlow">ETF Flow</option><option value="marketMonitor">大盤監控</option><option value="ai">AI選股</option>
+<option value="holders">大戶籌碼</option><option value="marketMonitor">大盤監控</option><option value="ai">AI選股</option>
 </select>
 <div id="mobilePageNav" class="mobile-page-nav">
 <button id="mobilePageNavToggle" class="mobile-page-nav-toggle" type="button" aria-expanded="false">總覽</button>
@@ -225,6 +225,41 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   else clearStaleLabels();
   window.addEventListener("load", clearStaleLabels, {once:true});
   setTimeout(clearStaleLabels, 5000);
+})();
+</script>
+<script id="active-etf-feature-card-20261112">
+/* Only add a home shortcut. The existing feature-sort module remains authoritative. */
+(function () {
+  const rail = document.getElementById('featureRail');
+  const flowsCard = rail?.querySelector('.feature-card[data-feature="flows"]');
+  if (!flowsCard || rail.querySelector('.feature-card[data-feature="etfFlow"]')) return;
+
+  const card = flowsCard.cloneNode(true);
+  card.dataset.feature = 'etfFlow';
+  card.dataset.tone = 'blue';
+  card.setAttribute('aria-label', '主動式ETF');
+  const name = card.querySelector('.feature-copy b');
+  const description = card.querySelector('.feature-copy small');
+  if (name) name.textContent = '主動式ETF';
+  if (description) description.textContent = '持股／績效／資金流';
+  const icon = card.querySelector('.feature-icon');
+  if (icon) icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M7 15l4-4 3 2 3-4"></path></svg>';
+  card.onclick = function () { if (typeof page === 'function') page('etfFlow'); };
+  flowsCard.insertAdjacentElement('afterend', card);
+  rail.querySelectorAll('.feature-index').forEach((number, index) => {
+    number.textContent = String(index + 1).padStart(2, '0');
+  });
+
+  // Users with existing saved card orders also get this new card after 籌碼日報.
+  try {
+    const key = 'tw-feature-order-v4';
+    const saved = JSON.parse(localStorage.getItem(key) || 'null');
+    if (Array.isArray(saved) && !saved.includes('etfFlow')) {
+      const at = saved.indexOf('flows');
+      saved.splice(at < 0 ? saved.length : at + 1, 0, 'etfFlow');
+      localStorage.setItem(key, JSON.stringify(saved));
+    }
+  } catch (_) {}
 })();
 </script>
 <script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
@@ -441,7 +476,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/research_safari_table_fix.js?v=20261027-safari-text-v1"></script>
 
 <script defer src="./assets/research_ai_layout_fix.js?v=20261026-source-audit-v5"></script>
-<script defer src="./assets/etf_flow.js?v=20261112-stock-short-names-v7"></script>
+<script defer src="./assets/etf_flow.js?v=20261112-estimated-amount-v1"></script>
 <script id="broker-frame-height-listener-v2">(()=>{'use strict';
  const iframe=document.getElementById('brokerResearchFrame');
  if(!iframe)return;
