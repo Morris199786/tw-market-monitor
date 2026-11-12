@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only Sheets importer. Build active-equity ETF data; publish manifest last.
-Input: --xlsx workbook.xlsx, or GOOGLE_SERVICE_ACCOUNT_JSON and ETFFLOW_SHEET_ID.
+Input: --xlsx workbook.xlsx, or Google Application Default Credentials (WIF),
+with legacy GOOGLE_SERVICE_ACCOUNT_JSON support.
 Optional --market-csv: date,code,adjusted_close,average_price (TWD only).
 """
 import argparse, collections, datetime as dt, hashlib, json, math, os, re, shutil, tempfile
@@ -32,9 +33,14 @@ def read_sheets():
     import google.auth
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
+    scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
     raw=os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON') or os.environ.get('GOOGLE_SERVICE_ACCOUNT')
-    if not raw:raise RuntimeError('Set GOOGLE_SERVICE_ACCOUNT_JSON to a service account with read access to the source Sheet')
-    info=json.loads(raw);cred=service_account.Credentials.from_service_account_info(info,scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+    if raw:
+        # Keep backwards compatibility with a valid legacy JSON secret when explicitly supplied.
+        cred=service_account.Credentials.from_service_account_info(json.loads(raw),scopes=scopes)
+    else:
+        # google-github-actions/auth exports GOOGLE_APPLICATION_CREDENTIALS for keyless WIF.
+        cred,_=google.auth.default(scopes=scopes)
     api=build('sheets','v4',credentials=cred,cache_discovery=False).spreadsheets()
     sid=os.environ.get('ETFFLOW_SHEET_ID',SHEET_ID)
     meta=api.get(spreadsheetId=sid,fields='sheets(properties(title,gridProperties(rowCount,columnCount)))').execute()
