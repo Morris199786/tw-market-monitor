@@ -31,3 +31,11 @@ html[data-theme=dark] #etfFlow{--ef-ink:#dbe5f1;--ef-muted:#a0afc1;--ef-border:#
 #etfFlow .ef-clear-input{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;min-height:34px;height:34px;padding:0;border-radius:50%;background:#eef1f5;color:#526071;font-size:22px;line-height:1;display:flex;justify-content:center;align-items:center}
 #etfFlow .ef-clear-input[hidden]{display:none!important}
 html[data-theme=dark] #etfFlow .ef-clear-input{background:#303d4d;color:#e0e7ee}
+
+/* ETF × stock: distinct interval and selected-day metrics; concise on mobile. */
+#etfFlow .ef-history-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 14px}
+#etfFlow .ef-history-metric{border:1px solid var(--ef-border);background:#f7f9fc;border-radius:13px;padding:12px;min-width:0}
+#etfFlow .ef-history-metric small{display:block;color:var(--ef-muted);font-size:12px;line-height:1.5;margin-bottom:6px}
+#etfFlow .ef-history-metric strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+html[data-theme=dark] #etfFlow .ef-history-metric{background:#202c3b}
+@media(max-width:380px){#etfFlow .ef-history-summary{grid-template-columns:1fr}}
