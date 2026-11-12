@@ -60,7 +60,8 @@ def make_batches(title, entries, max_entries=GROUP_SIZE, *, compact=False):
     item_budget = TELEGRAM_LIMIT - prefix_budget - 8
     if item_budget < 100:
         raise ValueError('title too long')
-    separator = '\n' if compact else '\n\n'
+    # Rating digests stay compact for batching, but preserve a blank line between companies.
+    separator = '\n\n' if title.startswith('📌 台股評等｜') else ('\n' if compact else '\n\n')
     for item in clean_entries:
         parts = split_text(item, item_budget) if utf16_len(item) > item_budget else [item]
         for part in parts:

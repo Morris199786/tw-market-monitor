@@ -1517,8 +1517,6 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
         ):
             text+='\n'+_telegram_source_url
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
-        if 'cumulative_difference' in (x.get('eps_basis'),x.get('prev_eps_basis')):
-            text+='\n\nEPS 含累計差額推算值'
         report_keys.append(delivery_key)
         report_entries.append(text)
         delivered_snapshots[key]={k:x.get(k) for k in fields}
