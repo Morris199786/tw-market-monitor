@@ -127,6 +127,17 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
     #marketPulse .daily-signal-item.pulse-earnings-signal { min-height:100px; }
   }
 </style>
+
+<style id="ios-search-no-zoom">
+/* iOS Safari: editable fields below 16px trigger viewport auto-zoom. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+</style>
 </head>
 <body>
 <header><div class="head">
