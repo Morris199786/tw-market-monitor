@@ -14,11 +14,23 @@ def num(x):
         v=float(str(x).replace(',','').replace('%',''));return v if math.isfinite(v) else None
     except (ValueError,TypeError):return None
 def date(x):
-    if isinstance(x,(dt.datetime,dt.date)):return x.strftime('%Y-%m-%d')
-    s=str(x or '').strip();m=re.match(r'^(20\d\d)[/-]?(\d\d)[/-]?(\d\d)',s)
-    if not m:return None
-    try:return dt.date(*map(int,m.groups())).isoformat()
-    except ValueError:return None
+    if isinstance(x,(dt.datetime,dt.date)):
+        return x.strftime('%Y-%m-%d')
+    # Sheets API UNFORMATTED_VALUE returns date-formatted cells as numeric
+    # serial days since 1899-12-30, while other tabs use YYYYMMDD strings.
+    if isinstance(x,(int,float)) and not isinstance(x,bool) and math.isfinite(x):
+        if 30000 <= x <= 80000:
+            return (dt.date(1899,12,30)+dt.timedelta(days=int(x))).isoformat()
+    s=str(x or '').strip()
+    m=re.fullmatch(r'(20\d\d)[/-]?(\d\d)[/-]?(\d\d)',s)
+    if m:
+        try:return dt.date(*map(int,m.groups())).isoformat()
+        except ValueError:return None
+    if re.fullmatch(r'\d{5}(?:\.0+)?',s):
+        serial=float(s)
+        if 30000 <= serial <= 80000:
+            return (dt.date(1899,12,30)+dt.timedelta(days=int(serial))).isoformat()
+    return None
 def dictionaries(rows):
     it=iter(rows);head=[str(x or '').strip() for x in next(it)]
     for values in it:
