@@ -1,0 +1,98 @@
+name: Import ETF Flow Initial JSON Data (One Time)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Same concurrency group as the daily ETF Flow sync.
+concurrency:
+  group: etf-flow-active-v2
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Verify ZIP and import JSON files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path, PurePosixPath
+          from collections import Counter
+          import json
+          import zipfile
+
+          archive = Path('etf_flow_initial_data.zip')
+          if not archive.is_file():
+              raise SystemExit('找不到 etf_flow_initial_data.zip；請將原始 ZIP 上傳到 repository 根目錄。')
+
+          output_root = Path('data')
+          with zipfile.ZipFile(archive) as z:
+              files = [m for m in z.infolist() if not m.is_dir()]
+              names = [m.filename for m in files]
+              if len(files) != 1034 or len(set(names)) != len(names):
+                  raise SystemExit(f'ZIP 檔案數量或重複路徑不符：{len(files)}，預期 1034。')
+              groups = Counter()
+              expected_version = '2212db1e783a'
+              prefix = f'etf-flow-v2/versions/{expected_version}/'
+              required = {
+                  'etf-flow-v2/manifest.json',
+                  *(prefix + x for x in ('meta.json','flows.json','ranking.json','stock-index.json')),
+              }
+              if not required.issubset(names):
+                  raise SystemExit('缺少 manifest 或四個主要 JSON。')
+              validated = []
+              for m in files:
+                  name = m.filename
+                  path = PurePosixPath(name)
+                  if path.is_absolute() or '..' in path.parts or not name.startswith('etf-flow-v2/') or path.suffix != '.json':
+                      raise SystemExit('ZIP 含有不允許的路徑：' + name)
+                  if m.file_size > 10 * 1024 * 1024:
+                      raise SystemExit('JSON 檔案過大：' + name)
+                  parsed = json.loads(z.read(m).decode('utf-8'))
+                  if name == 'etf-flow-v2/manifest.json':
+                      if parsed.get('schema') != 2 or parsed.get('path') != f'versions/{expected_version}/':
+                          raise SystemExit('manifest 的資料版本與 ZIP 不一致。')
+                  if name.startswith(prefix + 'etfs/'):
+                      groups['etfs'] += 1
+                  if name.startswith(prefix + 'stocks/'):
+                      groups['stocks'] += 1
+                  validated.append((path, z.read(m)))
+              if groups['etfs'] != 37 or groups['stocks'] != 992:
+                  raise SystemExit(f'ETF／個股 JSON 數量不符：{dict(groups)}。')
+
+              # Manifest is written last so it never points to partially extracted data.
+              validated.sort(key=lambda item: item[0].name == 'manifest.json')
+              for relative, content in validated:
+                  dest = output_root.joinpath(*relative.parts)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(content)
+
+          print('ETF Flow initial import validated: 1,034 JSON (37 ETF / 992 stocks / 5 common).')
+          PY
+
+      - name: Commit complete data and remove temporary ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- data/etf-flow-v2
+          git rm -f --ignore-unmatch -- etf_flow_initial_data.zip
+          if git diff --cached --quiet; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git commit -m 'Import ETF Flow initial JSON data'
+          git push origin HEAD:main
