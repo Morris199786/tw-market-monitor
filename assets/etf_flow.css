@@ -11,3 +11,23 @@
 #etfFlow .ef-chart{min-width:0;overflow:visible;margin-top:14px}#etfFlow svg{display:block;width:100%;height:auto;min-width:0;color:var(--ef-muted);touch-action:pan-y}#etfFlow svg text{fill:currentColor;font-size:12px;font-family:inherit}#etfFlow .ef-chart-selection{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;margin:10px 0}#etfFlow .ef-chart-selection label{display:flex;gap:8px;align-items:center}#etfFlow .ef-chart-selection strong{font-size:17px}
 html[data-theme=dark] #etfFlow{--ef-ink:#dbe5f1;--ef-muted:#a0afc1;--ef-border:#374354}html[data-theme=dark] #etfFlow .ef-card,html[data-theme=dark] #etfFlow .ef-stat,html[data-theme=dark] #etfFlow button,html[data-theme=dark] #etfFlow input,html[data-theme=dark] #etfFlow select{background:#1b2532}html[data-theme=dark] #etfFlow th,html[data-theme=dark] #etfFlow .ef-empty{background:#202c3b}
 @media(max-width:650px){#etfFlow .ef-card{padding:14px;border-radius:15px}#etfFlow .ef-columns{grid-template-columns:1fr;gap:12px}#etfFlow .ef-tabs{gap:5px}#etfFlow .ef-tabs button{font-size:12px;padding:9px 4px}#etfFlow .ef-heading h1{font-size:24px}#etfFlow .ef-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#etfFlow .ef-stat strong{font-size:16px}#etfFlow th,#etfFlow td{padding:9px 7px}#etfFlow .ef-heading>button{font-size:12px;white-space:nowrap}}
+
+/* ETF Flow 績效排名：表頭與各筆資料使用相同欄寬及對齊方式。
+   只作用於績效排名，不更動其他表格。手機窄螢幕可在表格內左右滑動。 */
+#etfFlow .ef-ranking-table{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#etfFlow .ef-ranking-table table{table-layout:fixed;width:100%;min-width:710px}
+#etfFlow .ef-ranking-table th,#etfFlow .ef-ranking-table td{box-sizing:border-box;vertical-align:middle;font-variant-numeric:tabular-nums}
+#etfFlow .ef-ranking-table th:nth-child(1),#etfFlow .ef-ranking-table td:nth-child(1){width:8%;text-align:center}
+#etfFlow .ef-ranking-table th:nth-child(2),#etfFlow .ef-ranking-table td:nth-child(2){width:37%;text-align:left}
+#etfFlow .ef-ranking-table th:nth-child(3),#etfFlow .ef-ranking-table td:nth-child(3){width:17%;text-align:center}
+#etfFlow .ef-ranking-table th:nth-child(4),#etfFlow .ef-ranking-table td:nth-child(4){width:16%;text-align:right}
+#etfFlow .ef-ranking-table th:nth-child(5),#etfFlow .ef-ranking-table td:nth-child(5){width:22%;text-align:center}
+#etfFlow .ef-ranking-table td:nth-child(2) .ef-link{display:inline-block;width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.45;text-align:left;vertical-align:middle}
+#etfFlow .ef-ranking-table td:nth-child(5){white-space:normal;line-height:1.5}
+
+/* ETF 代號搜尋：僅清除輸入文字，不改變目前顯示的基金 */
+#etfFlow .ef-input-wrap{display:block;position:relative;width:100%;min-width:0}
+#etfFlow .ef-input-wrap>input{width:100%;padding-right:50px}
+#etfFlow .ef-clear-input{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;min-height:34px;height:34px;padding:0;border-radius:50%;background:#eef1f5;color:#526071;font-size:22px;line-height:1;display:flex;justify-content:center;align-items:center}
+#etfFlow .ef-clear-input[hidden]{display:none!important}
+html[data-theme=dark] #etfFlow .ef-clear-input{background:#303d4d;color:#e0e7ee}
