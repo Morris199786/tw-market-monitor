@@ -1431,7 +1431,21 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
     state=load_json(SENT,{'ids':[]})
     sent=set(state.get('ids',[]))
     snapshots=dict(state.get('report_metrics',{}))
-    fields=('eps','prev_eps','gross_margin','prev_gross_margin')
+    base_fields=('eps','prev_eps','gross_margin','prev_gross_margin')
+    opm_fields=('operating_margin','prev_operating_margin')
+    fields=base_fields+opm_fields
+    opm_version='2026-11-13-opm-notification-v1'
+    opm_data=load_json(DATA/'quarterly_opm.json',{})
+    opm_metrics=opm_data.get('metrics',{}) if opm_data.get('schema')==1 else {}
+    def with_opm(row):
+        result=dict(row)
+        period=row.get('period')
+        prior_period=row.get('prev_period') or (previous(period) if period else None)
+        for field,quarter in (('operating_margin',period),('prev_operating_margin',prior_period)):
+            metric=opm_metrics.get(f"{row.get('ticker')}|{quarter}",{})
+            if metric.get('value') is not None:
+                result[field]=metric['value']
+        return result
     def report_key(x):return f"report|{x['ticker']}|{x['period']}|{x['publish_date']}"
     # Seed previously delivered snapshots before the new data overwrites the old feed.
     for x in previous_reports or []:
@@ -1478,7 +1492,8 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
     report_keys=[]
     report_entries=[]
     delivered_snapshots={}
-    for x in reports:
+    for original in reports:
+        x=with_opm(original)
         published=x.get('publish_date') or ''
         if not published or published>today:continue
         key=report_key(x)
@@ -1488,8 +1503,11 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
             prior=snapshots.get(key)
             cutoff=(now.date()-timedelta(days=14)).isoformat()
             # Only fill missing values in a previously delivered report; no historical blast.
+            # Only reports delivered with the new format may trigger an OPM-only
+            # supplement. Backfilling OPM for old-format messages never replays them.
+            supplement_fields=base_fields+(opm_fields if prior and prior.get('opm_tracking_version')==opm_version else ())
             supplement=bool(prior is not None and cutoff<=published and
-                            any(prior.get(k) is None and x.get(k) is not None for k in fields))
+                            any(prior.get(k) is None and x.get(k) is not None for k in supplement_fields))
             if not supplement:continue
             import hashlib, json
             values={k:x.get(k) for k in fields}
@@ -1499,8 +1517,8 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
             delivery_key=key
         if delivery_key in sent or delivery_key in report_keys or all(x.get(k) is None for k in ('gross_margin','eps')):continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
-              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\nEPS：{f(x['eps'],' 元')}\n\n"
-              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\nEPS：{f(x['prev_eps'],' 元')}")
+              f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\n營業利益率（OPM）：{f(x.get('operating_margin'),'%')}\nEPS：{f(x['eps'],' 元')}\n\n"
+              f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\n營業利益率（OPM）：{f(x.get('prev_operating_margin'),'%')}\nEPS：{f(x['prev_eps'],' 元')}")
         if supplement:
             text='🔄 資料補齊更新\n'+text
         if x.get('source') == 'news_backup':
@@ -1519,7 +1537,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         report_keys.append(delivery_key)
         report_entries.append(text)
-        delivered_snapshots[key]={k:x.get(k) for k in fields}
+        delivered_snapshots[key]={**{k:x.get(k) for k in fields},'opm_tracking_version':opm_version}
     if deliver_batch(report_keys, f'📊 財報公布｜{today}｜{len(report_entries)} 筆', report_entries, max_entries=1000):
         snapshots.update(delivered_snapshots)
     checkpoint()
@@ -2139,6 +2157,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
