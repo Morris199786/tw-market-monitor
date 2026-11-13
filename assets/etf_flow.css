@@ -85,3 +85,40 @@ html[data-theme=dark] #etfFlow .ef-buy-top-item{background:#202c3b}
 #etfFlow #efBuyTopBody[hidden]{display:none!important}
 #etfFlow .ef-buy-top-lots{text-align:right;white-space:normal;max-width:44%;overflow-wrap:anywhere}
 #etfFlow .ef-buy-top-lots small{display:block;margin-top:4px;color:var(--ef-muted);font-size:11px;font-weight:400}
+
+
+/* Stock view: summaries and date groups only; ETF/ranking/flows unchanged. */
+#etfFlow #efStockOverview .ef-stock-net{display:flex;flex-direction:column;gap:5px;margin:18px 0;color:var(--ef-muted,#7c899d)}
+#etfFlow #efStockOverview .ef-stock-net>strong{font-size:28px;line-height:1.3;font-variant-numeric:tabular-nums}
+#etfFlow .ef-stock-totals{display:grid;grid-template-columns:1fr 1fr;gap:15px;border-top:1px solid var(--ef-border);padding-top:14px}
+#etfFlow .ef-stock-totals>div{display:flex;flex-direction:column;gap:5px}
+#etfFlow .ef-stock-method{margin-top:16px;color:inherit;font-size:13px}
+#etfFlow .ef-stock-method summary,#etfFlow .ef-stock-entry-detail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:inherit}
+#etfFlow .ef-stock-method p{line-height:1.7;color:inherit;opacity:.8}
+#etfFlow .ef-stock-dates{display:flex;align-items:end;gap:8px;flex-wrap:wrap;margin-top:10px}
+#etfFlow .ef-stock-dates label{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+#etfFlow .ef-stock-dates input{width:100%;min-width:0;font:inherit;padding:9px 5px;border:1px solid var(--ef-border);border-radius:8px;background:transparent;color:inherit}
+#etfFlow .ef-stock-mobile{display:none}
+#etfFlow .ef-stock-day{border:1px solid var(--ef-border);border-radius:13px;padding:13px;margin:12px 0}
+#etfFlow .ef-stock-day>summary{display:flex;justify-content:space-between;gap:10px;cursor:pointer;list-style:none;min-height:48px;align-items:center}
+#etfFlow .ef-stock-day>summary::-webkit-details-marker{display:none}
+#etfFlow .ef-stock-day>summary>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+#etfFlow .ef-stock-day small{font-size:12px;font-weight:400;opacity:.8}
+#etfFlow .ef-stock-day-value{text-align:right;font-size:12px}
+#etfFlow .ef-stock-day-value strong{font-size:17px}
+#etfFlow .ef-stock-entry{padding:15px 0 0;margin-top:14px;border-top:1px solid var(--ef-border)}
+#etfFlow .ef-stock-entry-head{display:flex;justify-content:space-between;align-items:start;gap:12px}
+#etfFlow .ef-stock-entry-head>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+#etfFlow .ef-stock-entry-head .ef-link{white-space:normal;text-align:left;padding:0;line-height:1.5;font-size:14px;overflow-wrap:anywhere;min-height:44px}
+#etfFlow .ef-stock-entry-value{flex-shrink:0;text-align:right;max-width:48%;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+#etfFlow .ef-stock-entry-value strong{font-size:17px}
+#etfFlow .ef-stock-entry-detail{font-size:12px;margin-top:6px}
+#etfFlow .ef-stock-entry-detail dl{margin:0;display:grid;gap:9px}
+#etfFlow .ef-stock-entry-detail dl>div{display:flex;justify-content:space-between;gap:12px}
+#etfFlow .ef-stock-entry-detail dt{opacity:.8}
+#etfFlow .ef-stock-entry-detail dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:700px){#etfFlow .ef-stock-mobile{display:block}#etfFlow .ef-stock-desktop{display:none}#etfFlow #efStockOverview,#etfFlow #efStockLog{padding:15px}#etfFlow #efStockOverview h3{font-size:20px}#etfFlow #efStockOverview .ef-buttons{gap:6px;flex-wrap:wrap}#etfFlow #efStockOverview .ef-buttons button{padding:9px 10px;font-size:13px}}
+#etfFlow #efStockOverview .ef-buttons{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+#etfFlow #efStockOverview .ef-buttons button{width:100%;min-width:0;padding:9px 3px;white-space:nowrap}
+#etfFlow #efStockLog>.ef-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-width:300px}
+#etfFlow #efStockLog>.ef-buttons button{width:100%;min-width:0}
