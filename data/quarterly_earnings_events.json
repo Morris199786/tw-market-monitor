@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 983,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-13T21:30+08:00",
+  "updated_at": "2026-11-13T22:34+08:00",
   "upcoming": [
     {
       "ticker": "2338",
@@ -25526,7 +25526,7 @@
       "publish_date": "2026-10-30",
       "publish_time": "17:07:34",
       "subject": "公告本公司115年第3季合併財務報告經董事會決議通過",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/t05st01?co_id=3211&year=115",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3211&SPOKE_DATE=20261030&SPOKE_TIME=170734&SEQ_NO=1&skey=3211202610301",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -27982,17 +27982,16 @@
     "source_errors": [
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
-      "detail/4117/2026-10-30",
-      "detail/3211/2026-10-30",
-      "announcement_scan/2026-10-24~2026-10-31:ValueError:announcement schema unavailable",
-      "announcement_scan:time_budget",
+      "detail/4577/2026-10-28",
+      "planned_date/4577/2026-10-28:unavailable",
+      "announcement_scan/2026-11-01~2026-11-13:ValueError:announcement schema unavailable",
       "daily_mops:ConnectTimeout",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3015/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3665/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/5225/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6442/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/6451/2026-Q3:ValueError:announcement schema unavailable",
+      "targeted_mops/6451/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/6781/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6789/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/9912/2026-Q3:ValueError:announcement schema unavailable",
@@ -28002,7 +28001,8 @@
     ],
     "historical_errors": [],
     "coverage": {
-      "2026-10-24~2026-10-31": "failed"
+      "2026-10-24~2026-10-31": "ok",
+      "2026-11-01~2026-11-13": "failed"
     },
     "calendar_errors": []
   },
