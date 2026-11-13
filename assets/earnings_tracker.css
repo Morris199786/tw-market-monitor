@@ -293,3 +293,9 @@ html[data-theme="dark"] #quarterlyEarningsPanel .earnings-report-row.earnings-pu
   border-color:#e6bd55 !important;
   box-shadow:0 0 0 1px rgba(230,189,85,.18);
 }
+
+
+/* OPM: three metrics per quarter; retain readable cards on phones. */
+#quarterlyEarningsPanel .earnings-detail.opm-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+#quarterlyEarningsPanel .opm-grid>div{min-width:0}
+@media(max-width:720px){#quarterlyEarningsPanel .earnings-detail.opm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#quarterlyEarningsPanel .opm-grid .opm-metric{grid-column:1/-1}}
