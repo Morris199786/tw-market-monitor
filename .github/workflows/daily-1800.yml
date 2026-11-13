@@ -2,6 +2,12 @@ name: Daily close update
 
 on:
   schedule:
+    # Taiwan time: extra runs update ONLY the stock trend data.
+    - cron: "20 0 * * 1-5"
+    - cron: "45 6 * * 1-5"
+    - cron: "15 8 * * 1-5"
+    - cron: "40 10 * * 1-5"
+    # Existing full daily update schedules stay unchanged.
     - cron: "0 10 * * *"
     - cron: "20 10 * * *"
   workflow_dispatch:
@@ -35,7 +41,22 @@ jobs:
       - name: Run daily update
         id: daily
         continue-on-error: true
-        run: python scripts/update_all.py
+        env:
+          TRIGGER_KIND: ${{ github.event_name }}
+          TRIGGER_SCHEDULE: ${{ github.event.schedule }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$TRIGGER_KIND" == "schedule" && "$TRIGGER_SCHEDULE" != "0 10 * * *" && "$TRIGGER_SCHEDULE" != "20 10 * * *" ]]; then
+            # Extra runs write only stock_trend.json, its status and private cache.
+            python scripts/update_stock_trend.py
+          else
+            # Keep the existing full daily pipeline exactly as before.
+            result=0
+            python scripts/update_all.py || result=$?
+            python scripts/update_stock_trend.py || result=1
+            exit "$result"
+          fi
       - name: Commit only this run's changed data; never overwrite concurrent publishers
         shell: bash
         run: |
@@ -104,3 +125,4 @@ jobs:
         run: |
           echo "::error::One or more update scripts failed. Successful data was committed; inspect Run daily update for details."
           exit 1
+
