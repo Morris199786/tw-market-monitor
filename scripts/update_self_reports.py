@@ -2253,7 +2253,9 @@ def commit_generated_data():
     """CAS-publish only this workflow's files, preserving unrelated updates."""
     paths = ["self_reports.json", "self_reports_history.json", "self_reports_sent.json",
              "quarterly_earnings.json", "quarterly_earnings_sent.json", "quarterly_earnings_history.json",
-             "quarterly_earnings_events.json", "quarterly_earnings_scan.json", "earnings_calendar.json", "eps_news_backup.json"]
+             "quarterly_earnings_events.json", "quarterly_opm.json", "quarterly_earnings_scan.json", "earnings_calendar.json", "eps_news_backup.json"]
+    if os.getenv("OPM_BACKFILL_ONLY", "").lower() == "true":
+        paths = ["quarterly_opm.json"]
     files = {"data/"+name:(ROOT/"data"/name).read_text(encoding="utf-8") for name in paths if (ROOT/"data"/name).exists()}
     if not files:
         return
@@ -3181,6 +3183,7 @@ if __name__ == "__main__":
         commit_generated_data()
     else:
         main()
+
 
 
 

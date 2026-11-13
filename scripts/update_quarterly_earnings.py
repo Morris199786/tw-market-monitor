@@ -2128,10 +2128,18 @@ def main():
     result=dict(expected_roster=expected_roster_rows,universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
     save_json(DATA/'quarterly_earnings_events.json',result)
     save_json(OUT,result)
+    # Independent OPM cache includes all saved quarters. EPS/GM and Telegram
+    # deduplication retain their existing behavior, even if an OPM source fails.
+    try:
+        from quarterly_opm import update_opm
+        update_opm(history_rows=by, reports=None)
+    except Exception as exc:
+        print('OPM enrichment pending:', type(exc).__name__, str(exc)[:200], flush=True)
     notify_earnings(ups, reports, now_tpe(), bool(SOURCE_ERRORS), old.get('reports',[]))
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
