@@ -299,3 +299,55 @@ html[data-theme="dark"] #quarterlyEarningsPanel .earnings-report-row.earnings-pu
 #quarterlyEarningsPanel .earnings-detail.opm-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 #quarterlyEarningsPanel .opm-grid>div{min-width:0}
 @media(max-width:720px){#quarterlyEarningsPanel .earnings-detail.opm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#quarterlyEarningsPanel .opm-grid .opm-metric{grid-column:1/-1}}
+
+/* 財報比較卡：僅套用實際公布財報，保留其他分頁、搜尋及資料來源。 */
+#quarterlyEarningsPanel .earnings-comparison-card{padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--card);min-width:0}
+#quarterlyEarningsPanel .earnings-comparison-card .earnings-result-head{padding:0;margin:0 0 9px;gap:8px;align-items:baseline;flex-direction:row;flex-wrap:wrap}
+#quarterlyEarningsPanel .earnings-comparison-card .earnings-company{flex:1 1 auto;gap:7px;min-width:0}
+#quarterlyEarningsPanel .earnings-comparison-card .earnings-company b{font-size:17px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.4}
+#quarterlyEarningsPanel .earnings-comparison-card .earnings-period{font-size:11px;font-weight:500;white-space:nowrap}
+#quarterlyEarningsPanel .ec-signals{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 11px}
+#quarterlyEarningsPanel .ec-signal{display:inline-flex;align-items:center;border-radius:6px;padding:3px 6px;font-size:10px;font-weight:650;line-height:1.5;background:rgba(127,127,127,.07)}
+#quarterlyEarningsPanel .ec-improved{color:#b63447}
+#quarterlyEarningsPanel .ec-declined{color:#137458}
+#quarterlyEarningsPanel .ec-signal.ec-improved{background:rgba(190,55,74,.075)}
+#quarterlyEarningsPanel .ec-signal.ec-declined{background:rgba(20,126,91,.075)}
+#quarterlyEarningsPanel .ec-neutral,#quarterlyEarningsPanel .ec-pending{color:var(--muted)}
+#quarterlyEarningsPanel .ec-pending{font-size:12px;font-weight:500}
+#quarterlyEarningsPanel .ec-table-wrap{border:1px solid var(--line);border-radius:11px;overflow:hidden;max-width:100%}
+#quarterlyEarningsPanel table.ec-table{width:100%;table-layout:fixed;border-collapse:collapse;border-spacing:0;font-variant-numeric:tabular-nums;color:var(--ink);font-size:13px;margin:0}
+#quarterlyEarningsPanel .ec-table th,#quarterlyEarningsPanel .ec-table td{padding:11px 7px;vertical-align:middle;text-align:right;border:0;border-bottom:1px solid var(--line);white-space:normal;line-height:1.4;overflow-wrap:anywhere}
+#quarterlyEarningsPanel .ec-table thead th{font-size:11px;font-weight:500;color:var(--muted);background:rgba(127,127,127,.035);padding-top:9px;padding-bottom:9px}
+#quarterlyEarningsPanel .ec-table th:first-child{width:18%;text-align:left}
+#quarterlyEarningsPanel .ec-table th:nth-child(2){width:27%}
+#quarterlyEarningsPanel .ec-table th:nth-child(3){width:26%}
+#quarterlyEarningsPanel .ec-table th:nth-child(4){width:29%}
+#quarterlyEarningsPanel .ec-table tbody th{font-weight:650;font-size:12px}
+#quarterlyEarningsPanel .ec-table thead th>span,#quarterlyEarningsPanel .ec-table thead th>small{display:block}
+#quarterlyEarningsPanel .ec-table thead .ec-quarter{display:inline;font-size:12px;color:var(--ink);font-weight:700;margin-left:3px}
+#quarterlyEarningsPanel .ec-table thead th>span:first-child{display:inline}
+#quarterlyEarningsPanel .ec-table thead small{font-size:10px;opacity:.8;margin-top:2px}
+#quarterlyEarningsPanel .ec-table .ec-current{background:rgba(100,125,160,.045)}
+#quarterlyEarningsPanel .ec-current strong{font-weight:750;font-size:15px}
+#quarterlyEarningsPanel .ec-previous{color:var(--muted);font-size:12px}
+#quarterlyEarningsPanel .ec-table td small{font-size:10px;font-weight:500}
+#quarterlyEarningsPanel .ec-delta>span{display:block;font-weight:700;font-size:13px}
+#quarterlyEarningsPanel .ec-delta>small{display:block;line-height:1.35;margin-top:1px}
+#quarterlyEarningsPanel .ec-table tr:last-child>*{border-bottom:0}
+#quarterlyEarningsPanel .ec-footnote{font-size:11px;line-height:1.5;margin:7px 0 0;color:var(--muted)}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source{padding:0;margin:8px 0 0;border:0}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source>summary{padding:5px 0;min-height:32px;font-size:11px;color:var(--muted);gap:5px}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source>summary::after{content:'▾';font-size:10px}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source[open]>summary::after{content:'▴'}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source>p{margin:8px 0;font-size:12px;line-height:1.6}
+#quarterlyEarningsPanel .earnings-comparison-card>.earnings-source a{font-size:11px;overflow-wrap:anywhere}
+html[data-theme="dark"] #quarterlyEarningsPanel .ec-improved{color:#ff9aaa}
+html[data-theme="dark"] #quarterlyEarningsPanel .ec-declined{color:#73d6b3}
+html[data-theme="dark"] #quarterlyEarningsPanel .ec-current{background:rgba(145,172,210,.075)}
+@media(max-width:380px){
+ #quarterlyEarningsPanel .earnings-comparison-card{padding:12px}
+ #quarterlyEarningsPanel .ec-table th,#quarterlyEarningsPanel .ec-table td{padding-left:5px;padding-right:5px}
+ #quarterlyEarningsPanel .ec-current strong{font-size:14px}
+ #quarterlyEarningsPanel .ec-signal{font-size:9px}
+}
+
