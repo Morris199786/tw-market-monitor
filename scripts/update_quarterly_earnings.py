@@ -1376,7 +1376,15 @@ def event_cumulative(x, period):
     if official.get('cum_revenue') is not None: revenue=official['cum_revenue']
     if official.get('cum_gross') is not None: gross=official['cum_gross']
     if eps is None and revenue is None: return None
-    return dict(ticker=x['ticker'],period=period,market=x.get('market',''),cum_eps=eps,cum_revenue=revenue,cum_gross=gross,source='board_announcement',source_url=x.get('source_url',''))
+    opm_fact = None
+    try:
+        from quarterly_opm import announcement_fact
+        opm_fact = announcement_fact(text, str(x['ticker']), period,
+                                     x.get('source_url', ''), x.get('market'),
+                                     trusted_company=True)
+    except Exception as exc:
+        print('Announcement OPM pending:', x.get('ticker'), period, type(exc).__name__, flush=True)
+    return dict(ticker=x['ticker'],period=period,market=x.get('market',''),cum_eps=eps,cum_revenue=revenue,cum_gross=gross,source='board_announcement',source_url=x.get('source_url',''),opm_ytd_fact=opm_fact)
 
 
 def closed_dates(year):
@@ -2157,6 +2165,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 

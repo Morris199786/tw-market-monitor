@@ -19,7 +19,7 @@ from html.parser import HTMLParser
 
 from sources import ROOT, load_json, save_json, now_tpe
 
-VERSION = '2026-11-13-opm-v1'
+VERSION = '2026-11-13-opm-announcements-v2'
 PERIOD = re.compile(r'^(20\d{2})-Q([1-4])$')
 URLS = {'twse': 'https://openapi.twse.com.tw/v1/opendata/t187ap06_L_ci',
         'tpex': 'https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap06_O_ci'}
@@ -257,6 +257,59 @@ def fetch_filing(ticker, period):
     raise RuntimeError('; '.join(errors))
 
 
+def announcement_fact(page, ticker, period, source, market=None, trusted_company=False):
+    """Read an explicitly dated, consolidated YTD revenue/profit pair from MOPS."""
+    parsed = urllib.parse.urlparse(source or '')
+    if parsed.scheme != 'https' or parsed.hostname not in ('mops.twse.com.tw', 'mopsov.twse.com.tw'):
+        return None
+    if not PERIOD.fullmatch(str(period)):
+        return None
+    query = urllib.parse.parse_qs(parsed.query)
+    identified = [v for name in ('COMPANY_ID', 'co_id', 'CO_ID') for v in query.get(name, [])]
+    if identified and any(str(v) != str(ticker) for v in identified):
+        return None
+    text = re.sub(r'<script\b[^>]*>.*?</script>', ' ', str(page or ''), flags=re.I | re.S)
+    text = unicodedata.normalize('NFKC', html.unescape(re.sub(r'<[^>]+>', ' ', text)))
+    text = re.sub(r'\s+', ' ', text).replace('臺', '台')
+    text = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])', '', text)
+    compact = re.sub(r'\s+', '', text)
+    if not trusted_company and not re.search(rf'(?<!\d){re.escape(str(ticker))}(?!\d)', text):
+        return None
+    if not re.search(r'合併(?:財務|綜合|損益)', text):
+        return None
+    year, q = int(period[:4]), int(period[-1])
+    month, day = q * 3, calendar.monthrange(year, q * 3)[1]
+    y = rf'(?:{year}|{year-1911})'
+    date_range = rf'{y}[/年]0?1[/月]0?1日?[~～至\-]{y}[/年]0?{month}[/月]0?{day}日?'
+    if not re.search(date_range, compact):
+        return None
+    def one(label):
+        pattern = (r'(?:1月1日)?\s*累計至本期止\s*' + label +
+                   r'(?:\s*\([^)]*\))*?\s*\((仟元|千元|元)\)\s*[:：]\s*' +
+                   r'(\(\s*[+\-]?[\d,]+(?:\.\d+)?\s*\)|[+\-]?[\d,]+(?:\.\d+)?)')
+        values = {(m.group(1), number(m.group(2))) for m in re.finditer(pattern, text)}
+        values = {(unit, value) for unit, value in values if value is not None}
+        return next(iter(values)) if len(values) == 1 else None
+    revenue = one(r'(?:合併)?營業收入(?:淨額|合計)?')
+    profit = one(r'(?:合併)?營業(?:利益|損益)(?:\(損失\)|\(利益及損失\))?')
+    if not revenue or not profit or revenue[0] != profit[0] or revenue[1] <= 0:
+        return None
+    return {'ticker': str(ticker), 'period': period, 'market': market,
+            'revenue': revenue[1], 'operating_profit': profit[1],
+            'unit': 'TWD_thousands' if revenue[0] in ('仟元', '千元') else 'TWD',
+            'basis': 'consolidated_industrial_ytd', 'source_type': 'official_announcement',
+            'source_url': source, 'fetched_at': now_tpe().isoformat(timespec='minutes')}
+
+
+def fetch_announcement(row, market=None):
+    source = row.get('source_url', '')
+    parsed = urllib.parse.urlparse(source)
+    if parsed.scheme != 'https' or parsed.hostname not in ('mops.twse.com.tw', 'mopsov.twse.com.tw'):
+        return None
+    page = request(source)
+    return announcement_fact(page, str(row['ticker']), row['period'], source, market)
+
+
 def metric(facts, ticker, period):
     key = f'{ticker}|{period}'; record = facts.get(key, {})
     single = record.get('single')
@@ -314,6 +367,24 @@ def update_opm(*, history_rows=None, reports=None, full=False, budget=110):
     def add(record, kind='ytd'):
         key = f"{record['ticker']}|{record['period']}"
         facts.setdefault(key, {})[kind] = record
+    history_index = {(str(row.get('ticker')), row.get('period')): row for row in history_rows}
+    def consistent_with_same_announcement(fact):
+        row = history_index.get((fact.get('ticker'), fact.get('period')), {})
+        known = number(row.get('cum_revenue'))
+        if (known is not None and row.get('source_url') == fact.get('source_url')
+                and fact.get('unit') == 'TWD_thousands'):
+            return abs(known - fact['revenue']) <= max(0.01, abs(known) * 1e-8)
+        return True
+    # The main report parser now persists the independently validated amount pair.
+    # Never take a cached revenue from one source/unit and a profit from another.
+    for row in history_rows:
+        fact = row.get('opm_ytd_fact')
+        if (isinstance(fact, dict) and fact.get('ticker') == str(row.get('ticker'))
+                and fact.get('period') == row.get('period')
+                and fact.get('source_type') == 'official_announcement'
+                and consistent_with_same_announcement(fact)):
+            key = f"{fact['ticker']}|{fact['period']}"
+            facts.setdefault(key, {}).setdefault('ytd', fact)
     with ThreadPoolExecutor(max_workers=2) as pool:
         jobs = {market: pool.submit(snapshot_facts, market) for market in URLS}
         for market, job in jobs.items():
@@ -330,10 +401,38 @@ def update_opm(*, history_rows=None, reports=None, full=False, budget=110):
     def due(key):
         stamp = attempts.get(key, {}).get('at')
         if full or attempts.get(key, {}).get('version') != VERSION or not stamp: return True
-        cooldown = 7200 if not key.startswith('filing|') and attempts.get(key, {}).get('status') == 'pending' else 1800
+        cooldown = 7200 if not key.startswith(('filing|', 'announcement|')) and attempts.get(key, {}).get('status') == 'pending' else 1800
         try: return (now - datetime.fromisoformat(stamp)).total_seconds() >= cooldown
         except (ValueError, TypeError): return True
     ranked = sorted(groups, key=lambda k: (attempts.get('|'.join(k), {}).get('at', ''), k[1], k[0]))
+    # Recover existing announcements too, even when EPS and GM were already complete.
+    announcement_rows = [row for row in reports
+                         if not facts.get(f"{row['ticker']}|{row['period']}", {}).get('ytd')
+                         and metric(facts, str(row['ticker']), row['period']) is None
+                         and urllib.parse.urlparse(row.get('source_url', '')).hostname in ('mops.twse.com.tw', 'mopsov.twse.com.tw')
+                         and due(f"announcement|{row['ticker']}|{row['period']}")]
+    announcement_rows.sort(key=lambda row: (
+        0 if facts.get(f"{row['ticker']}|{previous(row['period'])}", {}).get('ytd') else 1,
+        attempts.get(f"announcement|{row['ticker']}|{row['period']}", {}).get('at', ''),
+        -int(str(row.get('publish_date', '')).replace('-', '') or '0'), str(row['ticker'])))
+    def announcement_lookup(row):
+        if time.monotonic() - started > (budget if full else min(40, budget / 2)):
+            return row, None, None
+        try:
+            fact = fetch_announcement(row, markets.get(str(row['ticker'])))
+            if fact and not consistent_with_same_announcement(fact):
+                return row, None, 'revenue_conflicts_with_same_cached_announcement'
+            return row, fact, None if fact else 'no_validated_ytd_operating_profit'
+        except Exception as exc:
+            return row, None, type(exc).__name__ + ':' + str(exc)[:100]
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        for row, fact, error in pool.map(announcement_lookup, announcement_rows if full else announcement_rows[:12]):
+            if fact is None and error is None: continue
+            key = f"announcement|{row['ticker']}|{row['period']}"
+            attempts[key] = {'at': now.isoformat(timespec='minutes'), 'version': VERSION,
+                             'status': 'received' if fact else 'pending'}
+            if fact: add(fact)
+            elif error: errors.append(f'{key}: {error}')
     for market, period in ranked:
         key = f'{market}|{period}'
         if not due(key): continue
@@ -396,3 +495,4 @@ if __name__ == '__main__':
     parser.add_argument('--full-backfill', action='store_true', help='Process the complete saved history, without a short per-run budget')
     args = parser.parse_args()
     update_opm(full=args.full_backfill, budget=1500 if args.full_backfill else 110)
+
