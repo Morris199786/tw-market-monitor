@@ -1435,14 +1435,15 @@ def save_financial_history(by):
 
 
 def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_reports=None):
-    """Shared cron runner, Taiwan time; successful deliveries are checkpointed separately."""
+    """Notify first same-day releases only. All backfills remain silent."""
+    if os.getenv('OPM_BACKFILL_ONLY', '').strip().lower() in ('1', 'true', 'yes'):
+        return
     state=load_json(SENT,{'ids':[]})
     sent=set(state.get('ids',[]))
     snapshots=dict(state.get('report_metrics',{}))
     base_fields=('eps','prev_eps','gross_margin','prev_gross_margin')
     opm_fields=('operating_margin','prev_operating_margin')
     fields=base_fields+opm_fields
-    opm_version='2026-11-13-opm-notification-v1'
     opm_data=load_json(DATA/'quarterly_opm.json',{})
     opm_metrics=opm_data.get('metrics',{}) if opm_data.get('schema')==1 else {}
     def with_opm(row):
@@ -1503,32 +1504,18 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
     for original in reports:
         x=with_opm(original)
         published=x.get('publish_date') or ''
-        if not published or published>today:continue
+        # A historical report is data recovery, never a new announcement.
+        if published!=today:continue
         key=report_key(x)
         already=(key in sent or any(i.startswith(f"report|{x['ticker']}|{x['period']}|") for i in sent))
-        supplement=False
-        if already:
-            prior=snapshots.get(key)
-            cutoff=(now.date()-timedelta(days=14)).isoformat()
-            # Only fill missing values in a previously delivered report; no historical blast.
-            # Only reports delivered with the new format may trigger an OPM-only
-            # supplement. Backfilling OPM for old-format messages never replays them.
-            supplement_fields=base_fields+(opm_fields if prior and prior.get('opm_tracking_version')==opm_version else ())
-            supplement=bool(prior is not None and cutoff<=published and
-                            any(prior.get(k) is None and x.get(k) is not None for k in supplement_fields))
-            if not supplement:continue
-            import hashlib, json
-            values={k:x.get(k) for k in fields}
-            delivery_key=key+'|supplement|'+hashlib.sha256(json.dumps(values,sort_keys=True).encode()).hexdigest()[:16]
-        else:
-            if published!=today:continue
-            delivery_key=key
+        # A previously delivered report stays silent even when EPS, GM or OPM
+        # changes from missing to available. Keep successful-send IDs unchanged.
+        if already:continue
+        delivery_key=key
         if delivery_key in sent or delivery_key in report_keys or all(x.get(k) is None for k in ('gross_margin','eps')):continue
         text=(f"📊 {x['name']} {x['ticker']}｜財報公布\n"
               f"本季 {x['period']}\n毛利率：{f(x['gross_margin'],'%')}\n營業利益率（OPM）：{f(x.get('operating_margin'),'%')}\nEPS：{f(x['eps'],' 元')}\n\n"
               f"上一季 {x['prev_period']}\n毛利率：{f(x['prev_gross_margin'],'%')}\n營業利益率（OPM）：{f(x.get('prev_operating_margin'),'%')}\nEPS：{f(x['prev_eps'],' 元')}")
-        if supplement:
-            text='🔄 資料補齊更新\n'+text
         if x.get('source') == 'news_backup':
             text+='\n來源：當日新聞備援（非官方公告事件）'
         # Telegram links: preserve both distinct sources, but show identical URLs once.
@@ -1545,7 +1532,7 @@ def notify_earnings(upcoming, reports, now, source_incomplete=False, previous_re
         if x.get('release_type')=='issuer_conference': text+='\n來源：公司官方法說資料（非核閱報告）'
         report_keys.append(delivery_key)
         report_entries.append(text)
-        delivered_snapshots[key]={**{k:x.get(k) for k in fields},'opm_tracking_version':opm_version}
+        delivered_snapshots[key]={k:x.get(k) for k in fields}
     if deliver_batch(report_keys, f'📊 財報公布｜{today}｜{len(report_entries)} 筆', report_entries, max_entries=1000):
         snapshots.update(delivered_snapshots)
     checkpoint()
@@ -2165,6 +2152,7 @@ def main():
     print('quarterly earnings',len(ups),'upcoming',len(reports),'reports','history errors',len(errors))
 
 if __name__=='__main__': main()
+
 
 
 
