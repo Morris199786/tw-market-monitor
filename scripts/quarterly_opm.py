@@ -19,7 +19,7 @@ from html.parser import HTMLParser
 
 from sources import ROOT, load_json, save_json, now_tpe
 
-VERSION = '2026-11-13-opm-announcements-v2'
+VERSION = '2026-11-13-opm-announcements-v3'
 PERIOD = re.compile(r'^(20\d{2})-Q([1-4])$')
 URLS = {'twse': 'https://openapi.twse.com.tw/v1/opendata/t187ap06_L_ci',
         'tpex': 'https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap06_O_ci'}
@@ -275,7 +275,10 @@ def announcement_fact(page, ticker, period, source, market=None, trusted_company
     compact = re.sub(r'\s+', '', text)
     if not trusted_company and not re.search(rf'(?<!\d){re.escape(str(ticker))}(?!\d)', text):
         return None
-    if not re.search(r'合併(?:財務|綜合|損益)', text):
+    # Some issuers identify consolidation in the earnings narrative as
+    # "合併營收" rather than in the financial-report title. The dated YTD
+    # revenue/profit pair below remains mandatory; narrative amounts are not used.
+    if not re.search(r'合併(?:財務|綜合|損益|營收|營業收入)', text):
         return None
     year, q = int(period[:4]), int(period[-1])
     month, day = q * 3, calendar.monthrange(year, q * 3)[1]
@@ -415,8 +418,12 @@ def update_opm(*, history_rows=None, reports=None, full=False, budget=110):
         0 if facts.get(f"{row['ticker']}|{previous(row['period'])}", {}).get('ytd') else 1,
         attempts.get(f"announcement|{row['ticker']}|{row['period']}", {}).get('at', ''),
         -int(str(row.get('publish_date', '')).replace('-', '') or '0'), str(row['ticker'])))
+    # Give announcement recovery its own time slice. Slow snapshot requests
+    # must not consume this entire slice before the first saved report is read.
+    announcement_started = time.monotonic()
     def announcement_lookup(row):
-        if time.monotonic() - started > (budget if full else min(40, budget / 2)):
+        if (time.monotonic() - started > budget if full else
+                time.monotonic() - announcement_started > min(40, budget / 2)):
             return row, None, None
         try:
             fact = fetch_announcement(row, markets.get(str(row['ticker'])))
@@ -495,4 +502,5 @@ if __name__ == '__main__':
     parser.add_argument('--full-backfill', action='store_true', help='Process the complete saved history, without a short per-run budget')
     args = parser.parse_args()
     update_opm(full=args.full_backfill, budget=1500 if args.full_backfill else 110)
+
 
