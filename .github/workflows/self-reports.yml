@@ -2,6 +2,11 @@ name: Self reports update
 
 on:
   workflow_dispatch:
+    inputs:
+      opm_backfill_only:
+        description: '只補齊歷史 OPM（不重跑 EPS、毛利率或推播）'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -30,23 +35,33 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Collect EPS news backup
+        if: ${{ !inputs.opm_backfill_only }}
         continue-on-error: true
         run: python scripts/eps_news_backup.py
 
       - name: Update self reports
+        if: ${{ !inputs.opm_backfill_only }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update_self_reports.py
 
       - name: Update quarterly earnings
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && !inputs.opm_backfill_only }}
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update_quarterly_earnings.py
 
+      - name: Backfill historical OPM only
+        if: ${{ !cancelled() && inputs.opm_backfill_only }}
+        timeout-minutes: 30
+        run: python scripts/quarterly_opm.py --full-backfill
+
       - name: Commit updated data
         if: ${{ !cancelled() }}
+        env:
+          OPM_BACKFILL_ONLY: ${{ inputs.opm_backfill_only }}
         run: python scripts/update_self_reports.py --commit-data
+
 
