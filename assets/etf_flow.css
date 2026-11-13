@@ -77,3 +77,11 @@ html[data-theme=dark] #etfFlow .ef-history-metric{background:#202c3b}
 html[data-theme=dark] #etfFlow .ef-buy-top{background:#1b2532}
 html[data-theme=dark] #etfFlow .ef-buy-top-item{background:#202c3b}
 @media(max-width:400px){#etfFlow .ef-buy-top{padding:11px}#etfFlow .ef-buy-top-item{gap:7px;padding:7px}#etfFlow .ef-buy-top-rank{flex-basis:29px;height:29px}#etfFlow .ef-buy-top-rank svg{width:23px;height:23px}#etfFlow .ef-buy-top-stock strong{font-size:12px}#etfFlow .ef-buy-top-lots{font-size:12px}}
+
+/* Amount ranking and accessible collapsible heading. */
+#etfFlow .ef-buy-top-toggle{width:100%;text-align:left;background:transparent;border:0;padding:0;border-radius:6px}
+#etfFlow .ef-buy-top-toggle strong{flex:1 1 210px}
+#etfFlow .ef-buy-top-head .ef-buy-top-action{color:var(--ef-ink);font-weight:600;white-space:nowrap}
+#etfFlow #efBuyTopBody[hidden]{display:none!important}
+#etfFlow .ef-buy-top-lots{text-align:right;white-space:normal;max-width:44%;overflow-wrap:anywhere}
+#etfFlow .ef-buy-top-lots small{display:block;margin-top:4px;color:var(--ef-muted);font-size:11px;font-weight:400}
