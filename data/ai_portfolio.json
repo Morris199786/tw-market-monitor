@@ -1,0 +1,2704 @@
+{
+  "schema": 1,
+  "strategy": "three-pillar-paper-v1",
+  "started_at": "2026-11-14T12:17:15+08:00",
+  "config": {
+    "initial_cash": 1000000,
+    "max_positions": 10,
+    "entry_weight": 0.1,
+    "commission_rate": 0.001425,
+    "minimum_commission": 20,
+    "sell_tax": 0.003,
+    "slippage": 0.0005,
+    "minimum_score": 60
+  },
+  "cash": 1000000.0,
+  "positions": {},
+  "decisions": [
+    {
+      "date": "2026-11-13",
+      "available_at": "2026-11-14T12:17:15+08:00",
+      "valid": true,
+      "targets": [
+        {
+          "ticker": "2454",
+          "name": "聯發科",
+          "market": "twse",
+          "score": 75.24,
+          "pillars": {
+            "chip": 86.63,
+            "fundamental": 59.02,
+            "momentum": 84.88
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 15.27 → 17.5（2026-Q3）",
+            "GM 46.199507 → 46.322392（2026-Q3）",
+            "OPM 15.02654 → 16.126722（2026-Q3）",
+            "Morgan Stanley 2026-10-30：Overweight；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +2,609.9 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +12,360 萬元",
+            "近5日 +21.53%／近20日 -1.08%；同族群5日均值 +24.06%"
+          ],
+          "risks": [
+            "TPU v9放量高度取決於Intel EMIB-T基板供應及良率改善，若供應不足，AI ASIC營收可能無法追蹤Morgan Stanley預估。",
+            "若中國及其他新興市場智慧型手機需求惡化，可能壓抑營運表現。",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 30000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1KrpyiP1AnXys77VCH-1qz6k5AloxakQA/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2454&SPOKE_DATE=20261030&SPOKE_TIME=170417&SEQ_NO=2&skey=2454202610302",
+          "sector": "IP"
+        },
+        {
+          "ticker": "3533",
+          "name": "嘉澤",
+          "market": "twse",
+          "score": 74.62,
+          "pillars": {
+            "chip": 87.84,
+            "fundamental": 56.19,
+            "momentum": 85.02
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 17.67 → 17.07（2026-Q3）",
+            "GM 45.468301 → 44.829844（2026-Q3）",
+            "OPM 21.974768 → 22.930864（2026-Q3）",
+            "Morgan Stanley 2026-11-12：Overweight；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +691.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +11,460 萬元",
+            "400張以上持股比週變化 +0.97 百分點（20261106）",
+            "近5日 +20.50%／近20日 +5.23%；同族群5日均值 +10.11%"
+          ],
+          "risks": [
+            "原物料成本上升持續對3Q毛利率造成壓力。",
+            "營業費用高於預期，3Q營業費用為22億元，較Morgan Stanley預估高10%、較市場預期高9%。"
+          ],
+          "etf_details": [
+            {
+              "fund": "00400A",
+              "shares_delta": 60000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/15SRZeBzfxr-87bnhMrU6AaTG_ii2sQRF/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3533&year=115",
+          "sector": "連接線材"
+        },
+        {
+          "ticker": "5475",
+          "name": "德宏",
+          "market": "tpex",
+          "score": 70.36,
+          "pillars": {
+            "chip": 57.83,
+            "fundamental": 72.42,
+            "momentum": 91.29
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 0.95 → 2.25（2026-Q3）",
+            "GM 36.618132 → 46.252549（2026-Q3）",
+            "OPM 23.664065 → 36.223072（2026-Q3）",
+            "400張以上持股比週變化 +1.26 百分點（20261106）",
+            "近5日 +24.48%／近20日 +9.33%；同族群5日均值 +26.31%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5475&SPOKE_DATE=20261112&SPOKE_TIME=164407&SEQ_NO=1&skey=5475202611121",
+          "sector": "玻纖布／玻纖紗"
+        },
+        {
+          "ticker": "4958",
+          "name": "臻鼎-KY",
+          "market": "twse",
+          "score": 70.33,
+          "pillars": {
+            "chip": 64.86,
+            "fundamental": 78.6,
+            "momentum": 64.74
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 2.22 → 4.11（2026-Q3）",
+            "GM 23.097153 → 27.719004（2026-Q3）",
+            "OPM 7.766066 → 13.489132（2026-Q3）",
+            "Citi Research 2026-11-10：Buy；目標價動作 unknown",
+            "主動ETF當日持股淨變動估值 +4,400 萬元",
+            "近5日 +17.96%／近20日 -15.22%；同族群5日均值 +9.29%"
+          ],
+          "risks": [
+            "iPhone、Mac及iPad終端需求低於預期。",
+            "新款智慧手機內容價值降低或面臨價格壓力。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00991A",
+              "shares_delta": 100000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1AXYDZwVzZFOkY1v3OOSQg8W0totGeOa8/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4958&year=115",
+          "sector": "ABF"
+        },
+        {
+          "ticker": "2330",
+          "name": "台積電",
+          "market": "twse",
+          "score": 69.44,
+          "pillars": {
+            "chip": 88.49,
+            "fundamental": 56.65,
+            "momentum": 56.93
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 27.25 → 29.42（2026-Q3）",
+            "GM 67.720723 → 66.413459（2026-Q3）",
+            "OPM 60.344346 → 58.654784（2026-Q3）",
+            "Morgan Stanley 2026-10-15：Overweight；目標價動作 maintain",
+            "法人／投信排行已知淨張數 +743.6 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +127,370 萬元",
+            "近5日 +10.07%／近20日 -3.69%；同族群5日均值 +10.07%"
+          ],
+          "risks": [
+            "3Q26毛利率受到2奈米節點及海外營運稀釋，且4Q26毛利率中位數指引顯示壓力延續。",
+            "2奈米及3奈米加速擴產將帶來較高折舊，且新產能爬坡可能造成毛利率壓力；海外晶圓廠成本大幅增加亦為下行風險。",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00981A",
+              "shares_delta": 542000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1v-mCkphoagYt0507gJMSU30v6gHMAbD_/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2330&year=115",
+          "sector": "晶圓代工（台積電）"
+        },
+        {
+          "ticker": "3443",
+          "name": "創意",
+          "market": "twse",
+          "score": 68.72,
+          "pillars": {
+            "chip": 85.03,
+            "fundamental": 63.04,
+            "momentum": 97.49
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 11.61 → 16.95（2026-Q3）",
+            "GM 21.545027 → 20.583513（2026-Q3）",
+            "OPM 12.063031 → 13.602938（2026-Q3）",
+            "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +149.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +25,830 萬元",
+            "近5日 +38.76%／近20日 +12.26%；同族群5日均值 +24.06%"
+          ],
+          "risks": [
+            "美國CSP客戶專案需求放緩，可能使訂單與專案能見度低於預期。",
+            "AI ASIC專案數量減少可能導致NRE需求低於預期。",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 30000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1Lr22OcQnsjBDm6XZKxmU4dL4IAQfPVuc/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3443&SPOKE_DATE=20261029&SPOKE_TIME=163112&SEQ_NO=2&skey=3443202610292",
+          "sector": "IP"
+        },
+        {
+          "ticker": "1815",
+          "name": "富喬",
+          "market": "tpex",
+          "score": 67.95,
+          "pillars": {
+            "chip": 69.84,
+            "fundamental": 56.44,
+            "momentum": 87.18
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.45 → 1.17（2026-Q3）",
+            "GM 39.969792 → 49.09824（2026-Q3）",
+            "OPM 25.690693 → 38.019777（2026-Q3）",
+            "法人／投信排行已知淨張數 +9,157.2 張（2026-11-13）",
+            "近5日 +20.85%／近20日 +11.37%；同族群5日均值 +26.31%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1815&SPOKE_DATE=20261104&SPOKE_TIME=134255&SEQ_NO=1",
+          "sector": "玻纖布／玻纖紗"
+        },
+        {
+          "ticker": "6510",
+          "name": "精測",
+          "market": "tpex",
+          "score": 67.89,
+          "pillars": {
+            "chip": 87.26,
+            "fundamental": 57.8,
+            "momentum": 99.3
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 15.02 → 16.75（2026-Q3）",
+            "GM 57.515684 → 57.257582（2026-Q3）",
+            "OPM 34.747176 → 35.21374（2026-Q3）",
+            "Daiwa 2026-10-28：Buy；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +204.3 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +5,002 萬元",
+            "400張以上持股比週變化 +3.24 百分點（20261106）",
+            "近5日 +44.69%／近20日 +14.80%；同族群5日均值 +28.62%"
+          ],
+          "risks": [
+            "AI/HPC專案延遲可能影響營收與獲利成長。",
+            "探針卡認證不成功或延遲，可能推遲2027年量產放量。",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00408A",
+              "shares_delta": 3000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00994A",
+              "shares_delta": 12000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1ent7JBV82s38ZudUD7aeaAoTZmrfN04J/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6510&SPOKE_DATE=20261027&SPOKE_TIME=175528&SEQ_NO=1&skey=6510202610271",
+          "sector": "探針卡／測試介面"
+        },
+        {
+          "ticker": "3017",
+          "name": "奇鋐",
+          "market": "twse",
+          "score": 67.86,
+          "pillars": {
+            "chip": 88.32,
+            "fundamental": 59.78,
+            "momentum": 93.1
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 24.37 → 29.32（2026-Q3）",
+            "GM 32.57 → 33.864202（2026-Q3）",
+            "OPM 27.437611 → 28.525522（2026-Q3）",
+            "Goldman Sachs 2026-11-11：Buy；目標價動作 upgrade",
+            "法人／投信排行已知淨張數 +990.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +48,032 萬元",
+            "近5日 +31.60%／近20日 -1.46%；同族群5日均值 +10.81%"
+          ],
+          "risks": [
+            "液冷採用速度低於預期，可能壓抑液冷業務成長。",
+            "AI伺服器需求低於預期，可能影響伺服器業務及產品組合改善。",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00400A",
+              "shares_delta": 100000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00403A",
+              "shares_delta": 50000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00982A",
+              "shares_delta": 8000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1jYnviMZkUafvyhbfv_CC94doktOcDtjB/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3017&year=115",
+          "sector": "散熱"
+        },
+        {
+          "ticker": "3624",
+          "name": "光頡",
+          "market": "tpex",
+          "score": 67.81,
+          "pillars": {
+            "chip": 71.09,
+            "fundamental": 65.45,
+            "momentum": 65.99
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.11 → 1.93（2026-Q3）",
+            "GM 32.794476 → 38.230533（2026-Q3）",
+            "OPM 18.508267 → 24.638993（2026-Q3）",
+            "法人／投信排行已知淨張數 +2,516.2 張（2026-11-13）",
+            "400張以上持股比週變化 +2.47 百分點（20261106）",
+            "近5日 +24.74%／近20日 -20.13%；同族群5日均值 +10.76%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3624&SPOKE_DATE=20261106&SPOKE_TIME=170815&SEQ_NO=1",
+          "sector": "被動元件"
+        }
+      ],
+      "candidates": [
+        {
+          "ticker": "2454",
+          "name": "聯發科",
+          "market": "twse",
+          "score": 75.24,
+          "pillars": {
+            "chip": 86.63,
+            "fundamental": 59.02,
+            "momentum": 84.88
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 15.27 → 17.5（2026-Q3）",
+            "GM 46.199507 → 46.322392（2026-Q3）",
+            "OPM 15.02654 → 16.126722（2026-Q3）",
+            "Morgan Stanley 2026-10-30：Overweight；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +2,609.9 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +12,360 萬元",
+            "近5日 +21.53%／近20日 -1.08%；同族群5日均值 +24.06%"
+          ],
+          "risks": [
+            "TPU v9放量高度取決於Intel EMIB-T基板供應及良率改善，若供應不足，AI ASIC營收可能無法追蹤Morgan Stanley預估。",
+            "若中國及其他新興市場智慧型手機需求惡化，可能壓抑營運表現。",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 30000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1KrpyiP1AnXys77VCH-1qz6k5AloxakQA/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2454&SPOKE_DATE=20261030&SPOKE_TIME=170417&SEQ_NO=2&skey=2454202610302",
+          "sector": "IP"
+        },
+        {
+          "ticker": "3533",
+          "name": "嘉澤",
+          "market": "twse",
+          "score": 74.62,
+          "pillars": {
+            "chip": 87.84,
+            "fundamental": 56.19,
+            "momentum": 85.02
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 17.67 → 17.07（2026-Q3）",
+            "GM 45.468301 → 44.829844（2026-Q3）",
+            "OPM 21.974768 → 22.930864（2026-Q3）",
+            "Morgan Stanley 2026-11-12：Overweight；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +691.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +11,460 萬元",
+            "400張以上持股比週變化 +0.97 百分點（20261106）",
+            "近5日 +20.50%／近20日 +5.23%；同族群5日均值 +10.11%"
+          ],
+          "risks": [
+            "原物料成本上升持續對3Q毛利率造成壓力。",
+            "營業費用高於預期，3Q營業費用為22億元，較Morgan Stanley預估高10%、較市場預期高9%。"
+          ],
+          "etf_details": [
+            {
+              "fund": "00400A",
+              "shares_delta": 60000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/15SRZeBzfxr-87bnhMrU6AaTG_ii2sQRF/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3533&year=115",
+          "sector": "連接線材"
+        },
+        {
+          "ticker": "6269",
+          "name": "台郡",
+          "market": "twse",
+          "score": 70.7,
+          "pillars": {
+            "chip": 52.8,
+            "fundamental": 79.2,
+            "momentum": 89.48
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -1.67 → -0.56（2026-Q3）",
+            "GM 4.278229 → 10.81606（2026-Q3）",
+            "OPM -13.022269 → -4.279383（2026-Q3）",
+            "近5日 +23.85%／近20日 +7.91%；同族群5日均值 +17.05%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6269&SPOKE_DATE=20261104&SPOKE_TIME=165105&SEQ_NO=1",
+          "sector": "PTFE材料"
+        },
+        {
+          "ticker": "5475",
+          "name": "德宏",
+          "market": "tpex",
+          "score": 70.36,
+          "pillars": {
+            "chip": 57.83,
+            "fundamental": 72.42,
+            "momentum": 91.29
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 0.95 → 2.25（2026-Q3）",
+            "GM 36.618132 → 46.252549（2026-Q3）",
+            "OPM 23.664065 → 36.223072（2026-Q3）",
+            "400張以上持股比週變化 +1.26 百分點（20261106）",
+            "近5日 +24.48%／近20日 +9.33%；同族群5日均值 +26.31%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5475&SPOKE_DATE=20261112&SPOKE_TIME=164407&SEQ_NO=1&skey=5475202611121",
+          "sector": "玻纖布／玻纖紗"
+        },
+        {
+          "ticker": "4958",
+          "name": "臻鼎-KY",
+          "market": "twse",
+          "score": 70.33,
+          "pillars": {
+            "chip": 64.86,
+            "fundamental": 78.6,
+            "momentum": 64.74
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 2.22 → 4.11（2026-Q3）",
+            "GM 23.097153 → 27.719004（2026-Q3）",
+            "OPM 7.766066 → 13.489132（2026-Q3）",
+            "Citi Research 2026-11-10：Buy；目標價動作 unknown",
+            "主動ETF當日持股淨變動估值 +4,400 萬元",
+            "近5日 +17.96%／近20日 -15.22%；同族群5日均值 +9.29%"
+          ],
+          "risks": [
+            "iPhone、Mac及iPad終端需求低於預期。",
+            "新款智慧手機內容價值降低或面臨價格壓力。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00991A",
+              "shares_delta": 100000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1AXYDZwVzZFOkY1v3OOSQg8W0totGeOa8/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4958&year=115",
+          "sector": "ABF"
+        },
+        {
+          "ticker": "4989",
+          "name": "榮科",
+          "market": "twse",
+          "score": 70.2,
+          "pillars": {
+            "chip": 48.83,
+            "fundamental": 87.5,
+            "momentum": 78.33
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -0.8 → 0.28（2026-Q3）",
+            "GM -3.848509 → 6.53966（2026-Q3）",
+            "OPM -10.901189 → 2.757499（2026-Q3）",
+            "近5日 +20.32%／近20日 -7.82%；同族群5日均值 +15.28%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4989&year=115",
+          "sector": "銅箔／CCL"
+        },
+        {
+          "ticker": "2330",
+          "name": "台積電",
+          "market": "twse",
+          "score": 69.44,
+          "pillars": {
+            "chip": 88.49,
+            "fundamental": 56.65,
+            "momentum": 56.93
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 27.25 → 29.42（2026-Q3）",
+            "GM 67.720723 → 66.413459（2026-Q3）",
+            "OPM 60.344346 → 58.654784（2026-Q3）",
+            "Morgan Stanley 2026-10-15：Overweight；目標價動作 maintain",
+            "法人／投信排行已知淨張數 +743.6 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +127,370 萬元",
+            "近5日 +10.07%／近20日 -3.69%；同族群5日均值 +10.07%"
+          ],
+          "risks": [
+            "3Q26毛利率受到2奈米節點及海外營運稀釋，且4Q26毛利率中位數指引顯示壓力延續。",
+            "2奈米及3奈米加速擴產將帶來較高折舊，且新產能爬坡可能造成毛利率壓力；海外晶圓廠成本大幅增加亦為下行風險。",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00981A",
+              "shares_delta": 542000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1v-mCkphoagYt0507gJMSU30v6gHMAbD_/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2330&year=115",
+          "sector": "晶圓代工（台積電）"
+        },
+        {
+          "ticker": "3443",
+          "name": "創意",
+          "market": "twse",
+          "score": 68.72,
+          "pillars": {
+            "chip": 85.03,
+            "fundamental": 63.04,
+            "momentum": 97.49
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 11.61 → 16.95（2026-Q3）",
+            "GM 21.545027 → 20.583513（2026-Q3）",
+            "OPM 12.063031 → 13.602938（2026-Q3）",
+            "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +149.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +25,830 萬元",
+            "近5日 +38.76%／近20日 +12.26%；同族群5日均值 +24.06%"
+          ],
+          "risks": [
+            "美國CSP客戶專案需求放緩，可能使訂單與專案能見度低於預期。",
+            "AI ASIC專案數量減少可能導致NRE需求低於預期。",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 30000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1Lr22OcQnsjBDm6XZKxmU4dL4IAQfPVuc/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3443&SPOKE_DATE=20261029&SPOKE_TIME=163112&SEQ_NO=2&skey=3443202610292",
+          "sector": "IP"
+        },
+        {
+          "ticker": "2383",
+          "name": "台光電",
+          "market": "twse",
+          "score": 67.99,
+          "pillars": {
+            "chip": 84.19,
+            "fundamental": 65.26,
+            "momentum": 41.05
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 27.56 → 40.46（2026-Q3）",
+            "GM 33.850715 → 37.695591（2026-Q3）",
+            "OPM 26.935232 → 30.691805（2026-Q3）",
+            "Morgan Stanley 2026-11-11：Overweight；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +168.3 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +35,828 萬元",
+            "近5日 +10.34%／近20日 -17.68%；同族群5日均值 +15.28%"
+          ],
+          "risks": [
+            "AI需求弱於預期可能壓抑需求與台光電營運表現。",
+            "台光電市占流失可能削弱報告所述的正面看法。",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00400A",
+              "shares_delta": 67000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00982A",
+              "shares_delta": 8000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00991A",
+              "shares_delta": 10000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1CdQ60L0RykZYnmCXw0DeIVktWQAm_vxt/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2383&SPOKE_DATE=20261028&SPOKE_TIME=151622&SEQ_NO=1&skey=2383202610281",
+          "sector": "銅箔／CCL"
+        },
+        {
+          "ticker": "1815",
+          "name": "富喬",
+          "market": "tpex",
+          "score": 67.95,
+          "pillars": {
+            "chip": 69.84,
+            "fundamental": 56.44,
+            "momentum": 87.18
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.45 → 1.17（2026-Q3）",
+            "GM 39.969792 → 49.09824（2026-Q3）",
+            "OPM 25.690693 → 38.019777（2026-Q3）",
+            "法人／投信排行已知淨張數 +9,157.2 張（2026-11-13）",
+            "近5日 +20.85%／近20日 +11.37%；同族群5日均值 +26.31%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1815&SPOKE_DATE=20261104&SPOKE_TIME=134255&SEQ_NO=1",
+          "sector": "玻纖布／玻纖紗"
+        },
+        {
+          "ticker": "6643",
+          "name": "M31",
+          "market": "tpex",
+          "score": 67.95,
+          "pillars": {
+            "chip": 49.04,
+            "fundamental": 81.25,
+            "momentum": 79.16
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -0.06 → 0.35（2026-Q3）",
+            "GM 100.0 → 100.0（2026-Q3）",
+            "OPM -3.990755 → 1.475904（2026-Q3）",
+            "Daiwa 2026-11-10：Buy；目標價動作 unknown",
+            "近5日 +19.68%／近20日 -6.24%；同族群5日均值 +24.06%"
+          ],
+          "risks": [
+            "規模仍未達最佳及營運費用壓力可能限制2026至2027年獲利反轉幅度。",
+            "3Q26就業獎金延後認列，已對獲利反轉進程造成影響。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": "https://drive.google.com/file/d/1PAfvGIqlMFZzvYlRMfwOalw09d7u9rVO/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6643&SPOKE_DATE=20261103&SPOKE_TIME=150640&SEQ_NO=2&skey=6643202611032",
+          "sector": "IP"
+        },
+        {
+          "ticker": "6510",
+          "name": "精測",
+          "market": "tpex",
+          "score": 67.89,
+          "pillars": {
+            "chip": 87.26,
+            "fundamental": 57.8,
+            "momentum": 99.3
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 15.02 → 16.75（2026-Q3）",
+            "GM 57.515684 → 57.257582（2026-Q3）",
+            "OPM 34.747176 → 35.21374（2026-Q3）",
+            "Daiwa 2026-10-28：Buy；目標價動作 unknown",
+            "法人／投信排行已知淨張數 +204.3 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +5,002 萬元",
+            "400張以上持股比週變化 +3.24 百分點（20261106）",
+            "近5日 +44.69%／近20日 +14.80%；同族群5日均值 +28.62%"
+          ],
+          "risks": [
+            "AI/HPC專案延遲可能影響營收與獲利成長。",
+            "探針卡認證不成功或延遲，可能推遲2027年量產放量。",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00408A",
+              "shares_delta": 3000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00994A",
+              "shares_delta": 12000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1ent7JBV82s38ZudUD7aeaAoTZmrfN04J/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6510&SPOKE_DATE=20261027&SPOKE_TIME=175528&SEQ_NO=1&skey=6510202610271",
+          "sector": "探針卡／測試介面"
+        },
+        {
+          "ticker": "3017",
+          "name": "奇鋐",
+          "market": "twse",
+          "score": 67.86,
+          "pillars": {
+            "chip": 88.32,
+            "fundamental": 59.78,
+            "momentum": 93.1
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 24.37 → 29.32（2026-Q3）",
+            "GM 32.57 → 33.864202（2026-Q3）",
+            "OPM 27.437611 → 28.525522（2026-Q3）",
+            "Goldman Sachs 2026-11-11：Buy；目標價動作 upgrade",
+            "法人／投信排行已知淨張數 +990.7 張（2026-11-13）",
+            "主動ETF當日持股淨變動估值 +48,032 萬元",
+            "近5日 +31.60%／近20日 -1.46%；同族群5日均值 +10.81%"
+          ],
+          "risks": [
+            "液冷採用速度低於預期，可能壓抑液冷業務成長。",
+            "AI伺服器需求低於預期，可能影響伺服器業務及產品組合改善。",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [
+            {
+              "fund": "00400A",
+              "shares_delta": 100000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00403A",
+              "shares_delta": 50000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00982A",
+              "shares_delta": 8000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1jYnviMZkUafvyhbfv_CC94doktOcDtjB/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3017&year=115",
+          "sector": "散熱"
+        },
+        {
+          "ticker": "3624",
+          "name": "光頡",
+          "market": "tpex",
+          "score": 67.81,
+          "pillars": {
+            "chip": 71.09,
+            "fundamental": 65.45,
+            "momentum": 65.99
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.11 → 1.93（2026-Q3）",
+            "GM 32.794476 → 38.230533（2026-Q3）",
+            "OPM 18.508267 → 24.638993（2026-Q3）",
+            "法人／投信排行已知淨張數 +2,516.2 張（2026-11-13）",
+            "400張以上持股比週變化 +2.47 百分點（20261106）",
+            "近5日 +24.74%／近20日 -20.13%；同族群5日均值 +10.76%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3624&SPOKE_DATE=20261106&SPOKE_TIME=170815&SEQ_NO=1",
+          "sector": "被動元件"
+        },
+        {
+          "ticker": "8096",
+          "name": "擎亞",
+          "market": "tpex",
+          "score": 67.79,
+          "pillars": {
+            "chip": 49.19,
+            "fundamental": 87.5,
+            "momentum": 65.57
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 1.41 → 5.2（2026-Q3）",
+            "GM 2.436582 → 4.890373（2026-Q3）",
+            "OPM 0.994644 → 3.225115（2026-Q3）",
+            "400張以上持股比週變化 +0.70 百分點（20261106）",
+            "近5日 +16.19%／近20日 -13.37%；同族群5日均值 +4.87%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8096&SPOKE_DATE=20261111&SPOKE_TIME=154009&SEQ_NO=1",
+          "sector": "記憶體"
+        },
+        {
+          "ticker": "6515",
+          "name": "穎崴",
+          "market": "twse",
+          "score": 67.17,
+          "pillars": {
+            "chip": 67.49,
+            "fundamental": 65.61,
+            "momentum": 69.62
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 18.7 → 28.61（2026-Q3）",
+            "GM 38.329263 → 40.548224（2026-Q3）",
+            "OPM 23.420436 → 27.196856（2026-Q3）",
+            "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+            "主動ETF當日持股淨變動估值 +24,690 萬元",
+            "近5日 +24.89%／近20日 -18.60%；同族群5日均值 +28.62%"
+          ],
+          "risks": [
+            "美國AI GPU產品路線若延遲，或客戶與產業集中度較高，可能影響穎崴業務展望。",
+            "全球同業在同軸測試座與hypersocket領域的競爭加劇，可能壓抑公司成長與獲利。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 60000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1ghcui9WiSBjkHixH3MkSrk3AChjnhpii/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6515&SPOKE_DATE=20261105&SPOKE_TIME=182851&SEQ_NO=1",
+          "sector": "探針卡／測試介面"
+        },
+        {
+          "ticker": "6706",
+          "name": "惠特",
+          "market": "twse",
+          "score": 66.39,
+          "pillars": {
+            "chip": 47.86,
+            "fundamental": 79.66,
+            "momentum": 76.93
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -1.89 → -0.23（2026-Q3）",
+            "GM -14.247079 → 8.452461（2026-Q3）",
+            "OPM -92.058913 → -46.562534（2026-Q3）",
+            "近5日 +22.44%／近20日 -12.54%；同族群5日均值 +15.75%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6706&SPOKE_DATE=20261106&SPOKE_TIME=172548&SEQ_NO=1",
+          "sector": "光通封裝／設備／檢測"
+        },
+        {
+          "ticker": "6531",
+          "name": "愛普*",
+          "market": "twse",
+          "score": 66.31,
+          "pillars": {
+            "chip": 67.4,
+            "fundamental": 64.98,
+            "momentum": 66.76
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 4.18 → 7.21（2026-Q3）",
+            "GM 49.064297 → 56.000082（2026-Q3）",
+            "OPM 30.711374 → 40.914117（2026-Q3）",
+            "法人／投信排行已知淨張數 +1,590.3 張（2026-11-13）",
+            "近5日 +17.76%／近20日 -13.84%；同族群5日均值 +6.37%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6531&SPOKE_DATE=20261106&SPOKE_TIME=153016&SEQ_NO=1",
+          "sector": "IC 設計"
+        },
+        {
+          "ticker": "3234",
+          "name": "光環",
+          "market": "tpex",
+          "score": 66.28,
+          "pillars": {
+            "chip": 47.72,
+            "fundamental": 81.16,
+            "momentum": 73.66
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -0.16 → 0.33（2026-Q3）",
+            "GM 19.871021 → 29.660718（2026-Q3）",
+            "OPM -8.701499 → 10.915034（2026-Q3）",
+            "近5日 +23.91%／近20日 -15.18%；同族群5日均值 +20.31%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3234&SPOKE_DATE=20261105&SPOKE_TIME=162304&SEQ_NO=1",
+          "sector": "光通訊元件／模組"
+        },
+        {
+          "ticker": "2316",
+          "name": "楠梓電",
+          "market": "twse",
+          "score": 65.98,
+          "pillars": {
+            "chip": 50.19,
+            "fundamental": 87.5,
+            "momentum": 54.49
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 3.02 → 6.77（2026-Q3）",
+            "GM -3.531383 → 10.957958（2026-Q3）",
+            "OPM -16.312495 → 2.103954（2026-Q3）",
+            "近5日 +21.50%／近20日 -25.23%；同族群5日均值 +21.91%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2316&year=115",
+          "sector": "PCB"
+        },
+        {
+          "ticker": "4749",
+          "name": "新應材",
+          "market": "tpex",
+          "score": 65.59,
+          "pillars": {
+            "chip": 60.32,
+            "fundamental": 62.26,
+            "momentum": 82.79
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 3.28 → 5.89（2026-Q3）",
+            "GM 44.528756 → 47.565738（2026-Q3）",
+            "OPM 23.197431 → 25.915216（2026-Q3）",
+            "法人／投信排行已知淨張數 +382.2 張（2026-11-13）",
+            "近5日 +20.20%／近20日 -0.55%；同族群5日均值 +13.60%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4749&SPOKE_DATE=20261030&SPOKE_TIME=170800&SEQ_NO=1&skey=4749202610301",
+          "sector": "半導體材料／耗材"
+        },
+        {
+          "ticker": "6830",
+          "name": "汎銓",
+          "market": "twse",
+          "score": 65.57,
+          "pillars": {
+            "chip": 50.82,
+            "fundamental": 79.82,
+            "momentum": 66.55
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 0.36 → 1.6（2026-Q3）",
+            "GM 24.963513 → 34.597724（2026-Q3）",
+            "OPM 2.536389 → 13.691102（2026-Q3）",
+            "近5日 +13.17%／近20日 -3.18%；同族群5日均值 +11.10%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=6830&year=115",
+          "sector": "半導體測試／驗證／量測"
+        },
+        {
+          "ticker": "3711",
+          "name": "日月光投控",
+          "market": "twse",
+          "score": 64.95,
+          "pillars": {
+            "chip": 69.03,
+            "fundamental": 63.24,
+            "momentum": 60.21
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 4.8 → 6.13（2026-Q3）",
+            "GM 20.997391 → 22.101502（2026-Q3）",
+            "OPM 11.0407 → 13.572308（2026-Q3）",
+            "Citi Research 2026-10-29：Buy；目標價動作 unknown",
+            "主動ETF當日持股淨變動估值 +20,810 萬元",
+            "近5日 +13.47%／近20日 -11.14%；同族群5日均值 +18.34%"
+          ],
+          "risks": [
+            "組裝與測試需求高於可用產能，產能與廠房空間限制可能限制公司滿足客戶需求的速度。",
+            "資本支出擴張若過於積極，可能導致產業供過於求。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00403A",
+              "shares_delta": 320000.0,
+              "date": "2026-11-13"
+            },
+            {
+              "fund": "00982A",
+              "shares_delta": 28000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1jHDo34vefENHxDNMrI72r_LroWcpGR__/view?usp=drivesdk",
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3711&year=115",
+          "sector": "IC 封裝／測試"
+        },
+        {
+          "ticker": "4576",
+          "name": "大銀微系統",
+          "market": "twse",
+          "score": 64.71,
+          "pillars": {
+            "chip": 51.31,
+            "fundamental": 68.69,
+            "momentum": 83.55
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 0.96 → 2.14（2026-Q3）",
+            "GM 37.10052 → 42.356827（2026-Q3）",
+            "OPM 17.93076 → 24.275278（2026-Q3）",
+            "近5日 +20.66%／近20日 -1.95%；同族群5日均值 +10.45%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4576&year=115",
+          "sector": "工具機／自動化系統"
+        },
+        {
+          "ticker": "3105",
+          "name": "穩懋",
+          "market": "tpex",
+          "score": 64.54,
+          "pillars": {
+            "chip": 68.5,
+            "fundamental": 68.93,
+            "momentum": 97.84
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 2.3 → 4.55（2026-Q3）",
+            "GM 28.239477 → 37.39344999288273（2026-Q3）",
+            "OPM 14.11214 → 24.161843（2026-Q3）",
+            "Goldman Sachs 2026-10-29：Sell；目標價動作 upgrade",
+            "法人／投信排行已知淨張數 +1,702.3 張（2026-11-13）",
+            "近5日 +39.90%／近20日 +13.15%；同族群5日均值 +28.74%"
+          ],
+          "risks": [
+            "新PD產品目前貢獻仍有限，資料中心光通訊業務至2026-27E可能無法形成規模，LD產品是否於2028E由光通訊公司外包給穩懋仍高度不確定。",
+            "手機相關業務包括cellular、Wi-Fi與光通訊，報告估計占2026E總營收50%以上；手機需求可能受到高記憶體成本影響。",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [],
+          "research_url": "https://drive.google.com/file/d/1AEik-Syg1Bzpqdzq1DHEr42teGZQVAra/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3105&SPOKE_DATE=20261028&SPOKE_TIME=140020&SEQ_NO=1&skey=3105202610281",
+          "sector": "低軌衛星"
+        },
+        {
+          "ticker": "2455",
+          "name": "全新",
+          "market": "twse",
+          "score": 64.38,
+          "pillars": {
+            "chip": 57.97,
+            "fundamental": 69.99,
+            "momentum": 65.99
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.14 → 1.81（2026-Q3）",
+            "GM 38.607461 → 44.908999（2026-Q3）",
+            "OPM 23.184096 → 31.25692（2026-Q3）",
+            "Daiwa 2026-11-05：Buy；目標價動作 unknown",
+            "主動ETF當日持股淨變動估值 +1,137 萬元",
+            "近5日 +22.88%／近20日 -18.92%；同族群5日均值 +20.31%"
+          ],
+          "risks": [
+            "中國出口管制可能造成非預期供應鏈中斷。",
+            "RF業務仍受消費者需求疲弱及智慧手機成本通膨影響，產能利用率仍低於最佳水準。",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00982A",
+              "shares_delta": 29000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": "https://drive.google.com/file/d/1t0HE7onI_fawqeJ9aAn_LpW5PCvcC-AX/view?usp=drivesdk",
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2455&SPOKE_DATE=20261029&SPOKE_TIME=153119&SEQ_NO=1&skey=2455202610291",
+          "sector": "光通訊元件／模組"
+        },
+        {
+          "ticker": "5469",
+          "name": "瀚宇博",
+          "market": "twse",
+          "score": 64.01,
+          "pillars": {
+            "chip": 49.36,
+            "fundamental": 68.34,
+            "momentum": 84.67
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 0.82 → 2.02（2026-Q3）",
+            "GM 15.058369 → 16.83624（2026-Q3）",
+            "OPM 6.859102 → 9.254846（2026-Q3）",
+            "近5日 +22.45%／近20日 -4.53%；同族群5日均值 +21.91%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5469&SPOKE_DATE=20261105&SPOKE_TIME=152215&SEQ_NO=1",
+          "sector": "PCB"
+        },
+        {
+          "ticker": "3715",
+          "name": "定穎投控",
+          "market": "twse",
+          "score": 63.97,
+          "pillars": {
+            "chip": 53.95,
+            "fundamental": 82.33,
+            "momentum": 97.28
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS -0.81 → 0.11（2026-Q3）",
+            "GM 14.017493 → 22.232817（2026-Q3）",
+            "OPM 0.985573 → 9.938061（2026-Q3）",
+            "近5日 +43.36%／近20日 +7.60%；同族群5日均值 +21.91%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知",
+            "大戶排行未涵蓋，方向未知",
+            "近5日漲幅逾25%，追價扣10分"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3715&SPOKE_DATE=20261103&SPOKE_TIME=184707&SEQ_NO=1",
+          "sector": "PCB"
+        },
+        {
+          "ticker": "3665",
+          "name": "貿聯-KY",
+          "market": "twse",
+          "score": 63.59,
+          "pillars": {
+            "chip": 71.61,
+            "fundamental": 66.32,
+            "momentum": 42.09
+          },
+          "eligible": false,
+          "evidence": [
+            "EPS 15.28 → 21.93（2026-Q3）",
+            "主動ETF當日持股淨變動估值 +31,768 萬元",
+            "400張以上持股比週變化 +0.70 百分點（20261106）",
+            "近5日 +14.72%／近20日 -24.57%；同族群5日均值 +10.11%"
+          ],
+          "risks": [
+            "GM資料未齊，該項不判多空",
+            "OPM資料未齊，該項不判多空",
+            "近30日無個股研究，研究項給中性分",
+            "未列入法人完整資料／排行，方向未知"
+          ],
+          "etf_details": [
+            {
+              "fund": "00991A",
+              "shares_delta": 209000.0,
+              "date": "2026-11-13"
+            }
+          ],
+          "research_url": null,
+          "financial_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1pcFAwc0pDVllmUDBtSTVXU3RIdmFYU1M4TFJuU0VyOGQ5OGp3LTNKSjNQV1BuX3JCQlhBQW81cF9oekpfU0htcnBFVHc0cDY4RklpbUZ1SUdJaFM3SlM40gFkQVVfeXFMTXZXaHZxSkhHRU0yRU1VVzY1YnpQeG51Q3B5cWVGVkFEVzlwZTRKNVA5RkgxUm5LUE1razRBbjVFU29wVlk0RGs2OTF5aGtYS0JOZXNNVmFuVF9nS0dUdWtzeDdLSA?oc=5",
+          "sector": "連接線材"
+        },
+        {
+          "ticker": "6147",
+          "name": "頎邦",
+          "market": "tpex",
+          "score": 63.52,
+          "pillars": {
+            "chip": 64.47,
+            "fundamental": 63.53,
+            "momentum": 61.6
+          },
+          "eligible": true,
+          "evidence": [
+            "EPS 1.28 → 2.46（2026-Q3）",
+            "GM 30.2989 → 31.082697（2026-Q3）",
+            "OPM 19.269414 → 21.865241（2026-Q3）",
+            "法人／投信排行已知淨張數 +2,517.9 張（2026-11-13）",
+            "近5日 +20.77%／近20日 -20.05%；同族群5日均值 +18.34%"
+          ],
+          "risks": [
+            "近30日無個股研究，研究項給中性分",
+            "大戶排行未涵蓋，方向未知"
+          ],
+          "etf_details": [],
+          "research_url": null,
+          "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6147&SPOKE_DATE=20261030&SPOKE_TIME=133249&SEQ_NO=1&skey=6147202610301",
+          "sector": "IC 封裝／測試"
+        }
+      ],
+      "errors": [],
+      "coverage": {
+        "price": {
+          "usable": 288,
+          "universe": 288
+        },
+        "etf": {
+          "fresh": 26,
+          "total": 26
+        }
+      },
+      "sources": {
+        "market_date": "2026-11-13",
+        "institutional_date": "2026-11-13",
+        "holder_date": "20261106",
+        "earnings_updated": "2026-11-13T23:16+08:00",
+        "research_updated": "2026-11-14T12:14+08:00",
+        "etf_version": "9d6d61f45365"
+      },
+      "model": "既有AI研究結構化結果＋固定三面向規則；分數不是上漲機率",
+      "input_hash": "6425c6d2325e659748f3b65b285292d25c249a046f65cc11f2852adbb2bb0996"
+    }
+  ],
+  "trades": [],
+  "equity": [],
+  "processed_sessions": [],
+  "execution_warnings": [],
+  "latest_attempt": {
+    "date": "2026-11-13",
+    "available_at": "2026-11-14T12:17:15+08:00",
+    "valid": true,
+    "targets": [
+      {
+        "ticker": "2454",
+        "name": "聯發科",
+        "market": "twse",
+        "score": 75.24,
+        "pillars": {
+          "chip": 86.63,
+          "fundamental": 59.02,
+          "momentum": 84.88
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 15.27 → 17.5（2026-Q3）",
+          "GM 46.199507 → 46.322392（2026-Q3）",
+          "OPM 15.02654 → 16.126722（2026-Q3）",
+          "Morgan Stanley 2026-10-30：Overweight；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +2,609.9 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +12,360 萬元",
+          "近5日 +21.53%／近20日 -1.08%；同族群5日均值 +24.06%"
+        ],
+        "risks": [
+          "TPU v9放量高度取決於Intel EMIB-T基板供應及良率改善，若供應不足，AI ASIC營收可能無法追蹤Morgan Stanley預估。",
+          "若中國及其他新興市場智慧型手機需求惡化，可能壓抑營運表現。",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 30000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1KrpyiP1AnXys77VCH-1qz6k5AloxakQA/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2454&SPOKE_DATE=20261030&SPOKE_TIME=170417&SEQ_NO=2&skey=2454202610302",
+        "sector": "IP"
+      },
+      {
+        "ticker": "3533",
+        "name": "嘉澤",
+        "market": "twse",
+        "score": 74.62,
+        "pillars": {
+          "chip": 87.84,
+          "fundamental": 56.19,
+          "momentum": 85.02
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 17.67 → 17.07（2026-Q3）",
+          "GM 45.468301 → 44.829844（2026-Q3）",
+          "OPM 21.974768 → 22.930864（2026-Q3）",
+          "Morgan Stanley 2026-11-12：Overweight；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +691.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +11,460 萬元",
+          "400張以上持股比週變化 +0.97 百分點（20261106）",
+          "近5日 +20.50%／近20日 +5.23%；同族群5日均值 +10.11%"
+        ],
+        "risks": [
+          "原物料成本上升持續對3Q毛利率造成壓力。",
+          "營業費用高於預期，3Q營業費用為22億元，較Morgan Stanley預估高10%、較市場預期高9%。"
+        ],
+        "etf_details": [
+          {
+            "fund": "00400A",
+            "shares_delta": 60000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/15SRZeBzfxr-87bnhMrU6AaTG_ii2sQRF/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3533&year=115",
+        "sector": "連接線材"
+      },
+      {
+        "ticker": "5475",
+        "name": "德宏",
+        "market": "tpex",
+        "score": 70.36,
+        "pillars": {
+          "chip": 57.83,
+          "fundamental": 72.42,
+          "momentum": 91.29
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 0.95 → 2.25（2026-Q3）",
+          "GM 36.618132 → 46.252549（2026-Q3）",
+          "OPM 23.664065 → 36.223072（2026-Q3）",
+          "400張以上持股比週變化 +1.26 百分點（20261106）",
+          "近5日 +24.48%／近20日 +9.33%；同族群5日均值 +26.31%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5475&SPOKE_DATE=20261112&SPOKE_TIME=164407&SEQ_NO=1&skey=5475202611121",
+        "sector": "玻纖布／玻纖紗"
+      },
+      {
+        "ticker": "4958",
+        "name": "臻鼎-KY",
+        "market": "twse",
+        "score": 70.33,
+        "pillars": {
+          "chip": 64.86,
+          "fundamental": 78.6,
+          "momentum": 64.74
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 2.22 → 4.11（2026-Q3）",
+          "GM 23.097153 → 27.719004（2026-Q3）",
+          "OPM 7.766066 → 13.489132（2026-Q3）",
+          "Citi Research 2026-11-10：Buy；目標價動作 unknown",
+          "主動ETF當日持股淨變動估值 +4,400 萬元",
+          "近5日 +17.96%／近20日 -15.22%；同族群5日均值 +9.29%"
+        ],
+        "risks": [
+          "iPhone、Mac及iPad終端需求低於預期。",
+          "新款智慧手機內容價值降低或面臨價格壓力。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00991A",
+            "shares_delta": 100000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1AXYDZwVzZFOkY1v3OOSQg8W0totGeOa8/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4958&year=115",
+        "sector": "ABF"
+      },
+      {
+        "ticker": "2330",
+        "name": "台積電",
+        "market": "twse",
+        "score": 69.44,
+        "pillars": {
+          "chip": 88.49,
+          "fundamental": 56.65,
+          "momentum": 56.93
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 27.25 → 29.42（2026-Q3）",
+          "GM 67.720723 → 66.413459（2026-Q3）",
+          "OPM 60.344346 → 58.654784（2026-Q3）",
+          "Morgan Stanley 2026-10-15：Overweight；目標價動作 maintain",
+          "法人／投信排行已知淨張數 +743.6 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +127,370 萬元",
+          "近5日 +10.07%／近20日 -3.69%；同族群5日均值 +10.07%"
+        ],
+        "risks": [
+          "3Q26毛利率受到2奈米節點及海外營運稀釋，且4Q26毛利率中位數指引顯示壓力延續。",
+          "2奈米及3奈米加速擴產將帶來較高折舊，且新產能爬坡可能造成毛利率壓力；海外晶圓廠成本大幅增加亦為下行風險。",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00981A",
+            "shares_delta": 542000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1v-mCkphoagYt0507gJMSU30v6gHMAbD_/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2330&year=115",
+        "sector": "晶圓代工（台積電）"
+      },
+      {
+        "ticker": "3443",
+        "name": "創意",
+        "market": "twse",
+        "score": 68.72,
+        "pillars": {
+          "chip": 85.03,
+          "fundamental": 63.04,
+          "momentum": 97.49
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 11.61 → 16.95（2026-Q3）",
+          "GM 21.545027 → 20.583513（2026-Q3）",
+          "OPM 12.063031 → 13.602938（2026-Q3）",
+          "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +149.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +25,830 萬元",
+          "近5日 +38.76%／近20日 +12.26%；同族群5日均值 +24.06%"
+        ],
+        "risks": [
+          "美國CSP客戶專案需求放緩，可能使訂單與專案能見度低於預期。",
+          "AI ASIC專案數量減少可能導致NRE需求低於預期。",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 30000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1Lr22OcQnsjBDm6XZKxmU4dL4IAQfPVuc/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3443&SPOKE_DATE=20261029&SPOKE_TIME=163112&SEQ_NO=2&skey=3443202610292",
+        "sector": "IP"
+      },
+      {
+        "ticker": "1815",
+        "name": "富喬",
+        "market": "tpex",
+        "score": 67.95,
+        "pillars": {
+          "chip": 69.84,
+          "fundamental": 56.44,
+          "momentum": 87.18
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.45 → 1.17（2026-Q3）",
+          "GM 39.969792 → 49.09824（2026-Q3）",
+          "OPM 25.690693 → 38.019777（2026-Q3）",
+          "法人／投信排行已知淨張數 +9,157.2 張（2026-11-13）",
+          "近5日 +20.85%／近20日 +11.37%；同族群5日均值 +26.31%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1815&SPOKE_DATE=20261104&SPOKE_TIME=134255&SEQ_NO=1",
+        "sector": "玻纖布／玻纖紗"
+      },
+      {
+        "ticker": "6510",
+        "name": "精測",
+        "market": "tpex",
+        "score": 67.89,
+        "pillars": {
+          "chip": 87.26,
+          "fundamental": 57.8,
+          "momentum": 99.3
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 15.02 → 16.75（2026-Q3）",
+          "GM 57.515684 → 57.257582（2026-Q3）",
+          "OPM 34.747176 → 35.21374（2026-Q3）",
+          "Daiwa 2026-10-28：Buy；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +204.3 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +5,002 萬元",
+          "400張以上持股比週變化 +3.24 百分點（20261106）",
+          "近5日 +44.69%／近20日 +14.80%；同族群5日均值 +28.62%"
+        ],
+        "risks": [
+          "AI/HPC專案延遲可能影響營收與獲利成長。",
+          "探針卡認證不成功或延遲，可能推遲2027年量產放量。",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00408A",
+            "shares_delta": 3000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00994A",
+            "shares_delta": 12000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1ent7JBV82s38ZudUD7aeaAoTZmrfN04J/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6510&SPOKE_DATE=20261027&SPOKE_TIME=175528&SEQ_NO=1&skey=6510202610271",
+        "sector": "探針卡／測試介面"
+      },
+      {
+        "ticker": "3017",
+        "name": "奇鋐",
+        "market": "twse",
+        "score": 67.86,
+        "pillars": {
+          "chip": 88.32,
+          "fundamental": 59.78,
+          "momentum": 93.1
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 24.37 → 29.32（2026-Q3）",
+          "GM 32.57 → 33.864202（2026-Q3）",
+          "OPM 27.437611 → 28.525522（2026-Q3）",
+          "Goldman Sachs 2026-11-11：Buy；目標價動作 upgrade",
+          "法人／投信排行已知淨張數 +990.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +48,032 萬元",
+          "近5日 +31.60%／近20日 -1.46%；同族群5日均值 +10.81%"
+        ],
+        "risks": [
+          "液冷採用速度低於預期，可能壓抑液冷業務成長。",
+          "AI伺服器需求低於預期，可能影響伺服器業務及產品組合改善。",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00400A",
+            "shares_delta": 100000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00403A",
+            "shares_delta": 50000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00982A",
+            "shares_delta": 8000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1jYnviMZkUafvyhbfv_CC94doktOcDtjB/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3017&year=115",
+        "sector": "散熱"
+      },
+      {
+        "ticker": "3624",
+        "name": "光頡",
+        "market": "tpex",
+        "score": 67.81,
+        "pillars": {
+          "chip": 71.09,
+          "fundamental": 65.45,
+          "momentum": 65.99
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.11 → 1.93（2026-Q3）",
+          "GM 32.794476 → 38.230533（2026-Q3）",
+          "OPM 18.508267 → 24.638993（2026-Q3）",
+          "法人／投信排行已知淨張數 +2,516.2 張（2026-11-13）",
+          "400張以上持股比週變化 +2.47 百分點（20261106）",
+          "近5日 +24.74%／近20日 -20.13%；同族群5日均值 +10.76%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3624&SPOKE_DATE=20261106&SPOKE_TIME=170815&SEQ_NO=1",
+        "sector": "被動元件"
+      }
+    ],
+    "candidates": [
+      {
+        "ticker": "2454",
+        "name": "聯發科",
+        "market": "twse",
+        "score": 75.24,
+        "pillars": {
+          "chip": 86.63,
+          "fundamental": 59.02,
+          "momentum": 84.88
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 15.27 → 17.5（2026-Q3）",
+          "GM 46.199507 → 46.322392（2026-Q3）",
+          "OPM 15.02654 → 16.126722（2026-Q3）",
+          "Morgan Stanley 2026-10-30：Overweight；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +2,609.9 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +12,360 萬元",
+          "近5日 +21.53%／近20日 -1.08%；同族群5日均值 +24.06%"
+        ],
+        "risks": [
+          "TPU v9放量高度取決於Intel EMIB-T基板供應及良率改善，若供應不足，AI ASIC營收可能無法追蹤Morgan Stanley預估。",
+          "若中國及其他新興市場智慧型手機需求惡化，可能壓抑營運表現。",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 30000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1KrpyiP1AnXys77VCH-1qz6k5AloxakQA/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2454&SPOKE_DATE=20261030&SPOKE_TIME=170417&SEQ_NO=2&skey=2454202610302",
+        "sector": "IP"
+      },
+      {
+        "ticker": "3533",
+        "name": "嘉澤",
+        "market": "twse",
+        "score": 74.62,
+        "pillars": {
+          "chip": 87.84,
+          "fundamental": 56.19,
+          "momentum": 85.02
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 17.67 → 17.07（2026-Q3）",
+          "GM 45.468301 → 44.829844（2026-Q3）",
+          "OPM 21.974768 → 22.930864（2026-Q3）",
+          "Morgan Stanley 2026-11-12：Overweight；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +691.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +11,460 萬元",
+          "400張以上持股比週變化 +0.97 百分點（20261106）",
+          "近5日 +20.50%／近20日 +5.23%；同族群5日均值 +10.11%"
+        ],
+        "risks": [
+          "原物料成本上升持續對3Q毛利率造成壓力。",
+          "營業費用高於預期，3Q營業費用為22億元，較Morgan Stanley預估高10%、較市場預期高9%。"
+        ],
+        "etf_details": [
+          {
+            "fund": "00400A",
+            "shares_delta": 60000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/15SRZeBzfxr-87bnhMrU6AaTG_ii2sQRF/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3533&year=115",
+        "sector": "連接線材"
+      },
+      {
+        "ticker": "6269",
+        "name": "台郡",
+        "market": "twse",
+        "score": 70.7,
+        "pillars": {
+          "chip": 52.8,
+          "fundamental": 79.2,
+          "momentum": 89.48
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -1.67 → -0.56（2026-Q3）",
+          "GM 4.278229 → 10.81606（2026-Q3）",
+          "OPM -13.022269 → -4.279383（2026-Q3）",
+          "近5日 +23.85%／近20日 +7.91%；同族群5日均值 +17.05%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6269&SPOKE_DATE=20261104&SPOKE_TIME=165105&SEQ_NO=1",
+        "sector": "PTFE材料"
+      },
+      {
+        "ticker": "5475",
+        "name": "德宏",
+        "market": "tpex",
+        "score": 70.36,
+        "pillars": {
+          "chip": 57.83,
+          "fundamental": 72.42,
+          "momentum": 91.29
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 0.95 → 2.25（2026-Q3）",
+          "GM 36.618132 → 46.252549（2026-Q3）",
+          "OPM 23.664065 → 36.223072（2026-Q3）",
+          "400張以上持股比週變化 +1.26 百分點（20261106）",
+          "近5日 +24.48%／近20日 +9.33%；同族群5日均值 +26.31%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5475&SPOKE_DATE=20261112&SPOKE_TIME=164407&SEQ_NO=1&skey=5475202611121",
+        "sector": "玻纖布／玻纖紗"
+      },
+      {
+        "ticker": "4958",
+        "name": "臻鼎-KY",
+        "market": "twse",
+        "score": 70.33,
+        "pillars": {
+          "chip": 64.86,
+          "fundamental": 78.6,
+          "momentum": 64.74
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 2.22 → 4.11（2026-Q3）",
+          "GM 23.097153 → 27.719004（2026-Q3）",
+          "OPM 7.766066 → 13.489132（2026-Q3）",
+          "Citi Research 2026-11-10：Buy；目標價動作 unknown",
+          "主動ETF當日持股淨變動估值 +4,400 萬元",
+          "近5日 +17.96%／近20日 -15.22%；同族群5日均值 +9.29%"
+        ],
+        "risks": [
+          "iPhone、Mac及iPad終端需求低於預期。",
+          "新款智慧手機內容價值降低或面臨價格壓力。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00991A",
+            "shares_delta": 100000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1AXYDZwVzZFOkY1v3OOSQg8W0totGeOa8/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4958&year=115",
+        "sector": "ABF"
+      },
+      {
+        "ticker": "4989",
+        "name": "榮科",
+        "market": "twse",
+        "score": 70.2,
+        "pillars": {
+          "chip": 48.83,
+          "fundamental": 87.5,
+          "momentum": 78.33
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -0.8 → 0.28（2026-Q3）",
+          "GM -3.848509 → 6.53966（2026-Q3）",
+          "OPM -10.901189 → 2.757499（2026-Q3）",
+          "近5日 +20.32%／近20日 -7.82%；同族群5日均值 +15.28%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4989&year=115",
+        "sector": "銅箔／CCL"
+      },
+      {
+        "ticker": "2330",
+        "name": "台積電",
+        "market": "twse",
+        "score": 69.44,
+        "pillars": {
+          "chip": 88.49,
+          "fundamental": 56.65,
+          "momentum": 56.93
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 27.25 → 29.42（2026-Q3）",
+          "GM 67.720723 → 66.413459（2026-Q3）",
+          "OPM 60.344346 → 58.654784（2026-Q3）",
+          "Morgan Stanley 2026-10-15：Overweight；目標價動作 maintain",
+          "法人／投信排行已知淨張數 +743.6 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +127,370 萬元",
+          "近5日 +10.07%／近20日 -3.69%；同族群5日均值 +10.07%"
+        ],
+        "risks": [
+          "3Q26毛利率受到2奈米節點及海外營運稀釋，且4Q26毛利率中位數指引顯示壓力延續。",
+          "2奈米及3奈米加速擴產將帶來較高折舊，且新產能爬坡可能造成毛利率壓力；海外晶圓廠成本大幅增加亦為下行風險。",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00981A",
+            "shares_delta": 542000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1v-mCkphoagYt0507gJMSU30v6gHMAbD_/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2330&year=115",
+        "sector": "晶圓代工（台積電）"
+      },
+      {
+        "ticker": "3443",
+        "name": "創意",
+        "market": "twse",
+        "score": 68.72,
+        "pillars": {
+          "chip": 85.03,
+          "fundamental": 63.04,
+          "momentum": 97.49
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 11.61 → 16.95（2026-Q3）",
+          "GM 21.545027 → 20.583513（2026-Q3）",
+          "OPM 12.063031 → 13.602938（2026-Q3）",
+          "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +149.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +25,830 萬元",
+          "近5日 +38.76%／近20日 +12.26%；同族群5日均值 +24.06%"
+        ],
+        "risks": [
+          "美國CSP客戶專案需求放緩，可能使訂單與專案能見度低於預期。",
+          "AI ASIC專案數量減少可能導致NRE需求低於預期。",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 30000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1Lr22OcQnsjBDm6XZKxmU4dL4IAQfPVuc/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3443&SPOKE_DATE=20261029&SPOKE_TIME=163112&SEQ_NO=2&skey=3443202610292",
+        "sector": "IP"
+      },
+      {
+        "ticker": "2383",
+        "name": "台光電",
+        "market": "twse",
+        "score": 67.99,
+        "pillars": {
+          "chip": 84.19,
+          "fundamental": 65.26,
+          "momentum": 41.05
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 27.56 → 40.46（2026-Q3）",
+          "GM 33.850715 → 37.695591（2026-Q3）",
+          "OPM 26.935232 → 30.691805（2026-Q3）",
+          "Morgan Stanley 2026-11-11：Overweight；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +168.3 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +35,828 萬元",
+          "近5日 +10.34%／近20日 -17.68%；同族群5日均值 +15.28%"
+        ],
+        "risks": [
+          "AI需求弱於預期可能壓抑需求與台光電營運表現。",
+          "台光電市占流失可能削弱報告所述的正面看法。",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00400A",
+            "shares_delta": 67000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00982A",
+            "shares_delta": 8000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00991A",
+            "shares_delta": 10000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1CdQ60L0RykZYnmCXw0DeIVktWQAm_vxt/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2383&SPOKE_DATE=20261028&SPOKE_TIME=151622&SEQ_NO=1&skey=2383202610281",
+        "sector": "銅箔／CCL"
+      },
+      {
+        "ticker": "1815",
+        "name": "富喬",
+        "market": "tpex",
+        "score": 67.95,
+        "pillars": {
+          "chip": 69.84,
+          "fundamental": 56.44,
+          "momentum": 87.18
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.45 → 1.17（2026-Q3）",
+          "GM 39.969792 → 49.09824（2026-Q3）",
+          "OPM 25.690693 → 38.019777（2026-Q3）",
+          "法人／投信排行已知淨張數 +9,157.2 張（2026-11-13）",
+          "近5日 +20.85%／近20日 +11.37%；同族群5日均值 +26.31%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=1815&SPOKE_DATE=20261104&SPOKE_TIME=134255&SEQ_NO=1",
+        "sector": "玻纖布／玻纖紗"
+      },
+      {
+        "ticker": "6643",
+        "name": "M31",
+        "market": "tpex",
+        "score": 67.95,
+        "pillars": {
+          "chip": 49.04,
+          "fundamental": 81.25,
+          "momentum": 79.16
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -0.06 → 0.35（2026-Q3）",
+          "GM 100.0 → 100.0（2026-Q3）",
+          "OPM -3.990755 → 1.475904（2026-Q3）",
+          "Daiwa 2026-11-10：Buy；目標價動作 unknown",
+          "近5日 +19.68%／近20日 -6.24%；同族群5日均值 +24.06%"
+        ],
+        "risks": [
+          "規模仍未達最佳及營運費用壓力可能限制2026至2027年獲利反轉幅度。",
+          "3Q26就業獎金延後認列，已對獲利反轉進程造成影響。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": "https://drive.google.com/file/d/1PAfvGIqlMFZzvYlRMfwOalw09d7u9rVO/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6643&SPOKE_DATE=20261103&SPOKE_TIME=150640&SEQ_NO=2&skey=6643202611032",
+        "sector": "IP"
+      },
+      {
+        "ticker": "6510",
+        "name": "精測",
+        "market": "tpex",
+        "score": 67.89,
+        "pillars": {
+          "chip": 87.26,
+          "fundamental": 57.8,
+          "momentum": 99.3
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 15.02 → 16.75（2026-Q3）",
+          "GM 57.515684 → 57.257582（2026-Q3）",
+          "OPM 34.747176 → 35.21374（2026-Q3）",
+          "Daiwa 2026-10-28：Buy；目標價動作 unknown",
+          "法人／投信排行已知淨張數 +204.3 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +5,002 萬元",
+          "400張以上持股比週變化 +3.24 百分點（20261106）",
+          "近5日 +44.69%／近20日 +14.80%；同族群5日均值 +28.62%"
+        ],
+        "risks": [
+          "AI/HPC專案延遲可能影響營收與獲利成長。",
+          "探針卡認證不成功或延遲，可能推遲2027年量產放量。",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00408A",
+            "shares_delta": 3000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00994A",
+            "shares_delta": 12000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1ent7JBV82s38ZudUD7aeaAoTZmrfN04J/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6510&SPOKE_DATE=20261027&SPOKE_TIME=175528&SEQ_NO=1&skey=6510202610271",
+        "sector": "探針卡／測試介面"
+      },
+      {
+        "ticker": "3017",
+        "name": "奇鋐",
+        "market": "twse",
+        "score": 67.86,
+        "pillars": {
+          "chip": 88.32,
+          "fundamental": 59.78,
+          "momentum": 93.1
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 24.37 → 29.32（2026-Q3）",
+          "GM 32.57 → 33.864202（2026-Q3）",
+          "OPM 27.437611 → 28.525522（2026-Q3）",
+          "Goldman Sachs 2026-11-11：Buy；目標價動作 upgrade",
+          "法人／投信排行已知淨張數 +990.7 張（2026-11-13）",
+          "主動ETF當日持股淨變動估值 +48,032 萬元",
+          "近5日 +31.60%／近20日 -1.46%；同族群5日均值 +10.81%"
+        ],
+        "risks": [
+          "液冷採用速度低於預期，可能壓抑液冷業務成長。",
+          "AI伺服器需求低於預期，可能影響伺服器業務及產品組合改善。",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [
+          {
+            "fund": "00400A",
+            "shares_delta": 100000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00403A",
+            "shares_delta": 50000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00982A",
+            "shares_delta": 8000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1jYnviMZkUafvyhbfv_CC94doktOcDtjB/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3017&year=115",
+        "sector": "散熱"
+      },
+      {
+        "ticker": "3624",
+        "name": "光頡",
+        "market": "tpex",
+        "score": 67.81,
+        "pillars": {
+          "chip": 71.09,
+          "fundamental": 65.45,
+          "momentum": 65.99
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.11 → 1.93（2026-Q3）",
+          "GM 32.794476 → 38.230533（2026-Q3）",
+          "OPM 18.508267 → 24.638993（2026-Q3）",
+          "法人／投信排行已知淨張數 +2,516.2 張（2026-11-13）",
+          "400張以上持股比週變化 +2.47 百分點（20261106）",
+          "近5日 +24.74%／近20日 -20.13%；同族群5日均值 +10.76%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3624&SPOKE_DATE=20261106&SPOKE_TIME=170815&SEQ_NO=1",
+        "sector": "被動元件"
+      },
+      {
+        "ticker": "8096",
+        "name": "擎亞",
+        "market": "tpex",
+        "score": 67.79,
+        "pillars": {
+          "chip": 49.19,
+          "fundamental": 87.5,
+          "momentum": 65.57
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 1.41 → 5.2（2026-Q3）",
+          "GM 2.436582 → 4.890373（2026-Q3）",
+          "OPM 0.994644 → 3.225115（2026-Q3）",
+          "400張以上持股比週變化 +0.70 百分點（20261106）",
+          "近5日 +16.19%／近20日 -13.37%；同族群5日均值 +4.87%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=8096&SPOKE_DATE=20261111&SPOKE_TIME=154009&SEQ_NO=1",
+        "sector": "記憶體"
+      },
+      {
+        "ticker": "6515",
+        "name": "穎崴",
+        "market": "twse",
+        "score": 67.17,
+        "pillars": {
+          "chip": 67.49,
+          "fundamental": 65.61,
+          "momentum": 69.62
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 18.7 → 28.61（2026-Q3）",
+          "GM 38.329263 → 40.548224（2026-Q3）",
+          "OPM 23.420436 → 27.196856（2026-Q3）",
+          "Citi Research 2026-11-05：Buy；目標價動作 unknown",
+          "主動ETF當日持股淨變動估值 +24,690 萬元",
+          "近5日 +24.89%／近20日 -18.60%；同族群5日均值 +28.62%"
+        ],
+        "risks": [
+          "美國AI GPU產品路線若延遲，或客戶與產業集中度較高，可能影響穎崴業務展望。",
+          "全球同業在同軸測試座與hypersocket領域的競爭加劇，可能壓抑公司成長與獲利。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 60000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1ghcui9WiSBjkHixH3MkSrk3AChjnhpii/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6515&SPOKE_DATE=20261105&SPOKE_TIME=182851&SEQ_NO=1",
+        "sector": "探針卡／測試介面"
+      },
+      {
+        "ticker": "6706",
+        "name": "惠特",
+        "market": "twse",
+        "score": 66.39,
+        "pillars": {
+          "chip": 47.86,
+          "fundamental": 79.66,
+          "momentum": 76.93
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -1.89 → -0.23（2026-Q3）",
+          "GM -14.247079 → 8.452461（2026-Q3）",
+          "OPM -92.058913 → -46.562534（2026-Q3）",
+          "近5日 +22.44%／近20日 -12.54%；同族群5日均值 +15.75%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6706&SPOKE_DATE=20261106&SPOKE_TIME=172548&SEQ_NO=1",
+        "sector": "光通封裝／設備／檢測"
+      },
+      {
+        "ticker": "6531",
+        "name": "愛普*",
+        "market": "twse",
+        "score": 66.31,
+        "pillars": {
+          "chip": 67.4,
+          "fundamental": 64.98,
+          "momentum": 66.76
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 4.18 → 7.21（2026-Q3）",
+          "GM 49.064297 → 56.000082（2026-Q3）",
+          "OPM 30.711374 → 40.914117（2026-Q3）",
+          "法人／投信排行已知淨張數 +1,590.3 張（2026-11-13）",
+          "近5日 +17.76%／近20日 -13.84%；同族群5日均值 +6.37%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6531&SPOKE_DATE=20261106&SPOKE_TIME=153016&SEQ_NO=1",
+        "sector": "IC 設計"
+      },
+      {
+        "ticker": "3234",
+        "name": "光環",
+        "market": "tpex",
+        "score": 66.28,
+        "pillars": {
+          "chip": 47.72,
+          "fundamental": 81.16,
+          "momentum": 73.66
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -0.16 → 0.33（2026-Q3）",
+          "GM 19.871021 → 29.660718（2026-Q3）",
+          "OPM -8.701499 → 10.915034（2026-Q3）",
+          "近5日 +23.91%／近20日 -15.18%；同族群5日均值 +20.31%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3234&SPOKE_DATE=20261105&SPOKE_TIME=162304&SEQ_NO=1",
+        "sector": "光通訊元件／模組"
+      },
+      {
+        "ticker": "2316",
+        "name": "楠梓電",
+        "market": "twse",
+        "score": 65.98,
+        "pillars": {
+          "chip": 50.19,
+          "fundamental": 87.5,
+          "momentum": 54.49
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 3.02 → 6.77（2026-Q3）",
+          "GM -3.531383 → 10.957958（2026-Q3）",
+          "OPM -16.312495 → 2.103954（2026-Q3）",
+          "近5日 +21.50%／近20日 -25.23%；同族群5日均值 +21.91%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=2316&year=115",
+        "sector": "PCB"
+      },
+      {
+        "ticker": "4749",
+        "name": "新應材",
+        "market": "tpex",
+        "score": 65.59,
+        "pillars": {
+          "chip": 60.32,
+          "fundamental": 62.26,
+          "momentum": 82.79
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 3.28 → 5.89（2026-Q3）",
+          "GM 44.528756 → 47.565738（2026-Q3）",
+          "OPM 23.197431 → 25.915216（2026-Q3）",
+          "法人／投信排行已知淨張數 +382.2 張（2026-11-13）",
+          "近5日 +20.20%／近20日 -0.55%；同族群5日均值 +13.60%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4749&SPOKE_DATE=20261030&SPOKE_TIME=170800&SEQ_NO=1&skey=4749202610301",
+        "sector": "半導體材料／耗材"
+      },
+      {
+        "ticker": "6830",
+        "name": "汎銓",
+        "market": "twse",
+        "score": 65.57,
+        "pillars": {
+          "chip": 50.82,
+          "fundamental": 79.82,
+          "momentum": 66.55
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 0.36 → 1.6（2026-Q3）",
+          "GM 24.963513 → 34.597724（2026-Q3）",
+          "OPM 2.536389 → 13.691102（2026-Q3）",
+          "近5日 +13.17%／近20日 -3.18%；同族群5日均值 +11.10%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=6830&year=115",
+        "sector": "半導體測試／驗證／量測"
+      },
+      {
+        "ticker": "3711",
+        "name": "日月光投控",
+        "market": "twse",
+        "score": 64.95,
+        "pillars": {
+          "chip": 69.03,
+          "fundamental": 63.24,
+          "momentum": 60.21
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 4.8 → 6.13（2026-Q3）",
+          "GM 20.997391 → 22.101502（2026-Q3）",
+          "OPM 11.0407 → 13.572308（2026-Q3）",
+          "Citi Research 2026-10-29：Buy；目標價動作 unknown",
+          "主動ETF當日持股淨變動估值 +20,810 萬元",
+          "近5日 +13.47%／近20日 -11.14%；同族群5日均值 +18.34%"
+        ],
+        "risks": [
+          "組裝與測試需求高於可用產能，產能與廠房空間限制可能限制公司滿足客戶需求的速度。",
+          "資本支出擴張若過於積極，可能導致產業供過於求。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00403A",
+            "shares_delta": 320000.0,
+            "date": "2026-11-13"
+          },
+          {
+            "fund": "00982A",
+            "shares_delta": 28000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1jHDo34vefENHxDNMrI72r_LroWcpGR__/view?usp=drivesdk",
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=3711&year=115",
+        "sector": "IC 封裝／測試"
+      },
+      {
+        "ticker": "4576",
+        "name": "大銀微系統",
+        "market": "twse",
+        "score": 64.71,
+        "pillars": {
+          "chip": 51.31,
+          "fundamental": 68.69,
+          "momentum": 83.55
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 0.96 → 2.14（2026-Q3）",
+          "GM 37.10052 → 42.356827（2026-Q3）",
+          "OPM 17.93076 → 24.275278（2026-Q3）",
+          "近5日 +20.66%／近20日 -1.95%；同族群5日均值 +10.45%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mops.twse.com.tw/mops/web/t05st01?co_id=4576&year=115",
+        "sector": "工具機／自動化系統"
+      },
+      {
+        "ticker": "3105",
+        "name": "穩懋",
+        "market": "tpex",
+        "score": 64.54,
+        "pillars": {
+          "chip": 68.5,
+          "fundamental": 68.93,
+          "momentum": 97.84
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 2.3 → 4.55（2026-Q3）",
+          "GM 28.239477 → 37.39344999288273（2026-Q3）",
+          "OPM 14.11214 → 24.161843（2026-Q3）",
+          "Goldman Sachs 2026-10-29：Sell；目標價動作 upgrade",
+          "法人／投信排行已知淨張數 +1,702.3 張（2026-11-13）",
+          "近5日 +39.90%／近20日 +13.15%；同族群5日均值 +28.74%"
+        ],
+        "risks": [
+          "新PD產品目前貢獻仍有限，資料中心光通訊業務至2026-27E可能無法形成規模，LD產品是否於2028E由光通訊公司外包給穩懋仍高度不確定。",
+          "手機相關業務包括cellular、Wi-Fi與光通訊，報告估計占2026E總營收50%以上；手機需求可能受到高記憶體成本影響。",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [],
+        "research_url": "https://drive.google.com/file/d/1AEik-Syg1Bzpqdzq1DHEr42teGZQVAra/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3105&SPOKE_DATE=20261028&SPOKE_TIME=140020&SEQ_NO=1&skey=3105202610281",
+        "sector": "低軌衛星"
+      },
+      {
+        "ticker": "2455",
+        "name": "全新",
+        "market": "twse",
+        "score": 64.38,
+        "pillars": {
+          "chip": 57.97,
+          "fundamental": 69.99,
+          "momentum": 65.99
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.14 → 1.81（2026-Q3）",
+          "GM 38.607461 → 44.908999（2026-Q3）",
+          "OPM 23.184096 → 31.25692（2026-Q3）",
+          "Daiwa 2026-11-05：Buy；目標價動作 unknown",
+          "主動ETF當日持股淨變動估值 +1,137 萬元",
+          "近5日 +22.88%／近20日 -18.92%；同族群5日均值 +20.31%"
+        ],
+        "risks": [
+          "中國出口管制可能造成非預期供應鏈中斷。",
+          "RF業務仍受消費者需求疲弱及智慧手機成本通膨影響，產能利用率仍低於最佳水準。",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00982A",
+            "shares_delta": 29000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": "https://drive.google.com/file/d/1t0HE7onI_fawqeJ9aAn_LpW5PCvcC-AX/view?usp=drivesdk",
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2455&SPOKE_DATE=20261029&SPOKE_TIME=153119&SEQ_NO=1&skey=2455202610291",
+        "sector": "光通訊元件／模組"
+      },
+      {
+        "ticker": "5469",
+        "name": "瀚宇博",
+        "market": "twse",
+        "score": 64.01,
+        "pillars": {
+          "chip": 49.36,
+          "fundamental": 68.34,
+          "momentum": 84.67
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 0.82 → 2.02（2026-Q3）",
+          "GM 15.058369 → 16.83624（2026-Q3）",
+          "OPM 6.859102 → 9.254846（2026-Q3）",
+          "近5日 +22.45%／近20日 -4.53%；同族群5日均值 +21.91%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=5469&SPOKE_DATE=20261105&SPOKE_TIME=152215&SEQ_NO=1",
+        "sector": "PCB"
+      },
+      {
+        "ticker": "3715",
+        "name": "定穎投控",
+        "market": "twse",
+        "score": 63.97,
+        "pillars": {
+          "chip": 53.95,
+          "fundamental": 82.33,
+          "momentum": 97.28
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS -0.81 → 0.11（2026-Q3）",
+          "GM 14.017493 → 22.232817（2026-Q3）",
+          "OPM 0.985573 → 9.938061（2026-Q3）",
+          "近5日 +43.36%／近20日 +7.60%；同族群5日均值 +21.91%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知",
+          "大戶排行未涵蓋，方向未知",
+          "近5日漲幅逾25%，追價扣10分"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=3715&SPOKE_DATE=20261103&SPOKE_TIME=184707&SEQ_NO=1",
+        "sector": "PCB"
+      },
+      {
+        "ticker": "3665",
+        "name": "貿聯-KY",
+        "market": "twse",
+        "score": 63.59,
+        "pillars": {
+          "chip": 71.61,
+          "fundamental": 66.32,
+          "momentum": 42.09
+        },
+        "eligible": false,
+        "evidence": [
+          "EPS 15.28 → 21.93（2026-Q3）",
+          "主動ETF當日持股淨變動估值 +31,768 萬元",
+          "400張以上持股比週變化 +0.70 百分點（20261106）",
+          "近5日 +14.72%／近20日 -24.57%；同族群5日均值 +10.11%"
+        ],
+        "risks": [
+          "GM資料未齊，該項不判多空",
+          "OPM資料未齊，該項不判多空",
+          "近30日無個股研究，研究項給中性分",
+          "未列入法人完整資料／排行，方向未知"
+        ],
+        "etf_details": [
+          {
+            "fund": "00991A",
+            "shares_delta": 209000.0,
+            "date": "2026-11-13"
+          }
+        ],
+        "research_url": null,
+        "financial_url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1pcFAwc0pDVllmUDBtSTVXU3RIdmFYU1M4TFJuU0VyOGQ5OGp3LTNKSjNQV1BuX3JCQlhBQW81cF9oekpfU0htcnBFVHc0cDY4RklpbUZ1SUdJaFM3SlM40gFkQVVfeXFMTXZXaHZxSkhHRU0yRU1VVzY1YnpQeG51Q3B5cWVGVkFEVzlwZTRKNVA5RkgxUm5LUE1razRBbjVFU29wVlk0RGs2OTF5aGtYS0JOZXNNVmFuVF9nS0dUdWtzeDdLSA?oc=5",
+        "sector": "連接線材"
+      },
+      {
+        "ticker": "6147",
+        "name": "頎邦",
+        "market": "tpex",
+        "score": 63.52,
+        "pillars": {
+          "chip": 64.47,
+          "fundamental": 63.53,
+          "momentum": 61.6
+        },
+        "eligible": true,
+        "evidence": [
+          "EPS 1.28 → 2.46（2026-Q3）",
+          "GM 30.2989 → 31.082697（2026-Q3）",
+          "OPM 19.269414 → 21.865241（2026-Q3）",
+          "法人／投信排行已知淨張數 +2,517.9 張（2026-11-13）",
+          "近5日 +20.77%／近20日 -20.05%；同族群5日均值 +18.34%"
+        ],
+        "risks": [
+          "近30日無個股研究，研究項給中性分",
+          "大戶排行未涵蓋，方向未知"
+        ],
+        "etf_details": [],
+        "research_url": null,
+        "financial_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6147&SPOKE_DATE=20261030&SPOKE_TIME=133249&SEQ_NO=1&skey=6147202610301",
+        "sector": "IC 封裝／測試"
+      }
+    ],
+    "errors": [],
+    "coverage": {
+      "price": {
+        "usable": 288,
+        "universe": 288
+      },
+      "etf": {
+        "fresh": 26,
+        "total": 26
+      }
+    },
+    "sources": {
+      "market_date": "2026-11-13",
+      "institutional_date": "2026-11-13",
+      "holder_date": "20261106",
+      "earnings_updated": "2026-11-13T23:16+08:00",
+      "research_updated": "2026-11-14T12:14+08:00",
+      "etf_version": "9d6d61f45365"
+    },
+    "model": "既有AI研究結構化結果＋固定三面向規則；分數不是上漲機率",
+    "input_hash": "6425c6d2325e659748f3b65b285292d25c249a046f65cc11f2852adbb2bb0996"
+  },
+  "updated_at": "2026-11-14T12:17:15+08:00",
+  "status": "ready",
+  "limitations": [
+    "這是向前追蹤的規則模擬，未重建歷史AI建議。",
+    "整數股數以普通交易開盤價代理零股成交，非真實零股撮合價。",
+    "含假設手續費、賣出稅及滑價；未自動計入股利、配股、減資等公司行動，淨值為價格損益口徑。",
+    "缺價沿用前次標記並提示；單一價日不假設成交。",
+    "晚到排程按實際產生時間決策，不倒填隔日已發生的開盤交易。"
+  ]
+}
