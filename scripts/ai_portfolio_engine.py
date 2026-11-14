@@ -40,7 +40,9 @@ def migrate(state,config,now):
 def frozen_decision(state,proposal):
     state['latest_attempt']=deepcopy(proposal)
     if not proposal.get('valid'):return False
-    if any(d['date']==proposal['date'] for d in state['decisions']):return False
+    same=[d for d in state['decisions'] if d['date']==proposal['date']]
+    if same and (not proposal.get('input_hash') or same[-1].get('input_hash')==proposal['input_hash']):return False
+    if state['decisions'] and stamp(proposal['available_at'])<stamp(state['decisions'][-1]['available_at']):raise ValueError('Cannot backdate availability')
     if state['decisions'] and proposal['date']<state['decisions'][-1]['date']:raise ValueError('Cannot backdate a decision')
     if stamp(proposal['available_at'])<stamp(proposal['date']+'T13:30:00+08:00'):raise ValueError('Not a completed session')
     if sum(x.get('weight',0) for x in proposal['targets'])<state['config']['min_exposure']-1e-7:raise ValueError('Below user minimum 40% target exposure')
@@ -51,7 +53,10 @@ def frozen_decision(state,proposal):
     for t in targets:
         cap=state['config']['max_etf_weight'] if t.get('asset_type')=='etf' else state['config']['max_stock_weight']
         if t['weight']>cap+1e-6:raise ValueError('Position exceeds instrument cap')
-    state['decisions'].append(deepcopy(proposal));return True
+    new=deepcopy(proposal);new['revision']=len(same)+1
+    new['decision_id']=new['date']+'-r'+str(new['revision'])+'-'+new.get('input_hash','legacy')[:10]
+    if same:new['supersedes']=same[-1].get('decision_id',same[-1]['date'])
+    state['decisions'].append(new);return True
 
 def fee(value,config):return max(config['minimum_commission'],value*config['commission_rate'])
 
@@ -72,7 +77,7 @@ def session(state,day,bars,closes):
     targets={x['ticker']:x for x in decision['targets']} if decision else None
     if targets is not None:
         desired={};force=(sum(p['shares']*(number((bars.get(t) or {}).get('open')) or p['mark']) for t,p in pos.items())/opening_equity)>decision['regime']['target_exposure']+.03
-        for t in set(pos)|set(targets):
+        for t in sorted(set(pos)|set(targets)):
             p=pos.get(t);target=targets.get(t);op=number((bars.get(t) or {}).get('open'))
             if target is None:desired[t]=0;continue
             if not op:continue
@@ -82,7 +87,7 @@ def session(state,day,bars,closes):
                 desired[t]=p['shares']
             else:desired[t]=int(target_value/op)
         # Sells, including partial reductions, fund subsequent purchases.
-        for t in list(pos):
+        for t in sorted(pos):
             p=pos[t];qty=p['shares']-desired.get(t,p['shares'])
             if qty<=0:continue
             b=bars.get(t)
@@ -98,7 +103,7 @@ def session(state,day,bars,closes):
             allocated_cost=p['cost']*qty/p['shares'];net=gross-commission-tax;state['cash']+=net
             full=qty==p['shares'];p['shares']-=qty;p['cost']-=allocated_cost
             state['trades'].append(dict(date=day,ticker=t,name=p['name'],asset_type=p.get('asset_type','stock'),side='sell',shares=qty,
-                price=price,commission=commission,tax=tax,cash_flow=net,realized_pnl=net-allocated_cost,closed=full,decision_date=decision['date'],
+                price=price,commission=commission,tax=tax,cash_flow=net,realized_pnl=net-allocated_cost,closed=full,decision_date=decision['date'],decision_id=decision.get('decision_id',decision['date']),
                 reason='移出名單' if t not in targets else '降低目標權重／大盤降曝險'))
             if full:del pos[t]
         for t,target in targets.items():
@@ -121,10 +126,10 @@ def session(state,day,bars,closes):
                 p['shares']+=qty;p['cost']+=cost
             else:
                 pos[t]=dict(ticker=t,name=target['name'],asset_type=target.get('asset_type','stock'),shares=qty,cost=cost,mark=price,
-                    entry_date=day,entry_reason=target.get('evidence',[]),decision_date=decision['date'],avg_volume=target.get('avg_volume',0))
+                    entry_date=day,entry_reason=target.get('evidence',[]),decision_date=decision['date'],decision_id=decision.get('decision_id',decision['date']),avg_volume=target.get('avg_volume',0))
             pos[t]['avg_volume']=target.get('avg_volume',pos[t].get('avg_volume',0));pos[t]['target_weight']=target['weight']
             state['trades'].append(dict(date=day,ticker=t,name=target['name'],asset_type=target.get('asset_type','stock'),side='buy',shares=qty,
-                price=price,commission=commission,tax=0,cash_flow=-cost,decision_date=decision['date'],reason='調高目標權重' if p else '新入選'))
+                price=price,commission=commission,tax=0,cash_flow=-cost,decision_date=decision['date'],decision_id=decision.get('decision_id',decision['date']),reason='調高目標權重' if p else '新入選'))
     stale=[]
     for t,p in pos.items():
         cl=number(closes.get(t))

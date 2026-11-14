@@ -86,9 +86,9 @@ def fundamentals(t,row,official,opm,reports,now,calendar):
         except (TypeError,ValueError):continue
         if when>now or (now-when).days>90:continue
         broker=r.get('broker') or 'unknown';previous=brokers.get(broker)
-        if not previous or when>previous[0]:brokers[broker]=(when,r)
+        if not previous or (when,str(r.get('id','')))> (previous[0],str(previous[1].get('id',''))):brokers[broker]=(when,r)
     values=[]
-    for when,r in sorted(brokers.values(),key=lambda x:x[0],reverse=True)[:3]:
+    for when,r in sorted(brokers.values(),key=lambda x:(x[0],str(x[1].get('broker','')),str(x[1].get('id',''))),reverse=True)[:3]:
         sessions=age_days(when.date().isoformat(),now,calendar);rating=str(r.get('rating') or '').lower()
         base=75 if any(x in rating for x in ('buy','overweight','outperform','買進','優於')) else 25 if any(x in rating for x in ('sell','underweight','underperform','賣出')) else 50
         if r.get('target_price_action')=='downgrade':base-=20
@@ -97,6 +97,9 @@ def fundamentals(t,row,official,opm,reports,now,calendar):
         event=50+(base-50)*decay(sessions,5)
         values.append(.75*durable+.25*event)
         evidence.append(f'{r.get("broker","")} {r.get("date","")} {r.get("rating") or "未評等"}，距收到 {sessions} 交易日；目標價動作 {r.get("target_price_action") or "未提供"}')
+        points=r.get('key_points') or ([r.get('summary')] if r.get('summary') else [])
+        if isinstance(points,str):points=[points]
+        evidence.extend('研究重點（原摘要）：'+str(x)[:240] for x in points[:2])
         risks.extend(str(x) for x in (r.get('risks') or [])[:1])
     if not values:risks.append('近90日無個股研究，研究因子中性，不限制股票池')
     return dict(score=.8*fin+.2*average(values),verified=financial_valid,evidence=evidence,risks=risks,freshness=ages,

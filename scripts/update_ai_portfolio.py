@@ -5,9 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from ai_portfolio_engine import DEFAULTS,VERSION,TZ,number,stamp,initial,migrate,frozen_decision,session
 from ai_allocation import average,market_regime,fundamentals,allocate,decay,age_days,ensure_floor
+from ai_reference_data import CAPTURE,record,digest,reference_snapshot,merge_earnings,research_index,holder_values
 ROOT=Path(__file__).resolve().parents[1]
 
-def read(path,default=None):return json.loads(path.read_text(encoding='utf-8')) if path.exists() else ({} if default is None else default)
+def read(path,default=None):
+    value=json.loads(path.read_text(encoding='utf-8')) if path.exists() else ({} if default is None else default)
+    record(path,value,path.exists())
+    return value
 def write(path,value):
     path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+'.tmp')
     tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\n');tmp.replace(path)
@@ -47,7 +51,7 @@ def bars_for(data,ticker,frames=None):
         prev=b['close']
     return bars
 
-def proposal(data,cfg,now,protected=()):
+def _proposal(data,cfg,now,protected=()):
     universe=read(data/'ai_universe.json');day=universe.get('date','');attempt=dict(date=day,available_at=now.isoformat(timespec='seconds'),valid=False,targets=[],candidates=[],errors=[],coverage={})
     if not day or day>now.date().isoformat() or now<stamp(day+'T13:30:00+08:00') or (now.date()-datetime.fromisoformat(day).date()).days>4:
         attempt['errors'].append('全市場行情尚未完成／過舊，請先執行 collect_ai_universe.py');return attempt
@@ -110,18 +114,28 @@ def proposal(data,cfg,now,protected=()):
                 etf_flow[t]=etf_flow.get(t,0)+n*stocks[t]['price'];etf_details[t].append(dict(fund=fund['code'],shares_delta=n,date=day))
     if not funds or fresh/len(funds)<.7:attempt['errors'].append('同日台股ETF持股資料不足70%')
     attempt['coverage']['etf']={'fresh':fresh,'total':len(funds)};etfrank=directional(etf_flow)
-    holder=read(data/'holders.json');hdate=holder.get('date','');holders={}
+    holder=read(data/'holders.json');hdate=holder.get('date','');holders={};hmode='unavailable'
     try:hage=(now.date()-datetime.strptime(hdate,'%Y%m%d').date()).days
     except ValueError:hage=999
-    if hage<=14 and holder.get('complete'):
-        for m in ('twse','tpex'):
-            for x in holder.get(m,{}).get('400',[]):
-                if number(x.get('delta')) is not None:holders[str(x['ticker'])]=number(x['delta'])
+    if 0<=hage<=14 and holder.get('complete'):
+        current=read(data/'history/holders'/(hdate+'.json'))
+        previous=read(data/'history/holders'/(str(holder.get('previous_date','missing'))+'.json'))
+        holders,hmode=holder_values(holder,current,previous,number)
+    holders={t:v for t,v in holders.items() if t in stocks and stocks[t].get('asset_type')=='stock'}
     if not holders:attempt['errors'].append('大戶資料未齊或超過14日')
     holder_sessions=age_days(datetime.strptime(hdate,'%Y%m%d').date().isoformat(),now,calendar) if holders else 0
-    holdrank={t:50+(v-50)*decay(holder_sessions,10) for t,v in directional(holders).items()}
+    hgroups={g:directional({t:v[g]['delta'] for t,v in holders.items() if g in v}) for g in ('400','1000')}
+    # Give both 400+ and 1000+ weekly changes half of the existing holder factor.
+    # Missing tier stays neutral; never infer missing data as zero change.
+    holdrank={t:average([50+(hgroups[g].get(t,50)-50)*decay(holder_sessions,10) for g in ('400','1000')]) for t in holders}
+    attempt['coverage']['holders']={'mode':hmode,'date':hdate,'previous_date':holder.get('previous_date'),
+        '400_companies':sum('400' in v for v in holders.values()),'1000_companies':sum('1000' in v for v in holders.values()),
+        'weight_within_chips':.2,'tier_weights':{'400':.5,'1000':.5}}
     earnings=read(data/'quarterly_earnings.json');opm=read(data/'quarterly_opm.json').get('metrics',{});official=read(data/'ai_fundamentals.json').get('stocks',{})
-    reports=read(data/'reports.json');financial={};research=defaultdict(list)
+    reports=read(data/'reports.json');financial={};research=research_index(reports.get('items',[]))
+    raw_reports=read(data/'business_reports.json').get('items',[])
+    recovered=read(data/'quarterly_earnings_recovered.json')
+    earnings={**earnings,'reports':merge_earnings(earnings,recovered)}
     if not earnings.get('reports') or not reports.get('items'):attempt['errors'].append('既有財報或研究資料庫讀取失敗')
     for f in earnings.get('reports',[]):
         published=f.get('publish_date');t=str(f.get('ticker'))
@@ -130,7 +144,6 @@ def proposal(data,cfg,now,protected=()):
         except ValueError:continue
         if when>now:continue
         if t not in financial or (f.get('period',''),published)>(financial[t].get('period',''),financial[t].get('publish_date','')):financial[t]=f
-    for r in reports.get('items',[]):research[str(r.get('ticker'))].append(r)
     ranking5=percentile(mom5);ranking20=percentile(mom20);turnrank=percentile({t:q.get('turnover',0) for t,q in stocks.items()})
     ranked=[];stock_scores={}
     for t in history:
@@ -143,7 +156,12 @@ def proposal(data,cfg,now,protected=()):
         if t in flows:evidence.append(f'法人同日已知淨額 {flows[t]/1000:+,.1f} 張')
         else:risks.append('法人排行未涵蓋，不能當成零買超')
         if t in etf_flow:evidence.append(f'ETF同日持股淨變動估值 {etf_flow[t]/10000:+,.0f} 萬元')
-        if t in holders:evidence.append(f'400張以上週變化 {holders[t]:+.2f} 百分點（{hdate}）')
+        if t in holders:
+            for g,label in [('400','400張以上'),('1000','千張以上')]:
+                v=holders[t].get(g)
+                if v:
+                    ratio=f"，持股比 {v['ratio']:.2f}%" if v['ratio'] is not None else ''
+                    evidence.append(f"{label}週變化 {v['delta']:+.2f} 百分點{ratio}（{hdate}）")
         evidence.append(f'5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%；實際加權指數5日 {regime.get("return5",0):+.2f}%')
         if mom5[t]>25:score-=10;risks.append('近5日漲逾25%，扣10分避免過度追價')
         discovery=not f['verified']
@@ -179,9 +197,21 @@ def proposal(data,cfg,now,protected=()):
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
         model='既有AI研究＋官方全市場財務資料＋透明規則配置；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
-        'holder_date':hdate,'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official)},
+        'holder_date':hdate,'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
         temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150})
-    attempt['input_hash']=hashlib.sha256(json.dumps(attempt,ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+    return attempt
+
+def proposal(data,cfg,now,protected=()):
+    captured={};token=CAPTURE.set(captured)
+    try:attempt=_proposal(data,cfg,now,protected)
+    finally:CAPTURE.reset(token)
+    manifest=reference_snapshot(data,cfg,captured,now)
+    attempt['reference_hash']=manifest['reference_hash']
+    attempt['reference_files']=len(manifest['files'])
+    attempt['evaluation_date']=manifest['evaluation_date']
+    attempt['input_hash']=digest({'reference_hash':manifest['reference_hash'],'targets':attempt.get('targets',[]),
+        'candidates':attempt.get('candidates',[]),'regime':attempt.get('regime'),'valid':attempt.get('valid'),'errors':attempt.get('errors',[])})
+    attempt['_reference_manifest']=manifest
     return attempt
 
 def run(root,now,preview=False):
@@ -195,7 +225,7 @@ def run(root,now,preview=False):
         if day>now.date().isoformat() or now<stamp(day+'T13:30:00+08:00'):continue
         session(state,day,{t:b.get(day) for t,b in candles.items()},{t:q.get('close',q.get('price')) for t,q in frames[day].items()})
     protected=set(state['positions'])|{t['ticker'] for t in (state['decisions'][-1]['targets'] if state['decisions'] else [])}
-    attempt=proposal(data,cfg,now,protected);frozen_decision(state,attempt)
+    attempt=proposal(data,cfg,now,protected);manifest=attempt.pop('_reference_manifest');frozen_decision(state,attempt)
     state.update(updated_at=now.isoformat(timespec='seconds'),status='ready' if attempt['valid'] else 'data_pending',
         limitations=['整數股可含零股；以普通交易開盤價加滑價作模擬代理，非真實零股9:10撮合價。',
         '含費稅的價格損益口徑，尚未自動匯入股利、配股與減資；疑似公司行動保留標記待確認。',
@@ -206,6 +236,7 @@ def run(root,now,preview=False):
     if archive is not None:
         archive_path=output/'ai_portfolio_archives'/('v1_'+archive['started_at'].replace(':','-')+'.json')
         if not archive_path.exists():write(archive_path,archive)
+    write(output/'ai_reference_manifest.json',manifest)
     write(output/'ai_portfolio.json',state)
     print(json.dumps(dict(preview=preview,status=state['status'],capital=cfg['initial_cash'],targets=len(state['decisions'][-1]['targets']) if state['decisions'] else 0,
         errors=attempt['errors'],coverage=attempt['coverage'],regime=attempt.get('regime'),cash_target=attempt.get('target_cash')),ensure_ascii=False))
