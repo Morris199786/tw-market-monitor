@@ -140,10 +140,15 @@ jobs:
           a=d.get('latest_attempt',{})
           last=(d.get('decisions') or [{}])[-1]
           lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Decision revision: {last.get('revision',1)}",f"Holder date: {last.get('sources',{}).get('holder_date')}",f"Reference hash: {last.get('reference_hash','legacy')}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
+          lines.extend([f"Published: {bool(a.get('valid'))}",f"Published at: {last.get('available_at','none')}",f"Model: {last.get('model','none')}"])
+          for warning in a.get('warnings',[]):
+              print('::warning::'+warning.replace('\n',' '))
+              lines.append(warning)
           for error in a.get('errors',[]):
               print('::warning::'+error.replace('\n',' '))
               lines.append('Data pending: '+error)
           print('\n'.join(lines))
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
               f.write('\n\n'.join(lines)+'\n')
+          if not a.get('valid'):raise SystemExit('本次未發布有效名單，資料狀態已保存至網站；不以綠勾表示發布完成')
           PY
