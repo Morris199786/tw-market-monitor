@@ -1,7 +1,7 @@
 import sys,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from minervini_patterns import clean_bars,pivots,rs_ranks,trend,setup_at,limit_companies
+from minervini_patterns import clean_bars,pivots,rs_ranks,trend,setup_at,limit_companies,liquid_enough,unbroken_setup,analyze
 class Patterns(unittest.TestCase):
  def bars(self,n=260):
   from datetime import date,timedelta
@@ -30,4 +30,19 @@ class Limit(unittest.TestCase):
   out=limit_companies(rows)
   self.assertEqual(len({x['ticker'] for x in out}),10)
   self.assertEqual(sum(x['ticker']=='0' for x in out),2)
+class Audit(unittest.TestCase):
+ def test_illiquid_rejected(self):
+  b=Patterns().bars()
+  self.assertFalse(liquid_enough(b))
+  self.assertEqual(analyze(b,90),[])
+ def test_prior_breakout_cannot_hide_in_base(self):
+  b=Patterns().bars();s={'segments':[{'end':250}], 'pivot':355, 'start':240}
+  self.assertFalse(unbroken_setup(b,s,260))
+ def test_contracted_volume_required(self):
+  from unittest.mock import patch
+  b=Patterns().bars()
+  for row in b:row['volume']=1000000
+  setup={'segments':[], 'start':240,'pivot':1000}
+  with patch('minervini_patterns.setup_at',return_value=[setup]):
+   self.assertEqual(analyze(b,90),[])
 if __name__=='__main__':unittest.main()
