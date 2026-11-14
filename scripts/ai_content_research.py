@@ -99,7 +99,20 @@ def infer(doc,model,api_key):
     if body.get('status')!='completed':raise ValueError('incomplete inference')
     text=''.join(c.get('text','') for o in body.get('output',[]) for c in o.get('content',[]) if c.get('type')=='output_text')
     text=re.sub(r'^```(?:json)?\s*|\s*```$','',text.strip())
-    return validate(json.loads(text),doc)
+    return json.loads(text)
+
+def merge_cache(path,restored):
+    """Merge by content key; never let a failure overwrite a successful analysis."""
+    if not restored.exists():return
+    left=json.loads(path.read_text()) if path.exists() else {'items':{}}
+    right=json.loads(restored.read_text())
+    if not isinstance(left.get('items'),dict) or not isinstance(right.get('items'),dict):raise ValueError('invalid cache')
+    items=left['items']
+    for key,value in right['items'].items():
+        if key not in items or (items[key].get('status')!='complete' and value.get('status')=='complete'):items[key]=value
+    if not left.get('model'):left['model']=right.get('model')
+    left.setdefault('version',VERSION);path.parent.mkdir(parents=True,exist_ok=True)
+    temp=path.with_suffix('.tmp');temp.write_text(json.dumps(left,ensure_ascii=False,indent=2)+'\n');temp.replace(path)
 
 def prepare(data,now,model=None,inference=infer,retry_errors=False):
     model=model or os.environ.get('AI_CONTENT_MODEL') or os.environ.get('OPENAI_REPORT_MODEL') or 'gpt-5.6-luna'
@@ -127,6 +140,7 @@ def prepare(data,now,model=None,inference=infer,retry_errors=False):
         tasks={pool.submit(work,doc):(k,doc) for k,doc in sorted(jobs.items())}
         for task in as_completed(tasks):
             k,doc=tasks[task]
+            output=None
             try:
                 output=task.result()
                 if output is None:continue # Resume unstarted work next run, without claiming analysis.
@@ -134,11 +148,13 @@ def prepare(data,now,model=None,inference=infer,retry_errors=False):
                 entries[k]={'status':'complete','document':{x:v for x,v in doc.items() if x!='text'},'result':result}
             except Exception as exc:
                 # Persist failure too: repeated runs do not silently re-spend on errors.
-                entries[k]={'status':'error','error':type(exc).__name__,'document':{x:v for x,v in doc.items() if x!='text'}};errors.append(k)
+                entries[k]={'status':'error','error':type(exc).__name__,'reason':str(exc)[:180] if isinstance(exc,ValueError) else type(exc).__name__,'raw_result':output,'document':{x:v for x,v in doc.items() if x!='text'}};errors.append(k)
             save()
     active=[document(r,model)[0] for v in rows.values() for r in selected(v,now)]
     cache['status']={'selected':len(active),'pending':sum(k not in entries for k in active),'errors':sum(entries.get(k,{}).get('status')=='error' for k in active)};save();return cache
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--retry-errors',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);p.add_argument('--retry-errors',action='store_true');p.add_argument('--restore-cache',type=Path);a=p.parse_args()
+    if a.restore_cache is not None:
+        merge_cache(a.root/'data/ai_research_content.json',a.restore_cache);raise SystemExit(0)
     c=prepare(a.root/'data',datetime.now(TZ),retry_errors=a.retry_errors or os.environ.get('AI_CONTENT_RETRY_ERRORS')=='true');print(json.dumps(c.get('status',{}),ensure_ascii=False))
