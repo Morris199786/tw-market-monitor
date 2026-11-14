@@ -90,9 +90,9 @@ class Model(unittest.TestCase):
         row=dict(period='2026-Q3',prev_period='2026-Q2',publish_date='2026-11-01',eps=2,prev_eps=1,gross_margin=30,prev_gross_margin=20,operating_margin=20,prev_operating_margin=10)
         early=fundamentals('1815',row,None,{},[],stamp('2026-11-02T18:00:00+08:00'),cal);late=fundamentals('1815',row,None,{},[],stamp('2026-11-13T18:00:00+08:00'),cal)
         self.assertLess(late['freshness']['earnings_event_weight'],early['freshness']['earnings_event_weight']);self.assertGreater(late['score'],50)
-    def test_new_broker_downgrade_replaces_old_buy(self):
+    def test_rating_only_does_not_substitute_for_missing_content(self):
         cal=['2026-11-01','2026-11-02','2026-11-03'];reports=[dict(broker='A',received_at='2026-11-01T18:00:00+08:00',rating='Buy'),dict(broker='A',received_at='2026-11-02T18:00:00+08:00',rating='Sell')]
-        f=fundamentals('1815',None,None,{},reports,stamp('2026-11-03T18:00:00+08:00'),cal);self.assertEqual(f['research_count'],1);self.assertLess(f['score'],50)
+        f=fundamentals('1815',None,None,{},reports,stamp('2026-11-03T18:00:00+08:00'),cal);self.assertEqual(f['research_count'],0);self.assertEqual(f['research_score'],50);self.assertEqual(len(f['research_missing']),1)
     def test_future_research_does_not_leak(self):
         f=fundamentals('1815',None,None,{},[dict(broker='A',received_at='2027-01-01T18:00:00+08:00',rating='Buy')],stamp('2026-11-13T18:00:00+08:00'),['2026-11-13']);self.assertEqual(f['research_count'],0)
     def test_official_ytd_not_mislabeled_single_quarter(self):
@@ -120,7 +120,7 @@ class Integration(unittest.TestCase):
             write(data/'etf-flow-v2/manifest.json',{'path':'versions/test/'});base=data/'etf-flow-v2/versions/test'
             write(base/'meta.json',dict(funds=[dict(code='00981A',region='TW',listing='2025-01-01')]))
             write(base/'etfs/00981A.json',dict(fund={'latest':day},events=[dict(date=day,code=t,delta=1000) for t in codes]))
-            write(data/'quarterly_earnings.json',{'reports':[{'ticker':'9999','publish_date':'2026-11-13'}]});write(data/'reports.json',{'items':[{'ticker':'9999','date':'2026-11-13'}]})
+            write(data/'quarterly_earnings.json',{'reports':[dict(ticker=t,period='2026-Q3',prev_period='2026-Q2',publish_date='2026-11-13',publish_time='18:00:00',eps=3,prev_eps=1,gross_margin=40,prev_gross_margin=20,operating_margin=30,prev_operating_margin=10) for t in codes]});write(data/'reports.json',{'items':[{'ticker':'9999','date':'2026-11-13'}]})
             write(data/'ai_fundamentals.json',{'stocks':{t:dict(period='2026-Q3',scope='year_to_date',observed_at='2026-11-14T12:00:00+08:00',eps=2,gross_margin=30,operating_margin=20) for t in codes}})
             old=initial({**DEFAULTS,'initial_cash':1000000},'2026-11-14T12:00:00+08:00');old['strategy']='three-pillar-paper-v1';write(data/'ai_portfolio.json',old)
             s=run(root,now);self.assertEqual(s['status'],'ready');self.assertTrue(s['decisions'][0]['targets']);self.assertEqual(s['cash'],20000000)
