@@ -1,5 +1,5 @@
 {
-  "reference_hash": "d1e60f2a2ad40c154f25891fadbd92cfb704214e86ca6a2bc0eb8c4d5b1a3516",
+  "reference_hash": "64b9eef12b469decd2bfa157769cd1398784501c368472e22296b7672c16d887",
   "files": {
     "data/ai_backtest_k/00400A.json": {
       "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
@@ -15986,7 +15986,7 @@
       "exists": true
     },
     "data/ai_research_content.json": {
-      "hash": "de041edb8633fa4d88606883c3bce5afd77b77428264920fa5b9679e87ae8aaf",
+      "hash": "1ac2de9c84fef37bf0dd9a0649c8c6d7f4242bd468f90ef6701e2c0b28376b5f",
       "exists": true
     },
     "data/ai_setup_k/00400A.json": {
@@ -32214,8 +32214,8 @@
       "exists": true
     },
     "data/history/institutional/2026-11-13.json": {
-      "hash": "065b9af8afe269944e911b98ddb70b5a7cb35e47c6cc54df838e1aabe84fc651",
-      "exists": true
+      "hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "exists": false
     },
     "data/history/market/2026-08-27.json": {
       "hash": "4cd96c0fb6b1205cb40fee46014cc9e2eb13e1efb55a977531567b0fb7acd765",
@@ -32413,10 +32413,6 @@
       "hash": "0ae8d6302216afef5bb05aec3a9aa42a4e6cca83d12bb5e4539d34807cbaf51a",
       "exists": true
     },
-    "data/history/market/2026-11-13.json": {
-      "hash": "409c4bdc4ecc88a2d66b377094778b8bbc25470c9a003478b38778d1b2c0c353",
-      "exists": true
-    },
     "data/holders.json": {
       "hash": "a50b250752401bbf4724cba02164e2afb0e5eb570ea94560163afd56bbe80cd1",
       "exists": true
@@ -32477,6 +32473,10 @@
       "hash": "8b630a8d6c2ba1f6edf2430174220b3bb23ccbd6e46e639fefa6da5825a55e80",
       "exists": true
     },
+    "data/sectors.json": {
+      "hash": "170272db2e3a4c77ac9983c9ee0aace880338b6d7e1dd21d3083a51be2792ee0",
+      "exists": true
+    },
     "data/self_reports.json": {
       "hash": "1eb1764786e7eb541ceaa87b8a053c4fdb1fd3e383387aeda70522403a997f31",
       "exists": true
@@ -32490,7 +32490,7 @@
       "exists": true
     },
     "scripts/ai_allocation.py": {
-      "hash": "cba1bc136f84fa31b8cd2546e75ad386a82985fd013cf82c85ed35f40182a535",
+      "hash": "6aa9c7e5f4e76b1e2d1135ee4ec27358d7edc7e834de07aa730373d744d2b9b5",
       "exists": true
     },
     "scripts/ai_evidence.py": {
@@ -32502,30 +32502,35 @@
       "exists": true
     },
     "scripts/ai_reference_data.py": {
-      "hash": "763477b6b9b0df0bda1b6e02bc95640077f536d2df27433f3283c43c18e60271",
+      "hash": "d62f9f291eeb36089d51cc01bbce5f8500e28d5c9e8df7a81ca78b216931f5da",
       "exists": true
     },
     "scripts/ai_signal_model.py": {
       "hash": "8a205e84c5cde50333121d412a479b8b61450699856b3facd50a59e06a80f064",
       "exists": true
     },
+    "scripts/ai_relative_momentum.py": {
+      "hash": "202bf690744a264801ab85d2355adf4982cc24c431bf5318ec452e0694fc1f67",
+      "exists": true
+    },
     "scripts/ai_portfolio_engine.py": {
-      "hash": "7caf91f95e8d60a67bb06fae2a6a7ca79eaf1e1dc522cbbd60c2e9156d69f6df",
+      "hash": "a1a070bdab25e43246dc1995f7088db357ae7810945956f52a3beb47c5a82ce8",
       "exists": true
     },
     "scripts/update_ai_portfolio.py": {
-      "hash": "b0261ff24cdf5a0e1b2d6c2bcb9f8a5c68ed1cff60d4fd3ff1e789a2e5b40cdd",
+      "hash": "a36b6fe0f38fd99134ccb256f6ee8a38a8d3f35c4cb310fc3eaea6d9cd267557",
       "exists": true
     }
   },
   "evaluation_date": "2026-11-15",
   "algorithm_hashes": {
-    "ai_allocation.py": "cba1bc136f84fa31b8cd2546e75ad386a82985fd013cf82c85ed35f40182a535",
+    "ai_allocation.py": "6aa9c7e5f4e76b1e2d1135ee4ec27358d7edc7e834de07aa730373d744d2b9b5",
     "ai_evidence.py": "0867bdf21f3aa5bd54a12e80e091c795bcd86a52f3527b3feb5d8f6f520a9aea",
     "ai_content_research.py": "3d096e152b0980cbcb481441cceb425a1018f842c6d8d3658b644198749c1621",
-    "ai_reference_data.py": "763477b6b9b0df0bda1b6e02bc95640077f536d2df27433f3283c43c18e60271",
+    "ai_reference_data.py": "d62f9f291eeb36089d51cc01bbce5f8500e28d5c9e8df7a81ca78b216931f5da",
     "ai_signal_model.py": "8a205e84c5cde50333121d412a479b8b61450699856b3facd50a59e06a80f064",
-    "ai_portfolio_engine.py": "7caf91f95e8d60a67bb06fae2a6a7ca79eaf1e1dc522cbbd60c2e9156d69f6df",
-    "update_ai_portfolio.py": "b0261ff24cdf5a0e1b2d6c2bcb9f8a5c68ed1cff60d4fd3ff1e789a2e5b40cdd"
+    "ai_relative_momentum.py": "202bf690744a264801ab85d2355adf4982cc24c431bf5318ec452e0694fc1f67",
+    "ai_portfolio_engine.py": "a1a070bdab25e43246dc1995f7088db357ae7810945956f52a3beb47c5a82ce8",
+    "update_ai_portfolio.py": "a36b6fe0f38fd99134ccb256f6ee8a38a8d3f35c4cb310fc3eaea6d9cd267557"
   }
 }
