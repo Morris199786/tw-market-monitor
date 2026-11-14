@@ -1,0 +1,43 @@
+name: AI paper portfolio
+on:
+  schedule:
+    # Taiwan 22:30 and next trading morning 07:30. All local data, no external requests.
+    - cron: '30 14 * * 1-5'
+    - cron: '30 23 * * 0-4'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tw-market-data-writer
+  cancel-in-progress: false
+jobs:
+  portfolio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync current data
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+      - name: Verify portfolio accounting
+        run: python -m unittest discover -s tests -p 'test_ai_portfolio.py' -q
+      - name: Process stored decisions and publish next target list
+        run: python scripts/update_ai_portfolio.py
+      - name: Commit account and observed market snapshots together
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/ai_portfolio.json
+          if [ -d data/ai_market_snapshots ]; then git add data/ai_market_snapshots; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: advance AI paper portfolio'
+          # Never resolve a state conflict by overwriting or resetting the ledger.
+          # If another writer wins, fail safely; the next scheduled run starts from main.
+          git push origin HEAD:main
