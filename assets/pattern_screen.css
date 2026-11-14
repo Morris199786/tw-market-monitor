@@ -18,3 +18,8 @@
 #patterns .ps-detail-head{align-items:flex-start}#patterns .ps-detail{scroll-margin-top:220px}
 #patterns .ps-card .ps-note{margin-bottom:8px}#patterns .ps-metrics{margin-top:10px}
 @media(max-width:600px){#patterns .ps-annotation-guide{grid-template-columns:1fr}#patterns .ps-guide-item{padding:10px}#patterns .ps-metrics small{font-size:11px;line-height:1.5}}
+
+#patterns .ps-buckets{display:flex;gap:6px;padding:5px;border:1px solid var(--ps-line);border-radius:14px;background:var(--ps-card);margin:18px 0 8px}
+#patterns .ps-buckets button{flex:1;min-height:46px;border:0;border-radius:10px;background:transparent;color:var(--ps-ink);font:inherit;font-weight:700;font-size:15px;padding:8px}
+#patterns .ps-buckets button[aria-pressed="true"]{background:#243b53;color:white}
+#patterns .ps-watch-note{font-size:12px;line-height:1.8;color:var(--muted,#758297);padding:9px;border-radius:8px;background:var(--ps-soft)}
