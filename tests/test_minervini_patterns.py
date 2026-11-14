@@ -1,7 +1,7 @@
 import sys,unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
-from minervini_patterns import clean_bars,pivots,rs_ranks,trend,setup_at,limit_companies,liquid_enough,unbroken_setup,analyze
+from minervini_patterns import clean_bars,pivots,rs_ranks,trend,setup_at,limit_companies,liquid_enough,unbroken_setup,analyze,separate_lists
 class Patterns(unittest.TestCase):
  def bars(self,n=260):
   from datetime import date,timedelta
@@ -45,4 +45,27 @@ class Audit(unittest.TestCase):
   setup={'segments':[], 'start':240,'pivot':1000}
   with patch('minervini_patterns.setup_at',return_value=[setup]):
    self.assertEqual(analyze(b,90),[])
+class Separate(unittest.TestCase):
+ def test_qualified_and_watch_do_not_mix(self):
+  rows=[{'ticker':'A','qualified':True,'status':'breakout'}, {'ticker':'A','qualified':False,'status':'forming'}, {'ticker':'B','qualified':False,'status':'near'}, {'ticker':'C','qualified':False,'status':'failed'}]
+  q,w=separate_lists(rows)
+  self.assertEqual([s['ticker'] for s in q],['A'])
+  self.assertEqual([s['ticker'] for s in w],['B'])
+ def test_no_minimum_and_separate_limits(self):
+  self.assertEqual(separate_lists([]),([],[]))
+  rows=[{'ticker':str(i),'qualified':i<12,'status':'breakout' if i<12 else 'forming'} for i in range(25)]
+  q,w=separate_lists(rows)
+  self.assertEqual(len(q),10);self.assertEqual(len(w),10)
+ def test_missing_volume_becomes_observation_only(self):
+  from unittest.mock import patch
+  b=Patterns().bars()
+  for row in b:row['volume']=1000000
+  setup={'segments':[], 'start':240,'end':259,'pivot':1000,'stop':100,'pattern':'flat'}
+  with patch('minervini_patterns.setup_at',side_effect=lambda *args:[dict(setup)]):
+   self.assertEqual(analyze(b,90),[])
+   observed=analyze(b,90,include_observations=True)
+   self.assertEqual(len(observed),1)
+   self.assertFalse(observed[0]['qualified'])
+   self.assertEqual(observed[0]['bucket'],'observation')
+   self.assertTrue(observed[0]['pending_reasons'])
 if __name__=='__main__':unittest.main()
