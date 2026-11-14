@@ -5,6 +5,11 @@ on:
     - cron: '30 14 * * 1-5'
     - cron: '30 23 * * 0-4'
   workflow_dispatch:
+    inputs:
+      retry_content_errors:
+        description: '僅在上次內容分析失敗時勾選：重試失敗項，成功快取不重算'
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency:
@@ -30,6 +35,13 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_ai*.py' -q
       - name: Refresh AI-only full-market quotes and official financials
         run: python scripts/collect_ai_universe.py
+      - name: Interpret latest broker and meeting content (reuse evidence cache)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_CONTENT_RETRY_ERRORS: ${{ inputs.retry_content_errors }}
+          AI_CONTENT_MODEL: ${{ vars.AI_CONTENT_MODEL }}
+          OPENAI_REPORT_MODEL: ${{ vars.OPENAI_REPORT_MODEL }}
+        run: python scripts/ai_content_research.py
       - name: Process stored decisions and publish next target list
         run: python scripts/update_ai_portfolio.py
       - name: Report actual portfolio status
@@ -53,7 +65,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          owned_paths=(data/ai_portfolio.json data/ai_reference_manifest.json data/ai_market_snapshots data/ai_portfolio_archives data/ai_universe.json data/ai_fundamentals.json data/ai_universe_days data/ai_etf_bars)
+          owned_paths=(data/ai_research_content.json data/ai_portfolio.json data/ai_reference_manifest.json data/ai_market_snapshots data/ai_portfolio_archives data/ai_universe.json data/ai_fundamentals.json data/ai_universe_days data/ai_etf_bars)
           for path in "${owned_paths[@]}"; do
             if [ -e "$path" ]; then git add -- "$path"; fi
           done
