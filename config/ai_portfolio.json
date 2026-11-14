@@ -1,10 +1,19 @@
 {
-  "initial_cash": 1000000,
-  "max_positions": 10,
-  "entry_weight": 0.1,
+  "initial_cash": 20000000,
+  "max_positions": 12,
   "commission_rate": 0.001425,
   "minimum_commission": 20,
   "sell_tax": 0.003,
+  "etf_sell_tax": 0.001,
   "slippage": 0.0005,
-  "minimum_score": 60
+  "minimum_score": 60,
+  "max_stock_weight": 0.15,
+  "max_etf_weight": 0.25,
+  "max_sector_weight": 0.35,
+  "discovery_weight": 0.05,
+  "rebalance_band": 0.02,
+  "rebalance_relative": 0.2,
+  "participation_rate": 0.01,
+  "bootstrap_days_per_run": 7,
+  "min_exposure": 0.4
 }
