@@ -5,7 +5,7 @@ All calculations and annotations use the same validated OHLCV bars.
 import math
 from statistics import mean
 
-VERSION = 'minervini-v2-audit'
+VERSION = 'minervini-v3-separated'
 RULES = {
     'book': ['趨勢樣板八項條件', 'VCP 波動逐步收縮與右側量縮', '平坦底部約4–7週、深度約10–15%'],
     'implementation': {
@@ -122,7 +122,7 @@ def unbroken_setup(bars, s, end):
     return all(bars[i]['close']<=s['pivot'] for i in range(start,end))
 
 
-def analyze(bars, rs):
+def analyze(bars, rs, include_observations=False):
     if not liquid_enough(bars):return []
     checks=trend(bars,rs)
     if len(checks)!=8 or not all(c['passed'] for c in checks):return []
@@ -137,7 +137,7 @@ def analyze(bars, rs):
             baseline=mean(b['volume'] for b in bars[end-50:end])
             dry=mean(b['volume'] for b in bars[end-5:end])/baseline if baseline else None
             # Volume contraction is an admission criterion, not just a badge.
-            if dry is None or dry>.75:continue
+            if (dry is None or dry>.75) and not include_observations:continue
             after=bars[end:];breakout=None;confirmed=False
             for i,b in enumerate(after,end):
                 volbase=mean(x['volume'] for x in bars[i-50:i])
@@ -150,6 +150,7 @@ def analyze(bars, rs):
             else:status='forming'
             # Do not emit stale setups that never broke and were superseded.
             if age and breakout is None:continue
+            if include_observations and status=='failed':continue
             s.update(status=status,trend=checks,rs=rs,distance_pct=round(distance,2),dry_ratio=round(dry,3) if dry is not None else None,
                 volume_ratio=round(bars[-1]['volume']/mean(b['volume'] for b in bars[-51:-1]),3) if mean(b['volume'] for b in bars[-51:-1]) else None,
                 breakout_date=bars[breakout]['time'] if breakout is not None else None,
@@ -164,7 +165,12 @@ def analyze(bars, rs):
             priority={'breakout':6,'failed':5,'unconfirmed':4,'near':3,'forming':2}[status]
             prev=candidates.get(s['pattern'])
             if prev is None or priority>prev[0]:candidates[s['pattern']]=(priority,s)
-    return [s for _,s in candidates.values()]
+    result=[s for _,s in candidates.values()]
+    for s in result:
+        s['qualified']=s['status']=='breakout' and all(c['passed'] for c in s['conditions'])
+        s['pending_reasons']=[c['label'] for c in s['conditions'] if not c['passed']]
+        s['bucket']='qualified' if s['qualified'] else 'observation'
+    return result
 
 
 def rs_ranks(histories):
@@ -184,3 +190,10 @@ def limit_companies(items, maximum=10):
         if len(selected) < maximum:
             selected.add(item['ticker'])
     return [item for item in items if item['ticker'] in selected]
+
+
+def separate_lists(items, maximum=10):
+    qualified=limit_companies([s for s in items if s.get('qualified')],maximum)
+    companies={s['ticker'] for s in items if s.get('qualified')}
+    observed=[s for s in items if not s.get('qualified') and s['ticker'] not in companies and s.get('status')!='failed']
+    return qualified,limit_companies(observed,maximum)

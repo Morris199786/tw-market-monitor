@@ -5,7 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor,as_completed
 import update_daily_k as candles
-from minervini_patterns import VERSION,RULES,clean_bars,trend,analyze,rs_ranks,limit_companies
+from minervini_patterns import VERSION,RULES,clean_bars,trend,analyze,rs_ranks,limit_companies,separate_lists
 ROOT=Path(__file__).resolve().parents[1]
 TZ=ZoneInfo('Asia/Taipei')
 
@@ -31,7 +31,7 @@ def scan(root,as_of):
     ranks=rs_ranks(histories);items=[];tt=0
     for t,bars in histories.items():
         checks=trend(bars,ranks.get(t));tt+=int(bool(checks) and all(x['passed'] for x in checks))
-        for s in analyze(bars,ranks.get(t)):
+        for s in analyze(bars,ranks.get(t),include_observations=True):
             s.update(ticker=t,name=universe[t].get('name',t),market=universe[t]['market'],as_of=as_of,
                 price=bars[-1]['close'],price_basis=basis[t],id=t+'-'+s['pattern'],chart_path='data/pattern_charts/'+t+'.json')
             for seg in s['segments']+s['zones']:
@@ -44,15 +44,19 @@ def scan(root,as_of):
     order={'breakout':0,'near':1,'unconfirmed':2,'forming':3,'failed':4}
     items.sort(key=lambda s:(order[s['status']],-s['rs'],abs(s['distance_pct']),s['ticker']))
     matched_stocks=len({i['ticker'] for i in items})
-    items=limit_companies(items,10)
+    qualified,observations=separate_lists(items,10)
+    observation_matches=len({i['ticker'] for i in items if not i.get('qualified')})
+    qualified_matches=len({i['ticker'] for i in items if i.get('qualified')})
+    items=qualified+observations
     counts={reason:sum(v==reason for v in excluded.values()) for reason in sorted(set(excluded.values()))}
     result=dict(schema=1,version=VERSION,as_of=as_of,generated_at=datetime.now(TZ).isoformat(timespec='seconds'),
         scope='全上市／上櫃普通股；不含興櫃、ETF、權證及特別股',
         coverage=dict(registered=len(universe),eligible=len(histories),excluded=counts,trend_pass=tt,
-            max_companies=10,matched_stocks=matched_stocks,rs_population=len(ranks),candidate_stocks=len({i['ticker'] for i in items}),patterns=len(items),
+            max_companies=10,matched_stocks=matched_stocks,rs_population=len(ranks),candidate_stocks=len({i['ticker'] for i in qualified}),patterns=len(qualified),
+            qualified_matches=qualified_matches,observation_matches=observation_matches,observation_stocks=len({i['ticker'] for i in observations}),
             complete_history=len(histories)+counts.get('short_history',0)==len(universe)),
         price_note='沿用未還原OHLC；除權息、減資及分割可能影響辨識。近130日單日價格跳動超過25%先排除；不等於完整公司行動校正。',
-        rules=RULES,items=items)
+        rules=RULES,items=items,qualified=qualified,observations=observations)
     candles.write(data/'pattern_screen.json',result)
     candles.write(data/'pattern_snapshots'/(as_of+'.json'),result)
     candles.write(data/'pattern_coverage.json',dict(as_of=as_of,excluded=excluded))
