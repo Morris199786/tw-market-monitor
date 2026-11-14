@@ -71,6 +71,14 @@ def session(state,day,bars,closes):
     eligible=[d for d in state['decisions'] if stamp(d['available_at'])<stamp(day+'T09:00:00+08:00')]
     decision=eligible[-1] if eligible else None
     cfg=state['config'];pos=state['positions'];warnings=[]
+    attempt=state.get('latest_attempt',{})
+    # A failed refresh known before this open suspends stale target orders.
+    # Existing holdings are still marked; no previous decisions/trades are rewritten.
+    if decision and attempt.get('valid') is False and attempt.get('available_at'):
+        at=stamp(attempt['available_at'])
+        if stamp(decision['available_at'])<=at<stamp(day+'T09:00:00+08:00'):
+            decision=None
+            warnings.append(dict(date=day,ticker='',side='hold',reason='最近計算未通過整體資料檢查，暫停新調倉；不依過期名單下單'))
     for t,p in pos.items():
         if (bars.get(t) or {}).get('corporate_action'):p['valuation_blocked']=True
     opening_equity=state['cash']+sum(p['shares']*(p['mark'] if p.get('valuation_blocked') else number((bars.get(t) or {}).get('open')) or p['mark']) for t,p in pos.items())

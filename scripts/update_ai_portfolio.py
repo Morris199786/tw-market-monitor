@@ -8,6 +8,7 @@ from ai_allocation import average,market_regime,fundamentals,allocate,decay,age_
 from ai_reference_data import CAPTURE,record,digest,reference_snapshot,merge_earnings,research_index,holder_values
 from ai_content_research import load_sources
 from ai_signal_model import monthly_bonus,mixed_flow_score
+from ai_relative_momentum import sector_groups,benchmark_returns,momentum as relative_momentum
 ROOT=Path(__file__).resolve().parents[1]
 
 def read(path,default=None):
@@ -84,7 +85,7 @@ def _proposal(data,cfg,now,protected=()):
     registered=universe.get('register_count',0);usable_stocks=sum(stocks[t].get('asset_type')=='stock' for t in history)
     attempt['coverage'].update(register=registered,quoted_stocks=universe.get('stock_quote_count',0),usable_stocks=usable_stocks,
         usable_etfs=sum(stocks[t].get('asset_type')=='etf' for t in history),quote_etfs=universe.get('etf_count',0),price={'usable':len(history),'universe':len(stocks)})
-    if registered<1500 or usable_stocks<registered*.70:attempt['errors'].append('全市場普通股21日行情覆蓋不足70%，保留前次決策')
+    if registered<1500 or usable_stocks<registered*.70:attempt['errors'].append('全市場普通股21日行情覆蓋不足70%，本次不發布新名單')
     if missing:=sorted(set(protected)-set(history)):attempt['errors'].append('已持有／前次目標行情不足：'+','.join(missing))
     breadth=average([1 if x>0 else 0 for t,x in mom20.items() if stocks[t]['asset_type']=='stock'],0)
     regime=market_regime(monitor,day,breadth);attempt['regime']=regime
@@ -162,7 +163,12 @@ def _proposal(data,cfg,now,protected=()):
         f.setdefault('prev_period',previous)
         for metric in ('eps','gross_margin','operating_margin'):
             if f.get('prev_'+metric) is None:f['prev_'+metric]=quarters.get((t,previous),{}).get(metric)
-    ranking5=percentile(mom5);ranking20=percentile(mom20);turnrank=percentile({t:q.get('turnover',0) for t,q in stocks.items()})
+    groups=sector_groups(read(data/'sectors.json'))
+    try:market_returns=benchmark_returns(monitor,dates)
+    except ValueError as exc:
+        attempt['errors'].append(str(exc));return attempt
+    relative_returns={5:mom5,20:mom20}
+    turnrank=percentile({t:q.get('turnover',0) for t,q in stocks.items()})
     ranked=[];stock_scores={};research_pending={}
     for t in history:
         q=stocks[t]
@@ -171,8 +177,9 @@ def _proposal(data,cfg,now,protected=()):
         if f['research_missing']:research_pending[t]=len(f['research_missing'])
         bonus=monthly_bonus(t,self_items,quarters,now,calendar)
         chip=.35*flowrank.get(t,50)+.35*etfrank.get(t,50)+.2*holdrank.get(t,50)+.1*turnrank.get(t,50)
-        momentum=.6*ranking5[t]+.4*ranking20[t];score=.4*chip+.4*f['score']+.2*momentum+bonus['bonus']
-        evidence=f['evidence']+bonus['evidence'];risks=f['risks']+bonus['risks']
+        relative=relative_momentum(t,relative_returns,market_returns,groups)
+        momentum=relative['score'];score=.4*chip+.4*f['score']+.2*momentum+bonus['bonus']
+        evidence=f['evidence']+bonus['evidence']+relative['evidence'];risks=f['risks']+bonus['risks']
         if caps.get(t):
             if t in flow_amounts:evidence.append(f'法人淨額占收盤市值 {flow_amounts[t]/caps[t]*100:+.4f}%（金額／占市值各半）')
             if t in etf_flow:evidence.append(f'ETF淨持股變動占收盤市值 {etf_flow[t]/caps[t]*100:+.4f}%（金額／占市值各半）')
@@ -187,15 +194,15 @@ def _proposal(data,cfg,now,protected=()):
                     ratio=f"，持股比 {v['ratio']:.2f}%" if v['ratio'] is not None else ''
                     evidence.append(f"{label}週變化 {v['delta']:+.2f} 百分點{ratio}（{hdate}）")
         evidence.append(f'5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%；實際加權指數5日 {regime.get("return5",0):+.2f}%')
-        if mom5[t]>25:score-=10;risks.append('近5日漲逾25%，扣10分避免過度追價')
+        if mom5[t]>25:risks.append('近5日漲逾25%，提示追價／跳空風險；不固定扣分或降低部位')
         discovery=not f['verified']
         liquid=q.get('turnover',0)>=10000000 and avgvol[t]>=100000
         confirmed=(f['verified'] and f['score']>=50 and chip>=55 and momentum>=45)
         exploring=(discovery and chip>=70 and momentum>=75 and (t in flows or t in etf_flow))
-        eligible=liquid and score>=cfg['minimum_score'] and (confirmed or exploring)
+        eligible=liquid and score>=cfg['minimum_score'] and (confirmed or exploring) and not f['research_missing']
         x=dict(ticker=t,name=q['name'],market=q['market'],asset_type='stock',sector='產業 '+str(q.get('industry','unknown')),
             score=round(score,2),pillars=dict(chip=round(chip,2),fundamental=round(f['score'],2),momentum=round(momentum,2)),eligible=eligible,
-            research_details=f['research_details'],financial_score=round(f['financial_score'],2),research_score=round(f['research_score'],2),self_report_bonus=round(bonus['bonus'],3),model_version='content-qoq-v4',
+            research_details=f['research_details'],financial_score=round(f['financial_score'],2),research_score=round(f['research_score'],2),self_report_bonus=round(bonus['bonus'],3),model_version='relative-content-v5',relative_momentum=relative,research_pending=len(f['research_missing']),
             discovery=discovery,confidence='基本面已驗證' if f['verified'] else '待基本面確認的小部位',freshness=f['freshness'],
             evidence=evidence,risks=risks,etf_details=etf_details[t],volatility=vol[t],avg_volume=avgvol[t],price=q['price'])
         ranked.append(x);stock_scores[t]=x
@@ -205,25 +212,27 @@ def _proposal(data,cfg,now,protected=()):
         holdings=q.get('holdings',[]);known=[]
         total_weight=sum(float(h[3]) for h in holdings if len(h)>3 and number(h[3]) is not None)
         for h in holdings:
-            if len(h)>3 and str(h[0]) in stock_scores and number(h[3]) is not None:known.append((stock_scores[str(h[0])]['pillars']['fundamental'],float(h[3])))
+            if len(h)>3 and str(h[0]) in stock_scores and not stock_scores[str(h[0])].get('research_pending') and number(h[3]) is not None:known.append((stock_scores[str(h[0])]['pillars']['fundamental'],float(h[3])))
         coverage=sum(w for s,w in known)/total_weight if total_weight else 0
         underlying=sum(s*w for s,w in known)/sum(w for s,w in known) if known and coverage>=.60 else 50
-        momentum=.6*ranking5[t]+.4*ranking20[t];chip=50+max(-25,min(25,(regime.get('score',0)-2)*8))
+        relative=relative_momentum(t,relative_returns,market_returns,[])
+        momentum=relative['score'];chip=50+max(-25,min(25,(regime.get('score',0)-2)*8))
         score=.4*chip+.3*underlying+.3*momentum
         ranked.append(dict(ticker=t,name=q['name'],market=q['market'],asset_type='etf',sector='分散ETF',score=round(score,2),
             pillars=dict(chip=chip,fundamental=round(underlying,2),momentum=round(momentum,2)),eligible=q.get('turnover',0)>=10000000 and avgvol[t]>=100000 and score>=60 and mom20[t]>0 and momentum>=50,
-            core_eligible=t in ('0050','006208') and q.get('turnover',0)>=10000000 and avgvol[t]>=100000,discovery=False,confidence='ETF配置',volatility=vol[t],avg_volume=avgvol[t],price=q['price'],freshness={},
-            evidence=[f'台股原型股票ETF；5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%',f'持股基本面可辨識權重 {coverage:.1%}，不足60%時中性評分'],
+            relative_momentum=relative,model_version='relative-content-v5',core_eligible=t in ('0050','006208') and q.get('turnover',0)>=10000000 and avgvol[t]>=100000,discovery=False,confidence='ETF配置',volatility=vol[t],avg_volume=avgvol[t],price=q['price'],freshness={},
+            evidence=relative['evidence']+[f'台股原型股票ETF；5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%',f'持股基本面可辨識權重 {coverage:.1%}，不足60%時中性評分'],
             risks=['ETF不套用公司EPS／OPM；持股與個股可能重疊，單檔25%、ETF合計50%上限'],etf_details=[]))
-    if research_pending:attempt['errors'].append(f'最新研究內容待AI判讀／需檢查失敗快取：{sum(research_pending.values())}份、{len(research_pending)}家公司；保留舊正式名單')
+    if research_pending:attempt.setdefault('warnings',[]).append(f'研究內容待核對{sum(research_pending.values())}份、{len(research_pending)}家公司：本次排除這些公司的直接交易，不阻擋其餘已驗證標的發布新名單')
+    attempt['excluded_research']=[{'ticker':t,'name':stocks[t]['name'],'pending_documents':n} for t,n in sorted(research_pending.items())]
     attempt['coverage']['research_content']={'pending_companies':len(research_pending),'pending_documents':sum(research_pending.values()),'model':content_cache.get('model'),'version':content_cache.get('version')}
     ranked.sort(key=lambda x:(-x['score'],x['ticker']));targets=allocate(ranked,regime['target_exposure'],cfg)
     core=[dict(x,confidence='最低部位大盤ETF') for x in ranked if x.get('core_eligible')]
     targets,floor_met=ensure_floor(targets,core,cfg)
-    if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低40%目標，保留前次決策')
+    if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低40%目標，本次不發布新名單')
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
-        model='content-qoq-v4：本業季比較＋自結加分＋金額及市值強度＋證據式AI內容判讀；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
+        model='relative-content-v5：同期大盤／族群相對動能＋不按波動率降權＋本業季比較＋自結加分＋金額及市值強度＋證據式AI內容判讀；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
         'holder_date':hdate,'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
         temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150})
     return attempt
@@ -257,7 +266,7 @@ def run(root,now,preview=False):
         limitations=['整數股可含零股；以普通交易開盤價加滑價作模擬代理，非真實零股9:10撮合價。',
         '含費稅的價格損益口徑，尚未自動匯入股利、配股與減資；疑似公司行動保留標記待確認。',
         '每次成交上限為決策時已知5日均量的1%，未成交部分等待後續可驗證交易日。',
-        '大盤曝險和時效半衰期是未經最佳化的模型設定，不保證績效；ETF與個股仍可能存在穿透持股重疊。',
+        '波動率僅揭露，不直接扣分或降權；高波動不等於高預期報酬。大盤與半衰期尚未經績效最佳化；ETF與個股可能重疊。',
         '完整上市上櫃名冊都掃描；不足21日行情、新上市、資料不齊標的會揭露覆蓋並暫不交易。'])
     output=root/'preview' if preview else data
     if archive is not None:

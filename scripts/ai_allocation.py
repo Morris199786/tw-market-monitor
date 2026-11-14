@@ -35,7 +35,7 @@ def market_regime(monitor,day,breadth):
     else:label,exposure='防禦',.55
     return dict(valid=True,date=day,label=label,target_exposure=exposure,cash_floor=1-exposure,score=score,
         ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,reasons=reasons,
-        note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低40%；無法驗證時保留前次決策，不假設成交')
+        note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低40%；整體資料無法驗證時本次不發布名單並暫停新調倉，不假設成交')
 
 def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
     from ai_signal_model import quarter_signal,research_signal,weighted,clip
@@ -77,8 +77,8 @@ def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
 def allocate(candidates,exposure,cfg):
     selected=[dict(x) for x in candidates if x.get('eligible')][:cfg['max_positions']]
     weights={x['ticker']:0 for x in selected}
-    # Conviction adjusted for historical volatility. No assumed expected returns.
-    strength={x['ticker']:max(1,x['score']-50)**2/max(1,x.get('volatility',2)) for x in selected}
+    # Conviction-only sizing. Volatility is diagnostic, not a mechanical penalty.
+    strength={x['ticker']:max(1,x['score']-50)**2 for x in selected}
     for _ in range(80):
         remaining=exposure-sum(weights.values())
         if remaining<1e-8:break
@@ -104,7 +104,7 @@ def allocate(candidates,exposure,cfg):
     for x in selected:
         w=math.floor(weights[x['ticker']]*1e6)/1e6
         if w<=0:continue
-        x['weight']=w;x['allocation_reason']='資料尚待基本面確認，限制5%內' if x.get('discovery') else '依綜合分數、波動及單檔／產業上限配置'
+        x['weight']=w;x['allocation_reason']='資料尚待基本面確認，限制5%內' if x.get('discovery') else '依綜合分數及單檔／產業上限配置；不因高波動自動降權'
         out.append(x)
     return out
 
