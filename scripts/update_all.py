@@ -12,6 +12,7 @@ TASKS = [
     'update_stock_detail.py',
     'repair_ai_candles.py',
     'update_heatmap.py',
+    'collect_ai_universe.py',
     'update_ai_portfolio.py',
 ]
 
@@ -35,4 +36,5 @@ def main() -> int:
 
 if __name__ == '__main__':
     sys.exit(main())
+
 
