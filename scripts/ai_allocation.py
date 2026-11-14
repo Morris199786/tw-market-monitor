@@ -37,73 +37,42 @@ def market_regime(monitor,day,breadth):
         ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,reasons=reasons,
         note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低40%；無法驗證時保留前次決策，不假設成交')
 
-def fundamentals(t,row,official,opm,reports,now,calendar):
-    evidence=[];risks=[];ages={};report=row or {};age=age_days(report.get('publish_date'),now,calendar)
-    comparable=[];quality=[]
-    for key,label,scale in [('eps','EPS',.1),('gross_margin','GM',1),('operating_margin','OPM',1)]:
-        cur=report.get(key);prev=report.get('prev_'+key)
-        if key=='operating_margin':
-            cur=opm.get(t+'|'+report.get('period',''),{}).get('value',cur)
-            prev=opm.get(t+'|'+report.get('prev_period',''),{}).get('value',prev)
-        v=number(cur);c=comparison(cur,prev,scale)
-        if c is not None:comparable.append(c)
-        if v is not None:
-            quality.append((70 if v>0 else 30) if key=='eps' else max(0,min(100,50+v*1.5)))
-            evidence.append(f'{report.get("period","")} 單季 {label}：{prev if prev is not None else "待補"} → {cur}')
-            if v<0:risks.append(f'本季{label}為負，不能只憑改善就當作已獲利')
-    financial_valid=age is not None and len(quality)>=2 and (now.date()-stamp(report['publish_date']+'T00:00:00+08:00').date()).days<=150
+def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
+    from ai_signal_model import quarter_signal,research_signal,weighted,clip
+    row=row or {};evidence=[];risks=[];ages={}
+    age=age_days(row.get('publish_date'),now,calendar)
+    vals,quality,trend,ev,ri=quarter_signal(row,opm,t)
+    financial_valid=age is not None and sum(vals[k] is not None for k in ('eps','gross_margin','operating_margin'))>=2 and (now.date()-stamp(row['publish_date']+'T00:00:00+08:00').date()).days<=150
     use_quarter=financial_valid
     if financial_valid:
-        durable=.55*average(quality)+.45*average(comparable)
-        surprise=average(comparable);event=50+(surprise-50)*decay(age,5)
-        fin=.8*durable+.2*event;ages['earnings_sessions']=age;ages['earnings_event_weight']=round(decay(age,5),3)
-        evidence.append(f'財報距今 {age} 交易日；事件效力半衰期5日，營運品質延續至新財報（最長150日）')
+        evidence+=ev;risks+=ri
+        durable=.25*quality+.75*trend
+        event=50+(trend-50)*decay(age,5)
+        fin=.8*durable+.2*event
+        ages.update(earnings_sessions=age,earnings_event_weight=round(decay(age,5),3))
+        evidence.append('財務核心以季比較為主：持續性分數75%季變化／25%獲利狀態；EPS30%、毛利率30%、OPM40%交叉判讀')
     else:
-        # Official market-wide financials are cumulative and labelled as such.
-        off=official or {};observed=off.get('observed_at');fresh=False
-        if observed:
-            try:
-                year,quarter=off.get('period','').split('-Q');month=int(quarter)*3
-                end=date(int(year),month,cal.monthrange(int(year),month)[1])
-                fresh=stamp(observed)<=now and (now-stamp(observed)).days<=14 and 0<=(now.date()-end).days<=180
-            except (ValueError,TypeError):pass
-        offq=[]
+        off=official or {};fresh=False
+        try:
+            year,quarter=off.get('period','').split('-Q');month=int(quarter)*3
+            end=date(int(year),month,cal.monthrange(int(year),month)[1])
+            fresh=stamp(off['observed_at'])<=now and (now-stamp(off['observed_at'])).days<=14 and 0<=(now.date()-end).days<=180
+        except (KeyError,ValueError,TypeError):pass
+        metrics=[]
         if fresh:
-            for key,label in [('eps','EPS'),('gross_margin','GM'),('operating_margin','OPM')]:
-                v=number(off.get(key))
+            for k,label in [('eps','EPS'),('gross_margin','GM'),('operating_margin','OPM')]:
+                v=number(off.get(k))
                 if v is not None:
-                    offq.append((70 if v>0 else 30) if key=='eps' else max(0,min(100,50+v*1.5)))
+                    metrics.append(clip(50+12*math.copysign(math.log1p(abs(v)),v)) if k=='eps' else clip(50+v*1.5))
                     evidence.append(f'官方 {off.get("period")} 累計 {label} {v:.2f}（非單季）')
-        financial_valid=len(offq)>=2
-        fin=average(offq)
-        if offq:risks.append('官方全市場資料為累計口徑，首次取得日期不當成財報公告事件日期')
-        else:risks.append('基本面資料不足，不能宣稱營運已改善')
-    # Latest report per broker wins, so fresh downgrades replace old bullish calls.
-    brokers={}
-    for r in reports:
-        received=r.get('received_at') or (r.get('group_date') or r.get('date',''))+'T23:59:59+08:00'
-        try:when=stamp(received)
-        except (TypeError,ValueError):continue
-        if when>now or (now-when).days>90:continue
-        broker=r.get('broker') or 'unknown';previous=brokers.get(broker)
-        if not previous or (when,str(r.get('id','')))> (previous[0],str(previous[1].get('id',''))):brokers[broker]=(when,r)
-    values=[]
-    for when,r in sorted(brokers.values(),key=lambda x:(x[0],str(x[1].get('broker','')),str(x[1].get('id',''))),reverse=True)[:3]:
-        sessions=age_days(when.date().isoformat(),now,calendar);rating=str(r.get('rating') or '').lower()
-        base=75 if any(x in rating for x in ('buy','overweight','outperform','買進','優於')) else 25 if any(x in rating for x in ('sell','underweight','underperform','賣出')) else 50
-        if r.get('target_price_action')=='downgrade':base-=20
-        if r.get('action')=='downgrade':base=min(base,35)
-        durable=50+(base-50)*decay(sessions,30)
-        event=50+(base-50)*decay(sessions,5)
-        values.append(.75*durable+.25*event)
-        evidence.append(f'{r.get("broker","")} {r.get("date","")} {r.get("rating") or "未評等"}，距收到 {sessions} 交易日；目標價動作 {r.get("target_price_action") or "未提供"}')
-        points=r.get('key_points') or ([r.get('summary')] if r.get('summary') else [])
-        if isinstance(points,str):points=[points]
-        evidence.extend('研究重點（原摘要）：'+str(x)[:240] for x in points[:2])
-        risks.extend(str(x) for x in (r.get('risks') or [])[:1])
-    if not values:risks.append('近90日無個股研究，研究因子中性，不限制股票池')
-    return dict(score=.8*fin+.2*average(values),verified=financial_valid,evidence=evidence,risks=risks,freshness=ages,
-        research_count=len(values),basis='single_quarter' if use_quarter else 'official_ytd_or_unknown')
+        financial_valid=len(metrics)>=2
+        fin=50+.30*(average(metrics)-50) # no fictitious QoQ from YTD numbers
+        risks.append('缺少可驗證單季比較，累計數據僅作低權重獲利狀態，不能宣稱季成長')
+    research=research_signal(reports,content_cache or {},now,calendar)
+    evidence+=research['evidence'];risks+=research['risks']
+    return dict(score=.60*fin+.40*research['score'],verified=financial_valid,evidence=evidence,risks=risks,freshness=ages,
+        research_count=research['count'],research_missing=research['missing'],research_details=research['details'],
+        financial_score=fin,research_score=research['score'],basis='single_quarter' if use_quarter else 'official_ytd_or_unknown')
 
 def allocate(candidates,exposure,cfg):
     selected=[dict(x) for x in candidates if x.get('eligible')][:cfg['max_positions']]

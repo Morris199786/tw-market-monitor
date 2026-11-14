@@ -6,6 +6,8 @@ from pathlib import Path
 from ai_portfolio_engine import DEFAULTS,VERSION,TZ,number,stamp,initial,migrate,frozen_decision,session
 from ai_allocation import average,market_regime,fundamentals,allocate,decay,age_days,ensure_floor
 from ai_reference_data import CAPTURE,record,digest,reference_snapshot,merge_earnings,research_index,holder_values
+from ai_content_research import load_sources
+from ai_signal_model import monthly_bonus,mixed_flow_score
 ROOT=Path(__file__).resolve().parents[1]
 
 def read(path,default=None):
@@ -102,7 +104,12 @@ def _proposal(data,cfg,now,protected=()):
                     n=number(x.get('shares'))
                     if n is not None:flows[str(x['ticker'])]=sign*abs(n)
     if institutional.get('date')!=day:attempt['errors'].append('法人資料不是同日')
-    flowrank=directional({t:v*stocks[t]['price'] for t,v in flows.items() if t in stocks})
+    master=read(data/'master.json').get('stocks',{})
+    caps={t:number(master.get(t,{}).get('shares_issued')) for t in stocks}
+    caps={t:n*stocks[t]['price'] for t,n in caps.items() if n is not None and n>0}
+    def mixed_flow(values):return mixed_flow_score(values,caps,directional)
+    flow_amounts={t:v*stocks[t]['price'] for t,v in flows.items() if t in stocks}
+    flowrank=mixed_flow(flow_amounts)
     funds=[f for f in meta.get('funds',[]) if f.get('region')=='TW' and f.get('listing','9999')<=day];fresh=0;etf_flow={};etf_details=defaultdict(list)
     for fund in funds:
         f=fund_history.get(fund['code']) or read(base/'etfs'/(fund['code']+'.json'))
@@ -113,7 +120,7 @@ def _proposal(data,cfg,now,protected=()):
             if e.get('date')==day and t in stocks and n is not None:
                 etf_flow[t]=etf_flow.get(t,0)+n*stocks[t]['price'];etf_details[t].append(dict(fund=fund['code'],shares_delta=n,date=day))
     if not funds or fresh/len(funds)<.7:attempt['errors'].append('同日台股ETF持股資料不足70%')
-    attempt['coverage']['etf']={'fresh':fresh,'total':len(funds)};etfrank=directional(etf_flow)
+    attempt['coverage']['etf']={'fresh':fresh,'total':len(funds)};etfrank=mixed_flow(etf_flow)
     holder=read(data/'holders.json');hdate=holder.get('date','');holders={};hmode='unavailable'
     try:hage=(now.date()-datetime.strptime(hdate,'%Y%m%d').date()).days
     except ValueError:hage=999
@@ -132,7 +139,10 @@ def _proposal(data,cfg,now,protected=()):
         '400_companies':sum('400' in v for v in holders.values()),'1000_companies':sum('1000' in v for v in holders.values()),
         'weight_within_chips':.2,'tier_weights':{'400':.5,'1000':.5}}
     earnings=read(data/'quarterly_earnings.json');opm=read(data/'quarterly_opm.json').get('metrics',{});official=read(data/'ai_fundamentals.json').get('stocks',{})
-    reports=read(data/'reports.json');financial={};research=research_index(reports.get('items',[]))
+    reports=read(data/'reports.json');financial={};research=load_sources(data,read,now)
+    content_cache=read(data/'ai_research_content.json')
+    self_items=read(data/'self_reports_history.json').get('items',[])+read(data/'self_reports.json').get('items',[])
+    quarters={}
     raw_reports=read(data/'business_reports.json').get('items',[])
     recovered=read(data/'quarterly_earnings_recovered.json')
     earnings={**earnings,'reports':merge_earnings(earnings,recovered)}
@@ -143,16 +153,30 @@ def _proposal(data,cfg,now,protected=()):
         try:when=stamp(published+'T'+(f.get('publish_time') or '23:59:59')+'+08:00')
         except ValueError:continue
         if when>now:continue
+        quarters[(t,f.get('period'))]=f
         if t not in financial or (f.get('period',''),published)>(financial[t].get('period',''),financial[t].get('publish_date','')):financial[t]=f
+    for (t,period),f in quarters.items():
+        match=__import__('re').fullmatch(r'(\d{4})-Q([1-4])',str(period))
+        if not match:continue
+        year,q=map(int,match.groups());previous=f'{year-1}-Q4' if q==1 else f'{year}-Q{q-1}'
+        f.setdefault('prev_period',previous)
+        for metric in ('eps','gross_margin','operating_margin'):
+            if f.get('prev_'+metric) is None:f['prev_'+metric]=quarters.get((t,previous),{}).get(metric)
     ranking5=percentile(mom5);ranking20=percentile(mom20);turnrank=percentile({t:q.get('turnover',0) for t,q in stocks.items()})
-    ranked=[];stock_scores={}
+    ranked=[];stock_scores={};research_pending={}
     for t in history:
         q=stocks[t]
         if q['asset_type']=='etf':continue
-        f=fundamentals(t,financial.get(t),official.get(t),opm,research[t],now,calendar)
+        f=fundamentals(t,financial.get(t),official.get(t),opm,research[t],now,calendar,content_cache)
+        if f['research_missing']:research_pending[t]=len(f['research_missing'])
+        bonus=monthly_bonus(t,self_items,quarters,now,calendar)
         chip=.35*flowrank.get(t,50)+.35*etfrank.get(t,50)+.2*holdrank.get(t,50)+.1*turnrank.get(t,50)
-        momentum=.6*ranking5[t]+.4*ranking20[t];score=.4*chip+.4*f['score']+.2*momentum
-        evidence=f['evidence'];risks=f['risks']
+        momentum=.6*ranking5[t]+.4*ranking20[t];score=.4*chip+.4*f['score']+.2*momentum+bonus['bonus']
+        evidence=f['evidence']+bonus['evidence'];risks=f['risks']+bonus['risks']
+        if caps.get(t):
+            if t in flow_amounts:evidence.append(f'法人淨額占收盤市值 {flow_amounts[t]/caps[t]*100:+.4f}%（金額／占市值各半）')
+            if t in etf_flow:evidence.append(f'ETF淨持股變動占收盤市值 {etf_flow[t]/caps[t]*100:+.4f}%（金額／占市值各半）')
+        else:risks.append('已發行股數缺值，占市值因子維持中性，不假設零市值')
         if t in flows:evidence.append(f'法人同日已知淨額 {flows[t]/1000:+,.1f} 張')
         else:risks.append('法人排行未涵蓋，不能當成零買超')
         if t in etf_flow:evidence.append(f'ETF同日持股淨變動估值 {etf_flow[t]/10000:+,.0f} 萬元')
@@ -171,6 +195,7 @@ def _proposal(data,cfg,now,protected=()):
         eligible=liquid and score>=cfg['minimum_score'] and (confirmed or exploring)
         x=dict(ticker=t,name=q['name'],market=q['market'],asset_type='stock',sector='產業 '+str(q.get('industry','unknown')),
             score=round(score,2),pillars=dict(chip=round(chip,2),fundamental=round(f['score'],2),momentum=round(momentum,2)),eligible=eligible,
+            research_details=f['research_details'],financial_score=round(f['financial_score'],2),research_score=round(f['research_score'],2),self_report_bonus=round(bonus['bonus'],3),model_version='content-qoq-v4',
             discovery=discovery,confidence='基本面已驗證' if f['verified'] else '待基本面確認的小部位',freshness=f['freshness'],
             evidence=evidence,risks=risks,etf_details=etf_details[t],volatility=vol[t],avg_volume=avgvol[t],price=q['price'])
         ranked.append(x);stock_scores[t]=x
@@ -190,13 +215,15 @@ def _proposal(data,cfg,now,protected=()):
             core_eligible=t in ('0050','006208') and q.get('turnover',0)>=10000000 and avgvol[t]>=100000,discovery=False,confidence='ETF配置',volatility=vol[t],avg_volume=avgvol[t],price=q['price'],freshness={},
             evidence=[f'台股原型股票ETF；5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%',f'持股基本面可辨識權重 {coverage:.1%}，不足60%時中性評分'],
             risks=['ETF不套用公司EPS／OPM；持股與個股可能重疊，單檔25%、ETF合計50%上限'],etf_details=[]))
+    if research_pending:attempt['errors'].append(f'最新研究內容待AI判讀／需檢查失敗快取：{sum(research_pending.values())}份、{len(research_pending)}家公司；保留舊正式名單')
+    attempt['coverage']['research_content']={'pending_companies':len(research_pending),'pending_documents':sum(research_pending.values()),'model':content_cache.get('model'),'version':content_cache.get('version')}
     ranked.sort(key=lambda x:(-x['score'],x['ticker']));targets=allocate(ranked,regime['target_exposure'],cfg)
     core=[dict(x,confidence='最低部位大盤ETF') for x in ranked if x.get('core_eligible')]
     targets,floor_met=ensure_floor(targets,core,cfg)
     if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低40%目標，保留前次決策')
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
-        model='既有AI研究＋官方全市場財務資料＋透明規則配置；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
+        model='content-qoq-v4：本業季比較＋自結加分＋金額及市值強度＋證據式AI內容判讀；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
         'holder_date':hdate,'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
         temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150})
     return attempt

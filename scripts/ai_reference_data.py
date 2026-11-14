@@ -26,7 +26,7 @@ def reference_snapshot(data,cfg,files,now):
         inventory[key]=meta
     config_path=root/'config/ai_portfolio.json'
     inventory['config/ai_portfolio.json']={'hash':digest(cfg),'exists':config_path.exists()}
-    algorithms={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path(__file__).parent.glob('*.py') if p.name in {'ai_portfolio_engine.py','ai_allocation.py','ai_reference_data.py','update_ai_portfolio.py'}}
+    algorithms={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path(__file__).parent.glob('*.py') if p.name in {'ai_portfolio_engine.py','ai_allocation.py','ai_reference_data.py','update_ai_portfolio.py','ai_signal_model.py','ai_content_research.py'}}
     for name,hash_value in algorithms.items():inventory['scripts/'+name]={'hash':hash_value,'exists':True}
     # Execution time is not a reference. Calendar date is: age/availability gates
     # can legitimately change when a new calendar day starts, even on a weekend.
@@ -53,7 +53,7 @@ def research_index(rows):
         if re.fullmatch(r'\d{4}',parent):indexed[parent].append({**r,**views.get(parent,{})})
         for t,v in sorted(views.items()):
             if t==parent:continue
-            out={k:r.get(k) for k in ('id','broker','date','group_date','received_at','report_type','source_url')}
+            out={k:r.get(k) for k in ('id','broker','date','group_date','received_at','report_type','source_url','category','original_type','type','meeting_date')}
             out.update(v);out['ticker']=t
             out['summary']=v.get('summary') or v.get('evidence') or ''
             indexed[t].append(out)
