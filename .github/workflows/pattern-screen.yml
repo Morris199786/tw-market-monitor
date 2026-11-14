@@ -1,0 +1,54 @@
+name: Pattern screen
+on:
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: '每次最多補查家數；首次可設2000，後續自動續補'
+        default: '300'
+        required: true
+  schedule:
+    - cron: '45 10 * * 1-5'
+permissions:
+  contents: write
+concurrency:
+  group: tw-market-data-writer
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - run: python -m unittest discover -s tests -p test_minervini_patterns.py
+      - name: Refresh all-market histories and identify patterns
+        env:
+          PATTERN_BUDGET: ${{ inputs.budget || '300' }}
+        run: |
+          python scripts/update_pattern_screen.py --refresh --budget "$PATTERN_BUDGET"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pattern-results
+          path: |
+            data/pattern_screen.json
+            data/pattern_coverage.json
+            data/pattern_history_status.json
+      - name: Save independent pattern data
+        run: |
+          set -e
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/pattern*.json data/pattern_history data/pattern_charts data/pattern_snapshots
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: independent all-market pattern screen'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
