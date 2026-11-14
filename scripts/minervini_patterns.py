@@ -5,10 +5,11 @@ All calculations and annotations use the same validated OHLCV bars.
 import math
 from statistics import mean
 
-VERSION = 'minervini-v1'
+VERSION = 'minervini-v2-audit'
 RULES = {
     'book': ['趨勢樣板八項條件', 'VCP 波動逐步收縮與右側量縮', '平坦底部約4–7週、深度約10–15%'],
     'implementation': {
+        'min_avg_turnover_20_twd': 10000000, 'max_zero_volume_sessions_20': 2,
         'flat_sessions': [20, 25, 30, 35], 'flat_max_depth_pct': 15,
         'vcp_swing_reversal_pct': 3, 'vcp_contractions': [2, 4],
         'vcp_max_depth_pct': 35, 'vcp_next_depth_max_ratio': .85,
@@ -109,7 +110,20 @@ def setup_at(bars, end):
     return found
 
 
+def liquid_enough(bars):
+    recent=bars[-20:]
+    return len(recent)==20 and mean(b['close']*b['volume'] for b in recent)>=10_000_000 and sum(b['volume']==0 for b in recent)<=2
+
+
+def unbroken_setup(bars, s, end):
+    # After the final VCP trough, a close above its pivot is already a breakout;
+    # never bury that event inside the base and relabel a later surge as first.
+    start=s['segments'][-1]['end']+1 if s['segments'] else s['start']
+    return all(bars[i]['close']<=s['pivot'] for i in range(start,end))
+
+
 def analyze(bars, rs):
+    if not liquid_enough(bars):return []
     checks=trend(bars,rs)
     if len(checks)!=8 or not all(c['passed'] for c in checks):return []
     candidates={};n=len(bars)
@@ -119,12 +133,15 @@ def analyze(bars, rs):
         end=n-age
         if end<253:continue
         for s in setup_at(bars,end):
+            if not unbroken_setup(bars,s,end):continue
             baseline=mean(b['volume'] for b in bars[end-50:end])
             dry=mean(b['volume'] for b in bars[end-5:end])/baseline if baseline else None
+            # Volume contraction is an admission criterion, not just a badge.
+            if dry is None or dry>.75:continue
             after=bars[end:];breakout=None;confirmed=False
             for i,b in enumerate(after,end):
                 volbase=mean(x['volume'] for x in bars[i-50:i])
-                if b['close']>s['pivot']:
+                if b['close']>s['pivot'] and bars[i-1]['close']<=s['pivot']:
                     breakout=i;confirmed=bool(volbase and b['volume']/volbase>=1.5);break
             price=bars[-1]['close'];distance=(price/s['pivot']-1)*100
             if price<s['stop'] or (breakout is not None and price<s['pivot']):status='failed'
@@ -139,6 +156,7 @@ def analyze(bars, rs):
                 breakout_volume_confirmed=confirmed,
                 conditions=[dict(label='趨勢樣板（含台股RS代理）8/8',passed=True),
                     dict(label='型態幾何結構符合本版門檻',passed=True),
+                    dict(label='近20日均成交金額≥1,000萬元，零成交日≤2（自訂）',passed=True),
                     dict(label='整理末5日量／整理末50日均量 ≤0.75',passed=dry is not None and dry<=.75),
                     dict(label='突破收盤高於樞紐，且突破量≥前50日均量1.5倍',passed=confirmed),
                     dict(label='最新收盤未跌破型態失效位置',passed=price>=s['stop'])])
