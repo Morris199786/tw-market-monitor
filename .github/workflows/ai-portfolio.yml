@@ -27,7 +27,7 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
       - name: Verify portfolio accounting
-        run: python -m unittest discover -s tests -p 'test_ai_portfolio.py' -q
+        run: python -m unittest discover -s tests -p 'test_ai*.py' -q
       - name: Refresh AI-only full-market quotes and official financials
         run: python scripts/collect_ai_universe.py
       - name: Process stored decisions and publish next target list
@@ -39,7 +39,7 @@ jobs:
           d=json.load(open('data/ai_portfolio.json',encoding='utf-8'))
           a=d.get('latest_attempt',{})
           last=(d.get('decisions') or [{}])[-1]
-          lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
+          lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Decision revision: {last.get('revision',1)}",f"Holder date: {last.get('sources',{}).get('holder_date')}",f"Reference hash: {last.get('reference_hash','legacy')}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
           for error in a.get('errors',[]):
               print('::warning::'+error.replace('\n',' '))
               lines.append('Data pending: '+error)
@@ -53,7 +53,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          owned_paths=(data/ai_portfolio.json data/ai_market_snapshots data/ai_portfolio_archives data/ai_universe.json data/ai_fundamentals.json data/ai_universe_days data/ai_etf_bars)
+          owned_paths=(data/ai_portfolio.json data/ai_reference_manifest.json data/ai_market_snapshots data/ai_portfolio_archives data/ai_universe.json data/ai_fundamentals.json data/ai_universe_days data/ai_etf_bars)
           for path in "${owned_paths[@]}"; do
             if [ -e "$path" ]; then git add -- "$path"; fi
           done
@@ -72,6 +72,16 @@ jobs:
               echo '::error::Another writer changed the AI account or its caches. Stopping rather than merging portfolio state; start a fresh workflow run.'
               exit 1
             fi
+            # Refuse to publish scores computed from superseded website data.
+            python - "$base_commit" "$remote_commit" <<'PYREF'
+          import json, subprocess, sys
+          refs=json.load(open('data/ai_reference_manifest.json',encoding='utf-8'))['files']
+          changed=set(subprocess.check_output(['git','diff','--name-only',sys.argv[1],sys.argv[2]],text=True).splitlines())
+          stale=sorted(changed.intersection(refs))
+          if stale:
+              print('::error::Website reference data changed during scoring: '+', '.join(stale[:12])+'. Start a fresh workflow run.')
+              sys.exit(1)
+          PYREF
             # Only unrelated files changed remotely. Replay this AI-only commit on top.
             if ! git rebase origin/main; then
               git rebase --abort
