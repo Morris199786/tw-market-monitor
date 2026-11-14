@@ -1,7 +1,7 @@
 name: AI paper portfolio
 on:
   schedule:
-    # Taiwan 22:30 and next trading morning 07:30. All local data, no external requests.
+    # Taiwan 22:30 and next trading morning 07:30.
     - cron: '30 14 * * 1-5'
     - cron: '30 23 * * 0-4'
   workflow_dispatch:
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   portfolio:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,16 +28,57 @@ jobs:
           git reset --hard origin/main
       - name: Verify portfolio accounting
         run: python -m unittest discover -s tests -p 'test_ai_portfolio.py' -q
+      - name: Refresh AI-only full-market quotes and official financials
+        run: python scripts/collect_ai_universe.py
       - name: Process stored decisions and publish next target list
         run: python scripts/update_ai_portfolio.py
-      - name: Commit account and observed market snapshots together
+      - name: Report actual portfolio status
         run: |
+          python - <<'PY'
+          import json, os
+          d=json.load(open('data/ai_portfolio.json',encoding='utf-8'))
+          a=d.get('latest_attempt',{})
+          last=(d.get('decisions') or [{}])[-1]
+          lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
+          for error in a.get('errors',[]):
+              print('::warning::'+error.replace('\n',' '))
+              lines.append('Data pending: '+error)
+          print('\n'.join(lines))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write('\n\n'.join(lines)+'\n')
+          PY
+      - name: Commit AI account and caches without overwriting concurrent updates
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ai_portfolio.json
-          if [ -d data/ai_market_snapshots ]; then git add data/ai_market_snapshots; fi
+          owned_paths=(data/ai_portfolio.json data/ai_market_snapshots data/ai_portfolio_archives data/ai_universe.json data/ai_fundamentals.json data/ai_universe_days data/ai_etf_bars)
+          for path in "${owned_paths[@]}"; do
+            if [ -e "$path" ]; then git add -- "$path"; fi
+          done
           if git diff --cached --quiet; then exit 0; fi
+          base_commit=$(git rev-parse HEAD)
           git commit -m 'data: advance AI paper portfolio'
-          # Never resolve a state conflict by overwriting or resetting the ledger.
-          # If another writer wins, fail safely; the next scheduled run starts from main.
-          git push origin HEAD:main
+          for attempt in 1 2 3 4; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            remote_commit=$(git rev-parse origin/main)
+            if [ "$remote_commit" = "$base_commit" ]; then
+              echo '::error::Push failed without a concurrent commit. Check the push error above; no data was overwritten.'
+              exit 1
+            fi
+            if ! git diff --quiet "$base_commit" "$remote_commit" -- "${owned_paths[@]}"; then
+              echo '::error::Another writer changed the AI account or its caches. Stopping rather than merging portfolio state; start a fresh workflow run.'
+              exit 1
+            fi
+            # Only unrelated files changed remotely. Replay this AI-only commit on top.
+            if ! git rebase origin/main; then
+              git rebase --abort
+              echo '::error::Rebase conflict. Existing remote files were preserved; start a fresh workflow run.'
+              exit 1
+            fi
+            base_commit=$remote_commit
+          done
+          echo '::error::Concurrent updates exceeded retry limit; remote data was preserved.'
+          exit 1
