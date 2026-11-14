@@ -192,7 +192,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="volume" class="page"><div class="hero"><div><div class="kicker">VOLUME SURGE</div><h1>科技股突然放量</h1><p>今日成交量 ÷ 前五個交易日平均量</p></div><span id="volDate" class="badge"></span></div><div class="toolbar"><button id="advanced" class="tab">進階篩選 ＋</button></div><div id="volStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>漲跌</th><th>今日量</th><th>5日量比</th><th>進階條件</th></tr></thead><tbody id="volRows"></tbody></table></div></section>
 <section id="turnover" class="page"><div class="hero"><div><div class="kicker">TURNOVER</div><h1>成交金額 TOP30</h1><p>採官方每日行情實際成交金額</p></div><span id="turnDate" class="badge"></span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-turn="twse">上市</button><button class="tab" data-turn="tpex">上櫃</button></div></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>成交金額</th><th>成交張數</th><th>收盤</th><th>漲跌</th></tr></thead><tbody id="turnRows"></tbody></table></div></section>
 <section id="marginLending" class="page"><div class="hero"><div><div class="kicker">MARGIN / SECURITIES LENDING</div><h1>融資／借券賣出異動</h1><p>融資與借券賣出｜先抓單日突然暴增，再找近期持續累積｜科技股上市、上櫃各 TOP30</p></div><div class="badges"><span class="badge">盤後更新</span><span id="mlDate" class="badge"></span></div></div><div class="toolbar"><div class="tabs"><button class="tab active" data-ml-kind="margin">融資增加</button><button class="tab" data-ml-kind="borrow">借券賣出增加</button></div><div class="tabs"><button class="tab active" data-ml-market="twse">上市</button><button class="tab" data-ml-market="tpex">上櫃</button></div></div><div id="mlStatus" class="status"></div><div id="mlLogic"></div><div id="mlCards" class="grid three"></div></section>
-<section id="ai" class="page"><div class="hero"><div><div class="kicker">AI PICKS</div><h1>AI選股</h1><p>依法人、大戶籌碼、量價與成交熱度進行相對強弱排序</p></div><span class="badge">每天 18:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-aim="twse">上市</button><button class="tab" data-aim="tpex">上櫃</button></div></div><div id="aiStatus" class="status"></div><div id="aiCards" class="grid three"></div></section>
+<section id="ai" class="page"><div class="hero"><div><div class="kicker">AI PAPER PORTFOLIO</div><h1>AI 模擬投資組合</h1><p>籌碼 × 基本面 × 動能。持續入選就續抱，移出才賣出，逐日記錄持倉與績效。</p></div><span class="badge">收盤後決策</span></div><div id="aiPortfolioRoot"></div></section>
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
 <section id="monthlyRevenue" class="page" hidden><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
 <section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>2024 年起每日外資資金與融資相對大盤增幅</p></div></div>
@@ -219,7 +219,9 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </main>
 
 <script>window.__brokerReportsRenderer="v3";</script>
-<script src="./assets/app.js?v=20261112-speech-v2-render-owner"></script>
+<link rel="stylesheet" href="./assets/ai_portfolio.css?v=20261114-paper-v1">
+<script src="./assets/ai_portfolio.js?v=20261114-paper-v1"></script>
+<script src="./assets/app.js?v=20261114-paper-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20261113-stock-links-v2"></script>
 <script>
@@ -273,7 +275,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   } catch (_) {}
 })();
 </script>
-<script src="./assets/ai_backtest.js?v=20260927-ai-bt1"></script>
+<!-- Legacy AI backtest remains archived; it does not render in the new paper account. -->
 <script src="./assets/feature_sort.js?v=20261111-ai-last-v2"></script>
 <script src="./assets/broker_report_charts.js?v=20261027-ai-v2"></script>
 <script src="./assets/report_dates.js?v=20261031-fixed-upload-t1-v3"></script>
@@ -503,6 +505,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script defer src="./assets/stock_cross_nav.js?v=20261113-finance-links-audio-v5"></script>
 </body>
 </html>
+
 
 
 
