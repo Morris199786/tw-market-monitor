@@ -35,6 +35,15 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_ai*.py' -q
       - name: Refresh AI-only full-market quotes and official financials
         run: python scripts/collect_ai_universe.py
+      - name: Restore independently saved research analysis
+        uses: actions/cache/restore@v4
+        with:
+          path: .ai-content-cache/ai_research_content.json
+          key: ai-content-v1-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ai-content-v1-${{ github.ref_name }}-
+      - name: Merge restored research cache
+        run: python scripts/ai_content_research.py --restore-cache .ai-content-cache/ai_research_content.json
       - name: Interpret latest broker and meeting content (reuse evidence cache)
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -42,23 +51,28 @@ jobs:
           AI_CONTENT_MODEL: ${{ vars.AI_CONTENT_MODEL }}
           OPENAI_REPORT_MODEL: ${{ vars.OPENAI_REPORT_MODEL }}
         run: python scripts/ai_content_research.py
+      - name: Checkpoint research cache before portfolio publication
+        if: always()
+        run: |
+          if [ -f data/ai_research_content.json ]; then
+            mkdir -p .ai-content-cache
+            cp data/ai_research_content.json .ai-content-cache/ai_research_content.json
+          fi
+      - name: Save research independently of Git push
+        if: always() && hashFiles('.ai-content-cache/ai_research_content.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .ai-content-cache/ai_research_content.json
+          key: ai-content-v1-${{ github.ref_name }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Keep downloadable research recovery copy
+        if: always() && hashFiles('.ai-content-cache/ai_research_content.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-research-content-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .ai-content-cache/ai_research_content.json
+          retention-days: 30
       - name: Process stored decisions and publish next target list
         run: python scripts/update_ai_portfolio.py
-      - name: Report actual portfolio status
-        run: |
-          python - <<'PY'
-          import json, os
-          d=json.load(open('data/ai_portfolio.json',encoding='utf-8'))
-          a=d.get('latest_attempt',{})
-          last=(d.get('decisions') or [{}])[-1]
-          lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Decision revision: {last.get('revision',1)}",f"Holder date: {last.get('sources',{}).get('holder_date')}",f"Reference hash: {last.get('reference_hash','legacy')}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
-          for error in a.get('errors',[]):
-              print('::warning::'+error.replace('\n',' '))
-              lines.append('Data pending: '+error)
-          print('\n'.join(lines))
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
-              f.write('\n\n'.join(lines)+'\n')
-          PY
       - name: Commit AI account and caches without overwriting concurrent updates
         shell: bash
         run: |
@@ -90,9 +104,9 @@ jobs:
           refs=json.load(open('data/ai_reference_manifest.json',encoding='utf-8'))['files']
           changed=set(subprocess.check_output(['git','diff','--name-only',sys.argv[1],sys.argv[2]],text=True).splitlines())
           stale=sorted(changed.intersection(refs))
-          if stale:
-              print('::error::Website reference data changed during scoring: '+', '.join(stale[:12])+'. Start a fresh workflow run.')
-              sys.exit(1)
+          from pathlib import Path
+          Path('.ai-content-cache/stale-reference').write_text('1' if stale else '0')
+          if stale:print('Reference changed; rescore against current main without repeating completed inference: '+', '.join(stale[:12]))
           PYREF
             # Only unrelated files changed remotely. Replay this AI-only commit on top.
             if ! git rebase origin/main; then
@@ -100,7 +114,36 @@ jobs:
               echo '::error::Rebase conflict. Existing remote files were preserved; start a fresh workflow run.'
               exit 1
             fi
+            if [ "$(cat .ai-content-cache/stale-reference)" = "1" ]; then
+              # Discard only this run's unpublished decision. Start from the actual
+              # remote ledger; completed immutable content-cache keys are retained.
+              if git cat-file -e origin/main:data/ai_portfolio.json 2>/dev/null; then
+                git show origin/main:data/ai_portfolio.json > data/ai_portfolio.json
+              else
+                rm -f data/ai_portfolio.json
+              fi
+              python scripts/update_ai_portfolio.py
+              for path in "${owned_paths[@]}"; do
+                if [ -e "$path" ]; then git add -- "$path"; fi
+              done
+              git commit --amend --no-edit
+            fi
             base_commit=$remote_commit
           done
           echo '::error::Concurrent updates exceeded retry limit; remote data was preserved.'
           exit 1
+      - name: Report actual portfolio status
+        run: |
+          python - <<'PY'
+          import json, os
+          d=json.load(open('data/ai_portfolio.json',encoding='utf-8'))
+          a=d.get('latest_attempt',{})
+          last=(d.get('decisions') or [{}])[-1]
+          lines=['AI paper portfolio',f"Status: {d.get('status')}",f"Capital: {d['config']['initial_cash']:,.0f}",f"Decision date: {last.get('date','not published')}",f"Targets: {len(last.get('targets',[]))}",f"Decision revision: {last.get('revision',1)}",f"Holder date: {last.get('sources',{}).get('holder_date')}",f"Reference hash: {last.get('reference_hash','legacy')}",f"Actual positions: {len(d.get('positions',{}))}",f"Coverage: {json.dumps(a.get('coverage',{}),ensure_ascii=False)}"]
+          for error in a.get('errors',[]):
+              print('::warning::'+error.replace('\n',' '))
+              lines.append('Data pending: '+error)
+          print('\n'.join(lines))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write('\n\n'.join(lines)+'\n')
+          PY
