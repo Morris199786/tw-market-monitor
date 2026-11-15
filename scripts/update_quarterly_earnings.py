@@ -2103,6 +2103,17 @@ def main():
             enforce_verified_quarter_eps(prior_result, x['ticker'], x['prev_period'])
             x['prev_eps'] = prior_result['eps']
 
+    # Additive late recovery: only missing fields on already published reports.
+    # Existing official/news precedence and announcement/delivery keys stay intact.
+    backup_diagnostics = {}
+    try:
+        from financial_backups import enrich_reports
+        backup_diagnostics = enrich_reports(list(events.values()), ROOT, now)
+        print('Missing-field backup:', backup_diagnostics, flush=True)
+    except Exception as exc:
+        backup_diagnostics = {'error': type(exc).__name__ + ':' + str(exc)[:200]}
+        print('Missing-field backup deferred:', backup_diagnostics, flush=True)
+
     # Check final values AFTER every official/cache/news merge and BEFORE JSON/Telegram.
     # Do not discard valid EPS when the margin is bad.
     for x in events.values():
@@ -2138,7 +2149,7 @@ def main():
                                   key=lambda x: (x['planned_date'], x['ticker'], x['period']))
     ups=sorted(upcoming.values(),key=lambda x:(x['planned_date'],x['ticker']))
     reports=sorted(events.values(),key=lambda x:(x['publish_date'],x.get('publish_time','')),reverse=True)
-    result=dict(expected_roster=expected_roster_rows,universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None]},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
+    result=dict(expected_roster=expected_roster_rows,universe_scope='上市上櫃科技普通股＋熱力圖成分股',universe_count=len(uni),version=VERSION,updated_at=now.isoformat(timespec='minutes'),upcoming=ups,reports=reports,diagnostics={'source_errors':SOURCE_ERRORS,'historical_errors':errors,'coverage':SCAN_STATUS,'calendar_errors':[y for y,v in calendars.items() if v is None],'missing_field_backup':backup_diagnostics},retention_note='依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3')
     save_json(DATA/'quarterly_earnings_events.json',result)
     save_json(OUT,result)
     # Independent OPM cache includes all saved quarters. EPS/GM and Telegram

@@ -484,9 +484,18 @@ def update_opm(*, history_rows=None, reports=None, full=False, budget=110):
                 errors.append(f'{key}: {error}')
             else:
                 for kind, row in found.items(): add(row, kind)
+    # Read validated additive backups only after all existing official paths.
+    # A valid MOPS result always takes precedence over company/news backups.
+    try:
+        from financial_backups import backup_opm
+        backup_cache = load_json(ROOT / 'data/financial_backups.json', {})
+    except ImportError:
+        backup_cache = {}
+        def backup_opm(cache, ticker, period): return None
     metrics = {}
     for ticker, period in sorted(targets):
         result = metric(facts, ticker, period)
+        if not result: result = backup_opm(backup_cache, ticker, period)
         if result: metrics[f'{ticker}|{period}'] = result
     result = {'schema': 1, 'version': VERSION, 'updated_at': now_tpe().isoformat(timespec='minutes'),
               'metrics': metrics, 'facts': facts, 'attempts': attempts,
