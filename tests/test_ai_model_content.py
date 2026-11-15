@@ -55,9 +55,10 @@ class Monthly(unittest.TestCase):
  def test_seventy_percent_two_points(self):self.assertAlmostEqual(self.bonus([self.item(.84)])['bonus'],2)
  def test_no_disclosure_no_penalty(self):self.assertEqual(self.bonus([])['bonus'],0)
  def test_negative_or_zero_baseline_no_fake_ratio(self):
-  for b in (0,-1):self.assertEqual(self.bonus([self.item()],b)['bonus'],0)
- def test_max_four_and_no_negative_penalty(self):
-  self.assertEqual(self.bonus([self.item(10)])['bonus'],4);self.assertEqual(self.bonus([self.item(-1)])['bonus'],0)
+  for b in (0,-1):
+   out=self.bonus([self.item()],b);self.assertIsNone(out['ratio']);self.assertGreater(out['bonus'],0)
+ def test_max_four_and_profit_to_loss_penalty(self):
+  self.assertEqual(self.bonus([self.item(10)])['bonus'],4);self.assertLessEqual(self.bonus([self.item(-1)])['bonus'],-6)
  def test_same_quarter_never_denominator(self):
   x=self.item(1,month='2026-09',quarter_period='2026-Q3',quarter_eps=3);self.assertEqual(self.bonus([x])['bonus'],0)
  def test_future_announcement_ignored(self):self.assertEqual(self.bonus([self.item(publish_date='2026-11-15')])['bonus'],0)
