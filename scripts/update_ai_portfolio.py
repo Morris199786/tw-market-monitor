@@ -8,6 +8,7 @@ from ai_allocation import average,market_regime,fundamentals,allocate,decay,age_
 from ai_reference_data import CAPTURE,record,digest,reference_snapshot,merge_earnings,research_index,holder_values
 from ai_content_research import load_sources
 from ai_signal_model import monthly_bonus,mixed_flow_score
+from ai_holder_signal import holder_signal
 from ai_relative_momentum import sector_groups,benchmark_returns,momentum as relative_momentum
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -131,14 +132,16 @@ def _proposal(data,cfg,now,protected=()):
         holders,hmode=holder_values(holder,current,previous,number)
     holders={t:v for t,v in holders.items() if t in stocks and stocks[t].get('asset_type')=='stock'}
     if not holders:attempt['errors'].append('大戶資料未齊或超過14日')
-    holder_sessions=age_days(datetime.strptime(hdate,'%Y%m%d').date().isoformat(),now,calendar) if holders else 0
     hgroups={g:directional({t:v[g]['delta'] for t,v in holders.items() if g in v}) for g in ('400','1000')}
     # Give both 400+ and 1000+ weekly changes half of the existing holder factor.
     # Missing tier stays neutral; never infer missing data as zero change.
-    holdrank={t:average([50+(hgroups[g].get(t,50)-50)*decay(holder_sessions,10) for g in ('400','1000')]) for t in holders}
+    groups=sector_groups(read(data/'sectors.json'))
+    market_closes={r['date']:r.get('index') for r in monitor.get('raw',[]) if r.get('date')}
+    holder_signals={t:holder_signal(t,[hgroups[g].get(t,50) for g in ('400','1000')],holder,now,day,calendar,history,market_closes,groups) for t in holders}
+    holdrank={t:x['score'] for t,x in holder_signals.items()}
     attempt['coverage']['holders']={'mode':hmode,'date':hdate,'previous_date':holder.get('previous_date'),
         '400_companies':sum('400' in v for v in holders.values()),'1000_companies':sum('1000' in v for v in holders.values()),
-        'weight_within_chips':.2,'tier_weights':{'400':.5,'1000':.5}}
+        'weight_within_chips':.2,'tier_weights':{'400':.5,'1000':.5},'policy':'publication-5day-price-confirmation','publication':next(iter(holder_signals.values()),{})}
     earnings=read(data/'quarterly_earnings.json');opm=read(data/'quarterly_opm.json').get('metrics',{});official=read(data/'ai_fundamentals.json').get('stocks',{})
     reports=read(data/'reports.json');financial={};research=load_sources(data,read,now)
     content_cache=read(data/'ai_research_content.json')
@@ -163,7 +166,6 @@ def _proposal(data,cfg,now,protected=()):
         f.setdefault('prev_period',previous)
         for metric in ('eps','gross_margin','operating_margin'):
             if f.get('prev_'+metric) is None:f['prev_'+metric]=quarters.get((t,previous),{}).get(metric)
-    groups=sector_groups(read(data/'sectors.json'))
     try:market_returns=benchmark_returns(monitor,dates)
     except ValueError as exc:
         attempt['errors'].append(str(exc));return attempt
@@ -188,6 +190,9 @@ def _proposal(data,cfg,now,protected=()):
         else:risks.append('法人排行未涵蓋，不能當成零買超')
         if t in etf_flow:evidence.append(f'ETF同日持股淨變動估值 {etf_flow[t]/10000:+,.0f} 萬元')
         if t in holders:
+            hs=holder_signals[t]
+            evidence.append(f'大戶訊號：公布後{hs["sessions"]}個已收盤交易日；時效保留{hs["weight"]:.0%}；正面確認係數{hs["confirmation_multiplier"]:.0%}；{hs["status"]}')
+            if hs['publication_method'].startswith('estimated'):risks.append('大戶來源缺實際公布時間，採統計日後週六15:00估計，不以統計日期起算')
             for g,label in [('400','400張以上'),('1000','千張以上')]:
                 v=holders[t].get(g)
                 if v:
@@ -202,7 +207,7 @@ def _proposal(data,cfg,now,protected=()):
         eligible=liquid and score>=cfg['minimum_score'] and (confirmed or exploring) and not f['research_missing']
         x=dict(ticker=t,name=q['name'],market=q['market'],asset_type='stock',sector='產業 '+str(q.get('industry','unknown')),
             score=round(score,2),pillars=dict(chip=round(chip,2),fundamental=round(f['score'],2),momentum=round(momentum,2)),eligible=eligible,
-            research_details=f['research_details'],financial_score=round(f['financial_score'],2),research_score=round(f['research_score'],2),self_report_bonus=round(bonus['bonus'],3),model_version='relative-content-v5',relative_momentum=relative,research_pending=len(f['research_missing']),
+            research_details=f['research_details'],financial_score=round(f['financial_score'],2),research_score=round(f['research_score'],2),self_report_bonus=round(bonus['bonus'],3),self_report_adjustment=bonus,holder_signal=holder_signals.get(t),model_version='relative-content-v6',relative_momentum=relative,research_pending=len(f['research_missing']),
             discovery=discovery,confidence='基本面已驗證' if f['verified'] else '待基本面確認的小部位',freshness=f['freshness'],
             evidence=evidence,risks=risks,etf_details=etf_details[t],volatility=vol[t],avg_volume=avgvol[t],price=q['price'])
         ranked.append(x);stock_scores[t]=x
@@ -220,7 +225,7 @@ def _proposal(data,cfg,now,protected=()):
         score=.4*chip+.3*underlying+.3*momentum
         ranked.append(dict(ticker=t,name=q['name'],market=q['market'],asset_type='etf',sector='分散ETF',score=round(score,2),
             pillars=dict(chip=chip,fundamental=round(underlying,2),momentum=round(momentum,2)),eligible=q.get('turnover',0)>=10000000 and avgvol[t]>=100000 and score>=60 and mom20[t]>0 and momentum>=50,
-            relative_momentum=relative,model_version='relative-content-v5',core_eligible=t in ('0050','006208') and q.get('turnover',0)>=10000000 and avgvol[t]>=100000,discovery=False,confidence='ETF配置',volatility=vol[t],avg_volume=avgvol[t],price=q['price'],freshness={},
+            relative_momentum=relative,model_version='relative-content-v6',core_eligible=t in ('0050','006208') and q.get('turnover',0)>=10000000 and avgvol[t]>=100000,discovery=False,confidence='ETF配置',volatility=vol[t],avg_volume=avgvol[t],price=q['price'],freshness={},
             evidence=relative['evidence']+[f'台股原型股票ETF；5日 {mom5[t]:+.2f}%／20日 {mom20[t]:+.2f}%',f'持股基本面可辨識權重 {coverage:.1%}，不足60%時中性評分'],
             risks=['ETF不套用公司EPS／OPM；持股與個股可能重疊，單檔25%、ETF合計50%上限'],etf_details=[]))
     if research_pending:attempt.setdefault('warnings',[]).append(f'研究內容待核對{sum(research_pending.values())}份、{len(research_pending)}家公司：本次排除這些公司的直接交易，不阻擋其餘已驗證標的發布新名單')
@@ -232,9 +237,9 @@ def _proposal(data,cfg,now,protected=()):
     if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低40%目標，本次不發布新名單')
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
-        model='relative-content-v5：同期大盤／族群相對動能＋不按波動率降權＋本業季比較＋自結加分＋金額及市值強度＋證據式AI內容判讀；分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
-        'holder_date':hdate,'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
-        temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150})
+        model='relative-content-v6：相對動能＋自結加扣分及盈虧轉換＋大戶短效與價格確認＋本業季比較＋證據式研究；不因高波動降權，分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
+        'holder_date':hdate,'holder_published_at':next(iter(holder_signals.values()),{}).get('published_at'),'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
+        temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150,'holder_session_weights':[1,.8,.55,.35,.2,.1,.05],'self_report_range':[-8,4]})
     return attempt
 
 def proposal(data,cfg,now,protected=()):

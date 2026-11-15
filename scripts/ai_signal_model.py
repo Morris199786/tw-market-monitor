@@ -26,9 +26,14 @@ def quarter_signal(row,opm,ticker):
         if a is not None:evidence.append(f'{row.get("period","")} 單季 {label}：{b if b is not None else "待補"} → {a}')
         if a is not None and b is not None:
             changes[k]=clip(50+50*(a-b)/max(abs(b),.25)) if k=='eps' else clip(50+8*(a-b))
+    if vals['eps'] is not None and vals['prev_eps'] is not None:
+        a,b=vals['eps'],vals['prev_eps']
+        if b<0<a:evidence.append('單季EPS虧轉盈：正向計分，並交叉檢查毛利率與OPM')
+        elif b>=0>a:risks.append('單季EPS盈轉虧：負向計分，不適用EPS季減扣分緩和')
+        elif a<0 and b<0:evidence.append('單季EPS持續虧損：'+('虧損縮小' if a>b else '虧損擴大' if a<b else '虧損持平'))
     epschange=changes.get('eps');margin=[changes[k] for k in ('gross_margin','operating_margin') if k in changes]
     if epschange is not None and len(margin)==2:
-        if epschange<50 and all(x>=50 for x in margin):
+        if epschange<50 and not (vals['prev_eps']>=0 and vals['eps']<0) and all(x>=50 for x in margin):
             changes['eps']=max(42,50+(epschange-50)*.25)
             risks.append('EPS季減但毛利率與OPM未惡化：降低EPS扣分；業外／稅率／股數等原因待確認，不直接認定業外')
         elif epschange>50 and all(x<50 for x in margin):
@@ -73,6 +78,7 @@ def research_signal(rows,cache,now,calendar):
     return dict(score=score,count=len(details),selected=len(choices),missing=missing,details=details,evidence=evidence,risks=risks)
 
 def monthly_bonus(t,items,quarters,now,calendar):
+    """Signed self-report adjustment; retain the bonus key for ledger compatibility."""
     usable=[]
     for r in items:
         if str(r.get('ticker'))!=t or number(r.get('monthly_eps')) is None:continue
@@ -84,17 +90,35 @@ def monthly_bonus(t,items,quarters,now,calendar):
         except (ValueError,KeyError,TypeError):continue
         usable.append(r)
     if not usable:return dict(bonus=0,evidence=[],risks=[])
-    r=max(enumerate(usable),key=lambda pair:(pair[1]['monthly_period'],pair[1]['publish_date'],pair[1].get('publish_time',''),pair[0]))[1]
+    r=max(enumerate(usable),key=lambda pair:(pair[1]['monthly_period'],pair[1]['publish_date'],(pair[1].get('publish_time') or ''),pair[0]))[1]
     year,month=map(int,r['monthly_period'].split('-'));q=(month-1)//3+1
     baseline=f'{year-1}-Q4' if q==1 else f'{year}-Q{q-1}'
     prior=quarters.get((t,baseline),{});base=number(prior.get('eps'))
     # The announcement's quarter EPS is only used when the period matches exactly.
     if base is None and r.get('quarter_period')==baseline:base=number(r.get('quarter_eps'))
-    if base is None or base<=0:
-        return dict(bonus=0,evidence=[],risks=[f'單月自結{r["monthly_period"]}已讀取，但前一季{baseline} EPS非正或缺值，不用失真比例加分'])
-    eps=number(r['monthly_eps']);ratio=eps/base;age=sum(r['publish_date']<d<=now.date().isoformat() for d in calendar)
-    # Previous-quarter EPS x 120% / 3 = 40% of quarter EPS.
-    # Strictly above the threshold; use a tolerance for floating point equality.
-    excess=0 if ratio<=.40+1e-12 else ratio-.40
-    bonus=round(clip(excess/.60,0,1)*4*decay(age,10),8)
-    return dict(bonus=bonus,evidence=[f'自結加分 +{bonus:.2f}總分：{r["monthly_period"]} 單月EPS {eps:g} ÷ 前季{baseline} EPS {base:g}＝{ratio:.1%}；高於前季EPS×120%÷3（40%）才加分，不外推整季'],risks=['單月自結可能含業外，屬加分線索；無公布或不達門檻不扣分'])
+    if base is None:
+        return dict(bonus=0,evidence=[],risks=[f'單月自結已讀取，但前一季{baseline} EPS缺值，維持中性'])
+    eps=number(r['monthly_eps']);monthly_base=base/3
+    age=sum(r['publish_date']<d<=now.date().isoformat() for d in calendar)
+    scale=max(abs(monthly_base),.05);ratio=None
+    if base>0 and eps<0:
+        raw=-6-2*math.tanh(abs(eps)/scale);status='盈轉虧'
+    elif base<0 and eps>0:
+        raw=2+2*math.tanh(eps/scale);status='虧轉盈'
+    elif base>=.15:
+        ratio=eps/monthly_base
+        if ratio>1.2+1e-12:raw=min(4,(ratio-1.2)/1.8*4);status='超過120%，加分'
+        elif ratio>=1-1e-12:raw=0;status='100%～120%緩衝區'
+        elif ratio>=.8-1e-12:raw=-5*(1-ratio);status='80%～100%，小扣分'
+        else:raw=max(-6,-1-5*(.8-ratio)/.8);status='低於80%，加重扣分'
+    else:
+        # No division by zero or a tiny/negative EPS. Improvement from losses
+        # is bounded below a confirmed return to profitability.
+        raw=4*math.tanh((eps-monthly_base)/scale)
+        if base<0 and eps<=0:raw=min(1.5,raw)
+        status=('虧損縮小' if eps>monthly_base else '虧損擴大' if eps<monthly_base else '虧損持平') if base<0 else '零／接近零基期，按EPS差額判斷'
+    adjustment=round(raw*decay(age,10),8)
+    comparison=f'達成率 {ratio:.1%}' if ratio is not None else '零／近零／負基期不計百分比'
+    return dict(bonus=adjustment,raw_adjustment=round(raw,8),ratio=ratio,status=status,
+        evidence=[f'自結調整 {adjustment:+.2f}總分：{r["monthly_period"]} 單月EPS {eps:g}；前季{baseline} EPS {base:g}÷3＝{monthly_base:g}；{comparison}；{status}'],
+        risks=['單月自結可能含業外，不直接外推整季；未公布維持中性，單一最新月份不重複累加'])
