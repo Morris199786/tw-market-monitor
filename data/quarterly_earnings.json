@@ -5576,25 +5576,34 @@
     }
   ],
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
-  "universe_count": 983,
+  "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-16T17:23+08:00",
-  "upcoming": [
+  "updated_at": "2026-11-16T18:23+08:00",
+  "upcoming": [],
+  "reports": [
     {
       "ticker": "4977",
       "name": "眾達-KY",
       "period": "2026-Q3",
-      "planned_date": "2026-11-16",
-      "subject": "預計召開財報董事會",
-      "source": "mops_t170sb01",
-      "source_label": "公開資訊觀測站（董事會預計日期）",
-      "source_url": "https://mops.twse.com.tw/mops/#/web/t170sb01",
+      "publish_date": "2026-11-16",
+      "publish_time": "18:12:20",
+      "subject": "本公司115年第3季合併財務報告業經董事會決議通過",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4977&SPOKE_DATE=20261116&SPOKE_TIME=181220&SEQ_NO=2&skey=4977202611162",
+      "retention_status": "reporting_quarter",
+      "release_type": "financial_report",
+      "source_label": "公開資訊觀測站",
+      "source": "mops_official",
+      "official_announcement_date": "2026-11-16",
+      "released_metrics": {},
+      "eps": 2.89,
+      "gross_margin": 47.44493,
+      "eps_basis": "cumulative_difference",
       "prev_period": "2026-Q2",
       "prev_eps": 2.68,
-      "prev_gross_margin": 23.122362
-    }
-  ],
-  "reports": [
+      "prev_gross_margin": 23.122362,
+      "prev_eps_basis": "cumulative_difference",
+      "data_status": "complete"
+    },
     {
       "ticker": "2338",
       "name": "光罩",
@@ -28027,69 +28036,56 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "planned_date/4583/2026-10-27:unavailable",
-      "planned_date/8131/2026-10-27:unavailable",
-      "detail/6548/2026-10-29",
-      "planned_date/6548/2026-10-29:unavailable",
-      "detail/7918/2026-10-30",
-      "planned_date/7918/2026-10-30:unavailable",
-      "announcement_scan/2026-11-01~2026-11-16:ValueError:announcement schema unavailable",
-      "daily_mops:ReadTimeout",
+      "announcement_scan/2026-10-24~2026-10-31:ValueError:announcement schema unavailable",
+      "announcement_scan/2026-11-01~2026-11-16:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by",
+      "daily_mops:ConnectTimeout",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3015/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/4977/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/5225/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Read timed out. (read timeout=4)",
+      "targeted_mops/3015/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
+      "targeted_mops/5225/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6442/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6451/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6781/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6789/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/9912/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3484/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
       "targeted_mops/3628/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
-      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable"
+      "targeted_mops/3484/2026-Q3:ValueError:announcement schema unavailable",
+      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable",
+      "mops_board_schedule:2026-Q3/otc:URLError:<urlopen error [Errno 111] Connection refused>",
+      "mops_board_schedule:2026-Q2/otc:URLError:<urlopen error timed out>"
     ],
-    "historical_errors": [
-      "tpex/2026-Q1: ValueError",
-      "twse/2026-Q2: ValueError"
-    ],
+    "historical_errors": [],
     "coverage": {
-      "2026-10-24~2026-10-31": "ok",
+      "2026-10-24~2026-10-31": "failed",
       "2026-11-01~2026-11-16": "failed"
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 10,
+      "attempted": 8,
       "fields_filled": 0,
-      "targets": 19,
+      "targets": 17,
       "errors": [
         {
-          "key": "4904|2026-Q3",
+          "key": "4977|2026-Q3",
           "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.fareastone.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCer"
+            "SSLError:HTTPSConnectionPool(host='www.pcltech.com', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLEOFError("
           ]
         },
         {
-          "key": "3712|2026-Q2",
+          "key": "7402|2026-Q3",
           "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
+            "HTTPError:406 Client Error: Not Acceptable for url: https://shopify.com/62943396065/account?buyer_flags=eyJhbGciOiJIUzI1NiJ9.eyJpc"
           ]
         },
         {
-          "key": "3712|2026-Q3",
+          "key": "6405|2026-Q2",
           "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
+            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
           ]
         },
         {
-          "key": "8291|2026-Q2",
+          "key": "6405|2026-Q3",
           "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
-          ]
-        },
-        {
-          "key": "8291|2026-Q3",
-          "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
+            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
           ]
         }
       ]
