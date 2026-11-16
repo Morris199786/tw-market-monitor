@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-16T22:13+08:00",
+  "updated_at": "2026-11-16T23:12+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-09-v39-attention-only-site",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -15,7 +15,7 @@
         "publish_time": "17:35:13",
         "subject": "2884 玉山金 115/11/16 17:35:13 公告本公司暨子公司115年10月自結盈餘",
         "source": "mops_ajax",
-        "source_error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:detail_validation_failed",
+        "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
         "eps_parse_status": "failed",
         "eps_parse_reason": "eps_values_not_parsed",
         "monthly_eps": null,
@@ -2503,21 +2503,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 213,
+          "rows": 214,
           "hits": 12
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 213,
+          "rows": 214,
           "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 213,
+          "rows": 214,
           "hits": 4
         },
         {
@@ -2547,8 +2547,8 @@
         {
           "mode": "company_rescue",
           "ticker": "6994",
-          "base": "https://mops.twse.com.tw",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 6,
           "hits": 0,
           "error": ""
         },
