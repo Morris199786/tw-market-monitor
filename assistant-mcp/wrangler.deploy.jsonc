@@ -26,5 +26,21 @@
         "period": 60
       }
     }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MEMBER_REGISTRY",
+        "class_name": "MemberRegistry"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "membership-v1",
+      "new_sqlite_classes": [
+        "MemberRegistry"
+      ]
+    }
   ]
 }
