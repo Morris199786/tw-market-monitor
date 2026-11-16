@@ -19,7 +19,19 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Fill missing recent market history first
+        id: market
+        continue-on-error: true
+        run: |
+          PYTHONPATH=scripts python - <<'PYCODE'
+          from update_close import backfill_market, load_json, ROOT
+          master = load_json(ROOT / 'data/master.json', {}).get('stocks', {})
+          day = load_json(ROOT / 'data/market_latest.json', {}).get('date')
+          backfill_market(master, target=21, as_of_date=day)
+          PYCODE
       - name: Repair latest 20 institutional trading days
+        id: flows
+        continue-on-error: true
         run: python scripts/update_institutional.py
       - name: Rebuild stock detail
         run: python scripts/update_stock_detail.py
@@ -27,7 +39,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/history/institutional data/institutional.json data/stock_detail.json
+          git add data/history/market data/history/institutional data/institutional.json data/stock_detail.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'Repair institutional history and stock detail'
           for i in 1 2 3; do
@@ -35,3 +47,9 @@ jobs:
             if [ "$i" = 3 ]; then exit 1; fi
             sleep 3
           done
+
+      - name: Report remaining incomplete sources
+        if: steps.market.outcome == 'failure' || steps.flows.outcome == 'failure'
+        run: |
+          echo '::error::Successful repairs committed; some official sources remain incomplete. Inspect repair logs.'
+          exit 1
