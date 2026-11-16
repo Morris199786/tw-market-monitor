@@ -297,6 +297,31 @@ def backfill_market(
     target=21,
     as_of_date=None
 ):
+    # A sufficient COUNT of old files does not mean the recent calendar is complete.
+    trend = load_json(ROOT / "data/stock_trend.json", {})
+    known = set(trend.get("dates_by_period", {}).get("20", []))
+    known.update(p.stem for p in (ROOT / "data/history/stock-trend-market").glob("*.json"))
+    if as_of_date:
+        known = {day for day in known if day <= as_of_date}
+    failures = []
+    for day in sorted(known)[-target:]:
+        path = ROOT / f"data/history/market/{day}.json"
+        cached = load_json(path, {})
+        if cached.get("date") == day and len(cached.get("stocks", {})) >= MIN_TWSE_ROWS + MIN_TPEX_ROWS:
+            continue
+        try:
+            tw = fetch_twse_quotes_by_date(day)
+            ot = fetch_tpex_quotes_by_date(day)
+            if len(tw) < MIN_TWSE_ROWS or len(ot) < MIN_TPEX_ROWS:
+                raise RuntimeError("dated market source incomplete")
+            quotes = {t:q for t,q in {**tw, **ot}.items() if t in master and ordinary_ticker(t)}
+            save_json(path, {"date":day,"updated_at":now_tpe().isoformat(timespec="minutes"),"stocks":quotes})
+            print("Repaired missing market session", day, len(quotes))
+        except Exception as exc:
+            failures.append(day)
+            print("Missing market session remains", day, type(exc).__name__)
+    if failures:
+        raise RuntimeError("Missing recent market history: " + ", ".join(failures))
     existing = {
         p.stem
         for p in history_files()

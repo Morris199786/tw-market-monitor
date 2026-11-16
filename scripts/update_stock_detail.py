@@ -59,7 +59,17 @@ def market_history():
         d = load_json(p, {})
         if d.get("date") and d.get("stocks"):
             rows.append(d)
-    return rows[-NEEDED_MARKET_DAYS:]
+    # Keep known trading sessions even if their market snapshot has not arrived.
+    # Missing sessions must never be replaced with older dates in a 5/10/20-day window.
+    by_date = {r["date"]:r for r in rows}
+    trend = load_json(ROOT / "data/stock_trend.json", {})
+    known = set(trend.get("dates_by_period", {}).get("20", []))
+    base = trend.get("base_dates_by_period", {}).get("20")
+    if base:
+        known.add(base)
+    for day in known:
+        by_date.setdefault(day, {"date":day,"stocks":{}})
+    return [by_date[day] for day in sorted(by_date)[-NEEDED_MARKET_DAYS:]]
 
 
 def institutional_history():
