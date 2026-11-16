@@ -39,13 +39,13 @@
       "ticker": "3664",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "3712|2026-Q2": {
       "ticker": "3712",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "3712|2026-Q3": {
       "ticker": "3712",
@@ -129,13 +129,13 @@
       "ticker": "8291",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "8291|2026-Q3": {
       "ticker": "8291",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "4908|2026-Q3": {
       "ticker": "4908",
@@ -147,13 +147,13 @@
       "ticker": "6441",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "6895|2026-Q2": {
       "ticker": "6895",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-16T20:07:12+08:00"
+      "checked_at": "2026-11-16T22:13:43+08:00"
     },
     "2327|2026-Q3": {
       "ticker": "2327",
@@ -210,7 +210,7 @@
       "notes": []
     },
     "3664|2026-Q2": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -219,15 +219,13 @@
       "notes": []
     },
     "3712|2026-Q2": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
         "gross_margin"
       ],
-      "notes": [
-        "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
-      ]
+      "notes": []
     },
     "3712|2026-Q3": {
       "at": "2026-11-16T17:23:54+08:00",
@@ -363,7 +361,7 @@
       ]
     },
     "8291|2026-Q2": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -374,7 +372,7 @@
       ]
     },
     "8291|2026-Q3": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -394,7 +392,7 @@
       "notes": []
     },
     "6441|2026-Q2": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -403,7 +401,7 @@
       "notes": []
     },
     "6895|2026-Q2": {
-      "at": "2026-11-16T20:07:12+08:00",
+      "at": "2026-11-16T22:13:43+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -475,16 +473,22 @@
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-16T21:20:11+08:00",
+  "updated_at": "2026-11-16T22:13:43+08:00",
   "last_run": {
-    "attempted": 1,
+    "attempted": 6,
     "fields_filled": 0,
     "targets": 12,
     "errors": [
       {
-        "key": "3718|2026-Q2",
+        "key": "8291|2026-Q2",
         "notes": [
-          "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
+          "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
+        ]
+      },
+      {
+        "key": "8291|2026-Q3",
+        "notes": [
+          "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
         ]
       }
     ]

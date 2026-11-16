@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-16T21:20+08:00",
+  "updated_at": "2026-11-16T22:13+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28071,7 +28071,8 @@
       "targeted_mops/9912/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3484/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3628/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable"
+      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable",
+      "targeted_mops/8291/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable"
     ],
     "historical_errors": [],
     "coverage": {
@@ -28080,14 +28081,20 @@
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 1,
+      "attempted": 6,
       "fields_filled": 0,
       "targets": 12,
       "errors": [
         {
-          "key": "3718|2026-Q2",
+          "key": "8291|2026-Q2",
           "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
+          ]
+        },
+        {
+          "key": "8291|2026-Q3",
+          "notes": [
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
           ]
         }
       ]
