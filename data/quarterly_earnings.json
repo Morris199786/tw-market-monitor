@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 983,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-16T13:04+08:00",
+  "updated_at": "2026-11-16T14:02+08:00",
   "upcoming": [
     {
       "ticker": "2338",
@@ -8988,14 +8988,14 @@
       "source": "mops_official",
       "official_announcement_date": "2026-11-11",
       "released_metrics": {},
-      "eps": null,
-      "gross_margin": null,
-      "eps_basis": null,
+      "eps": -1.62,
+      "gross_margin": -1.054747,
+      "eps_basis": "reported_single",
       "prev_period": "2026-Q2",
       "prev_eps": -1.83,
       "prev_gross_margin": -6.696154,
       "prev_eps_basis": "reported_single",
-      "data_status": "pending_financial_data"
+      "data_status": "complete"
     },
     {
       "ticker": "3455",
@@ -28010,24 +28010,24 @@
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
       "announcement_scan/2026-11-01~2026-11-16:ValueError:announcement schema unavailable",
-      "targeted_mops/2338/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable",
+      "targeted_mops/2338/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3015/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/4977/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/5225/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/6442/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
+      "targeted_mops/6442/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6451/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6781/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6789/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/9912/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3339/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/3484/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3628/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/4577/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Read timed out. (read timeout=4)",
-      "targeted_mops/8084/2026-Q3:ValueError:announcement schema unavailable;ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja",
-      "targeted_mops/8291/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ConnectTimeout:HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/aja"
+      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable",
+      "targeted_mops/8084/2026-Q3:ValueError:announcement schema unavailable;ValueError:announcement schema unavailable"
     ],
-    "historical_errors": [],
+    "historical_errors": [
+      "twse/2026-Q1: ValueError"
+    ],
     "coverage": {
       "2026-10-24~2026-10-31": "ok",
       "2026-11-01~2026-11-16": "failed"
@@ -28039,41 +28039,27 @@
       "targets": 23,
       "errors": [
         {
-          "key": "6411|2026-Q3",
+          "key": "8291|2026-Q2",
           "notes": [
-            "HTTPError:404 Client Error: Not Found for url: https://www.amazingic.com/en/csr/page/en/csr/page/Sustainable-Environment",
-            "HTTPError:404 Client Error: Not Found for url: https://www.amazingic.com/en/csr/page/en/investor/Monthly-Revenue",
-            "HTTPError:404 Client Error: Not Found for url: https://www.amazingic.com/en/csr/page/en/investor/Quarterly-Financial-Statements"
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
           ]
         },
         {
-          "key": "7402|2026-Q3",
+          "key": "8291|2026-Q3",
           "notes": [
-            "HTTPError:406 Client Error: Not Acceptable for url: https://shopify.com/62943396065/account?buyer_flags=eyJhbGciOiJIUzI1NiJ9.eyJpc"
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
           ]
         },
         {
-          "key": "6405|2026-Q2",
+          "key": "3712|2026-Q2",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
           ]
         },
         {
-          "key": "6405|2026-Q3",
+          "key": "3712|2026-Q3",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-          ]
-        },
-        {
-          "key": "3623|2026-Q2",
-          "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCer"
-          ]
-        },
-        {
-          "key": "4904|2026-Q3",
-          "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.fareastone.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCer"
+            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
           ]
         }
       ]
