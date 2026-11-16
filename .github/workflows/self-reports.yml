@@ -49,6 +49,12 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update_self_reports.py
 
+      - name: Publish self reports before quarterly scan
+        if: ${{ !cancelled() && !inputs.opm_backfill_only }}
+        env:
+          SELF_REPORT_DATA_ONLY: "true"
+        run: python scripts/update_self_reports.py --commit-data
+
       - name: Update quarterly earnings
         if: ${{ !cancelled() && !inputs.opm_backfill_only }}
         env:
