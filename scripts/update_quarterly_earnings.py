@@ -299,7 +299,13 @@ def is_report_subject(s):
         and re.search(r"(?:合併|個體|個別)?財務(?:報告|報表)[。.]?$", s)
         and not re.search(r"預定|預訂|擬|將提|將公布|將發布|通知|議程|審議|提案|草案|申報期限|延後|延期|延遲|未公布|未發布|未公告|未完成|補充|說明|查核|核閱|會計師", s)
     )
-    return formal or quarterly or noun_only
+    preliminary_financial = bool(
+        period_from_text(s)
+        and re.search(r'(?:自結|自行結算)(?:合併)?財務資訊', s)
+        and re.search(r'公告|公布|發布|通過|決議', s)
+        and not re.search(r'預定|預訂|擬|將提|將公布|將發布|未公布|未發布|未公告|未完成|提案|草案', s)
+    )
+    return formal or quarterly or noun_only or preliminary_financial
 
 
 def is_result_candidate(subject):
