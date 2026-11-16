@@ -94,8 +94,8 @@ jobs:
             for path in "${paths[@]}"; do
               # Compare each remote file to the original checkout. If another
               # workflow modified the SAME file, do not revert its new data.
-              original=$(git rev-parse "$base:$path" 2>/dev/null || true)
-              current=$(git rev-parse "HEAD:$path" 2>/dev/null || true)
+              original=$(git rev-parse --verify --quiet "$base:$path" 2>/dev/null || true)
+              current=$(git rev-parse --verify --quiet "HEAD:$path" 2>/dev/null || true)
               if [[ "$original" != "$current" ]]; then
                 echo "::warning file=$path::A concurrent workflow updated this file; skipping stale daily output."
                 conflicts=$((conflicts + 1))
