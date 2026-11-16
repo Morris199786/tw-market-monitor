@@ -442,6 +442,34 @@ def _extract_horizontal_eps(text):
     }
 
 
+def _recover_mops_stacked_eps(text):
+    """Read separate recent-month/quarter blocks, never rolling totals."""
+    data = normalize_for_parse(text)
+    start = re.search(r'財務業務資訊|財務資訊', data)
+    if not start:
+        return {}
+    section = data[start.end():]
+    month = re.search(r'最近一月', section)
+    quarter = re.search(r'最近一季', section)
+    if not month or not quarter or month.start() >= quarter.start():
+        return {}
+    # A shared horizontal table has both headings before its first EPS row.
+    blocks = [('monthly', section[month.end():quarter.start()]),
+              ('quarter', re.split(r'最近四季|\s[5-9]\s*[.、]\s*(?:有無|完整財務|其他)',
+                                  section[quarter.end():], maxsplit=1)[0])]
+    result = {}
+    for prefix, block in blocks:
+        marker = re.search(r'每股\s*(?:稅後)?\s*(?:基本)?\s*(?:盈餘|損益)\s*(?:[（(]\s*元\s*[）)])?\s*([+-]?\d+(?:\.\d+)?)\s+([+-]?\d+(?:\.\d+)?)\s*%', block)
+        period = (_find_month_period(block[:marker.start()]) if prefix == 'monthly'
+                  else _find_quarter_period(block[:marker.start()])) if marker else None
+        if not marker or not period:
+            return {}
+        result[prefix + '_eps'] = _number(marker.group(1))
+        result[prefix + '_period'] = period
+        result[prefix + '_eps_yoy'] = _number(marker.group(2))
+    return result
+
+
 def _recover_mops_financial_eps_row(text):
     """Additive MOPS attention-table recovery; legacy successful results win.
 
@@ -868,6 +896,12 @@ def extract_metrics(text):
         for prefix in ('monthly', 'quarter'):
             if out.get(prefix + '_eps') == verified_table[prefix + '_eps']:
                 out[prefix + '_period'] = verified_table[prefix + '_period']
+
+    stacked = _recover_mops_stacked_eps(text)
+    for prefix in ('monthly', 'quarter'):
+        if out.get(prefix + '_eps') is None and stacked.get(prefix + '_eps') is not None:
+            for suffix in ('eps', 'period', 'eps_yoy'):
+                out[prefix + '_' + suffix] = stacked.get(prefix + '_' + suffix)
 
     out["eps"] = out["monthly_eps"]
 
