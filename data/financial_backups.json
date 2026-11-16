@@ -184,6 +184,12 @@
       "period": "2026-Q3",
       "metrics": {},
       "checked_at": "2026-11-16T18:23:37+08:00"
+    },
+    "6781|2026-Q3": {
+      "ticker": "6781",
+      "period": "2026-Q3",
+      "metrics": {},
+      "checked_at": "2026-11-16T19:21:25+08:00"
     }
   },
   "attempts": {
@@ -455,39 +461,23 @@
       "notes": [
         "SSLError:HTTPSConnectionPool(host='www.pcltech.com', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLEOFError("
       ]
+    },
+    "6781|2026-Q3": {
+      "at": "2026-11-16T19:21:25+08:00",
+      "version": "quarter-missing-fields-v1",
+      "status": "pending",
+      "missing": [
+        "operating_margin"
+      ],
+      "notes": []
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-16T18:23:37+08:00",
+  "updated_at": "2026-11-16T19:21:25+08:00",
   "last_run": {
-    "attempted": 8,
+    "attempted": 1,
     "fields_filled": 0,
-    "targets": 17,
-    "errors": [
-      {
-        "key": "4977|2026-Q3",
-        "notes": [
-          "SSLError:HTTPSConnectionPool(host='www.pcltech.com', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLEOFError("
-        ]
-      },
-      {
-        "key": "7402|2026-Q3",
-        "notes": [
-          "HTTPError:406 Client Error: Not Acceptable for url: https://shopify.com/62943396065/account?buyer_flags=eyJhbGciOiJIUzI1NiJ9.eyJpc"
-        ]
-      },
-      {
-        "key": "6405|2026-Q2",
-        "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-        ]
-      },
-      {
-        "key": "6405|2026-Q3",
-        "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-        ]
-      }
-    ]
+    "targets": 14,
+    "errors": []
   }
 }
