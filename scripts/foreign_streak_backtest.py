@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TWSE/TPEx foreign net-buy streak event study. Python 3.11+, standard library only.
+"""TWSE/TPEx foreign and investment-trust net-buy streak event study. Python 3.11+, standard library only.
 Does not modify the website, publish results, send messages or place orders.
 """
 from __future__ import annotations
@@ -8,7 +8,7 @@ import json, math, statistics, sys, time, urllib.parse, urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-SCHEMA = 1
+SCHEMA = 2
 TZ = ZoneInfo('Asia/Taipei')
 HORIZONS = (3, 5, 10, 20)
 THRESHOLDS = (3, 5)
@@ -147,24 +147,27 @@ def parse_quotes(data, market, day):
         raise ValueError(f'{market} quotes too few: {len(out)}')
     return out
 
-def parse_flows(data, market, day):
+def parse_flows(data, market, day, investor="foreign"):
+    if investor not in ("foreign", "trust"):
+        raise ValueError("Unknown investor")
     check_date(data, day)
     out = {}
     if market == 'twse':
-        label = '外陸資買賣超股數(不含外資自營商)'
+        label = '外陸資買賣超股數(不含外資自營商)' if investor == 'foreign' else '投信買賣超股數'
         candidates = [t for t in tables(data) if label in t.get('fields', [])]
         if len(candidates) != 1:
-            raise ValueError('TWSE foreign flow header changed')
+            raise ValueError('TWSE institutional flow header changed')
         t = candidates[0]; fs = t['fields']
         ci, ni = fs.index('證券代號'), fs.index(label)
-        bi, si = fs.index('外陸資買進股數(不含外資自營商)'), fs.index('外陸資賣出股數(不含外資自營商)')
+        buy_label, sell_label = ('外陸資買進股數(不含外資自營商)', '外陸資賣出股數(不含外資自營商)') if investor == 'foreign' else ('投信買進股數', '投信賣出股數')
+        bi, si = fs.index(buy_label), fs.index(sell_label)
         for row in t['data']:
             ticker = clean(row[ci])
             if not ordinary(ticker):
                 continue
             b, s, n = [num(row[i]) for i in (bi, si, ni)]
             if None in (b, s, n) or b - s != n:
-                raise ValueError('TWSE foreign buy/sell identity mismatch')
+                raise ValueError('TWSE institutional buy/sell identity mismatch')
             out[ticker] = int(n)
     else:
         candidates = [t for t in tables(data) if t.get('title') == '三大法人買賣明細資訊']
@@ -181,20 +184,24 @@ def parse_flows(data, market, day):
                 continue
             if len(row) != 24:
                 raise ValueError('TPEx institutional row width changed')
-            b, s, n = [num(row[i]) for i in (2, 3, 4)]
+            b, s, n = [num(row[i]) for i in ((2, 3, 4) if investor == 'foreign' else (11, 12, 13))]
             if None in (b, s, n) or b - s != n:
-                raise ValueError('TPEx foreign buy/sell identity mismatch')
-            out[ticker] = int(n)  # First foreign group excludes foreign dealers; NOT column 10.
+                raise ValueError('TPEx institutional buy/sell identity mismatch')
+            out[ticker] = int(n)  # Foreign group: columns 2/3/4. Investment trust: columns 11/12/13.
     if len(out) < 100:
         raise ValueError(f'{market} flows too few: {len(out)}')
     return out
 
 def fetch_day(day, market, cache, delay, refresh=False):
     path = cache / market / (day + '.json')
+    saved = {}
     if path.exists() and not refresh:
-        d = read(path)
-        if d.get('schema') == SCHEMA and d.get('date') == day and d.get('market') == market and len(d.get('quotes', {})) >= 100 and len(d.get('flows', {})) >= 100:
-            return d
+        candidate = read(path)
+        if (candidate.get('schema') in (1, SCHEMA) and candidate.get('date') == day
+                and candidate.get('market') == market and len(candidate.get('quotes', {})) >= 100):
+            saved = candidate
+            if len(saved.get('flows', {})) >= 100 and len(saved.get('trust_flows', {})) >= 100:
+                return saved
     date_param = day.replace('-', '') if market == 'twse' else day.replace('-', '/')
     qp = {'date': date_param, 'response': 'json'}
     fp = dict(qp)
@@ -202,14 +209,20 @@ def fetch_day(day, market, cache, delay, refresh=False):
         qp['type'] = 'ALLBUT0999'; fp['selectType'] = 'ALLBUT0999'
     else:
         qp['id'] = ''; fp.update(type='Daily', sect='EW')
-    q = get_json(URLS[market, 'quotes'], qp, delay)
+    # Upgrade the existing v1 cache without downloading its verified OHLC again.
+    quotes = saved.get('quotes')
+    if quotes is None:
+        q = get_json(URLS[market, 'quotes'], qp, delay)
+        quotes = parse_quotes(q, market, day)
     f = get_json(URLS[market, 'flows'], fp, delay)
     d = dict(schema=SCHEMA, date=day, market=market,
              retrieved_at=dt.datetime.now(TZ).isoformat(timespec='seconds'),
              sources=[URLS[market, 'quotes'], URLS[market, 'flows']],
-             quotes=parse_quotes(q, market, day), flows=parse_flows(f, market, day))
+             quotes=quotes, flows=parse_flows(f, market, day, 'foreign'),
+             trust_flows=parse_flows(f, market, day, 'trust'))
     atomic(path, d)
     return d
+
 
 def download(dates, markets, cache, delay, refresh=False):
     """At most two workers; one sequential worker per market. No mass per-stock requests."""
@@ -220,11 +233,11 @@ def download(dates, markets, cache, delay, refresh=False):
             try:
                 d = fetch_day(day, market, cache, delay, refresh)
                 loaded[day] = d
-                cov.append(dict(market=market, date=day, status='ok', quotes=len(d['quotes']), flows=len(d['flows']), error=''))
+                cov.append(dict(market=market, date=day, status='ok', quotes=len(d['quotes']), flows=len(d['flows']), trust_flows=len(d['trust_flows']), error=''))
             except Exception as exc:
                 error = str(exc)
                 bad.append(dict(market=market, date=day, error=error))
-                cov.append(dict(market=market, date=day, status='failed', quotes=0, flows=0, error=error))
+                cov.append(dict(market=market, date=day, status='failed', quotes=0, flows=0, trust_flows=0, error=error))
                 print('MISSING', market, day, error, flush=True)
             if (i + 1) % 10 == 0 or i + 1 == len(dates):
                 print(f'{market}: {i+1}/{len(dates)} sessions, failed={len(bad)}', flush=True)
@@ -253,7 +266,8 @@ def action_reason(prev, q):
         return 'suspected_ex_dividend_split_or_capital_action'
     return ''
 
-def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005):
+def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005, investor='foreign'):
+    if investor not in ('foreign','trust'):raise ValueError('Unknown investor')
     trades = []
     for market, days in data.items():
         runs, known = {}, {}
@@ -262,7 +276,7 @@ def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005
             if d is None:
                 runs.clear(); known.clear()  # Never splice across a missing market session.
                 continue
-            flow = d['flows']
+            flow = d['trust_flows' if investor == 'trust' else 'flows']
             for ticker in set(runs) - set(flow):
                 runs.pop(ticker, None); known.pop(ticker, None)
             for ticker, net in flow.items():
@@ -282,7 +296,7 @@ def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005
                         continue
                     name = d['quotes'].get(ticker, {}).get('name', ticker)
                     for horizon in HORIZONS:
-                        t = dict(market=market, ticker=ticker, name=name, streak=threshold, run_length=runs[ticker],
+                        t = dict(investor=investor, market=market, ticker=ticker, name=name, streak=threshold, run_length=runs[ticker],
                                  signal_date=day, horizon=horizon, entry_date='', exit_date='', status='', reason='',
                                  entry_open='', exit_close='', gross_pct='', net_pct='')
                         trades.append(t)
@@ -316,29 +330,30 @@ def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005
 
 def summarize(trades):
     summary, cohorts = [], []
-    for market in ('all', 'twse', 'tpex'):
-        group = [t for t in trades if market == 'all' or t['market'] == market]
-        if not group:continue
-        for streak in THRESHOLDS:
-            for horizon in HORIZONS:
-                ts = [t for t in group if t['streak'] == streak and t['horizon'] == horizon]
-                done = [t for t in ts if t['status'] == 'completed']
-                statuses = collections.Counter(t['status'] for t in ts)
-                values = [t['net_pct'] for t in done]
-                by_date = collections.defaultdict(list)
-                for t in done:by_date[t['entry_date']].append(t['net_pct'])
-                for day, vs in sorted(by_date.items()):
-                    cohorts.append(dict(market=market, streak=streak, horizon=horizon, entry_date=day,
-                                        trades=len(vs), equal_weight_net_pct=statistics.mean(vs)))
-                summary.append(dict(market=market, streak=streak, horizon=horizon, signals=len(ts),
-                    completed=len(done), pending=statuses['pending_entry']+statuses['pending_exit'], excluded=statuses['excluded'],
-                    gross_mean_pct=statistics.mean(t['gross_pct'] for t in done) if done else '',
-                    net_mean_pct=statistics.mean(values) if values else '',
-                    net_median_pct=statistics.median(values) if values else '',
-                    net_win_rate_pct=100*sum(v>0 for v in values)/len(values) if values else '',
-                    net_best_pct=max(values) if values else '', net_worst_pct=min(values) if values else '',
-                    entry_dates=len(by_date),
-                    entry_date_equal_weight_mean_pct=statistics.mean(statistics.mean(v) for v in by_date.values()) if by_date else ''))
+    for investor in sorted({t['investor'] for t in trades}):
+      for market in ('all', 'twse', 'tpex'):
+          group = [t for t in trades if t['investor'] == investor and (market == 'all' or t['market'] == market)]
+          if not group:continue
+          for streak in THRESHOLDS:
+              for horizon in HORIZONS:
+                  ts = [t for t in group if t['streak'] == streak and t['horizon'] == horizon]
+                  done = [t for t in ts if t['status'] == 'completed']
+                  statuses = collections.Counter(t['status'] for t in ts)
+                  values = [t['net_pct'] for t in done]
+                  by_date = collections.defaultdict(list)
+                  for t in done:by_date[t['entry_date']].append(t['net_pct'])
+                  for day, vs in sorted(by_date.items()):
+                      cohorts.append(dict(investor=investor, market=market, streak=streak, horizon=horizon, entry_date=day,
+                                          trades=len(vs), equal_weight_net_pct=statistics.mean(vs)))
+                  summary.append(dict(investor=investor, market=market, streak=streak, horizon=horizon, signals=len(ts),
+                      completed=len(done), pending=statuses['pending_entry']+statuses['pending_exit'], excluded=statuses['excluded'],
+                      gross_mean_pct=statistics.mean(t['gross_pct'] for t in done) if done else '',
+                      net_mean_pct=statistics.mean(values) if values else '',
+                      net_median_pct=statistics.median(values) if values else '',
+                      net_win_rate_pct=100*sum(v>0 for v in values)/len(values) if values else '',
+                      net_best_pct=max(values) if values else '', net_worst_pct=min(values) if values else '',
+                      entry_dates=len(by_date),
+                      entry_date_equal_weight_mean_pct=statistics.mean(statistics.mean(v) for v in by_date.values()) if by_date else ''))
     return summary, cohorts
 
 def write_csv(path, rows):
@@ -349,14 +364,14 @@ def write_csv(path, rows):
 
 def report(out, summary, meta):
     rows = ''.join('<tr>'+''.join(f'<td>{html.escape(str(r[k]) if not isinstance(r[k],float) else f"{r[k]:.3f}")}</td>'
-                   for k in ('market','streak','horizon','completed','pending','excluded','gross_mean_pct','net_mean_pct','net_median_pct','net_win_rate_pct'))+'</tr>' for r in summary)
-    title=f"外資連買回測 {meta['year']}"
+                   for k in ('investor','market','streak','horizon','completed','pending','excluded','gross_mean_pct','net_mean_pct','net_median_pct','net_win_rate_pct'))+'</tr>' for r in summary)
+    title=f"法人連買回測 {meta['year']}（{'投信' if meta['investor']=='trust' else '外資' if meta['investor']=='foreign' else '外資＋投信'}）"
     doc=f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title><style>body{{font:16px system-ui;max-width:1150px;margin:32px auto;padding:0 16px;color:#182436}}table{{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}}td,th{{border-bottom:1px solid #ddd;padding:10px;text-align:right;white-space:nowrap}}th{{background:#edf2f8}}.scroll{{overflow:auto}}p{{line-height:1.7}}code{{overflow-wrap:anywhere}}</style>
-<h1>{title}</h1><p>截至 {meta['as_of']}；訊號模式：{meta['signal_mode']}。連買首次達標後下一交易日開盤買入，買入日算第1天；第3／5／10／20個交易日收盤賣出。零或賣超中斷連買，缺值不當成零。</p>
-<p>外資及陸資，不含外資自營商。歷史每日股票池，排除0開頭及91開頭TDR；不以目前上市名單回篩。含稅費與滑價，未計最低手續費、股數取整或現金利息。未到期另列；一價成交無法驗證、缺價、疑似除權息／分割／減資區間保守排除。</p>
+<h1>{title}</h1><p>截至 {meta['as_of']}；訊號模式：{meta['signal_mode']}。連買達標後下一交易日開盤買入，買入日算第1天；第3／5／10／20個交易日收盤賣出。零或賣超中斷連買，缺值不當成零。</p>
+<p>foreign＝外資及陸資（不含外資自營商），trust＝投信；各自以本身每日淨買超辨識連買，兩者不混合。歷史每日股票池，排除0開頭及91開頭TDR；不以目前上市名單回篩。含稅費與滑價，未計最低手續費、股數取整或現金利息。未到期另列；一價成交無法驗證、缺價、疑似除權息／分割／減資區間保守排除。</p>
 <p><strong>這是每筆訊號的事件研究，不是固定本金投資組合績效。</strong>不同訊號可能重疊，平均報酬與勝率不能當作可實現的累積／年化報酬；買賣成交仍是日K模擬，非逐筆成交驗證。新下市或停牌缺價排除可能形成選樣偏誤，完整狀態保留於trades.csv。</p>
-<div class="scroll"><table><thead><tr>{''.join('<th>'+s+'</th>' for s in ['市場','連買天數','持有天數','完成','未到期','排除','平均毛報酬%','平均淨報酬%','中位淨報酬%','淨勝率%'])}</tr></thead><tbody>{rows}</tbody></table></div>
+<div class="scroll"><table><thead><tr>{''.join('<th>'+s+'</th>' for s in ['法人','市場','連買天數','持有天數','完成','未到期','排除','平均毛報酬%','平均淨報酬%','中位淨報酬%','淨勝率%'])}</tr></thead><tbody>{rows}</tbody></table></div>
 <p>平均淨報酬已計雙邊手續費各 {meta['fee']*100:.4f}%、賣出稅 {meta['tax']*100:.3f}%、雙邊滑價各 {meta['slippage']*100:.3f}%。另附每日進場批次等權平均，避免訊號多的日期完全主導統計。所有結果均非投資建議。</p></html>'''
     (out/'report.html').write_text(doc,encoding='utf-8')
 
@@ -407,12 +422,22 @@ def self_test():
     try:check_date({'date':'20260103'},'2026-01-02')
     except ValueError:pass
     else:raise AssertionError('Date mismatch accepted')
-    print('PASS: entry/exit timing, 3/5-day signals, all horizons, costs, first/rolling, missing data, censoring, action and execution exclusions, summaries and date validation')
+    dates5,data5=fixture()
+    for i,day in enumerate(dates5):data5['twse'][day]['trust_flows']={'2330':0 if i==0 else -100}
+    assert not study(data5,dates5,2026,investor='trust')
+    assert len(study(data5,dates5,2026,investor='foreign'))==8
+    for day in dates5:data5['twse'][day]['trust_flows']=dict(data5['twse'][day]['flows'])
+    trust=study(data5,dates5,2026,investor='trust')
+    assert len(trust)==8 and all(t['investor']=='trust' for t in trust)
+    assert trust[0]['net_pct']==ts[0]['net_pct']
+    assert len(summarize(ts+trust)[0])==32
+    print('PASS: independent foreign/trust signals, entry/exit timing, 3/5-day signals, all horizons, costs, first/rolling, missing data, censoring, action and execution exclusions, summaries and date validation')
     return 0
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--year',type=int,default=2026)
+    p.add_argument('--investor',choices=['foreign','trust','both'],default='trust',help='foreign=外資, trust=投信, both=分別回測兩者')
     p.add_argument('--as-of',help='YYYY-MM-DD; default latest day after 18:30 Taipei, otherwise yesterday')
     p.add_argument('--markets',default='twse,tpex')
     p.add_argument('--signal-mode',choices=['first','rolling'],default='first')
@@ -441,7 +466,7 @@ def main(argv=None):
     # Allow subsequent January data only when explicitly requested via --as-of, to finish year-end entries.
     if as_of>dt.date(a.year+1,2,28):as_of=dt.date(a.year+1,2,28)
     meta=dict(year=a.year,as_of=as_of.isoformat(),signal_mode=a.signal_mode,fee=a.fee,tax=a.tax,slippage=a.slippage,
-              generated_at=now.isoformat(),status='collecting',scope='historical_4digit_stocks_excluding_0_and_91',sources=URLS_AS_LIST)
+              investor=a.investor,generated_at=now.isoformat(),status='collecting',scope='historical_4digit_stocks_excluding_0_and_91',sources=URLS_AS_LIST)
     atomic(a.output/'metadata.json',meta)
     try:
         if a.offline:
@@ -467,7 +492,12 @@ def main(argv=None):
         if failures or not dates:
             atomic(a.output/'failures.json',failures)
             raise ValueError(f'{len(failures)} daily sources missing; statistics withheld to avoid false full-year results. Rerun to resume cache.')
-        trades=study(data,dates,a.year,a.signal_mode,a.fee,a.tax,a.slippage)
+        investors=('foreign','trust') if a.investor=='both' else (a.investor,)
+        trades=[]
+        for investor in investors:
+            missing=[(m,day) for m in markets for day in dates if len(data[m][day].get('trust_flows' if investor=='trust' else 'flows',{}))<100]
+            if missing:raise ValueError(f'Missing {investor} cache on {len(missing)} market-days; rerun without --offline to upgrade cache')
+            trades.extend(study(data,dates,a.year,a.signal_mode,a.fee,a.tax,a.slippage,investor))
         summary,cohorts=summarize(trades)
         meta.update(status='complete',official_sessions=len(dates),last_session=dates[-1],trade_rows=len(trades),
                     note='Event study, not cumulative portfolio performance; see README and report.html')
@@ -481,3 +511,4 @@ def main(argv=None):
 
 URLS_AS_LIST=sorted(set(URLS.values()))+['https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK']
 if __name__=='__main__':raise SystemExit(main())
+
