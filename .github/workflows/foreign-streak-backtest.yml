@@ -1,0 +1,97 @@
+name: Foreign streak backtest 2026
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: '回測進場年度'
+        type: choice
+        options: ['2026']
+        default: '2026'
+      as_of:
+        description: '資料截止日 YYYY-MM-DD；留白自動取台灣18:30後最新日期'
+        type: string
+        default: ''
+      signal_mode:
+        description: 'first=每段連買首次達3/5天；rolling=達標後每天產生訊號'
+        type: choice
+        options: ['first', 'rolling']
+        default: 'first'
+permissions:
+  contents: read
+concurrency:
+  group: foreign-streak-backtest-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      BT_YEAR: ${{ inputs.year }}
+      BT_AS_OF: ${{ inputs.as_of }}
+      BT_SIGNAL_MODE: ${{ inputs.signal_mode }}
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify backtest accounting and timing
+        run: python scripts/foreign_streak_backtest.py --self-test
+      - name: Restore isolated historical cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/foreign-streak-v1
+          key: foreign-streak-v1-${{ inputs.year }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            foreign-streak-v1-${{ inputs.year }}-
+      - name: Download official history and run event study
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--year "$BT_YEAR" --signal-mode "$BT_SIGNAL_MODE" --output "backtest-results/foreign_streak_$BT_YEAR")
+          if [ -n "$BT_AS_OF" ]; then args+=(--as-of "$BT_AS_OF"); fi
+          python scripts/foreign_streak_backtest.py "${args[@]}"
+      - name: Save completed historical days even after a partial download failure
+        if: always() && hashFiles('.cache/foreign-streak-v1/**/*.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/foreign-streak-v1
+          key: foreign-streak-v1-${{ inputs.year }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Downloadable results and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: foreign-streak-${{ inputs.year }}-${{ github.run_id }}
+          path: backtest-results/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Show backtest summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv,json,os
+          from pathlib import Path
+          folder=Path('backtest-results')/('foreign_streak_'+os.environ['BT_YEAR'])
+          meta=folder/'metadata.json'
+          if not meta.exists():
+              print('No metadata generated; inspect preceding steps.')
+              raise SystemExit(0)
+          d=json.loads(meta.read_text())
+          lines=['## 外資連買3／5天回測',f"狀態：{d.get('status')}；截止日：{d.get('as_of')}",
+              '下一交易日開盤買入，買入日算第1天，第3／5／10／20個交易日收盤賣出。',
+              '事件研究；不同訊號可能重疊，平均報酬不是固定本金累積報酬。']
+          if d.get('error'):lines.append('錯誤：'+d['error'])
+          summary=folder/'summary.csv'
+          if d.get('status')=='complete' and summary.exists():
+              lines += ['', '|市場|連買天數|持有天數|完成筆數|未到期|排除|平均毛報酬|平均淨報酬|淨勝率|',
+                  '|---|---:|---:|---:|---:|---:|---:|---:|---:|']
+              def fmt(x):return f'{float(x):.2f}%' if x else '—'
+              for r in csv.DictReader(summary.open(encoding='utf-8-sig')):
+                  lines.append('|'+ '|'.join([r['market'],r['streak'],r['horizon'],r['completed'],r['pending'],r['excluded'],fmt(r['gross_mean_pct']),fmt(r['net_mean_pct']),fmt(r['net_win_rate_pct'])])+'|')
+          lines += ['', 'Artifact 內含 report.html、summary.csv、trades.csv、entry_date_cohorts.csv、coverage.csv、metadata.json。',
+              '本流程不修改網站資料、不提交commit、不推播。若來源缺日，統計暫不發布；重新執行會沿用已完成下載。']
+          text='\n\n'.join(lines[:4])+'\n'+'\n'.join(lines[4:])
+          print(text)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:f.write(text+'\n')
+          PY
