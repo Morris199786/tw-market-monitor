@@ -1,4 +1,4 @@
-name: Foreign streak backtest 2026
+name: Institutional streak backtest 2026
 on:
   workflow_dispatch:
     inputs:
@@ -7,6 +7,11 @@ on:
         type: choice
         options: ['2026']
         default: '2026'
+      investor:
+        description: '法人：trust投信／foreign外資／both分別回測兩者'
+        type: choice
+        options: ['trust', 'foreign', 'both']
+        default: 'trust'
       as_of:
         description: '資料截止日 YYYY-MM-DD；留白自動取台灣18:30後最新日期'
         type: string
@@ -27,6 +32,7 @@ jobs:
     timeout-minutes: 180
     env:
       BT_YEAR: ${{ inputs.year }}
+      BT_INVESTOR: ${{ inputs.investor }}
       BT_AS_OF: ${{ inputs.as_of }}
       BT_SIGNAL_MODE: ${{ inputs.signal_mode }}
       PYTHONUNBUFFERED: '1'
@@ -48,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          args=(--year "$BT_YEAR" --signal-mode "$BT_SIGNAL_MODE" --output "backtest-results/foreign_streak_$BT_YEAR")
+          args=(--year "$BT_YEAR" --investor "$BT_INVESTOR" --signal-mode "$BT_SIGNAL_MODE" --output "backtest-results/foreign_streak_$BT_YEAR")
           if [ -n "$BT_AS_OF" ]; then args+=(--as-of "$BT_AS_OF"); fi
           python scripts/foreign_streak_backtest.py "${args[@]}"
       - name: Save completed historical days even after a partial download failure
@@ -61,7 +67,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: foreign-streak-${{ inputs.year }}-${{ github.run_id }}
+          name: institutional-streak-${{ inputs.investor }}-${{ inputs.year }}-${{ github.run_id }}
           path: backtest-results/
           if-no-files-found: warn
           retention-days: 90
@@ -78,20 +84,21 @@ jobs:
               print('No metadata generated; inspect preceding steps.')
               raise SystemExit(0)
           d=json.loads(meta.read_text())
-          lines=['## 外資連買3／5天回測',f"狀態：{d.get('status')}；截止日：{d.get('as_of')}",
+          lines=['## 法人連買3／5天回測',f"狀態：{d.get('status')}；法人：{d.get('investor')}；截止日：{d.get('as_of')}",
               '下一交易日開盤買入，買入日算第1天，第3／5／10／20個交易日收盤賣出。',
               '事件研究；不同訊號可能重疊，平均報酬不是固定本金累積報酬。']
           if d.get('error'):lines.append('錯誤：'+d['error'])
           summary=folder/'summary.csv'
           if d.get('status')=='complete' and summary.exists():
-              lines += ['', '|市場|連買天數|持有天數|完成筆數|未到期|排除|平均毛報酬|平均淨報酬|淨勝率|',
-                  '|---|---:|---:|---:|---:|---:|---:|---:|---:|']
+              lines += ['', '|法人|市場|連買天數|持有天數|完成筆數|未到期|排除|平均毛報酬|平均淨報酬|淨勝率|',
+                  '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|']
               def fmt(x):return f'{float(x):.2f}%' if x else '—'
               for r in csv.DictReader(summary.open(encoding='utf-8-sig')):
-                  lines.append('|'+ '|'.join([r['market'],r['streak'],r['horizon'],r['completed'],r['pending'],r['excluded'],fmt(r['gross_mean_pct']),fmt(r['net_mean_pct']),fmt(r['net_win_rate_pct'])])+'|')
+                  lines.append('|'+ '|'.join([r['investor'],r['market'],r['streak'],r['horizon'],r['completed'],r['pending'],r['excluded'],fmt(r['gross_mean_pct']),fmt(r['net_mean_pct']),fmt(r['net_win_rate_pct'])])+'|')
           lines += ['', 'Artifact 內含 report.html、summary.csv、trades.csv、entry_date_cohorts.csv、coverage.csv、metadata.json。',
               '本流程不修改網站資料、不提交commit、不推播。若來源缺日，統計暫不發布；重新執行會沿用已完成下載。']
           text='\n\n'.join(lines[:4])+'\n'+'\n'.join(lines[4:])
           print(text)
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:f.write(text+'\n')
           PY
+
