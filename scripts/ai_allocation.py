@@ -28,14 +28,30 @@ def market_regime(monitor,day,breadth):
     reasons=[f'指數 {closes[-1]:,.2f}；20日均線 {ma20:,.2f}；60日均線 {ma60:,.2f}',
         f'5日漲跌 {ret5:+.2f}%；距20日高點 {dd20:.2f}%',f'上漲廣度 {breadth:.1%}；外資5日合計 {sum(foreign):+.2f} 億',
         f'監控燈號：外資 {last.get("foreign_light")}／融資 {last.get("margin_light")}／交集 {last.get("intersection")}']
-    if dd20<=-12 or last.get('intersection')=='red':label,exposure='高度防禦',.40
+    # Independent 20% tier: require price stress, weak trend, breadth and flows together.
+    # Thresholds are explicit policy settings, not backtest-optimized parameters.
+    extreme_checks=dict(
+        price_stress=dd20<=-20 or ret5<=-8,
+        below_both_averages=closes[-1]<ma20 and closes[-1]<ma60,
+        weak_breadth=0<=breadth<=.20,
+        foreign_outflow=sum(foreign)<0,
+    )
+    extreme=all(extreme_checks.values())
+    reasons.append('20%極度防禦檢核：'+ '；'.join(
+        f'{label}{"符合" if extreme_checks[key] else "未符合"}' for key,label in (
+            ('price_stress','距20日高點跌至少20%或5日跌至少8%：'),
+            ('below_both_averages','指數低於20及60日均線：'),
+            ('weak_breadth','近20日上漲股票占比不超過20%：'),
+            ('foreign_outflow','外資近5日合計賣超：'))))
+    if extreme:label,exposure='極度防禦',.20
+    elif dd20<=-12 or last.get('intersection')=='red':label,exposure='高度防禦',.40
     elif closes[-1]<ma20 and closes[-1]<ma60:label,exposure='防禦',.55
     elif score>=4:label,exposure='積極',.90
     elif score>=2:label,exposure='均衡',.70
     else:label,exposure='防禦',.55
     return dict(valid=True,date=day,label=label,target_exposure=exposure,cash_floor=1-exposure,score=score,
         ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,reasons=reasons,
-        note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低20%；整體資料無法驗證時本次不發布名單並暫停新調倉，不假設成交')
+        note='目標水位20%／40%／55%／70%／90%；20%須急跌、均線轉弱、低廣度及外資賣超同時成立。透明固定規則，新增門檻未經績效回測或最佳化；個股不足時用可驗證的大盤ETF補足最低20%；整體資料無法驗證時本次不發布名單並暫停新調倉，不假設成交')
 
 def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
     from ai_signal_model import quarter_signal,research_signal,weighted,clip
@@ -137,3 +153,4 @@ def ensure_floor(targets,core,cfg):
     out=[x for x in out if x['weight']>0]
     for x in out:x['weight']=round(x['weight'],8)
     return out,sum(x['weight'] for x in out)>=floor-1e-7
+
