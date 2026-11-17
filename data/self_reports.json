@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-17T13:56+08:00",
+  "updated_at": "2026-11-17T14:48+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-09-v39-attention-only-site",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2496,28 +2496,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
+      "rows": 2,
       "self_reports": 0,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 22,
+          "rows": 41,
+          "hits": 2
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 41,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 22,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 22,
+          "rows": 41,
           "hits": 0
         },
         {
@@ -2552,14 +2552,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 22,
+          "rows": 41,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 22,
+          "rows": 41,
           "hits": 0
         },
         {
@@ -2600,7 +2600,7 @@
             },
             {
               "market": "tpex",
-              "rows": 1,
+              "rows": 74,
               "ticker_pool": 0
             }
           ],
@@ -2697,9 +2697,10 @@
         {
           "mode": "company_rescue",
           "ticker": "1802",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ReadTimeout;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
@@ -2776,7 +2777,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2338",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2968,7 +2969,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3005",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2976,7 +2977,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3010",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2984,7 +2985,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3028",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3000,7 +3001,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3044",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3292,7 +3293,18 @@
           "rescued_tickers": []
         }
       ],
-      "rejected": [],
+      "rejected": [
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "5701 劍湖山 115/11/17 13:53:43 公告本公司115年10月份自結合併 財務報告之負債比率、流動比率及速 動比率。"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "3073 天方能源 115/11/17 14:20:23 公告本公司115年10月份自結合併財務報告之 負債比率、流動比率及速動比率"
+        }
+      ],
       "error": ""
     },
     "twse": {
@@ -3303,7 +3315,7 @@
     },
     "tpex": {
       "ok": true,
-      "rows": 1,
+      "rows": 74,
       "self_reports": 0,
       "error": ""
     }
