@@ -266,7 +266,8 @@ def action_reason(prev, q):
         return 'suspected_ex_dividend_split_or_capital_action'
     return ''
 
-def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005, investor='foreign'):
+def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005, investor='foreign', stop_loss=.08):
+    if stop_loss is not None and not 0 < stop_loss < 1:raise ValueError('Invalid stop loss')
     if investor not in ('foreign','trust'):raise ValueError('Unknown investor')
     trades = []
     for market, days in data.items():
@@ -298,34 +299,51 @@ def study(data, dates, year, mode='first', fee=.001425, tax=.003, slippage=.0005
                     for horizon in HORIZONS:
                         t = dict(investor=investor, market=market, ticker=ticker, name=name, streak=threshold, run_length=runs[ticker],
                                  signal_date=day, horizon=horizon, entry_date='', exit_date='', status='', reason='',
-                                 entry_open='', exit_close='', gross_pct='', net_pct='')
+                                 entry_open='', exit_close='', gross_pct='', net_pct='', planned_exit_date='',
+                                 exit_price='', exit_type='', actual_holding_days='', stop_price='')
                         trades.append(t)
                         if entry_i >= len(dates):
                             t.update(status='pending_entry', reason='next_session_not_observed'); continue
                         t['entry_date'] = dates[entry_i]
                         exit_i = entry_i + horizon - 1  # Entry day counts as holding day 1.
-                        if exit_i >= len(dates):
-                            t.update(status='pending_exit', reason='holding_period_not_mature'); continue
-                        t['exit_date'] = dates[exit_i]
-                        window = [days.get(x, {}).get('quotes', {}).get(ticker) for x in dates[entry_i:exit_i+1]]
-                        if not all(tradable(q) for q in window):
-                            t.update(status='excluded', reason='missing_suspended_or_invalid_OHLCV'); continue
-                        if locked(window[0]) or locked(window[-1]):
-                            t.update(status='excluded', reason='one_price_entry_or_exit_execution_unverified'); continue
-                        # No silent dividend/split loss. Exclude flagged intervals rather than fake total returns.
+                        t.update(planned_exit_date=dates[exit_i] if exit_i < len(dates) else '',
+                                 exit_price='', exit_type='', actual_holding_days='', stop_price='')
                         prev = d['quotes'].get(ticker)
-                        why = ''
-                        for q in window:
+                        op = None
+                        for j in range(entry_i, min(exit_i+1, len(dates))):
+                            q = days.get(dates[j], {}).get('quotes', {}).get(ticker)
+                            if not tradable(q):
+                                t.update(status='excluded', reason='missing_suspended_or_invalid_OHLCV'); break
+                            if j == entry_i and locked(q):
+                                t.update(status='excluded', reason='one_price_entry_or_exit_execution_unverified'); break
                             why = action_reason(prev, q)
-                            if why:break
+                            if why:
+                                t.update(status='excluded', reason=why); break
+                            if op is None:
+                                op = q['open']
+                                t['entry_open'] = op
+                                t['stop_price'] = op*(1-stop_loss) if stop_loss is not None else ''
+                            price, kind = None, ''
+                            # Strictly greater than 8% loss: touching exactly -8% alone is not a breach.
+                            # Stop-market proxy: gaps fill at opening price; intraday breaches at threshold.
+                            if stop_loss is not None and q['open'] < t['stop_price']:
+                                price, kind = q['open'], 'stop_gap'
+                            elif stop_loss is not None and q['low'] < t['stop_price']:
+                                price, kind = t['stop_price'], 'stop_intraday'
+                            elif j == exit_i:
+                                price, kind = q['close'], 'expiry'
+                            if price is not None:
+                                if locked(q):
+                                    t.update(status='excluded', reason='one_price_entry_or_exit_execution_unverified'); break
+                                gross = price/op-1
+                                net_return = price*(1-slippage)*(1-fee-tax)/(op*(1+slippage)*(1+fee))-1
+                                t.update(status='completed', exit_date=dates[j], exit_price=price,
+                                         exit_close=q['close'], exit_type=kind, actual_holding_days=j-entry_i+1,
+                                         gross_pct=round(gross*100,8), net_pct=round(net_return*100,8))
+                                break
                             prev = q
-                        if why:
-                            t.update(status='excluded', reason=why); continue
-                        op, cl = window[0]['open'], window[-1]['close']
-                        gross = cl / op - 1
-                        net_return = cl * (1-slippage) * (1-fee-tax) / (op * (1+slippage) * (1+fee)) - 1
-                        t.update(status='completed', entry_open=op, exit_close=cl,
-                                 gross_pct=round(gross*100, 8), net_pct=round(net_return*100, 8))
+                        if not t['status']:
+                            t.update(status='pending_exit', reason='holding_period_not_mature')
     return trades
 
 def summarize(trades):
@@ -346,7 +364,8 @@ def summarize(trades):
                       cohorts.append(dict(investor=investor, market=market, streak=streak, horizon=horizon, entry_date=day,
                                           trades=len(vs), equal_weight_net_pct=statistics.mean(vs)))
                   summary.append(dict(investor=investor, market=market, streak=streak, horizon=horizon, signals=len(ts),
-                      completed=len(done), pending=statuses['pending_entry']+statuses['pending_exit'], excluded=statuses['excluded'],
+                      completed=len(done), stopped=sum(t.get('exit_type','').startswith('stop_') for t in done),
+                      stop_rate_pct=100*sum(t.get('exit_type','').startswith('stop_') for t in done)/len(done) if done else '', pending=statuses['pending_entry']+statuses['pending_exit'], excluded=statuses['excluded'],
                       gross_mean_pct=statistics.mean(t['gross_pct'] for t in done) if done else '',
                       net_mean_pct=statistics.mean(values) if values else '',
                       net_median_pct=statistics.median(values) if values else '',
@@ -364,14 +383,15 @@ def write_csv(path, rows):
 
 def report(out, summary, meta):
     rows = ''.join('<tr>'+''.join(f'<td>{html.escape(str(r[k]) if not isinstance(r[k],float) else f"{r[k]:.3f}")}</td>'
-                   for k in ('investor','market','streak','horizon','completed','pending','excluded','gross_mean_pct','net_mean_pct','net_median_pct','net_win_rate_pct'))+'</tr>' for r in summary)
+                   for k in ('investor','market','streak','horizon','completed','stopped','pending','excluded','gross_mean_pct','net_mean_pct','net_median_pct','net_win_rate_pct'))+'</tr>' for r in summary)
     title=f"法人連買回測 {meta['year']}（{'投信' if meta['investor']=='trust' else '外資' if meta['investor']=='foreign' else '外資＋投信'}）"
     doc=f'''<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title><style>body{{font:16px system-ui;max-width:1150px;margin:32px auto;padding:0 16px;color:#182436}}table{{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}}td,th{{border-bottom:1px solid #ddd;padding:10px;text-align:right;white-space:nowrap}}th{{background:#edf2f8}}.scroll{{overflow:auto}}p{{line-height:1.7}}code{{overflow-wrap:anywhere}}</style>
 <h1>{title}</h1><p>截至 {meta['as_of']}；訊號模式：{meta['signal_mode']}。連買達標後下一交易日開盤買入，買入日算第1天；第3／5／10／20個交易日收盤賣出。零或賣超中斷連買，缺值不當成零。</p>
+<p>停損：{'關閉' if not meta['stop_loss'] else str(round(meta['stop_loss']*100,4))+'%'}；以進場開盤價計算，不含交易成本。每日依序檢查開盤與最低價；虧損嚴格超過門檻時，跳空以開盤價、盤中以門檻價模擬賣出，再計滑價及稅費。恰好觸及門檻不算跌破；到期日也先檢查停損。未觸發才到期收盤出場。停損後不再檢查後續價格。日K無法確認成交或價格限制，一價出場保守排除，因此不保證實際損失只到8%。</p>
 <p>foreign＝外資及陸資（不含外資自營商），trust＝投信；各自以本身每日淨買超辨識連買，兩者不混合。歷史每日股票池，排除0開頭及91開頭TDR；不以目前上市名單回篩。含稅費與滑價，未計最低手續費、股數取整或現金利息。未到期另列；一價成交無法驗證、缺價、疑似除權息／分割／減資區間保守排除。</p>
 <p><strong>這是每筆訊號的事件研究，不是固定本金投資組合績效。</strong>不同訊號可能重疊，平均報酬與勝率不能當作可實現的累積／年化報酬；買賣成交仍是日K模擬，非逐筆成交驗證。新下市或停牌缺價排除可能形成選樣偏誤，完整狀態保留於trades.csv。</p>
-<div class="scroll"><table><thead><tr>{''.join('<th>'+s+'</th>' for s in ['法人','市場','連買天數','持有天數','完成','未到期','排除','平均毛報酬%','平均淨報酬%','中位淨報酬%','淨勝率%'])}</tr></thead><tbody>{rows}</tbody></table></div>
+<div class="scroll"><table><thead><tr>{''.join('<th>'+s+'</th>' for s in ['法人','市場','連買天數','持有天數','完成','停損筆數','未到期','排除','平均毛報酬%','平均淨報酬%','中位淨報酬%','淨勝率%'])}</tr></thead><tbody>{rows}</tbody></table></div>
 <p>平均淨報酬已計雙邊手續費各 {meta['fee']*100:.4f}%、賣出稅 {meta['tax']*100:.3f}%、雙邊滑價各 {meta['slippage']*100:.3f}%。另附每日進場批次等權平均，避免訊號多的日期完全主導統計。所有結果均非投資建議。</p></html>'''
     (out/'report.html').write_text(doc,encoding='utf-8')
 
@@ -431,6 +451,43 @@ def self_test():
     assert len(trust)==8 and all(t['investor']=='trust' for t in trust)
     assert trust[0]['net_pct']==ts[0]['net_pct']
     assert len(summarize(ts+trust)[0])==32
+    # Stop tests: apply identically to both investors and all holding horizons.
+    def stop_fixture(n=35):
+        ds,dd=fixture(n)
+        for k,day in enumerate(ds):
+            dd['twse'][day]['quotes']['2330'].update(open=100.,high=101.,low=99.,close=100.,change=0.)
+            dd['twse'][day]['trust_flows']=dict(dd['twse'][day]['flows'])
+        return ds,dd
+    def picked(dd,ds,inv='foreign',stop=.08):
+        return [t for t in study(dd,ds,2026,investor=inv,stop_loss=stop) if t['streak']==3]
+    ds,dd=stop_fixture()
+    dd['twse'][ds[4]]['quotes']['2330']['low']=91.
+    for inv in ('foreign','trust'):
+        result=picked(dd,ds,inv)
+        assert all(t['exit_type']=='stop_intraday' and abs(t['gross_pct']+8)<1e-7 and t['actual_holding_days']==1 for t in result)
+        assert all(t['net_pct'] < -8 for t in result)
+    # Equality is not a breach; expiry still takes the usual closing price.
+    dd['twse'][ds[4]]['quotes']['2330']['low']=92.
+    assert all(t['exit_type']=='expiry' for t in picked(dd,ds))
+    ds,dd=stop_fixture()
+    dd['twse'][ds[5]]['quotes']['2330'].update(open=89.,high=100.,low=88.)
+    assert all(t['exit_type']=='stop_gap' and t['gross_pct']==-11 for t in picked(dd,ds))
+    # Missing prices AFTER actual stop must not exclude an already closed trade.
+    del dd['twse'][ds[6]]['quotes']['2330']
+    assert all(t['status']=='completed' for t in picked(dd,ds))
+    ds,dd=stop_fixture(6)
+    dd['twse'][ds[5]]['quotes']['2330']['low']=91.
+    assert all(t['status']=='completed' for t in picked(dd,ds))
+    assert all(t['status']=='pending_exit' for t in picked(dd,ds,stop=None))
+    ds,dd=stop_fixture()
+    dd['twse'][ds[6]]['quotes']['2330']['low']=91.
+    assert picked(dd,ds)[0]['exit_type']=='stop_intraday'  # Expiry-day stop takes precedence.
+    ds,dd=stop_fixture()
+    dd['twse'][ds[5]]['quotes']['2330'].update(open=90.,high=90.,low=90.,close=90.,change=-10.)
+    assert all(t['status']=='excluded' for t in picked(dd,ds))
+    ds,dd=stop_fixture()
+    assert [t['net_pct'] for t in picked(dd,ds)]==[t['net_pct'] for t in picked(dd,ds,stop=None)]
+    print('PASS: 8% stop, strict threshold, intraday/gap/expiry timing, early exit before maturity, post-exit data isolation, locked limits, both investors, disabled-stop parity')
     print('PASS: independent foreign/trust signals, entry/exit timing, 3/5-day signals, all horizons, costs, first/rolling, missing data, censoring, action and execution exclusions, summaries and date validation')
     return 0
 
@@ -447,12 +504,14 @@ def main(argv=None):
     p.add_argument('--fee',type=float,default=.001425)
     p.add_argument('--tax',type=float,default=.003)
     p.add_argument('--slippage',type=float,default=.0005)
+    p.add_argument('--stop-loss',type=float,default=.08,help='Price loss fraction; default .08; 0 disables stop')
     p.add_argument('--refresh',action='store_true')
     p.add_argument('--offline',action='store_true',help='Use cached calendar and daily files only; no network')
     p.add_argument('--self-test',action='store_true',help='Run deterministic offline backtest tests')
     a=p.parse_args(argv)
     if a.self_test:
         return self_test()
+    if not 0 <= a.stop_loss < 1:p.error('stop-loss must be >=0 and <1')
     now=dt.datetime.now(TZ)
     as_of=dt.date.fromisoformat(a.as_of) if a.as_of else now.date()-dt.timedelta(days=int(now.time()<dt.time(18,30)))
     if as_of>now.date() or (as_of==now.date() and now.time()<dt.time(18,30)):
@@ -466,7 +525,7 @@ def main(argv=None):
     # Allow subsequent January data only when explicitly requested via --as-of, to finish year-end entries.
     if as_of>dt.date(a.year+1,2,28):as_of=dt.date(a.year+1,2,28)
     meta=dict(year=a.year,as_of=as_of.isoformat(),signal_mode=a.signal_mode,fee=a.fee,tax=a.tax,slippage=a.slippage,
-              investor=a.investor,generated_at=now.isoformat(),status='collecting',scope='historical_4digit_stocks_excluding_0_and_91',sources=URLS_AS_LIST)
+              stop_loss=a.stop_loss,investor=a.investor,generated_at=now.isoformat(),status='collecting',scope='historical_4digit_stocks_excluding_0_and_91',sources=URLS_AS_LIST)
     atomic(a.output/'metadata.json',meta)
     try:
         if a.offline:
@@ -497,7 +556,7 @@ def main(argv=None):
         for investor in investors:
             missing=[(m,day) for m in markets for day in dates if len(data[m][day].get('trust_flows' if investor=='trust' else 'flows',{}))<100]
             if missing:raise ValueError(f'Missing {investor} cache on {len(missing)} market-days; rerun without --offline to upgrade cache')
-            trades.extend(study(data,dates,a.year,a.signal_mode,a.fee,a.tax,a.slippage,investor))
+            trades.extend(study(data,dates,a.year,a.signal_mode,a.fee,a.tax,a.slippage,investor,a.stop_loss or None))
         summary,cohorts=summarize(trades)
         meta.update(status='complete',official_sessions=len(dates),last_session=dates[-1],trade_rows=len(trades),
                     note='Event study, not cumulative portfolio performance; see README and report.html')
@@ -511,4 +570,5 @@ def main(argv=None):
 
 URLS_AS_LIST=sorted(set(URLS.values()))+['https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK']
 if __name__=='__main__':raise SystemExit(main())
+
 
