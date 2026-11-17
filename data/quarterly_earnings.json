@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-17T21:24+08:00",
+  "updated_at": "2026-11-17T22:12+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -24823,7 +24823,7 @@
       "publish_date": "2026-11-03",
       "publish_time": "15:13:24",
       "subject": "公告本公司董事會通過115年第三季合併財務報告",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2344&SPOKE_DATE=20261103&SPOKE_TIME=151324&SEQ_NO=1&skey=2344202611031",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/t05st01?co_id=2344&year=115",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -28059,12 +28059,13 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "detail/4583/2026-10-27",
-      "planned_date/4583/2026-10-27:unavailable",
-      "planned_date/8131/2026-10-27:unavailable",
+      "announcement_scan/2026-10-24~2026-10-31:ValueError:announcement schema unavailable",
+      "detail/2344/2026-11-03",
+      "detail/7762/2026-11-03",
+      "planned_date/7762/2026-11-03:unavailable",
       "announcement_scan/2026-11-01~2026-11-17:ValueError:announcement schema unavailable",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3015/2026-Q3:ValueError:announcement schema unavailable",
+      "targeted_mops/3015/2026-Q3:ConnectTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/a;ValueError:announcement schema unavailable",
       "targeted_mops/5225/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6442/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6451/2026-Q3:ValueError:announcement schema unavailable",
@@ -28075,7 +28076,7 @@
     ],
     "historical_errors": [],
     "coverage": {
-      "2026-10-24~2026-10-31": "ok",
+      "2026-10-24~2026-10-31": "failed",
       "2026-11-01~2026-11-17": "failed"
     },
     "calendar_errors": [],
