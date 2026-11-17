@@ -13089,5 +13089,41 @@
         "promoted": false
       }
     ]
+  },
+  {
+    "at": "2026-11-17T10:03:26.654396+00:00",
+    "category": "all",
+    "mode": "pending",
+    "limit": 10,
+    "model": "gpt-5.6-luna",
+    "results": [
+      {
+        "id": "line-1b2054ccb32a567109d3",
+        "status": "success",
+        "audit": {
+          "status": "passed",
+          "issues": [],
+          "blocks": 32,
+          "validation": "transport_only_no_python_content_review"
+        },
+        "usage": {
+          "input_tokens": 2707,
+          "input_tokens_details": {
+            "cache_write_tokens": 2704,
+            "cache_write_tokens_details": {
+              "ttl_12h_tokens": 0,
+              "ttl_30m_tokens": 2704
+            },
+            "cached_tokens": 0
+          },
+          "output_tokens": 5960,
+          "output_tokens_details": {
+            "reasoning_tokens": 230
+          },
+          "total_tokens": 8667
+        },
+        "promoted": false
+      }
+    ]
   }
 ]
