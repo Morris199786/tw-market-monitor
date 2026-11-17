@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-17T15:40+08:00",
+  "updated_at": "2026-11-17T16:43+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28067,10 +28067,10 @@
       "targeted_mops/5225/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6442/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/6451/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/6789/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable",
+      "targeted_mops/6789/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/9912/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/3484/2026-Q3:ValueError:announcement schema unavailable",
-      "targeted_mops/4577/2026-Q3:ValueError:announcement schema unavailable"
+      "targeted_mops/3484/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable",
+      "targeted_mops/4577/2026-Q3:ReadTimeout:HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Read timed out. (read timeout=4);ValueError:announcement schema unavailable"
     ],
     "historical_errors": [],
     "coverage": {
@@ -28079,31 +28079,20 @@
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 7,
+      "attempted": 3,
       "fields_filled": 0,
       "targets": 12,
       "errors": [
         {
-          "key": "6405|2026-Q2",
+          "key": "8291|2026-Q2",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
           ]
         },
         {
-          "key": "6405|2026-Q3",
+          "key": "8291|2026-Q3",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-          ]
-        },
-        {
-          "key": "3623|2026-Q2",
-          "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: /doc/2026Q2.pdf (Caused by C",
-            "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutE",
-            "TimeoutError:financial_news_company_page",
-            "TimeoutError:financial_news_discovery",
-            "TimeoutError:financial_news_discovery",
-            "TimeoutError:news_discovery"
+            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
           ]
         }
       ]
