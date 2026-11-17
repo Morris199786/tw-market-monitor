@@ -26,7 +26,14 @@ def initial(config,now):
 
 def migrate(state,config,now):
     if state.get('strategy')==VERSION:
-        if state['config']!=config:raise ValueError('Account configuration changed; explicit versioned migration required')
+        if state['config']!=config:
+            allowed={'max_positions','min_exposure','max_stock_weight'}
+            changed={k for k in set(state['config'])|set(config) if state['config'].get(k)!=config.get(k)}
+            if not changed<=allowed or any(config.get(k)!=v for k,v in {'max_positions':8,'min_exposure':.2,'max_stock_weight':.3}.items()):
+                raise ValueError('Account configuration changed; explicit versioned migration required')
+            state=deepcopy(state)
+            state.setdefault('configuration_events',[]).append(dict(at=now,reason='User allocation limits: 8 positions, 20% minimum, 30% stock cap',previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
+            state['config']=deepcopy(config)
         return state,None
     if state.get('strategy')!='three-pillar-paper-v1':raise ValueError('Unknown previous account version')
     if state.get('positions') or state.get('trades') or state.get('equity') or state.get('processed_sessions'):
@@ -45,7 +52,7 @@ def frozen_decision(state,proposal):
     if state['decisions'] and stamp(proposal['available_at'])<stamp(state['decisions'][-1]['available_at']):raise ValueError('Cannot backdate availability')
     if state['decisions'] and proposal['date']<state['decisions'][-1]['date']:raise ValueError('Cannot backdate a decision')
     if stamp(proposal['available_at'])<stamp(proposal['date']+'T13:30:00+08:00'):raise ValueError('Not a completed session')
-    if sum(x.get('weight',0) for x in proposal['targets'])<state['config']['min_exposure']-1e-7:raise ValueError('Below user minimum 40% target exposure')
+    if sum(x.get('weight',0) for x in proposal['targets'])<state['config']['min_exposure']-1e-7:raise ValueError('Below configured minimum target exposure')
     targets=proposal['targets'];codes=[t['ticker'] for t in targets]
     if len(set(codes))!=len(codes) or len(codes)>state['config']['max_positions']:raise ValueError('Invalid targets')
     weights=[number(t.get('weight')) for t in targets]

@@ -35,7 +35,7 @@ def market_regime(monitor,day,breadth):
     else:label,exposure='防禦',.55
     return dict(valid=True,date=day,label=label,target_exposure=exposure,cash_floor=1-exposure,score=score,
         ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,reasons=reasons,
-        note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低40%；整體資料無法驗證時本次不發布名單並暫停新調倉，不假設成交')
+        note='透明固定規則，未經績效最佳化；個股不足時用可驗證的大盤ETF補足最低20%；整體資料無法驗證時本次不發布名單並暫停新調倉，不假設成交')
 
 def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
     from ai_signal_model import quarter_signal,research_signal,weighted,clip
@@ -133,7 +133,7 @@ def ensure_floor(targets,core,cfg):
                 out.remove(min(removable,key=lambda y:y['score']))
             x=dict(candidate,weight=0);out.append(x)
         gap=floor-sum(y['weight'] for y in out);x['weight']+=min(room(x),max(0,gap))
-        x['allocation_reason']='依使用者最低40%投資部位規則，以已驗證的大盤ETF補足；不代表短線看多'
+        x['allocation_reason']='依使用者最低20%投資部位規則，以已驗證的大盤ETF補足；不代表短線看多'
     out=[x for x in out if x['weight']>0]
     for x in out:x['weight']=round(x['weight'],8)
     return out,sum(x['weight'] for x in out)>=floor-1e-7

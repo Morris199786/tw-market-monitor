@@ -234,7 +234,7 @@ def _proposal(data,cfg,now,protected=()):
     ranked.sort(key=lambda x:(-x['score'],x['ticker']));targets=allocate(ranked,regime['target_exposure'],cfg)
     core=[dict(x,confidence='最低部位大盤ETF') for x in ranked if x.get('core_eligible')]
     targets,floor_met=ensure_floor(targets,core,cfg)
-    if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低40%目標，本次不發布新名單')
+    if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低20%目標，本次不發布新名單')
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
         model='relative-content-v6：相對動能＋自結加扣分及盈虧轉換＋大戶短效與價格確認＋本業季比較＋證據式研究；不因高波動降權，分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
