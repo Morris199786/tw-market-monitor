@@ -39,13 +39,13 @@
       "ticker": "3664",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "3712|2026-Q2": {
       "ticker": "3712",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "3712|2026-Q3": {
       "ticker": "3712",
@@ -93,31 +93,31 @@
       "ticker": "6405",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "6405|2026-Q3": {
       "ticker": "6405",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "7812|2026-Q2": {
       "ticker": "7812",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "3259|2026-Q3": {
       "ticker": "3259",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "3623|2026-Q2": {
       "ticker": "3623",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-17T20:20:06+08:00"
+      "checked_at": "2026-11-17T22:48:49+08:00"
     },
     "4904|2026-Q3": {
       "ticker": "4904",
@@ -210,7 +210,7 @@
       "notes": []
     },
     "3664|2026-Q2": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -219,13 +219,15 @@
       "notes": []
     },
     "3712|2026-Q2": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
         "gross_margin"
       ],
-      "notes": []
+      "notes": [
+        "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
+      ]
     },
     "3712|2026-Q3": {
       "at": "2026-11-16T17:23:54+08:00",
@@ -299,7 +301,7 @@
       "notes": []
     },
     "6405|2026-Q2": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -310,7 +312,7 @@
       ]
     },
     "6405|2026-Q3": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -321,7 +323,7 @@
       ]
     },
     "7812|2026-Q2": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -332,7 +334,7 @@
       "notes": []
     },
     "3259|2026-Q3": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -341,7 +343,7 @@
       "notes": []
     },
     "3623|2026-Q2": {
-      "at": "2026-11-17T20:20:06+08:00",
+      "at": "2026-11-17T22:48:49+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -349,11 +351,7 @@
       ],
       "notes": [
         "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: /doc/2026Q2.pdf (Caused by C",
-        "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutE",
-        "TimeoutError:financial_news_company_page",
-        "TimeoutError:financial_news_discovery",
-        "TimeoutError:financial_news_discovery",
-        "TimeoutError:news_discovery"
+        "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutE"
       ]
     },
     "4904|2026-Q3": {
@@ -478,11 +476,37 @@
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-17T22:12:13+08:00",
+  "updated_at": "2026-11-17T22:48:49+08:00",
   "last_run": {
-    "attempted": 0,
+    "attempted": 7,
     "fields_filled": 0,
     "targets": 12,
-    "errors": []
+    "errors": [
+      {
+        "key": "3712|2026-Q2",
+        "notes": [
+          "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
+        ]
+      },
+      {
+        "key": "6405|2026-Q2",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+        ]
+      },
+      {
+        "key": "6405|2026-Q3",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+        ]
+      },
+      {
+        "key": "3623|2026-Q2",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: /doc/2026Q2.pdf (Caused by C",
+          "ConnectTimeout:HTTPSConnectionPool(host='www.transtouch.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutE"
+        ]
+      }
+    ]
   }
 }
