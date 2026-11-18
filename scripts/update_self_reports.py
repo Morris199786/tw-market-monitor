@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-09-v39-attention-only-site"
+VERSION = "2026-11-18-v40-restated-eps-label"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -559,6 +559,12 @@ def _recover_mops_eps_layouts(text):
         # Extract precisely the EPS row; do not consume subsequent legal notes.
         tail = section[marker.end():]
         tail = re.sub(r'^\s*(?:[（(]\s*元\s*[）)]|元)\s*', '', tail)
+        # An EPS row may label its values 追溯調整 (also filed as 追朔調整).
+        # Skip only this exact annotation immediately before a numeric cell.
+        # Keep unknown prose rejected; never search ahead for arbitrary numbers.
+        tail = re.sub(
+            r'^\s*(?:[（(]\s*追[溯朔]\s*調整\s*[）)]|追[溯朔]\s*調整)'
+            r'\s*[:：]?\s*(?=[+\-\d(])', '', tail)
         row = re.split(r'\s[5-9]\s*[.、]\s*(?:有無|完整財務|其他)', tail, maxsplit=1)[0]
         row = row[:160]
         # Matches parentheses negative EPS and negative percentages, plus text YoY.
@@ -3218,6 +3224,7 @@ if __name__ == "__main__":
         commit_generated_data()
     else:
         main()
+
 
 
 
