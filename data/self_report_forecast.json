@@ -1,23 +1,11 @@
 {
-  "updated_at": "2026-11-17T22:05:11+08:00",
-  "prediction_date": "2026-11-18",
-  "asof": "2026-11-17",
+  "updated_at": "2026-11-18T22:08:38+08:00",
+  "prediction_date": "2026-11-19",
+  "asof": "2026-11-18",
   "picks": [
     {
-      "ticker": "2471",
-      "name": "資通",
-      "market": "twse",
-      "probability": null,
-      "reasons": [
-        "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
-        "近3日注意3次、近5日注意3次",
-        "近30日未公布自結",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "6614",
-      "name": "資拓宏宇",
+      "ticker": "2305",
+      "name": "全友",
       "market": "twse",
       "probability": null,
       "reasons": [
@@ -28,112 +16,52 @@
       ]
     },
     {
-      "ticker": "4174",
-      "name": "浩鼎",
+      "ticker": "3287",
+      "name": "廣寰科",
       "market": "tpex",
-      "probability": 0.24746149246587534,
+      "probability": 0.24115733879854945,
+      "reasons": [
+        "最近注意交易距今0交易日",
+        "近3日注意3次、近5日注意3次、近20日注意7次",
+        "保留原有前日注意、近5日注意3次及舊模型評分",
+        "預測月份2026-10尚未公告EPS／自結"
+      ]
+    },
+    {
+      "ticker": "8227",
+      "name": "巨有科技",
+      "market": "tpex",
+      "probability": 0.24108251427476293,
       "reasons": [
         "最近注意交易距今0交易日",
         "近3日注意2次、近5日注意3次、近20日注意3次",
         "保留原有前日注意、近5日注意3次及舊模型評分",
         "預測月份2026-10尚未公告EPS／自結"
       ]
-    },
-    {
-      "ticker": "6221",
-      "name": "晉泰",
-      "market": "tpex",
-      "probability": 0.24618068558860415,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意2次、近5日注意3次、近20日注意5次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "6140",
-      "name": "訊達電腦",
-      "market": "tpex",
-      "probability": 0.24413494026720556,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意3次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "6234",
-      "name": "高僑",
-      "market": "tpex",
-      "probability": 0.24413494026720556,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意6次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "7584",
-      "name": "樂意",
-      "market": "tpex",
-      "probability": 0.24413494026720556,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意3次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "8084",
-      "name": "巨虹",
-      "market": "tpex",
-      "probability": 0.24413494026720556,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意4次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
-    },
-    {
-      "ticker": "7717",
-      "name": "萊德光電-KY",
-      "market": "tpex",
-      "probability": 0.23279931984232724,
-      "reasons": [
-        "最近注意交易距今0交易日",
-        "近3日注意3次、近5日注意3次、近20日注意3次",
-        "保留原有前日注意、近5日注意3次及舊模型評分",
-        "預測月份2026-10尚未公告EPS／自結"
-      ]
     }
   ],
-  "announcement_asof": "2026-11-17",
+  "announcement_asof": "2026-11-18",
   "model_version": "2026-10-21-listed-rule-A-otc-original",
   "backtest": {
     "start": "2026-10-21",
-    "end": "2026-11-17",
+    "end": "2026-11-18",
     "twse": {
-      "predictions": 60,
+      "predictions": 62,
       "hits": 30,
-      "actual": 37,
-      "precision": 0.5,
-      "recall": 0.8108108108108109,
-      "f1": 0.6185567010309279,
-      "settled_days": 18
+      "actual": 38,
+      "precision": 0.4838709677419355,
+      "recall": 0.7894736842105263,
+      "f1": 0.6,
+      "settled_days": 19
     },
     "tpex": {
-      "predictions": 34,
-      "hits": 25,
-      "actual": 33,
-      "precision": 0.7352941176470589,
-      "recall": 0.7575757575757576,
-      "f1": 0.746268656716418,
-      "settled_days": 18
+      "predictions": 41,
+      "hits": 26,
+      "actual": 35,
+      "precision": 0.6341463414634146,
+      "recall": 0.7428571428571429,
+      "f1": 0.6842105263157895,
+      "settled_days": 19
     }
   },
   "backtest_detail": {
@@ -141,22 +69,22 @@
     "start": "2026-10-21",
     "forward": {
       "twse": {
-        "predictions": 60,
+        "predictions": 62,
         "hits": 30,
-        "actual": 37,
-        "precision": 0.5,
-        "recall": 0.8108108108108109,
-        "f1": 0.6185567010309279,
-        "settled_days": 18
+        "actual": 38,
+        "precision": 0.4838709677419355,
+        "recall": 0.7894736842105263,
+        "f1": 0.6,
+        "settled_days": 19
       },
       "tpex": {
-        "predictions": 34,
-        "hits": 25,
-        "actual": 33,
-        "precision": 0.7352941176470589,
-        "recall": 0.7575757575757576,
-        "f1": 0.746268656716418,
-        "settled_days": 18
+        "predictions": 41,
+        "hits": 26,
+        "actual": 35,
+        "precision": 0.6341463414634146,
+        "recall": 0.7428571428571429,
+        "f1": 0.6842105263157895,
+        "settled_days": 19
       }
     },
     "includes_provisional": true,
@@ -670,7 +598,7 @@
       },
       {
         "date": "2026-11-17",
-        "provisional": true,
+        "provisional": false,
         "twse": {
           "predictions": 5,
           "hits": 0,
@@ -694,11 +622,41 @@
             "6751"
           ]
         }
+      },
+      {
+        "date": "2026-11-18",
+        "provisional": true,
+        "twse": {
+          "predictions": 2,
+          "hits": 0,
+          "actual": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "hit_tickers": [],
+          "missed_tickers": [
+            "7610"
+          ]
+        },
+        "tpex": {
+          "predictions": 7,
+          "hits": 1,
+          "actual": 2,
+          "precision": 0.14285714285714285,
+          "recall": 0.5,
+          "f1": 0.2222222222222222,
+          "hit_tickers": [
+            "7717"
+          ],
+          "missed_tickers": [
+            "6148"
+          ]
+        }
       }
     ]
   },
   "pending_dates": [
-    "2026-11-18"
+    "2026-11-19"
   ],
   "evaluation_policy": "每個注意交易截止日只計一次；公告觀察窗為截止日之後至下一交易日（含休市公告）；保留原始預測，不以公告後名單回算績效。",
   "forward_forecasts": {
@@ -2231,6 +2189,48 @@
           ]
         }
       ]
+    },
+    "2026-11-19": {
+      "asof": "2026-11-18",
+      "model_version": "2026-10-21-listed-rule-A-otc-original",
+      "picks": [
+        {
+          "ticker": "2305",
+          "name": "全友",
+          "market": "twse",
+          "probability": null,
+          "reasons": [
+            "A規則：前一交易日有效注意至少1次；排除純第10～13款；近30日有自結即排除；依近5/3日注意次數排序",
+            "近3日注意1次、近5日注意1次",
+            "近30日未公布自結",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "3287",
+          "name": "廣寰科",
+          "market": "tpex",
+          "probability": 0.24115733879854945,
+          "reasons": [
+            "最近注意交易距今0交易日",
+            "近3日注意3次、近5日注意3次、近20日注意7次",
+            "保留原有前日注意、近5日注意3次及舊模型評分",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        },
+        {
+          "ticker": "8227",
+          "name": "巨有科技",
+          "market": "tpex",
+          "probability": 0.24108251427476293,
+          "reasons": [
+            "最近注意交易距今0交易日",
+            "近3日注意2次、近5日注意3次、近20日注意3次",
+            "保留原有前日注意、近5日注意3次及舊模型評分",
+            "預測月份2026-10尚未公告EPS／自結"
+          ]
+        }
+      ]
     }
   },
   "forward_settlements": {
@@ -2281,7 +2281,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-10-22": {
       "actuals": {
@@ -2325,7 +2325,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-10-27": {
       "actuals": {
@@ -2370,7 +2370,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-10-28": {
       "actuals": {
@@ -2411,7 +2411,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-10-29": {
       "actuals": {
@@ -2451,7 +2451,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-10-30": {
       "actuals": {
@@ -2486,7 +2486,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-02": {
       "actuals": {
@@ -2525,7 +2525,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-03": {
       "actuals": {
@@ -2571,7 +2571,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-04": {
       "actuals": {
@@ -2602,7 +2602,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-05": {
       "actuals": {
@@ -2647,7 +2647,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-06": {
       "actuals": {
@@ -2696,7 +2696,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-09": {
       "actuals": {
@@ -2756,7 +2756,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-10": {
       "actuals": {
@@ -2794,7 +2794,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-11": {
       "actuals": {
@@ -2825,7 +2825,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-12": {
       "actuals": {
@@ -2867,7 +2867,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-13": {
       "actuals": {
@@ -2908,7 +2908,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-16": {
       "actuals": {
@@ -2951,7 +2951,7 @@
       },
       "provisional": false,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     },
     "2026-11-17": {
       "actuals": {
@@ -2986,22 +2986,64 @@
           ]
         }
       },
+      "provisional": false,
+      "source": "site_history_signal_window_v1",
+      "verified_at": "2026-11-18T22:07:00+08:00"
+    },
+    "2026-11-18": {
+      "actuals": {
+        "twse": [
+          "7610"
+        ],
+        "tpex": [
+          "6148",
+          "7717"
+        ]
+      },
+      "metrics": {
+        "twse": {
+          "predictions": 2,
+          "hits": 0,
+          "actual": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "hit_tickers": [],
+          "missed_tickers": [
+            "7610"
+          ]
+        },
+        "tpex": {
+          "predictions": 7,
+          "hits": 1,
+          "actual": 2,
+          "precision": 0.14285714285714285,
+          "recall": 0.5,
+          "f1": 0.2222222222222222,
+          "hit_tickers": [
+            "7717"
+          ],
+          "missed_tickers": [
+            "6148"
+          ]
+        }
+      },
       "provisional": true,
       "source": "site_history_signal_window_v1",
-      "verified_at": "2026-11-17T22:04:00+08:00"
+      "verified_at": "2026-11-18T22:07:00+08:00"
     }
   },
   "source_status": {
     "twse": {
       "ok": true,
-      "rows": 1616,
-      "source": "https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate=20260701&endDate=20261117",
+      "rows": 1625,
+      "source": "https://www.twse.com.tw/rwd/zh/announcement/notice?response=json&startDate=20260701&endDate=20261118",
       "offline": false
     },
     "tpex": {
       "ok": true,
-      "rows": 1653,
-      "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=2026/07/01&endDate=2026/11/17&response=json",
+      "rows": 1668,
+      "source": "https://www.tpex.org.tw/www/zh-tw/bulletin/attention?startDate=2026/07/01&endDate=2026/11/18&response=json",
       "offline": false
     }
   }
