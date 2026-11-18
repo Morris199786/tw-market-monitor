@@ -147,13 +147,13 @@
       "ticker": "6441",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-18T08:09:46+08:00"
+      "checked_at": "2026-11-18T14:52:00+08:00"
     },
     "6895|2026-Q2": {
       "ticker": "6895",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-18T08:09:46+08:00"
+      "checked_at": "2026-11-18T14:52:00+08:00"
     },
     "2327|2026-Q3": {
       "ticker": "2327",
@@ -165,7 +165,7 @@
       "ticker": "3718",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-18T08:09:46+08:00"
+      "checked_at": "2026-11-18T14:52:00+08:00"
     },
     "8084|2026-Q3": {
       "ticker": "8084",
@@ -397,7 +397,7 @@
       "notes": []
     },
     "6441|2026-Q2": {
-      "at": "2026-11-18T08:09:46+08:00",
+      "at": "2026-11-18T14:52:00+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -406,7 +406,7 @@
       "notes": []
     },
     "6895|2026-Q2": {
-      "at": "2026-11-18T08:09:46+08:00",
+      "at": "2026-11-18T14:52:00+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -424,7 +424,7 @@
       "notes": []
     },
     "3718|2026-Q2": {
-      "at": "2026-11-18T08:09:46+08:00",
+      "at": "2026-11-18T14:52:00+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -478,11 +478,18 @@
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-18T14:01:11+08:00",
+  "updated_at": "2026-11-18T14:52:00+08:00",
   "last_run": {
-    "attempted": 0,
+    "attempted": 3,
     "fields_filled": 0,
     "targets": 12,
-    "errors": []
+    "errors": [
+      {
+        "key": "3718|2026-Q2",
+        "notes": [
+          "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
+        ]
+      }
+    ]
   }
 }
