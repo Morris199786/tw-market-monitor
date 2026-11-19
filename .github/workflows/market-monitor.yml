@@ -8,6 +8,7 @@ permissions:
 concurrency:
   group: tw-market-data-writer
   cancel-in-progress: false
+  queue: max
 jobs:
   update:
     runs-on: ubuntu-latest
