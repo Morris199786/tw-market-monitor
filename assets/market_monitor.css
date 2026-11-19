@@ -75,3 +75,29 @@
 #marketMonitor .mb-nav button{flex:1;background:transparent;color:inherit;border:0;border-bottom:2px solid transparent;border-radius:0;padding:.7rem .2rem}
 #marketMonitor .mb-nav button[aria-pressed=true]{color:#248398;border-bottom-color:currentColor;font-weight:700}
 .mb-panel{max-width:850px;margin:auto}.mb-tools{display:flex;gap:.5rem}.mb-panel article{padding:1rem 0}.mb-panel article>div{margin:1rem 0;font-weight:600}.mb-panel svg{display:block;width:100%;touch-action:pan-y}.mb-panel details{margin-top:1rem}.mb-panel p{font-variant-numeric:tabular-nums;line-height:1.65}
+
+
+#marketMonitor .mb-tools{flex-wrap:wrap;gap:6px}
+#marketMonitor .mb-tools select{font-size:1rem;max-width:100%;padding:.45rem .55rem}
+.mb-heading,.mb-legend{display:flex;align-items:center;justify-content:space-between;gap:.6rem}
+.mb-heading h2{font-size:1.3rem;margin:.25rem 0}
+.mb-heading time,.mb-note,.mb-stats span,.mb-stats small{color:var(--muted);font-size:.82rem}
+.mb-stats,.mb-chart,.mb-details{border:1px solid var(--line,#d6dce3);border-radius:12px;background:var(--card,#fff);color:var(--ink);font-variant-numeric:tabular-nums}
+.mb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(9rem,100%),1fr));gap:.8rem;margin:.65rem 0;padding:.8rem}
+.mb-stats strong,.mb-stats small{display:block}
+.mb-stats strong{font-size:1.32rem;line-height:1.45}
+.mb-chart{margin:.55rem 0;padding:.65rem .5rem}
+.mb-chart p{margin:.7rem .25rem;font-size:.88rem}
+.mb-legend{justify-content:flex-start;flex-wrap:wrap;padding:0 .25rem;font-size:.86rem;font-weight:650}
+.mb-legend span::before{content:'';display:inline-block;width:1.25em;vertical-align:middle;border-top:3px solid var(--series);margin-right:.35em}
+.mb-legend .mb-dashed::before{border-top-style:dashed}
+.mb-note{display:block;line-height:1.5}
+.mb-details{overflow:hidden}
+.mb-details summary{padding:.6rem .85rem}
+.mb-scroll{max-height:55vh;overflow:auto}
+#marketMonitor .mb-details table{width:max-content;min-width:100%;border-spacing:0;font-size:.85rem}
+#marketMonitor .mb-details :is(th,td){padding:.48rem .65rem;text-align:right;white-space:nowrap;border-top:1px solid var(--line,#d6dce3)}
+#marketMonitor .mb-details th{background:var(--card,#fff);color:var(--ink)}
+.mb-details thead th{position:sticky;top:0;z-index:1}
+#marketMonitor .mb-details tr>:first-child{position:sticky;left:0;text-align:left}
+.mb-details thead th:first-child{z-index:2}
