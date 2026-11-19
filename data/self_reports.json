@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-19T16:52+08:00",
+  "updated_at": "2026-11-19T18:29+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-18-v40-restated-eps-label",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2529,21 +2529,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 106,
+          "rows": 156,
           "hits": 4
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 106,
+          "rows": 156,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 106,
+          "rows": 156,
           "hits": 0
         },
         {
@@ -2571,21 +2571,20 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 0,
+          "error": "ConnectionError(ReadTimeoutError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Read timed out.\"))"
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 156,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 107,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 108,
+          "rows": 156,
           "hits": 0
         },
         {
@@ -2599,13 +2598,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7544b45c6870>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mops.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mops.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7544b45c6fc0>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2761,7 +2761,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2338",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2809,7 +2809,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2440",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2834,7 +2834,7 @@
           "mode": "company_rescue",
           "ticker": "2474",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2865,10 +2865,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2707",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ReadTimeout;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -2890,7 +2889,7 @@
           "mode": "company_rescue",
           "ticker": "2882",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2946,7 +2945,7 @@
           "mode": "company_rescue",
           "ticker": "3045",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -3026,7 +3025,7 @@
           "mode": "company_rescue",
           "ticker": "4958",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -3042,7 +3041,7 @@
           "mode": "company_rescue",
           "ticker": "5215",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -3129,7 +3128,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6869",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3138,7 +3137,7 @@
           "mode": "company_rescue",
           "ticker": "6949",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -3170,7 +3169,7 @@
           "mode": "company_rescue",
           "ticker": "8499",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
