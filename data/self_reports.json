@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-19T13:11+08:00",
+  "updated_at": "2026-11-19T14:18+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-18-v40-restated-eps-label",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2529,21 +2529,21 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 11,
+          "rows": 26,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 11,
+          "rows": 26,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 11,
+          "rows": 26,
           "hits": 0
         },
         {
@@ -2578,14 +2578,13 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 11,
-          "hits": 0
+          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mopsov.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mopsov.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 11,
+          "rows": 26,
           "hits": 0
         },
         {
@@ -2626,7 +2625,7 @@
             },
             {
               "market": "tpex",
-              "rows": 62,
+              "rows": 54,
               "ticker_pool": 0
             }
           ],
@@ -2755,7 +2754,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2328",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2779,7 +2778,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2371",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2835,7 +2834,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2474",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2907,7 +2906,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2887",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2915,7 +2914,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2912",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2955,7 +2954,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3380",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2964,7 +2963,7 @@
           "mode": "company_rescue",
           "ticker": "3518",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2995,7 +2994,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3701",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3019,7 +3018,7 @@
         {
           "mode": "company_rescue",
           "ticker": "4938",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3194,7 +3193,7 @@
     },
     "tpex": {
       "ok": true,
-      "rows": 62,
+      "rows": 54,
       "self_reports": 0,
       "error": ""
     }
