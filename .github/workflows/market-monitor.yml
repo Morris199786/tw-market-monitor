@@ -25,11 +25,21 @@ jobs:
       - name: Update monitor
         if: ${{ !cancelled() }}
         run: python scripts/update_market_monitor.py
+      - uses: actions/cache@v4
+        if: ${{ !cancelled() }}
+        with:
+          path: .cache/market-breadth-v1
+          key: market-breadth-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: market-breadth-v1-
+      - name: Update market breadth
+        if: ${{ !cancelled() }}
+        run: python scripts/update_market_breadth.py
       - name: Save monitor data
         if: ${{ always() }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ -f data/market_breadth.json ]; then git add data/market_breadth.json; fi
           git add data/market_monitor.json
           if [ -f data/us_market_monitor.json ]; then git add data/us_market_monitor.json; fi
           if git diff --cached --quiet; then exit 0; fi
@@ -39,4 +49,5 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+
 
