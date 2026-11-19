@@ -1,0 +1,69 @@
+name: Backfill Taiwan market breadth
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+concurrency:
+  group: tw-market-monitor-update
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache/restore@v4
+        with:
+          path: .cache/market-breadth-v1
+          key: market-breadth-v1-backfill-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: market-breadth-v1-
+      - name: Download historical quotes and calculate breadth
+        run: python scripts/update_market_breadth.py --start-year 2024 --budget-seconds 19200
+      - name: Save progress
+        if: ${{ !cancelled() && hashFiles('.cache/market-breadth-v1/**') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/market-breadth-v1
+          key: market-breadth-v1-backfill-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Verify market coverage
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('data')
+          data = json.loads((root / 'market_breadth.json').read_text())
+          monitor = json.loads((root / 'market_monitor.json').read_text())
+          expected = {row['date'] for row in monitor['raw']
+                      if '2024-01-01' <= row['date'] <= monitor['as_of_date'] and row.get('index') is not None}
+          if not expected:
+              raise SystemExit('Trading calendar unavailable')
+          for market in ('twse', 'tpex', 'all'):
+              valid = {row['date'] for row in data['series'][market]
+                       if row.get('complete') and all(row.get(k) is not None for k in ('ad', 'pct20', 'pct60'))}
+              missing = sorted(expected - valid)
+              print(f'{market}: {len(missing)} missing, first dates: {missing[:10]}')
+              if missing:
+                  raise SystemExit('History is incomplete; cached quotes can be reused on next run')
+          if not data['complete'] or any(data['missing_dates'].values()):
+              raise SystemExit('Unresolved historical quotes')
+          PY
+      - name: Publish verified history
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/market_breadth.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: backfill verified Taiwan market breadth'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
