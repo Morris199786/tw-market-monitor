@@ -375,3 +375,21 @@ html[data-theme="dark"] #quarterlyEarningsPanel .ec-current{background:rgba(145,
   left:50%;right:auto;transform:translateX(-50%);
  }
 }
+
+
+/* Global per-browser financial metric order controls. */
+#earningsMetricOrder{margin:0 0 14px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)}
+#earningsMetricOrder[hidden]{display:none!important}
+#earningsMetricOrder>summary{padding:13px 15px;cursor:pointer;font-weight:700;line-height:1.6}
+#earningsMetricOrder [data-order-current]{font-size:12px;font-weight:400;color:var(--muted);margin-left:12px;display:inline-block}
+#earningsMetricOrder .emo-content{padding:0 15px 14px}
+#earningsMetricOrder p{font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 10px}
+#earningsMetricOrder .emo-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
+#earningsMetricOrder .emo-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:10px}
+#earningsMetricOrder .emo-list li>div{display:flex;gap:6px}
+#earningsMetricOrder button{font:inherit;min-width:44px;min-height:44px;padding:7px 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink);cursor:pointer}
+#earningsMetricOrder button:disabled{opacity:.3;cursor:default}
+#earningsMetricOrder button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#earningsMetricOrder .emo-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#earningsMetricOrder [data-order-save]{background:var(--ink);color:var(--bg);font-weight:700}
+#earningsMetricOrder .emo-status{margin:10px 0 0}
