@@ -4,6 +4,8 @@ import io
 import json
 import math
 import re
+import time
+import urllib.error
 import sys
 import urllib.request
 import zipfile
@@ -93,8 +95,16 @@ def rows_from(margin, prices, current_month):
 
 def fetch(url):
     request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Market Monitor)'})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read()
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return response.read()
+        except (TimeoutError, urllib.error.URLError) as exc:
+            if isinstance(exc, urllib.error.HTTPError) and exc.code not in (429, 500, 502, 503, 504):
+                raise
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
 
 
 def main():
@@ -132,7 +142,10 @@ def main():
     print(f'US monitor: {len(rows)} months; latest {payload["as_of_month"]}; {len(errors)} source errors')
     for error in errors:
         print(error, file=sys.stderr)
-    return 1 if errors else 0
+    if errors and rows and all(e.startswith('FRED:') for e in errors) and prices:
+        print('::warning::FRED unavailable. Retained saved S&P 500 history; missing months remain blank.')
+        return 0
+    return 1 if errors or not rows else 0
 
 
 if __name__ == '__main__':
