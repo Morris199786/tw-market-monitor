@@ -33,3 +33,17 @@ html[data-theme="dark"] #ai{--ap-accent:#83b9db;--ap-tint:#20384c}html[data-them
 .ap-position-toggle[aria-expanded=true] i{transform:rotate(225deg)}
 #ai .ap-position-detail[hidden]{display:none}
 #ai .ap-inventory .ap-position-detail td{white-space:normal;background:var(--ap-tint);padding:12px}
+
+/* Keep the six inventory columns together on a portrait phone. */
+@media (max-width: 540px) {
+  #ai .ap-inventory table:has(thead th:nth-child(6)) :is(th,td) {
+    padding-inline: 2px;
+  }
+  #ai .ap-inventory table:has(thead th:nth-child(6)) thead th {
+    white-space: normal;
+    line-height: 1.25;
+  }
+  #ai .ap-inventory .ap-position-toggle {
+    max-width: 5em;
+  }
+}
