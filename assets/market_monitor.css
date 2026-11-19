@@ -70,3 +70,8 @@
   #marketMonitor .mm-us-month dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
   #marketMonitor .mm-us-month dd { font-size: 21px; }
 }
+
+#marketMonitor .mb-nav{display:flex;gap:0;border-bottom:1px solid #8994a655;margin:.5rem 0 1rem}
+#marketMonitor .mb-nav button{flex:1;background:transparent;color:inherit;border:0;border-bottom:2px solid transparent;border-radius:0;padding:.7rem .2rem}
+#marketMonitor .mb-nav button[aria-pressed=true]{color:#248398;border-bottom-color:currentColor;font-weight:700}
+.mb-panel{max-width:850px;margin:auto}.mb-tools{display:flex;gap:.5rem}.mb-panel article{padding:1rem 0}.mb-panel article>div{margin:1rem 0;font-weight:600}.mb-panel svg{display:block;width:100%;touch-action:pan-y}.mb-panel details{margin-top:1rem}.mb-panel p{font-variant-numeric:tabular-nums;line-height:1.65}
