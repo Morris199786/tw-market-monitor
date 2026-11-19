@@ -26,7 +26,8 @@ jobs:
       - name: Update monitor
         if: ${{ !cancelled() }}
         run: python scripts/update_market_monitor.py
-      - uses: actions/cache@v4
+      - id: breadth-cache
+        uses: actions/cache/restore@v4
         if: ${{ !cancelled() }}
         with:
           path: .cache/market-breadth-v1
@@ -35,6 +36,12 @@ jobs:
       - name: Update market breadth
         if: ${{ !cancelled() }}
         run: python scripts/update_market_breadth.py
+      - name: Save downloaded breadth history
+        if: ${{ !cancelled() && steps.breadth-cache.outputs.cache-hit != 'true' && hashFiles('.cache/market-breadth-v1/**') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/market-breadth-v1
+          key: market-breadth-v1-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Save monitor data
         if: ${{ always() }}
         run: |
