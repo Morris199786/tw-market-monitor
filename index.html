@@ -67,7 +67,7 @@
   }
 </style>
 
-<link rel="stylesheet" href="./assets/market_monitor.css?v=20261120-composite-table-v1">
+<link rel="stylesheet" href="./assets/market_monitor.css?v=20261120-recovery-evidence-v2">
 <style id="site-dark-palette-20261020">
 /* 深色模式統一為參考網站的石墨灰色系；淺色模式不受影響 */
 html[data-theme="dark"]{
@@ -199,7 +199,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
 <section id="monthlyRevenue" class="page" hidden><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
 <section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>每日外資買賣超、融資與大盤綜合燈號</p></div></div>
-<section class="card" data-tw-risk aria-label="大盤綜合燈號" style="padding:12px 16px;margin-bottom:10px"><div>大盤綜合燈號　<strong>載入中</strong>　<small></small></div><div data-summary></div><details><summary>查看判斷依據</summary><p data-factors></p><p>黃燈：融資黃或紅，加權收盤距近 60 日高點不超過 3%，站上 20 日線的占比低於 50%，且比近 20 日高點少至少 15 個百分點。</p><p>黃紅燈：資金交集紅燈、20 日市場廣度轉弱、騰落轉弱，且外資紅燈或站上 60 日線的占比低於 50%。</p><p>紅燈：當日資金交集與外資皆紅、20 日市場廣度轉弱，且近 5 個交易日至少 3 天資金交集亮紅。符合多級時顯示最高級，其餘為綠燈。</p><p>廣度採上市櫃合計。20 日廣度轉弱指占比低於 40%，或低於 50% 且比近 10 日高點少至少 15 個百分點。騰落轉弱指近 5 日累計上漲減下跌家數為負，且至少 3 日為負。</p></details></section>
+<section class="card" data-tw-risk aria-label="大盤綜合燈號" style="padding:12px 16px;margin-bottom:10px"><div>大盤綜合燈號　<strong>載入中</strong>　<small></small></div><div data-summary></div><details><summary>燈號判斷依據與退燈條件</summary><p data-factors></p></details></section>
 <div class="mm-tools"><label>年份 <select data-mm-year aria-label="大盤監控年份"></select></label><label>月份 <select data-mm-month aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
 <div class="status" data-mm-status>開啟分頁後載入資料</div>
 
@@ -306,7 +306,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-<script src="./assets/market_monitor.js?v=20261120-composite-table-v1"></script>
+<script src="./assets/market_monitor.js?v=20261120-recovery-evidence-v2"></script>
 <script>
 (function(){
   const wrap = document.getElementById("mobilePageNav");
@@ -510,30 +510,3 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/pattern_screen.js?v=20261114-separated-v5"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
