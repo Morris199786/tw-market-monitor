@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-20T08:04+08:00",
+  "updated_at": "2026-11-20T08:35+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-18-v40-restated-eps-label",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2557,7 +2557,8 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer')))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2906,7 +2907,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2905",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2922,10 +2923,9 @@
         {
           "mode": "company_rescue",
           "ticker": "3008",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
