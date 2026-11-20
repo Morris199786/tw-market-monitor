@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-20T20:44+08:00",
+  "updated_at": "2026-11-20T21:20+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28105,7 +28105,8 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "announcement_scan/2026-10-24~2026-10-31:ValueError:announcement schema unavailable",
+      "planned_date/4583/2026-10-27:unavailable",
+      "planned_date/8131/2026-10-27:unavailable",
       "announcement_scan/2026-11-01~2026-11-20:ValueError:announcement schema unavailable",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
       "targeted_mops/3015/2026-Q3:ValueError:announcement schema unavailable",
@@ -28115,12 +28116,12 @@
     ],
     "historical_errors": [],
     "coverage": {
-      "2026-10-24~2026-10-31": "failed",
+      "2026-10-24~2026-10-31": "ok",
       "2026-11-01~2026-11-20": "failed"
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 2,
+      "attempted": 0,
       "fields_filled": 0,
       "targets": 12,
       "errors": []
