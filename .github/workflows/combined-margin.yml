@@ -1,0 +1,299 @@
+name: 上市櫃融資歷史回補與每日更新
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/combined-margin.yml'
+      - 'data/market_monitor.json'
+      - 'data/history/monitor-funds-2008-2023.json'
+  schedule:
+    - cron: '35 14,20 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: combined-market-margin
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Prepare update_tpex_margin.py
+        run: |
+          cat > "$RUNNER_TEMP/update_tpex_margin.py" <<'SOURCE'
+          """Maintain the TPEx cash-balance series for the Taiwan monitor, in Taiwan dollars."""
+          import json
+          import re
+          import sys
+          import time
+          import unicodedata
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          DEST = Path("data/market_margin_tpex.json")
+          URL = "https://www.tpex.org.tw/www/zh-tw/margin/balance"
+
+
+          def parse_report(report, day):
+              if report.get("date") != day.replace("-", "") or report.get("stat") != "ok":
+                  raise ValueError(f"{day}: missing report or report date mismatch")
+              for table in report["tables"]:
+                  fields = table.get("fields", [])
+                  if "資餘額" not in fields:
+                      continue
+                  previous = next(i for i, name in enumerate(fields) if name.startswith("前資餘額"))
+                  current = fields.index("資餘額")
+                  rows = [r for r in table.get("summary", []) if len(r) > current and
+                          unicodedata.normalize("NFKC", str(r[1])).replace(" ", "") in
+                          ("融資金(仟元)", "融資金(千元)")]
+                  if len(rows) != 1:
+                      continue
+                  amounts = [str(rows[0][i]).strip().replace(",", "") for i in (previous, current)]
+                  if all(re.fullmatch(r"[0-9]+", amount) and int(amount) > 0 for amount in amounts):
+                      return [int(amount) * 1000 for amount in amounts]
+              raise ValueError(f"{day}: missing cash summary")
+
+
+          def fetch(day):
+              url = URL + "?" + urlencode({"date": day.replace("-", "/"), "response": "json"})
+              request = Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
+              for attempt in range(3):
+                  try:
+                      with urlopen(request, timeout=20) as response:
+                          return parse_report(json.load(response), day)
+                  except (OSError, ValueError, KeyError, StopIteration) as exc:
+                      if attempt == 2:
+                          raise RuntimeError(f"{day}: {exc}") from exc
+                      time.sleep(2 ** (attempt + 1))
+
+
+          def main():
+              recent = json.loads(Path("data/market_monitor.json").read_text())["rows"]
+              archive = json.loads(Path("data/history/monitor-funds-2008-2023.json").read_text())
+              days = sorted({r["date"] for r in archive + recent})
+              result = json.loads(DEST.read_text()) if DEST.exists() else {"unit": "TWD", "rows": {}}
+              rows = result["rows"]
+              due = sorted(set(days[-3:]) | (set(days) - rows.keys()), reverse=True)
+
+              def save():
+                  tmp = DEST.with_suffix(".tmp")
+                  tmp.write_text(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n")
+                  tmp.replace(DEST)
+
+              deadline = time.monotonic() + 4 * 60 * 60
+              failures = 0
+              consecutive = 0
+              try:
+                  for i, day in enumerate(due):
+                      try:
+                          rows[day] = fetch(day)
+                          consecutive = 0
+                      except RuntimeError as exc:
+                          print(exc, file=sys.stderr, flush=True)
+                          failures += 1
+                          consecutive += 1
+                      if i % 25 == 0:
+                          save()
+                          print(f"{day}: {len(rows.keys() & set(days))}/{len(days)}", flush=True)
+                      if consecutive >= 5 or time.monotonic() >= deadline:
+                          break
+                      time.sleep(0.55)
+              finally:
+                  save()
+              missing = set(days) - rows.keys()
+              print(f"Expected {len(days)}, missing {len(missing)}, request failures {failures}.")
+              return int(bool(missing or failures))
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+          SOURCE
+      - name: Prepare backtest_combined_margin.cjs
+        run: |
+          cat > "$RUNNER_TEMP/backtest_combined_margin.cjs" <<'SOURCE'
+          // Run the site's actual signal functions against the same daily inputs as the dashboard.
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          const read = file => JSON.parse(fs.readFileSync('data/' + file, 'utf8'));
+          const source = fs.readFileSync('assets/market_monitor.js', 'utf8');
+          const end = source.indexOf('function paintTwRisk(');
+          if (end < 0) throw Error('Cannot locate risk engine');
+          const engine = {};
+          vm.runInNewContext(source.slice(0, end), engine);
+          const funds = read('history/monitor-funds-2008-2023.json').concat(read('market_monitor.json').rows);
+          const breadth = read('history/monitor-breadth-2008-2023.json').all.concat(read('market_breadth.json').series.all);
+          const otc = read('market_margin_tpex.json');
+          if (otc.unit !== 'TWD') throw Error('Unexpected unit');
+          const daily = engine.applyCombinedMargin(funds, otc.rows);
+          if (daily.some(r => r.margin == null || !Number.isFinite(r.index) || r.index <= 0)) {
+            throw Error('Incomplete financing or index history. Full-period statistics withheld.');
+          }
+          const old = engine.buildTwRisk(funds, breadth);
+          const next = engine.buildTwRisk(daily, breadth);
+          const common = daily.map(r => old.has(r.date) && next.has(r.date));
+          function summarize(signals, threshold) {
+            const episodes = [];
+            let last = -Infinity;
+            for (let i = 1; i < daily.length; i++) {
+              if (!common[i] || !common[i-1] || i-last <= 20) continue;
+              if (signals.get(daily[i].date).level < threshold ||
+                  signals.get(daily[i-1].date).level >= threshold) continue;
+              last = i;
+              const following = daily.slice(i+1, i+21);
+              const drop = following.length === 20 ? Math.min(...following.map(r => r.index)) / daily[i].index - 1 : null;
+              episodes.push({date:daily[i].date, hit:drop == null ? null : drop <= -0.05, worst_return:drop});
+            }
+            const hits = episodes.filter(e => e.hit === true).length;
+            const misses = episodes.filter(e => e.hit === false).length;
+            return {hits, false_alarms:misses, pending:episodes.length-hits-misses,
+              hit_rate:hits+misses ? hits/(hits+misses) : null, episodes};
+          }
+          const latest = daily.at(-1).date.slice(0,7);
+          const output = {start:daily[0].date, end:daily.at(-1).date, common_signal_days:common.filter(Boolean).length,
+            definition:'收盤首次升至指定層級，20 個交易日內同級去重。後續 20 個收盤較亮燈日收盤再跌至少 5% 算命中。期末不足 20 日列待觀察。',
+            monthly_detail:daily.filter(r => r.date.startsWith(latest)).map(r => ({
+              date:r.date, combined:r.margin, old_level:old.get(r.date)?.level ?? null,
+              new_level:next.get(r.date)?.level ?? null, basis:next.get(r.date)?.basis ?? null})),
+            listed_only:{orange_or_red:summarize(old, 2), red:summarize(old, 3)},
+            combined:{orange_or_red:summarize(next, 2), red:summarize(next, 3)}};
+          fs.writeFileSync('data/market_margin_backtest.json', JSON.stringify(output,null,2)+'\n');
+          for (const [scope,stats] of Object.entries({上市:output.listed_only, 上市櫃:output.combined})) {
+            for(const [light, v] of Object.entries(stats)) console.log(scope, light, '命中', v.hits, '誤報', v.false_alarms, '待觀察', v.pending);
+          }
+          SOURCE
+      - name: Load verified starting balances on first run
+        run: |
+          if test ! -f data/market_margin_tpex.json; then
+          cat > data/market_margin_tpex.json <<'DATA'
+          {"rows":{"2008-01-02":[86211562000,86375616000],"2026-08-14":[180743862000,181611101000],"2026-08-17":[181611101000,182824981000],"2026-08-18":[182824981000,182463435000],"2026-08-19":[182463435000,182424031000],"2026-08-20":[182424031000,184079129000],"2026-08-24":[185210828000,184030578000],"2026-08-25":[184030699000,183919755000],"2026-08-26":[183919755000,187660887000],"2026-08-27":[187660887000,191015337000],"2026-08-28":[191015337000,192693531000],"2026-08-31":[192693531000,194660092000],"2026-09-01":[194660092000,197303220000],"2026-09-02":[197262910000,198171896000],"2026-09-03":[198211959000,196161741000],"2026-09-04":[196161733000,198243039000],"2026-09-07":[198243211000,200457405000],"2026-09-08":[200457405000,200067483000],"2026-09-09":[200067558000,200584560000],"2026-09-10":[200584560000,201273701000],"2026-09-11":[201273701000,199568970000],"2026-09-14":[199568970000,197710150000],"2026-09-16":[197488605000,199722917000],"2026-09-17":[199722974000,201929733000],"2026-09-18":[201929733000,204617024000],"2026-09-21":[204617024000,206728540000],"2026-09-22":[206728540000,208524048000],"2026-09-23":[208524048000,210851410000],"2026-09-24":[210851410000,211727513000],"2026-09-29":[211727513000,213675300000],"2026-09-30":[213675300000,215878925000],"2026-10-01":[215834793000,218871976000],"2026-10-06":[224173355000,226151152000],"2026-10-07":[226151152000,228958200000],"2026-10-12":[227872177000,228346504000],"2026-10-29":[211241733000,209958881000],"2026-10-30":[209958881000,205301345000],"2026-11-06":[184036520000,169974100000],"2026-11-09":[169989817000,170153798000],"2026-11-18":[160441825000,157222849000],"2026-11-19":[157222849000,147412900000]},"unit":"TWD"}
+          DATA
+          fi
+      - name: Fetch official cash balances
+        id: fetch
+        run: python3 "$RUNNER_TEMP/update_tpex_margin.py"
+      - name: Activate combined financing on complete data
+        run: |
+          if grep -Fq 'function applyCombinedMargin(' assets/market_monitor.js && grep -Fq '上市櫃融資<br>' index.html; then exit 0; fi
+          cat > "$RUNNER_TEMP/market.patch" <<'PATCH'
+          --- a/assets/market_monitor.js
+          +++ b/assets/market_monitor.js
+          @@ -12,4 +12,37 @@
+           let twCompositeFunds = [];
+           let twCompositeBreadth = [];
+          +
+          +function applyCombinedMargin(funds, otc) {
+          +  const sorted = [...new Map(funds.map(r => [r.date, r])).values()]
+          +    .sort((a, b) => a.date.localeCompare(b.date));
+          +  const valid = n => Number.isSafeInteger(n) && n > 0;
+          +  const combined = [];
+          +  for (const original of sorted) {
+          +    const pair = otc[original.date];
+          +    const prior = Array.isArray(pair) ? pair[0] : null;
+          +    const current = Array.isArray(pair) ? pair[1] : null;
+          +    const r = {...original, twseMargin: original.margin, tpexMargin: current,
+          +      margin: valid(original.margin) && valid(current) ? original.margin + current : null,
+          +      margin_previous: valid(original.margin_previous) && valid(prior) ? original.margin_previous + prior : null,
+          +      relative: null, relative5: null, relative20: null, margin_light: null, intersection: null};
+          +    combined.push(r);
+          +    for (const [days, field] of [[1, 'relative'], [5, 'relative5'], [20, 'relative20']]) {
+          +      const w = combined.slice(-days - 1);
+          +      if (w.length === days + 1 && w.every(x => valid(x.margin) && Number.isFinite(x.index) && x.index > 0)) {
+          +        r[field] = (r.margin / w[0].margin - r.index / w[0].index) * 100;
+          +      }
+          +    }
+          +    if (r.relative5 != null && r.relative20 != null) {
+          +      r.margin_light = r.relative5 >= 5 || r.relative20 >= 9 ? 'red'
+          +        : r.relative5 >= 3.5 || r.relative20 >= 7.5 ? 'yellow' : 'normal';
+          +      const f = r.foreign_light, m = r.margin_light;
+          +      if (['normal', 'yellow', 'red'].includes(f)) {
+          +        r.intersection = f === 'normal' || m === 'normal' ? 'normal'
+          +          : f === 'red' || m === 'red' ? 'red' : 'yellow';
+          +      }
+          +    }
+          +  }
+          +  return combined;
+          +}
+ 
+           function buildTwRisk(funds, breadth) {
+          @@ -179,5 +212,5 @@
+ 
+               const categories = [...new Set(rows.map(r => r.foreign_basis).filter(Boolean))];
+          -    const scope = categories.length ? '上市全市場｜官方外資分類：' + categories.join('、') : dataset.scope;
+          +    const scope = '融資：上市＋上櫃｜基準：加權指數｜外資：上市' + (categories.length ? '（' + categories.join('、') + '）' : '');
+               root.querySelector('[data-mm-status]').textContent =
+                 `資料截至 ${dataset.as_of_date || '尚無資料'}｜${scope || ''}｜${coverage}｜更新 ${dataset.updated_at || '—'}${dataset.archiveWarning || ''}`;
+          @@ -209,5 +242,7 @@
+ 
+                         <td class="${marginChange == null ? 'mm-missing' : ''}">
+          -                ${fmt(marginChange)}
+          +                <details><summary>${r.margin == null ? '待補' : (r.margin / 1e8).toLocaleString('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2})}</summary>
+          +                  <small>上市 ${r.twseMargin == null ? '—' : (r.twseMargin / 1e8).toFixed(2)}<br>上櫃 ${r.tpexMargin == null ? '—' : (r.tpexMargin / 1e8).toFixed(2)}</small></details>
+          +                <small>增減 ${fmt(marginChange)}</small>
+                         </td>
+ 
+          @@ -274,4 +309,15 @@
+                     dataset.archiveWarning = '｜歷史資料載入失敗，請重新整理';
+                   }
+          +        let otc = {};
+          +        try {
+          +          const response = await fetch('./data/market_margin_tpex.json', {cache:'no-store'});
+          +          if (!response.ok) throw new Error('上櫃融資資料讀取失敗');
+          +          const saved = await response.json();
+          +          if (saved.unit !== 'TWD' || !saved.rows) throw new Error('融資資料格式錯誤');
+          +          otc = saved.rows;
+          +        } catch {
+          +          dataset.archiveWarning = (dataset.archiveWarning || '') + '｜上櫃融資待補';
+          +        }
+          +        dataset.rows = applyCombinedMargin(dataset.rows, otc);
+                   twRiskByDate = new Map();
+                   twBreadthRequest = null;
+          --- a/index.html
+          +++ b/index.html
+          @@ -213,9 +213,9 @@
+           <p>每日融資相對增幅＝融資金額餘額日增幅－加權指數日漲跌幅（百分點）<br>燈號另用累計報酬之差：黃＝5日≥3.5或20日≥7.5百分點；紅＝5日≥5或20日≥9百分點。不是將每日差值相加</p>
+           <p>外資與融資均達黃燈以上且其中一項為紅，當日資金交集為紅。缺資料顯示資料不足，不補零。跨月份連續計算，月份選單只篩選顯示</p>
+          -<p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採上市全市場金額餘額。未來月份保留空白</p>
+          +<p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採同日上市＋上櫃金額餘額，先加總再計算 1、5、20 日增幅，與加權指數比較。任一市場缺資料，該日合計及受影響的燈號顯示待補。未來月份保留空白</p>
+           </div>
+           </div>
+ 
+          -<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
+          +<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>上市櫃融資<br>餘額／增減（億元）</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
+           </section>
+           <section id="etfFlow" class="page"></section>
+          @@ -307,5 +307,5 @@
+           })();
+           </script>
+          -<script src="./assets/market_monitor.js?v=20261120-recovery-evidence-v2"></script>
+          +<script src="./assets/market_monitor.js?v=20261120-combined-margin-v1"></script>
+           <script>
+           (function(){
+          PATCH
+          git apply --check "$RUNNER_TEMP/market.patch"
+          git apply "$RUNNER_TEMP/market.patch"
+          node --check assets/market_monitor.js
+      - name: Compare old and new signals on full history
+        run: node "$RUNNER_TEMP/backtest_combined_margin.cjs"
+      - name: Save verified days and retain progress on partial failure
+        if: ${{ !cancelled() && hashFiles('data/market_margin_tpex.json') != '' }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/market_margin_tpex.json
+          if test "${{ job.status }}" = success; then
+            git add data/market_margin_backtest.json assets/market_monitor.js index.html
+          else
+            git restore --worktree assets/market_monitor.js index.html
+          fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: update verified TPEx financing balances'
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
