@@ -1,4 +1,5 @@
 name: 上市櫃融資歷史回補與每日更新
+# v20261120-checkpoint-v2: 每 25 筆成功交易日寫回 main；僅更新融資 JSON，避免 index.html rebase 衝突。
 on:
   workflow_dispatch:
   push:
@@ -22,11 +23,79 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: Prepare safe per-batch GitHub checkpoint publisher
+        run: |
+          cat > "$RUNNER_TEMP/publish_margin_checkpoint.py" <<'SOURCE'
+          """Publish only verified TPEx JSON to fresh main, without rebasing UI files."""
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          LOCAL = Path('data/market_margin_tpex.json')
+          WT = Path(os.environ['RUNNER_TEMP']) / 'margin-checkpoint-worktree'
+          REL = Path('data/market_margin_tpex.json')
+
+          def git(*args, cwd=None, check=True):
+              return subprocess.run(['git', *args], cwd=cwd, check=check, text=True,
+                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+          def valid(payload):
+              if payload.get('unit') != 'TWD' or not isinstance(payload.get('rows'), dict):
+                  raise ValueError('Incorrect cash-balance schema or unit')
+              for day, pair in payload['rows'].items():
+                  if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', day):
+                      raise ValueError('Invalid date: ' + str(day))
+                  if (not isinstance(pair, list) or len(pair) != 2 or
+                      not all(type(n) is int and n > 0 for n in pair)):
+                      raise ValueError('Invalid amounts on ' + str(day))
+              return payload['rows']
+
+          def main():
+              local = valid(json.loads(LOCAL.read_text()))
+              if not WT.exists():
+                  git('worktree', 'add', '--detach', str(WT), 'HEAD')
+              for attempt in range(1, 6):
+                  print(f'CHECKPOINT: syncing verified rows to main (attempt {attempt}/5)', flush=True)
+                  git('fetch', '--quiet', 'origin', 'main')
+                  git('reset', '--hard', 'origin/main', cwd=WT)
+                  dest = WT / REL
+                  remote = valid(json.loads(dest.read_text())) if dest.exists() else {}
+                  merged = dict(remote)
+                  merged.update(local)
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_text(json.dumps({'unit':'TWD', 'rows':dict(sorted(merged.items()))},
+                                             ensure_ascii=False, sort_keys=True,
+                                             separators=(',', ':'))+'\n')
+                  git('add', '--', str(REL), cwd=WT)
+                  diff = git('diff', '--cached', '--quiet', cwd=WT, check=False)
+                  if diff.returncode == 0:
+                      print('CHECKPOINT: already saved on main', flush=True)
+                      return
+                  if diff.returncode != 1:
+                      raise RuntimeError('Failed to inspect staged JSON')
+                  git('config', 'user.name', 'github-actions[bot]', cwd=WT)
+                  git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com', cwd=WT)
+                  git('commit', '-m', 'data: checkpoint verified TPEx financing balances', cwd=WT)
+                  pushed = git('push', 'origin', 'HEAD:main', cwd=WT, check=False)
+                  if pushed.returncode == 0:
+                      print(f'CHECKPOINT: published {len(merged)} rows to main', flush=True)
+                      return
+                  print(f'CHECKPOINT: push race on attempt {attempt}; retrying', file=sys.stderr, flush=True)
+              raise RuntimeError('Could not publish checkpoint after 5 retries')
+
+          if __name__ == '__main__':
+              main()
+          SOURCE
       - name: Prepare update_tpex_margin.py
         run: |
           cat > "$RUNNER_TEMP/update_tpex_margin.py" <<'SOURCE'
           """Maintain the TPEx cash-balance series for the Taiwan monitor, in Taiwan dollars."""
           import json
+          import os
+          import subprocess
           import re
           import sys
           import time
@@ -72,41 +141,52 @@ jobs:
                       time.sleep(2 ** (attempt + 1))
 
 
+          def checkpoint(rows, expected):
+              # Persist to runner disk, then to remote GitHub main immediately.
+              tmp = DEST.with_suffix('.tmp')
+              tmp.write_text(json.dumps({'unit': 'TWD', 'rows': rows},
+                                        sort_keys=True, separators=(',', ':')) + '\n')
+              tmp.replace(DEST)
+              command = [sys.executable,
+                         str(Path(os.environ['RUNNER_TEMP']) / 'publish_margin_checkpoint.py')]
+              subprocess.run(command, check=True)
+              print(f'CHECKPOINT: {len(rows.keys() & expected)}/{len(expected)} verified days saved to GitHub', flush=True)
+
           def main():
-              recent = json.loads(Path("data/market_monitor.json").read_text())["rows"]
-              archive = json.loads(Path("data/history/monitor-funds-2008-2023.json").read_text())
-              days = sorted({r["date"] for r in archive + recent})
-              result = json.loads(DEST.read_text()) if DEST.exists() else {"unit": "TWD", "rows": {}}
-              rows = result["rows"]
-              due = sorted(set(days[-3:]) | (set(days) - rows.keys()), reverse=True)
-
-              def save():
-                  tmp = DEST.with_suffix(".tmp")
-                  tmp.write_text(json.dumps(result, sort_keys=True, separators=(",", ":")) + "\n")
-                  tmp.replace(DEST)
-
+              recent = json.loads(Path('data/market_monitor.json').read_text())['rows']
+              archive = json.loads(Path('data/history/monitor-funds-2008-2023.json').read_text())
+              days = sorted({r['date'] for r in archive + recent})
+              expected = set(days)
+              result = json.loads(DEST.read_text()) if DEST.exists() else {'unit': 'TWD', 'rows': {}}
+              if result.get('unit') != 'TWD' or not isinstance(result.get('rows'), dict):
+                  raise ValueError('Invalid local TPEx cash-balance data')
+              rows = result['rows']
+              due = sorted(set(days[-3:]) | (expected - rows.keys()), reverse=True)
+              print(f'CHECKPOINT START: saved {len(rows.keys() & expected)}/{len(expected)}, to fetch {len(due)}', flush=True)
               deadline = time.monotonic() + 4 * 60 * 60
-              failures = 0
-              consecutive = 0
+              failures = consecutive = successful_since_checkpoint = 0
               try:
-                  for i, day in enumerate(due):
+                  for i, day in enumerate(due, 1):
                       try:
                           rows[day] = fetch(day)
+                          successful_since_checkpoint += 1
                           consecutive = 0
                       except RuntimeError as exc:
                           print(exc, file=sys.stderr, flush=True)
                           failures += 1
                           consecutive += 1
-                      if i % 25 == 0:
-                          save()
-                          print(f"{day}: {len(rows.keys() & set(days))}/{len(days)}", flush=True)
+                      if successful_since_checkpoint >= 25:
+                          checkpoint(rows, expected)
+                          successful_since_checkpoint = 0
                       if consecutive >= 5 or time.monotonic() >= deadline:
                           break
                       time.sleep(0.55)
               finally:
-                  save()
-              missing = set(days) - rows.keys()
-              print(f"Expected {len(days)}, missing {len(missing)}, request failures {failures}.")
+                  # All completed fetches survive a later API failure or time limit.
+                  if successful_since_checkpoint or not DEST.exists():
+                      checkpoint(rows, expected)
+              missing = expected - rows.keys()
+              print(f'Expected {len(days)}, missing {len(missing)}, request failures {failures}.', flush=True)
               return int(bool(missing or failures))
 
 
@@ -175,125 +255,13 @@ jobs:
           fi
       - name: Fetch official cash balances
         id: fetch
+        continue-on-error: true
         run: python3 "$RUNNER_TEMP/update_tpex_margin.py"
-      - name: Activate combined financing on complete data
-        run: |
-          if grep -Fq 'function applyCombinedMargin(' assets/market_monitor.js && grep -Fq '上市櫃融資<br>' index.html; then exit 0; fi
-          cat > "$RUNNER_TEMP/market.patch" <<'PATCH'
-          --- a/assets/market_monitor.js
-          +++ b/assets/market_monitor.js
-          @@ -12,4 +12,37 @@
-           let twCompositeFunds = [];
-           let twCompositeBreadth = [];
-          +
-          +function applyCombinedMargin(funds, otc) {
-          +  const sorted = [...new Map(funds.map(r => [r.date, r])).values()]
-          +    .sort((a, b) => a.date.localeCompare(b.date));
-          +  const valid = n => Number.isSafeInteger(n) && n > 0;
-          +  const combined = [];
-          +  for (const original of sorted) {
-          +    const pair = otc[original.date];
-          +    const prior = Array.isArray(pair) ? pair[0] : null;
-          +    const current = Array.isArray(pair) ? pair[1] : null;
-          +    const r = {...original, twseMargin: original.margin, tpexMargin: current,
-          +      margin: valid(original.margin) && valid(current) ? original.margin + current : null,
-          +      margin_previous: valid(original.margin_previous) && valid(prior) ? original.margin_previous + prior : null,
-          +      relative: null, relative5: null, relative20: null, margin_light: null, intersection: null};
-          +    combined.push(r);
-          +    for (const [days, field] of [[1, 'relative'], [5, 'relative5'], [20, 'relative20']]) {
-          +      const w = combined.slice(-days - 1);
-          +      if (w.length === days + 1 && w.every(x => valid(x.margin) && Number.isFinite(x.index) && x.index > 0)) {
-          +        r[field] = (r.margin / w[0].margin - r.index / w[0].index) * 100;
-          +      }
-          +    }
-          +    if (r.relative5 != null && r.relative20 != null) {
-          +      r.margin_light = r.relative5 >= 5 || r.relative20 >= 9 ? 'red'
-          +        : r.relative5 >= 3.5 || r.relative20 >= 7.5 ? 'yellow' : 'normal';
-          +      const f = r.foreign_light, m = r.margin_light;
-          +      if (['normal', 'yellow', 'red'].includes(f)) {
-          +        r.intersection = f === 'normal' || m === 'normal' ? 'normal'
-          +          : f === 'red' || m === 'red' ? 'red' : 'yellow';
-          +      }
-          +    }
-          +  }
-          +  return combined;
-          +}
- 
-           function buildTwRisk(funds, breadth) {
-          @@ -179,5 +212,5 @@
- 
-               const categories = [...new Set(rows.map(r => r.foreign_basis).filter(Boolean))];
-          -    const scope = categories.length ? '上市全市場｜官方外資分類：' + categories.join('、') : dataset.scope;
-          +    const scope = '融資：上市＋上櫃｜基準：加權指數｜外資：上市' + (categories.length ? '（' + categories.join('、') + '）' : '');
-               root.querySelector('[data-mm-status]').textContent =
-                 `資料截至 ${dataset.as_of_date || '尚無資料'}｜${scope || ''}｜${coverage}｜更新 ${dataset.updated_at || '—'}${dataset.archiveWarning || ''}`;
-          @@ -209,5 +242,7 @@
- 
-                         <td class="${marginChange == null ? 'mm-missing' : ''}">
-          -                ${fmt(marginChange)}
-          +                <details><summary>${r.margin == null ? '待補' : (r.margin / 1e8).toLocaleString('zh-TW', {minimumFractionDigits:2, maximumFractionDigits:2})}</summary>
-          +                  <small>上市 ${r.twseMargin == null ? '—' : (r.twseMargin / 1e8).toFixed(2)}<br>上櫃 ${r.tpexMargin == null ? '—' : (r.tpexMargin / 1e8).toFixed(2)}</small></details>
-          +                <small>增減 ${fmt(marginChange)}</small>
-                         </td>
- 
-          @@ -274,4 +309,15 @@
-                     dataset.archiveWarning = '｜歷史資料載入失敗，請重新整理';
-                   }
-          +        let otc = {};
-          +        try {
-          +          const response = await fetch('./data/market_margin_tpex.json', {cache:'no-store'});
-          +          if (!response.ok) throw new Error('上櫃融資資料讀取失敗');
-          +          const saved = await response.json();
-          +          if (saved.unit !== 'TWD' || !saved.rows) throw new Error('融資資料格式錯誤');
-          +          otc = saved.rows;
-          +        } catch {
-          +          dataset.archiveWarning = (dataset.archiveWarning || '') + '｜上櫃融資待補';
-          +        }
-          +        dataset.rows = applyCombinedMargin(dataset.rows, otc);
-                   twRiskByDate = new Map();
-                   twBreadthRequest = null;
-          --- a/index.html
-          +++ b/index.html
-          @@ -213,9 +213,9 @@
-           <p>每日融資相對增幅＝融資金額餘額日增幅－加權指數日漲跌幅（百分點）<br>燈號另用累計報酬之差：黃＝5日≥3.5或20日≥7.5百分點；紅＝5日≥5或20日≥9百分點。不是將每日差值相加</p>
-           <p>外資與融資均達黃燈以上且其中一項為紅，當日資金交集為紅。缺資料顯示資料不足，不補零。跨月份連續計算，月份選單只篩選顯示</p>
-          -<p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採上市全市場金額餘額。未來月份保留空白</p>
-          +<p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採同日上市＋上櫃金額餘額，先加總再計算 1、5、20 日增幅，與加權指數比較。任一市場缺資料，該日合計及受影響的燈號顯示待補。未來月份保留空白</p>
-           </div>
-           </div>
- 
-          -<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
-          +<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>上市櫃融資<br>餘額／增減（億元）</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
-           </section>
-           <section id="etfFlow" class="page"></section>
-          @@ -307,5 +307,5 @@
-           })();
-           </script>
-          -<script src="./assets/market_monitor.js?v=20261120-recovery-evidence-v2"></script>
-          +<script src="./assets/market_monitor.js?v=20261120-combined-margin-v1"></script>
-           <script>
-           (function(){
-          PATCH
-          git apply --check "$RUNNER_TEMP/market.patch"
-          git apply "$RUNNER_TEMP/market.patch"
-          node --check assets/market_monitor.js
       - name: Compare old and new signals on full history
+        if: ${{ steps.fetch.outcome == 'success' }}
         run: node "$RUNNER_TEMP/backtest_combined_margin.cjs"
-      - name: Save verified days and retain progress on partial failure
-        if: ${{ !cancelled() && hashFiles('data/market_margin_tpex.json') != '' }}
+      - name: Report unfinished collection after saving checkpoints
+        if: ${{ steps.fetch.outcome == 'failure' }}
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/market_margin_tpex.json
-          if test "${{ job.status }}" = success; then
-            git add data/market_margin_backtest.json assets/market_monitor.js index.html
-          else
-            git restore --worktree assets/market_monitor.js index.html
-          fi
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'data: update verified TPEx financing balances'
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-          done
+          echo 'Collection unfinished. Every completed checkpoint was already committed to GitHub main.' >&2
           exit 1
