@@ -183,3 +183,30 @@
 }
 #marketMonitor .mb-table-basis{display:flex;align-items:center;gap:9px;justify-content:flex-end;font-size:12px;font-weight:750;color:var(--muted);margin:5px 0 12px}
 #marketMonitor .mb-table-basis select{min-height:35px;padding:7px 26px 7px 10px;font-size:13px;border-radius:9px}
+
+/* Composite risk card: presentation only, no changes to trigger conditions. */
+#marketMonitor .mm-risk-card {
+  margin: 10px 0 16px !important;
+  padding: 17px 19px !important;
+  border: 1px solid var(--line, #dce2ea);
+  border-left: 5px solid #94a3b8;
+  border-radius: 16px;
+  background: var(--card, #fff);
+  color: var(--ink);
+  box-shadow: 0 3px 14px rgba(20, 30, 50, .04);
+  overflow-wrap: anywhere;
+}
+#marketMonitor .mm-risk-card[data-risk-level="0"] { border-left-color: #26a447; }
+#marketMonitor .mm-risk-card[data-risk-level="1"] { border-left-color: #e2b429; }
+#marketMonitor .mm-risk-card[data-risk-level="2"] { border-left-color: #e18829; }
+#marketMonitor .mm-risk-card[data-risk-level="3"] { border-left-color: #d13438; }
+#marketMonitor .mm-risk-card strong { font-size: clamp(21px, 3vw, 27px); font-weight: 800; }
+#marketMonitor .mm-risk-card small { color: var(--muted); font-size: 12px; font-weight: 600; }
+#marketMonitor .mm-risk-card [data-summary] { margin: 8px 0 0; font-size: 14px; line-height: 1.65; }
+#marketMonitor .mm-risk-card details { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line, #dce2ea); }
+#marketMonitor .mm-risk-card details summary { font-size: 13px; }
+#marketMonitor .mm-risk-card [data-factors] { font-size: 13px; line-height: 1.7; }
+@media (max-width: 700px) {
+  #marketMonitor .mm-risk-card { padding: 14px 15px !important; }
+  #marketMonitor .mm-risk-card strong { font-size: 22px; }
+}
