@@ -67,7 +67,7 @@
   }
 </style>
 
-<link rel="stylesheet" href="./assets/market_monitor.css?v=20261119-pro-821fa26cff96">
+<link rel="stylesheet" href="./assets/market_monitor.css?v=20261120-risk-display-v3">
 <style id="site-dark-palette-20261020">
 /* 深色模式統一為參考網站的石墨灰色系；淺色模式不受影響 */
 html[data-theme="dark"]{
@@ -198,24 +198,25 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="ai" class="page"><div class="hero ap-hero"><div><div class="kicker">PORTFOLIO INTELLIGENCE</div><h1>AI 投資組合<span>模擬交易</span></h1><p>追蹤配置、持倉與每一次決策。</p></div></div><div id="aiPortfolioRoot"></div></section>
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
 <section id="monthlyRevenue" class="page" hidden><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
-<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>2024 年起每日外資資金與融資相對大盤增幅</p></div></div>
+<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>每日外資買賣超、融資與大盤綜合燈號</p></div></div>
+<section class="card" data-tw-risk aria-label="大盤綜合燈號" style="padding:12px 16px;margin-bottom:10px"><div>大盤綜合燈號　<strong>載入中</strong>　<small></small></div><div data-summary></div><details><summary>查看判斷依據</summary><p data-factors></p><p>黃燈：融資黃或紅，加權收盤距近 60 日高點不超過 3%，站上 20 日線的占比低於 50%，且比近 20 日高點少至少 15 個百分點。</p><p>黃紅燈：資金交集紅燈、20 日市場廣度轉弱、騰落轉弱，且外資紅燈或站上 60 日線的占比低於 50%。</p><p>紅燈：當日資金交集與外資皆紅、20 日市場廣度轉弱，且近 5 個交易日至少 3 天資金交集亮紅。符合多級時顯示最高級，其餘為綠燈。</p><p>廣度採上市櫃合計。20 日廣度轉弱指占比低於 40%，或低於 50% 且比近 10 日高點少至少 15 個百分點。騰落轉弱指近 5 日累計上漲減下跌家數為負，且至少 3 日為負。</p></details></section>
 <div class="mm-tools"><label>年份 <select data-mm-year aria-label="大盤監控年份"></select></label><label>月份 <select data-mm-month aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
 <div class="status" data-mm-status>開啟分頁後載入資料</div>
 
 <div id="marketMonitorLogic" class="mm-logic">
 <button id="marketMonitorLogicToggle" class="mm-logic-toggle" type="button" aria-expanded="false" aria-controls="marketMonitorLogicContent">
-<span class="mm-logic-arrow">▶</span><span>黃燈／紅燈計算規則</span>
+<span class="mm-logic-arrow">▶</span><span>外資與融資分項規則</span>
 </button>
 <div id="marketMonitorLogicContent" class="mm-logic-content">
 <p>黃色底＝警告；紅色底＝危險；正常不加底色。燈號是原試算表指標，不是行情預測</p>
 <p>外資：Z＝（近5日平均－前15日平均）÷近20日樣本標準差。P10＝近10日賣超金額絕對值總和÷近10日全部金額絕對值總和<br>黃：Z≤−0.8且近5日平均&lt;0，或P10≥70%；紅：Z≤−1.1且近5日平均&lt;0，或P10≥80%，紅燈優先。原檔未註明標準差種類，此版採STDEV.S</p>
 <p>每日融資相對增幅＝融資金額餘額日增幅－加權指數日漲跌幅（百分點）<br>燈號另用累計報酬之差：黃＝5日≥3.5或20日≥7.5百分點；紅＝5日≥5或20日≥9百分點。不是將每日差值相加</p>
-<p>交集：兩指標同時警告才亮燈，其中一項紅燈則交集紅燈。缺資料顯示資料不足，不補零。跨月份連續計算，月份選單只篩選顯示</p>
+<p>外資與融資均達黃燈以上且其中一項為紅，當日資金交集為紅。缺資料顯示資料不足，不補零。跨月份連續計算，月份選單只篩選顯示</p>
 <p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採上市全市場金額餘額。未來月份保留空白</p>
 </div>
 </div>
 
-<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>兩指標交集</th></tr></thead><tbody></tbody></table></div>
+<div class="card tablewrap"><table><thead><tr><th>日期</th><th>外資買賣超<br>億元</th><th>大盤融資變化<br>億元</th><th>融資相對大盤<br>每日增幅</th><th>大盤綜合燈號</th></tr></thead><tbody></tbody></table></div>
 </section>
 <section id="etfFlow" class="page"></section>
 
@@ -305,7 +306,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-<script src="./assets/market_monitor.js?v=20261119-history-2008"></script>
+<script src="./assets/market_monitor.js?v=20261120-risk-display-v3"></script>
 <script>
 (function(){
   const wrap = document.getElementById("mobilePageNav");
@@ -509,6 +510,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <script src="./assets/pattern_screen.js?v=20261114-separated-v5"></script>
 </body>
 </html>
+
 
 
 
