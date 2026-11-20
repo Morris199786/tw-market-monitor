@@ -222,12 +222,12 @@
 #marketMonitor .mm-composite-filters label{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px}
 #marketMonitor .mm-composite-filters select,#marketMonitor .mm-composite-filters button{min-height:40px;padding:8px 10px}
 #marketMonitor .mm-composite-status{font-size:12px;line-height:1.6;color:var(--muted);margin:10px 0}
-#marketMonitor .mm-composite-scroll{overflow:auto;width:100%;max-height:69vh;background:var(--card,#fff);border:1px solid var(--line);border-radius:15px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#marketMonitor .mm-composite-scroll{overflow:visible;width:100%;max-height:none;background:var(--card,#fff);border:1px solid var(--line);border-radius:15px;overscroll-behavior:auto;-webkit-overflow-scrolling:auto}
 #marketMonitor .mm-composite-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:auto;font-variant-numeric:tabular-nums}
 #marketMonitor .mm-composite-table th,#marketMonitor .mm-composite-table td{text-align:center;white-space:nowrap;min-width:78px;font-size:12px;line-height:1.45;padding:13px 12px;border:0;border-bottom:1px solid var(--line)}
-#marketMonitor .mm-composite-table thead th{position:sticky;top:0;z-index:2;font-size:11px;font-weight:800;color:var(--muted);background:var(--soft,#f3f5f8)}
-#marketMonitor .mm-composite-table .mm-composite-date{position:sticky;left:0;z-index:1;min-width:58px;font-weight:800;background:var(--card,#fff)}
-#marketMonitor .mm-composite-table thead th:first-child{position:sticky;left:0;z-index:3;min-width:58px}
+#marketMonitor .mm-composite-table thead th{position:static;font-size:11px;font-weight:800;color:var(--muted);background:var(--soft,#f3f5f8)}
+#marketMonitor .mm-composite-table .mm-composite-date{position:static;min-width:58px;font-weight:800;background:var(--card,#fff)}
+#marketMonitor .mm-composite-table thead th:first-child{position:static;min-width:58px}
 #marketMonitor .mm-composite-table tbody tr:last-child :is(td,th){border-bottom:0}
 #marketMonitor .mm-composite-table .mm-cwarn{background:#fff0bf;color:#725000;font-weight:750}
 #marketMonitor .mm-composite-table .mm-corange{background:#ffe0b6;color:#8b4400;font-weight:800}
