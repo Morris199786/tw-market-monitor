@@ -210,3 +210,38 @@
   #marketMonitor .mm-risk-card { padding: 14px 15px !important; }
   #marketMonitor .mm-risk-card strong { font-size: 22px; }
 }
+
+/* Composite signal: four-tab monitor; preserve original risk formula and legacy panels. */
+#marketMonitor .mb-nav{grid-template-columns:repeat(4,minmax(0,1fr))}
+#marketMonitor .mb-nav button{font-size:13px;padding:10px 4px}
+#marketMonitor .mm-composite-page{min-width:0}
+#marketMonitor .mm-composite-intro{margin:14px 0 12px}
+#marketMonitor .mm-composite-intro h2{font-size:23px;margin:2px 0 5px;color:var(--ink)}
+#marketMonitor .mm-composite-intro p{margin:0;font-size:12px;line-height:1.7;color:var(--muted)}
+#marketMonitor .mm-composite-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:13px 0 10px}
+#marketMonitor .mm-composite-filters label{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px}
+#marketMonitor .mm-composite-filters select,#marketMonitor .mm-composite-filters button{min-height:40px;padding:8px 10px}
+#marketMonitor .mm-composite-status{font-size:12px;line-height:1.6;color:var(--muted);margin:10px 0}
+#marketMonitor .mm-composite-scroll{overflow:auto;width:100%;max-height:69vh;background:var(--card,#fff);border:1px solid var(--line);border-radius:15px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#marketMonitor .mm-composite-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:auto;font-variant-numeric:tabular-nums}
+#marketMonitor .mm-composite-table th,#marketMonitor .mm-composite-table td{text-align:center;white-space:nowrap;min-width:78px;font-size:12px;line-height:1.45;padding:13px 12px;border:0;border-bottom:1px solid var(--line)}
+#marketMonitor .mm-composite-table thead th{position:sticky;top:0;z-index:2;font-size:11px;font-weight:800;color:var(--muted);background:var(--soft,#f3f5f8)}
+#marketMonitor .mm-composite-table .mm-composite-date{position:sticky;left:0;z-index:1;min-width:58px;font-weight:800;background:var(--card,#fff)}
+#marketMonitor .mm-composite-table thead th:first-child{position:sticky;left:0;z-index:3;min-width:58px}
+#marketMonitor .mm-composite-table tbody tr:last-child :is(td,th){border-bottom:0}
+#marketMonitor .mm-composite-table .mm-cwarn{background:#fff0bf;color:#725000;font-weight:750}
+#marketMonitor .mm-composite-table .mm-corange{background:#ffe0b6;color:#8b4400;font-weight:800}
+#marketMonitor .mm-composite-table .mm-cbad{background:#ffe0df;color:#941e2d;font-weight:800}
+#marketMonitor .mm-composite-table .mm-composite-signal{font-weight:800;min-width:103px}
+#marketMonitor .mm-composite-footnote{font-size:12px;line-height:1.7;color:var(--muted);margin:11px 2px}
+html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cwarn{background:#493b1d;color:#ffdc83}
+html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-corange{background:#57351e;color:#ffd19d}
+html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cbad{background:#4b252d;color:#ffb4bd}
+@media(max-width:720px){
+  #marketMonitor .mb-nav{gap:3px;padding:4px;margin:11px 0 15px}
+  #marketMonitor .mb-nav button{font-size:12px;min-height:42px;padding:9px 2px}
+  #marketMonitor .mm-composite-table th,#marketMonitor .mm-composite-table td{font-size:12px!important;padding:11px 10px!important}
+  #marketMonitor .mm-composite-filters{gap:8px}
+  #marketMonitor .mm-composite-filters select{font-size:16px!important}
+  #marketMonitor .mm-composite-intro h2{font-size:20px}
+}
