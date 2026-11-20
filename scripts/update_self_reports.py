@@ -739,6 +739,73 @@ def explicit_table_metrics(text):
     return result
 
 
+
+def _recover_mops_annotated_block_eps(text):
+    """Strict fallback for MOPS (1)單月 / (2)單季 / (3)四季 disclosures.
+
+    Read the first numeric EPS row *inside each labelled block* only.  A
+    parenthesized unit and a following restatement annotation are allowed;
+    never scan across another metric or use the rolling-four-quarter block.
+    """
+    source = normalize_for_parse(text)
+    heading = re.search(r"財務業務資訊|財務資訊", source)
+    if not heading:
+        return {}
+    source = source[heading.end():]
+    block_markers = list(re.finditer(
+        r"\(\s*([123])\s*\)\s*(單月|單季|最近四季累計)", source))
+    blocks = {}
+    for index, marker in enumerate(block_markers):
+        number, label = marker.groups()
+        if (number, label) not in (("1", "單月"), ("2", "單季")):
+            continue
+        end = (block_markers[index+1].start()
+               if index+1 < len(block_markers) else len(source))
+        blocks[label] = source[marker.end():end]
+    if not all(label in blocks for label in ("單月", "單季")):
+        return {}
+
+    result = {}
+    for label, prefix in (("單月", "monthly"), ("單季", "quarter")):
+        block = blocks[label]
+        period = (_find_month_period(block) if label == "單月"
+                  else _find_quarter_period(block))
+        if not period:
+            return {}
+        # The line is always read after an explicit EPS label, never after an
+        # arbitrary amount, revenue figure, or rolling four-quarter heading.
+        eps_label = re.search(
+            r"(?:每股\s*(?:稅後)?\s*(?:基本)?\s*(?:盈餘|損益)|\bEPS\b)",
+            block, re.I)
+        if not eps_label:
+            return {}
+        tail = block[eps_label.end():]
+        # Accept one unit and up to two short parenthetical annotations.
+        # Reject any unrecognised text or later-line search before EPS.
+        tail = re.sub(r"^\s*(?:[（(]\s*(?:元|新台幣元)\s*[）)])?", "", tail)
+        for _ in range(2):
+            note = re.match(r"^\s*[（(]\s*([^（）()\n]{1,32})\s*[）)]", tail)
+            if not note:
+                break
+            note_text = re.sub(r"\s+", "", note.group(1))
+            if not re.fullmatch(r"(?:除權後)?追[溯朔]調整|除權後(?:追[溯朔]調整)?|重編後|調整後", note_text):
+                return {}
+            tail = tail[note.end():]
+        numeric = r"([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))"
+        row = re.match(
+            r"^\s*" + numeric + r"\s+" + numeric +
+            r"\s+" + numeric + r"\s*%", tail)
+        if not row:
+            return {}
+        current, previous, growth = map(lambda x: _number(x), row.groups())
+        if current is None or previous is None or growth is None:
+            return {}
+        result[prefix+"_eps"] = current
+        result[prefix+"_period"] = period
+        result[prefix+"_eps_yoy"] = growth
+        result[prefix+"_eps_yoy_text"] = f"{growth:+.2f}%"
+    return result
+
 def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
@@ -902,6 +969,14 @@ def extract_metrics(text):
         for prefix in ('monthly', 'quarter'):
             if out.get(prefix + '_eps') == verified_table[prefix + '_eps']:
                 out[prefix + '_period'] = verified_table[prefix + '_period']
+
+    # MOPS annual/quarter EPS row can include `(除權後追溯調整)` after `(元)`.
+    # Parse the labelled monthly and quarterly blocks only; ignore rolling 4Q.
+    annotated = _recover_mops_annotated_block_eps(text)
+    for prefix in ('monthly', 'quarter'):
+        if out.get(prefix + '_eps') is None and annotated.get(prefix + '_eps') is not None:
+            for suffix in ('eps', 'period', 'eps_yoy', 'eps_yoy_text'):
+                out[prefix + '_' + suffix] = annotated.get(prefix + '_' + suffix)
 
     stacked = _recover_mops_stacked_eps(text)
     for prefix in ('monthly', 'quarter'):
