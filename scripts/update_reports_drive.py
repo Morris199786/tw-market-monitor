@@ -13,6 +13,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+from report_provider import complete_report
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,9 +23,7 @@ DRIVE_API = "https://www.googleapis.com/drive/v3"
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 ROOT_FOLDER_ID = os.environ["DRIVE_FOLDER_ID"]
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
-OPENAI_API_URL = "https://api.openai.com/v1/responses"
 
 INBOX_PATH = ROOT / "data/report_inbox.json"
 STATE_PATH = ROOT / "data/processed_reports.json"
@@ -237,11 +236,6 @@ def image_bytes_and_mime(image_path, mime_type):
 
 
 def extract_image_text(image_path, mime_type, filename):
-    if not OPENAI_API_KEY:
-        raise RuntimeError(
-            "OPENAI_API_KEY is missing for image report extraction"
-        )
-
     raw, safe_mime = image_bytes_and_mime(
         image_path,
         mime_type,
@@ -286,23 +280,7 @@ def extract_image_text(image_path, mime_type, filename):
         ],
     }
 
-    r = requests.post(
-        OPENAI_API_URL,
-        headers={
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=180,
-    )
-
-    if r.status_code >= 400:
-        raise RuntimeError(
-            f"OpenAI image extraction {r.status_code}: "
-            + r.text[:1200]
-        )
-
-    text = response_text(r.json())
+    text = complete_report(payload)
     text = text.replace("\x00", "")
     text = re.sub(r"[ \t]+\n", "\n", text)
     text = re.sub(r"\n{4,}", "\n\n\n", text)

@@ -12,6 +12,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import requests
+from report_provider import complete_report
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo("Asia/Taipei")
@@ -20,9 +21,7 @@ DRIVE_API = "https://www.googleapis.com/drive/v3"
 ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
 ROOT_FOLDER_ID = os.environ["DRIVE_FOLDER_ID"]
 
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPENAI_MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
-OPENAI_API_URL = "https://api.openai.com/v1/responses"
 
 TELEGRAM_BOT_TOKEN = os.environ.get(
     "TELEGRAM_BOT_TOKEN",
@@ -238,19 +237,7 @@ def analyze_image(raw, mime_type, filename):
         }],
     }
 
-    r = requests.post(
-        OPENAI_API_URL,
-        headers={
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=180,
-    )
-    if r.status_code >= 400:
-        raise RuntimeError(f"OpenAI image parse {r.status_code}: {r.text[:1200]}")
-
-    return parse_json_loose(response_text(r.json()))
+    return parse_json_loose(complete_report(payload))
 
 
 

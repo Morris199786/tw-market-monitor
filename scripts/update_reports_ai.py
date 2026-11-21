@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 import requests
+from report_provider import complete_report, NoReportCapacity
 from report_presentation import complete_reason, upside_text, enrich_upside
 from report_identity import registry, audit_report, VERSION, alias_hits, explicit_tickers
 
@@ -22,7 +23,6 @@ TZ = ZoneInfo("Asia/Taipei")
 INBOX_PATH = ROOT / "data/report_inbox.json"
 REPORTS_PATH = ROOT / "data/reports.json"
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
 MODEL = os.environ.get("OPENAI_REPORT_MODEL", "gpt-5.6-luna").strip()
 
 PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN", "").strip()
@@ -36,7 +36,6 @@ SITE_URL = os.environ.get(
     "https://morris199786.github.io/tw-market-monitor/",
 ).rstrip("/") + "/"
 
-API_URL = "https://api.openai.com/v1/responses"
 PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
 
 
@@ -508,18 +507,7 @@ Drive 日期：
             {"role": "user", "content": [{"type": "input_text", "text": user}]},
         ],
     }
-    r = requests.post(
-        API_URL,
-        headers={
-            "Authorization": f"Bearer {OPENAI_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=180,
-    )
-    if r.status_code >= 400:
-        raise RuntimeError(f"OpenAI API {r.status_code}: " + r.text[:1200])
-    obj = parse_json_loose(response_text(r.json()))
+    obj = parse_json_loose(complete_report(payload))
     return audit_report(normalize_report(obj, src), src, COMPANIES)
 
 
@@ -934,8 +922,6 @@ def main():
         commit_claim_before_external_call("AI " + file_id)
 
         try:
-            if not OPENAI_API_KEY:
-                raise RuntimeError("OPENAI_API_KEY is missing")
             report = analyze_report(src)
             items.append(report)
             by_source[file_id] = report
@@ -949,6 +935,14 @@ def main():
             src["ai_processed_at"] = now_tpe()
             processed += 1
 
+        except NoReportCapacity as exc:
+            # Both routes declined the request. It is safe to retry this file next run.
+            src["status"] = "pending_ai"
+            src.pop("ai_attempted_at", None)
+            if kgi_first_api:
+                src.pop("kgi_first_api_claimed_at", None)
+            quota_exhausted = True
+            print("Report deferred:", file_id, str(exc))
         except Exception as exc:
             failed += 1
             error_text = str(exc)[:1200]
