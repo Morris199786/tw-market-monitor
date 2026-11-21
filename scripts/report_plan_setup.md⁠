@@ -1,0 +1,22 @@
+# 啟用券商報告的 Plus 優先解析
+
+準備一台 GitHub Actions 能以 SSH 連線的常開 Linux 或 macOS 主機，使用專用的一般使用者帳號。在這個帳號安裝 Python 3 和支援 `codex exec --ignore-user-config` 的 Codex CLI，以 `codex login` 選擇 ChatGPT 登入。用 `codex login status` 確認顯示 `Logged in using ChatGPT`。請在該帳號的用量設定確認額外點數／自動加購符合自己的預算。
+
+1. 將本目錄的 `report_plan_worker.py` 放到該帳號的私人目錄。確認非互動 SSH 的 PATH 找得到 Python 和 Codex。
+2. 在自己的電腦用 `ssh-keygen -t ed25519 -f report_worker` 產生這項工作專用的金鑰，供排程無人值守使用。將公鑰加到私人主機該帳號的 `~/.ssh/authorized_keys`，限制為以下單一指令。替換 Python 與腳本的絕對路徑，再接上完整公鑰。
+   ```text
+   restrict,command="/usr/bin/python3 /PRIVATE/PATH/report_plan_worker.py" ssh-ed25519 AAAA... report-worker
+   ```
+3. 到 GitHub repo 的 Settings → Secrets and variables → Actions，設定以下 repository secrets。
+      
+      |名稱                     |值                                       |
+      |-----------------------|----------------------------------------|
+      |REPORT_PLAN_SSH_TARGET |專用帳號@私人主機名稱，SSH 使用連接埠 22                |
+      |REPORT_PLAN_SSH_KEY    |剛產生的 SSH 私鑰全文                           |
+      |REPORT_PLAN_KNOWN_HOSTS|已與主機管理者核對指紋的 OpenSSH known_hosts 完整主機公鑰行|
+      |OPENAI_API_KEY         |既有 API 備援金鑰                             |
+4. 私人主機上用底下指令檢查登入。部署後原 cronjob 繼續觸發 Broker reports Drive inbox。工作流程先檢查私人主機，成功才讀取待處理資料。登入資料只留在私人主機。每次解析都優先嘗試方案，只有 Codex 明確回報用量上限才送出同一份輸入到 API。
+   ```sh
+   echo '{"check":true}' | python3 /PRIVATE/PATH/report_plan_worker.py
+   ```
+   預期會收到 `{"status": "ready"}`。解析日誌會標示使用的管道。網路錯誤、登入失效或解析格式錯誤不會啟動付費備援。
