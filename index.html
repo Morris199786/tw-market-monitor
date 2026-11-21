@@ -67,7 +67,7 @@
   }
 </style>
 
-<link rel="stylesheet" href="./assets/market_monitor.css?v=20261120-composite-scroll-sort-v2">
+<link rel="stylesheet" href="./assets/market_monitor.css?v=20261121-v12-risk-timeline-v1">
 <style id="site-dark-palette-20261020">
 /* 深色模式統一為參考網站的石墨灰色系；淺色模式不受影響 */
 html[data-theme="dark"]{
@@ -198,7 +198,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <section id="ai" class="page"><div class="hero ap-hero"><div><div class="kicker">PORTFOLIO INTELLIGENCE</div><h1>AI 投資組合<span>模擬交易</span></h1><p>追蹤配置、持倉與每一次決策。</p></div></div><div id="aiPortfolioRoot"></div></section>
 <section id="holders" class="page"><div class="hero"><div><div class="kicker">LARGE HOLDERS</div><h1>本週大戶籌碼集中</h1><p>400張以上與千張以上持股比例增加幅度</p></div><span id="holderDate" class="badge">週六 17:00</span></div><div class="toolbar"><div class="tabs"><button class="tab active" data-hm="twse">上市</button><button class="tab" data-hm="tpex">上櫃</button></div><div class="tabs"><button class="tab active" data-hk="400">400張大戶增加</button><button class="tab" data-hk="1000">千張大戶增加</button></div></div><div id="holderStatus" class="status"></div><div class="card tablewrap"><table><thead><tr><th>排行／股票</th><th>本週漲跌幅</th><th>大戶比率</th><th>增加</th></tr></thead><tbody id="holderRows"></tbody></table></div></section>
 <section id="monthlyRevenue" class="page" hidden><div class="hero"><div><div class="kicker">MONTHLY REVENUE</div><h1>月營收公布</h1><p>自訂科技族群｜最新已公布月份｜營收、MoM、YoY</p></div><div class="badges"><span id="revenueMonthBadge" class="badge"></span></div></div><div id="revenueStatus" class="status"></div><div id="revenueSectorTabs" class="week-strip"></div><div id="revenueSections"></div></section>
-<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>每日外資買賣超、融資與大盤綜合燈號</p></div></div>
+<section id="marketMonitor" class="page"><div class="hero"><div><div class="kicker">MARKET MONITOR</div><h1>大盤監控</h1><p>每日外資、融資、廣度與四級動態風險燈號</p></div></div>
 <section class="card" data-tw-risk aria-label="大盤綜合燈號" style="padding:12px 16px;margin-bottom:10px"><div>大盤綜合燈號　<strong>載入中</strong>　<small></small></div><div data-summary></div><details><summary>燈號判斷依據與退燈條件</summary><p data-factors></p></details></section>
 <div class="mm-tools"><label>年份 <select data-mm-year aria-label="大盤監控年份"></select></label><label>月份 <select data-mm-month aria-label="大盤監控月份"></select></label><button type="button">重新整理</button></div>
 <div class="status" data-mm-status>開啟分頁後載入資料</div>
@@ -306,7 +306,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-<script src="./assets/market_monitor.js?v=20261120-composite-scroll-sort-v2"></script>
+<script src="./assets/market_monitor.js?v=20261121-v12-risk-timeline-v1"></script>
 <script>
 (function(){
   const wrap = document.getElementById("mobilePageNav");
