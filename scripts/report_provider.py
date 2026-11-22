@@ -21,7 +21,23 @@ def plan_request(payload):
     )
     if proc.returncode:
         # Never treat a connection failure as permission to spend API credits.
-        raise RuntimeError(f"Private report worker failed (exit {proc.returncode})")
+        diagnostics = (
+            ("bad permissions", "SSH_PRIVATE_KEY_PERMISSIONS"),
+            ("error in libcrypto", "SSH_PRIVATE_KEY_FORMAT"),
+            ("invalid format", "SSH_KEY_FORMAT"),
+            ("host key verification failed", "SSH_HOST_KEY_CHECK"),
+            ("permission denied (", "SSH_LOGIN_DENIED"),
+            ("could not resolve hostname", "SSH_TARGET_NAME"),
+            ("connection timed out", "SSH_TIMEOUT"),
+            ("connection refused", "SSH_CONNECTION_REFUSED"),
+            ("no route to host", "SSH_NO_ROUTE"),
+            ("connection reset", "SSH_CONNECTION_RESET"),
+            ("connection closed", "SSH_CONNECTION_CLOSED"),
+        )
+        stderr = proc.stderr.lower()
+        reason = next((label for marker, label in diagnostics if marker in stderr),
+                      "SSH_UNCLASSIFIED" if proc.returncode == 255 else "WORKER_FAILED")
+        raise RuntimeError(f"Private report worker failed (exit {proc.returncode}, {reason})")
     return json.loads(proc.stdout)
 
 
@@ -52,3 +68,4 @@ def complete_report(payload):
         raise RuntimeError(f"Report API returned HTTP {response.status_code}: {code}")
     return "\n".join(part["text"] for item in response.json()["output"]
                      for part in item.get("content", []) if part.get("type") == "output_text").strip()
+
