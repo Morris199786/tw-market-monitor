@@ -29,10 +29,10 @@ def migrate(state,config,now):
         if state['config']!=config:
             allowed={'max_positions','min_exposure','max_stock_weight'}
             changed={k for k in set(state['config'])|set(config) if state['config'].get(k)!=config.get(k)}
-            if not changed<=allowed or any(config.get(k)!=v for k,v in {'max_positions':8,'min_exposure':.2,'max_stock_weight':.3}.items()):
+            if not changed<=allowed or any(config.get(k)!=v for k,v in {'max_positions':8,'min_exposure':0,'max_stock_weight':.3}.items()):
                 raise ValueError('Account configuration changed; explicit versioned migration required')
             state=deepcopy(state)
-            state.setdefault('configuration_events',[]).append(dict(at=now,reason='User allocation limits: 8 positions, 20% minimum, 30% stock cap',previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
+            state.setdefault('configuration_events',[]).append(dict(at=now,reason='User allocation limits: 8 positions, 0% minimum, 30% stock cap; smooth 0–100% exposure',previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
             state['config']=deepcopy(config)
         return state,None
     if state.get('strategy')!='three-pillar-paper-v1':raise ValueError('Unknown previous account version')

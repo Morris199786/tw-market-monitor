@@ -1,5 +1,5 @@
 """Full-market, recency-aware, market-regime weighted forward paper account. No pushes."""
-import argparse,hashlib,json,math,statistics
+import argparse,hashlib,json,math,statistics,subprocess
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -55,6 +55,56 @@ def bars_for(data,ticker,frames=None):
         prev=b['close']
     return bars
 
+def v12_market_signal(data,day):
+    """Execute exactly the dashboard's V12 implementation using node (preinstalled on Actions).
+
+    Includes the historical archive so long rolling windows and hysteresis are
+    identical to the website. Missing or stale source data blocks publication.
+    """
+    js_path=data.parent/'assets'/'market_monitor.js'
+    if not js_path.is_file():
+        return dict(valid=False,date=day,error='大盤監控 market_monitor.js 不存在')
+    # Include model source in the inference reference manifest; a change to
+    # website V12 must also invalidate previously scored AI references.
+    record(js_path,dict(sha256=hashlib.sha256(js_path.read_bytes()).hexdigest()),True)
+    monitor=read(data/'market_monitor.json')
+    breadth=read(data/'market_breadth.json')
+    funds_archive=read(data/'history/monitor-funds-2008-2023.json',[])
+    breadth_archive=read(data/'history/monitor-breadth-2008-2023.json',{})
+    otc=read(data/'market_margin_tpex.json')
+    if (monitor.get('as_of_date','')<day or breadth.get('as_of_date','')<day or
+        not isinstance(funds_archive,list) or not isinstance(breadth_archive.get('all'),list) or
+        otc.get('unit')!='TWD' or not isinstance(otc.get('rows'),dict)):
+        return dict(valid=False,date=day,error='大盤／廣度／融資來源日期不一致或歷史資料缺漏')
+    # Node executes the existing JS engine directly, avoiding a second approximate
+    # Python reimplementation of V12 and its rolling/hysteresis rules.
+    script=r"""
+    const fs=require('node:fs'),vm=require('node:vm');
+    const input=JSON.parse(fs.readFileSync(0,'utf8'));
+    const source=fs.readFileSync(input.js,'utf8');
+    const end=source.indexOf('function paintTwRisk(');
+    if(end<0)throw Error('V12 JS function boundary missing');
+    const context={};vm.runInNewContext(source.slice(0,end),context,{timeout:15000});
+    if(typeof context.buildTwRisk!=='function'||typeof context.applyCombinedMargin!=='function')throw Error('V12 engine not found');
+    const funds=context.applyCombinedMargin(input.funds,input.otc);
+    const result=context.buildTwRisk(funds,input.breadth).get(input.day);
+    const valid=!!result&&result.valid===true&&Number.isFinite(result.score);
+    process.stdout.write(JSON.stringify({date:input.day,valid,score:valid?result.score:null,
+      level:valid?result.level:null,reason:valid?result.reason:'V12 signal missing'}));
+    """
+    payload=dict(js=str(js_path),day=day,
+                 funds=funds_archive+monitor.get('rows',[]),
+                 breadth=breadth_archive['all']+breadth.get('series',{}).get('all',[]),
+                 otc=otc['rows'])
+    try:
+        result=subprocess.run(['node','-e',script],input=json.dumps(payload,ensure_ascii=False),
+                              text=True,capture_output=True,timeout=45,check=True)
+        out=json.loads(result.stdout)
+        if out.get('date')!=day:return dict(valid=False,date=day,error='V12 輸出日期不一致')
+        return out
+    except (OSError,subprocess.CalledProcessError,subprocess.TimeoutExpired,ValueError) as exc:
+        return dict(valid=False,date=day,error='V12 計算失敗：'+str(exc)[:350])
+
 def _proposal(data,cfg,now,protected=()):
     universe=read(data/'ai_universe.json');day=universe.get('date','');attempt=dict(date=day,available_at=now.isoformat(timespec='seconds'),valid=False,targets=[],candidates=[],errors=[],coverage={})
     if not day or day>now.date().isoformat() or now<stamp(day+'T13:30:00+08:00') or (now.date()-datetime.fromisoformat(day).date()).days>4:
@@ -89,7 +139,9 @@ def _proposal(data,cfg,now,protected=()):
     if registered<1500 or usable_stocks<registered*.70:attempt['errors'].append('全市場普通股21日行情覆蓋不足70%，本次不發布新名單')
     if missing:=sorted(set(protected)-set(history)):attempt['errors'].append('已持有／前次目標行情不足：'+','.join(missing))
     breadth=average([1 if x>0 else 0 for t,x in mom20.items() if stocks[t]['asset_type']=='stock'],0)
-    regime=market_regime(monitor,day,breadth);attempt['regime']=regime
+    risk=v12_market_signal(data,day)
+    regime=market_regime(monitor,day,breadth,risk);attempt['regime']=regime
+    if not risk.get('valid') and risk.get('error'):attempt['errors'].append(risk['error'])
     if not regime['valid']:attempt['errors'].extend(regime['reasons'])
     # Institutional daily data: same-date full archive preferred; ranked absence stays neutral.
     institutional=read(data/'institutional.json');flows={};archive=read(data/'history/institutional'/(day+'.json'))
@@ -232,13 +284,16 @@ def _proposal(data,cfg,now,protected=()):
     attempt['excluded_research']=[{'ticker':t,'name':stocks[t]['name'],'pending_documents':n} for t,n in sorted(research_pending.items())]
     attempt['coverage']['research_content']={'pending_companies':len(research_pending),'pending_documents':sum(research_pending.values()),'model':content_cache.get('model'),'version':content_cache.get('version')}
     ranked.sort(key=lambda x:(-x['score'],x['ticker']));targets=allocate(ranked,regime['target_exposure'],cfg)
-    core=[dict(x,confidence='最低部位大盤ETF') for x in ranked if x.get('core_eligible')]
-    targets,floor_met=ensure_floor(targets,core,cfg)
-    if not floor_met:attempt['errors'].append('無法以合格標的及可驗證大盤ETF達到最低20%目標，本次不發布新名單')
+    # 0% exposure is a valid explicit cash allocation: do not force a core ETF.
+    # Keep legacy minimum-floor support if a future config explicitly requests it.
+    if cfg.get('min_exposure',0)>0:
+        core=[dict(x,confidence='最低部位大盤ETF') for x in ranked if x.get('core_eligible')]
+        targets,floor_met=ensure_floor(targets,core,cfg)
+        if not floor_met:attempt['errors'].append('無法達到設定的最低投資水位，本次不發布新名單')
     exposure=sum(t['weight'] for t in targets)
     attempt.update(valid=not attempt['errors'],targets=targets,candidates=ranked[:50],regime=regime,target_exposure=exposure,target_cash=1-exposure,
         model='relative-content-v6：相對動能＋自結加扣分及盈虧轉換＋大戶短效與價格確認＋本業季比較＋證據式研究；不因高波動降權，分數不是機率',sources={'market_date':day,'institutional_date':institutional.get('date'),
-        'holder_date':hdate,'holder_published_at':next(iter(holder_signals.values()),{}).get('published_at'),'market_monitor_date':regime.get('date'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
+        'holder_date':hdate,'holder_published_at':next(iter(holder_signals.values()),{}).get('published_at'),'market_monitor_date':regime.get('date'),'v12_risk_score':regime.get('risk_score'),'v12_risk_level':regime.get('risk_level'),'etf_version':manifest.get('version'),'official_financial_count':len(official),'earnings_updated_at':earnings.get('updated_at'),'opm_updated_at':read(data/'quarterly_opm.json').get('updated_at'),'research_updated_at':reports.get('updated_at'),'research_items':len(reports.get('items',[])),'research_raw_files':len(raw_reports),'holder_mode':hmode},
         temporal_policy={'event_half_life_sessions':5,'research_thesis_half_life_sessions':30,'financial_max_age_calendar_days':150,'holder_session_weights':[1,.8,.55,.35,.2,.1,.05],'self_report_range':[-8,4]})
     return attempt
 
