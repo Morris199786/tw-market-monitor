@@ -1,6 +1,7 @@
 import json,sys,tempfile,unittest
 from pathlib import Path
 from copy import deepcopy
+from unittest.mock import patch
 from datetime import datetime,timedelta
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from ai_portfolio_engine import *
@@ -85,6 +86,21 @@ class Model(unittest.TestCase):
         def m(up):return {'rows':[dict(date=d,index=100+i if up else 200-i,foreign=10 if up else -10,foreign_light='normal',margin_light='normal',intersection='normal') for i,d in enumerate(dates)]}
         good=market_regime(m(True),dates[-1],.8);bad=market_regime(m(False),dates[-1],.2);self.assertEqual(good['target_exposure'],.9);self.assertLess(bad['target_exposure'],good['target_exposure'])
     def test_stale_macro_not_used(self):self.assertFalse(market_regime({'rows':[]},'2026-11-13',.8)['valid'])
+    def test_v12_continuous_exposure_zero_to_full(self):
+        dates=[(datetime(2026,8,1)+timedelta(days=i)).date().isoformat() for i in range(70)]
+        rows=[dict(date=d,index=100+i,foreign=10,foreign_light='normal',margin_light='normal',intersection='normal') for i,d in enumerate(dates)]
+        macro={'rows':rows};day=dates[-1]
+        for risk,expected in ((0,1.0),(20,.896),(50,.5),(65,.28175),(80,.104),(100,0.0),(120,0.0)):
+            v12=dict(valid=True,date=day,score=risk,level=3 if risk>=65 else 2 if risk>=52 else 1 if risk>=38 else 0)
+            regime=market_regime(macro,day,.8,v12)
+            self.assertTrue(regime['valid'])
+            self.assertAlmostEqual(regime['target_exposure'],expected,places=5)
+        invalid=market_regime(macro,day,.8,dict(valid=True,date=dates[-2],score=20,level=0))
+        self.assertFalse(invalid['valid'])
+    def test_zero_exposure_decision_really_can_exit(self):
+        state=initial({**DEFAULTS,'min_exposure':0},'2026-11-13T18:00:00+08:00')
+        self.assertTrue(frozen_decision(state,plan('2026-11-13',[],exposure=0)))
+        self.assertEqual(state['decisions'][-1]['targets'],[])
     def test_event_fades_but_financial_quality_persists(self):
         cal=[(datetime(2026,10,1)+timedelta(days=i)).date().isoformat() for i in range(45)]
         row=dict(period='2026-Q3',prev_period='2026-Q2',publish_date='2026-11-01',eps=2,prev_eps=1,gross_margin=30,prev_gross_margin=20,operating_margin=20,prev_operating_margin=10)
@@ -123,7 +139,13 @@ class Integration(unittest.TestCase):
             write(data/'quarterly_earnings.json',{'reports':[dict(ticker=t,period='2026-Q3',prev_period='2026-Q2',publish_date='2026-11-13',publish_time='18:00:00',eps=3,prev_eps=1,gross_margin=40,prev_gross_margin=20,operating_margin=30,prev_operating_margin=10) for t in codes]});write(data/'reports.json',{'items':[{'ticker':'9999','date':'2026-11-13'}]})
             write(data/'ai_fundamentals.json',{'stocks':{t:dict(period='2026-Q3',scope='year_to_date',observed_at='2026-11-14T12:00:00+08:00',eps=2,gross_margin=30,operating_margin=20) for t in codes}})
             old=initial({**DEFAULTS,'initial_cash':1000000},'2026-11-14T12:00:00+08:00');old['strategy']='three-pillar-paper-v1';write(data/'ai_portfolio.json',old)
-            s=run(root,now);self.assertEqual(s['status'],'ready');self.assertTrue(s['decisions'][0]['targets']);self.assertEqual(s['cash'],20000000)
-            self.assertEqual(s['decisions'][0]['coverage']['usable_stocks'],1100);self.assertTrue(list((data/'ai_portfolio_archives').glob('*.json')))
-            again=run(root,stamp('2026-11-14T13:05:00+08:00'));self.assertEqual(again['decisions'],s['decisions']);self.assertFalse(again['trades'])
+            # Mock the V12 signal ONLY in this synthetic integration fixture. The
+            # fixture has neither real monitor JS assets nor daily breadth archives.
+            # Production must still reject missing real same-date data.
+            fixture_v12=dict(date=day,valid=True,score=20.0,level=0)
+            with patch('update_ai_portfolio.v12_market_signal',return_value=fixture_v12):
+                s=run(root,now);self.assertEqual(s['status'],'ready');self.assertTrue(s['decisions'][0]['targets']);self.assertEqual(s['cash'],20000000)
+                self.assertEqual(s['decisions'][0]['coverage']['usable_stocks'],1100);self.assertTrue(list((data/'ai_portfolio_archives').glob('*.json')))
+                self.assertAlmostEqual(s['decisions'][0]['regime']['target_exposure'],.896)
+                again=run(root,stamp('2026-11-14T13:05:00+08:00'));self.assertEqual(again['decisions'],s['decisions']);self.assertFalse(again['trades'])
 if __name__=='__main__':unittest.main()
