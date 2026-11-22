@@ -22,6 +22,12 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
+      - name: Connect report runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:github-reports
       - name: Check private ChatGPT report worker before claiming reports
         env:
           WORKER_KEY: ${{ secrets.REPORT_PLAN_SSH_KEY }}
