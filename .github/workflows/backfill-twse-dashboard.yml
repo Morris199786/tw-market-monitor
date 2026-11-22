@@ -18,7 +18,7 @@ concurrency:
 jobs:
   backfill:
     runs-on: ubuntu-24.04
-    timeout-minutes: 110
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,50 +27,40 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install headless Chromium for official TWSE dashboard
-        run: |
-          python -m pip install playwright==1.56.0
-          python -m playwright install --with-deps chromium
-      - name: Collect verified official days; missing days stay missing
+      - name: Fetch official date-scoped credit JSON (no Chromium required)
         id: collect
         continue-on-error: true
         env:
           START_DATE: ${{ inputs.start_date }}
           END_DATE: ${{ inputs.end_date }}
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -n "$END_DATE" ]; then
             python scripts/update_twse_credit_dashboard.py --backfill --start "$START_DATE" --end "$END_DATE"
           else
             python scripts/update_twse_credit_dashboard.py --backfill --start "$START_DATE"
           fi
-      - name: Upload official response diagnostics
+      - name: Publish verified historical records even if some dates unavailable
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: twse-credit-api-diagnostics
-          path: .cache/twse-credit-probe.json
-          if-no-files-found: ignore
-          retention-days: 14
-      - name: Publish verified historical records only
-        if: always()
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/twse_credit_dashboard.json
-          if git diff --cached --quiet; then echo 'TWSE_BACKFILL_NO_VERIFIED_CHANGE'; exit 0; fi
-          git commit -m 'data: TWSE credit dashboard verified historical observations'
+          if git diff --cached --quiet; then echo 'TWSE_BACKFILL_NO_CHANGE'; exit 0; fi
+          git commit -m 'data: verified TWSE credit dashboard backfill'
           for n in 1 2 3 4 5; do
-            git fetch origin main && git -c rebase.autoStash=true rebase origin/main
+            git fetch origin main
+            git -c rebase.autoStash=true rebase origin/main
             if git push origin HEAD:main; then echo 'TWSE_BACKFILL_PUBLISHED'; exit 0; fi
             sleep "$n"
           done
           exit 1
-      - name: Report whether official history was complete
-        if: always()
+      - name: Final backfill status
+        if: ${{ always() }}
         run: |
           echo 'Collector outcome: ${{ steps.collect.outcome }}'
-          echo 'Rows are written only when all seven fields and the official report date are verified.'
-          echo 'If the source cannot switch historical date, download twse-credit-api-diagnostics from this run.'
+          echo 'Missing dates are not fabricated. The collector prints all gaps in TWSE_CREDIT_SUMMARY.'
           if test '${{ steps.collect.outcome }}' != 'success'; then exit 1; fi
