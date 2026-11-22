@@ -185,7 +185,7 @@ ARTICLE_SCHEMA = {
     'required':['title','summary','blocks'],
 }
 
-def parse(text, model, on_response=None, response_id=None):
+def parse_api(text, model, on_response=None, response_id=None):
     # GPT-5 family: Responses API, no unsupported temperature/JSON-mode settings.
     payload = {
         'model': model,
@@ -257,6 +257,23 @@ def parse(text, model, on_response=None, response_id=None):
         raise ValueError('STRUCTURED_JSON_ERROR ' + str(exc) +
                          ' | near=' + repr(body[max(0,exc.pos-80):exc.pos+80])) from exc
     return parsed, data.get('usage', {})
+
+
+def parse(text, model, on_response=None, response_id=None):
+    """Use the existing Excel prompt/schema with a subscription-first provider.
+
+    A saved Responses API ID is resumed directly; never launch another
+    generation or fall back to a second POST after a network ambiguity.
+    """
+    from research_provider import research_first
+    return research_first(
+        raw_text=text,
+        model=model,
+        instructions=SYSTEM_PROMPT + '\n僅輸出合法 JSON object，不要 markdown。',
+        schema=ARTICLE_SCHEMA,
+        api_call=lambda: parse_api(text, model, on_response, response_id),
+        response_id=response_id,
+    )
 
 
 def audit(result, row=None):
@@ -413,7 +430,7 @@ def run_yingbang_only(args):
     if not isinstance(render,dict) or not isinstance(render.get('items'),dict) or not isinstance(history,list):
         sys.exit('YINGBANG_OUTPUT_INVALID: no API called')
     if not os.getenv('OPENAI_API_KEY'):
-        sys.exit('OPENAI_API_KEY missing; no calls made')
+        sys.exit('OPENAI_API_KEY missing for last-resort fallback; no calls made')
     if os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
         sys.exit('YINGBANG_DURABLE_CLAIM_REQUIRED: no API called')
     at=datetime.datetime.now(datetime.timezone.utc).isoformat()
@@ -564,7 +581,7 @@ def main():
     if stats['missing_category'] or stats['missing_api_route']:
         sys.exit('RESEARCH_SYNC_REQUIRED: run LINE research sync before paid batch')
     if selected and not os.getenv('OPENAI_API_KEY'):
-        sys.exit('OPENAI_API_KEY missing; no calls made')
+        sys.exit('OPENAI_API_KEY missing for last-resort fallback; no calls made')
     if selected and os.getenv('RESEARCH_AI_REMOTE_CHECKPOINT') != '1':
         sys.exit('DURABLE_CLAIM_REQUIRED: no API called')
     run = {'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
