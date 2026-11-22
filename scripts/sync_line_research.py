@@ -28,13 +28,40 @@ COLUMNS = ('date','type','source','industry','company','ticker','period','story'
            'source_row','full_text','full_text_2','full_text_3')
 BROKER_TYPES = {'券商評等', '個股報告', '產業報告'}
 
-# Only publish the two actual B-column types verified in the Sheet audit:
-# call memo (204) and 法說會 (191). Other Sheet categories are never imported.
+# Include B=call memo/法說會 OR C=業務提供會議錄音. Read full A:W content.
 def allowed_sheet_type(value):
     normalized = unicodedata.normalize('NFKC', str(value or '')).strip().casefold()
     normalized = re.sub(r'\s+', ' ', normalized)
     return normalized in {'call memo', '法說會'}
 
+
+
+def is_meeting_recording(source):
+    """C-column exact source label (ignoring spacing and width differences)."""
+    return normalize(source) == normalize('業務提供會議錄音')
+
+
+def allowed_sheet_row(row):
+    return allowed_sheet_type(row.get('type')) or is_meeting_recording(row.get('source'))
+
+
+def recording_content_key(row):
+    """Identify genuinely identical recordings, not merely the same stock/day.
+
+    Keep the raw row ID and its existing AI cache key unchanged. The key ignores
+    B classification and C's constant label, but includes the full recorded body.
+    """
+    if not is_meeting_recording(row.get('source')):
+        return ''
+    fields = ('story', 'revenue', 'eps', 'inventory', 'utilization',
+              'guidance', 'trend', 'rating_target', 'numbers', 'source_row',
+              'full_text', 'full_text_2', 'full_text_3')
+    body = '\n'.join(str(row.get(k) or '') for k in fields)
+    body = re.sub(r'\s+', '', unicodedata.normalize('NFKC', body)).casefold()
+    if len(body) < 100:  # Too short to prove identity; do not collapse separate notes.
+        return ''
+    identity = normalize(row.get('ticker')) or normalize(row.get('company'))
+    return hashlib.sha256((identity + '|' + body).encode('utf-8')).hexdigest()
 
 
 def inspect_sheet_types(values):
@@ -44,6 +71,11 @@ def inspect_sheet_types(values):
         raise ValueError('Empty sheet; nothing to inspect')
     counts = Counter(str(row[1]).strip() if len(row) > 1 and str(row[1]).strip() else '(空白)' for row in values[1:])
     accepted = {label: count for label, count in counts.items() if allowed_sheet_type(label)}
+    recording = sum(is_meeting_recording(row[2] if len(row) > 2 else '') for row in values[1:])
+    combined = sum(allowed_sheet_type(row[1] if len(row) > 1 else '') or
+                   is_meeting_recording(row[2] if len(row) > 2 else '') for row in values[1:])
+    print('LINE_SHEET_C_RECORDING_COUNTS ' + json.dumps(
+        {'matching_rows': recording, 'combined_allowed_rows': combined}, ensure_ascii=False), flush=True)
     print('LINE_SHEET_B_COLUMN_COUNTS ' + json.dumps(dict(counts.most_common()), ensure_ascii=False), flush=True)
     print('LINE_SHEET_B_COLUMN_ALLOWED ' + json.dumps({'matching_types': accepted, 'matching_rows': sum(accepted.values()), 'excluded_rows': sum(counts.values())-sum(accepted.values())}, ensure_ascii=False), flush=True)
     return counts, accepted
@@ -132,7 +164,7 @@ MEETING_RE = re.compile(r'(法說|聯合法說|法人說明|電話會議|訪談|
 def classify(row):
     """Classify the document, not subjects mentioned in its body.
 
-    Excel B controls ingestion; a mislabeled B=法說會 does not turn an
+    Excel B and C control ingestion; a mislabeled B=法說會 does not turn an
     investment morning digest, industry report, or weekly report into a call.
     This function never changes API eligibility or the original source data.
     """
@@ -151,6 +183,8 @@ def classify(row):
         return '市場情報'
     if re.search(r'(?i)(週報|周報|weekly\s*(?:report|update|review)|週度更新)', identity):
         return '週報'
+    if is_meeting_recording(source):
+        return '法說／訪談'
     if original in ('個股報告', '券商評等'):
         return '個股研究'
     if original == '產業報告' or INDUSTRY_RE.search(identity):
@@ -281,12 +315,13 @@ def python_us_research(row):
 def transform(values, brokers, today):
     if not values or not values[0]:
         raise ValueError('Empty sheet; refuse to overwrite existing data')
-    items, seen = [], set()
+    items, seen, seen_recordings = [], set(), set()
     invalid = identical = excluded_type = 0
+    recording_duplicates = 0
     for sheet_row_number, raw in enumerate(values[1:], 2):
         cells = (list(raw) + [''] * len(COLUMNS))[:len(COLUMNS)]
         row = dict(zip(COLUMNS,cells))
-        if not allowed_sheet_type(row['type']):
+        if not allowed_sheet_row(row):
             excluded_type += 1
             continue
         d = parse_date(row['date'])
@@ -301,6 +336,12 @@ def transform(values, brokers, today):
             identical += 1
             continue
         seen.add(digest)
+        rec_key = recording_content_key(row)
+        if rec_key and rec_key in seen_recordings:
+            recording_duplicates += 1
+            continue
+        if rec_key:
+            seen_recordings.add(rec_key)
         row['id'] = 'line-' + digest[:20]
         row['original_type'] = row['type']
         row['category'] = classify(row)
@@ -320,10 +361,11 @@ def transform(values, brokers, today):
         row['unverified'] = row['original_type'] == '小作文'
         items.append(row)
     if not items:
-        raise ValueError('No rows with column B = call memo or 法說會; refusing to replace published LINE data. Check Sheet B-column values.')
+        raise ValueError('No rows with B=call memo/法說會 or C=業務提供會議錄音; refusing to overwrite published data.')
     items.sort(key=lambda r:(r['date'],r['sheet_row_number']),reverse=True)
     return {'count':len(items),'items':items}, {'input_rows':len(values)-1,
         'kept':len(items),'excluded_other_B_types':excluded_type,'invalid_dates':invalid,'identical_rows_removed':identical,
+        'identical_recordings_removed':recording_duplicates,
         'broker_overlap_candidates':sum(bool(r['possible_broker_duplicates']) for r in items)}
 
 
@@ -484,9 +526,12 @@ def main():
         if not token:
             sys.exit('ACCESS_TOKEN missing; no output written')
         values = fetch_sheet(token)
-    _, allowed = inspect_sheet_types(values)
-    if os.getenv('LINE_SYNC_DRY_RUN') == '1' and not allowed:
-        print('CHECK_ONLY_NO_MATCH: B 欄沒有完全符合「法說/訪談」的資料；未發布、未修改檔案、未呼叫 API。請根據上述真實 B 欄分布確認篩選類型。', flush=True)
+    inspect_sheet_types(values)
+    allowed_count = sum(allowed_sheet_type(row[1] if len(row)>1 else '') or
+                        is_meeting_recording(row[2] if len(row)>2 else '')
+                        for row in values[1:])
+    if os.getenv('LINE_SYNC_DRY_RUN') == '1' and not allowed_count:
+        print('CHECK_ONLY_NO_MATCH: B=call memo/法說會 與 C=業務提供會議錄音 都沒有符合資料；未修改檔案、未呼叫 API。', flush=True)
         return
     brokers = load_all_brokers()
     data, stats = transform(values, brokers, today)
