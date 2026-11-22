@@ -105,6 +105,19 @@ def allowed_type(value):
     return re.sub(r'\s+', ' ', value) in ('call memo', '法說會')
 
 
+def allowed_recording_source(value):
+    """Only the exact requested C-column source, tolerating Unicode/spacing variants."""
+    import unicodedata
+    source = unicodedata.normalize('NFKC', str(value or '')).casefold()
+    return re.sub(r'\s+', '', source) == '業務提供會議錄音'
+
+
+def allowed_row(row):
+    # Same union rule as Excel synchronization (B OR C).
+    return (allowed_type(row.get('original_type') or row.get('type'))
+            or allowed_recording_source(row.get('source')))
+
+
 def source_fields(row):
     """Send every nonempty A-W column, retaining the original field labels."""
     return {label: str(row.get(key) or '') for key, label in FIELD_NAMES.items()
@@ -118,7 +131,7 @@ def content(row):
 def route(row):
     if row.get('market') == 'US':
         return 'python'
-    if allowed_type(row.get('original_type') or row.get('type')):
+    if allowed_row(row):
         return 'required'
     return row.get('api_route') or 'none'
 
@@ -466,7 +479,7 @@ def main():
         path = ROOT / 'data/research_shards' / shard['file']
         for row in load(path, {}).get('items', []):
             stats['shard_rows'] += 1
-            if row.get('source_kind') != 'line' or not allowed_type(row.get('original_type') or row.get('type')):
+            if row.get('source_kind') != 'line' or not allowed_row(row):
                 continue
             if row.get('market') == 'US':
                 continue
@@ -534,7 +547,7 @@ def main():
     if args.article_id and (args.mode != 'pending' or args.limit != 1):
         sys.exit('TARGET_SAFETY: requires --mode pending --limit 1')
     if args.article_id and not selected:
-        print('TARGET_BLOCKED_NO_API: existing attempt or ineligible article; no credit charged')
+        print('TARGET_BLOCKED_NO_API: existing attempt, matching completed event, or ineligible article; no credit charged')
         return
     if args.article_id and (len(selected) != 1 or selected[0][0]['id'] != args.article_id):
         sys.exit('TARGET_SAFETY: unexpected candidate; refusing paid call')
