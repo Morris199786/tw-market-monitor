@@ -31,6 +31,7 @@ TZ = ZoneInfo('Asia/Taipei')
 FIELDS = ('maintenance_ratio', 'call_accounts', 'call_amount',
           'disposal_accounts', 'disposal_amount', 'credit_accounts',
           'credit_account_ratio')
+OPTIONAL_FIELDS = ('notified_call_accounts', 'credit_balance')
 COUNT_KEYS = ('call_accounts', 'disposal_accounts', 'credit_accounts')
 
 
@@ -81,6 +82,7 @@ def from_official(payload, requested):
         'credit_accounts': int(val('marginAccNum')),
         'credit_account_ratio': float(val('marginAccRate')),
         'notified_call_accounts': int(val('callAccNum')),
+        'credit_balance': round(val('crdAmt') / 100_000_000, 6),
     }
     for official_key, normalized_key in (
         ('belowAccNum','call_accounts'), ('exeAccNum','disposal_accounts'),
@@ -145,7 +147,7 @@ def persist(new_rows, calendar):
     if merged_rows == obj['rows'] and merged_cal == obj.get('calendar', []):
         print('TWSE_CREDIT_UNCHANGED', len(merged_rows), flush=True)
         return
-    obj.update({'schema': 1, 'source': API, 'first_date': str(START),
+    obj.update({'schema': 1, 'source': API, 'dashboard': DASHBOARD, 'first_date': str(START),
                 'calendar': merged_cal, 'rows': merged_rows})
     DEST.parent.mkdir(parents=True, exist_ok=True)
     tmp = DEST.with_suffix('.tmp')
