@@ -9,7 +9,7 @@ on:
         options: [check, sync, recover_85, ai, failed, rerun_three, retry_mediatek, yingbang_only]
         default: check
       max_reports:
-        description: 'ai模式本次最多API文章數（1–250）；只處理未嘗試文章'
+        description: 'ai模式本次最多解析文章數（1–250）；Codex先行，限額時API備援'
         required: true
         default: '10'
         type: string
@@ -32,6 +32,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Connect private Codex worker over Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:github-reports
+      - name: Verify private subscription worker before any research claim
+        env:
+          WORKER_KEY: ${{ secrets.REPORT_PLAN_SSH_KEY }}
+          WORKER_HOST_KEY: ${{ secrets.REPORT_PLAN_KNOWN_HOSTS }}
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
+          RESEARCH_AI_ROUTE: plan-first
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$WORKER_KEY" > ~/.ssh/report_worker
+          printf '%s\n' "$WORKER_HOST_KEY" >> ~/.ssh/known_hosts
+          PYTHONPATH=scripts python - <<'PYCODE'
+          from report_provider import plan_request
+          assert plan_request({'check': True}) == {'status': 'ready'}
+          result = plan_request({'task': 'research', 'check': True})
+          assert result == {'status': 'ready', 'research': True}, result
+          print('EXCEL_RESEARCH_PRIVATE_WORKER_READY')
+          PYCODE
       - name: Refresh ledger and configure checkpoint identity
         run: |
           git pull --ff-only origin main
@@ -45,6 +70,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           RESEARCH_AI_REMOTE_CHECKPOINT: '1'
+          RESEARCH_AI_ROUTE: plan-first
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
           RESEARCH_AI_MODEL: gpt-5.6-luna
         run: python scripts/research_ai_batch.py --mode yingbang_only --limit 1
       - name: Publish only Yingbang output and its audit
@@ -151,12 +178,41 @@ jobs:
           else
             python scripts/research_ai_batch.py --limit "$BATCH_LIMIT" --category all --mode pending --dry-run
           fi
+      - name: Connect private Codex worker over Tailscale
+        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:github-reports
+      - name: Verify private subscription worker before any research claim
+        if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
+        env:
+          WORKER_KEY: ${{ secrets.REPORT_PLAN_SSH_KEY }}
+          WORKER_HOST_KEY: ${{ secrets.REPORT_PLAN_KNOWN_HOSTS }}
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
+          RESEARCH_AI_ROUTE: plan-first
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$WORKER_KEY" > ~/.ssh/report_worker
+          printf '%s\n' "$WORKER_HOST_KEY" >> ~/.ssh/known_hosts
+          PYTHONPATH=scripts python - <<'PYCODE'
+          from report_provider import plan_request
+          assert plan_request({'check': True}) == {'status': 'ready'}
+          result = plan_request({'task': 'research', 'check': True})
+          assert result == {'status': 'ready', 'research': True}, result
+          print('EXCEL_RESEARCH_PRIVATE_WORKER_READY')
+          PYCODE
       - name: Analyze selected unprocessed articles
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' || inputs.run_mode == 'yingbang_only' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           BATCH_LIMIT: ${{ inputs.max_reports }}
           RESEARCH_AI_REMOTE_CHECKPOINT: '1'
+          RESEARCH_AI_ROUTE: plan-first
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
           RESEARCH_AI_MODEL: gpt-5.6-luna
         run: |
           if [ "${{ inputs.run_mode }}" = "yingbang_only" ]; then
