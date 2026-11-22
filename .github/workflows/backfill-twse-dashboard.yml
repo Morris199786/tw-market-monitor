@@ -43,6 +43,14 @@ jobs:
           else
             python scripts/update_twse_credit_dashboard.py --backfill --start "$START_DATE"
           fi
+      - name: Upload official response diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: twse-credit-api-diagnostics
+          path: .cache/twse-credit-probe.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Publish verified historical records only
         if: always()
         shell: bash
@@ -63,5 +71,6 @@ jobs:
         if: always()
         run: |
           echo 'Collector outcome: ${{ steps.collect.outcome }}'
-          echo 'Rows are written only when all fields and the official report date are verified.'
+          echo 'Rows are written only when all seven fields and the official report date are verified.'
+          echo 'If the source cannot switch historical date, download twse-credit-api-diagnostics from this run.'
           if test '${{ steps.collect.outcome }}' != 'success'; then exit 1; fi
