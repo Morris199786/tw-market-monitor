@@ -8,7 +8,8 @@ If TWSE changes its DOM/date controls, the run reports an error and leaves the
 last published JSON untouched. Use --probe for field/date diagnostics.
 """
 from __future__ import annotations
-import argparse, datetime as dt, json, math, re, time
+import argparse, datetime as dt, json, math, re, time, sys
+from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -105,42 +106,129 @@ def report_date_from_body(text):
     return dates[-1] if len(set(dates))==1 else None
 
 
+def inspect_date_controls(page):
+    """Capture actual DOM controls, rather than relying on input[type=date]."""
+    return page.evaluate("""() => [...document.querySelectorAll('input,button,[role=button],[role=textbox]')]
+      .filter(x => x.getBoundingClientRect().width > 0)
+      .map(x => ({tag:x.tagName, type:x.type||'', value:x.value||'',
+         placeholder:x.getAttribute('placeholder')||'', label:x.getAttribute('aria-label')||'',
+         text:(x.innerText||'').slice(0,80), outer:x.outerHTML.slice(0,400)}))
+      .filter(x => /date|日期|時間|[0-9]{4}[/\\-][0-9]{1,2}/i.test(JSON.stringify(x))).slice(0,45)""")
+
+
+def add_network_diagnostics(page):
+    """Keep a bounded view of *official* JSON response shapes and request dates.
+
+    Network observations are diagnostic only: an endpoint is not trusted as a
+    historical record unless the response explicitly proves its own date.
+    """
+    observations=[]
+    def record(response):
+        try:
+            parts=urlsplit(response.url)
+            if not (parts.hostname or '').endswith('twse.com.tw'):
+                return
+            mime=response.headers.get('content-type','').lower()
+            if 'json' not in mime:
+                return
+            entry={'url_path':parts.path,'query':dict(parse_qsl(parts.query)),
+                   'status':response.status, 'mime':mime[:75]}
+            payload=response.json()
+            if isinstance(payload,dict):
+                entry['keys']=list(payload.keys())[:35]
+                entry['sample']=json.dumps(payload,ensure_ascii=False)[:2500]
+            elif isinstance(payload,list):
+                entry['length']=len(payload)
+                entry['sample']=json.dumps(payload[:2],ensure_ascii=False)[:2500]
+            if len(observations)<220: observations.append(entry)
+        except Exception as exc:
+            if len(observations)<220:observations.append({'parse_error':str(exc)[:160]})
+    page.on('response',record)
+    return observations
+
+
 def set_date(page, day):
-    """Request a specific date through the visible picker; never assume a URL parameter works."""
-    control = page.locator('input[type="date"]:visible')
-    if control.count():
-        control.first.fill(day)
-        control.first.dispatch_event('change')
-        control.first.dispatch_event('input')
-        page.wait_for_timeout(850)
-        return True
-    # Some TWSE builds use a plain text DatePicker input.
-    for selector in ('input[placeholder*="日期"]:visible','input[aria-label*="日期"]:visible'):
-        loc=page.locator(selector)
-        if loc.count():
-            loc.first.fill(day.replace('-','/'))
-            loc.first.press('Enter')
-            page.wait_for_timeout(850)
-            return True
+    """Try actual calendar widgets (including readonly/React inputs).
+
+    Confirming a chosen date is a *separate* step in capture_day. Merely
+    filling an input is never proof that the server supplied historical data.
+    """
+    variants=(day, day.replace('-','/'), day.replace('-',''))
+    selectors=(
+        'input[type="date"]', 'input[placeholder*="日期"]',
+        'input[placeholder*="時間"]', 'input[aria-label*="日期"]',
+        'input[aria-label*="時間"]', '.el-date-editor input',
+        '.ant-picker-input input', '.react-datepicker__input-container input',
+        'input[readonly]',
+    )
+    for selector in selectors:
+        for input_el in page.locator(selector).all()[:12]:
+            try:
+                if not input_el.is_visible(): continue
+                for value in variants[:2]:
+                    try:
+                        input_el.click(timeout=1800)
+                        input_el.evaluate("""(el, value) => {
+                          const setter=Object.getOwnPropertyDescriptor(
+                            HTMLInputElement.prototype,'value').set;
+                          setter.call(el,value);
+                          el.dispatchEvent(new Event('input',{bubbles:true}));
+                          el.dispatchEvent(new Event('change',{bubbles:true}));
+                        }""",value)
+                        input_el.press('Enter',timeout=1800)
+                        page.wait_for_timeout(850)
+                        if day in page.locator('body').inner_text() or value in page.locator('body').inner_text():
+                            return True
+                    except Exception:pass
+                # Calendar widgets with a date input may accept the keyboard.
+                try:
+                    input_el.click(timeout=1500)
+                    input_el.press('ControlOrMeta+A',timeout=1500)
+                    input_el.type(day.replace('-','/'),delay=35,timeout=2500)
+                    input_el.press('Enter',timeout=1500)
+                    page.wait_for_timeout(650)
+                    return True
+                except Exception:pass
+            except Exception:pass
     return False
 
 
-def capture_day(page, day=None):
-    page.goto(URL, wait_until='domcontentloaded',timeout=35000)
-    page.wait_for_timeout(1800)
-    selected = False
-    if day: selected = set_date(page,day)
-    page.wait_for_timeout(900)
-    body = page.locator('body').inner_text(timeout=18000)
-    report_day = report_date_from_body(body)
-    if not report_day:
-        return None, {'reason':'Page did not expose an unambiguous official data date','selected':selected,'wanted':day,'body_excerpt':body[:1200]}
-    if day and report_day != day:
-        return None, {'reason':'Selected date not reflected in official report date; no backfill row', 'wanted':day,'actual':report_day,'selected':selected}
-    row,err=parse_visible_text(body,report_day)
+def capture_day(page, day=None, reload=True):
+    if reload:
+        page.goto(URL,wait_until='domcontentloaded',timeout=45000)
+        page.wait_for_timeout(2000)
+    selected=False
+    if day:
+        selected=set_date(page,day)
+        page.wait_for_timeout(1100)
+    body=page.locator('body').inner_text(timeout=19000)
+    reported=report_date_from_body(body)
+    if not reported:
+        return None, {'wanted':day,'selected':selected,
+                      'reason':'Official data date not detectable in rendered page',
+                      'body_excerpt':body[:1300]}
+    if day and reported!=day:
+        return None, {'wanted':day,'actual':reported,'selected':selected,
+                      'reason':'Official date did not change: refusing to backdate latest figures'}
+    row,err=parse_visible_text(body,reported)
     if err:
-        return None, {'reason':err,'date':report_day,'body_excerpt':body[:1600]}
-    return row,{'date':report_day,'selected':selected}
+        return None, {'wanted':day,'actual':reported,'selected':selected,
+                      'reason':err,'body_excerpt':body[:1300]}
+    return row, {'date':reported,'selected':selected}
+
+
+def save_probe(info,page,network):
+    probe=DEST.parent.parent/'.cache/twse-credit-probe.json'
+    probe.parent.mkdir(parents=True,exist_ok=True)
+    try: controls=inspect_date_controls(page)
+    except Exception as exc: controls=[{'error':str(exc)}]
+    probe.write_text(json.dumps({
+        'created_at':dt.datetime.now(TZ).isoformat(), 'page':page.url,
+        'date_controls':controls,'official_json_responses':network,
+        'diagnostics':info,
+        'note':'These are diagnostics, NOT verified historical observations.'
+    },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    print('TWSE_CREDIT_PROBE',str(probe),'responses',len(network),flush=True)
 
 
 def read_old():
@@ -166,58 +254,75 @@ def commit(rows):
     temp=DEST.with_suffix('.tmp')
     temp.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     temp.replace(DEST)
-    print('TWSE_CREDIT_PUBLISHED_LOCALLY',len(obj['rows']),obj['rows'][-1]['date'],flush=True)
+    print('TWSE_CREDIT_PUBLISHED_LOCALLY',len(obj['rows']),obj['rows'][-1]['date'] if obj['rows'] else 'none',flush=True)
 
 
 def main():
     p=argparse.ArgumentParser()
-    group=p.add_mutually_exclusive_group(required=True)
-    group.add_argument('--daily',action='store_true')
-    group.add_argument('--backfill',action='store_true')
-    group.add_argument('--probe',action='store_true')
-    p.add_argument('--start',default=str(START));p.add_argument('--end')
+    g=p.add_mutually_exclusive_group(required=True)
+    g.add_argument('--daily',action='store_true')
+    g.add_argument('--backfill',action='store_true')
+    g.add_argument('--probe',action='store_true')
+    p.add_argument('--start',default=str(START))
+    p.add_argument('--end')
+    p.add_argument('--max-consecutive-failures',type=int,default=3)
     args=p.parse_args()
     from playwright.sync_api import sync_playwright
     today=dt.datetime.now(TZ).date()
+    output=[];failures=[];attempted=0
     with sync_playwright() as pw:
         browser=pw.chromium.launch(headless=True,args=['--no-sandbox'])
-        page=browser.new_page(locale='zh-TW',timezone_id='Asia/Taipei',viewport={'width':1200,'height':1100})
-        page.set_default_timeout(14000)
-        output=[];diagnostics=[]
+        page=browser.new_page(locale='zh-TW',timezone_id='Asia/Taipei',viewport={'width':1280,'height':1000})
+        page.set_default_timeout(13000)
+        network=add_network_diagnostics(page)
         if args.daily or args.probe:
             try:
                 row,info=capture_day(page)
                 print('TWSE_CREDIT_LATEST',json.dumps(info,ensure_ascii=False),flush=True)
-                if row and str(START)<=row['date']<=str(today):output.append(row)
-                else:diagnostics.append(info)
-            except Exception as e: diagnostics.append({'mode':'latest','error':str(e)[:600]})
+                if row and str(START)<=row['date']<=str(today): output.append(row)
+                else:failures.append(info)
+            except Exception as exc:failures.append({'mode':'latest','error':repr(exc)[:500]})
         else:
             start=dt.date.fromisoformat(args.start)
             end=min(dt.date.fromisoformat(args.end) if args.end else today,today)
-            existing={r['date'] for r in read_old()['rows']}
-            days=[start+dt.timedelta(days=n) for n in range((end-start).days+1)]
-            # Restrict to actual trading days in the already-maintained market calendar.
-            calendar_path=DEST.parent/'market_monitor.json'
-            calendar=(json.loads(calendar_path.read_text(encoding='utf-8')).get('rows',[]) if calendar_path.exists() else [])
-            trading_days={r.get('date') for r in calendar}
-            days=[d for d in days if str(d) in trading_days and str(d) not in existing]
-            print('TWSE_CREDIT_BACKFILL_START',len(days),str(start),str(end),flush=True)
-            for index,date in enumerate(days):
+            if end<start: raise SystemExit('End date precedes start date')
+            old_dates={r['date'] for r in read_old()['rows']}
+            market_path=DEST.parent/'market_monitor.json'
+            if not market_path.exists(): raise SystemExit('Market trading calendar missing')
+            market=json.loads(market_path.read_text(encoding='utf-8'))
+            trading_days={r.get('date') for r in market.get('rows',[]) if isinstance(r,dict)}
+            dates=[start+dt.timedelta(days=n) for n in range((end-start).days+1)]
+            dates=[str(d) for d in dates if str(d) in trading_days and str(d) not in old_dates]
+            print('TWSE_CREDIT_BACKFILL_START',len(dates),str(start),str(end),flush=True)
+            consecutive=0
+            for index,day in enumerate(dates):
+                attempted+=1
                 try:
-                    row,info=capture_day(page,str(date))
-                    if row:output.append(row)
-                    else:diagnostics.append(info)
-                except Exception as e:diagnostics.append({'date':str(date),'error':str(e)[:500]})
-                if index%10==9 and output:commit(output);output.clear()
-                time.sleep(.5)
+                    row,info=capture_day(page,day,reload=(index==0 or consecutive>0))
+                    if row:
+                        output.append(row);consecutive=0
+                        print('TWSE_CREDIT_VERIFIED',day,flush=True)
+                    else:
+                        failures.append(info);consecutive+=1
+                        print('TWSE_CREDIT_MISSING',json.dumps(info,ensure_ascii=False)[:700],flush=True)
+                except Exception as exc:
+                    failures.append({'date':day,'error':repr(exc)[:450]});consecutive+=1
+                if len(output)>=10:
+                    commit(output);output.clear()
+                if consecutive>=args.max_consecutive_failures:
+                    print('TWSE_CREDIT_EARLY_STOP',consecutive,
+                          'consecutive failures; do not waste 38 browser page loads',flush=True)
+                    break
+                time.sleep(.25)
+        if output and not args.probe:commit(output)
+        if args.probe or failures:save_probe(failures[:30],page,network)
         browser.close()
-    if output and not args.probe: commit(output)
-    print('TWSE_CREDIT_DIAGNOSTICS',json.dumps(diagnostics[:8],ensure_ascii=False),flush=True)
-    if args.daily and not output:
-        print('TWSE_CREDIT_NO_VERIFIED_DAILY_ROW: official dashboard adapter needs DOM/API validation',flush=True)
-        raise SystemExit(2)
-    if args.backfill and diagnostics:
-        print('TWSE_CREDIT_INCOMPLETE_BACKFILL',len(diagnostics),flush=True)
-        raise SystemExit(3)
+    print('TWSE_CREDIT_SUMMARY',json.dumps({'attempted':attempted,
+          'failed':len(failures),'verified_total':len(read_old()['rows'])},ensure_ascii=False),flush=True)
+    if args.probe:return
+    if failures:
+        print('TWSE_CREDIT_INCOMPLETE_BACKFILL' if args.backfill else
+              'TWSE_CREDIT_NO_VERIFIED_DAILY_ROW',len(failures),flush=True)
+        raise SystemExit(3 if args.backfill else 2)
 
 if __name__=='__main__':main()
