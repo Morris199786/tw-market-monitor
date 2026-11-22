@@ -1,5 +1,7 @@
 name: Market monitor | complete Taiwan market data
-# All daily dashboard sources are maintained by this one workflow.
+# Unified MARKET MONITOR workflow: listed/OTC margin, index, foreign flows, breadth, TWSE credit risk and US monitoring.
+# This is the single workflow for the Taiwan dashboard, including the TWSE credit cards / chart data source.
+# The credit risk source is the TWSE BFIJ3U JSON API; no browser installation.
 # Cron-job.org: POST workflow_dispatch at 21:30 Asia/Taipei (13:30 UTC).
 # Disable the legacy combined-margin workflow after deploying this file.
 on:
@@ -14,7 +16,7 @@ concurrency:
 
 jobs:
   market:
-    name: TWSE, foreign flows, market breadth and US monitor
+    name: TWSE index, foreign flows, market breadth, credit risk and US monitor
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -48,6 +50,46 @@ jobs:
         with:
           path: .cache/market-breadth-v1
           key: market-breadth-v1-${{ github.run_id }}-${{ github.run_attempt }}
+      # BFIJ3U is an official JSON endpoint; Playwright/Chromium are not needed.
+      # Keep this refresh independent so temporary TWSE API errors do not
+      # prevent the main market sources or the TPEx follow-up job from updating.
+      - name: Refresh TWSE official credit dashboard (verified BFIJ3U API)
+        id: twse-credit
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          test -f scripts/update_twse_credit_dashboard.py
+          python scripts/update_twse_credit_dashboard.py --daily
+      - name: Validate TWSE credit JSON and report update outcome
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          CREDIT_RESULT: ${{ steps.twse-credit.outcome }}
+        run: |
+          python - <<'PYCODE'
+          import json
+          import os
+          from pathlib import Path
+          status = os.environ.get('CREDIT_RESULT', 'unknown')
+          p = Path('data/twse_credit_dashboard.json')
+          if not p.exists():
+              print('TWSE_CREDIT_MISSING_JSON')
+              raise SystemExit(1)
+          obj = json.loads(p.read_text(encoding='utf-8'))
+          rows = obj.get('rows', [])
+          if not isinstance(rows, list):
+              raise SystemExit('TWSE_CREDIT_BAD_SCHEMA')
+          dates = [row['date'] for row in rows]
+          if len(dates) != len(set(dates)):
+              raise SystemExit('TWSE_CREDIT_DUPLICATE_DATES')
+          latest = max(dates, default='none')
+          print(f'TWSE_CREDIT_STATUS outcome={status}, rows={len(rows)}, latest={latest}')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write(f'### TWSE 信用交易資料\n\n- API 更新結果：{status}\n- 已驗證筆數：{len(rows)}\n- 最新日期：{latest}\n')
+              if status != 'success':
+                  f.write('- 注意：官方 API 本次更新失敗，已保留舊資料；其他市場資料繼續更新。\n')
+          PYCODE
       - name: Publish primary daily market data
         if: ${{ always() }}
         shell: bash
@@ -55,11 +97,11 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json; do
+          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json data/twse_credit_dashboard.json; do
             if test -f "$f"; then git add -- "$f"; fi
           done
           if git diff --cached --quiet; then echo 'MARKET_DATA_UNCHANGED'; exit 0; fi
-          git commit -m 'data: update index, foreign, financing and breadth'
+          git commit -m 'data: update market monitor, credit risk and breadth'
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             git -c rebase.autoStash=true rebase origin/main

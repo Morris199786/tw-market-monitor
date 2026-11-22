@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Fetch official date-scoped credit JSON (no Chromium required)
+      - name: Fetch official date-scoped credit JSON (cards + history metrics, no Chromium required)
         id: collect
         continue-on-error: true
         env:
