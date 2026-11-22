@@ -1,328 +1,228 @@
 #!/usr/bin/env python3
-"""Conservative capture of official TWSE credit dashboard display.
+"""TWSE official credit dashboard, date-scoped JSON ingestion.
 
-This intentionally does NOT infer figures from the margin-balance report. The
-new dashboard's machine-readable interface is not documented; the browser
-adapter must see seven distinct official values and the same selected date.
-If TWSE changes its DOM/date controls, the run reports an error and leaves the
-last published JSON untouched. Use --probe for field/date diagnostics.
+Historical source verified on 2026-11-22:
+  https://www.twse.com.tw/rwd/zh/marginTrading/BFIJ3U?response=json&date=YYYYMMDD
+
+Always verify response date equals requested date. Never synthesize missing history.
+Money values are raw TWD in BFIJ3U and stored as TWD 100 million (億元).
 """
 from __future__ import annotations
-import argparse, datetime as dt, json, math, re, time, sys
-from urllib.parse import urlsplit, parse_qsl, urlencode, urlunsplit
+
+import argparse
+import datetime as dt
+import json
+import math
+import re
+import sys
+import time
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
-URL = 'https://www.twse.com.tw/dashboard/zh/credit/margin.html'
+API = 'https://www.twse.com.tw/rwd/zh/marginTrading/BFIJ3U'
+DASHBOARD = 'https://www.twse.com.tw/dashboard/zh/credit/margin.html'
 DEST = Path(__file__).resolve().parents[1] / 'data/twse_credit_dashboard.json'
+MARKET = DEST.parent / 'market_monitor.json'
 START = dt.date(2026, 9, 23)
 TZ = ZoneInfo('Asia/Taipei')
-FIELDS = {
-    'maintenance_ratio': (('全市場擔保維持率','全市場整戶擔保維持率'), 'pct'),
-    'call_accounts': (('追繳戶數','追繳帳戶數'), 'int'),
-    'call_amount': (('追繳金額',), 'money'),
-    'disposal_accounts': (('處分戶數','處分帳戶數'), 'int'),
-    'disposal_amount': (('處分金額',), 'money'),
-    'credit_accounts': (('當日信用交易戶數','信用交易戶數'), 'int'),
-    'credit_account_ratio': (('信用交易戶數占總開戶數比重','信用交易戶數占總開戶數','信用交易戶數比重'), 'pct'),
-}
-DEFAULT = {'schema':1, 'source':URL, 'first_date':str(START), 'rows':[]}
+FIELDS = ('maintenance_ratio', 'call_accounts', 'call_amount',
+          'disposal_accounts', 'disposal_amount', 'credit_accounts',
+          'credit_account_ratio')
+COUNT_KEYS = ('call_accounts', 'disposal_accounts', 'credit_accounts')
 
 
-def normalize(text):
-    return re.sub(r'[\s\u00a0\u200b]+','', str(text or '')).replace('％','%')
-
-
-def parse_value(label, nearby, kind):
-    """Keep label-to-number adjacency tight; ambiguous matches are rejected."""
-    raw = normalize(nearby)
-    label = normalize(label)
-    at = raw.find(label)
-    if at < 0:
-        return None
-    following = raw[at+len(label):]
-    # Do not take values from a subsequent KPI label.
-    cutoff = min([following.index(normalize(n)) for k,(names,_) in FIELDS.items() for n in names
-                  if normalize(n) and normalize(n) in following] or [len(following)])
-    following = following[:cutoff]
-    if kind=='pct':
-        match = re.search(r'(?<!\d)(\d{1,3}(?:\.\d{1,4})?)%', following[:90])
-        return float(match.group(1)) if match else None
-    match = re.search(r'(?<!\d)([\d,]+(?:\.\d{1,4})?)(戶|億元|萬元|元)?', following[:72])
-    if not match:
-        return None
-    number = float(match.group(1).replace(',',''))
-    unit = match.group(2) or ''
-    if kind == 'int':
-        return int(number) if number.is_integer() and (unit in ('', '戶')) else None
-    if kind == 'money':
-        if unit == '億元': return round(number, 4)
-        if unit == '萬元': return round(number / 10000, 4)
-        # A money value without a displayed unit cannot be safely normalized.
-        return None
-    return None
-
-
-def parse_visible_text(text, date):
-    """Parse labels followed by numbers, including layouts with line breaks."""
-    compact=normalize(text)
-    row={'date':date}
-    for key,(labels,kind) in FIELDS.items():
-        values=[]
-        for label in labels:
-            label=normalize(label)
-            for match in re.finditer(re.escape(label),compact):
-                value=parse_value(label,compact[match.start():match.start()+len(label)+120],kind)
-                if value is not None:values.append(value)
-        values=list(dict.fromkeys(values))
-        if len(values)!=1:
-            return None, f'{key}: expected one distinct official value; found {values[:8]}'
-        row[key]=values[0]
-    return validate(row),None
+def parse_number(value, key):
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError(f'{key}: missing or invalid numeric value {value!r}')
+    return value
 
 
 def validate(row):
-    if not re.fullmatch(r'20\d{2}-\d{2}-\d{2}',str(row.get('date',''))):
-        raise ValueError('bad report date')
+    if not isinstance(row, dict) or not re.fullmatch(r'20\d{2}-\d{2}-\d{2}', str(row.get('date', ''))):
+        raise ValueError('invalid row date')
     for key in FIELDS:
-        v=row.get(key)
-        if not isinstance(v,(int,float)) or isinstance(v,bool) or not math.isfinite(v) or v<0:
-            raise ValueError(f'missing or invalid {key}')
+        parse_number(row.get(key), key)
     if not 100 <= row['maintenance_ratio'] <= 500:
-        raise ValueError('maintenance ratio is out of plausible bounds; do not publish')
+        raise ValueError('implausible maintenance ratio')
     if not 0 <= row['credit_account_ratio'] <= 100:
-        raise ValueError('credit account ratio invalid')
-    if not all(isinstance(row[k],int) for k in ('call_accounts','disposal_accounts','credit_accounts')):
-        raise ValueError('account counts must be integers')
+        raise ValueError('invalid credit account ratio')
+    for key in COUNT_KEYS:
+        if type(row[key]) is not int:
+            raise ValueError(f'{key}: account count must be an integer')
     return row
 
 
-def report_date_from_body(text):
-    candidates=re.findall(r'(?:資料時間|資料日期)\s*([12]\d{3})[/-](\d{1,2})[/-](\d{1,2})',text)
-    dates=[]
-    for y,m,d in candidates:
-        try: dates.append(str(dt.date(int(y),int(m),int(d))))
-        except ValueError: pass
-    return dates[-1] if len(set(dates))==1 else None
+def from_official(payload, requested):
+    if not isinstance(payload, dict) or str(payload.get('stat', '')).upper() != 'OK':
+        raise ValueError('official API did not return an OK record')
+    date = str(payload.get('date', ''))
+    if date != requested.strftime('%Y%m%d'):
+        raise ValueError(f'official API date mismatch: wanted {requested:%Y%m%d}, got {date!r}')
+
+    def val(field):
+        return parse_number(payload.get(field), field)
+
+    # TWSE definitions: belowAccNum = accounts with maintenance below 130%,
+    # callAccNum = accounts issued a margin-call notice (DIFFERENT statistic).
+    # The dashboard's below-130% metric is displayed in call_accounts.
+    # Both metrics are kept distinctly to avoid silently equating them.
+    for extra in ('callAccNum', 'crdAmt'):
+        val(extra)
+    row = {
+        'date': requested.isoformat(),
+        'maintenance_ratio': float(val('keepRate')),
+        'call_accounts': int(val('belowAccNum')),
+        'call_amount': round(val('callAmt') / 100_000_000, 6),
+        'disposal_accounts': int(val('exeAccNum')),
+        'disposal_amount': round(val('exeAmt') / 100_000_000, 6),
+        'credit_accounts': int(val('marginAccNum')),
+        'credit_account_ratio': float(val('marginAccRate')),
+        'notified_call_accounts': int(val('callAccNum')),
+    }
+    for official_key, normalized_key in (
+        ('belowAccNum','call_accounts'), ('exeAccNum','disposal_accounts'),
+        ('marginAccNum','credit_accounts'), ('callAccNum','notified_call_accounts')
+    ):
+        if not float(payload[official_key]).is_integer():
+            raise ValueError(f'{official_key} must be an integer')
+    return validate(row)
 
 
-def inspect_date_controls(page):
-    """Capture actual DOM controls, rather than relying on input[type=date]."""
-    return page.evaluate("""() => [...document.querySelectorAll('input,button,[role=button],[role=textbox]')]
-      .filter(x => x.getBoundingClientRect().width > 0)
-      .map(x => ({tag:x.tagName, type:x.type||'', value:x.value||'',
-         placeholder:x.getAttribute('placeholder')||'', label:x.getAttribute('aria-label')||'',
-         text:(x.innerText||'').slice(0,80), outer:x.outerHTML.slice(0,400)}))
-      .filter(x => /date|日期|時間|[0-9]{4}[/\\-][0-9]{1,2}/i.test(JSON.stringify(x))).slice(0,45)""")
-
-
-def add_network_diagnostics(page):
-    """Keep a bounded view of *official* JSON response shapes and request dates.
-
-    Network observations are diagnostic only: an endpoint is not trusted as a
-    historical record unless the response explicitly proves its own date.
-    """
-    observations=[]
-    def record(response):
+def fetch(day, retries=3, opener=urlopen, sleep=time.sleep):
+    url = API + '?' + urlencode({'response': 'json', 'date': day.strftime('%Y%m%d')})
+    headers = {'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; tw-market-monitor/1.0)',
+               'Referer': DASHBOARD, 'Cache-Control': 'no-cache'}
+    for attempt in range(retries):
         try:
-            parts=urlsplit(response.url)
-            if not (parts.hostname or '').endswith('twse.com.tw'):
-                return
-            mime=response.headers.get('content-type','').lower()
-            if 'json' not in mime:
-                return
-            entry={'url_path':parts.path,'query':dict(parse_qsl(parts.query)),
-                   'status':response.status, 'mime':mime[:75]}
-            payload=response.json()
-            if isinstance(payload,dict):
-                entry['keys']=list(payload.keys())[:35]
-                entry['sample']=json.dumps(payload,ensure_ascii=False)[:2500]
-            elif isinstance(payload,list):
-                entry['length']=len(payload)
-                entry['sample']=json.dumps(payload[:2],ensure_ascii=False)[:2500]
-            if len(observations)<220: observations.append(entry)
-        except Exception as exc:
-            if len(observations)<220:observations.append({'parse_error':str(exc)[:160]})
-    page.on('response',record)
-    return observations
-
-
-def set_date(page, day):
-    """Try actual calendar widgets (including readonly/React inputs).
-
-    Confirming a chosen date is a *separate* step in capture_day. Merely
-    filling an input is never proof that the server supplied historical data.
-    """
-    variants=(day, day.replace('-','/'), day.replace('-',''))
-    selectors=(
-        'input[type="date"]', 'input[placeholder*="日期"]',
-        'input[placeholder*="時間"]', 'input[aria-label*="日期"]',
-        'input[aria-label*="時間"]', '.el-date-editor input',
-        '.ant-picker-input input', '.react-datepicker__input-container input',
-        'input[readonly]',
-    )
-    for selector in selectors:
-        for input_el in page.locator(selector).all()[:12]:
-            try:
-                if not input_el.is_visible(): continue
-                for value in variants[:2]:
-                    try:
-                        input_el.click(timeout=1800)
-                        input_el.evaluate("""(el, value) => {
-                          const setter=Object.getOwnPropertyDescriptor(
-                            HTMLInputElement.prototype,'value').set;
-                          setter.call(el,value);
-                          el.dispatchEvent(new Event('input',{bubbles:true}));
-                          el.dispatchEvent(new Event('change',{bubbles:true}));
-                        }""",value)
-                        input_el.press('Enter',timeout=1800)
-                        page.wait_for_timeout(850)
-                        if day in page.locator('body').inner_text() or value in page.locator('body').inner_text():
-                            return True
-                    except Exception:pass
-                # Calendar widgets with a date input may accept the keyboard.
-                try:
-                    input_el.click(timeout=1500)
-                    input_el.press('ControlOrMeta+A',timeout=1500)
-                    input_el.type(day.replace('-','/'),delay=35,timeout=2500)
-                    input_el.press('Enter',timeout=1500)
-                    page.wait_for_timeout(650)
-                    return True
-                except Exception:pass
-            except Exception:pass
-    return False
-
-
-def capture_day(page, day=None, reload=True):
-    if reload:
-        page.goto(URL,wait_until='domcontentloaded',timeout=45000)
-        page.wait_for_timeout(2000)
-    selected=False
-    if day:
-        selected=set_date(page,day)
-        page.wait_for_timeout(1100)
-    body=page.locator('body').inner_text(timeout=19000)
-    reported=report_date_from_body(body)
-    if not reported:
-        return None, {'wanted':day,'selected':selected,
-                      'reason':'Official data date not detectable in rendered page',
-                      'body_excerpt':body[:1300]}
-    if day and reported!=day:
-        return None, {'wanted':day,'actual':reported,'selected':selected,
-                      'reason':'Official date did not change: refusing to backdate latest figures'}
-    row,err=parse_visible_text(body,reported)
-    if err:
-        return None, {'wanted':day,'actual':reported,'selected':selected,
-                      'reason':err,'body_excerpt':body[:1300]}
-    return row, {'date':reported,'selected':selected}
-
-
-def save_probe(info,page,network):
-    probe=DEST.parent.parent/'.cache/twse-credit-probe.json'
-    probe.parent.mkdir(parents=True,exist_ok=True)
-    try: controls=inspect_date_controls(page)
-    except Exception as exc: controls=[{'error':str(exc)}]
-    probe.write_text(json.dumps({
-        'created_at':dt.datetime.now(TZ).isoformat(), 'page':page.url,
-        'date_controls':controls,'official_json_responses':network,
-        'diagnostics':info,
-        'note':'These are diagnostics, NOT verified historical observations.'
-    },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    print('TWSE_CREDIT_PROBE',str(probe),'responses',len(network),flush=True)
+            request = Request(url, headers=headers)
+            with opener(request, timeout=25) as response:
+                payload = json.load(response)
+            return from_official(payload, day)
+        except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+            if attempt == retries - 1:
+                raise RuntimeError(f'official API transport failure: {exc}') from exc
+            sleep(2 ** attempt)
+    raise RuntimeError('unexpected retry exit')
 
 
 def read_old():
-    if not DEST.exists(): return DEFAULT
-    obj=json.loads(DEST.read_text(encoding='utf-8'))
-    if not isinstance(obj.get('rows'),list): raise ValueError('existing dashboard JSON malformed')
-    for row in obj['rows']: validate(row)
+    if not DEST.exists():
+        return {'schema': 1, 'first_date': str(START), 'rows': [], 'calendar': []}
+    obj = json.loads(DEST.read_text(encoding='utf-8'))
+    if not isinstance(obj, dict) or not isinstance(obj.get('rows'), list):
+        raise ValueError('existing JSON rows malformed')
+    for row in obj['rows']:
+        validate(row)
     return obj
 
 
-def commit(rows):
-    obj=read_old()
-    by_date={r['date']:r for r in obj['rows']}
-    for r in rows: by_date[r['date']]=validate(r)
-    trading_path=DEST.parent/'market_monitor.json'
-    calendar=sorted({r['date'] for r in json.loads(trading_path.read_text(encoding='utf-8')).get('rows',[])
-                     if r.get('date','')>=str(START)}) if trading_path.exists() else obj.get('calendar',[])
-    obj.update({'schema':1,'source':URL,'first_date':str(START),
-                'calendar':calendar,'rows':sorted(by_date.values(),key=lambda r:r['date'])})
-    if obj['rows'] == read_old()['rows'] and obj['calendar']==read_old().get('calendar',[]):
-        print('TWSE_CREDIT_UNCHANGED',len(obj['rows']),flush=True);return
+def trading_calendar(start, end):
+    if not MARKET.exists():
+        raise RuntimeError('market_monitor.json is required for the official trading-day calendar')
+    market = json.loads(MARKET.read_text(encoding='utf-8'))
+    rows = market.get('rows', [])
+    if not isinstance(rows, list) or not rows:
+        raise RuntimeError('market_monitor.json has no rows')
+    days = set()
+    for row in rows:
+        value = row.get('date') if isinstance(row, dict) else None
+        if isinstance(value, str) and re.fullmatch(r'20\d{2}-\d{2}-\d{2}', value) and start.isoformat() <= value <= end.isoformat():
+            days.add(value)
+    if not days:
+        raise RuntimeError('no trading days in the requested range')
+    return sorted(days)
+
+
+def persist(new_rows, calendar):
+    obj = read_old()
+    by_date = {row['date']: row for row in obj['rows']}
+    by_date.update({row['date']: validate(row) for row in new_rows})
+    merged_cal = sorted(set(obj.get('calendar', []) or []) | set(calendar))
+    merged_rows = [by_date[k] for k in sorted(by_date)]
+    if merged_rows == obj['rows'] and merged_cal == obj.get('calendar', []):
+        print('TWSE_CREDIT_UNCHANGED', len(merged_rows), flush=True)
+        return
+    obj.update({'schema': 1, 'source': API, 'first_date': str(START),
+                'calendar': merged_cal, 'rows': merged_rows})
     DEST.parent.mkdir(parents=True, exist_ok=True)
-    temp=DEST.with_suffix('.tmp')
-    temp.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    temp.replace(DEST)
-    print('TWSE_CREDIT_PUBLISHED_LOCALLY',len(obj['rows']),obj['rows'][-1]['date'] if obj['rows'] else 'none',flush=True)
+    tmp = DEST.with_suffix('.tmp')
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    tmp.replace(DEST)
+    print('TWSE_CREDIT_PUBLISHED_LOCALLY', len(merged_rows), flush=True)
 
 
 def main():
-    p=argparse.ArgumentParser()
-    g=p.add_mutually_exclusive_group(required=True)
-    g.add_argument('--daily',action='store_true')
-    g.add_argument('--backfill',action='store_true')
-    g.add_argument('--probe',action='store_true')
-    p.add_argument('--start',default=str(START))
-    p.add_argument('--end')
-    p.add_argument('--max-consecutive-failures',type=int,default=3)
-    args=p.parse_args()
-    from playwright.sync_api import sync_playwright
-    today=dt.datetime.now(TZ).date()
-    output=[];failures=[];attempted=0
-    with sync_playwright() as pw:
-        browser=pw.chromium.launch(headless=True,args=['--no-sandbox'])
-        page=browser.new_page(locale='zh-TW',timezone_id='Asia/Taipei',viewport={'width':1280,'height':1000})
-        page.set_default_timeout(13000)
-        network=add_network_diagnostics(page)
-        if args.daily or args.probe:
+    parser = argparse.ArgumentParser()
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--backfill', action='store_true')
+    mode.add_argument('--daily', action='store_true')
+    mode.add_argument('--probe', action='store_true')
+    parser.add_argument('--start', default=str(START))
+    parser.add_argument('--end')
+    parser.add_argument('--max-consecutive-failures', type=int, default=5,
+                        help='Abort after consecutive missing records, preserving prior verified rows')
+    args = parser.parse_args()
+    today = dt.datetime.now(TZ).date()
+    if args.daily or args.probe:
+        # Find the most recently published trading date; do not assume today has data.
+        days = [today - dt.timedelta(days=i) for i in range(6)]
+        if args.probe:
+            days = [dt.date.fromisoformat(args.start)]
+        last_error = None
+        for day in days:
             try:
-                row,info=capture_day(page)
-                print('TWSE_CREDIT_LATEST',json.dumps(info,ensure_ascii=False),flush=True)
-                if row and str(START)<=row['date']<=str(today): output.append(row)
-                else:failures.append(info)
-            except Exception as exc:failures.append({'mode':'latest','error':repr(exc)[:500]})
-        else:
-            start=dt.date.fromisoformat(args.start)
-            end=min(dt.date.fromisoformat(args.end) if args.end else today,today)
-            if end<start: raise SystemExit('End date precedes start date')
-            old_dates={r['date'] for r in read_old()['rows']}
-            market_path=DEST.parent/'market_monitor.json'
-            if not market_path.exists(): raise SystemExit('Market trading calendar missing')
-            market=json.loads(market_path.read_text(encoding='utf-8'))
-            trading_days={r.get('date') for r in market.get('rows',[]) if isinstance(r,dict)}
-            dates=[start+dt.timedelta(days=n) for n in range((end-start).days+1)]
-            dates=[str(d) for d in dates if str(d) in trading_days and str(d) not in old_dates]
-            print('TWSE_CREDIT_BACKFILL_START',len(dates),str(start),str(end),flush=True)
-            consecutive=0
-            for index,day in enumerate(dates):
-                attempted+=1
-                try:
-                    row,info=capture_day(page,day,reload=(index==0 or consecutive>0))
-                    if row:
-                        output.append(row);consecutive=0
-                        print('TWSE_CREDIT_VERIFIED',day,flush=True)
-                    else:
-                        failures.append(info);consecutive+=1
-                        print('TWSE_CREDIT_MISSING',json.dumps(info,ensure_ascii=False)[:700],flush=True)
-                except Exception as exc:
-                    failures.append({'date':day,'error':repr(exc)[:450]});consecutive+=1
-                if len(output)>=10:
-                    commit(output);output.clear()
-                if consecutive>=args.max_consecutive_failures:
-                    print('TWSE_CREDIT_EARLY_STOP',consecutive,
-                          'consecutive failures; do not waste 38 browser page loads',flush=True)
-                    break
-                time.sleep(.25)
-        if output and not args.probe:commit(output)
-        if args.probe or failures:save_probe(failures[:30],page,network)
-        browser.close()
-    print('TWSE_CREDIT_SUMMARY',json.dumps({'attempted':attempted,
-          'failed':len(failures),'verified_total':len(read_old()['rows'])},ensure_ascii=False),flush=True)
-    if args.probe:return
-    if failures:
-        print('TWSE_CREDIT_INCOMPLETE_BACKFILL' if args.backfill else
-              'TWSE_CREDIT_NO_VERIFIED_DAILY_ROW',len(failures),flush=True)
-        raise SystemExit(3 if args.backfill else 2)
+                row = fetch(day)
+                print('TWSE_CREDIT_VERIFIED', json.dumps(row, ensure_ascii=False), flush=True)
+                if not args.probe:
+                    persist([row], [str(day)])
+                return
+            except (ValueError, RuntimeError) as exc:
+                last_error = exc
+                print('TWSE_CREDIT_UNAVAILABLE', str(day), str(exc), flush=True)
+        raise SystemExit(f'No verified recent official row: {last_error}')
 
-if __name__=='__main__':main()
+    start = max(START, dt.date.fromisoformat(args.start))
+    end = min(today, dt.date.fromisoformat(args.end) if args.end else today)
+    if end < start:
+        raise SystemExit('end_date precedes start_date')
+    calendar = trading_calendar(start, end)
+    known = {row['date'] for row in read_old()['rows']}
+    pending = [day for day in calendar if day not in known]
+    print('TWSE_CREDIT_BACKFILL_START', len(pending), str(start), str(end), flush=True)
+    batch = []
+    missing = []
+    failures_in_a_row = 0
+    for value in pending:
+        try:
+            row = fetch(dt.date.fromisoformat(value))
+            batch.append(row)
+            failures_in_a_row = 0
+            print('TWSE_CREDIT_VERIFIED', value, row['maintenance_ratio'], row['call_accounts'], flush=True)
+        except (ValueError, RuntimeError) as exc:
+            failures_in_a_row += 1
+            missing.append({'date': value, 'reason': str(exc)[:220]})
+            print('TWSE_CREDIT_MISSING', value, str(exc), flush=True)
+        if len(batch) >= 10:
+            persist(batch, calendar)
+            batch.clear()
+        if failures_in_a_row >= max(1, args.max_consecutive_failures):
+            print('TWSE_CREDIT_EARLY_STOP', failures_in_a_row, flush=True)
+            break
+        time.sleep(0.25)
+    if batch or calendar:
+        persist(batch, calendar)
+    all_rows = read_old()['rows']
+    covered = {row['date'] for row in all_rows}
+    gaps = [day for day in calendar if day not in covered]
+    summary = {'expected': len(calendar), 'verified': len(calendar) - len(gaps),
+               'missing': len(gaps), 'missing_dates': gaps[:50], 'sample_errors': missing[:8]}
+    print('TWSE_CREDIT_SUMMARY', json.dumps(summary, ensure_ascii=False), flush=True)
+    if gaps:
+        raise SystemExit(3)
+
+
+if __name__ == '__main__':
+    main()
