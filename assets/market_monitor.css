@@ -615,3 +615,43 @@ html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cbad :is(.mm-tabl
  #marketMonitor .twd-chart-caption span{display:block;margin-top:5px}
  #marketMonitor .twd-table-head{padding:14px 12px 9px}
 }
+
+
+/* 2026-11-22 Credit dashboard: compact analytical sheet, not seven oversized cards. */
+#marketMonitor .twd-market-sheet{overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:15px;margin:10px 0 14px;box-shadow:0 2px 12px rgba(24,39,60,.035)}
+#marketMonitor .twd-market-sheet-title{display:flex;justify-content:space-between;align-items:end;gap:12px;padding:16px 17px 13px}
+#marketMonitor .twd-market-section-tag{font-size:10px;letter-spacing:.12em;font-weight:800;color:#2086a9}
+#marketMonitor .twd-market-sheet-title h3{font-size:17px;font-weight:800;color:var(--ink);margin:4px 0 0}
+#marketMonitor .twd-market-asof{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+#marketMonitor .twd-market-cols,#marketMonitor .twd-market-row{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr) minmax(0,.99fr) minmax(0,.99fr);align-items:center;column-gap:9px}
+#marketMonitor .twd-market-cols{background:var(--soft);color:var(--muted);font-size:11px;font-weight:650;letter-spacing:.01em;padding:10px 14px;border-block:1px solid var(--line)}
+#marketMonitor .twd-market-cols>span:not(:first-child){text-align:right}
+#marketMonitor .twd-market-row{width:100%;min-width:0;height:auto;min-height:51px;margin:0;padding:10px 14px!important;text-align:left;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:var(--card)!important;color:var(--ink)!important;cursor:pointer;font:inherit!important;line-height:1.45;box-shadow:none!important;appearance:none!important;transition:background .15s ease}
+#marketMonitor .twd-market-row:hover{background:var(--soft)!important}
+#marketMonitor .twd-market-row:last-child{border-bottom:0!important}
+#marketMonitor .twd-market-row.is-active{background:rgba(37,137,175,.075)!important;box-shadow:inset 3px 0 0 #258cb2!important}
+#marketMonitor .twd-market-row:focus-visible{outline:2px solid #258cb2!important;outline-offset:-3px}
+#marketMonitor .twd-market-label{min-width:0;font-size:12px;font-weight:650;line-height:1.4;overflow-wrap:anywhere}
+#marketMonitor .twd-market-number{text-align:right;font-size:clamp(13px,1.45vw,16px);font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+#marketMonitor .twd-market-number small{font-size:10px;margin-left:2px;font-weight:500;color:var(--muted);letter-spacing:0}
+#marketMonitor .twd-market-change{text-align:right;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.025em}
+#marketMonitor .twd-market-change.warn{color:#b94b55!important}
+#marketMonitor .twd-market-change.cool{color:#168567!important}
+#marketMonitor .twd-market-change.neutral{color:var(--muted)!important}
+#marketMonitor .twd-market-footer{border-top:1px solid var(--line);padding:10px 14px;color:var(--muted);font-size:11px}
+@media(max-width:700px){
+ #marketMonitor .twd-head{margin:7px 0 10px}
+ #marketMonitor .twd-head h2{font-size:20px}
+ #marketMonitor .twd-market-sheet-title{padding:13px 11px 11px}
+ #marketMonitor .twd-market-sheet-title h3{font-size:16px}
+ #marketMonitor .twd-market-asof{font-size:10px}
+ #marketMonitor .twd-market-asof span{display:none}
+ #marketMonitor .twd-market-cols,#marketMonitor .twd-market-row{grid-template-columns:minmax(0,1.45fr) minmax(0,.9fr) minmax(0,.95fr) minmax(0,.95fr);column-gap:5px}
+ #marketMonitor .twd-market-cols{font-size:10px;padding:9px 9px}
+ #marketMonitor .twd-market-row{min-height:53px;padding:9px 9px!important}
+ #marketMonitor .twd-market-label{font-size:11px;line-height:1.35}
+ #marketMonitor .twd-market-number{font-size:14px}
+ #marketMonitor .twd-market-number small{font-size:9px}
+ #marketMonitor .twd-market-change{font-size:10px}
+ #marketMonitor .twd-market-footer{font-size:10px;padding:9px 11px}
+}
