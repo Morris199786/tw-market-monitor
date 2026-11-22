@@ -9,7 +9,7 @@ import unicodedata
 from pathlib import Path
 from report_presentation import enrich_upside
 
-VERSION = "2026-10-28-identity-alias-guard-v1"
+VERSION = "2026-11-22-optional-target-v2"
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = {
     "2383": {"name": "台光電", "aliases": ["Elite Material", "Elite Materials", "Elite Material Co., Ltd.", "EMC"]},
@@ -222,13 +222,19 @@ def resolve(ticker, name, text, companies):
 
 
 def _target_matches(page):
+    """Find issuer price targets, including Macquarie's '12-month target' format.
+
+    Text extraction from PDF tables may put currency and amount in a later column.
+    Avoid mixing report prices with valuation ranges or recommendation history.
+    """
     pattern = re.compile(
-        r"(?:\b(?:12[\s-]*(?:month|m)\s+)?target\s+price|\bprice\s+target|\bPO\b|\bTP\b|目標(?:股)?價)"
-        r"\s*(?:上調|下調|上修|下修|調高|調低|調升|調降|lowered|raised|reduced|increased|revised|cut)?\s*(?:至|為|to)?\s*[:：]?\s*"
-        r"(?:(TWD|NT\$|NTD|USD|US\$|KRW)\s*)?"
+        r"(?:\b12[\s-]*(?:month|m)\s+(?:target(?:\s+price)?|tgt)\b"
+        r"|\btarget\s+price\b|\bprice\s+target\b|\bPO\b|\bTP\b|目標(?:股)?價)"
+        r"\s*(?:上調|下調|上修|下修|調高|調低|調升|調降|lowered|raised|reduced|increased|revised|cut)?"
+        r"\s*(?:至|為|to)?\s*[:：]?\s*"
+        r"(?:\(?\s*(TWD|NT\$|NTD|USD|US\$|KRW)\s*\)?\s*)?"
         r"(\d[\d,]*(?:\.\d+)?[kK]?|n\.?a\.?(?!\w))", re.I)
     return list(pattern.finditer(page))
-
 
 def _issuer_for_target(page, match, companies):
     head = page[:match.start()]
@@ -414,8 +420,14 @@ def audit_report(report, src, companies):
                 r["action"] = "maintain"
             if own["target_unavailable"]:
                 r["action"], r["rating"], r["target_price_old"] = "none", "", None
-        elif r.get("target_price_new") is not None:
-            raise ValueError("price target has no validated issuer-specific source block")
+        else:
+            # A missing or unrecognized target price is not a report-level failure.
+            # Retain the analysis, forecasts and visuals but never publish a target
+            # which cannot be tied to the issuer and verified in the source text.
+            if r.get("target_price_new") is not None or r.get("target_price_old") is not None:
+                r["target_price_validation"] = "unverified_source_block"
+            r["target_price_old"] = None
+            r["target_price_new"] = None
     lines = [view_line(v) for v in views if v.get("target_price_new") is not None]
     if lines:
         r["recommendation_headlines"] = lines
