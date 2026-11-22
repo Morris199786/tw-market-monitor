@@ -1,16 +1,20 @@
-name: Market monitor
+name: Market monitor | complete Taiwan market data
+# All daily dashboard sources are maintained by this one workflow.
+# Cron-job.org: POST workflow_dispatch at 21:30 Asia/Taipei (13:30 UTC).
+# Disable the legacy combined-margin workflow after deploying this file.
 on:
-  schedule:
-    - cron: '15 10 * * 1-5'
   workflow_dispatch:
+
 permissions:
   contents: write
+
 concurrency:
   group: tw-market-monitor-update
   cancel-in-progress: false
-  queue: max
+
 jobs:
-  update:
+  market:
+    name: TWSE, foreign flows, market breadth and US monitor
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -21,39 +25,227 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Update US monitor
+      - name: Refresh US monitoring
+        continue-on-error: true
         run: python scripts/update_us_market_monitor.py
-      - name: Update monitor
+      - name: Refresh TWSE index, foreign investment and listed margin
         if: ${{ !cancelled() }}
         run: python scripts/update_market_monitor.py
-      - id: breadth-cache
-        uses: actions/cache/restore@v4
+      - name: Restore market breadth cache
+        id: breadth-cache
         if: ${{ !cancelled() }}
+        uses: actions/cache/restore@v4
         with:
           path: .cache/market-breadth-v1
           key: market-breadth-v1-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: market-breadth-v1-
-      - name: Update market breadth
+      - name: Refresh 20d/60d breadth and advance-decline
         if: ${{ !cancelled() }}
         run: python scripts/update_market_breadth.py
-      - name: Save downloaded breadth history
+      - name: Save market breadth download cache
         if: ${{ !cancelled() && steps.breadth-cache.outputs.cache-hit != 'true' && hashFiles('.cache/market-breadth-v1/**') != '' }}
         uses: actions/cache/save@v4
         with:
           path: .cache/market-breadth-v1
           key: market-breadth-v1-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Save monitor data
+      - name: Publish primary daily market data
         if: ${{ always() }}
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if [ -f data/market_breadth.json ]; then git add data/market_breadth.json; fi
-          git add data/market_monitor.json
-          if [ -f data/us_market_monitor.json ]; then git add data/us_market_monitor.json; fi
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'data: market monitor'
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
+          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json; do
+            if test -f "$f"; then git add -- "$f"; fi
+          done
+          if git diff --cached --quiet; then echo 'MARKET_DATA_UNCHANGED'; exit 0; fi
+          git commit -m 'data: update index, foreign, financing and breadth'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git -c rebase.autoStash=true rebase origin/main
+            if git push origin HEAD:main; then echo 'MARKET_DATA_PUBLISHED'; exit 0; fi
+            sleep "$attempt"
           done
           exit 1
+
+  tpex_margin:
+    name: TPEx margin daily refresh and missing history
+    needs: market
+    # Start with a fresh checkout after the primary market JSON is published.
+    if: ${{ !cancelled() && needs.market.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Update official TPEx cash balances, preserving completed checkpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/market_tpex_margin.py" <<'PYCODE'
+          """TPEx official daily margin balances, with durable per-batch GitHub checkpoints."""
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+          import time
+          import unicodedata
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          DEST = Path('data/market_margin_tpex.json')
+          HISTORY = Path('data/history/monitor-funds-2008-2023.json')
+          MONITOR = Path('data/market_monitor.json')
+          URL = 'https://www.tpex.org.tw/www/zh-tw/margin/balance'
+          WORKTREE = Path(os.environ['RUNNER_TEMP']) / 'market-tpex-checkpoint'
+          REL = Path('data/market_margin_tpex.json')
+
+          def git(*cmd, cwd=None, check=True):
+              cp = subprocess.run(['git', *cmd], cwd=cwd, text=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+              if check and cp.returncode:
+                  raise RuntimeError(f'git {cmd[0]}: {cp.stderr[-1000:]}')
+              return cp
+
+          def validated(path):
+              if not path.exists():
+                  return {}
+              payload = json.loads(path.read_text(encoding='utf-8'))
+              if payload.get('unit') != 'TWD' or not isinstance(payload.get('rows'), dict):
+                  raise ValueError(f'Unexpected cash-balance schema: {path}')
+              for day, pair in payload['rows'].items():
+                  if not re.fullmatch(r'20\d{2}-\d{2}-\d{2}', day):
+                      raise ValueError('Invalid date ' + day)
+                  if not isinstance(pair, list) or len(pair) != 2 or any(type(v) is not int or v <= 0 for v in pair):
+                      raise ValueError('Invalid cash balances on ' + day)
+              return payload['rows']
+
+          def encode(rows):
+              return json.dumps({'unit': 'TWD', 'rows': dict(sorted(rows.items()))},
+                                ensure_ascii=False, separators=(',', ':')) + '\n'
+
+          def publish(rows):
+              DEST.parent.mkdir(parents=True, exist_ok=True)
+              tmp = DEST.with_suffix('.tmp')
+              tmp.write_text(encode(rows), encoding='utf-8')
+              tmp.replace(DEST)
+              if not WORKTREE.exists():
+                  git('worktree', 'add', '--detach', str(WORKTREE), 'HEAD')
+              for attempt in range(1, 6):
+                  git('fetch', 'origin', 'main')
+                  git('reset', '--hard', 'origin/main', cwd=WORKTREE)
+                  remote = validated(WORKTREE / REL)
+                  merged = dict(remote)
+                  merged.update(rows)
+                  target = WORKTREE / REL
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_text(encode(merged), encoding='utf-8')
+                  git('config', 'user.name', 'github-actions[bot]', cwd=WORKTREE)
+                  git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com', cwd=WORKTREE)
+                  git('add', '--', str(REL), cwd=WORKTREE)
+                  if git('diff', '--cached', '--quiet', cwd=WORKTREE, check=False).returncode == 0:
+                      print('TPEX_CHECKPOINT_ALREADY_CURRENT', len(merged), flush=True)
+                      return
+                  git('commit', '-m', 'data: TPEx cash margin checkpoint', cwd=WORKTREE)
+                  if git('push', 'origin', 'HEAD:main', cwd=WORKTREE, check=False).returncode == 0:
+                      print('TPEX_CHECKPOINT_PUBLISHED', len(merged), flush=True)
+                      return
+                  time.sleep(attempt)
+              raise RuntimeError('Cannot publish TPEx margin checkpoint after five retries')
+
+          def fetch(day):
+              url = URL + '?' + urlencode({'date': day.replace('-', '/'), 'response': 'json'})
+              req = Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'})
+              for attempt in range(3):
+                  try:
+                      with urlopen(req, timeout=20) as response:
+                          payload = json.load(response)
+                      if payload.get('date') != day.replace('-', '') or payload.get('stat') != 'ok':
+                          raise ValueError('Wrong report date or unsuccessful status')
+                      for table in payload.get('tables', []):
+                          fields = table.get('fields', [])
+                          if '資餘額' not in fields:
+                              continue
+                          prev = next((i for i, name in enumerate(fields) if name.startswith('前資餘額')), None)
+                          curr = fields.index('資餘額')
+                          if prev is None:
+                              continue
+                          for row in table.get('summary', []):
+                              if len(row) <= max(prev, curr, 1):
+                                  continue
+                              kind = unicodedata.normalize('NFKC', str(row[1])).replace(' ', '')
+                              if kind not in ('融資金(仟元)', '融資金(千元)'):
+                                  continue
+                              nums = [str(row[i]).strip().replace(',', '') for i in (prev, curr)]
+                              if all(re.fullmatch(r'\d+', n) and int(n) > 0 for n in nums):
+                                  return [int(n) * 1000 for n in nums]
+                      raise ValueError('No verified margin cash summary')
+                  except (OSError, ValueError, KeyError, TypeError) as error:
+                      if attempt == 2:
+                          raise RuntimeError(f'{day}: {error}') from error
+                      time.sleep(2 ** (attempt + 1))
+
+          def main():
+              recent = json.loads(MONITOR.read_text(encoding='utf-8'))['rows']
+              archive = json.loads(HISTORY.read_text(encoding='utf-8'))
+              days = sorted({r['date'] for r in recent + archive if r.get('date')})
+              if not days:
+                  raise RuntimeError('Missing primary TWSE trading calendar')
+              rows = validated(DEST)
+              missing = set(days) - rows.keys()
+              recent_days = days[-3:]
+              due = sorted(set(recent_days) | missing, reverse=True)
+              print('TPEX_START', json.dumps({'calendar_days': len(days), 'missing_before': len(missing),
+                  'latest_day': days[-1], 'refresh_recent': recent_days}, ensure_ascii=False), flush=True)
+              failures = 0
+              consecutive = 0
+              batch = 0
+              deadline = time.monotonic() + 4 * 60 * 60
+              for day in due:
+                  try:
+                      rows[day] = fetch(day)
+                      batch += 1
+                      consecutive = 0
+                  except RuntimeError as error:
+                      print('TPEX_FETCH_WARNING', error, file=sys.stderr, flush=True)
+                      failures += 1
+                      consecutive += 1
+                  if batch >= 25:
+                      publish(rows)
+                      batch = 0
+                  if consecutive >= 5 or time.monotonic() >= deadline:
+                      break
+                  time.sleep(0.55)
+              if batch:
+                  publish(rows)
+              latest_missing = [day for day in recent_days if day not in rows]
+              still_missing = set(days) - rows.keys()
+              print('TPEX_FINISHED', json.dumps({'latest_day': days[-1],
+                  'missing_history': len(still_missing), 'failures': failures,
+                  'latest_missing': latest_missing}, ensure_ascii=False), flush=True)
+              # Missing recent official data is NOT silently treated as a completed update.
+              if latest_missing:
+                  raise SystemExit('TPEx latest-day financing unavailable: ' + ','.join(latest_missing))
+              # Historical gaps remain visible in logs and are retried next run.
+
+          if __name__ == '__main__':
+              main()
+          PYCODE
+          python "$RUNNER_TEMP/market_tpex_margin.py"
+      - name: Verify all daily table source files exist
+        if: ${{ success() }}
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          for path in ('data/market_monitor.json', 'data/market_breadth.json', 'data/market_margin_tpex.json'):
+              data = json.loads(Path(path).read_text())
+              print('SOURCE_PRESENT', path, 'as_of=', data.get('as_of_date', 'per-date records'))
+          PYCODE
