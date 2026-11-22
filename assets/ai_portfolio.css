@@ -47,3 +47,95 @@ html[data-theme="dark"] #ai{--ap-accent:#83b9db;--ap-tint:#20384c}html[data-them
     max-width: 5em;
   }
 }
+
+
+/* 2026-11-22: Portfolio intelligence v3 — quiet, compact risk-led dashboard */
+#aiPortfolioRoot{--ap-quiet:#8090a0}
+#aiPortfolioRoot .ap-balance-main{border-radius:15px;padding:24px 26px;background:linear-gradient(115deg,#162a40,#234963);box-shadow:none}
+#aiPortfolioRoot .ap-balance-main>strong{margin:15px 0 8px;font-size:clamp(30px,4vw,42px)}
+#aiPortfolioRoot .ap-head-stats{margin:18px 0 18px}
+#aiPortfolioRoot .ap-waterfall{border:1px solid var(--line);background:var(--ap-surface);border-radius:15px;padding:22px 24px;margin-bottom:20px;min-width:0}
+#aiPortfolioRoot .ap-waterfall-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+#aiPortfolioRoot .ap-waterfall-heading h2{font-size:17px;font-weight:700;letter-spacing:-.25px;margin:0}
+#aiPortfolioRoot .ap-waterfall-heading p{margin:6px 0 0;color:var(--ap-muted);font-size:11px;line-height:1.6}
+#aiPortfolioRoot .ap-risk-chip{white-space:nowrap;font-weight:700;border-radius:7px;padding:6px 9px;font-size:11px;background:var(--ap-tint);color:var(--ap-accent)}
+#aiPortfolioRoot .ap-risk-red{background:#fcebec;color:#b63e4d}
+#aiPortfolioRoot .ap-risk-orange{background:#fff1de;color:#a45b23}
+#aiPortfolioRoot .ap-risk-yellow{background:#fff5d9;color:#93721c}
+#aiPortfolioRoot .ap-risk-green{background:#e4f4ee;color:#217458}
+#aiPortfolioRoot .ap-waterfall-figures{display:grid;grid-template-columns:1fr 1fr;margin:22px 0 19px;gap:18px}
+#aiPortfolioRoot .ap-waterfall-figures>div{min-width:0}
+#aiPortfolioRoot .ap-waterfall-figures>div+div{padding-left:24px;border-left:1px solid var(--line)}
+#aiPortfolioRoot .ap-waterfall-figures span{display:block;color:var(--ap-muted);font-size:12px;line-height:1.5}
+#aiPortfolioRoot .ap-waterfall-figures strong{display:block;font-size:clamp(25px,3.3vw,35px);font-weight:730;letter-spacing:-.9px;margin-top:4px;line-height:1.25}
+#aiPortfolioRoot .ap-waterfall-figures strong small{font-size:.56em!important;margin-left:2px}
+#aiPortfolioRoot .ap-waterfall-bars{display:grid;gap:7px}
+#aiPortfolioRoot .ap-meter-label{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--ap-muted)}
+#aiPortfolioRoot .ap-meter-label b{font-weight:600;color:var(--ink)}
+#aiPortfolioRoot .ap-meter{height:7px;background:var(--line);border-radius:30px;overflow:hidden;margin-bottom:7px}
+#aiPortfolioRoot .ap-meter i{display:block;height:100%;background:#487b9b;border-radius:30px}
+#aiPortfolioRoot .ap-meter-target i{background:#7392af}
+#aiPortfolioRoot .ap-waterfall-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:13px;padding-top:14px;border-top:1px solid var(--line)}
+#aiPortfolioRoot .ap-waterfall-bottom strong{font-size:13px;font-weight:700}
+#aiPortfolioRoot .ap-waterfall-bottom span{color:var(--ap-muted);font-size:11px}
+#aiPortfolioRoot .ap-waterfall-note{margin:12px 0 0;color:var(--ap-muted);font-size:11px;line-height:1.75}
+#aiPortfolioRoot .ap-risk-evidence{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+#aiPortfolioRoot .ap-risk-evidence p{margin:7px 0}
+#aiPortfolioRoot .ap-tabs{margin-top:10px}
+#aiPortfolioRoot .ap-plan-heading{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:13px 0 9px;border-top:1px solid var(--line);margin-top:14px}
+#aiPortfolioRoot .ap-plan-heading strong{font-size:15px}
+#aiPortfolioRoot .ap-plan-heading span{font-size:11px;color:var(--ap-muted)}
+#aiPortfolioRoot .ap-sell-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:4px 0 15px}
+#aiPortfolioRoot .ap-sell-item{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:var(--ap-surface)}
+#aiPortfolioRoot .ap-sell-item .ap-company strong{font-size:15px}
+#aiPortfolioRoot .ap-sell-item>span{display:block;font-size:11px;color:var(--ap-muted);margin-top:8px}
+#aiPortfolioRoot .ap-plan-notice{margin:10px 0 15px;background:var(--ap-tint);border:1px solid var(--line);padding:15px 17px;border-radius:10px}
+#aiPortfolioRoot .ap-plan-notice strong{font-size:13px}
+#aiPortfolioRoot .ap-plan-notice p{font-size:11px;color:var(--ap-muted);margin:6px 0 0;line-height:1.75}
+html[data-theme="dark"] #aiPortfolioRoot .ap-risk-red{background:#51292e;color:#f6b1b9}
+html[data-theme="dark"] #aiPortfolioRoot .ap-risk-orange{background:#553b25;color:#f0bc89}
+html[data-theme="dark"] #aiPortfolioRoot .ap-risk-yellow{background:#504525;color:#f2d390}
+html[data-theme="dark"] #aiPortfolioRoot .ap-risk-green{background:#1c4338;color:#95dcc3}
+@media(max-width:680px){
+ #aiPortfolioRoot .ap-balance-main{padding:22px 21px}
+ #aiPortfolioRoot .ap-balance-main>strong{font-size:clamp(28px,8vw,36px)}
+ #aiPortfolioRoot .ap-head-stats{margin:14px 0}
+ #aiPortfolioRoot .ap-stats>span{padding-left:10px;font-size:10px}
+ #aiPortfolioRoot .ap-stats b{font-size:clamp(13px,3.5vw,16px);overflow-wrap:anywhere}
+ #aiPortfolioRoot .ap-waterfall{padding:18px 17px;margin-bottom:14px}
+ #aiPortfolioRoot .ap-waterfall-heading{flex-direction:column;gap:8px}
+ #aiPortfolioRoot .ap-waterfall-figures{gap:8px;margin:17px 0 16px}
+ #aiPortfolioRoot .ap-waterfall-figures>div+div{padding-left:12px}
+ #aiPortfolioRoot .ap-waterfall-figures span{font-size:11px}
+ #aiPortfolioRoot .ap-waterfall-figures strong{font-size:clamp(23px,6.2vw,30px)}
+ #aiPortfolioRoot .ap-waterfall-bottom{align-items:flex-start;flex-direction:column;gap:5px}
+ #aiPortfolioRoot .ap-sell-grid{grid-template-columns:1fr}
+ #aiPortfolioRoot .ap-sell-item{padding:12px 14px}
+ #aiPortfolioRoot .ap-plan-heading{flex-direction:column;align-items:flex-start;gap:4px}
+ #aiPortfolioRoot .ap-tabs>button{font-size:12px}
+}
+
+/* Mobile inventory: readable records rather than six compressed columns. */
+@media(max-width:540px){
+ #aiPortfolioRoot .ap-inventory>p{font-size:10px;line-height:1.6;margin-bottom:10px}
+ #aiPortfolioRoot .ap-inventory-scroll{overflow:visible;border:0;background:transparent}
+ #aiPortfolioRoot .ap-inventory table{display:block;width:100%;border:0;min-width:0;font-size:13px}
+ #aiPortfolioRoot .ap-inventory thead{display:none}
+ #aiPortfolioRoot .ap-inventory tbody{display:grid;gap:10px}
+ #aiPortfolioRoot .ap-inventory tr.ap-position-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:var(--ap-surface);row-gap:12px;column-gap:12px}
+ #aiPortfolioRoot .ap-inventory tr.ap-position-row>th{grid-column:1/-1;text-align:left;padding:0 0 10px!important;border-bottom:1px solid var(--line);min-width:0}
+ #aiPortfolioRoot .ap-inventory .ap-position-toggle{max-width:none;min-height:0}
+ #aiPortfolioRoot .ap-inventory .ap-position-toggle b{font-size:16px}
+ #aiPortfolioRoot .ap-inventory .ap-position-toggle small{font-size:11px}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td{display:block!important;text-align:left!important;padding:0!important;border:0;white-space:normal;min-width:0;font-size:14px;font-weight:650}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td::before{display:block;color:var(--ap-muted);font-size:10px;font-weight:400;margin-bottom:3px}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(2)::before{content:'現價'}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(3)::before{content:'平均成本'}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(4)::before{content:'持有張數'}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(5)::before{content:'帳戶持股占比'}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(6){grid-column:1/-1;border-top:1px solid var(--line);padding-top:9px!important}
+ #aiPortfolioRoot .ap-inventory .ap-position-row>td:nth-child(6)::before{content:'未實現損益'}
+ #aiPortfolioRoot .ap-inventory tr.ap-position-detail{display:block;margin-top:-11px;border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;overflow:hidden}
+ #aiPortfolioRoot .ap-inventory tr.ap-position-detail>td{display:block!important;white-space:normal!important;padding:14px!important;border:0!important}
+ #aiPortfolioRoot .ap-inventory tr.ap-position-detail .ap-meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
