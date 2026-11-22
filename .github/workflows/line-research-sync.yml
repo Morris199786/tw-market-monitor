@@ -35,8 +35,8 @@ jobs:
       - name: Connect private Codex worker over Tailscale
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
+          oauth-client-id: ${{ secrets.LINE_TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.LINE_TS_AUDIENCE }}
           tags: tag:github-reports
       - name: Verify private subscription worker before any research claim
         env:
@@ -182,8 +182,8 @@ jobs:
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
+          oauth-client-id: ${{ secrets.LINE_TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.LINE_TS_AUDIENCE }}
           tags: tag:github-reports
       - name: Verify private subscription worker before any research claim
         if: ${{ inputs.run_mode == 'ai' || inputs.run_mode == 'failed' || inputs.run_mode == 'rerun_three' || inputs.run_mode == 'retry_mediatek' }}
