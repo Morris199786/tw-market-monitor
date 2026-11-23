@@ -252272,7 +252272,7 @@
   ],
   "latest_attempt": {
     "date": "2026-11-23",
-    "available_at": "2026-11-23T22:04:26+08:00",
+    "available_at": "2026-11-24T05:53:55+08:00",
     "valid": false,
     "targets": [
       {
@@ -252372,7 +252372,7 @@
         "volatility": 1.0774704614620663,
         "avg_volume": 10447400.0,
         "price": 172.5,
-        "weight": 0.008166,
+        "weight": 0.008165,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -252620,7 +252620,7 @@
         "market": "twse",
         "asset_type": "stock",
         "sector": "產業 22",
-        "score": 74.24,
+        "score": 74.25,
         "pillars": {
           "chip": 78.32,
           "fundamental": 57.55,
@@ -252711,7 +252711,7 @@
         "volatility": 3.4241802323851225,
         "avg_volume": 1267161.6,
         "price": 283.0,
-        "weight": 0.007321,
+        "weight": 0.007326,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -252817,7 +252817,7 @@
         "volatility": 1.1644658708910147,
         "avg_volume": 28108435.4,
         "price": 164.5,
-        "weight": 0.007285,
+        "weight": 0.007284,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -252917,7 +252917,7 @@
         "volatility": 2.312582848814835,
         "avg_volume": 2231000.0,
         "price": 755.0,
-        "weight": 0.007267,
+        "weight": 0.007266,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -253032,7 +253032,7 @@
         "volatility": 7.6976786205013905,
         "avg_volume": 7099400.0,
         "price": 111.0,
-        "weight": 0.007213,
+        "weight": 0.007212,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -253132,7 +253132,7 @@
         "volatility": 1.7675406594241398,
         "avg_volume": 2763022.6,
         "price": 221.5,
-        "weight": 0.006753,
+        "weight": 0.006752,
         "allocation_reason": "依綜合分數及單檔／產業上限配置；不因高波動自動降權"
       },
       {
@@ -253955,7 +253955,7 @@
         "market": "twse",
         "asset_type": "stock",
         "sector": "產業 22",
-        "score": 74.24,
+        "score": 74.25,
         "pillars": {
           "chip": 78.32,
           "fundamental": 57.55,
@@ -256701,7 +256701,7 @@
           "fundamental": 60.86,
           "momentum": 73.61
         },
-        "eligible": true,
+        "eligible": false,
         "research_details": [
           {
             "kind": "broker",
@@ -256843,7 +256843,7 @@
           "benchmark": "台灣加權指數",
           "version": "relative-momentum-v1"
         },
-        "research_pending": 0,
+        "research_pending": 1,
         "discovery": false,
         "confidence": "基本面已驗證",
         "freshness": {
@@ -256874,6 +256874,7 @@
           "5日 -8.80%／20日 -21.04%；實際加權指數5日 -10.30%"
         ],
         "risks": [
+          "1份最新研究內容尚未完成AI判讀，不以評等或舊法說代替",
           "大戶來源缺實際公布時間，採統計日後週六15:00估計，不以統計日期起算"
         ],
         "etf_details": [],
@@ -259190,7 +259191,7 @@
         "sector": "產業 24",
         "score": 68.31,
         "pillars": {
-          "chip": 61.35,
+          "chip": 61.36,
           "fundamental": 62.01,
           "momentum": 94.82
         },
@@ -259881,8 +259882,8 @@
         }
       },
       "research_content": {
-        "pending_companies": 1,
-        "pending_documents": 1,
+        "pending_companies": 16,
+        "pending_documents": 16,
         "model": "gpt-5.6-luna",
         "version": "content-evidence-v1"
       }
@@ -259912,12 +259913,87 @@
       "note": "持股水位0%～100%連續調整；V12 超過100分時建議0%（全現金），V12 為0分時建議100%。不設最低20%或最高90%限制；單檔與產業上限、2%調倉帶維持。此曲線尚未完成歷史績效最佳化；當日缺V12資料會暫停發布新名單。"
     },
     "warnings": [
-      "研究內容待核對1份、1家公司：本次排除這些公司的直接交易，不阻擋其餘已驗證標的發布新名單"
+      "研究內容待核對16份、16家公司：本次排除這些公司的直接交易，不阻擋其餘已驗證標的發布新名單"
     ],
     "excluded_research": [
       {
+        "ticker": "1514",
+        "name": "亞力",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "2477",
+        "name": "美隆電",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "2723",
+        "name": "美食-KY",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "2901",
+        "name": "欣欣",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "3028",
+        "name": "增你強",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "3036",
+        "name": "文曄",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "3680",
+        "name": "家登",
+        "pending_documents": 1
+      },
+      {
         "ticker": "3702",
         "name": "大聯大",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "4533",
+        "name": "協易機",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "5536",
+        "name": "聖暉*",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "6209",
+        "name": "今國光",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "6438",
+        "name": "迅得",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "6462",
+        "name": "神盾",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "6603",
+        "name": "富強鑫",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "7717",
+        "name": "萊德光電-KY",
+        "pending_documents": 1
+      },
+      {
+        "ticker": "8046",
+        "name": "南電",
         "pending_documents": 1
       }
     ],
@@ -259934,8 +260010,8 @@
       "v12_risk_level": 3,
       "etf_version": "cd8ed006fd28",
       "official_financial_count": 1944,
-      "earnings_updated_at": "2026-11-23T21:08+08:00",
-      "opm_updated_at": "2026-11-23T22:04+08:00",
+      "earnings_updated_at": "2026-11-23T23:00+08:00",
+      "opm_updated_at": "2026-11-23T23:38+08:00",
       "research_updated_at": "2026-11-23T09:49+08:00",
       "research_items": 317,
       "research_raw_files": 707,
@@ -259959,12 +260035,12 @@
         4
       ]
     },
-    "reference_hash": "779999aae2ae1327a1ee1cf516476ab5a3e4db2e3ec73947f5352d660c4f13a9",
+    "reference_hash": "c49e684efb3b9d6d2a0405cc06dee5def79ba7c874afbf8063bb085119ddacf2",
     "reference_files": 8148,
-    "evaluation_date": "2026-11-23",
-    "input_hash": "a1bcb71ce2d98fa0d45fed23f68afb94855f6849ce52c1a6d0ae026e3d06ad8f"
+    "evaluation_date": "2026-11-24",
+    "input_hash": "97e4011cbde772167c8afc087fb21d8ed25232fb766ff7dbfe0194087cc8caa0"
   },
-  "updated_at": "2026-11-23T22:04:26+08:00",
+  "updated_at": "2026-11-24T05:53:55+08:00",
   "status": "data_pending",
   "limitations": [
     "整數股可含零股；以普通交易開盤價加滑價作模擬代理，非真實零股9:10撮合價。",
