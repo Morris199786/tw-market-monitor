@@ -1,0 +1,43 @@
+name: US Sentiment History Backfill (2011+)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: us-sentiment-history-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check 'yfinance>=0.2.50,<2' 'pandas>=2.0,<3'
+      - name: Download and validate historical data
+        run: python scripts/update_us_sentiment_history.py
+      - name: Upload source audit (including failures)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: us-sentiment-fetch-audit
+          path: data/us_sentiment_fetch_audit.json
+          if-no-files-found: warn
+      - name: Commit validated JSON only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/us_sentiment_history.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: backfill US sentiment history since 2011'
+            git push
+          else
+            echo 'No data changes'
+          fi
