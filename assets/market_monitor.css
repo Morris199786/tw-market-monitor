@@ -655,3 +655,28 @@ html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cbad :is(.mm-tabl
  #marketMonitor .twd-market-change{font-size:10px}
  #marketMonitor .twd-market-footer{font-size:10px;padding:9px 11px}
 }
+
+
+/* 2026-11-23: rebound confirmation & margin deleveraging — display only. */
+#marketMonitor .mm-composite-table tbody td.mm-cgood{background:rgba(24,157,99,.12)!important;color:var(--ink)!important}
+#marketMonitor .mm-composite-table .mm-cgood .mm-margin-num,
+#marketMonitor .mm-composite-table .mm-cgood .mm-margin-relative{color:#11794f!important;font-weight:760!important}
+#marketMonitor .mm-margin-relative{margin-top:3px;padding-top:4px;border-top:1px solid var(--line);font-size:10px;line-height:1.35;text-align:right;color:var(--muted);white-space:nowrap}
+#marketMonitor .mm-composite-table .mm-recovery-cell{min-width:132px!important;width:132px!important;text-align:center!important}
+#marketMonitor .mm-recovery-pill{display:inline-block;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:760;white-space:nowrap}
+#marketMonitor .mm-recovery-ok{background:rgba(23,147,97,.13);color:#13794e}
+#marketMonitor .mm-recovery-weak{background:rgba(209,144,40,.15);color:#9e6413}
+#marketMonitor .mm-recovery-none{color:var(--muted)}
+#marketMonitor .mm-recovery-date{display:block;margin-top:5px;font-size:10px;color:var(--muted);white-space:nowrap}
+#marketMonitor .mm-details-dialog .mm-detail-metric.mm-detail-positive>b{color:#148154!important;font-weight:800!important}
+#marketMonitor .mm-history-recovery{margin:13px 0!important;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
+#marketMonitor .mm-history-recovery>summary{font-size:12px;font-weight:750}
+#marketMonitor .mm-history-recovery-list{margin-top:9px}
+#marketMonitor .mm-history-recovery-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:11px}
+#marketMonitor .mm-history-recovery-line>b{color:#148154}
+#marketMonitor .mm-history-recovery-line>small{color:var(--muted)}
+html[data-theme="dark"] #marketMonitor .mm-composite-table tbody td.mm-cgood{background:rgba(32,151,107,.19)!important}
+html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cgood :is(.mm-margin-num,.mm-margin-relative){color:#72dcae!important}
+html[data-theme="dark"] #marketMonitor .mm-details-dialog .mm-detail-metric.mm-detail-positive>b{color:#72dcae!important}
+html[data-theme="dark"] #marketMonitor .mm-recovery-ok{background:rgba(23,147,97,.22);color:#83e0b5}
+html[data-theme="dark"] #marketMonitor .mm-recovery-weak{background:rgba(209,144,40,.23);color:#f1c17c}
