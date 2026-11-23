@@ -759,3 +759,63 @@ html[data-theme="dark"] #marketMonitor .mm-rebound-trigger.is-confirmed{backgrou
 #marketMonitor #mm-us .us-margin-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 #marketMonitor #mm-us .us-margin-strip .us-kpi-value{font-size:18px}
 }
+
+
+/* US dashboard v2: table-first layout + linked chart groups */
+#marketMonitor #mm-us .us-overview-card,
+#marketMonitor #mm-us .us-linked-card,
+#marketMonitor #mm-us .us-month-details,
+#marketMonitor #mm-us .us-method,
+#marketMonitor #mm-us .us-margin-section{
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--us-card);
+  box-sizing:border-box;
+}
+#marketMonitor #mm-us .us-overview-card{padding:14px 14px 12px;margin:14px 0 16px}
+#marketMonitor #mm-us .us-section-title--tight{margin:0 0 10px}
+#marketMonitor #mm-us .us-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+#marketMonitor #mm-us .us-overview-table{width:100%;min-width:720px;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-overview-table :is(th,td){padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;line-height:1.55}
+#marketMonitor #mm-us .us-overview-table thead th{font-size:11px;color:var(--muted);font-weight:800;white-space:nowrap;background:rgba(246,249,252,.88)}
+#marketMonitor #mm-us .us-overview-table tbody th{font-weight:800;color:var(--ink);min-width:120px}
+#marketMonitor #mm-us .us-overview-table tbody tr:last-child :is(th,td){border-bottom:0}
+#marketMonitor #mm-us .us-table-note{font-size:11px;color:var(--muted);line-height:1.65;margin:10px 2px 0}
+#marketMonitor #mm-us .us-linked-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:6px 0 0}
+#marketMonitor #mm-us .us-linked-card{padding:13px 13px 11px}
+#marketMonitor #mm-us .us-linked-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin:0 0 10px}
+#marketMonitor #mm-us .us-linked-head h3{margin:0 0 4px;font-size:16px;letter-spacing:-.02em}
+#marketMonitor #mm-us .us-linked-head p{margin:0;font-size:12px;color:var(--muted);line-height:1.6}
+#marketMonitor #mm-us .us-linked-stack{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#marketMonitor #mm-us .us-chart-card--compact{padding:12px 12px 10px;border-radius:12px;background:#fff;border:1px solid var(--us-line)}
+#marketMonitor #mm-us .us-chart-card--compact .us-chart-head h4{font-size:13px}
+#marketMonitor #mm-us .us-chart-card--compact .us-chart-head small{font-size:10px;line-height:1.45}
+#marketMonitor #mm-us .us-chart-card--compact .us-chart-legend{margin-top:8px}
+#marketMonitor #mm-us .us-chart-card--compact .us-chart-values{min-height:22px;font-size:12px;margin-top:2px}
+#marketMonitor #mm-us .us-chart-card--compact .us-chart-viewport svg{aspect-ratio:800/190;min-height:132px;max-height:180px}
+#marketMonitor #mm-us .us-chart-event{stroke:#b28a40;stroke-width:1.15;stroke-dasharray:3 4;opacity:.85}
+#marketMonitor #mm-us .us-margin-section{margin-top:18px;padding:14px 14px 12px}
+#marketMonitor #mm-us .us-table-wrap--margin{margin-top:8px}
+#marketMonitor #mm-us .us-margin-table{min-width:540px}
+#marketMonitor #mm-us .us-margin-table tbody th{min-width:120px}
+#marketMonitor #mm-us .us-month-details,#marketMonitor #mm-us .us-method{margin-top:12px}
+#marketMonitor #mm-us .us-month-details summary,#marketMonitor #mm-us .us-method summary{padding:12px 14px;font-size:12px;font-weight:800;cursor:pointer;line-height:1.45}
+#marketMonitor #mm-us .us-month-scroll{overflow-x:auto;padding:0 10px 10px}
+#marketMonitor #mm-us .us-month-details table{border-collapse:collapse;width:100%;min-width:600px;font-size:12px;font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-month-details :is(th,td){border-bottom:1px solid var(--line);text-align:right;padding:9px 11px;white-space:nowrap}
+#marketMonitor #mm-us .us-month-details :is(th,td):first-child{text-align:left}
+#marketMonitor #mm-us .us-month-details th{color:var(--muted);font-size:11px;font-weight:700}
+#marketMonitor #mm-us .us-month-details tbody tr:last-child td{border-bottom:0}
+#marketMonitor #mm-us .us-method p{font-size:11px;line-height:1.75;color:var(--muted);padding:0 14px;margin:0 0 12px}
+#marketMonitor #mm-us .us-method a{color:#247a9e;text-decoration:underline}
+#marketMonitor #mm-us .us-empty{font-size:12px;color:var(--muted);padding:18px 8px}
+@media(max-width:700px){
+  #marketMonitor #mm-us .us-overview-card{padding:12px 12px 10px}
+  #marketMonitor #mm-us .us-linked-card{padding:12px 10px 10px}
+  #marketMonitor #mm-us .us-section-title{display:block}
+  #marketMonitor #mm-us .us-periods{margin-top:11px;width:max-content;max-width:100%;box-sizing:border-box}
+  #marketMonitor #mm-us .us-chart-card--compact{padding:11px 10px 9px}
+  #marketMonitor #mm-us .us-chart-card--compact .us-chart-viewport svg{min-height:124px;max-height:168px}
+  #marketMonitor #mm-us .us-overview-table{min-width:680px}
+  #marketMonitor #mm-us .us-margin-section{padding:12px 10px 10px}
+}
