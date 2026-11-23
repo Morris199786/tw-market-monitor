@@ -1,3686 +1,606 @@
 {
-  "updated_at": "2026-11-20T15:58+08:00",
-  "date": "2026-11-20",
+  "updated_at": "2026-11-23T09:03+08:00",
+  "date": "2026-11-23",
   "unit": "TWD",
   "display_unit": "億元",
   "estimated": true,
-  "intraday": false,
-  "source": "TWSE_MIS_close_price_x_accumulated_volume",
-  "session_progress": 1.0,
-  "session_progress_pct": 100.0,
-  "progress_method": null,
+  "intraday": true,
+  "source": "TWSE_MIS_price_x_accumulated_volume",
+  "session_progress": 0.0147,
+  "session_progress_pct": 1.5,
+  "progress_method": "accumulated_vs_prev5_full_day_avg_no_projection",
   "avg5_dates": [
-    "2026-11-13",
     "2026-11-16",
     "2026-11-17",
     "2026-11-18",
-    "2026-11-19"
+    "2026-11-19",
+    "2026-11-20"
   ],
   "sectors": [
     {
-      "name": "成熟晶圓製程",
-      "turnover": 24004359300,
-      "avg5_turnover": 16897235053,
-      "vs_avg5_pct": 42.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 3,
-      "total_stocks": 3
-    },
-    {
       "name": "晶圓代工（台積電）",
-      "turnover": 150414000000,
-      "avg5_turnover": 111848242572,
-      "vs_avg5_pct": 34.5,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 24038512500,
+      "avg5_turnover": 132639830431,
+      "vs_avg5_pct": -81.9,
+      "progress_ratio": 0.1812,
+      "progress_pct": -81.9,
       "used_stocks": 1,
       "total_stocks": 1
     },
     {
-      "name": "廠務工程",
-      "turnover": 6445421200,
-      "avg5_turnover": 5168033249,
-      "vs_avg5_pct": 24.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 11,
-      "total_stocks": 11
-    },
-    {
-      "name": "記憶體",
-      "turnover": 53160487100,
-      "avg5_turnover": 47438167645,
-      "vs_avg5_pct": 12.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 15,
-      "total_stocks": 15
-    },
-    {
-      "name": "AI ODM／OEM",
-      "turnover": 43270453650,
-      "avg5_turnover": 40261487579,
-      "vs_avg5_pct": 7.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 12,
-      "total_stocks": 12
-    },
-    {
-      "name": "重電",
-      "turnover": 2313221900,
-      "avg5_turnover": 2272849477,
-      "vs_avg5_pct": 1.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 6,
-      "total_stocks": 6
-    },
-    {
-      "name": "網通／交換器",
-      "turnover": 8672745400,
-      "avg5_turnover": 9387070242,
-      "vs_avg5_pct": -7.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 6,
-      "total_stocks": 6
-    },
-    {
-      "name": "功率元件／導線架",
-      "turnover": 1866532800,
-      "avg5_turnover": 2123435366,
-      "vs_avg5_pct": -12.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 11,
-      "total_stocks": 11
-    },
-    {
-      "name": "TGV／Glass",
-      "turnover": 12688619800,
-      "avg5_turnover": 14785182335,
-      "vs_avg5_pct": -14.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 10,
-      "total_stocks": 10
-    },
-    {
-      "name": "工具機／自動化系統",
-      "turnover": 2937411850,
-      "avg5_turnover": 3445612525,
-      "vs_avg5_pct": -14.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 8,
-      "total_stocks": 8
-    },
-    {
-      "name": "被動元件",
-      "turnover": 24690107600,
-      "avg5_turnover": 33745032613,
-      "vs_avg5_pct": -26.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 14,
-      "total_stocks": 14
-    },
-    {
-      "name": "800V HVDC",
-      "turnover": 21815498400,
-      "avg5_turnover": 29880115695,
-      "vs_avg5_pct": -27.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 8,
-      "total_stocks": 8
-    },
-    {
-      "name": "電源管理／馬達驅動 IC",
-      "turnover": 2067832600,
-      "avg5_turnover": 2832499033,
-      "vs_avg5_pct": -27.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 5,
-      "total_stocks": 5
-    },
-    {
-      "name": "半導體材料／耗材",
-      "turnover": 4445552800,
-      "avg5_turnover": 6180175146,
-      "vs_avg5_pct": -28.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 14,
-      "total_stocks": 14
-    },
-    {
-      "name": "MCU",
-      "turnover": 473492750,
-      "avg5_turnover": 698118299,
-      "vs_avg5_pct": -32.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 8,
-      "total_stocks": 8
+      "name": "銅箔／CCL",
+      "turnover": 9899824050,
+      "avg5_turnover": 57474199613,
+      "vs_avg5_pct": -82.8,
+      "progress_ratio": 0.1722,
+      "progress_pct": -82.8,
+      "used_stocks": 7,
+      "total_stocks": 7
     },
     {
       "name": "IP",
-      "turnover": 73142565800,
-      "avg5_turnover": 110962259486,
-      "vs_avg5_pct": -34.1,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 16472317800,
+      "avg5_turnover": 104910189844,
+      "vs_avg5_pct": -84.3,
+      "progress_ratio": 0.157,
+      "progress_pct": -84.3,
       "used_stocks": 10,
       "total_stocks": 10
     },
     {
-      "name": "IC 設計",
-      "turnover": 6966203000,
-      "avg5_turnover": 10827352600,
-      "vs_avg5_pct": -35.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 6,
-      "total_stocks": 6
-    },
-    {
-      "name": "IC 封裝／測試",
-      "turnover": 25592227000,
-      "avg5_turnover": 40268844745,
-      "vs_avg5_pct": -36.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 12,
-      "total_stocks": 12
-    },
-    {
-      "name": "矽晶圓",
-      "turnover": 5409098700,
-      "avg5_turnover": 9324474847,
-      "vs_avg5_pct": -42.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 5,
-      "total_stocks": 5
-    },
-    {
-      "name": "半導體測試／驗證／量測",
-      "turnover": 387910200,
-      "avg5_turnover": 674673668,
-      "vs_avg5_pct": -42.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 3,
-      "total_stocks": 3
-    },
-    {
-      "name": "光纖連接／精密光學",
-      "turnover": 14633628400,
-      "avg5_turnover": 26439019045,
-      "vs_avg5_pct": -44.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 12,
-      "total_stocks": 12
-    },
-    {
-      "name": "AI 伺服器機構／機殼",
-      "turnover": 4912735100,
-      "avg5_turnover": 8928444556,
-      "vs_avg5_pct": -45.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 7,
-      "total_stocks": 7
-    },
-    {
-      "name": "連接線材",
-      "turnover": 5949280100,
-      "avg5_turnover": 11536377626,
-      "vs_avg5_pct": -48.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 7,
-      "total_stocks": 7
-    },
-    {
-      "name": "石英元件",
-      "turnover": 476369100,
-      "avg5_turnover": 932060241,
-      "vs_avg5_pct": -48.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 3,
-      "total_stocks": 3
-    },
-    {
-      "name": "半導體設備",
-      "turnover": 6424361500,
-      "avg5_turnover": 13105712035,
-      "vs_avg5_pct": -51.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 16,
-      "total_stocks": 16
-    },
-    {
-      "name": "PCB",
-      "turnover": 14314996250,
-      "avg5_turnover": 37199777958,
-      "vs_avg5_pct": -61.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 11,
-      "total_stocks": 11
-    },
-    {
-      "name": "銅箔／CCL",
-      "turnover": 25804863850,
-      "avg5_turnover": 68788329686,
-      "vs_avg5_pct": -62.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 7,
-      "total_stocks": 7
-    },
-    {
       "name": "散熱",
-      "turnover": 21456903000,
-      "avg5_turnover": 63077533340,
-      "vs_avg5_pct": -66.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 8254559150,
+      "avg5_turnover": 54492857964,
+      "vs_avg5_pct": -84.9,
+      "progress_ratio": 0.1515,
+      "progress_pct": -84.9,
       "used_stocks": 12,
       "total_stocks": 12
+    },
+    {
+      "name": "ABF",
+      "turnover": 6759279750,
+      "avg5_turnover": 46859803172,
+      "vs_avg5_pct": -85.6,
+      "progress_ratio": 0.1442,
+      "progress_pct": -85.6,
+      "used_stocks": 4,
+      "total_stocks": 4
+    },
+    {
+      "name": "800V HVDC",
+      "turnover": 4030569775,
+      "avg5_turnover": 30090483118,
+      "vs_avg5_pct": -86.6,
+      "progress_ratio": 0.1339,
+      "progress_pct": -86.6,
+      "used_stocks": 8,
+      "total_stocks": 8
+    },
+    {
+      "name": "成熟晶圓製程",
+      "turnover": 2446323700,
+      "avg5_turnover": 18687152923,
+      "vs_avg5_pct": -86.9,
+      "progress_ratio": 0.1309,
+      "progress_pct": -86.9,
+      "used_stocks": 3,
+      "total_stocks": 3
     },
     {
       "name": "PCB 設備",
-      "turnover": 1836961500,
-      "avg5_turnover": 6532544510,
-      "vs_avg5_pct": -71.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 602147750,
+      "avg5_turnover": 4677247630,
+      "vs_avg5_pct": -87.1,
+      "progress_ratio": 0.1287,
+      "progress_pct": -87.1,
       "used_stocks": 6,
       "total_stocks": 6
     },
     {
       "name": "探針卡／測試介面",
-      "turnover": 3596828000,
-      "avg5_turnover": 12799571050,
-      "vs_avg5_pct": -71.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 1258931500,
+      "avg5_turnover": 10019746137,
+      "vs_avg5_pct": -87.4,
+      "progress_ratio": 0.1256,
+      "progress_pct": -87.4,
       "used_stocks": 6,
       "total_stocks": 6
     },
     {
-      "name": "低軌衛星",
-      "turnover": 10585593600,
-      "avg5_turnover": 37755087241,
-      "vs_avg5_pct": -72.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 7,
-      "total_stocks": 7
-    },
-    {
-      "name": "PTFE材料",
-      "turnover": 1046043100,
-      "avg5_turnover": 4164299821,
-      "vs_avg5_pct": -74.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "name": "半導體測試／驗證／量測",
+      "turnover": 74865000,
+      "avg5_turnover": 596128746,
+      "vs_avg5_pct": -87.4,
+      "progress_ratio": 0.1256,
+      "progress_pct": -87.4,
       "used_stocks": 3,
       "total_stocks": 3
     },
     {
-      "name": "ABF",
-      "turnover": 13445913000,
-      "avg5_turnover": 54098111482,
-      "vs_avg5_pct": -75.1,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "name": "矽晶圓",
+      "turnover": 1074941900,
+      "avg5_turnover": 8700168031,
+      "vs_avg5_pct": -87.6,
+      "progress_ratio": 0.1236,
+      "progress_pct": -87.6,
+      "used_stocks": 5,
+      "total_stocks": 5
+    },
+    {
+      "name": "半導體設備",
+      "turnover": 1477197800,
+      "avg5_turnover": 12305932745,
+      "vs_avg5_pct": -88.0,
+      "progress_ratio": 0.12,
+      "progress_pct": -88.0,
+      "used_stocks": 16,
+      "total_stocks": 16
+    },
+    {
+      "name": "PCB 鑽孔耗材",
+      "turnover": 264929425,
+      "avg5_turnover": 2245490111,
+      "vs_avg5_pct": -88.2,
+      "progress_ratio": 0.118,
+      "progress_pct": -88.2,
       "used_stocks": 4,
       "total_stocks": 4
     },
     {
-      "name": "光通訊元件／模組",
-      "turnover": 7585479000,
-      "avg5_turnover": 33836335577,
-      "vs_avg5_pct": -77.6,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "name": "IC 封裝／測試",
+      "turnover": 4262749700,
+      "avg5_turnover": 36709649255,
+      "vs_avg5_pct": -88.4,
+      "progress_ratio": 0.1161,
+      "progress_pct": -88.4,
+      "used_stocks": 12,
+      "total_stocks": 12
+    },
+    {
+      "name": "工具機／自動化系統",
+      "turnover": 373009450,
+      "avg5_turnover": 3405428562,
+      "vs_avg5_pct": -89.0,
+      "progress_ratio": 0.1095,
+      "progress_pct": -89.0,
+      "used_stocks": 8,
+      "total_stocks": 8
+    },
+    {
+      "name": "記憶體",
+      "turnover": 5277191425,
+      "avg5_turnover": 49554043363,
+      "vs_avg5_pct": -89.4,
+      "progress_ratio": 0.1065,
+      "progress_pct": -89.4,
+      "used_stocks": 15,
+      "total_stocks": 15
+    },
+    {
+      "name": "AI ODM／OEM",
+      "turnover": 4359399975,
+      "avg5_turnover": 41085478815,
+      "vs_avg5_pct": -89.4,
+      "progress_ratio": 0.1061,
+      "progress_pct": -89.4,
+      "used_stocks": 12,
+      "total_stocks": 12
+    },
+    {
+      "name": "被動元件",
+      "turnover": 3177782100,
+      "avg5_turnover": 31523322031,
+      "vs_avg5_pct": -89.9,
+      "progress_ratio": 0.1008,
+      "progress_pct": -89.9,
+      "used_stocks": 14,
+      "total_stocks": 14
+    },
+    {
+      "name": "IC 設計",
+      "turnover": 954227750,
+      "avg5_turnover": 9906865723,
+      "vs_avg5_pct": -90.4,
+      "progress_ratio": 0.0963,
+      "progress_pct": -90.4,
+      "used_stocks": 6,
+      "total_stocks": 6
+    },
+    {
+      "name": "廠務工程",
+      "turnover": 544159500,
+      "avg5_turnover": 5741778004,
+      "vs_avg5_pct": -90.5,
+      "progress_ratio": 0.0948,
+      "progress_pct": -90.5,
       "used_stocks": 11,
       "total_stocks": 11
     },
     {
       "name": "光通封裝／設備／檢測",
-      "turnover": 1271533300,
-      "avg5_turnover": 5878518019,
-      "vs_avg5_pct": -78.4,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 418774250,
+      "avg5_turnover": 4551858813,
+      "vs_avg5_pct": -90.8,
+      "progress_ratio": 0.092,
+      "progress_pct": -90.8,
       "used_stocks": 8,
       "total_stocks": 8
     },
     {
+      "name": "半導體材料／耗材",
+      "turnover": 541763300,
+      "avg5_turnover": 5897184147,
+      "vs_avg5_pct": -90.8,
+      "progress_ratio": 0.0919,
+      "progress_pct": -90.8,
+      "used_stocks": 14,
+      "total_stocks": 14
+    },
+    {
+      "name": "PCB",
+      "turnover": 2678043050,
+      "avg5_turnover": 30342286279,
+      "vs_avg5_pct": -91.2,
+      "progress_ratio": 0.0883,
+      "progress_pct": -91.2,
+      "used_stocks": 11,
+      "total_stocks": 11
+    },
+    {
+      "name": "TGV／Glass",
+      "turnover": 1204055750,
+      "avg5_turnover": 13825150684,
+      "vs_avg5_pct": -91.3,
+      "progress_ratio": 0.0871,
+      "progress_pct": -91.3,
+      "used_stocks": 10,
+      "total_stocks": 10
+    },
+    {
+      "name": "AI 伺服器機構／機殼",
+      "turnover": 654871700,
+      "avg5_turnover": 7677573067,
+      "vs_avg5_pct": -91.5,
+      "progress_ratio": 0.0853,
+      "progress_pct": -91.5,
+      "used_stocks": 7,
+      "total_stocks": 7
+    },
+    {
+      "name": "PTFE材料",
+      "turnover": 260229800,
+      "avg5_turnover": 3127723965,
+      "vs_avg5_pct": -91.7,
+      "progress_ratio": 0.0832,
+      "progress_pct": -91.7,
+      "used_stocks": 3,
+      "total_stocks": 3
+    },
+    {
+      "name": "光通訊元件／模組",
+      "turnover": 2357769300,
+      "avg5_turnover": 28506555062,
+      "vs_avg5_pct": -91.7,
+      "progress_ratio": 0.0827,
+      "progress_pct": -91.7,
+      "used_stocks": 11,
+      "total_stocks": 11
+    },
+    {
+      "name": "光纖連接／精密光學",
+      "turnover": 1830298150,
+      "avg5_turnover": 22700168401,
+      "vs_avg5_pct": -91.9,
+      "progress_ratio": 0.0806,
+      "progress_pct": -91.9,
+      "used_stocks": 12,
+      "total_stocks": 12
+    },
+    {
+      "name": "石英元件",
+      "turnover": 63760325,
+      "avg5_turnover": 809323137,
+      "vs_avg5_pct": -92.1,
+      "progress_ratio": 0.0788,
+      "progress_pct": -92.1,
+      "used_stocks": 3,
+      "total_stocks": 3
+    },
+    {
+      "name": "重電",
+      "turnover": 184167900,
+      "avg5_turnover": 2342190404,
+      "vs_avg5_pct": -92.1,
+      "progress_ratio": 0.0786,
+      "progress_pct": -92.1,
+      "used_stocks": 6,
+      "total_stocks": 6
+    },
+    {
+      "name": "網通／交換器",
+      "turnover": 729940875,
+      "avg5_turnover": 9579123987,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.0762,
+      "progress_pct": -92.4,
+      "used_stocks": 6,
+      "total_stocks": 6
+    },
+    {
+      "name": "連接線材",
+      "turnover": 811223100,
+      "avg5_turnover": 10826321852,
+      "vs_avg5_pct": -92.5,
+      "progress_ratio": 0.0749,
+      "progress_pct": -92.5,
+      "used_stocks": 7,
+      "total_stocks": 7
+    },
+    {
       "name": "玻纖布／玻纖紗",
-      "turnover": 4827200000,
-      "avg5_turnover": 32194678406,
-      "vs_avg5_pct": -85.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 1483434250,
+      "avg5_turnover": 21500566224,
+      "vs_avg5_pct": -93.1,
+      "progress_ratio": 0.069,
+      "progress_pct": -93.1,
       "used_stocks": 4,
       "total_stocks": 4
     },
     {
-      "name": "PCB 鑽孔耗材",
-      "turnover": 379862400,
-      "avg5_turnover": 2891048875,
-      "vs_avg5_pct": -86.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "used_stocks": 4,
-      "total_stocks": 4
+      "name": "功率元件／導線架",
+      "turnover": 139823800,
+      "avg5_turnover": 2149490766,
+      "vs_avg5_pct": -93.5,
+      "progress_ratio": 0.065,
+      "progress_pct": -93.5,
+      "used_stocks": 11,
+      "total_stocks": 11
+    },
+    {
+      "name": "電源管理／馬達驅動 IC",
+      "turnover": 155187300,
+      "avg5_turnover": 2672821346,
+      "vs_avg5_pct": -94.2,
+      "progress_ratio": 0.0581,
+      "progress_pct": -94.2,
+      "used_stocks": 5,
+      "total_stocks": 5
+    },
+    {
+      "name": "MCU",
+      "turnover": 38457325,
+      "avg5_turnover": 683196317,
+      "vs_avg5_pct": -94.4,
+      "progress_ratio": 0.0563,
+      "progress_pct": -94.4,
+      "used_stocks": 8,
+      "total_stocks": 8
+    },
+    {
+      "name": "低軌衛星",
+      "turnover": 1455275775,
+      "avg5_turnover": 33117677081,
+      "vs_avg5_pct": -95.6,
+      "progress_ratio": 0.0439,
+      "progress_pct": -95.6,
+      "used_stocks": 7,
+      "total_stocks": 7
     }
   ],
   "stocks": [
     {
-      "ticker": "7828",
-      "name": "創新服務",
-      "turnover": 1266510000,
-      "avg5_turnover": 304348000,
-      "vs_avg5_pct": 316.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "探針卡／測試介面"
-      ]
-    },
-    {
-      "ticker": "5487",
-      "name": "通泰",
-      "turnover": 2084000,
-      "avg5_turnover": 612000,
-      "vs_avg5_pct": 240.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "7788",
-      "name": "松川精密",
-      "turnover": 1223790000,
-      "avg5_turnover": 363654996,
-      "vs_avg5_pct": 236.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "1514",
-      "name": "亞力",
-      "turnover": 165597200,
-      "avg5_turnover": 73253324,
-      "vs_avg5_pct": 126.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "8255",
-      "name": "朋程",
-      "turnover": 59478800,
-      "avg5_turnover": 28085200,
-      "vs_avg5_pct": 111.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "5299",
-      "name": "杰力",
-      "turnover": 20429000,
-      "avg5_turnover": 9794320,
-      "vs_avg5_pct": 108.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "6230",
-      "name": "尼得科超眾",
-      "turnover": 7462000,
-      "avg5_turnover": 3658085,
-      "vs_avg5_pct": 104.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "3289",
-      "name": "宜特",
-      "turnover": 160612200,
-      "avg5_turnover": 78777020,
-      "vs_avg5_pct": 103.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體測試／驗證／量測"
-      ]
-    },
-    {
-      "ticker": "3217",
-      "name": "優群",
-      "turnover": 75366000,
-      "avg5_turnover": 37756300,
-      "vs_avg5_pct": 99.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "3483",
-      "name": "力致",
-      "turnover": 83828750,
-      "avg5_turnover": 44121340,
-      "vs_avg5_pct": 90.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "3013",
-      "name": "晟銘電",
-      "turnover": 143409600,
-      "avg5_turnover": 76985695,
-      "vs_avg5_pct": 86.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "4906",
-      "name": "正文",
-      "turnover": 304665300,
-      "avg5_turnover": 165559013,
-      "vs_avg5_pct": 84.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "2451",
-      "name": "創見",
-      "turnover": 1702981000,
-      "avg5_turnover": 928693025,
-      "vs_avg5_pct": 83.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "6862",
-      "name": "三集瑞-KY",
-      "turnover": 27724200,
-      "avg5_turnover": 15306484,
-      "vs_avg5_pct": 81.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "5434",
-      "name": "崇越",
-      "turnover": 626705500,
-      "avg5_turnover": 347007333,
-      "vs_avg5_pct": 80.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "6202",
-      "name": "盛群",
-      "turnover": 71512200,
-      "avg5_turnover": 39651829,
-      "vs_avg5_pct": 80.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "3338",
-      "name": "泰碩",
-      "turnover": 35621250,
-      "avg5_turnover": 19773608,
-      "vs_avg5_pct": 80.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "1513",
-      "name": "中興電",
-      "turnover": 490365000,
-      "avg5_turnover": 272259951,
-      "vs_avg5_pct": 80.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "3587",
-      "name": "閎康",
-      "turnover": 116496000,
-      "avg5_turnover": 66596600,
-      "vs_avg5_pct": 74.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體測試／驗證／量測"
-      ]
-    },
-    {
-      "ticker": "8271",
-      "name": "宇瞻",
-      "turnover": 362957000,
-      "avg5_turnover": 207533360,
-      "vs_avg5_pct": 74.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "3558",
-      "name": "神準",
-      "turnover": 30231600,
-      "avg5_turnover": 17795380,
-      "vs_avg5_pct": 69.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "8299",
-      "name": "群聯",
-      "turnover": 11210760000,
-      "avg5_turnover": 6638289000,
-      "vs_avg5_pct": 68.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "2303",
-      "name": "聯電",
-      "turnover": 18365493300,
-      "avg5_turnover": 10895264642,
-      "vs_avg5_pct": 68.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "成熟晶圓製程"
-      ]
-    },
-    {
-      "ticker": "6672",
-      "name": "騰輝電子-KY",
-      "turnover": 4983537000,
-      "avg5_turnover": 2975796059,
-      "vs_avg5_pct": 67.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "3030",
-      "name": "德律",
-      "turnover": 582926000,
-      "avg5_turnover": 356590811,
-      "vs_avg5_pct": 63.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6188",
-      "name": "廣明",
-      "turnover": 87776250,
-      "avg5_turnover": 53956160,
-      "vs_avg5_pct": 62.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
       "ticker": "4583",
       "name": "台灣精銳",
-      "turnover": 85899000,
-      "avg5_turnover": 52879131,
-      "vs_avg5_pct": 62.4,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 165354000,
+      "avg5_turnover": 59120747,
+      "vs_avg5_pct": 179.7,
+      "progress_ratio": 2.7969,
+      "progress_pct": 179.7,
       "sectors": [
         "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "7703",
-      "name": "銳澤",
-      "turnover": 17500000,
-      "avg5_turnover": 10866600,
-      "vs_avg5_pct": 61.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "8182",
-      "name": "加高",
-      "turnover": 12723200,
-      "avg5_turnover": 8042910,
-      "vs_avg5_pct": 58.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "石英元件"
-      ]
-    },
-    {
-      "ticker": "3402",
-      "name": "漢科",
-      "turnover": 34819200,
-      "avg5_turnover": 22199700,
-      "vs_avg5_pct": 56.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "6191",
-      "name": "精成科",
-      "turnover": 302101000,
-      "avg5_turnover": 194218762,
-      "vs_avg5_pct": 55.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "3357",
-      "name": "臺慶科",
-      "turnover": 228494000,
-      "avg5_turnover": 148533800,
-      "vs_avg5_pct": 53.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "8088",
-      "name": "品安",
-      "turnover": 19580000,
-      "avg5_turnover": 12787500,
-      "vs_avg5_pct": 53.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "6525",
-      "name": "捷敏-KY",
-      "turnover": 86255500,
-      "avg5_turnover": 57032097,
-      "vs_avg5_pct": 51.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "5285",
-      "name": "界霖",
-      "turnover": 82770800,
-      "avg5_turnover": 55502219,
-      "vs_avg5_pct": 49.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "5471",
-      "name": "松翰",
-      "turnover": 29763250,
-      "avg5_turnover": 20307787,
-      "vs_avg5_pct": 46.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "3260",
-      "name": "威剛",
-      "turnover": 2658795000,
-      "avg5_turnover": 1832882700,
-      "vs_avg5_pct": 45.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "2404",
-      "name": "漢唐",
-      "turnover": 2135638000,
-      "avg5_turnover": 1481999993,
-      "vs_avg5_pct": 44.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "7712",
-      "name": "博盛半導體",
-      "turnover": 31811100,
-      "avg5_turnover": 22446000,
-      "vs_avg5_pct": 41.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "4952",
-      "name": "凌通",
-      "turnover": 10710000,
-      "avg5_turnover": 7632405,
-      "vs_avg5_pct": 40.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "6719",
-      "name": "力智",
-      "turnover": 179244000,
-      "avg5_turnover": 128496497,
-      "vs_avg5_pct": 39.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "電源管理／馬達驅動 IC"
-      ]
-    },
-    {
-      "ticker": "2421",
-      "name": "建準",
-      "turnover": 280719000,
-      "avg5_turnover": 202254252,
-      "vs_avg5_pct": 38.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "3413",
-      "name": "京鼎",
-      "turnover": 159727000,
-      "avg5_turnover": 115307138,
-      "vs_avg5_pct": 38.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6716",
-      "name": "應廣",
-      "turnover": 29822000,
-      "avg5_turnover": 21705400,
-      "vs_avg5_pct": 37.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "5388",
-      "name": "中磊",
-      "turnover": 264882000,
-      "avg5_turnover": 193008529,
-      "vs_avg5_pct": 37.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "5536",
-      "name": "聖暉*",
-      "turnover": 725748000,
-      "avg5_turnover": 535875800,
-      "vs_avg5_pct": 35.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "6117",
-      "name": "迎廣",
-      "turnover": 24816000,
-      "avg5_turnover": 18331057,
-      "vs_avg5_pct": 35.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "2330",
-      "name": "台積電",
-      "turnover": 150414000000,
-      "avg5_turnover": 111848242572,
-      "vs_avg5_pct": 34.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "晶圓代工（台積電）"
-      ]
-    },
-    {
-      "ticker": "2458",
-      "name": "義隆",
-      "turnover": 185744000,
-      "avg5_turnover": 138570358,
-      "vs_avg5_pct": 34.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "2371",
-      "name": "大同",
-      "turnover": 354354600,
-      "avg5_turnover": 264855054,
-      "vs_avg5_pct": 33.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "1504",
-      "name": "東元",
-      "turnover": 504416100,
-      "avg5_turnover": 378557076,
-      "vs_avg5_pct": 33.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "6139",
-      "name": "亞翔",
-      "turnover": 1855704000,
-      "avg5_turnover": 1401866013,
-      "vs_avg5_pct": 32.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "3380",
-      "name": "明泰",
-      "turnover": 53398500,
-      "avg5_turnover": 40454654,
-      "vs_avg5_pct": 32.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "4772",
-      "name": "台特化",
-      "turnover": 211050000,
-      "avg5_turnover": 161225400,
-      "vs_avg5_pct": 30.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "6667",
-      "name": "信紘科",
-      "turnover": 105384500,
-      "avg5_turnover": 81128300,
-      "vs_avg5_pct": 29.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "1503",
-      "name": "士電",
-      "turnover": 290160000,
-      "avg5_turnover": 226341557,
-      "vs_avg5_pct": 28.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "3122",
-      "name": "笙泉",
-      "turnover": 1409400,
-      "avg5_turnover": 1100180,
-      "vs_avg5_pct": 28.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "6788",
-      "name": "華景電",
-      "turnover": 207690000,
-      "avg5_turnover": 162155500,
-      "vs_avg5_pct": 28.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "5284",
-      "name": "jpp-KY",
-      "turnover": 127875000,
-      "avg5_turnover": 101138620,
-      "vs_avg5_pct": 26.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "6449",
-      "name": "鈺邦",
-      "turnover": 191840000,
-      "avg5_turnover": 154404582,
-      "vs_avg5_pct": 24.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "8081",
-      "name": "致新",
-      "turnover": 108057000,
-      "avg5_turnover": 87696045,
-      "vs_avg5_pct": 23.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "電源管理／馬達驅動 IC"
-      ]
-    },
-    {
-      "ticker": "6781",
-      "name": "AES-KY",
-      "turnover": 348648000,
-      "avg5_turnover": 286786777,
-      "vs_avg5_pct": 21.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "6435",
-      "name": "大中",
-      "turnover": 65488500,
-      "avg5_turnover": 54297700,
-      "vs_avg5_pct": 20.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "2324",
-      "name": "仁寶",
-      "turnover": 1418822750,
-      "avg5_turnover": 1177352392,
-      "vs_avg5_pct": 20.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "2233",
-      "name": "宇隆",
-      "turnover": 95180800,
-      "avg5_turnover": 79373508,
-      "vs_avg5_pct": 19.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "8103",
-      "name": "瀚荃",
-      "turnover": 126080000,
-      "avg5_turnover": 105528819,
-      "vs_avg5_pct": 19.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "6669",
-      "name": "緯穎",
-      "turnover": 7363025000,
-      "avg5_turnover": 6180362725,
-      "vs_avg5_pct": 19.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "5269",
-      "name": "祥碩",
-      "turnover": 825375000,
-      "avg5_turnover": 707376004,
-      "vs_avg5_pct": 16.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "3596",
-      "name": "智易",
-      "turnover": 216448000,
-      "avg5_turnover": 185581971,
-      "vs_avg5_pct": 16.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "6613",
-      "name": "朋億*",
-      "turnover": 38352000,
-      "avg5_turnover": 32929600,
-      "vs_avg5_pct": 16.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "6494",
-      "name": "九齊",
-      "turnover": 4058400,
-      "avg5_turnover": 3520310,
-      "vs_avg5_pct": 15.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "4966",
-      "name": "譜瑞-KY",
-      "turnover": 378880500,
-      "avg5_turnover": 330061600,
-      "vs_avg5_pct": 14.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "2317",
-      "name": "鴻海",
-      "turnover": 14103180000,
-      "avg5_turnover": 12362561064,
-      "vs_avg5_pct": 14.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "6138",
-      "name": "茂達",
-      "turnover": 109324000,
-      "avg5_turnover": 96005100,
-      "vs_avg5_pct": 13.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "電源管理／馬達驅動 IC"
-      ]
-    },
-    {
-      "ticker": "5234",
-      "name": "達興材料",
-      "turnover": 134757000,
-      "avg5_turnover": 119318088,
-      "vs_avg5_pct": 12.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "4967",
-      "name": "十銓",
-      "turnover": 887650000,
-      "avg5_turnover": 794459142,
-      "vs_avg5_pct": 11.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "6282",
-      "name": "康舒",
-      "turnover": 189551600,
-      "avg5_turnover": 169898908,
-      "vs_avg5_pct": 11.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "3711",
-      "name": "日月光投控",
-      "turnover": 15837335000,
-      "avg5_turnover": 14376425117,
-      "vs_avg5_pct": 10.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "5289",
-      "name": "宜鼎",
-      "turnover": 2250022000,
-      "avg5_turnover": 2042576800,
-      "vs_avg5_pct": 10.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "2356",
-      "name": "英業達",
-      "turnover": 1182367000,
-      "avg5_turnover": 1077241322,
-      "vs_avg5_pct": 9.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "2357",
-      "name": "華碩",
-      "turnover": 3399732000,
-      "avg5_turnover": 3144688492,
-      "vs_avg5_pct": 8.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "3135",
-      "name": "凌航",
-      "turnover": 107645600,
-      "avg5_turnover": 99814628,
-      "vs_avg5_pct": 7.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "2327",
-      "name": "國巨",
-      "turnover": 20113200000,
-      "avg5_turnover": 18662966557,
-      "vs_avg5_pct": 7.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "2337",
-      "name": "旺宏",
-      "turnover": 3647205800,
-      "avg5_turnover": 3408186380,
-      "vs_avg5_pct": 7.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "3680",
-      "name": "家登",
-      "turnover": 343526500,
-      "avg5_turnover": 321723200,
-      "vs_avg5_pct": 6.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "2344",
-      "name": "華邦電",
-      "turnover": 7395126000,
-      "avg5_turnover": 6929145206,
-      "vs_avg5_pct": 6.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "6691",
-      "name": "洋基工程",
-      "turnover": 536475000,
-      "avg5_turnover": 503616691,
-      "vs_avg5_pct": 6.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "8096",
-      "name": "擎亞",
-      "turnover": 188770500,
-      "avg5_turnover": 177723540,
-      "vs_avg5_pct": 6.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "3481",
-      "name": "群創",
-      "turnover": 6074189450,
-      "avg5_turnover": 5723393392,
-      "vs_avg5_pct": 6.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "2376",
-      "name": "技嘉",
-      "turnover": 3259960000,
-      "avg5_turnover": 3079311786,
-      "vs_avg5_pct": 5.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "3231",
-      "name": "緯創",
-      "turnover": 5343156000,
-      "avg5_turnover": 5093201037,
-      "vs_avg5_pct": 4.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "6664",
-      "name": "群翊",
-      "turnover": 78752000,
-      "avg5_turnover": 75112300,
-      "vs_avg5_pct": 4.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "4764",
-      "name": "雙鍵",
-      "turnover": 88474400,
-      "avg5_turnover": 84478543,
-      "vs_avg5_pct": 4.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "2441",
-      "name": "超豐",
-      "turnover": 475230000,
-      "avg5_turnover": 456000613,
-      "vs_avg5_pct": 4.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "6438",
-      "name": "迅得",
-      "turnover": 129918000,
-      "avg5_turnover": 127419898,
-      "vs_avg5_pct": 2.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 設備"
-      ]
-    },
-    {
-      "ticker": "3008",
-      "name": "大立光",
-      "turnover": 10925590000,
-      "avg5_turnover": 10751615930,
-      "vs_avg5_pct": 1.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3317",
-      "name": "尼克森",
-      "turnover": 26754600,
-      "avg5_turnover": 26439350,
-      "vs_avg5_pct": 1.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "1727",
-      "name": "中華化",
-      "turnover": 146250000,
-      "avg5_turnover": 145465923,
-      "vs_avg5_pct": 0.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "2481",
-      "name": "強茂",
-      "turnover": 840978000,
-      "avg5_turnover": 842183868,
-      "vs_avg5_pct": -0.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "6770",
-      "name": "力積電",
-      "turnover": 4471519500,
-      "avg5_turnover": 4530780110,
-      "vs_avg5_pct": -1.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體",
-        "成熟晶圓製程"
-      ]
-    },
-    {
-      "ticker": "4540",
-      "name": "全球傳動",
-      "turnover": 63148800,
-      "avg5_turnover": 64549989,
-      "vs_avg5_pct": -2.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "5351",
-      "name": "鈺創",
-      "turnover": 675331200,
-      "avg5_turnover": 696656460,
-      "vs_avg5_pct": -3.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "5483",
-      "name": "中美晶",
-      "turnover": 1091142000,
-      "avg5_turnover": 1126780500,
-      "vs_avg5_pct": -3.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "矽晶圓"
-      ]
-    },
-    {
-      "ticker": "2379",
-      "name": "瑞昱",
-      "turnover": 2165656000,
-      "avg5_turnover": 2253303110,
-      "vs_avg5_pct": -3.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "6789",
-      "name": "采鈺",
-      "turnover": 433840000,
-      "avg5_turnover": 452468588,
-      "vs_avg5_pct": -4.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "5443",
-      "name": "均豪",
-      "turnover": 78373400,
-      "avg5_turnover": 81891640,
-      "vs_avg5_pct": -4.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "2382",
-      "name": "廣達",
-      "turnover": 4298616000,
-      "avg5_turnover": 4497774774,
-      "vs_avg5_pct": -4.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "3535",
-      "name": "晶彩科",
-      "turnover": 52911500,
-      "avg5_turnover": 55916065,
-      "vs_avg5_pct": -5.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "3090",
-      "name": "日電貿",
-      "turnover": 371830000,
-      "avg5_turnover": 397852338,
-      "vs_avg5_pct": -6.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "2454",
-      "name": "聯發科",
-      "turnover": 58494350000,
-      "avg5_turnover": 63206407441,
-      "vs_avg5_pct": -7.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "8155",
-      "name": "博智",
-      "turnover": 274860000,
-      "avg5_turnover": 297126400,
-      "vs_avg5_pct": -7.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "6530",
-      "name": "創威",
-      "turnover": 24255000,
-      "avg5_turnover": 26276060,
-      "vs_avg5_pct": -7.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "3006",
-      "name": "晶豪科",
-      "turnover": 2055200000,
-      "avg5_turnover": 2226822701,
-      "vs_avg5_pct": -7.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "2408",
-      "name": "南亞科",
-      "turnover": 15526943500,
-      "avg5_turnover": 16911817093,
-      "vs_avg5_pct": -8.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "記憶體"
-      ]
-    },
-    {
-      "ticker": "6944",
-      "name": "兆聯實業",
-      "turnover": 317272500,
-      "avg5_turnover": 346320077,
-      "vs_avg5_pct": -8.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "5469",
-      "name": "瀚宇博",
-      "turnover": 230391000,
-      "avg5_turnover": 252135916,
-      "vs_avg5_pct": -8.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "2464",
-      "name": "盟立",
-      "turnover": 773032500,
-      "avg5_turnover": 846207747,
-      "vs_avg5_pct": -8.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "6693",
-      "name": "廣閎科",
-      "turnover": 72551100,
-      "avg5_turnover": 79785900,
-      "vs_avg5_pct": -9.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "電源管理／馬達驅動 IC"
-      ]
-    },
-    {
-      "ticker": "4768",
-      "name": "晶呈科技",
-      "turnover": 103547500,
-      "avg5_turnover": 114186800,
-      "vs_avg5_pct": -9.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "3138",
-      "name": "耀登",
-      "turnover": 30597000,
-      "avg5_turnover": 33808283,
-      "vs_avg5_pct": -9.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "低軌衛星"
-      ]
-    },
-    {
-      "ticker": "1785",
-      "name": "光洋科",
-      "turnover": 842380000,
-      "avg5_turnover": 937723680,
-      "vs_avg5_pct": -10.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "8074",
-      "name": "鉅橡",
-      "turnover": 20962800,
-      "avg5_turnover": 23566380,
-      "vs_avg5_pct": -11.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 鑽孔耗材"
-      ]
-    },
-    {
-      "ticker": "6937",
-      "name": "天虹",
-      "turnover": 56214000,
-      "avg5_turnover": 63255568,
-      "vs_avg5_pct": -11.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "2345",
-      "name": "智邦",
-      "turnover": 7803120000,
-      "avg5_turnover": 8784670694,
-      "vs_avg5_pct": -11.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "網通／交換器"
-      ]
-    },
-    {
-      "ticker": "3675",
-      "name": "德微",
-      "turnover": 89780000,
-      "avg5_turnover": 101882600,
-      "vs_avg5_pct": -11.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "1590",
-      "name": "亞德客-KY",
-      "turnover": 754152000,
-      "avg5_turnover": 864355285,
-      "vs_avg5_pct": -12.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "6239",
-      "name": "力成",
-      "turnover": 1990692000,
-      "avg5_turnover": 2282385135,
-      "vs_avg5_pct": -12.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "2478",
-      "name": "大毅",
-      "turnover": 200601000,
-      "avg5_turnover": 232358625,
-      "vs_avg5_pct": -13.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "3706",
-      "name": "神達",
-      "turnover": 723821000,
-      "avg5_turnover": 845176021,
-      "vs_avg5_pct": -14.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "2049",
-      "name": "上銀",
-      "turnover": 855055000,
-      "avg5_turnover": 1018371761,
-      "vs_avg5_pct": -16.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "4749",
-      "name": "新應材",
-      "turnover": 456660000,
-      "avg5_turnover": 545991400,
-      "vs_avg5_pct": -16.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "2375",
-      "name": "凱美",
-      "turnover": 142257700,
-      "avg5_turnover": 172375330,
-      "vs_avg5_pct": -17.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "6933",
-      "name": "AMAX-KY",
-      "turnover": 311664000,
-      "avg5_turnover": 381981009,
-      "vs_avg5_pct": -18.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "3044",
-      "name": "健鼎",
-      "turnover": 2883510000,
-      "avg5_turnover": 3541437283,
-      "vs_avg5_pct": -18.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "2301",
-      "name": "光寶科",
-      "turnover": 3084412500,
-      "avg5_turnover": 3788328698,
-      "vs_avg5_pct": -18.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "6695",
-      "name": "芯鼎",
-      "turnover": 31020000,
-      "avg5_turnover": 38319350,
-      "vs_avg5_pct": -19.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "5425",
-      "name": "台半",
-      "turnover": 287608800,
-      "avg5_turnover": 356768160,
-      "vs_avg5_pct": -19.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "6658",
-      "name": "聯策",
-      "turnover": 45853500,
-      "avg5_turnover": 57211224,
-      "vs_avg5_pct": -19.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 設備"
-      ]
-    },
-    {
-      "ticker": "6196",
-      "name": "帆宣",
-      "turnover": 470838000,
-      "avg5_turnover": 589074975,
-      "vs_avg5_pct": -20.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "廠務工程"
-      ]
-    },
-    {
-      "ticker": "2409",
-      "name": "友達",
-      "turnover": 5790389250,
-      "avg5_turnover": 7278628044,
-      "vs_avg5_pct": -20.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "5347",
-      "name": "世界",
-      "turnover": 1167346500,
-      "avg5_turnover": 1471190300,
-      "vs_avg5_pct": -20.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "成熟晶圓製程"
-      ]
-    },
-    {
-      "ticker": "6643",
-      "name": "M31",
-      "turnover": 179375000,
-      "avg5_turnover": 228334100,
-      "vs_avg5_pct": -21.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "5309",
-      "name": "系統電",
-      "turnover": 145081300,
-      "avg5_turnover": 184845230,
-      "vs_avg5_pct": -21.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "4938",
-      "name": "和碩",
-      "turnover": 958989900,
-      "avg5_turnover": 1223846745,
-      "vs_avg5_pct": -21.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "6197",
-      "name": "佳必琪",
-      "turnover": 226026000,
-      "avg5_turnover": 293535882,
-      "vs_avg5_pct": -23.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "8210",
-      "name": "勤誠",
-      "turnover": 708504000,
-      "avg5_turnover": 925101287,
-      "vs_avg5_pct": -23.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "2377",
-      "name": "微星",
-      "turnover": 907120000,
-      "avg5_turnover": 1197990212,
-      "vs_avg5_pct": -24.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI ODM／OEM"
-      ]
-    },
-    {
-      "ticker": "6706",
-      "name": "惠特",
-      "turnover": 109812500,
-      "avg5_turnover": 145674194,
-      "vs_avg5_pct": -24.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測"
-      ]
-    },
-    {
-      "ticker": "3228",
-      "name": "金麗科",
-      "turnover": 34534800,
-      "avg5_turnover": 46677800,
-      "vs_avg5_pct": -26.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "7822",
-      "name": "倍利科",
-      "turnover": 107257500,
-      "avg5_turnover": 149008506,
-      "vs_avg5_pct": -28.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "7769",
-      "name": "鴻勁",
-      "turnover": 2387140000,
-      "avg5_turnover": 3367125830,
-      "vs_avg5_pct": -29.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "7795",
-      "name": "長廣",
-      "turnover": 221932000,
-      "avg5_turnover": 322189720,
-      "vs_avg5_pct": -31.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 設備"
-      ]
-    },
-    {
-      "ticker": "2308",
-      "name": "台達電",
-      "turnover": 16368300000,
-      "avg5_turnover": 24050617786,
-      "vs_avg5_pct": -31.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱",
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "8150",
-      "name": "南茂",
-      "turnover": 867908000,
-      "avg5_turnover": 1282074517,
-      "vs_avg5_pct": -32.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "6861",
-      "name": "睿生光電",
-      "turnover": 76110000,
-      "avg5_turnover": 113122656,
-      "vs_avg5_pct": -32.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "6488",
-      "name": "環球晶",
-      "turnover": 3357607500,
-      "avg5_turnover": 4997429700,
-      "vs_avg5_pct": -32.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "矽晶圓"
-      ]
-    },
-    {
-      "ticker": "2367",
-      "name": "燿華",
-      "turnover": 197891100,
-      "avg5_turnover": 296607244,
-      "vs_avg5_pct": -33.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "低軌衛星"
-      ]
-    },
-    {
-      "ticker": "8261",
-      "name": "富鼎",
-      "turnover": 126863200,
-      "avg5_turnover": 190898628,
-      "vs_avg5_pct": -33.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "6415",
-      "name": "矽力*-KY",
-      "turnover": 1598656500,
-      "avg5_turnover": 2440515491,
-      "vs_avg5_pct": -34.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "電源管理／馬達驅動 IC"
-      ]
-    },
-    {
-      "ticker": "6257",
-      "name": "矽格",
-      "turnover": 637184000,
-      "avg5_turnover": 997162504,
-      "vs_avg5_pct": -36.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "2472",
-      "name": "立隆電",
-      "turnover": 177542500,
-      "avg5_turnover": 282128775,
-      "vs_avg5_pct": -37.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "6271",
-      "name": "同欣電",
-      "turnover": 565754000,
-      "avg5_turnover": 906976455,
-      "vs_avg5_pct": -37.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "6285",
-      "name": "啟碁",
-      "turnover": 2406968000,
-      "avg5_turnover": 3884068880,
-      "vs_avg5_pct": -38.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "低軌衛星"
-      ]
-    },
-    {
-      "ticker": "2484",
-      "name": "希華",
-      "turnover": 118555400,
-      "avg5_turnover": 192645224,
-      "vs_avg5_pct": -38.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "石英元件"
-      ]
-    },
-    {
-      "ticker": "2467",
-      "name": "志聖",
-      "turnover": 256150000,
-      "avg5_turnover": 420839556,
-      "vs_avg5_pct": -39.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "4989",
-      "name": "榮科",
-      "turnover": 130753350,
-      "avg5_turnover": 217748543,
-      "vs_avg5_pct": -40.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "6834",
-      "name": "天二科技",
-      "turnover": 133096600,
-      "avg5_turnover": 222328367,
-      "vs_avg5_pct": -40.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "5439",
-      "name": "高技",
-      "turnover": 214243500,
-      "avg5_turnover": 359531200,
-      "vs_avg5_pct": -40.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "3234",
-      "name": "光環",
-      "turnover": 83779000,
-      "avg5_turnover": 145145800,
-      "vs_avg5_pct": -42.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "1560",
-      "name": "中砂",
-      "turnover": 766195000,
-      "avg5_turnover": 1337063474,
-      "vs_avg5_pct": -42.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "5274",
-      "name": "信驊",
-      "turnover": 2640960000,
-      "avg5_turnover": 4643126000,
-      "vs_avg5_pct": -43.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "2059",
-      "name": "川湖",
-      "turnover": 3402600000,
-      "avg5_turnover": 6010907297,
-      "vs_avg5_pct": -43.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "3665",
-      "name": "貿聯-KY",
-      "turnover": 3900000000,
-      "avg5_turnover": 6979715736,
-      "vs_avg5_pct": -44.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "2351",
-      "name": "順德",
-      "turnover": 234570000,
-      "avg5_turnover": 435137321,
-      "vs_avg5_pct": -46.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "功率元件／導線架"
-      ]
-    },
-    {
-      "ticker": "4958",
-      "name": "臻鼎-KY",
-      "turnover": 5190330000,
-      "avg5_turnover": 9640537221,
-      "vs_avg5_pct": -46.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB",
-        "ABF"
-      ]
-    },
-    {
-      "ticker": "2383",
-      "name": "台光電",
-      "turnover": 8806540000,
-      "avg5_turnover": 16373001534,
-      "vs_avg5_pct": -46.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "4919",
-      "name": "新唐",
-      "turnover": 324133500,
-      "avg5_turnover": 603710788,
-      "vs_avg5_pct": -46.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "MCU"
-      ]
-    },
-    {
-      "ticker": "4770",
-      "name": "上品",
-      "turnover": 184275000,
-      "avg5_turnover": 344654637,
-      "vs_avg5_pct": -46.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "7772",
-      "name": "耀穎",
-      "turnover": 14427000,
-      "avg5_turnover": 27235820,
-      "vs_avg5_pct": -47.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3661",
-      "name": "世芯-KY",
-      "turnover": 9499680000,
-      "avg5_turnover": 18185762339,
-      "vs_avg5_pct": -47.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "3580",
-      "name": "友威科",
-      "turnover": 43669600,
-      "avg5_turnover": 84170360,
-      "vs_avg5_pct": -48.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6290",
-      "name": "良維",
-      "turnover": 277947000,
-      "avg5_turnover": 535821800,
-      "vs_avg5_pct": -48.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "3264",
-      "name": "欣銓",
-      "turnover": 842112000,
-      "avg5_turnover": 1665897400,
-      "vs_avg5_pct": -49.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "2316",
-      "name": "楠梓電",
-      "turnover": 188284000,
-      "avg5_turnover": 376176795,
-      "vs_avg5_pct": -49.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "3211",
-      "name": "順達",
-      "turnover": 326439000,
-      "avg5_turnover": 662695800,
-      "vs_avg5_pct": -50.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "1519",
-      "name": "華城",
-      "turnover": 508329000,
-      "avg5_turnover": 1057582515,
-      "vs_avg5_pct": -51.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "重電"
-      ]
-    },
-    {
-      "ticker": "4576",
-      "name": "大銀微系統",
-      "turnover": 223167500,
-      "avg5_turnover": 465918946,
-      "vs_avg5_pct": -52.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "工具機／自動化系統"
-      ]
-    },
-    {
-      "ticker": "8027",
-      "name": "鈦昇",
-      "turnover": 95040000,
-      "avg5_turnover": 200136400,
-      "vs_avg5_pct": -52.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "3042",
-      "name": "晶技",
-      "turnover": 345090500,
-      "avg5_turnover": 731372107,
-      "vs_avg5_pct": -52.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "石英元件"
-      ]
-    },
-    {
-      "ticker": "6533",
-      "name": "晶心科",
-      "turnover": 255886000,
-      "avg5_turnover": 546193006,
-      "vs_avg5_pct": -53.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "3583",
-      "name": "辛耘",
-      "turnover": 132246000,
-      "avg5_turnover": 292938143,
-      "vs_avg5_pct": -54.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "3563",
-      "name": "牧德",
-      "turnover": 172185000,
-      "avg5_turnover": 390863922,
-      "vs_avg5_pct": -55.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "2486",
-      "name": "一詮",
-      "turnover": 234954000,
-      "avg5_turnover": 533649766,
-      "vs_avg5_pct": -56.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "3533",
-      "name": "嘉澤",
-      "turnover": 1167840000,
-      "avg5_turnover": 2656950207,
-      "vs_avg5_pct": -56.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "6831",
-      "name": "邁科",
-      "turnover": 64719000,
-      "avg5_turnover": 150990568,
-      "vs_avg5_pct": -57.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "6207",
-      "name": "雷科",
-      "turnover": 96221400,
-      "avg5_turnover": 224770780,
-      "vs_avg5_pct": -57.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "6182",
-      "name": "合晶",
-      "turnover": 783385600,
-      "avg5_turnover": 1836029500,
-      "vs_avg5_pct": -57.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "矽晶圓"
-      ]
-    },
-    {
-      "ticker": "6588",
-      "name": "東典光電",
-      "turnover": 9877000,
-      "avg5_turnover": 23181360,
-      "vs_avg5_pct": -57.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3149",
-      "name": "正達",
-      "turnover": 298840200,
-      "avg5_turnover": 715038504,
-      "vs_avg5_pct": -58.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "3305",
-      "name": "昇貿",
-      "turnover": 262773000,
-      "avg5_turnover": 652938073,
-      "vs_avg5_pct": -59.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
       ]
     },
     {
       "ticker": "2493",
       "name": "揚博",
-      "turnover": 102580000,
-      "avg5_turnover": 259807588,
-      "vs_avg5_pct": -60.5,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 110059250,
+      "avg5_turnover": 200337367,
+      "vs_avg5_pct": -45.1,
+      "progress_ratio": 0.5494,
+      "progress_pct": -45.1,
       "sectors": [
         "PCB 設備"
-      ]
-    },
-    {
-      "ticker": "2449",
-      "name": "京元電子",
-      "turnover": 2249887500,
-      "avg5_turnover": 5928872307,
-      "vs_avg5_pct": -62.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "4939",
-      "name": "亞電",
-      "turnover": 41741200,
-      "avg5_turnover": 110065550,
-      "vs_avg5_pct": -62.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PTFE材料"
-      ]
-    },
-    {
-      "ticker": "6269",
-      "name": "台郡",
-      "turnover": 697264400,
-      "avg5_turnover": 1882942737,
-      "vs_avg5_pct": -63.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PTFE材料"
-      ]
-    },
-    {
-      "ticker": "3529",
-      "name": "力旺",
-      "turnover": 1053000000,
-      "avg5_turnover": 2888659000,
-      "vs_avg5_pct": -63.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "3131",
-      "name": "弘塑",
-      "turnover": 177525000,
-      "avg5_turnover": 496785000,
-      "vs_avg5_pct": -64.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6584",
-      "name": "南俊國際",
-      "turnover": 62775000,
-      "avg5_turnover": 176899800,
-      "vs_avg5_pct": -64.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "3035",
-      "name": "智原",
-      "turnover": 1079520000,
-      "avg5_turnover": 3046510999,
-      "vs_avg5_pct": -64.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "1303",
-      "name": "南亞",
-      "turnover": 9446336000,
-      "avg5_turnover": 27127225487,
-      "vs_avg5_pct": -65.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "4931",
-      "name": "新盛力",
-      "turnover": 129276000,
-      "avg5_turnover": 373287500,
-      "vs_avg5_pct": -65.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "800V HVDC"
-      ]
-    },
-    {
-      "ticker": "6515",
-      "name": "穎崴",
-      "turnover": 669320000,
-      "avg5_turnover": 1954126450,
-      "vs_avg5_pct": -65.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "探針卡／測試介面"
-      ]
-    },
-    {
-      "ticker": "2492",
-      "name": "華新科",
-      "turnover": 1958062500,
-      "avg5_turnover": 5816293837,
-      "vs_avg5_pct": -66.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "8064",
-      "name": "東捷",
-      "turnover": 68915200,
-      "avg5_turnover": 207853820,
-      "vs_avg5_pct": -66.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "2360",
-      "name": "致茂",
-      "turnover": 1497105000,
-      "avg5_turnover": 4539569161,
-      "vs_avg5_pct": -67.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "5498",
-      "name": "凱崴",
-      "turnover": 47955000,
-      "avg5_turnover": 146009780,
-      "vs_avg5_pct": -67.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 鑽孔耗材"
-      ]
-    },
-    {
-      "ticker": "6715",
-      "name": "嘉基",
-      "turnover": 201495000,
-      "avg5_turnover": 618922408,
-      "vs_avg5_pct": -67.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "4903",
-      "name": "聯光通",
-      "turnover": 47058700,
-      "avg5_turnover": 153087940,
-      "vs_avg5_pct": -69.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "2455",
-      "name": "全新",
-      "turnover": 398030000,
-      "avg5_turnover": 1300966235,
-      "vs_avg5_pct": -69.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "3105",
-      "name": "穩懋",
-      "turnover": 5460111000,
-      "avg5_turnover": 17903947000,
-      "vs_avg5_pct": -69.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組",
-        "低軌衛星"
-      ]
-    },
-    {
-      "ticker": "6141",
-      "name": "柏承",
-      "turnover": 14524250,
-      "avg5_turnover": 48334316,
-      "vs_avg5_pct": -70.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "3055",
-      "name": "蔚華科",
-      "turnover": 57250800,
-      "avg5_turnover": 191210374,
-      "vs_avg5_pct": -70.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測",
-        "TGV／Glass"
-      ]
-    },
-    {
-      "ticker": "6187",
-      "name": "萬潤",
-      "turnover": 605625000,
-      "avg5_turnover": 2064636800,
-      "vs_avg5_pct": -70.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測",
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6531",
-      "name": "愛普*",
-      "turnover": 769587500,
-      "avg5_turnover": 2754915528,
-      "vs_avg5_pct": -72.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 設計"
-      ]
-    },
-    {
-      "ticker": "3455",
-      "name": "由田",
-      "turnover": 68198000,
-      "avg5_turnover": 244948600,
-      "vs_avg5_pct": -72.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "3406",
-      "name": "玉晶光",
-      "turnover": 1632312000,
-      "avg5_turnover": 5883103268,
-      "vs_avg5_pct": -72.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3693",
-      "name": "營邦",
-      "turnover": 442755500,
-      "avg5_turnover": 1619080800,
-      "vs_avg5_pct": -72.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "AI 伺服器機構／機殼"
-      ]
-    },
-    {
-      "ticker": "4722",
-      "name": "國精化",
-      "turnover": 50846400,
-      "avg5_turnover": 192946592,
-      "vs_avg5_pct": -73.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "8028",
-      "name": "昇陽半導體",
-      "turnover": 228112500,
-      "avg5_turnover": 875452003,
-      "vs_avg5_pct": -73.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體材料／耗材"
-      ]
-    },
-    {
-      "ticker": "6640",
-      "name": "均華",
-      "turnover": 34500000,
-      "avg5_turnover": 135261000,
-      "vs_avg5_pct": -74.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "8046",
-      "name": "南電",
-      "turnover": 2397119000,
-      "avg5_turnover": 9512434268,
-      "vs_avg5_pct": -74.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "ABF"
-      ]
-    },
-    {
-      "ticker": "2368",
-      "name": "金像電",
-      "turnover": 2410290000,
-      "avg5_turnover": 9685885858,
-      "vs_avg5_pct": -75.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "3265",
-      "name": "台星科",
-      "turnover": 91791000,
-      "avg5_turnover": 374540200,
-      "vs_avg5_pct": -75.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "3167",
-      "name": "大量",
-      "turnover": 1308130000,
-      "avg5_turnover": 5359615379,
-      "vs_avg5_pct": -75.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 設備"
-      ]
-    },
-    {
-      "ticker": "3017",
-      "name": "奇鋐",
-      "turnover": 2901780000,
-      "avg5_turnover": 11988751450,
-      "vs_avg5_pct": -75.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "散熱"
-      ]
-    },
-    {
-      "ticker": "3450",
-      "name": "聯鈞",
-      "turnover": 363398000,
-      "avg5_turnover": 1508765118,
-      "vs_avg5_pct": -75.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "6442",
-      "name": "光聖",
-      "turnover": 678240000,
-      "avg5_turnover": 2869226702,
-      "vs_avg5_pct": -76.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "6451",
-      "name": "訊芯-KY",
-      "turnover": 87044000,
-      "avg5_turnover": 371805588,
-      "vs_avg5_pct": -76.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測"
-      ]
-    },
-    {
-      "ticker": "3037",
-      "name": "欣興",
-      "turnover": 4866294000,
-      "avg5_turnover": 21158421769,
-      "vs_avg5_pct": -77.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "ABF"
-      ]
-    },
-    {
-      "ticker": "3016",
-      "name": "嘉晶",
-      "turnover": 127727600,
-      "avg5_turnover": 555449061,
-      "vs_avg5_pct": -77.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "矽晶圓"
-      ]
-    },
-    {
-      "ticker": "6683",
-      "name": "雍智科技",
-      "turnover": 116058000,
-      "avg5_turnover": 522085600,
-      "vs_avg5_pct": -77.8,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "探針卡／測試介面"
-      ]
-    },
-    {
-      "ticker": "7734",
-      "name": "印能科技",
-      "turnover": 65520000,
-      "avg5_turnover": 302520000,
-      "vs_avg5_pct": -78.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "半導體設備"
-      ]
-    },
-    {
-      "ticker": "6223",
-      "name": "旺矽",
-      "turnover": 1256680000,
-      "avg5_turnover": 5863857000,
-      "vs_avg5_pct": -78.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "探針卡／測試介面"
-      ]
-    },
-    {
-      "ticker": "3715",
-      "name": "定穎投控",
-      "turnover": 760450000,
-      "avg5_turnover": 3624953473,
-      "vs_avg5_pct": -79.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB"
-      ]
-    },
-    {
-      "ticker": "6830",
-      "name": "汎銓",
-      "turnover": 110802000,
-      "avg5_turnover": 529300048,
-      "vs_avg5_pct": -79.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測",
-        "半導體測試／驗證／量測"
-      ]
-    },
-    {
-      "ticker": "8227",
-      "name": "巨有科技",
-      "turnover": 285000000,
-      "avg5_turnover": 1369177100,
-      "vs_avg5_pct": -79.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IP"
-      ]
-    },
-    {
-      "ticker": "3363",
-      "name": "上詮",
-      "turnover": 259834500,
-      "avg5_turnover": 1255122900,
-      "vs_avg5_pct": -79.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
       ]
     },
     {
       "ticker": "7728",
       "name": "光焱科技",
-      "turnover": 2944000,
-      "avg5_turnover": 14407000,
-      "vs_avg5_pct": -79.6,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 6955000,
+      "avg5_turnover": 14029300,
+      "vs_avg5_pct": -50.4,
+      "progress_ratio": 0.4957,
+      "progress_pct": -50.4,
       "sectors": [
         "光通封裝／設備／檢測"
-      ]
-    },
-    {
-      "ticker": "2313",
-      "name": "華通",
-      "turnover": 1846012500,
-      "avg5_turnover": 9179440735,
-      "vs_avg5_pct": -79.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB",
-        "低軌衛星"
-      ]
-    },
-    {
-      "ticker": "3605",
-      "name": "宏致",
-      "turnover": 176021100,
-      "avg5_turnover": 927068883,
-      "vs_avg5_pct": -81.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "連接線材"
-      ]
-    },
-    {
-      "ticker": "6147",
-      "name": "頎邦",
-      "turnover": 556336000,
-      "avg5_turnover": 2931348900,
-      "vs_avg5_pct": -81.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "1802",
-      "name": "台玻",
-      "turnover": 3269854800,
-      "avg5_turnover": 17335882546,
-      "vs_avg5_pct": -81.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "玻纖布／玻纖紗"
-      ]
-    },
-    {
-      "ticker": "6426",
-      "name": "統新",
-      "turnover": 62881500,
-      "avg5_turnover": 355733004,
-      "vs_avg5_pct": -82.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3026",
-      "name": "禾伸堂",
-      "turnover": 804816000,
-      "avg5_turnover": 4696694158,
-      "vs_avg5_pct": -82.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "3374",
-      "name": "精材",
-      "turnover": 1391742000,
-      "avg5_turnover": 9010129500,
-      "vs_avg5_pct": -84.6,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "IC 封裝／測試"
-      ]
-    },
-    {
-      "ticker": "6173",
-      "name": "信昌電",
-      "turnover": 215190000,
-      "avg5_turnover": 1407969400,
-      "vs_avg5_pct": -84.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "8358",
-      "name": "金居",
-      "turnover": 765206000,
-      "avg5_turnover": 5112961300,
-      "vs_avg5_pct": -85.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "4908",
-      "name": "前鼎",
-      "turnover": 29492500,
-      "avg5_turnover": 203752900,
-      "vs_avg5_pct": -85.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "8039",
-      "name": "台虹",
-      "turnover": 307037500,
-      "avg5_turnover": 2171291534,
-      "vs_avg5_pct": -85.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PTFE材料"
-      ]
-    },
-    {
-      "ticker": "8021",
-      "name": "尖點",
-      "turnover": 265567500,
-      "avg5_turnover": 1910998845,
-      "vs_avg5_pct": -86.1,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "PCB 鑽孔耗材"
-      ]
-    },
-    {
-      "ticker": "6278",
-      "name": "台表科",
-      "turnover": 270657000,
-      "avg5_turnover": 1959828815,
-      "vs_avg5_pct": -86.2,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通封裝／設備／檢測"
-      ]
-    },
-    {
-      "ticker": "5475",
-      "name": "德宏",
-      "turnover": 155960500,
-      "avg5_turnover": 1148688200,
-      "vs_avg5_pct": -86.4,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "玻纖布／玻纖紗"
-      ]
-    },
-    {
-      "ticker": "6274",
-      "name": "台燿",
-      "turnover": 1168748000,
-      "avg5_turnover": 8765512400,
-      "vs_avg5_pct": -86.7,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "銅箔／CCL"
-      ]
-    },
-    {
-      "ticker": "3624",
-      "name": "光頡",
-      "turnover": 85437600,
-      "avg5_turnover": 685023140,
-      "vs_avg5_pct": -87.5,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "被動元件"
-      ]
-    },
-    {
-      "ticker": "4979",
-      "name": "華星光",
-      "turnover": 212268000,
-      "avg5_turnover": 1747317700,
-      "vs_avg5_pct": -87.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光通訊元件／模組"
-      ]
-    },
-    {
-      "ticker": "5340",
-      "name": "建榮",
-      "turnover": 76566700,
-      "avg5_turnover": 654759860,
-      "vs_avg5_pct": -88.3,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "玻纖布／玻纖紗"
-      ]
-    },
-    {
-      "ticker": "3163",
-      "name": "波若威",
-      "turnover": 104652000,
-      "avg5_turnover": 942687600,
-      "vs_avg5_pct": -88.9,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "光纖連接／精密光學"
-      ]
-    },
-    {
-      "ticker": "3491",
-      "name": "昇達科",
-      "turnover": 622300000,
-      "avg5_turnover": 5660051000,
-      "vs_avg5_pct": -89.0,
-      "progress_ratio": null,
-      "progress_pct": null,
-      "sectors": [
-        "低軌衛星"
       ]
     },
     {
       "ticker": "3443",
       "name": "創意",
-      "turnover": 2230200000,
-      "avg5_turnover": 21406218350,
-      "vs_avg5_pct": -89.6,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 5902200000,
+      "avg5_turnover": 17296180631,
+      "vs_avg5_pct": -65.9,
+      "progress_ratio": 0.3412,
+      "progress_pct": -65.9,
       "sectors": [
         "IP"
       ]
     },
     {
-      "ticker": "4977",
-      "name": "眾達-KY",
-      "turnover": 326560000,
-      "avg5_turnover": 3208418064,
-      "vs_avg5_pct": -89.8,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "2383",
+      "name": "台光電",
+      "turnover": 4572967500,
+      "avg5_turnover": 15131423922,
+      "vs_avg5_pct": -69.8,
+      "progress_ratio": 0.3022,
+      "progress_pct": -69.8,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "6290",
+      "name": "良維",
+      "turnover": 153932250,
+      "avg5_turnover": 514986500,
+      "vs_avg5_pct": -70.1,
+      "progress_ratio": 0.2989,
+      "progress_pct": -70.1,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "6530",
+      "name": "創威",
+      "turnover": 7923300,
+      "avg5_turnover": 27160880,
+      "vs_avg5_pct": -70.8,
+      "progress_ratio": 0.2917,
+      "progress_pct": -70.8,
       "sectors": [
         "光通訊元件／模組"
       ]
     },
     {
-      "ticker": "1815",
-      "name": "富喬",
-      "turnover": 1324818000,
-      "avg5_turnover": 13055347800,
-      "vs_avg5_pct": -89.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6451",
+      "name": "訊芯-KY",
+      "turnover": 82015000,
+      "avg5_turnover": 320516817,
+      "vs_avg5_pct": -74.4,
+      "progress_ratio": 0.2559,
+      "progress_pct": -74.4,
       "sectors": [
-        "玻纖布／玻纖紗"
+        "光通封裝／設備／檢測"
       ]
     },
     {
-      "ticker": "7856",
-      "name": "漢測",
-      "turnover": 160550000,
-      "avg5_turnover": 1622458000,
-      "vs_avg5_pct": -90.1,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6274",
+      "name": "台燿",
+      "turnover": 1753140000,
+      "avg5_turnover": 6860129000,
+      "vs_avg5_pct": -74.4,
+      "progress_ratio": 0.2556,
+      "progress_pct": -74.4,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "4971",
+      "name": "IET-KY",
+      "turnover": 84984750,
+      "avg5_turnover": 334738100,
+      "vs_avg5_pct": -74.6,
+      "progress_ratio": 0.2539,
+      "progress_pct": -74.6,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "3563",
+      "name": "牧德",
+      "turnover": 93280000,
+      "avg5_turnover": 368080493,
+      "vs_avg5_pct": -74.7,
+      "progress_ratio": 0.2534,
+      "progress_pct": -74.7,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "7788",
+      "name": "松川精密",
+      "turnover": 119520000,
+      "avg5_turnover": 531897052,
+      "vs_avg5_pct": -77.5,
+      "progress_ratio": 0.2247,
+      "progress_pct": -77.5,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "7734",
+      "name": "印能科技",
+      "turnover": 51062500,
+      "avg5_turnover": 239517000,
+      "vs_avg5_pct": -78.7,
+      "progress_ratio": 0.2132,
+      "progress_pct": -78.7,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "6683",
+      "name": "雍智科技",
+      "turnover": 84524000,
+      "avg5_turnover": 405598000,
+      "vs_avg5_pct": -79.2,
+      "progress_ratio": 0.2084,
+      "progress_pct": -79.2,
       "sectors": [
         "探針卡／測試介面"
       ]
     },
     {
-      "ticker": "3081",
-      "name": "聯亞",
-      "turnover": 584220000,
-      "avg5_turnover": 6458371000,
-      "vs_avg5_pct": -91.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6862",
+      "name": "三集瑞-KY",
+      "turnover": 4005600,
+      "avg5_turnover": 19366876,
+      "vs_avg5_pct": -79.3,
+      "progress_ratio": 0.2068,
+      "progress_pct": -79.3,
       "sectors": [
-        "光通訊元件／模組"
+        "被動元件"
       ]
     },
     {
       "ticker": "3324",
       "name": "雙鴻",
-      "turnover": 455756000,
-      "avg5_turnover": 5141171200,
-      "vs_avg5_pct": -91.1,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 704160000,
+      "avg5_turnover": 3430680000,
+      "vs_avg5_pct": -79.5,
+      "progress_ratio": 0.2053,
+      "progress_pct": -79.5,
       "sectors": [
         "散熱"
       ]
     },
     {
-      "ticker": "6456",
-      "name": "GIS-KY",
-      "turnover": 263420700,
-      "avg5_turnover": 3106633526,
-      "vs_avg5_pct": -91.5,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6588",
+      "name": "東典光電",
+      "turnover": 4169550,
+      "avg5_turnover": 20451700,
+      "vs_avg5_pct": -79.6,
+      "progress_ratio": 0.2039,
+      "progress_pct": -79.6,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "3163",
+      "name": "波若威",
+      "turnover": 138627000,
+      "avg5_turnover": 689032500,
+      "vs_avg5_pct": -79.9,
+      "progress_ratio": 0.2012,
+      "progress_pct": -79.9,
       "sectors": [
         "光纖連接／精密光學"
       ]
@@ -3688,169 +608,3249 @@
     {
       "ticker": "4991",
       "name": "環宇-KY",
-      "turnover": 68985500,
-      "avg5_turnover": 876764300,
-      "vs_avg5_pct": -92.1,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 140883000,
+      "avg5_turnover": 712779500,
+      "vs_avg5_pct": -80.2,
+      "progress_ratio": 0.1977,
+      "progress_pct": -80.2,
       "sectors": [
         "光通訊元件／模組"
       ]
     },
     {
-      "ticker": "4971",
-      "name": "IET-KY",
-      "turnover": 34380000,
-      "avg5_turnover": 456611400,
-      "vs_avg5_pct": -92.5,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "4979",
+      "name": "華星光",
+      "turnover": 271610500,
+      "avg5_turnover": 1389226400,
+      "vs_avg5_pct": -80.4,
+      "progress_ratio": 0.1955,
+      "progress_pct": -80.4,
       "sectors": [
         "光通訊元件／模組"
       ]
     },
     {
-      "ticker": "3189",
-      "name": "景碩",
-      "turnover": 992170000,
-      "avg5_turnover": 13786718224,
-      "vs_avg5_pct": -92.8,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6147",
+      "name": "頎邦",
+      "turnover": 458328750,
+      "avg5_turnover": 2410347200,
+      "vs_avg5_pct": -81.0,
+      "progress_ratio": 0.1902,
+      "progress_pct": -81.0,
       "sectors": [
-        "ABF"
+        "IC 封裝／測試"
       ]
     },
     {
-      "ticker": "6727",
-      "name": "亞泰金屬",
-      "turnover": 28548000,
-      "avg5_turnover": 406300700,
-      "vs_avg5_pct": -93.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "2337",
+      "name": "旺宏",
+      "turnover": 692613500,
+      "avg5_turnover": 3659646730,
+      "vs_avg5_pct": -81.1,
+      "progress_ratio": 0.1893,
+      "progress_pct": -81.1,
       "sectors": [
-        "PCB 設備"
+        "記憶體"
       ]
     },
     {
-      "ticker": "6213",
-      "name": "聯茂",
-      "turnover": 503743500,
-      "avg5_turnover": 8216084364,
-      "vs_avg5_pct": -93.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "3081",
+      "name": "聯亞",
+      "turnover": 835587500,
+      "avg5_turnover": 4516051000,
+      "vs_avg5_pct": -81.5,
+      "progress_ratio": 0.185,
+      "progress_pct": -81.5,
       "sectors": [
-        "銅箔／CCL"
+        "光通訊元件／模組"
       ]
     },
     {
-      "ticker": "3532",
-      "name": "台勝科",
-      "turnover": 49236000,
-      "avg5_turnover": 808786086,
-      "vs_avg5_pct": -93.9,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "5475",
+      "name": "德宏",
+      "turnover": 192357000,
+      "avg5_turnover": 1040154100,
+      "vs_avg5_pct": -81.5,
+      "progress_ratio": 0.1849,
+      "progress_pct": -81.5,
       "sectors": [
-        "矽晶圓"
+        "玻纖布／玻纖紗"
+      ]
+    },
+    {
+      "ticker": "2330",
+      "name": "台積電",
+      "turnover": 24038512500,
+      "avg5_turnover": 132639830431,
+      "vs_avg5_pct": -81.9,
+      "progress_ratio": 0.1812,
+      "progress_pct": -81.9,
+      "sectors": [
+        "晶圓代工（台積電）"
+      ]
+    },
+    {
+      "ticker": "5299",
+      "name": "杰力",
+      "turnover": 2110400,
+      "avg5_turnover": 11979000,
+      "vs_avg5_pct": -82.4,
+      "progress_ratio": 0.1762,
+      "progress_pct": -82.4,
+      "sectors": [
+        "功率元件／導線架"
       ]
     },
     {
       "ticker": "3653",
       "name": "健策",
-      "turnover": 774345000,
-      "avg5_turnover": 13400457580,
-      "vs_avg5_pct": -94.2,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 1749182500,
+      "avg5_turnover": 10101259494,
+      "vs_avg5_pct": -82.7,
+      "progress_ratio": 0.1732,
+      "progress_pct": -82.7,
       "sectors": [
         "散熱"
       ]
     },
     {
-      "ticker": "6805",
-      "name": "富世達",
-      "turnover": 151580000,
-      "avg5_turnover": 2639920573,
-      "vs_avg5_pct": -94.3,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "4770",
+      "name": "上品",
+      "turnover": 52582500,
+      "avg5_turnover": 304727367,
+      "vs_avg5_pct": -82.7,
+      "progress_ratio": 0.1726,
+      "progress_pct": -82.7,
       "sectors": [
-        "散熱"
+        "半導體材料／耗材"
       ]
     },
     {
-      "ticker": "6234",
-      "name": "高僑",
-      "turnover": 45377100,
-      "avg5_turnover": 810473870,
-      "vs_avg5_pct": -94.4,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "8021",
+      "name": "尖點",
+      "turnover": 247792000,
+      "avg5_turnover": 1436746671,
+      "vs_avg5_pct": -82.8,
+      "progress_ratio": 0.1725,
+      "progress_pct": -82.8,
       "sectors": [
         "PCB 鑽孔耗材"
       ]
     },
     {
-      "ticker": "6510",
-      "name": "精測",
-      "turnover": 127710000,
-      "avg5_turnover": 2532696000,
-      "vs_avg5_pct": -95.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "3037",
+      "name": "欣興",
+      "turnover": 3002434500,
+      "avg5_turnover": 17455082640,
+      "vs_avg5_pct": -82.8,
+      "progress_ratio": 0.172,
+      "progress_pct": -82.8,
       "sectors": [
-        "探針卡／測試介面"
+        "ABF"
       ]
     },
     {
-      "ticker": "8042",
-      "name": "金山電",
-      "turnover": 40015500,
-      "avg5_turnover": 850797220,
-      "vs_avg5_pct": -95.3,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "3017",
+      "name": "奇鋐",
+      "turnover": 1747177500,
+      "avg5_turnover": 10326160594,
+      "vs_avg5_pct": -83.1,
+      "progress_ratio": 0.1692,
+      "progress_pct": -83.1,
       "sectors": [
-        "被動元件"
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "6584",
+      "name": "南俊國際",
+      "turnover": 24125500,
+      "avg5_turnover": 146358100,
+      "vs_avg5_pct": -83.5,
+      "progress_ratio": 0.1648,
+      "progress_pct": -83.5,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "6488",
+      "name": "環球晶",
+      "turnover": 739902000,
+      "avg5_turnover": 4586396700,
+      "vs_avg5_pct": -83.9,
+      "progress_ratio": 0.1613,
+      "progress_pct": -83.9,
+      "sectors": [
+        "矽晶圓"
+      ]
+    },
+    {
+      "ticker": "2368",
+      "name": "金像電",
+      "turnover": 1178316000,
+      "avg5_turnover": 7399397299,
+      "vs_avg5_pct": -84.1,
+      "progress_ratio": 0.1592,
+      "progress_pct": -84.1,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "2303",
+      "name": "聯電",
+      "turnover": 1962871000,
+      "avg5_turnover": 12522273608,
+      "vs_avg5_pct": -84.3,
+      "progress_ratio": 0.1568,
+      "progress_pct": -84.3,
+      "sectors": [
+        "成熟晶圓製程"
+      ]
+    },
+    {
+      "ticker": "7769",
+      "name": "鴻勁",
+      "turnover": 508235000,
+      "avg5_turnover": 3282416957,
+      "vs_avg5_pct": -84.5,
+      "progress_ratio": 0.1548,
+      "progress_pct": -84.5,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "8046",
+      "name": "南電",
+      "turnover": 1167296000,
+      "avg5_turnover": 7567872193,
+      "vs_avg5_pct": -84.6,
+      "progress_ratio": 0.1542,
+      "progress_pct": -84.6,
+      "sectors": [
+        "ABF"
+      ]
+    },
+    {
+      "ticker": "2317",
+      "name": "鴻海",
+      "turnover": 2039730000,
+      "avg5_turnover": 13325117016,
+      "vs_avg5_pct": -84.7,
+      "progress_ratio": 0.1531,
+      "progress_pct": -84.7,
+      "sectors": [
+        "AI ODM／OEM"
       ]
     },
     {
       "ticker": "3498",
       "name": "陽程",
-      "turnover": 27398000,
-      "avg5_turnover": 601655200,
-      "vs_avg5_pct": -95.4,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 60507000,
+      "avg5_turnover": 395644000,
+      "vs_avg5_pct": -84.7,
+      "progress_ratio": 0.1529,
+      "progress_pct": -84.7,
       "sectors": [
         "光通封裝／設備／檢測"
       ]
     },
     {
-      "ticker": "7717",
-      "name": "萊德光電-KY",
-      "turnover": 21714000,
-      "avg5_turnover": 797164100,
-      "vs_avg5_pct": -97.3,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "ticker": "6805",
+      "name": "富世達",
+      "turnover": 294345000,
+      "avg5_turnover": 1945013624,
+      "vs_avg5_pct": -84.9,
+      "progress_ratio": 0.1513,
+      "progress_pct": -84.9,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "6830",
+      "name": "汎銓",
+      "turnover": 60486000,
+      "avg5_turnover": 408892166,
+      "vs_avg5_pct": -85.2,
+      "progress_ratio": 0.1479,
+      "progress_pct": -85.2,
+      "sectors": [
+        "光通封裝／設備／檢測",
+        "半導體測試／驗證／量測"
+      ]
+    },
+    {
+      "ticker": "6213",
+      "name": "聯茂",
+      "turnover": 874240000,
+      "avg5_turnover": 5921119834,
+      "vs_avg5_pct": -85.2,
+      "progress_ratio": 0.1476,
+      "progress_pct": -85.2,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "6831",
+      "name": "邁科",
+      "turnover": 20320500,
+      "avg5_turnover": 137633709,
+      "vs_avg5_pct": -85.2,
+      "progress_ratio": 0.1476,
+      "progress_pct": -85.2,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "6640",
+      "name": "均華",
+      "turnover": 16740000,
+      "avg5_turnover": 115313800,
+      "vs_avg5_pct": -85.5,
+      "progress_ratio": 0.1452,
+      "progress_pct": -85.5,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "3380",
+      "name": "明泰",
+      "turnover": 6782100,
+      "avg5_turnover": 46996692,
+      "vs_avg5_pct": -85.6,
+      "progress_ratio": 0.1443,
+      "progress_pct": -85.6,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "3189",
+      "name": "景碩",
+      "turnover": 1870269250,
+      "avg5_turnover": 13016642340,
+      "vs_avg5_pct": -85.6,
+      "progress_ratio": 0.1437,
+      "progress_pct": -85.6,
+      "sectors": [
+        "ABF"
+      ]
+    },
+    {
+      "ticker": "7856",
+      "name": "漢測",
+      "turnover": 177962500,
+      "avg5_turnover": 1238582000,
+      "vs_avg5_pct": -85.6,
+      "progress_ratio": 0.1437,
+      "progress_pct": -85.6,
+      "sectors": [
+        "探針卡／測試介面"
+      ]
+    },
+    {
+      "ticker": "6727",
+      "name": "亞泰金屬",
+      "turnover": 47071000,
+      "avg5_turnover": 327827300,
+      "vs_avg5_pct": -85.6,
+      "progress_ratio": 0.1436,
+      "progress_pct": -85.6,
+      "sectors": [
+        "PCB 設備"
+      ]
+    },
+    {
+      "ticker": "2308",
+      "name": "台達電",
+      "turnover": 3424392000,
+      "avg5_turnover": 24114575907,
+      "vs_avg5_pct": -85.8,
+      "progress_ratio": 0.142,
+      "progress_pct": -85.8,
+      "sectors": [
+        "散熱",
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "6515",
+      "name": "穎崴",
+      "turnover": 222547500,
+      "avg5_turnover": 1573579137,
+      "vs_avg5_pct": -85.9,
+      "progress_ratio": 0.1414,
+      "progress_pct": -85.9,
+      "sectors": [
+        "探針卡／測試介面"
+      ]
+    },
+    {
+      "ticker": "6191",
+      "name": "精成科",
+      "turnover": 32498550,
+      "avg5_turnover": 230047370,
+      "vs_avg5_pct": -85.9,
+      "progress_ratio": 0.1413,
+      "progress_pct": -85.9,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "3455",
+      "name": "由田",
+      "turnover": 30504750,
+      "avg5_turnover": 221343300,
+      "vs_avg5_pct": -86.2,
+      "progress_ratio": 0.1378,
+      "progress_pct": -86.2,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "7712",
+      "name": "博盛半導體",
+      "turnover": 3162000,
+      "avg5_turnover": 22990860,
+      "vs_avg5_pct": -86.2,
+      "progress_ratio": 0.1375,
+      "progress_pct": -86.2,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "6510",
+      "name": "精測",
+      "turnover": 244200000,
+      "avg5_turnover": 1795346000,
+      "vs_avg5_pct": -86.4,
+      "progress_ratio": 0.136,
+      "progress_pct": -86.4,
+      "sectors": [
+        "探針卡／測試介面"
+      ]
+    },
+    {
+      "ticker": "8096",
+      "name": "擎亞",
+      "turnover": 26588000,
+      "avg5_turnover": 196215920,
+      "vs_avg5_pct": -86.4,
+      "progress_ratio": 0.1355,
+      "progress_pct": -86.4,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "3363",
+      "name": "上詮",
+      "turnover": 128986000,
+      "avg5_turnover": 963962300,
+      "vs_avg5_pct": -86.6,
+      "progress_ratio": 0.1338,
+      "progress_pct": -86.6,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "2344",
+      "name": "華邦電",
+      "turnover": 963930600,
+      "avg5_turnover": 7254533755,
+      "vs_avg5_pct": -86.7,
+      "progress_ratio": 0.1329,
+      "progress_pct": -86.7,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "4952",
+      "name": "凌通",
+      "turnover": 1110575,
+      "avg5_turnover": 8407445,
+      "vs_avg5_pct": -86.8,
+      "progress_ratio": 0.1321,
+      "progress_pct": -86.8,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "3711",
+      "name": "日月光投控",
+      "turnover": 2009997750,
+      "avg5_turnover": 15249607404,
+      "vs_avg5_pct": -86.8,
+      "progress_ratio": 0.1318,
+      "progress_pct": -86.8,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "3234",
+      "name": "光環",
+      "turnover": 17811750,
+      "avg5_turnover": 135386780,
+      "vs_avg5_pct": -86.8,
+      "progress_ratio": 0.1316,
+      "progress_pct": -86.8,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "5487",
+      "name": "通泰",
+      "turnover": 130500,
+      "avg5_turnover": 1004625,
+      "vs_avg5_pct": -87.0,
+      "progress_ratio": 0.1299,
+      "progress_pct": -87.0,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "2454",
+      "name": "聯發科",
+      "turnover": 8215717500,
+      "avg5_turnover": 63316538637,
+      "vs_avg5_pct": -87.0,
+      "progress_ratio": 0.1298,
+      "progress_pct": -87.0,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "2486",
+      "name": "一詮",
+      "turnover": 66701250,
+      "avg5_turnover": 516058675,
+      "vs_avg5_pct": -87.1,
+      "progress_ratio": 0.1293,
+      "progress_pct": -87.1,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "8042",
+      "name": "金山電",
+      "turnover": 62593300,
+      "avg5_turnover": 484040820,
+      "vs_avg5_pct": -87.1,
+      "progress_ratio": 0.1293,
+      "progress_pct": -87.1,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "4722",
+      "name": "國精化",
+      "turnover": 23927550,
+      "avg5_turnover": 189109535,
+      "vs_avg5_pct": -87.3,
+      "progress_ratio": 0.1265,
+      "progress_pct": -87.3,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "4749",
+      "name": "新應材",
+      "turnover": 64902000,
+      "avg5_turnover": 518084000,
+      "vs_avg5_pct": -87.5,
+      "progress_ratio": 0.1253,
+      "progress_pct": -87.5,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "2472",
+      "name": "立隆電",
+      "turnover": 32154000,
+      "avg5_turnover": 259434346,
+      "vs_avg5_pct": -87.6,
+      "progress_ratio": 0.1239,
+      "progress_pct": -87.6,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "2360",
+      "name": "致茂",
+      "turnover": 524380000,
+      "avg5_turnover": 4285074296,
+      "vs_avg5_pct": -87.8,
+      "progress_ratio": 0.1224,
+      "progress_pct": -87.8,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "3661",
+      "name": "世芯-KY",
+      "turnover": 2062980000,
+      "avg5_turnover": 16882872119,
+      "vs_avg5_pct": -87.8,
+      "progress_ratio": 0.1222,
+      "progress_pct": -87.8,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "6531",
+      "name": "愛普*",
+      "turnover": 244777500,
+      "avg5_turnover": 2023392089,
+      "vs_avg5_pct": -87.9,
+      "progress_ratio": 0.121,
+      "progress_pct": -87.9,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "5347",
+      "name": "世界",
+      "turnover": 175087500,
+      "avg5_turnover": 1464343300,
+      "vs_avg5_pct": -88.0,
+      "progress_ratio": 0.1196,
+      "progress_pct": -88.0,
+      "sectors": [
+        "成熟晶圓製程"
+      ]
+    },
+    {
+      "ticker": "8028",
+      "name": "昇陽半導體",
+      "turnover": 92701000,
+      "avg5_turnover": 775633412,
+      "vs_avg5_pct": -88.0,
+      "progress_ratio": 0.1195,
+      "progress_pct": -88.0,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "2451",
+      "name": "創見",
+      "turnover": 130630500,
+      "avg5_turnover": 1113080989,
+      "vs_avg5_pct": -88.3,
+      "progress_ratio": 0.1174,
+      "progress_pct": -88.3,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "2449",
+      "name": "京元電子",
+      "turnover": 613766250,
+      "avg5_turnover": 5231513061,
+      "vs_avg5_pct": -88.3,
+      "progress_ratio": 0.1173,
+      "progress_pct": -88.3,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "6449",
+      "name": "鈺邦",
+      "turnover": 19593250,
+      "avg5_turnover": 169938575,
+      "vs_avg5_pct": -88.5,
+      "progress_ratio": 0.1153,
+      "progress_pct": -88.5,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "3167",
+      "name": "大量",
+      "turnover": 415934250,
+      "avg5_turnover": 3640747884,
+      "vs_avg5_pct": -88.6,
+      "progress_ratio": 0.1142,
+      "progress_pct": -88.6,
+      "sectors": [
+        "PCB 設備"
+      ]
+    },
+    {
+      "ticker": "8210",
+      "name": "勤誠",
+      "turnover": 96162750,
+      "avg5_turnover": 844043517,
+      "vs_avg5_pct": -88.6,
+      "progress_ratio": 0.1139,
+      "progress_pct": -88.6,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "6667",
+      "name": "信紘科",
+      "turnover": 9423500,
+      "avg5_turnover": 83014700,
+      "vs_avg5_pct": -88.6,
+      "progress_ratio": 0.1135,
+      "progress_pct": -88.6,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "3587",
+      "name": "閎康",
+      "turnover": 9120000,
+      "avg5_turnover": 80463600,
+      "vs_avg5_pct": -88.7,
+      "progress_ratio": 0.1133,
+      "progress_pct": -88.7,
+      "sectors": [
+        "半導體測試／驗證／量測"
+      ]
+    },
+    {
+      "ticker": "4931",
+      "name": "新盛力",
+      "turnover": 38473000,
+      "avg5_turnover": 339418900,
+      "vs_avg5_pct": -88.7,
+      "progress_ratio": 0.1133,
+      "progress_pct": -88.7,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "8150",
+      "name": "南茂",
+      "turnover": 130803500,
+      "avg5_turnover": 1155284408,
+      "vs_avg5_pct": -88.7,
+      "progress_ratio": 0.1132,
+      "progress_pct": -88.7,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "8039",
+      "name": "台虹",
+      "turnover": 190946500,
+      "avg5_turnover": 1690722469,
+      "vs_avg5_pct": -88.7,
+      "progress_ratio": 0.1129,
+      "progress_pct": -88.7,
+      "sectors": [
+        "PTFE材料"
+      ]
+    },
+    {
+      "ticker": "5289",
+      "name": "宜鼎",
+      "turnover": 247907000,
+      "avg5_turnover": 2205992600,
+      "vs_avg5_pct": -88.8,
+      "progress_ratio": 0.1124,
+      "progress_pct": -88.8,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "8064",
+      "name": "東捷",
+      "turnover": 20145350,
+      "avg5_turnover": 180217620,
+      "vs_avg5_pct": -88.8,
+      "progress_ratio": 0.1118,
+      "progress_pct": -88.8,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "2421",
+      "name": "建準",
+      "turnover": 26158000,
+      "avg5_turnover": 234209818,
+      "vs_avg5_pct": -88.8,
+      "progress_ratio": 0.1117,
+      "progress_pct": -88.8,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "2484",
+      "name": "希華",
+      "turnover": 19738950,
+      "avg5_turnover": 176800117,
+      "vs_avg5_pct": -88.8,
+      "progress_ratio": 0.1116,
+      "progress_pct": -88.8,
+      "sectors": [
+        "石英元件"
+      ]
+    },
+    {
+      "ticker": "6139",
+      "name": "亞翔",
+      "turnover": 177100000,
+      "avg5_turnover": 1588413525,
+      "vs_avg5_pct": -88.9,
+      "progress_ratio": 0.1115,
+      "progress_pct": -88.9,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "6442",
+      "name": "光聖",
+      "turnover": 255372000,
+      "avg5_turnover": 2289894636,
+      "vs_avg5_pct": -88.8,
+      "progress_ratio": 0.1115,
+      "progress_pct": -88.8,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "3675",
+      "name": "德微",
+      "turnover": 11655000,
+      "avg5_turnover": 104638300,
+      "vs_avg5_pct": -88.9,
+      "progress_ratio": 0.1114,
+      "progress_pct": -88.9,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "6613",
+      "name": "朋億*",
+      "turnover": 3958500,
+      "avg5_turnover": 35639800,
+      "vs_avg5_pct": -88.9,
+      "progress_ratio": 0.1111,
+      "progress_pct": -88.9,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "5483",
+      "name": "中美晶",
+      "turnover": 130920000,
+      "avg5_turnover": 1187403200,
+      "vs_avg5_pct": -89.0,
+      "progress_ratio": 0.1103,
+      "progress_pct": -89.0,
+      "sectors": [
+        "矽晶圓"
+      ]
+    },
+    {
+      "ticker": "1513",
+      "name": "中興電",
+      "turnover": 37691250,
+      "avg5_turnover": 341957001,
+      "vs_avg5_pct": -89.0,
+      "progress_ratio": 0.1102,
+      "progress_pct": -89.0,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "5269",
+      "name": "祥碩",
+      "turnover": 86062500,
+      "avg5_turnover": 782268412,
+      "vs_avg5_pct": -89.0,
+      "progress_ratio": 0.11,
+      "progress_pct": -89.0,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "3357",
+      "name": "臺慶科",
+      "turnover": 18186750,
+      "avg5_turnover": 165686100,
+      "vs_avg5_pct": -89.0,
+      "progress_ratio": 0.1098,
+      "progress_pct": -89.0,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6223",
+      "name": "旺矽",
+      "turnover": 490847500,
+      "avg5_turnover": 4548018000,
+      "vs_avg5_pct": -89.2,
+      "progress_ratio": 0.1079,
+      "progress_pct": -89.2,
+      "sectors": [
+        "探針卡／測試介面"
+      ]
+    },
+    {
+      "ticker": "5284",
+      "name": "jpp-KY",
+      "turnover": 11768250,
+      "avg5_turnover": 109315435,
+      "vs_avg5_pct": -89.2,
+      "progress_ratio": 0.1077,
+      "progress_pct": -89.2,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "2327",
+      "name": "國巨",
+      "turnover": 2110137750,
+      "avg5_turnover": 19737063273,
+      "vs_avg5_pct": -89.3,
+      "progress_ratio": 0.1069,
+      "progress_pct": -89.3,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "3006",
+      "name": "晶豪科",
+      "turnover": 232155000,
+      "avg5_turnover": 2178810494,
+      "vs_avg5_pct": -89.3,
+      "progress_ratio": 0.1066,
+      "progress_pct": -89.3,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "5471",
+      "name": "松翰",
+      "turnover": 2418500,
+      "avg5_turnover": 22969190,
+      "vs_avg5_pct": -89.5,
+      "progress_ratio": 0.1053,
+      "progress_pct": -89.5,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "6789",
+      "name": "采鈺",
+      "turnover": 47227000,
+      "avg5_turnover": 448912600,
+      "vs_avg5_pct": -89.5,
+      "progress_ratio": 0.1052,
+      "progress_pct": -89.5,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "2324",
+      "name": "仁寶",
+      "turnover": 133536150,
+      "avg5_turnover": 1272198339,
+      "vs_avg5_pct": -89.5,
+      "progress_ratio": 0.105,
+      "progress_pct": -89.5,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "2492",
+      "name": "華新科",
+      "turnover": 482972000,
+      "avg5_turnover": 4613362436,
+      "vs_avg5_pct": -89.5,
+      "progress_ratio": 0.1047,
+      "progress_pct": -89.5,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6944",
+      "name": "兆聯實業",
+      "turnover": 39629000,
+      "avg5_turnover": 378381209,
+      "vs_avg5_pct": -89.5,
+      "progress_ratio": 0.1047,
+      "progress_pct": -89.5,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "3693",
+      "name": "營邦",
+      "turnover": 119990000,
+      "avg5_turnover": 1162837000,
+      "vs_avg5_pct": -89.7,
+      "progress_ratio": 0.1032,
+      "progress_pct": -89.7,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "4764",
+      "name": "雙鍵",
+      "turnover": 9090600,
+      "avg5_turnover": 88662701,
+      "vs_avg5_pct": -89.7,
+      "progress_ratio": 0.1025,
+      "progress_pct": -89.7,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "2467",
+      "name": "志聖",
+      "turnover": 39543000,
+      "avg5_turnover": 389068815,
+      "vs_avg5_pct": -89.8,
+      "progress_ratio": 0.1016,
+      "progress_pct": -89.8,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "5469",
+      "name": "瀚宇博",
+      "turnover": 23834700,
+      "avg5_turnover": 234978423,
+      "vs_avg5_pct": -89.9,
+      "progress_ratio": 0.1014,
+      "progress_pct": -89.9,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "8027",
+      "name": "鈦昇",
+      "turnover": 19437300,
+      "avg5_turnover": 192793720,
+      "vs_avg5_pct": -89.9,
+      "progress_ratio": 0.1008,
+      "progress_pct": -89.9,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "6257",
+      "name": "矽格",
+      "turnover": 92810250,
+      "avg5_turnover": 921794134,
+      "vs_avg5_pct": -89.9,
+      "progress_ratio": 0.1007,
+      "progress_pct": -89.9,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "2408",
+      "name": "南亞科",
+      "turnover": 1634992000,
+      "avg5_turnover": 16274160791,
+      "vs_avg5_pct": -90.0,
+      "progress_ratio": 0.1005,
+      "progress_pct": -90.0,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "2351",
+      "name": "順德",
+      "turnover": 39298000,
+      "avg5_turnover": 393461728,
+      "vs_avg5_pct": -90.0,
+      "progress_ratio": 0.0999,
+      "progress_pct": -90.0,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "2377",
+      "name": "微星",
+      "turnover": 90843750,
+      "avg5_turnover": 910140042,
+      "vs_avg5_pct": -90.0,
+      "progress_ratio": 0.0998,
+      "progress_pct": -90.0,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "6271",
+      "name": "同欣電",
+      "turnover": 77883750,
+      "avg5_turnover": 781812507,
+      "vs_avg5_pct": -90.0,
+      "progress_ratio": 0.0996,
+      "progress_pct": -90.0,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "2458",
+      "name": "義隆",
+      "turnover": 15487500,
+      "avg5_turnover": 155686351,
+      "vs_avg5_pct": -90.1,
+      "progress_ratio": 0.0995,
+      "progress_pct": -90.1,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "6197",
+      "name": "佳必琪",
+      "turnover": 29027500,
+      "avg5_turnover": 292757365,
+      "vs_avg5_pct": -90.1,
+      "progress_ratio": 0.0992,
+      "progress_pct": -90.1,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "6933",
+      "name": "AMAX-KY",
+      "turnover": 32371250,
+      "avg5_turnover": 326725187,
+      "vs_avg5_pct": -90.1,
+      "progress_ratio": 0.0991,
+      "progress_pct": -90.1,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "5536",
+      "name": "聖暉*",
+      "turnover": 62262000,
+      "avg5_turnover": 631593600,
+      "vs_avg5_pct": -90.1,
+      "progress_ratio": 0.0986,
+      "progress_pct": -90.1,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "6426",
+      "name": "統新",
+      "turnover": 25886250,
+      "avg5_turnover": 262675837,
+      "vs_avg5_pct": -90.1,
+      "progress_ratio": 0.0985,
+      "progress_pct": -90.1,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "2301",
+      "name": "光寶科",
+      "turnover": 370155500,
+      "avg5_turnover": 3771574744,
+      "vs_avg5_pct": -90.2,
+      "progress_ratio": 0.0981,
+      "progress_pct": -90.2,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "2404",
+      "name": "漢唐",
+      "turnover": 163822000,
+      "avg5_turnover": 1672586838,
+      "vs_avg5_pct": -90.2,
+      "progress_ratio": 0.0979,
+      "progress_pct": -90.2,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "3450",
+      "name": "聯鈞",
+      "turnover": 129281250,
+      "avg5_turnover": 1330440216,
+      "vs_avg5_pct": -90.3,
+      "progress_ratio": 0.0972,
+      "progress_pct": -90.3,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "6861",
+      "name": "睿生光電",
+      "turnover": 8711250,
+      "avg5_turnover": 89594623,
+      "vs_avg5_pct": -90.3,
+      "progress_ratio": 0.0972,
+      "progress_pct": -90.3,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "8155",
+      "name": "博智",
+      "turnover": 25168500,
+      "avg5_turnover": 258979100,
+      "vs_avg5_pct": -90.3,
+      "progress_ratio": 0.0972,
+      "progress_pct": -90.3,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "1303",
+      "name": "南亞",
+      "turnover": 2196522750,
+      "avg5_turnover": 22652873024,
+      "vs_avg5_pct": -90.3,
+      "progress_ratio": 0.097,
+      "progress_pct": -90.3,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "1785",
+      "name": "光洋科",
+      "turnover": 86779000,
+      "avg5_turnover": 898739600,
+      "vs_avg5_pct": -90.3,
+      "progress_ratio": 0.0966,
+      "progress_pct": -90.3,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "8271",
+      "name": "宇瞻",
+      "turnover": 24705000,
+      "avg5_turnover": 259392883,
+      "vs_avg5_pct": -90.5,
+      "progress_ratio": 0.0952,
+      "progress_pct": -90.5,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "8299",
+      "name": "群聯",
+      "turnover": 753720000,
+      "avg5_turnover": 7931475000,
+      "vs_avg5_pct": -90.5,
+      "progress_ratio": 0.095,
+      "progress_pct": -90.5,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "2382",
+      "name": "廣達",
+      "turnover": 437151000,
+      "avg5_turnover": 4609484237,
+      "vs_avg5_pct": -90.5,
+      "progress_ratio": 0.0948,
+      "progress_pct": -90.5,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "4908",
+      "name": "前鼎",
+      "turnover": 16320750,
+      "avg5_turnover": 172320100,
+      "vs_avg5_pct": -90.5,
+      "progress_ratio": 0.0947,
+      "progress_pct": -90.5,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "4966",
+      "name": "譜瑞-KY",
+      "turnover": 34920750,
+      "avg5_turnover": 369743800,
+      "vs_avg5_pct": -90.6,
+      "progress_ratio": 0.0944,
+      "progress_pct": -90.6,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "1514",
+      "name": "亞力",
+      "turnover": 9186750,
+      "avg5_turnover": 97489260,
+      "vs_avg5_pct": -90.6,
+      "progress_ratio": 0.0942,
+      "progress_pct": -90.6,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "6196",
+      "name": "帆宣",
+      "turnover": 52817500,
+      "avg5_turnover": 561740870,
+      "vs_avg5_pct": -90.6,
+      "progress_ratio": 0.094,
+      "progress_pct": -90.6,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "3135",
+      "name": "凌航",
+      "turnover": 9022650,
+      "avg5_turnover": 96772168,
+      "vs_avg5_pct": -90.7,
+      "progress_ratio": 0.0932,
+      "progress_pct": -90.7,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "5274",
+      "name": "信驊",
+      "turnover": 396375000,
+      "avg5_turnover": 4279887000,
+      "vs_avg5_pct": -90.7,
+      "progress_ratio": 0.0926,
+      "progress_pct": -90.7,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "6693",
+      "name": "廣閎科",
+      "turnover": 7685800,
+      "avg5_turnover": 83211780,
+      "vs_avg5_pct": -90.8,
+      "progress_ratio": 0.0924,
+      "progress_pct": -90.8,
+      "sectors": [
+        "電源管理／馬達驅動 IC"
+      ]
+    },
+    {
+      "ticker": "2357",
+      "name": "華碩",
+      "turnover": 285085000,
+      "avg5_turnover": 3124860309,
+      "vs_avg5_pct": -90.9,
+      "progress_ratio": 0.0912,
+      "progress_pct": -90.9,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "2409",
+      "name": "友達",
+      "turnover": 569389450,
+      "avg5_turnover": 6317028163,
+      "vs_avg5_pct": -91.0,
+      "progress_ratio": 0.0901,
+      "progress_pct": -91.0,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "3264",
+      "name": "欣銓",
+      "turnover": 125457500,
+      "avg5_turnover": 1409867700,
+      "vs_avg5_pct": -91.1,
+      "progress_ratio": 0.089,
+      "progress_pct": -91.1,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "3481",
+      "name": "群創",
+      "turnover": 536225000,
+      "avg5_turnover": 6035980557,
+      "vs_avg5_pct": -91.1,
+      "progress_ratio": 0.0888,
+      "progress_pct": -91.1,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "6706",
+      "name": "惠特",
+      "turnover": 12337500,
+      "avg5_turnover": 141237766,
+      "vs_avg5_pct": -91.3,
+      "progress_ratio": 0.0874,
+      "progress_pct": -91.3,
+      "sectors": [
+        "光通封裝／設備／檢測"
+      ]
+    },
+    {
+      "ticker": "4967",
+      "name": "十銓",
+      "turnover": 74354000,
+      "avg5_turnover": 853086348,
+      "vs_avg5_pct": -91.3,
+      "progress_ratio": 0.0872,
+      "progress_pct": -91.3,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "2478",
+      "name": "大毅",
+      "turnover": 18666300,
+      "avg5_turnover": 217561262,
+      "vs_avg5_pct": -91.4,
+      "progress_ratio": 0.0858,
+      "progress_pct": -91.4,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "3265",
+      "name": "台星科",
+      "turnover": 25003750,
+      "avg5_turnover": 293457400,
+      "vs_avg5_pct": -91.5,
+      "progress_ratio": 0.0852,
+      "progress_pct": -91.5,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "7828",
+      "name": "創新服務",
+      "turnover": 38850000,
+      "avg5_turnover": 458623000,
+      "vs_avg5_pct": -91.5,
+      "progress_ratio": 0.0847,
+      "progress_pct": -91.5,
+      "sectors": [
+        "探針卡／測試介面"
+      ]
+    },
+    {
+      "ticker": "1503",
+      "name": "士電",
+      "turnover": 21479750,
+      "avg5_turnover": 254167041,
+      "vs_avg5_pct": -91.5,
+      "progress_ratio": 0.0845,
+      "progress_pct": -91.5,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "8358",
+      "name": "金居",
+      "turnover": 323468750,
+      "avg5_turnover": 3828529400,
+      "vs_avg5_pct": -91.6,
+      "progress_ratio": 0.0845,
+      "progress_pct": -91.6,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "8074",
+      "name": "鉅橡",
+      "turnover": 2090550,
+      "avg5_turnover": 24838990,
+      "vs_avg5_pct": -91.6,
+      "progress_ratio": 0.0842,
+      "progress_pct": -91.6,
+      "sectors": [
+        "PCB 鑽孔耗材"
+      ]
+    },
+    {
+      "ticker": "3231",
+      "name": "緯創",
+      "turnover": 443811500,
+      "avg5_turnover": 5350752630,
+      "vs_avg5_pct": -91.7,
+      "progress_ratio": 0.0829,
+      "progress_pct": -91.7,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "6285",
+      "name": "啟碁",
+      "turnover": 332795000,
+      "avg5_turnover": 4028195458,
+      "vs_avg5_pct": -91.7,
+      "progress_ratio": 0.0826,
+      "progress_pct": -91.7,
       "sectors": [
         "低軌衛星"
       ]
     },
     {
+      "ticker": "6788",
+      "name": "華景電",
+      "turnover": 14722500,
+      "avg5_turnover": 179072700,
+      "vs_avg5_pct": -91.8,
+      "progress_ratio": 0.0822,
+      "progress_pct": -91.8,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "1560",
+      "name": "中砂",
+      "turnover": 105352000,
+      "avg5_turnover": 1283796076,
+      "vs_avg5_pct": -91.8,
+      "progress_ratio": 0.0821,
+      "progress_pct": -91.8,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "3596",
+      "name": "智易",
+      "turnover": 16702500,
+      "avg5_turnover": 204297746,
+      "vs_avg5_pct": -91.8,
+      "progress_ratio": 0.0818,
+      "progress_pct": -91.8,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "8081",
+      "name": "致新",
+      "turnover": 7839000,
+      "avg5_turnover": 95888749,
+      "vs_avg5_pct": -91.8,
+      "progress_ratio": 0.0818,
+      "progress_pct": -91.8,
+      "sectors": [
+        "電源管理／馬達驅動 IC"
+      ]
+    },
+    {
+      "ticker": "4958",
+      "name": "臻鼎-KY",
+      "turnover": 719280000,
+      "avg5_turnover": 8820206000,
+      "vs_avg5_pct": -91.8,
+      "progress_ratio": 0.0815,
+      "progress_pct": -91.8,
+      "sectors": [
+        "PCB",
+        "ABF"
+      ]
+    },
+    {
+      "ticker": "3016",
+      "name": "嘉晶",
+      "turnover": 37510200,
+      "avg5_turnover": 464904708,
+      "vs_avg5_pct": -91.9,
+      "progress_ratio": 0.0807,
+      "progress_pct": -91.9,
+      "sectors": [
+        "矽晶圓"
+      ]
+    },
+    {
+      "ticker": "3374",
+      "name": "精材",
+      "turnover": 528896500,
+      "avg5_turnover": 6568863300,
+      "vs_avg5_pct": -91.9,
+      "progress_ratio": 0.0805,
+      "progress_pct": -91.9,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "3706",
+      "name": "神達",
+      "turnover": 69430000,
+      "avg5_turnover": 868693687,
+      "vs_avg5_pct": -92.0,
+      "progress_ratio": 0.0799,
+      "progress_pct": -92.0,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "6669",
+      "name": "緯穎",
+      "turnover": 507322500,
+      "avg5_turnover": 6346931994,
+      "vs_avg5_pct": -92.0,
+      "progress_ratio": 0.0799,
+      "progress_pct": -92.0,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "1504",
+      "name": "東元",
+      "turnover": 34040050,
+      "avg5_turnover": 429625274,
+      "vs_avg5_pct": -92.1,
+      "progress_ratio": 0.0792,
+      "progress_pct": -92.1,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "3583",
+      "name": "辛耘",
+      "turnover": 21719250,
+      "avg5_turnover": 274220942,
+      "vs_avg5_pct": -92.1,
+      "progress_ratio": 0.0792,
+      "progress_pct": -92.1,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "2455",
+      "name": "全新",
+      "turnover": 98839500,
+      "avg5_turnover": 1262528387,
+      "vs_avg5_pct": -92.2,
+      "progress_ratio": 0.0783,
+      "progress_pct": -92.2,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "3715",
+      "name": "定穎投控",
+      "turnover": 159972750,
+      "avg5_turnover": 2050878432,
+      "vs_avg5_pct": -92.2,
+      "progress_ratio": 0.078,
+      "progress_pct": -92.2,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "6781",
+      "name": "AES-KY",
+      "turnover": 24811000,
+      "avg5_turnover": 320319104,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0775,
+      "progress_pct": -92.3,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "2379",
+      "name": "瑞昱",
+      "turnover": 176604500,
+      "avg5_turnover": 2295888071,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0769,
+      "progress_pct": -92.3,
+      "sectors": [
+        "IC 設計"
+      ]
+    },
+    {
+      "ticker": "4989",
+      "name": "榮科",
+      "turnover": 15058800,
+      "avg5_turnover": 196128454,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0768,
+      "progress_pct": -92.3,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "8261",
+      "name": "富鼎",
+      "turnover": 14334100,
+      "avg5_turnover": 186738872,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0768,
+      "progress_pct": -92.3,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "2345",
+      "name": "智邦",
+      "turnover": 679107500,
+      "avg5_turnover": 8866625197,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0766,
+      "progress_pct": -92.3,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "3008",
+      "name": "大立光",
+      "turnover": 824900000,
+      "avg5_turnover": 10773642938,
+      "vs_avg5_pct": -92.3,
+      "progress_ratio": 0.0766,
+      "progress_pct": -92.3,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "6643",
+      "name": "M31",
+      "turnover": 15924750,
+      "avg5_turnover": 208763500,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.0763,
+      "progress_pct": -92.4,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "4903",
+      "name": "聯光通",
+      "turnover": 9981300,
+      "avg5_turnover": 130923680,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.0762,
+      "progress_pct": -92.4,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "3413",
+      "name": "京鼎",
+      "turnover": 9630000,
+      "avg5_turnover": 126489050,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.0761,
+      "progress_pct": -92.4,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "3026",
+      "name": "禾伸堂",
+      "turnover": 269410500,
+      "avg5_turnover": 3542864439,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.076,
+      "progress_pct": -92.4,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6173",
+      "name": "信昌電",
+      "turnover": 81862750,
+      "avg5_turnover": 1083704800,
+      "vs_avg5_pct": -92.4,
+      "progress_ratio": 0.0755,
+      "progress_pct": -92.4,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6239",
+      "name": "力成",
+      "turnover": 158439750,
+      "avg5_turnover": 2113652892,
+      "vs_avg5_pct": -92.5,
+      "progress_ratio": 0.075,
+      "progress_pct": -92.5,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "2059",
+      "name": "川湖",
+      "turnover": 396382500,
+      "avg5_turnover": 5303286730,
+      "vs_avg5_pct": -92.5,
+      "progress_ratio": 0.0747,
+      "progress_pct": -92.5,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "5439",
+      "name": "高技",
+      "turnover": 25130250,
+      "avg5_turnover": 338669700,
+      "vs_avg5_pct": -92.6,
+      "progress_ratio": 0.0742,
+      "progress_pct": -92.6,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "6525",
+      "name": "捷敏-KY",
+      "turnover": 4935350,
+      "avg5_turnover": 66552731,
+      "vs_avg5_pct": -92.6,
+      "progress_ratio": 0.0742,
+      "progress_pct": -92.6,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "6664",
+      "name": "群翊",
+      "turnover": 5551000,
+      "avg5_turnover": 74839200,
+      "vs_avg5_pct": -92.6,
+      "progress_ratio": 0.0742,
+      "progress_pct": -92.6,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "1590",
+      "name": "亞德客-KY",
+      "turnover": 66240000,
+      "avg5_turnover": 893886390,
+      "vs_avg5_pct": -92.6,
+      "progress_ratio": 0.0741,
+      "progress_pct": -92.6,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "3580",
+      "name": "友威科",
+      "turnover": 5669500,
+      "avg5_turnover": 76670640,
+      "vs_avg5_pct": -92.6,
+      "progress_ratio": 0.0739,
+      "progress_pct": -92.6,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "6182",
+      "name": "合晶",
+      "turnover": 125495700,
+      "avg5_turnover": 1716496860,
+      "vs_avg5_pct": -92.7,
+      "progress_ratio": 0.0731,
+      "progress_pct": -92.7,
+      "sectors": [
+        "矽晶圓"
+      ]
+    },
+    {
+      "ticker": "1519",
+      "name": "華城",
+      "turnover": 67402500,
+      "avg5_turnover": 923280461,
+      "vs_avg5_pct": -92.7,
+      "progress_ratio": 0.073,
+      "progress_pct": -92.7,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "4576",
+      "name": "大銀微系統",
+      "turnover": 20621250,
+      "avg5_turnover": 282622508,
+      "vs_avg5_pct": -92.7,
+      "progress_ratio": 0.073,
+      "progress_pct": -92.7,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "2376",
+      "name": "技嘉",
+      "turnover": 202702500,
+      "avg5_turnover": 2794153215,
+      "vs_avg5_pct": -92.7,
+      "progress_ratio": 0.0725,
+      "progress_pct": -92.7,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "2316",
+      "name": "楠梓電",
+      "turnover": 22696350,
+      "avg5_turnover": 313682500,
+      "vs_avg5_pct": -92.8,
+      "progress_ratio": 0.0724,
+      "progress_pct": -92.8,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "5388",
+      "name": "中磊",
+      "turnover": 16912500,
+      "avg5_turnover": 234005826,
+      "vs_avg5_pct": -92.8,
+      "progress_ratio": 0.0723,
+      "progress_pct": -92.8,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "2441",
+      "name": "超豐",
+      "turnover": 36426600,
+      "avg5_turnover": 506896518,
+      "vs_avg5_pct": -92.8,
+      "progress_ratio": 0.0719,
+      "progress_pct": -92.8,
+      "sectors": [
+        "IC 封裝／測試"
+      ]
+    },
+    {
+      "ticker": "3680",
+      "name": "家登",
+      "turnover": 25499000,
+      "avg5_turnover": 354830400,
+      "vs_avg5_pct": -92.8,
+      "progress_ratio": 0.0719,
+      "progress_pct": -92.8,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "5498",
+      "name": "凱崴",
+      "turnover": 7261625,
+      "avg5_turnover": 101465000,
+      "vs_avg5_pct": -92.8,
+      "progress_ratio": 0.0716,
+      "progress_pct": -92.8,
+      "sectors": [
+        "PCB 鑽孔耗材"
+      ]
+    },
+    {
+      "ticker": "5351",
+      "name": "鈺創",
+      "turnover": 49734700,
+      "avg5_turnover": 697409000,
+      "vs_avg5_pct": -92.9,
+      "progress_ratio": 0.0713,
+      "progress_pct": -92.9,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "6435",
+      "name": "大中",
+      "turnover": 4104000,
+      "avg5_turnover": 57687400,
+      "vs_avg5_pct": -92.9,
+      "progress_ratio": 0.0711,
+      "progress_pct": -92.9,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "3131",
+      "name": "弘塑",
+      "turnover": 32825000,
+      "avg5_turnover": 463962000,
+      "vs_avg5_pct": -92.9,
+      "progress_ratio": 0.0707,
+      "progress_pct": -92.9,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "6202",
+      "name": "盛群",
+      "turnover": 3385600,
+      "avg5_turnover": 47898117,
+      "vs_avg5_pct": -92.9,
+      "progress_ratio": 0.0707,
+      "progress_pct": -92.9,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "5234",
+      "name": "達興材料",
+      "turnover": 8879500,
+      "avg5_turnover": 125863740,
+      "vs_avg5_pct": -92.9,
+      "progress_ratio": 0.0705,
+      "progress_pct": -92.9,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "3317",
+      "name": "尼克森",
+      "turnover": 1907100,
+      "avg5_turnover": 27071270,
+      "vs_avg5_pct": -93.0,
+      "progress_ratio": 0.0704,
+      "progress_pct": -93.0,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "2375",
+      "name": "凱美",
+      "turnover": 11497950,
+      "avg5_turnover": 163604197,
+      "vs_avg5_pct": -93.0,
+      "progress_ratio": 0.0703,
+      "progress_pct": -93.0,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "3042",
+      "name": "晶技",
+      "turnover": 43468250,
+      "avg5_turnover": 622863780,
+      "vs_avg5_pct": -93.0,
+      "progress_ratio": 0.0698,
+      "progress_pct": -93.0,
+      "sectors": [
+        "石英元件"
+      ]
+    },
+    {
+      "ticker": "6188",
+      "name": "廣明",
+      "turnover": 4370625,
+      "avg5_turnover": 62655480,
+      "vs_avg5_pct": -93.0,
+      "progress_ratio": 0.0698,
+      "progress_pct": -93.0,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "1802",
+      "name": "台玻",
+      "turnover": 731189250,
+      "avg5_turnover": 10517041544,
+      "vs_avg5_pct": -93.0,
+      "progress_ratio": 0.0695,
+      "progress_pct": -93.0,
+      "sectors": [
+        "玻纖布／玻纖紗"
+      ]
+    },
+    {
+      "ticker": "5434",
+      "name": "崇越",
+      "turnover": 29241000,
+      "avg5_turnover": 421590298,
+      "vs_avg5_pct": -93.1,
+      "progress_ratio": 0.0694,
+      "progress_pct": -93.1,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "8088",
+      "name": "品安",
+      "turnover": 1029525,
+      "avg5_turnover": 15145570,
+      "vs_avg5_pct": -93.2,
+      "progress_ratio": 0.068,
+      "progress_pct": -93.2,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "6834",
+      "name": "天二科技",
+      "turnover": 12900800,
+      "avg5_turnover": 190115996,
+      "vs_avg5_pct": -93.2,
+      "progress_ratio": 0.0679,
+      "progress_pct": -93.2,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6456",
+      "name": "GIS-KY",
+      "turnover": 114436800,
+      "avg5_turnover": 1711195223,
+      "vs_avg5_pct": -93.3,
+      "progress_ratio": 0.0669,
+      "progress_pct": -93.3,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "2367",
+      "name": "燿華",
+      "turnover": 18238325,
+      "avg5_turnover": 274421528,
+      "vs_avg5_pct": -93.4,
+      "progress_ratio": 0.0665,
+      "progress_pct": -93.4,
+      "sectors": [
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "3090",
+      "name": "日電貿",
+      "turnover": 27504000,
+      "avg5_turnover": 413749470,
+      "vs_avg5_pct": -93.4,
+      "progress_ratio": 0.0665,
+      "progress_pct": -93.4,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "1727",
+      "name": "中華化",
+      "turnover": 10003500,
+      "avg5_turnover": 151970034,
+      "vs_avg5_pct": -93.4,
+      "progress_ratio": 0.0658,
+      "progress_pct": -93.4,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "3665",
+      "name": "貿聯-KY",
+      "turnover": 459900000,
+      "avg5_turnover": 6994679333,
+      "vs_avg5_pct": -93.4,
+      "progress_ratio": 0.0657,
+      "progress_pct": -93.4,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "6770",
+      "name": "力積電",
+      "turnover": 308365200,
+      "avg5_turnover": 4700536015,
+      "vs_avg5_pct": -93.4,
+      "progress_ratio": 0.0656,
+      "progress_pct": -93.4,
+      "sectors": [
+        "記憶體",
+        "成熟晶圓製程"
+      ]
+    },
+    {
+      "ticker": "6719",
+      "name": "力智",
+      "turnover": 8834000,
+      "avg5_turnover": 134989334,
+      "vs_avg5_pct": -93.5,
+      "progress_ratio": 0.0654,
+      "progress_pct": -93.5,
+      "sectors": [
+        "電源管理／馬達驅動 IC"
+      ]
+    },
+    {
+      "ticker": "6438",
+      "name": "迅得",
+      "turnover": 8595750,
+      "avg5_turnover": 131834890,
+      "vs_avg5_pct": -93.5,
+      "progress_ratio": 0.0652,
+      "progress_pct": -93.5,
+      "sectors": [
+        "PCB 設備"
+      ]
+    },
+    {
+      "ticker": "3535",
+      "name": "晶彩科",
+      "turnover": 3788700,
+      "avg5_turnover": 58546578,
+      "vs_avg5_pct": -93.5,
+      "progress_ratio": 0.0647,
+      "progress_pct": -93.5,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "4772",
+      "name": "台特化",
+      "turnover": 11954250,
+      "avg5_turnover": 185318700,
+      "vs_avg5_pct": -93.5,
+      "progress_ratio": 0.0645,
+      "progress_pct": -93.5,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "2464",
+      "name": "盟立",
+      "turnover": 54056250,
+      "avg5_turnover": 866436544,
+      "vs_avg5_pct": -93.8,
+      "progress_ratio": 0.0624,
+      "progress_pct": -93.8,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "4939",
+      "name": "亞電",
+      "turnover": 5848500,
+      "avg5_turnover": 94052860,
+      "vs_avg5_pct": -93.8,
+      "progress_ratio": 0.0622,
+      "progress_pct": -93.8,
+      "sectors": [
+        "PTFE材料"
+      ]
+    },
+    {
+      "ticker": "4977",
+      "name": "眾達-KY",
+      "turnover": 174528000,
+      "avg5_turnover": 2830563299,
+      "vs_avg5_pct": -93.8,
+      "progress_ratio": 0.0617,
+      "progress_pct": -93.8,
+      "sectors": [
+        "光通訊元件／模組"
+      ]
+    },
+    {
+      "ticker": "5309",
+      "name": "系統電",
+      "turnover": 11129475,
+      "avg5_turnover": 180831320,
+      "vs_avg5_pct": -93.8,
+      "progress_ratio": 0.0615,
+      "progress_pct": -93.8,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "3030",
+      "name": "德律",
+      "turnover": 26461500,
+      "avg5_turnover": 430732400,
+      "vs_avg5_pct": -93.9,
+      "progress_ratio": 0.0614,
+      "progress_pct": -93.9,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "6494",
+      "name": "九齊",
+      "turnover": 248850,
+      "avg5_turnover": 4058060,
+      "vs_avg5_pct": -93.9,
+      "progress_ratio": 0.0613,
+      "progress_pct": -93.9,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "4938",
+      "name": "和碩",
+      "turnover": 66597500,
+      "avg5_turnover": 1089714593,
+      "vs_avg5_pct": -93.9,
+      "progress_ratio": 0.0611,
+      "progress_pct": -93.9,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "3013",
+      "name": "晟銘電",
+      "turnover": 5695900,
+      "avg5_turnover": 94063157,
+      "vs_avg5_pct": -93.9,
+      "progress_ratio": 0.0606,
+      "progress_pct": -93.9,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "6187",
+      "name": "萬潤",
+      "turnover": 105618000,
+      "avg5_turnover": 1745871600,
+      "vs_avg5_pct": -94.0,
+      "progress_ratio": 0.0605,
+      "progress_pct": -94.0,
+      "sectors": [
+        "光通封裝／設備／檢測",
+        "半導體設備"
+      ]
+    },
+    {
       "ticker": "8996",
       "name": "高力",
-      "turnover": 97838000,
-      "avg5_turnover": 4902167133,
-      "vs_avg5_pct": -98.0,
-      "progress_ratio": null,
-      "progress_pct": null,
+      "turnover": 217828000,
+      "avg5_turnover": 3602923508,
+      "vs_avg5_pct": -94.0,
+      "progress_ratio": 0.0605,
+      "progress_pct": -94.0,
       "sectors": [
         "散熱"
+      ]
+    },
+    {
+      "ticker": "3529",
+      "name": "力旺",
+      "turnover": 140225000,
+      "avg5_turnover": 2324516000,
+      "vs_avg5_pct": -94.0,
+      "progress_ratio": 0.0603,
+      "progress_pct": -94.0,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "3260",
+      "name": "威剛",
+      "turnover": 127443750,
+      "avg5_turnover": 2117785100,
+      "vs_avg5_pct": -94.0,
+      "progress_ratio": 0.0602,
+      "progress_pct": -94.0,
+      "sectors": [
+        "記憶體"
+      ]
+    },
+    {
+      "ticker": "6278",
+      "name": "台表科",
+      "turnover": 81446250,
+      "avg5_turnover": 1354433644,
+      "vs_avg5_pct": -94.0,
+      "progress_ratio": 0.0601,
+      "progress_pct": -94.0,
+      "sectors": [
+        "光通封裝／設備／檢測"
+      ]
+    },
+    {
+      "ticker": "4540",
+      "name": "全球傳動",
+      "turnover": 3976875,
+      "avg5_turnover": 66839516,
+      "vs_avg5_pct": -94.1,
+      "progress_ratio": 0.0595,
+      "progress_pct": -94.1,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "3533",
+      "name": "嘉澤",
+      "turnover": 125325000,
+      "avg5_turnover": 2171378784,
+      "vs_avg5_pct": -94.2,
+      "progress_ratio": 0.0577,
+      "progress_pct": -94.2,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "8182",
+      "name": "加高",
+      "turnover": 553125,
+      "avg5_turnover": 9659240,
+      "vs_avg5_pct": -94.3,
+      "progress_ratio": 0.0573,
+      "progress_pct": -94.3,
+      "sectors": [
+        "石英元件"
+      ]
+    },
+    {
+      "ticker": "6672",
+      "name": "騰輝電子-KY",
+      "turnover": 164426250,
+      "avg5_turnover": 2883995979,
+      "vs_avg5_pct": -94.3,
+      "progress_ratio": 0.057,
+      "progress_pct": -94.3,
+      "sectors": [
+        "銅箔／CCL"
+      ]
+    },
+    {
+      "ticker": "1815",
+      "name": "富喬",
+      "turnover": 543942000,
+      "avg5_turnover": 9569330300,
+      "vs_avg5_pct": -94.3,
+      "progress_ratio": 0.0568,
+      "progress_pct": -94.3,
+      "sectors": [
+        "玻纖布／玻纖紗"
+      ]
+    },
+    {
+      "ticker": "3624",
+      "name": "光頡",
+      "turnover": 26297150,
+      "avg5_turnover": 462829440,
+      "vs_avg5_pct": -94.3,
+      "progress_ratio": 0.0568,
+      "progress_pct": -94.3,
+      "sectors": [
+        "被動元件"
+      ]
+    },
+    {
+      "ticker": "6415",
+      "name": "矽力*-KY",
+      "turnover": 126155000,
+      "avg5_turnover": 2250345484,
+      "vs_avg5_pct": -94.4,
+      "progress_ratio": 0.0561,
+      "progress_pct": -94.4,
+      "sectors": [
+        "電源管理／馬達驅動 IC"
+      ]
+    },
+    {
+      "ticker": "3228",
+      "name": "金麗科",
+      "turnover": 2724550,
+      "avg5_turnover": 48648980,
+      "vs_avg5_pct": -94.4,
+      "progress_ratio": 0.056,
+      "progress_pct": -94.4,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "3532",
+      "name": "台勝科",
+      "turnover": 41114000,
+      "avg5_turnover": 744966563,
+      "vs_avg5_pct": -94.5,
+      "progress_ratio": 0.0552,
+      "progress_pct": -94.5,
+      "sectors": [
+        "矽晶圓"
+      ]
+    },
+    {
+      "ticker": "6658",
+      "name": "聯策",
+      "turnover": 3150000,
+      "avg5_turnover": 57213705,
+      "vs_avg5_pct": -94.5,
+      "progress_ratio": 0.0551,
+      "progress_pct": -94.5,
+      "sectors": [
+        "PCB 設備"
+      ]
+    },
+    {
+      "ticker": "3055",
+      "name": "蔚華科",
+      "turnover": 9409500,
+      "avg5_turnover": 171233520,
+      "vs_avg5_pct": -94.5,
+      "progress_ratio": 0.055,
+      "progress_pct": -94.5,
+      "sectors": [
+        "光通封裝／設備／檢測",
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "3402",
+      "name": "漢科",
+      "turnover": 1428000,
+      "avg5_turnover": 25970920,
+      "vs_avg5_pct": -94.5,
+      "progress_ratio": 0.055,
+      "progress_pct": -94.5,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "8103",
+      "name": "瀚荃",
+      "turnover": 6124800,
+      "avg5_turnover": 111634937,
+      "vs_avg5_pct": -94.5,
+      "progress_ratio": 0.0549,
+      "progress_pct": -94.5,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "3406",
+      "name": "玉晶光",
+      "turnover": 269326000,
+      "avg5_turnover": 4957338006,
+      "vs_avg5_pct": -94.6,
+      "progress_ratio": 0.0543,
+      "progress_pct": -94.6,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "7795",
+      "name": "長廣",
+      "turnover": 17337500,
+      "avg5_turnover": 319286484,
+      "vs_avg5_pct": -94.6,
+      "progress_ratio": 0.0543,
+      "progress_pct": -94.6,
+      "sectors": [
+        "PCB 設備"
+      ]
+    },
+    {
+      "ticker": "3211",
+      "name": "順達",
+      "turnover": 34867750,
+      "avg5_turnover": 646274900,
+      "vs_avg5_pct": -94.6,
+      "progress_ratio": 0.054,
+      "progress_pct": -94.6,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "6937",
+      "name": "天虹",
+      "turnover": 3657000,
+      "avg5_turnover": 67870432,
+      "vs_avg5_pct": -94.6,
+      "progress_ratio": 0.0539,
+      "progress_pct": -94.6,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "5285",
+      "name": "界霖",
+      "turnover": 3422000,
+      "avg5_turnover": 63863583,
+      "vs_avg5_pct": -94.6,
+      "progress_ratio": 0.0536,
+      "progress_pct": -94.6,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "3483",
+      "name": "力致",
+      "turnover": 2931000,
+      "avg5_turnover": 55251540,
+      "vs_avg5_pct": -94.7,
+      "progress_ratio": 0.053,
+      "progress_pct": -94.7,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "4919",
+      "name": "新唐",
+      "turnover": 30287600,
+      "avg5_turnover": 573521915,
+      "vs_avg5_pct": -94.7,
+      "progress_ratio": 0.0528,
+      "progress_pct": -94.7,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "3338",
+      "name": "泰碩",
+      "turnover": 1285600,
+      "avg5_turnover": 24680300,
+      "vs_avg5_pct": -94.8,
+      "progress_ratio": 0.0521,
+      "progress_pct": -94.8,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "3605",
+      "name": "宏致",
+      "turnover": 35375150,
+      "avg5_turnover": 693623333,
+      "vs_avg5_pct": -94.9,
+      "progress_ratio": 0.051,
+      "progress_pct": -94.9,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "7717",
+      "name": "萊德光電-KY",
+      "turnover": 36608000,
+      "avg5_turnover": 717949600,
+      "vs_avg5_pct": -94.9,
+      "progress_ratio": 0.051,
+      "progress_pct": -94.9,
+      "sectors": [
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "2049",
+      "name": "上銀",
+      "turnover": 54010000,
+      "avg5_turnover": 1085585640,
+      "vs_avg5_pct": -95.0,
+      "progress_ratio": 0.0498,
+      "progress_pct": -95.0,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "5425",
+      "name": "台半",
+      "turnover": 17645600,
+      "avg5_turnover": 353984760,
+      "vs_avg5_pct": -95.0,
+      "progress_ratio": 0.0498,
+      "progress_pct": -95.0,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "2233",
+      "name": "宇隆",
+      "turnover": 4380450,
+      "avg5_turnover": 88281736,
+      "vs_avg5_pct": -95.0,
+      "progress_ratio": 0.0496,
+      "progress_pct": -95.0,
+      "sectors": [
+        "工具機／自動化系統"
+      ]
+    },
+    {
+      "ticker": "3289",
+      "name": "宜特",
+      "turnover": 5259000,
+      "avg5_turnover": 106772980,
+      "vs_avg5_pct": -95.1,
+      "progress_ratio": 0.0493,
+      "progress_pct": -95.1,
+      "sectors": [
+        "半導體測試／驗證／量測"
+      ]
+    },
+    {
+      "ticker": "4906",
+      "name": "正文",
+      "turnover": 10104275,
+      "avg5_turnover": 206316666,
+      "vs_avg5_pct": -95.1,
+      "progress_ratio": 0.049,
+      "progress_pct": -95.1,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "2371",
+      "name": "大同",
+      "turnover": 14367600,
+      "avg5_turnover": 295671367,
+      "vs_avg5_pct": -95.1,
+      "progress_ratio": 0.0486,
+      "progress_pct": -95.1,
+      "sectors": [
+        "重電"
+      ]
+    },
+    {
+      "ticker": "3044",
+      "name": "健鼎",
+      "turnover": 147515000,
+      "avg5_turnover": 3092823140,
+      "vs_avg5_pct": -95.2,
+      "progress_ratio": 0.0477,
+      "progress_pct": -95.2,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "2356",
+      "name": "英業達",
+      "turnover": 50818825,
+      "avg5_turnover": 1066707567,
+      "vs_avg5_pct": -95.2,
+      "progress_ratio": 0.0476,
+      "progress_pct": -95.2,
+      "sectors": [
+        "AI ODM／OEM"
+      ]
+    },
+    {
+      "ticker": "6269",
+      "name": "台郡",
+      "turnover": 63434800,
+      "avg5_turnover": 1342948635,
+      "vs_avg5_pct": -95.3,
+      "progress_ratio": 0.0472,
+      "progress_pct": -95.3,
+      "sectors": [
+        "PTFE材料"
+      ]
+    },
+    {
+      "ticker": "2481",
+      "name": "強茂",
+      "turnover": 40650400,
+      "avg5_turnover": 890446973,
+      "vs_avg5_pct": -95.4,
+      "progress_ratio": 0.0457,
+      "progress_pct": -95.4,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "2313",
+      "name": "華通",
+      "turnover": 342912750,
+      "avg5_turnover": 7562225896,
+      "vs_avg5_pct": -95.5,
+      "progress_ratio": 0.0453,
+      "progress_pct": -95.5,
+      "sectors": [
+        "PCB",
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "3149",
+      "name": "正達",
+      "turnover": 22650200,
+      "avg5_turnover": 504105304,
+      "vs_avg5_pct": -95.5,
+      "progress_ratio": 0.0449,
+      "progress_pct": -95.5,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "6207",
+      "name": "雷科",
+      "turnover": 8748000,
+      "avg5_turnover": 200811400,
+      "vs_avg5_pct": -95.6,
+      "progress_ratio": 0.0436,
+      "progress_pct": -95.6,
+      "sectors": [
+        "TGV／Glass"
+      ]
+    },
+    {
+      "ticker": "6138",
+      "name": "茂達",
+      "turnover": 4673500,
+      "avg5_turnover": 108386000,
+      "vs_avg5_pct": -95.7,
+      "progress_ratio": 0.0431,
+      "progress_pct": -95.7,
+      "sectors": [
+        "電源管理／馬達驅動 IC"
+      ]
+    },
+    {
+      "ticker": "5340",
+      "name": "建榮",
+      "turnover": 15946000,
+      "avg5_turnover": 374040280,
+      "vs_avg5_pct": -95.7,
+      "progress_ratio": 0.0426,
+      "progress_pct": -95.7,
+      "sectors": [
+        "玻纖布／玻纖紗"
+      ]
+    },
+    {
+      "ticker": "6117",
+      "name": "迎廣",
+      "turnover": 746800,
+      "avg5_turnover": 17669129,
+      "vs_avg5_pct": -95.8,
+      "progress_ratio": 0.0423,
+      "progress_pct": -95.8,
+      "sectors": [
+        "AI 伺服器機構／機殼"
+      ]
+    },
+    {
+      "ticker": "8255",
+      "name": "朋程",
+      "turnover": 1535200,
+      "avg5_turnover": 36628020,
+      "vs_avg5_pct": -95.8,
+      "progress_ratio": 0.0419,
+      "progress_pct": -95.8,
+      "sectors": [
+        "功率元件／導線架"
+      ]
+    },
+    {
+      "ticker": "3305",
+      "name": "昇貿",
+      "turnover": 18813900,
+      "avg5_turnover": 481849684,
+      "vs_avg5_pct": -96.1,
+      "progress_ratio": 0.039,
+      "progress_pct": -96.1,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "6282",
+      "name": "康舒",
+      "turnover": 7221050,
+      "avg5_turnover": 185591191,
+      "vs_avg5_pct": -96.1,
+      "progress_ratio": 0.0389,
+      "progress_pct": -96.1,
+      "sectors": [
+        "800V HVDC"
+      ]
+    },
+    {
+      "ticker": "5443",
+      "name": "均豪",
+      "turnover": 3244800,
+      "avg5_turnover": 85568720,
+      "vs_avg5_pct": -96.2,
+      "progress_ratio": 0.0379,
+      "progress_pct": -96.2,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "3105",
+      "name": "穩懋",
+      "turnover": 579999000,
+      "avg5_turnover": 15795360400,
+      "vs_avg5_pct": -96.3,
+      "progress_ratio": 0.0367,
+      "progress_pct": -96.3,
+      "sectors": [
+        "光通訊元件／模組",
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "6716",
+      "name": "應廣",
+      "turnover": 875700,
+      "avg5_turnover": 24341900,
+      "vs_avg5_pct": -96.4,
+      "progress_ratio": 0.036,
+      "progress_pct": -96.4,
+      "sectors": [
+        "MCU"
+      ]
+    },
+    {
+      "ticker": "6533",
+      "name": "晶心科",
+      "turnover": 17563000,
+      "avg5_turnover": 505583836,
+      "vs_avg5_pct": -96.5,
+      "progress_ratio": 0.0347,
+      "progress_pct": -96.5,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "7822",
+      "name": "倍利科",
+      "turnover": 4627500,
+      "avg5_turnover": 133732300,
+      "vs_avg5_pct": -96.5,
+      "progress_ratio": 0.0346,
+      "progress_pct": -96.5,
+      "sectors": [
+        "半導體設備"
+      ]
+    },
+    {
+      "ticker": "3138",
+      "name": "耀登",
+      "turnover": 1072700,
+      "avg5_turnover": 32051198,
+      "vs_avg5_pct": -96.7,
+      "progress_ratio": 0.0335,
+      "progress_pct": -96.7,
+      "sectors": [
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "6691",
+      "name": "洋基工程",
+      "turnover": 18757500,
+      "avg5_turnover": 572081842,
+      "vs_avg5_pct": -96.7,
+      "progress_ratio": 0.0328,
+      "progress_pct": -96.7,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "3217",
+      "name": "優群",
+      "turnover": 1538400,
+      "avg5_turnover": 47261600,
+      "vs_avg5_pct": -96.7,
+      "progress_ratio": 0.0326,
+      "progress_pct": -96.7,
+      "sectors": [
+        "連接線材"
+      ]
+    },
+    {
+      "ticker": "3491",
+      "name": "昇達科",
+      "turnover": 143650000,
+      "avg5_turnover": 4707473000,
+      "vs_avg5_pct": -96.9,
+      "progress_ratio": 0.0305,
+      "progress_pct": -96.9,
+      "sectors": [
+        "低軌衛星"
+      ]
+    },
+    {
+      "ticker": "8227",
+      "name": "巨有科技",
+      "turnover": 39643500,
+      "avg5_turnover": 1338582300,
+      "vs_avg5_pct": -97.0,
+      "progress_ratio": 0.0296,
+      "progress_pct": -97.0,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "6715",
+      "name": "嘉基",
+      "turnover": 11039250,
+      "avg5_turnover": 435453862,
+      "vs_avg5_pct": -97.5,
+      "progress_ratio": 0.0254,
+      "progress_pct": -97.5,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "3035",
+      "name": "智原",
+      "turnover": 74511000,
+      "avg5_turnover": 2955554255,
+      "vs_avg5_pct": -97.5,
+      "progress_ratio": 0.0252,
+      "progress_pct": -97.5,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "6695",
+      "name": "芯鼎",
+      "turnover": 828500,
+      "avg5_turnover": 32949587,
+      "vs_avg5_pct": -97.5,
+      "progress_ratio": 0.0251,
+      "progress_pct": -97.5,
+      "sectors": [
+        "IP"
+      ]
+    },
+    {
+      "ticker": "7772",
+      "name": "耀穎",
+      "turnover": 347000,
+      "avg5_turnover": 16685120,
+      "vs_avg5_pct": -97.9,
+      "progress_ratio": 0.0208,
+      "progress_pct": -97.9,
+      "sectors": [
+        "光纖連接／精密光學"
+      ]
+    },
+    {
+      "ticker": "7703",
+      "name": "銳澤",
+      "turnover": 239000,
+      "avg5_turnover": 13282000,
+      "vs_avg5_pct": -98.2,
+      "progress_ratio": 0.018,
+      "progress_pct": -98.2,
+      "sectors": [
+        "廠務工程"
+      ]
+    },
+    {
+      "ticker": "6141",
+      "name": "柏承",
+      "turnover": 718200,
+      "avg5_turnover": 40398419,
+      "vs_avg5_pct": -98.2,
+      "progress_ratio": 0.0178,
+      "progress_pct": -98.2,
+      "sectors": [
+        "PCB"
+      ]
+    },
+    {
+      "ticker": "6230",
+      "name": "尼得科超眾",
+      "turnover": 77800,
+      "avg5_turnover": 4410795,
+      "vs_avg5_pct": -98.2,
+      "progress_ratio": 0.0176,
+      "progress_pct": -98.2,
+      "sectors": [
+        "散熱"
+      ]
+    },
+    {
+      "ticker": "4768",
+      "name": "晶呈科技",
+      "turnover": 2037500,
+      "avg5_turnover": 117008600,
+      "vs_avg5_pct": -98.3,
+      "progress_ratio": 0.0174,
+      "progress_pct": -98.3,
+      "sectors": [
+        "半導體材料／耗材"
+      ]
+    },
+    {
+      "ticker": "3558",
+      "name": "神準",
+      "turnover": 332000,
+      "avg5_turnover": 20881860,
+      "vs_avg5_pct": -98.4,
+      "progress_ratio": 0.0159,
+      "progress_pct": -98.4,
+      "sectors": [
+        "網通／交換器"
+      ]
+    },
+    {
+      "ticker": "6234",
+      "name": "高僑",
+      "turnover": 7785250,
+      "avg5_turnover": 682439450,
+      "vs_avg5_pct": -98.9,
+      "progress_ratio": 0.0114,
+      "progress_pct": -98.9,
+      "sectors": [
+        "PCB 鑽孔耗材"
+      ]
+    },
+    {
+      "ticker": "3122",
+      "name": "笙泉",
+      "turnover": 0,
+      "avg5_turnover": 1195990,
+      "vs_avg5_pct": -100.0,
+      "progress_ratio": 0.0,
+      "progress_pct": -100.0,
+      "sectors": [
+        "MCU"
       ]
     }
   ]
