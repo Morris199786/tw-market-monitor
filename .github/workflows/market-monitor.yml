@@ -30,6 +30,16 @@ jobs:
       - name: Refresh US monitoring
         continue-on-error: true
         run: python scripts/update_us_market_monitor.py
+      # Only fetch the latest ~35 calendar days; preserve the full 2011+ JSON.
+      # This is independent of FINRA and Taiwan market calculations.
+      - name: Install incremental US sentiment dependencies
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python -m pip install --disable-pip-version-check 'yfinance>=0.2.50,<2' 'pandas>=2.0,<3'
+      - name: Refresh US sentiment, VIX, indices and credit spreads (incremental)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python scripts/update_us_sentiment_daily.py
       - name: Refresh TWSE index, foreign investment and listed margin
         if: ${{ !cancelled() }}
         run: python scripts/update_market_monitor.py
@@ -97,7 +107,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json data/twse_credit_dashboard.json; do
+          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json data/twse_credit_dashboard.json data/us_sentiment_history.json; do
             if test -f "$f"; then git add -- "$f"; fi
           done
           if git diff --cached --quiet; then echo 'MARKET_DATA_UNCHANGED'; exit 0; fi
