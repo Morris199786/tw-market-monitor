@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-23T22:11+08:00",
+  "updated_at": "2026-11-23T23:00+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2638,13 +2638,15 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mops.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mops.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mops.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mops.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2815,7 +2817,7 @@
       "monthly_eps_yoy_text": "102.77%",
       "quarter_eps_yoy_text": "-99.92%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_label_not_found",
+      "eps_parse_reason": "",
       "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
       "_eps_parse_fingerprint": "a5c819cc15fda055a72e1dbabced7c6c0be165bd496d485466f083c3bf462fb0"
     },
@@ -2971,7 +2973,7 @@
       "monthly_eps_yoy_text": "-2%",
       "quarter_eps_yoy_text": "18%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_label_not_found",
+      "eps_parse_reason": "",
       "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
       "_eps_parse_fingerprint": "ec0fa80544924002d97ca714e671f8c783901445f3d057dfcde7fb10c337ec4b"
     },
