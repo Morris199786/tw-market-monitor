@@ -12,7 +12,7 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-18-v40-restated-eps-label"
+VERSION = "2026-11-23-v41-verified-quarter-column"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -806,6 +806,50 @@ def _recover_mops_annotated_block_eps(text):
         result[prefix+"_eps_yoy_text"] = f"{growth:+.2f}%"
     return result
 
+def _verified_separate_mops_quarter(text):
+    """Read an explicitly labelled (2)單季 comparison row, never an adjacent
+    去年同期 cell. This deliberately does NOT handle arbitrary/new layouts.
+
+    The EPS row must have current/last-year/YoY fields, a dated quarter label,
+    and an internally consistent YoY. Unknown layouts keep the legacy result.
+    """
+    source = normalize_for_parse(text)
+    # Require (1)單月, (2)單季, and (3)最近四季累計 in order.  This is the
+    # structure seen in the affected MOPS attention-trading disclosures.
+    month = re.search(r"\(\s*1\s*\)\s*單月", source)
+    quarter = re.search(r"\(\s*2\s*\)\s*單季", source)
+    rolling = re.search(r"\(\s*3\s*\)\s*最近四季累計", source)
+    if not (month and quarter and rolling and month.start() < quarter.start() < rolling.start()):
+        return None
+    block = source[quarter.end():rolling.start()]
+    period = _find_quarter_period(block)
+    if not period:
+        return None
+    # A single labelled EPS row.  Numeric token positions must be adjacent:
+    # current EPS, last-year same-quarter EPS, year-on-year growth percentage.
+    matches = list(re.finditer(EPS_WORD, block, re.I))
+    if len(matches) != 1:
+        return None
+    cells = _eps_cells(block[matches[0].start():])
+    if len(cells) < 3:
+        return None
+    current, prior = _number(cells[0]), _number(cells[1])
+    yoy = _number(cells[2], growth=True)
+    if current is None or prior in (None, 0) or yoy is None:
+        return None
+    # For loss-to-profit and negative bases, MOPS reports the change with
+    # the absolute value of prior-year EPS in the denominator.
+    implied = 100.0 * (current - prior) / abs(prior)
+    # Published EPS is rounded to cents; the ratio may use unrounded EPS.
+    # Allow at most one cent of numerator and denominator rounding plus 1pp.
+    rounding_tolerance = 1.0 + 100.0 * (0.005 + abs(current / prior) * 0.005) / abs(prior)
+    if abs(implied - yoy) > rounding_tolerance:
+        return None
+    return {'quarter_eps': current, 'quarter_period': period,
+            'quarter_eps_yoy': yoy, 'quarter_eps_yoy_text': f'{yoy:+g}%',
+            'quarter_prior_year_eps': prior}
+
+
 def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
@@ -983,6 +1027,22 @@ def extract_metrics(text):
         if out.get(prefix + '_eps') is None and stacked.get(prefix + '_eps') is not None:
             for suffix in ('eps', 'period', 'eps_yoy'):
                 out[prefix + '_' + suffix] = stacked.get(prefix + '_' + suffix)
+
+    # Narrow verified correction: several MOPS notices with parenthesized
+    # (115第3季)/(114第3季) headers made a legacy fallback select the
+    # *last-year* column as this quarter's EPS.  Do not re-parse any
+    # correctly handled case, and do not guess when the original table cannot
+    # be independently verified.
+    verified_quarter = _verified_separate_mops_quarter(text)
+    if verified_quarter and out.get('quarter_period') == verified_quarter['quarter_period']:
+        observed = out.get('quarter_eps')
+        if (observed is not None
+                and abs(observed - verified_quarter['quarter_prior_year_eps']) < 1e-7
+                and abs(observed - verified_quarter['quarter_eps']) > 1e-7):
+            out['quarter_eps'] = verified_quarter['quarter_eps']
+            out['quarter_eps_yoy'] = verified_quarter['quarter_eps_yoy']
+            out['quarter_eps_yoy_text'] = verified_quarter['quarter_eps_yoy_text']
+            out['eps_parse_reason'] = 'verified_mops_prior_year_column_corrected'
 
     out["eps"] = out["monthly_eps"]
 
