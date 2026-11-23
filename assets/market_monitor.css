@@ -685,3 +685,77 @@ html[data-theme="dark"] #marketMonitor .mm-details-dialog .mm-detail-metric.mm-d
 #marketMonitor .mm-rebound-detail-group .mm-detail-metric>b{white-space:normal;text-align:right}
 html[data-theme="dark"] #marketMonitor .mm-rebound-trigger.is-confirmed{background:rgba(28,155,110,.23)!important;color:#91e1b9!important}
 @media(max-width:540px){#marketMonitor .mm-rebound-trigger{margin-left:0!important;font-size:11px!important;padding:5px 10px!important}#marketMonitor .mm-rebound-detail-group{padding:10px}}
+
+
+/* US dashboard 2026-11-23. Strictly scoped to #mm-us so TW dashboard is untouched. */
+#marketMonitor #mm-us{--us-line:var(--line,#dce2e9);--us-soft:var(--soft,#f5f7fa);--us-card:var(--card,#fff);color:var(--ink);max-width:1220px;margin:0 auto;padding-bottom:28px;min-width:0}
+#marketMonitor #mm-us .us-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:17px 0 8px}
+#marketMonitor #mm-us .us-eyebrow{font-size:10px;letter-spacing:.18em;color:#258aa1;font-weight:800}
+#marketMonitor #mm-us h2{font-size:clamp(21px,3vw,27px);font-weight:800;letter-spacing:-.025em;margin:5px 0 4px}
+#marketMonitor #mm-us .us-head p,#marketMonitor #mm-us .us-section-title p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+#marketMonitor #mm-us .us-refresh{background:transparent;border:1px solid var(--line);font-size:12px;font-weight:750;padding:8px 12px;border-radius:10px;flex:none}
+#marketMonitor #mm-us .us-status{font-size:11px;color:var(--muted);line-height:1.6;margin:9px 0 14px}
+#marketMonitor #mm-us .us-kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0 21px}
+#marketMonitor #mm-us .us-kpi{min-width:0;background:var(--us-card);border:1px solid var(--us-line);border-radius:12px;padding:12px 13px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;box-sizing:border-box}
+#marketMonitor #mm-us .us-kpi-name{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.005em}
+#marketMonitor #mm-us .us-kpi-value{font-size:clamp(18px,2.2vw,26px);line-height:1.15;color:var(--ink);font-weight:800;white-space:normal;font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-kpi.is-fear .us-kpi-value{color:#bf4452}
+#marketMonitor #mm-us .us-kpi-note{font-size:11px;line-height:1.4;color:var(--muted)}
+#marketMonitor #mm-us .us-kpi-date{margin-top:auto;padding-top:3px;color:var(--muted);font-size:10px;letter-spacing:0}
+#marketMonitor #mm-us .us-section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:18px 0 12px}
+#marketMonitor #mm-us .us-section-title h3{font-size:17px;letter-spacing:-.02em;margin:0 0 4px}
+#marketMonitor #mm-us .us-periods{display:flex;gap:3px;padding:3px;border:1px solid var(--line);background:var(--us-soft);border-radius:10px;white-space:nowrap}
+#marketMonitor #mm-us .us-periods button{min-height:30px;border:0;border-radius:7px;background:transparent;font-size:11px;font-weight:700;padding:6px 10px;color:var(--muted)}
+#marketMonitor #mm-us .us-periods button[aria-pressed=true]{background:var(--us-card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+#marketMonitor #mm-us .us-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#marketMonitor #mm-us .us-chart-card{min-width:0;border:1px solid var(--us-line);background:var(--us-card);border-radius:13px;padding:14px 13px 11px;box-sizing:border-box;overflow:hidden}
+#marketMonitor #mm-us .us-chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#marketMonitor #mm-us .us-chart-head h4{margin:0 0 4px;font-size:13px;line-height:1.4;font-weight:800}
+#marketMonitor #mm-us .us-chart-head small{display:block;font-size:10px;line-height:1.4;color:var(--muted)}
+#marketMonitor #mm-us .us-chart-readout{flex:none;white-space:nowrap;font-size:11px;font-weight:750;font-variant-numeric:tabular-nums;color:var(--muted)}
+#marketMonitor #mm-us .us-chart-legend,#marketMonitor #mm-us .us-chart-values{display:flex;flex-wrap:wrap;gap:9px 15px;align-items:center;font-size:11px;color:var(--muted)}
+#marketMonitor #mm-us .us-chart-legend{margin:10px 0 0}
+#marketMonitor #mm-us .us-chart-values{margin:1px 0 0;min-height:26px;font-size:12px;font-weight:800;color:var(--ink)}
+#marketMonitor #mm-us .us-chart-legend span,#marketMonitor #mm-us .us-chart-values span{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-chart-legend i,#marketMonitor #mm-us .us-chart-values i{display:inline-block;width:8px;height:8px;flex:none;border-radius:99px}
+#marketMonitor #mm-us .us-chart-viewport{width:100%;margin:5px 0 0;min-height:100px}
+#marketMonitor #mm-us .us-chart-viewport svg{display:block;width:100%;height:auto;aspect-ratio:800/245;min-height:155px;max-height:265px;overflow:visible;touch-action:pan-y;user-select:none}
+#marketMonitor #mm-us .us-chart-gridline{stroke:var(--us-line);stroke-width:1;stroke-dasharray:3 5}
+#marketMonitor #mm-us .us-chart-axis{font-size:12px;fill:var(--muted);font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-chart-hit{cursor:crosshair;touch-action:pan-y;outline:none}
+#marketMonitor #mm-us .us-chart-hit:focus-visible{stroke:#227ba5;stroke-width:2}
+#marketMonitor #mm-us .us-margin-section{margin-top:21px;padding-top:4px;border-top:1px solid var(--line)}
+#marketMonitor #mm-us .us-margin-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 11px}
+#marketMonitor #mm-us .us-margin-strip .us-kpi{padding:11px 13px}
+#marketMonitor #mm-us .us-margin-strip .us-kpi-value{font-size:19px}
+#marketMonitor #mm-us .us-month-panel{border:1px solid var(--line);border-radius:13px;padding:12px;background:var(--us-card)}
+#marketMonitor #mm-us .us-month-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 7px;font-size:12px}
+#marketMonitor #mm-us .us-month-top span{font-size:11px;color:var(--muted)}
+#marketMonitor #mm-us .us-month-panel .us-chart-card{border:0;padding:0;border-radius:0}
+#marketMonitor #mm-us .us-month-panel .us-chart-viewport svg{max-height:230px}
+#marketMonitor #mm-us .us-month-details,#marketMonitor #mm-us .us-method{border:1px solid var(--line);border-radius:12px;margin-top:10px;background:var(--us-card);color:var(--ink);overflow:hidden}
+#marketMonitor #mm-us .us-month-details summary,#marketMonitor #mm-us .us-method summary{padding:12px 14px;font-size:12px;font-weight:750;cursor:pointer;line-height:1.4}
+#marketMonitor #mm-us .us-month-scroll{overflow-x:auto;padding:0 10px 9px}
+#marketMonitor #mm-us .us-month-details table{border-collapse:collapse;width:100%;min-width:600px;font-size:12px;font-variant-numeric:tabular-nums}
+#marketMonitor #mm-us .us-month-details :is(th,td){border-bottom:1px solid var(--line);text-align:right;padding:9px 11px;white-space:nowrap}
+#marketMonitor #mm-us .us-month-details :is(th,td):first-child{text-align:left}
+#marketMonitor #mm-us .us-month-details th{color:var(--muted);font-size:11px;font-weight:700}
+#marketMonitor #mm-us .us-month-details tbody tr:last-child td{border-bottom:0}
+#marketMonitor #mm-us .us-method p{font-size:11px;line-height:1.75;color:var(--muted);padding:0 14px;margin:0 0 12px}
+#marketMonitor #mm-us .us-method a{color:#247a9e;text-decoration:underline}
+#marketMonitor #mm-us .us-empty{font-size:12px;color:var(--muted);padding:18px 8px}
+@media(max-width:900px){#marketMonitor #mm-us .us-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){
+#marketMonitor #mm-us .us-head{margin-top:12px}
+#marketMonitor #mm-us .us-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:19px}
+#marketMonitor #mm-us .us-kpi{padding:11px 12px}
+#marketMonitor #mm-us .us-kpi-value{font-size:22px}
+#marketMonitor #mm-us .us-section-title{display:block}
+#marketMonitor #mm-us .us-periods{margin-top:11px;width:max-content;max-width:100%;box-sizing:border-box}
+#marketMonitor #mm-us .us-periods button{padding:5px 10px;font-size:11px}
+#marketMonitor #mm-us .us-chart-grid{grid-template-columns:minmax(0,1fr);gap:9px}
+#marketMonitor #mm-us .us-chart-card{padding:12px 10px}
+#marketMonitor #mm-us .us-chart-head h4{font-size:13px}
+#marketMonitor #mm-us .us-margin-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#marketMonitor #mm-us .us-margin-strip .us-kpi-value{font-size:18px}
+}
