@@ -3,6 +3,7 @@ from sources import *
 from eps_news_backup import monthly_fallback
 
 import html
+import hashlib
 import json
 import math
 import os
@@ -13,6 +14,12 @@ from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
 VERSION = "2026-11-23-v41-verified-quarter-column"
+# Bump only when EPS parsing behavior changes. The first run of this revision
+# audits existing official notices once; subsequent runs parse only changed
+# source text or notices without a completed check for this revision.
+EPS_PARSE_REVISION = "2026-11-23-quarter-column-v2"
+EPS_PARSE_REVISION_KEY = "_eps_parse_revision"
+EPS_PARSE_FINGERPRINT_KEY = "_eps_parse_fingerprint"
 
 MOPS_BASES = (
     "https://mops.twse.com.tw",
@@ -2915,6 +2922,48 @@ def diagnostic_entry(item):
     }
 
 
+def reparse_official_self_reports_incrementally(items):
+    """Correct legacy EPS once; only reparse changed/new notices thereafter.
+
+    A content fingerprint is deliberately computed on the exact text sent to
+    extract_metrics, not the summary or scrape timestamp. Never stamp an
+    empty notice or a news-backup record, and never alter push reservations.
+    """
+    counters = {"examined": 0, "reparsed": 0, "cached": 0,
+                "empty": 0, "news_skipped": 0, "updated": 0}
+    for item in items:
+        if item.get('source') == 'news_backup':
+            counters['news_skipped'] += 1
+            continue
+        counters['examined'] += 1
+        parse_text = "\n".join(
+            x for x in (item.get('subject') or '', item.get('detail') or '')
+            if x
+        )
+        if not parse_text.strip():
+            counters['empty'] += 1
+            continue
+        fingerprint = hashlib.sha256(parse_text.encode('utf-8')).hexdigest()
+        if (item.get(EPS_PARSE_REVISION_KEY) == EPS_PARSE_REVISION
+                and item.get(EPS_PARSE_FINGERPRINT_KEY) == fingerprint):
+            counters['cached'] += 1
+            continue
+
+        parsed = extract_metrics(parse_text)
+        counters['reparsed'] += 1
+        old_score = int(item.get('monthly_eps') is not None) + int(item.get('quarter_eps') is not None)
+        new_score = int(parsed.get('monthly_eps') is not None) + int(parsed.get('quarter_eps') is not None)
+        if new_score >= old_score:
+            changed = any(item.get(key) != value for key, value in parsed.items())
+            item.update(parsed)
+            counters['updated'] += int(changed)
+        # Even when the legacy score wins, remember this verified attempt:
+        # a future source change or parser revision will trigger a fresh check.
+        item[EPS_PARSE_REVISION_KEY] = EPS_PARSE_REVISION
+        item[EPS_PARSE_FINGERPRINT_KEY] = fingerprint
+    return counters
+
+
 def main():
     history_path = (
         ROOT
@@ -3046,49 +3095,12 @@ def main():
         saved.values()
     )
 
-    # 保留原本重新解析 history
-    for item in all_candidates:
-        if item.get('source') == 'news_backup':
-            continue
-        parse_text = "\n".join(
-            x
-            for x in (
-                item.get("subject")
-                or "",
-                item.get("detail")
-                or "",
-            )
-            if x
-        )
-
-        parsed = extract_metrics(
-            parse_text
-        )
-
-        old_score = (
-            int(
-                item.get("monthly_eps")
-                is not None
-            )
-            + int(
-                item.get("quarter_eps")
-                is not None
-            )
-        )
-
-        new_score = (
-            int(
-                parsed.get("monthly_eps")
-                is not None
-            )
-            + int(
-                parsed.get("quarter_eps")
-                is not None
-            )
-        )
-
-        if new_score >= old_score:
-            item.update(parsed)
+    # First deployment audits legacy EPS once; daily runs reuse unchanged
+    # notices. This step never fetches historical notices from the network.
+    parse_started = time.perf_counter()
+    eps_parse_stats = reparse_official_self_reports_incrementally(all_candidates)
+    print('EPS incremental audit', eps_parse_stats,
+          'elapsed', f'{time.perf_counter() - parse_started:.2f}s')
 
     enrich_cumulative_self_reports(all_candidates)
 
