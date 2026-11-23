@@ -67,7 +67,7 @@
   }
 </style>
 
-<link rel="stylesheet" href="./assets/market_monitor.css?v=20261123-ma60-divergence-colors-v2">
+<link rel="stylesheet" href="./assets/market_monitor.css?v=20261123-v12-rebound-deleverage-v1">
 <style id="site-dark-palette-20261020">
 /* 深色模式統一為參考網站的石墨灰色系；淺色模式不受影響 */
 html[data-theme="dark"]{
@@ -208,9 +208,9 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 <span class="mm-logic-arrow">▶</span><span>外資與融資分項規則</span>
 </button>
 <div id="marketMonitorLogicContent" class="mm-logic-content">
-<p>黃色底＝警告；紅色底＝危險；正常不加底色。燈號是原試算表指標，不是行情預測</p>
+<p>黃色底＝警告；紅色底＝危險。新增綠色底＝融資當日確實下降且相對加權指數 ≤ −2pp，代表明顯去槓桿；紅黃警戒優先於綠底。未達條件不加底色。分項燈號並非行情預測</p>
 <p>外資：Z＝（近5日平均－前15日平均）÷近20日樣本標準差。P10＝近10日賣超金額絕對值總和÷近10日全部金額絕對值總和<br>黃：Z≤−0.8且近5日平均&lt;0，或P10≥70%；紅：Z≤−1.1且近5日平均&lt;0，或P10≥80%，紅燈優先。原檔未註明標準差種類，此版採STDEV.S</p>
-<p>每日融資相對增幅＝融資金額餘額日增幅－加權指數日漲跌幅（百分點）<br>燈號另用累計報酬之差：黃＝5日≥3.5或20日≥7.5百分點；紅＝5日≥5或20日≥9百分點。不是將每日差值相加</p>
+<p>每日融資相對增幅＝融資金額餘額日增幅－加權指數日漲跌幅（百分點）<br>燈號另用累計報酬之差：黃＝5日≥3.5或20日≥7.5百分點；紅＝5日≥5或20日≥9百分點。不是將每日差值相加。盤勢恢復使用獨立規則：過去15日曾有 V12 紅燈、廣度5日改善至少15pp、最近10日曾有融資5日相對指數 ≤ −3pp；最多觀察確認後10日，轉弱僅為警示，不改原本 V12 分數與燈號</p>
 <p>外資與融資均達黃燈以上且其中一項為紅，當日資金交集為紅。缺資料顯示資料不足，不補零。跨月份連續計算，月份選單只篩選顯示</p>
 <p>外資採證交所實際買賣金額（上市全市場），不是個股收盤價估算值；融資採同日上市＋上櫃金額餘額，先加總再計算 1、5、20 日增幅，與加權指數比較。任一市場缺資料，該日合計及受影響的燈號顯示待補。未來月份保留空白</p>
 </div>
@@ -306,7 +306,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
   if (section && section.classList.contains("page") && typeof page === "function") page(target);
 })();
 </script>
-<script src="./assets/market_monitor.js?v=20261123-ma60-divergence-colors-v2"></script>
+<script src="./assets/market_monitor.js?v=20261123-v12-rebound-deleverage-v1"></script>
 <script>
 (function(){
   const wrap = document.getElementById("mobilePageNav");
