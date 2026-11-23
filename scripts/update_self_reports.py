@@ -13,11 +13,11 @@ import unicodedata
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlencode, urlparse
 
-VERSION = "2026-11-23-v41-verified-quarter-column"
+VERSION = "2026-11-23-v42-mops-blocks-and-corrections"
 # Bump only when EPS parsing behavior changes. The first run of this revision
 # audits existing official notices once; subsequent runs parse only changed
 # source text or notices without a completed check for this revision.
-EPS_PARSE_REVISION = "2026-11-23-quarter-column-v2"
+EPS_PARSE_REVISION = "2026-11-23-mops-blocks-v3"
 EPS_PARSE_REVISION_KEY = "_eps_parse_revision"
 EPS_PARSE_FINGERPRINT_KEY = "_eps_parse_fingerprint"
 
@@ -857,6 +857,110 @@ def _verified_separate_mops_quarter(text):
             'quarter_prior_year_eps': prior}
 
 
+def _verified_mops_attention_eps_blocks(text):
+    """Conservative MOPS attention table reader for two explicit layouts.
+
+    Handles separately headed (1)單月/(2)單季 tables and the TWSE
+    '科目 最近一個月/最近一季' format. Never reads rolling-four-quarter EPS.
+    It will not infer values from narratives, an unlabeled row or an
+    incomplete/ambiguous table. The matched EPS row itself is authoritative.
+    """
+    source = normalize_for_parse(text)
+    head = re.search(r'財務業務資訊|財務資訊', source)
+    if not head:
+        return {}
+    body = source[head.end():]
+    end = re.search(r'\s5\s*[.、]\s*有無|\s7\s*[.、]\s*完整財務', body)
+    if end:
+        body = body[:end.start()]
+
+    # Two alternative heading formats; don't combine them across a notice.
+    blocks = []
+    sep_month = re.search(r'\(\s*1\s*\)\s*單月\s*[:：]?', body)
+    sep_quarter = re.search(r'\(\s*2\s*\)\s*單季\s*[:：]?', body)
+    sep_rolling = re.search(r'\(\s*3\s*\)\s*最近四季累計', body)
+    if (sep_month and sep_quarter and sep_rolling and
+            sep_month.start() < sep_quarter.start() < sep_rolling.start()):
+        blocks = [
+            ('monthly', body[sep_month.end():sep_quarter.start()], 'triplet'),
+            ('quarter', body[sep_quarter.end():sep_rolling.start()], 'triplet'),
+        ]
+    else:
+        m = re.search(r'科目\s*最近一個?月', body)
+        q = re.search(r'科目\s*最近一季', body)
+        if m and q and m.start() < q.start():
+            blocks = [
+                ('monthly', body[m.end():q.start()], 'paired'),
+                ('quarter', body[q.end():], 'paired'),
+            ]
+    if len(blocks) != 2:
+        return {}
+
+    output = {}
+    for kind, block, style in blocks:
+        # Period must be in this block, not inferred from the announcement day.
+        period = (_find_month_period(block) if kind == 'monthly'
+                  else _find_quarter_period(block))
+        if not period:
+            return {}
+        # Exactly one EPS row per section, with unit and optional short
+        # adjustment annotation; reject ambiguous multiple EPS labels.
+        markers = list(re.finditer(
+            r'每股\s*(?:稅後)?\s*(?:基本)?\s*(?:盈餘|損益)', block, re.I))
+        if len(markers) != 1:
+            return {}
+        tail = block[markers[0].end():]
+        # Optional (元) and (除權後追溯調整), at most two annotations.
+        for _ in range(3):
+            note = re.match(r'^\s*[（(]\s*([^（）()]{1,28})\s*[）)]', tail)
+            if not note:
+                break
+            value = re.sub(r'\s+', '', note.group(1))
+            if value not in ('元', '新台幣元', '追溯調整', '追朔調整',
+                             '除權後追溯調整', '除權後追朔調整', '重編後', '調整後'):
+                # Parenthesized negative EPS is the value, not an annotation.
+                if re.fullmatch(r'[+-]?\d[\d,]*(?:\.\d+)?', value):
+                    break
+                return {}
+            tail = tail[note.end():]
+        # No jumping ahead to other lines, and do not consume an extra column.
+        number = r'(\([+-]?\d[\d,]*(?:\.\d+)?\)|[+-]?\d[\d,]*(?:\.\d+)?)'
+        percentage = r'(\([+-]?\d[\d,]*(?:\.\d+)?\s*%\)|[+-]?\d[\d,]*(?:\.\d+)?\s*%)'
+        if style == 'triplet':
+            pattern = r'^\s*'+number+r'\s+'+number+r'\s+'+percentage+r'(?!\S)'
+        else:
+            pattern = r'^\s*'+number+r'\s+'+percentage+r'(?!\S)'
+        m = re.match(pattern, tail)
+        if not m:
+            return {}
+        current = _number(m.group(1))
+        yoy_raw = m.group(3 if style == 'triplet' else 2).replace(' ', '')
+        if yoy_raw.startswith('(') and yoy_raw.endswith(')'):
+            yoy_raw = '-' + yoy_raw[1:-1]
+        yoy = _number(yoy_raw, growth=True)
+        if current is None or yoy is None:
+            return {}
+        if style == 'triplet':
+            previous = _number(m.group(2))
+            if previous in (None, 0):
+                # Still allow a well-formed EPS row with zero prior comparison
+                # but do not claim to have verified its percentage.
+                if previous is None:
+                    return {}
+            else:
+                implied = 100.0 * (current - previous) / abs(previous)
+                tolerance = 1.0 + 100.0 * (0.005 + abs(current/previous)*0.005) / abs(previous)
+                if abs(implied-yoy) > tolerance:
+                    return {}
+        output[kind+'_eps'] = current
+        output[kind+'_period'] = period
+        output[kind+'_eps_yoy'] = yoy
+        output[kind+'_eps_yoy_text'] = f'{yoy:+g}%'
+        if style == 'triplet':
+            output[kind+'_prior_year_eps'] = previous
+    return output
+
+
 def extract_metrics(text):
     text = normalize_for_parse(text)
     out = _empty_metrics()
@@ -1050,6 +1154,21 @@ def extract_metrics(text):
             out['quarter_eps_yoy'] = verified_quarter['quarter_eps_yoy']
             out['quarter_eps_yoy_text'] = verified_quarter['quarter_eps_yoy_text']
             out['eps_parse_reason'] = 'verified_mops_prior_year_column_corrected'
+
+    # Separate verified MOPS attention blocks; preserve legacy successes.
+    # Fill genuinely absent values, or correct only a proven last-year-column
+    # mistake. Unrelated/ambiguous values are never overwritten.
+    official_blocks = _verified_mops_attention_eps_blocks(text)
+    if official_blocks:
+        for kind in ('monthly', 'quarter'):
+            actual = official_blocks[kind+'_eps']
+            old = out.get(kind+'_eps')
+            prior = official_blocks.get(kind+'_prior_year_eps')
+            same_period = out.get(kind+'_period') in (None, official_blocks[kind+'_period'])
+            if same_period and (old is None or
+                    (prior is not None and abs(old-prior) < 1e-7 and abs(old-actual) > 1e-7)):
+                for suffix in ('eps','period','eps_yoy','eps_yoy_text'):
+                    out[kind+'_'+suffix] = official_blocks[kind+'_'+suffix]
 
     out["eps"] = out["monthly_eps"]
 
@@ -2964,6 +3083,34 @@ def reparse_official_self_reports_incrementally(items):
     return counters
 
 
+def list_visible_self_reports(all_candidates):
+    """Only display the latest explicit same-day correction; keep both in history."""
+    display_items = [
+        item
+        for item in all_candidates
+        if attention_report_for_site(item)
+    ]
+    # A same-day MOPS correction supersedes the original *on the website*.
+    # Keep both official notices in history and in the delivery ledger.
+    # The period keys prevent suppressing a separate valid company filing.
+    correction_keys = {
+        (str(x.get('ticker')), str(x.get('publish_date')),
+         str(x.get('monthly_period')), str(x.get('quarter_period')))
+        for x in display_items
+        if x.get('source') == 'mops_ajax'
+        and re.search(r'更正公告|更正.*(?:財務業務|交易資訊)', str(x.get('subject') or ''))
+    }
+    display_items = [
+        x for x in display_items
+        if (x.get('source') != 'mops_ajax'
+            or re.search(r'更正公告|更正.*(?:財務業務|交易資訊)', str(x.get('subject') or ''))
+            or (str(x.get('ticker')), str(x.get('publish_date')),
+                str(x.get('monthly_period')), str(x.get('quarter_period')))
+               not in correction_keys)
+    ]
+    return display_items
+
+
 def main():
     history_path = (
         ROOT
@@ -3137,11 +3284,7 @@ def main():
         reverse=True,
     )
 
-    display_items = [
-        item
-        for item in all_candidates
-        if attention_report_for_site(item)
-    ]
+    display_items = list_visible_self_reports(all_candidates)
 
     parse_failed = [
         diagnostic_entry(item)
