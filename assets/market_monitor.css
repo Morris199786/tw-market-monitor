@@ -662,12 +662,6 @@ html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cbad :is(.mm-tabl
 #marketMonitor .mm-composite-table .mm-cgood .mm-margin-num,
 #marketMonitor .mm-composite-table .mm-cgood .mm-margin-relative{color:#11794f!important;font-weight:760!important}
 #marketMonitor .mm-margin-relative{margin-top:3px;padding-top:4px;border-top:1px solid var(--line);font-size:10px;line-height:1.35;text-align:right;color:var(--muted);white-space:nowrap}
-#marketMonitor .mm-composite-table .mm-recovery-cell{min-width:132px!important;width:132px!important;text-align:center!important}
-#marketMonitor .mm-recovery-pill{display:inline-block;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:760;white-space:nowrap}
-#marketMonitor .mm-recovery-ok{background:rgba(23,147,97,.13);color:#13794e}
-#marketMonitor .mm-recovery-weak{background:rgba(209,144,40,.15);color:#9e6413}
-#marketMonitor .mm-recovery-none{color:var(--muted)}
-#marketMonitor .mm-recovery-date{display:block;margin-top:5px;font-size:10px;color:var(--muted);white-space:nowrap}
 #marketMonitor .mm-details-dialog .mm-detail-metric.mm-detail-positive>b{color:#148154!important;font-weight:800!important}
 #marketMonitor .mm-history-recovery{margin:13px 0!important;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
 #marketMonitor .mm-history-recovery>summary{font-size:12px;font-weight:750}
@@ -678,5 +672,31 @@ html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cbad :is(.mm-tabl
 html[data-theme="dark"] #marketMonitor .mm-composite-table tbody td.mm-cgood{background:rgba(32,151,107,.19)!important}
 html[data-theme="dark"] #marketMonitor .mm-composite-table .mm-cgood :is(.mm-margin-num,.mm-margin-relative){color:#72dcae!important}
 html[data-theme="dark"] #marketMonitor .mm-details-dialog .mm-detail-metric.mm-detail-positive>b{color:#72dcae!important}
-html[data-theme="dark"] #marketMonitor .mm-recovery-ok{background:rgba(23,147,97,.22);color:#83e0b5}
-html[data-theme="dark"] #marketMonitor .mm-recovery-weak{background:rgba(209,144,40,.23);color:#f1c17c}
+
+/* Professional two-factor market internals status within the unchanged V12 risk card. */
+#marketMonitor .mm-risk-recovery{margin-top:14px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:12px;line-height:1.5}
+#marketMonitor .mm-risk-recovery-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#marketMonitor .mm-risk-recovery-heading>strong{font-size:13px!important;color:var(--ink);font-weight:800;letter-spacing:.01em}
+#marketMonitor .mm-risk-recovery-status{display:inline-flex;align-items:center;min-height:27px;padding:4px 10px;border-radius:7px;font-size:11px;font-weight:800;letter-spacing:.005em;background:rgba(119,133,151,.13);color:var(--muted);max-width:100%;white-space:normal}
+#marketMonitor .mm-risk-recovery-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px}
+#marketMonitor .mm-risk-recovery-fact{min-width:0;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:var(--card)}
+#marketMonitor .mm-risk-recovery-fact .mm-recovery-fact-label{display:block;font-size:11px;color:var(--muted);font-weight:650}
+#marketMonitor .mm-risk-recovery-fact>b{display:block;margin:4px 0 3px;color:var(--ink);font-size:14px!important;font-weight:800;line-height:1.25}
+#marketMonitor .mm-risk-recovery-fact>small{display:block;color:var(--muted);font-size:10px;font-weight:550;line-height:1.45;overflow-wrap:anywhere}
+#marketMonitor .mm-risk-recovery-note{margin:9px 0 0;color:var(--ink);font-size:11px;line-height:1.55}
+#marketMonitor .mm-risk-recovery-foot{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
+#marketMonitor .mm-risk-recovery.is-risk .mm-risk-recovery-status{background:rgba(211,65,75,.13);color:#b53c47}
+#marketMonitor .mm-risk-recovery.is-deleveraging .mm-risk-recovery-status{background:rgba(226,133,51,.15);color:#aa601c}
+#marketMonitor .mm-risk-recovery.is-flat .mm-risk-recovery-status{background:rgba(201,147,47,.15);color:#896316}
+#marketMonitor .mm-risk-recovery.is-breadth .mm-risk-recovery-status{background:rgba(52,121,199,.14);color:#286bab}
+#marketMonitor .mm-risk-recovery.is-sync .mm-risk-recovery-status{background:rgba(20,144,94,.14);color:#12794e}
+#marketMonitor .mm-risk-recovery.is-neutral .mm-risk-recovery-status,#marketMonitor .mm-risk-recovery.is-pending .mm-risk-recovery-status,#marketMonitor .mm-risk-recovery.is-mild .mm-risk-recovery-status,#marketMonitor .mm-risk-recovery.is-soft .mm-risk-recovery-status{background:rgba(119,133,151,.13);color:#687686}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery{background:rgba(255,255,255,.02)}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery-fact{background:rgba(255,255,255,.02)}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-risk .mm-risk-recovery-status{background:rgba(211,65,75,.22);color:#ffb1bb}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-deleveraging .mm-risk-recovery-status{background:rgba(226,133,51,.22);color:#ffc78a}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-flat .mm-risk-recovery-status{background:rgba(201,147,47,.22);color:#f4d280}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-breadth .mm-risk-recovery-status{background:rgba(52,121,199,.25);color:#a6ceff}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-sync .mm-risk-recovery-status{background:rgba(20,144,94,.24);color:#81d7ad}
+html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-neutral .mm-risk-recovery-status,html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-mild .mm-risk-recovery-status,html[data-theme="dark"] #marketMonitor .mm-risk-recovery.is-soft .mm-risk-recovery-status{color:#c7cfda}
+@media(max-width:420px){#marketMonitor .mm-risk-recovery{padding:11px}#marketMonitor .mm-risk-recovery-fact{padding:9px 8px}#marketMonitor .mm-risk-recovery-fact>b{font-size:12px!important}#marketMonitor .mm-risk-recovery-fact>small{font-size:10px}}
