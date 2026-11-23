@@ -1,52 +1,13 @@
 {
-  "updated_at": "2026-11-23T16:42+08:00",
+  "updated_at": "2026-11-23T17:29+08:00",
   "monitor_start_date": "2026-09-26",
-  "filter_version": "2026-11-18-v40-restated-eps-label",
+  "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 390,
-    "parsed_count": 176,
-    "parse_failed_count": 199,
+    "candidate_count": 391,
+    "parsed_count": 174,
+    "parse_failed_count": 196,
     "parse_failed": [
-      {
-        "ticker": "6456",
-        "name": "GIS-KY",
-        "publish_date": "2026-11-23",
-        "publish_time": "16:20:07",
-        "subject": "6456 GIS-KY 115/11/23 16:20:07 因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解 (更正公告)",
-        "source": "mops_ajax",
-        "source_error": "",
-        "eps_parse_status": "failed",
-        "eps_parse_reason": "eps_values_not_parsed",
-        "monthly_eps": null,
-        "quarter_eps": null
-      },
-      {
-        "ticker": "6456",
-        "name": "GIS-KY",
-        "publish_date": "2026-11-23",
-        "publish_time": "16:00:05",
-        "subject": "6456 GIS-KY 115/11/23 16:00:05 因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
-        "source": "mops_ajax",
-        "source_error": "",
-        "eps_parse_status": "failed",
-        "eps_parse_reason": "eps_values_not_parsed",
-        "monthly_eps": null,
-        "quarter_eps": null
-      },
-      {
-        "ticker": "7856",
-        "name": "漢測",
-        "publish_date": "2026-11-23",
-        "publish_time": "14:50:42",
-        "subject": "7856 漢測 115/11/23 14:50:42 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解",
-        "source": "mops_ajax",
-        "source_error": "",
-        "eps_parse_status": "failed",
-        "eps_parse_reason": "eps_values_not_parsed",
-        "monthly_eps": null,
-        "quarter_eps": null
-      },
       {
         "ticker": "3226",
         "name": "龍鋒",
@@ -2600,35 +2561,36 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 12,
-      "self_reports": 11,
+      "rows": 13,
+      "self_reports": 12,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 123,
-          "hits": 12
+          "rows": 152,
+          "hits": 13
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 123,
+          "rows": 152,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 123,
+          "rows": 152,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x76d59eaecb60>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2655,33 +2617,19 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 124,
+          "rows": 152,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 125,
+          "rows": 152,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
           "rows": 0,
           "hits": 0
@@ -2691,6 +2639,20 @@
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
           "error": "ConnectionError(MaxRetryError('HTTPSConnectionPool(host=\\'mops.twse.com.tw\\', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by NewConnectionError(\"HTTPSConnection(host=\\'mops.twse.com.tw\\', port=443): Failed to establish a new connection: [Errno 111] Connection refused\"))'))"
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 0,
+          "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "openapi_rescue_pool",
@@ -2756,6 +2718,32 @@
   "items": [
     {
       "market": "",
+      "ticker": "2486",
+      "name": "一詮",
+      "publish_date": "2026-11-23",
+      "publish_time": "17:11:24",
+      "subject": "2486 一詮 115/11/23 17:11:24 本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布有關財務業務等重大訊息，以利投資人區別瞭解。",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 2486 一詮 公司提供 序號 1 發言日期 115/11/23 發言時間 17:11:24 發言人 劉秀興 發言人職稱 副總經理 發言人電話 2299-0001 主旨 本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布有關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/11/23 說明 1.事實發生日:115/11/23 2.發生緣由:依臺灣證券交易所股份有限公司通知辦理公告 3.公司每股面額（元）:10元 4.財務業務資訊（倘公司股票每股面額非10元，每股盈餘、每股淨值及每股股利等，與 其他每股面額10元之公司可能無法直接比較，建議投資人參考公開資訊觀測站公佈之 財務比率分析資料，包含股價淨值比、股東權益報酬率、股利殖利率及本益比等，以 保障自身權益）: 期間 (月) (季) 最近四季累計 ------ ------------------- ------------------- --------------- 最近一月 與去年 最近一季 與去年 114年第四季至 115年第三季 科目 115年10月 同期增減% 115年第3季 同期增減% 自結數 核閱數 核閱數 ------ ------------ ------- ---------------------- -------------- 營業收入 848 67.92% 2,301 48.26% 7,530 (百萬) 稅前淨利 94 394.74% 203 147.56% 526 (百萬) 歸屬母公司業主淨利 82 1071.43% 162 217.65% 387 (百萬) 每股盈餘 0.35 1066.67% 0.67 204.55% 1.65 (元) 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 6.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 7.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 8.其他應敘明事項:無 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2486&SPOKE_DATE=20261123&SPOKE_TIME=171124&SEQ_NO=1&skey=2486202611231",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": 0.35,
+      "monthly_eps": 0.35,
+      "monthly_eps_yoy": 1066.67,
+      "monthly_period": "2026-10",
+      "quarter_eps": 0.67,
+      "quarter_eps_yoy": 204.55,
+      "quarter_period": "2026-Q3",
+      "monthly_eps_yoy_text": "1066.67%",
+      "quarter_eps_yoy_text": "204.55%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "65b3a0b1a09da1b5d8a325e1a5570bf63f5d29822445a80296b94cf487c3b1dc"
+    },
+    {
+      "market": "",
       "ticker": "2243",
       "name": "宏旭-KY",
       "publish_date": "2026-11-23",
@@ -2776,7 +2764,9 @@
       "monthly_eps_yoy_text": "48%",
       "quarter_eps_yoy_text": "236%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "7ce6f62f3835e118f764b363e86f9ebf3f48eda0d3240bd25e5ffeb61d9e1a38"
     },
     {
       "market": "",
@@ -2790,17 +2780,19 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6456&SPOKE_DATE=20261123&SPOKE_TIME=162007&SEQ_NO=2&skey=6456202611232",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
-      "monthly_eps": null,
-      "monthly_eps_yoy": null,
+      "eps": -0.7,
+      "monthly_eps": -0.7,
+      "monthly_eps_yoy": -536.36,
       "monthly_period": "2026-10",
-      "quarter_eps": null,
-      "quarter_eps_yoy": null,
+      "quarter_eps": -2.17,
+      "quarter_eps_yoy": -648.28,
       "quarter_period": "2026-Q3",
-      "monthly_eps_yoy_text": null,
-      "quarter_eps_yoy_text": null,
-      "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "monthly_eps_yoy_text": "-536.36%",
+      "quarter_eps_yoy_text": "-648.28%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "55e8e6f40b15d173b93e6d7bff701e490a3f781c1556d79d8719902493473cdd"
     },
     {
       "market": "",
@@ -2824,31 +2816,9 @@
       "monthly_eps_yoy_text": "102.77%",
       "quarter_eps_yoy_text": "-99.92%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
-    },
-    {
-      "market": "",
-      "ticker": "6456",
-      "name": "GIS-KY",
-      "publish_date": "2026-11-23",
-      "publish_time": "16:00:05",
-      "subject": "6456 GIS-KY 115/11/23 16:00:05 因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解",
-      "detail": "公開資訊觀測站 本資料由 (上市公司) 6456 GIS-KY 公司提供 序號 1 發言日期 115/11/23 發言時間 16:00:05 發言人 林原平 發言人職稱 財務長 發言人電話 037-777939 主旨 因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解 符合條款 第 51 款 事實發生日 115/11/23 說明 1.事實發生日:115/11/23 2.發生緣由:依據臺灣證券交易所股份有限公司通知辦理公告 3.公司每股面額（元）:10元 4.財務業務資訊（倘公司股票每股面額非10元，每股盈餘、每股淨值及每股股利等，與 其他每股面額10元之公司可能無法直接比較，建議投資人參考公開資訊觀測站公佈之 財務比率分析資料，包含股價淨值比、股東權益報酬率、股利殖利率及本益比等，以 保障自身權益）: 科目 最近一個月 與去年同期 115年10月 增減(%) 合併自結數 ----------- ---------- 營業收入(百萬) 13,307 167.48% 稅前淨利(百萬) -278 434.62% 歸屬母公司業主淨利(百萬) -233 497.44% 每股盈餘(元) -0.7 536.36% 科目 最近一季 與去年同期 114年第4季至 115年第3季 增減(%) 115年第3季 合併查核數 合併查核數 ------------ ---------- ------------- 營業收入(百萬) 14,456 -10.45% 57,451 稅前淨利(百萬) -669 -3,816.67% -1,536 歸屬母公司業主 -725 655.21% -2,120 每股盈餘(元) -2.17 648.00% -6.35 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 6.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 7.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 8.其他應敘明事項: (1)115年10月較去年同期變化說明:主因10月增加客戶手機新產品，營收較去年同期 增加。但因產品組合變化導致毛利率下降，因此稅前淨利、歸屬母公司淨利及每股 盈餘下降。 (2) 115年第三季較去年同期變化說明:主因115年第三季營收較去年同期減少，導致 毛利率下降，且營業費用與去年同期相當，因此稅前淨利、歸屬母公司淨利及每股 盈餘下降。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
-      "source": "mops_ajax",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6456&SPOKE_DATE=20261123&SPOKE_TIME=160005&SEQ_NO=1&skey=6456202611231",
-      "source_error": "",
-      "match_reason": "attention_trading",
-      "eps": null,
-      "monthly_eps": null,
-      "monthly_eps_yoy": null,
-      "monthly_period": "2026-10",
-      "quarter_eps": null,
-      "quarter_eps_yoy": null,
-      "quarter_period": "2026-Q3",
-      "monthly_eps_yoy_text": null,
-      "quarter_eps_yoy_text": null,
-      "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a5c819cc15fda055a72e1dbabced7c6c0be165bd496d485466f083c3bf462fb0"
     },
     {
       "market": "",
@@ -2872,7 +2842,9 @@
       "monthly_eps_yoy_text": "650.00%",
       "quarter_eps_yoy_text": "-100.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b5426bc72a59a4cb65a2c7bf0942d4f72bc35acb60764b4e89d7795b1ceef72a"
     },
     {
       "market": "",
@@ -2896,7 +2868,9 @@
       "monthly_eps_yoy_text": "104.59%",
       "quarter_eps_yoy_text": "51.16%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "25498aa18bd551efb1ae6ce3daf9e27a07a307364305608b874dafd9dc58d992"
     },
     {
       "market": "",
@@ -2908,7 +2882,7 @@
       "detail": "公開資訊觀測站 本資料由 (上市公司) 6830 汎銓 公司提供 序號 1 發言日期 115/11/23 發言時間 15:47:16 發言人 宋建宏 發言人職稱 總經理室協理 發言人電話 03-666-3298 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/11/23 說明 1.事實發生日:115/11/23 2.發生緣由:依據臺灣證券交易所股份有限公司通知辦理。 3.公司每股面額（元）:10 4.財務業務資訊（倘公司股票每股面額非10元，每股盈餘、每股淨值及每股股利等，與 其他每股面額10元之公司可能無法直接比較，建議投資人參考公開資訊觀測站公佈之 財務比率分析資料，包含股價淨值比、股東權益報酬率、股利殖利率及本益比等，以 保障自身權益）: 期間 ( 月 ) ( 季 ) (最近四季累計) ======== ======================= ======================= ================== 最近一月 與去年同 最近一季 與去年同 114年第4季至115年 115年10月 期增減 % 115年第3季 期增減 % 第3季 科目 (IFRS合併自結數) (IFRS合併核閱數) (IFRS合併(查)核閱數) ======== =============== ======= ============== ======== ================== 營業收入 254.80 48.51 759.39 31.63 2565.47 (百萬) 稅前淨利(損) 28.75 213.90 95.32 88.95 97.58 (百萬) 歸屬母公司業 26.45 191.54 85.40 179.75 68.49 主淨利(損) (百萬) 每股盈餘 0.43 177.94 1.56 164.41 1.22 (元) 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 6.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 7.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 8.其他應敘明事項:無 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
       "source": "mops_ajax",
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6830&SPOKE_DATE=20261123&SPOKE_TIME=154716&SEQ_NO=1&skey=6830202611231",
-      "source_error": "",
+      "source_error": "https://mopsov.twse.com.tw:ConnectTimeout;https://mops.twse.com.tw:detail_validation_failed",
       "match_reason": "attention_trading",
       "eps": 0.43,
       "monthly_eps": 0.43,
@@ -2920,7 +2894,9 @@
       "monthly_eps_yoy_text": "+177.94%",
       "quarter_eps_yoy_text": "+164.41%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a4788629ece18c6527cf031fba8358cdca90f01c9b1a68ba839e7fe97bb27f4c"
     },
     {
       "market": "",
@@ -2938,13 +2914,15 @@
       "monthly_eps": 3.59,
       "monthly_eps_yoy": 96.0,
       "monthly_period": "2026-10",
-      "quarter_eps": 4.58,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 11.53,
+      "quarter_eps_yoy": 152.0,
       "quarter_period": "2026-Q3",
       "monthly_eps_yoy_text": "96%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+152%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "667425a7b206ee17dae3e59f0ab4ce895a6f6cf6c9987cb4d851a7e4ff83eaa7"
     },
     {
       "market": "",
@@ -2958,17 +2936,19 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7856&SPOKE_DATE=20261123&SPOKE_TIME=145042&SEQ_NO=3&skey=7856202611233",
       "source_error": "",
       "match_reason": "attention_trading",
-      "eps": null,
-      "monthly_eps": null,
-      "monthly_eps_yoy": null,
+      "eps": 5.46,
+      "monthly_eps": 5.46,
+      "monthly_eps_yoy": 397.0,
       "monthly_period": "2026-10",
-      "quarter_eps": null,
-      "quarter_eps_yoy": null,
+      "quarter_eps": -10.23,
+      "quarter_eps_yoy": -519.0,
       "quarter_period": "2026-Q3",
-      "monthly_eps_yoy_text": null,
-      "quarter_eps_yoy_text": null,
-      "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "monthly_eps_yoy_text": "+397%",
+      "quarter_eps_yoy_text": "-519%",
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "cf6c2aafc50fa10b61b71d97fe576a21e39759d6dc0a7ff3f2b7498f3343108f"
     },
     {
       "market": "",
@@ -2992,7 +2972,9 @@
       "monthly_eps_yoy_text": "-2%",
       "quarter_eps_yoy_text": "18%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ec0fa80544924002d97ca714e671f8c783901445f3d057dfcde7fb10c337ec4b"
     },
     {
       "market": "",
@@ -3016,7 +2998,9 @@
       "monthly_eps_yoy_text": "-131.88%",
       "quarter_eps_yoy_text": "-107.51%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b4191f560561cd715cc68ad482568f3dde17ea9936ed89b1b60529fef6272679"
     },
     {
       "market": "",
@@ -3040,7 +3024,9 @@
       "monthly_eps_yoy_text": "-503%",
       "quarter_eps_yoy_text": "-34%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a13e5bc1a13c81a87302fd0a39b9a9eedc8331e7f29c29a05c084ca4cd469f82"
     },
     {
       "market": "",
@@ -3064,7 +3050,9 @@
       "monthly_eps_yoy_text": "750.00%",
       "quarter_eps_yoy_text": "14.89%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "d1f9e1b14b51981572a83585ef71d6b995ab3c34951a7d7d0f1c90dfb59a4925"
     },
     {
       "market": "",
@@ -3088,7 +3076,9 @@
       "monthly_eps_yoy_text": "+168.66%",
       "quarter_eps_yoy_text": "+73.21%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "7373eece77d7e711e08001c798109526340160e084ac71d72a89eaf281521a0f"
     },
     {
       "market": "",
@@ -3112,7 +3102,9 @@
       "monthly_eps_yoy_text": "126%",
       "quarter_eps_yoy_text": "108%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5dd3235a91bcd0a3f8d5eeda11489701f8e7c488592b19d5a2ba2e8712e98fa8"
     },
     {
       "market": "",
@@ -3136,7 +3128,9 @@
       "monthly_eps_yoy_text": "158.24%",
       "quarter_eps_yoy_text": "277.60%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "4ded2342461eae238355b110e270370aca4168dd22eba33df86da94fef48c7b8"
     },
     {
       "market": "",
@@ -3160,7 +3154,9 @@
       "monthly_eps_yoy_text": "385.11%",
       "quarter_eps_yoy_text": "355.36%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1600cedff86c8e196c9c9ee6264dca5e9fa3b40b6df313e67645be554649bce7"
     },
     {
       "market": "",
@@ -3184,7 +3180,9 @@
       "monthly_eps_yoy_text": "+367.00%",
       "quarter_eps_yoy_text": "+525.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "e8fef6cc012a83de19f7ffa812de72701103ef61aec1adda427bc4ceccbec2e1"
     },
     {
       "market": "",
@@ -3202,13 +3200,15 @@
       "monthly_eps": 0.0939,
       "monthly_eps_yoy": 222.58,
       "monthly_period": "2026-10",
-      "quarter_eps": 0.0029,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.0611,
+      "quarter_eps_yoy": 2006.9,
       "quarter_period": "2026-Q3",
       "monthly_eps_yoy_text": "222.58%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+2006.9%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b9143249786586b85213eb8056079e22a969cfb2872410dfd747f866ee150ab6"
     },
     {
       "market": "",
@@ -3232,7 +3232,9 @@
       "monthly_eps_yoy_text": "431%",
       "quarter_eps_yoy_text": "343%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "fba1535ca1c2da5a00e0a6031ef54d76e8d3f8d45ea08617ea65f7bf92482821"
     },
     {
       "market": "",
@@ -3256,7 +3258,9 @@
       "monthly_eps_yoy_text": "89%",
       "quarter_eps_yoy_text": "99%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "cd140aa4d865670d7238ad62f0e4528271294e213a8f090fa22a26f95f530347"
     },
     {
       "market": "",
@@ -3280,7 +3284,9 @@
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "failed",
-      "eps_parse_reason": "eps_values_not_parsed"
+      "eps_parse_reason": "eps_values_not_parsed",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "201dcb29179621d4decf7116aaaee22901f6477f8fdf510f128e7e1d59a710ae"
     },
     {
       "market": "twse",
@@ -3304,7 +3310,9 @@
       "monthly_eps_yoy_text": "50.00%",
       "quarter_eps_yoy_text": "161.54%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3576d2fd20d2e253f036ca5310590ce17fe4725c755eec78c5aa5799b8f6cef1"
     },
     {
       "market": "",
@@ -3328,7 +3336,9 @@
       "monthly_eps_yoy_text": "11%",
       "quarter_eps_yoy_text": "-54%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "4dc464add6230b8768a911edd13fa060042a1eb0731d25dd3cd9955ff8a0fd2c"
     },
     {
       "market": "twse",
@@ -3352,7 +3362,9 @@
       "monthly_eps_yoy_text": "+669.00%",
       "quarter_eps_yoy_text": "+2348.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "79895dacf03c65a4d50cac5abe662a559801b54e87d53032c2915b0461c45f88"
     },
     {
       "market": "",
@@ -3376,7 +3388,9 @@
       "monthly_eps_yoy_text": "223%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1cfa53fd6e9782e5881f68b05aa77a00f64ae53f15aa7847c07e7698475231bd"
     },
     {
       "market": "",
@@ -3394,13 +3408,15 @@
       "monthly_eps": 0.2,
       "monthly_eps_yoy": 185.71,
       "monthly_period": "2026-10",
-      "quarter_eps": 0.27,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.31,
+      "quarter_eps_yoy": 14.81,
       "quarter_period": "2026-Q3",
       "monthly_eps_yoy_text": "185.71%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+14.81%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "c3fdacc821e1fd51439c72f5f0bbbe46b741edd4a68ce1e37d0765184d9a6b12"
     },
     {
       "market": "",
@@ -3424,7 +3440,9 @@
       "monthly_eps_yoy_text": "46,964%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "75c9723f420ffbcfa3fafed6b2498a56b0922795983167bb15e0e7a300612cf4"
     },
     {
       "market": "",
@@ -3448,7 +3466,9 @@
       "monthly_eps_yoy_text": "-20.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "partial",
-      "eps_parse_reason": "only_one_eps_section_parsed"
+      "eps_parse_reason": "only_one_eps_section_parsed",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b42367b7cbb4e69b8372b9d405b7b77c7bb06f9589fb7f32510b539562724b9b"
     },
     {
       "market": "twse",
@@ -3472,7 +3492,9 @@
       "monthly_eps_yoy_text": "156.4%",
       "quarter_eps_yoy_text": "162.1%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "0fa328deb8fbeabd48a328a5fc241a2b7d3d30c6b35ecd7a317c2bdc4fa84b74"
     },
     {
       "market": "twse",
@@ -3496,7 +3518,9 @@
       "monthly_eps_yoy_text": "56.39%",
       "quarter_eps_yoy_text": "129.76%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "e29fa9248caa1f00519e5df27e15c12e2f839acb19047a821f24441acaef395c"
     },
     {
       "market": "twse",
@@ -3520,7 +3544,9 @@
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b256c7b5593b712e2e4e0b79d2a67f306779bf8a31ad0171b3f47c4b1688e8d7"
     },
     {
       "market": "",
@@ -3544,7 +3570,9 @@
       "monthly_eps_yoy_text": "+81%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "4fdb3dee158f18b15060f9cce1858ffb45a1f42ff4d2d41e536dff2b458cf348"
     },
     {
       "market": "",
@@ -3568,7 +3596,9 @@
       "monthly_eps_yoy_text": "-233.00%",
       "quarter_eps_yoy_text": "-328.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3ca03e72c9aefb180c3cfb32808e8d6058a8691508c9b2de1ad3803a0ed52528"
     },
     {
       "market": "",
@@ -3592,7 +3622,9 @@
       "monthly_eps_yoy_text": "520.00%",
       "quarter_eps_yoy_text": "342.86%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5afcfb369ef267d2cb6c5c56357edc01639f9a513212dd28136371cd6812a398"
     },
     {
       "market": "",
@@ -3616,7 +3648,9 @@
       "monthly_eps_yoy_text": "+200.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "bbab65c78b13b0476fdc0fde559cff246734a930cc6ea52ea73120e9d4b97a0f"
     },
     {
       "market": "",
@@ -3640,7 +3674,9 @@
       "monthly_eps_yoy_text": "13,383%",
       "quarter_eps_yoy_text": "38,969%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "916a1bbad1aaa9641c3e772d9503183a28c000de0544a7e3c540dc8dca657476"
     },
     {
       "market": "",
@@ -3664,7 +3700,9 @@
       "monthly_eps_yoy_text": "277%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "077fa1508de979d41387d6ee6511f067e72e13706e2971a8c28ccdbeb0a87354"
     },
     {
       "market": "",
@@ -3682,13 +3720,15 @@
       "monthly_eps": 0.93,
       "monthly_eps_yoy": 342.86,
       "monthly_period": "2026-10",
-      "quarter_eps": 0.58,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 2.04,
+      "quarter_eps_yoy": 251.72,
       "quarter_period": "2026-Q3",
       "monthly_eps_yoy_text": "342.86%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+251.72%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "d47547fdd5681782ac7b8d0ed26dc771a4ca00a7c4b69b55df1b5817a397ee64"
     },
     {
       "market": "",
@@ -3706,13 +3746,15 @@
       "monthly_eps": 0.21,
       "monthly_eps_yoy": 75.0,
       "monthly_period": "2026-10",
-      "quarter_eps": 0.7,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.64,
+      "quarter_eps_yoy": -8.6,
       "quarter_period": "2026-Q3",
       "monthly_eps_yoy_text": "75.0%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "-8.6%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "79e558c2ea489657b0baf861b34e64d4751f75f4c4bd2936a90fbdc02b99e876"
     },
     {
       "market": "twse",
@@ -3736,7 +3778,9 @@
       "monthly_eps_yoy_text": "-41.18%",
       "quarter_eps_yoy_text": "+246.15%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b49fae2d119774fd6dec08b586a9333cf510cc04d9ea5a4a026902007aba11be"
     },
     {
       "market": "twse",
@@ -3760,7 +3804,9 @@
       "monthly_eps_yoy_text": "100%",
       "quarter_eps_yoy_text": "151%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "835092350042b2126756f95d3db7117866dae03f5769bb7b3bc2030ddfbb85f5"
     },
     {
       "ticker": "2455",
@@ -3783,7 +3829,9 @@
       "quarter_eps_yoy_text": "109.30%",
       "eps": 0.45,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "2545c2f6c12d541defe366b106b7eda1dcb50134fd118453f39de0f2b4f1721e"
     },
     {
       "ticker": "3376",
@@ -3807,7 +3855,9 @@
       "quarter_eps_yoy_text": "170%",
       "eps": 0.48,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "59a1df305d60428db9ee3c0a7039f88eb522edc6baeeefd85834e1885e16cf33"
     },
     {
       "ticker": "3379",
@@ -3830,7 +3880,9 @@
       "monthly_eps_yoy_text": "-98%",
       "quarter_eps_yoy_text": "-3210%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ce21fbd72bffaa303fd4b2783615d8c2d0dcb9322c0997a668dd90e31561f97d"
     },
     {
       "ticker": "6887",
@@ -3853,7 +3905,9 @@
       "quarter_eps_yoy_text": "292.75%",
       "eps": 0.09,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "63eb7a8ab3327c39dd78bb81e6c11e267f890f1ff8844a829023f8e0f1cbf704"
     },
     {
       "ticker": "6533",
@@ -3877,7 +3931,9 @@
       "quarter_eps_yoy_text": "-441%",
       "eps": 0.8,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "6cb435bf6452474caa95acbc17762258f073b5d80c62cb6f857b27393c8b78ab"
     },
     {
       "ticker": "3450",
@@ -3900,7 +3956,9 @@
       "quarter_eps_yoy_text": "-3%",
       "eps": 1.07,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "2f9c681816a80b1b602fcb885d5b48194c88371144a5cafaefadf8be24b05eae"
     },
     {
       "ticker": "4722",
@@ -3923,7 +3981,9 @@
       "monthly_eps_yoy_text": "-26.00%",
       "quarter_eps_yoy_text": "+31.00%",
       "eps": 0.29,
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5a4c08b850dd2aca399fe17fed1eec88f088cd3f5529bb9bada3e01066979f2e"
     },
     {
       "ticker": "8039",
@@ -3946,7 +4006,9 @@
       "quarter_eps_yoy_text": "-12%",
       "eps": 0.24,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "2a7559a5a77bc8c9b42b8713c470c374e3e5dc4e8881580dc2067973c4e5e86c"
     },
     {
       "ticker": "2426",
@@ -3969,7 +4031,9 @@
       "quarter_eps_yoy_text": "414.3%",
       "eps": 0.114,
       "eps_parse_reason": "",
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "fda9f359c5cf60baf16ea179e3cead9007da11c4cba87c81f97b4898964b1bae"
     },
     {
       "ticker": "6163",
@@ -3985,13 +4049,15 @@
       "monthly_eps": -0.22,
       "monthly_eps_yoy": 29.03,
       "monthly_period": "2026-09",
-      "quarter_eps": -0.56,
-      "quarter_eps_yoy": null,
+      "quarter_eps": -0.2,
+      "quarter_eps_yoy": 64.29,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "29.03%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+64.29%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b35423d000603f348da43075ec82acfcef9c5a356db4e9380fbe068239ad2a5f"
     },
     {
       "ticker": "6426",
@@ -4014,7 +4080,9 @@
       "monthly_eps_yoy": 29.23,
       "monthly_eps_yoy_text": "+29.23%",
       "eps": 0.84,
-      "market": "twse"
+      "market": "twse",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1452e76bed3795ce95f8158a119b8f4729bccd1a586fb9c410b8ac25865498a7"
     },
     {
       "ticker": "6015",
@@ -4030,13 +4098,15 @@
       "monthly_eps": -0.61,
       "monthly_eps_yoy": -710.0,
       "monthly_period": "2026-10",
-      "quarter_eps": -0.03,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 2.42,
+      "quarter_eps_yoy": 8167.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-710%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+8167%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "503e146caebaef491d1d8e274a718ebac1fca6419553495f4893615c60c25ca8"
     },
     {
       "ticker": "4919",
@@ -4058,7 +4128,9 @@
       "quarter_eps_yoy": null,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": -0.52
+      "eps": -0.52,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "afb012d71bcc5dbeae35b93d18d9098bc3136a3ad7aa4d4e7d5bca8f9c8030ed"
     },
     {
       "ticker": "6451",
@@ -4080,7 +4152,9 @@
       "monthly_eps_yoy_text": "-126.05%",
       "quarter_eps_yoy_text": "215.25%",
       "eps": -0.13,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "0b67e99aca2d021d63346b4258704ee14a341e044da13e6c0f164c5d146a9c59"
     },
     {
       "ticker": "5284",
@@ -4102,7 +4176,9 @@
       "monthly_eps_yoy": 2.0,
       "monthly_eps_yoy_text": "+2.00%",
       "eps": 2.45,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "156a522549d1bb2e2e17bc5549065d9de8805a77217e15b7e15eb41647e89596"
     },
     {
       "ticker": "3189",
@@ -4125,7 +4201,9 @@
       "monthly_eps_yoy_text": "213.56%",
       "quarter_eps_yoy_text": "513.33%",
       "eps": 1.85,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "887f7e86fe9c620e8ae822947e8da61ba57933cfc0b53313c895badb12f625d5"
     },
     {
       "ticker": "6209",
@@ -4147,7 +4225,9 @@
       "monthly_eps_yoy_text": "264%",
       "quarter_eps_yoy_text": "630%",
       "eps": 0.47,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "7791cb73c8b18680581f694eb10dbee01589aa7a9ff9b0e2a244da76d568311f"
     },
     {
       "ticker": "8042",
@@ -4164,13 +4244,15 @@
       "monthly_eps": 0.01,
       "monthly_eps_yoy": -86.0,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.02,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.7,
+      "quarter_eps_yoy": 3400.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-86%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+3400%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "2e8a75871729fdb9f066d12e9513e4e7f7c3a0551a99da61e2c3a3bdabc3b13c"
     },
     {
       "ticker": "5013",
@@ -4186,13 +4268,15 @@
       "monthly_eps": 0.54,
       "monthly_eps_yoy": 260.0,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.22,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.98,
+      "quarter_eps_yoy": 345.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "260%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+345%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "01c85cb2cf2774de66e977dce2ade25cf82c97af3a7eb04afc7f97ab983f3588"
     },
     {
       "market": "twse",
@@ -4215,7 +4299,9 @@
       "monthly_eps_yoy_text": "299.37%",
       "quarter_eps_yoy_text": "11.18%",
       "eps": 5.39,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "31d5c18822c6e292546824025f528a4a9597e2688bad884e8429c40fa44ca6e6"
     },
     {
       "market": "twse",
@@ -4238,7 +4324,9 @@
       "monthly_eps_yoy": 198.41,
       "monthly_eps_yoy_text": "+198.41%",
       "eps": 3.24,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "d1fbecae49c6bf4f245acce384c8087dc4dd34126ac2722446e732a562d8bb00"
     },
     {
       "market": "twse",
@@ -4262,7 +4350,9 @@
       "quarter_eps_yoy": 132.67,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": 0.22
+      "eps": 0.22,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "7d3ce5e9429e2594aa202ee194e0d3fa804830e2fe33ed1975b2b28e9d532135"
     },
     {
       "market": "twse",
@@ -4285,7 +4375,9 @@
       "monthly_eps_yoy_text": "354.96%",
       "quarter_eps_yoy_text": "325.09%",
       "eps": 7.7,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "da6e886aa389dea1fd5873e74db3f4795902beb032462c311812fed527a27be0"
     },
     {
       "ticker": "8272",
@@ -4308,7 +4400,9 @@
       "monthly_eps_yoy_text": "13.1%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3038b6fdf50a568f214d122b1b8e382a4e803b4eef3be0e53ada75f4c45d3643"
     },
     {
       "market": "twse",
@@ -4331,7 +4425,9 @@
       "quarter_eps_yoy": 102.47,
       "monthly_eps_yoy_text": "-101.85%",
       "quarter_eps_yoy_text": "+102.47%",
-      "eps": -0.05
+      "eps": -0.05,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "02a7ef3c2043935b6fc242e361423d322b3c1e6028945d52dfb182587bcb2728"
     },
     {
       "market": "twse",
@@ -4355,7 +4451,9 @@
       "monthly_eps_yoy_text": "3233.33%",
       "quarter_eps_yoy_text": "418.75%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f3fea517802e8495e2d2959d0518b12619474fc5075deaefd578557786aa10bc"
     },
     {
       "market": "twse",
@@ -4379,7 +4477,9 @@
       "monthly_eps_yoy_text": "409.43%",
       "quarter_eps_yoy_text": "138.71%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "15bfaab717f5f2e6220c5310626cb33e2ebcd49d89435b07f53caf5127fc000b"
     },
     {
       "ticker": "6697",
@@ -4396,13 +4496,15 @@
       "monthly_eps": 0.2,
       "monthly_eps_yoy": 53.8,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.98,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 1.07,
+      "quarter_eps_yoy": 9.2,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "53.8%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+9.2%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "54e542db53dab64162601071dee7b26eb9986a49c5da1fd46127e14e12ae0ba2"
     },
     {
       "ticker": "8291",
@@ -4425,7 +4527,9 @@
       "monthly_eps_yoy_text": "-16%",
       "quarter_eps_yoy_text": "-13%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "d693b1ff2c10f75d912950b1dd3270e46e18e3de51e57d3c120de0549a96a138"
     },
     {
       "ticker": "3691",
@@ -4442,13 +4546,15 @@
       "monthly_eps": 0.42,
       "monthly_eps_yoy": 205.0,
       "monthly_period": "2026-09",
-      "quarter_eps": -6.01,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.38,
+      "quarter_eps_yoy": 106.32,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "205.00%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+106.32%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "89c6ab4bfb572dcd7fa41e26a476291bc2d298d11da667f7a7aaee2d0a445509"
     },
     {
       "ticker": "8099",
@@ -4471,7 +4577,9 @@
       "monthly_eps_yoy_text": "90.79%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5240d751c29d072096bb7542ea279f9f5027a9e5da2a43093301f5ce2102e6db"
     },
     {
       "ticker": "7704",
@@ -4494,7 +4602,9 @@
       "monthly_eps_yoy_text": "164.71%",
       "quarter_eps_yoy_text": "100.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "8196994c64364348726c7edb12abb8e3d9ec3c9a777ebd64b87a0fb89c07094f"
     },
     {
       "ticker": "6873",
@@ -4518,7 +4628,9 @@
       "quarter_eps_yoy": null,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": null
+      "eps": null,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "12c221c7722115fbac5a0bceca5a7013eb52bf9f225c61456d8ce55057e62749"
     },
     {
       "ticker": "3498",
@@ -4540,7 +4652,9 @@
       "monthly_eps_yoy_text": "390.0%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "15393ed46b54c8a7303ce444f3114d7ee3b9a89989bb846883a70dd46c4d2262"
     },
     {
       "ticker": "1569",
@@ -4563,7 +4677,9 @@
       "monthly_eps_yoy_text": "273.75%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f2debcca3e41ca702d6e75a2118414505de43c1cf677ddf001ddf7b91e8fc5ff"
     },
     {
       "ticker": "3374",
@@ -4586,7 +4702,9 @@
       "monthly_eps_yoy_text": "+27%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "dc7e0c039e94fe56f24cc6dda61fc4d8c8ac729e67524a1c3c56323344847aa1"
     },
     {
       "market": "twse",
@@ -4610,7 +4728,9 @@
       "quarter_eps_yoy": null,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": null
+      "eps": null,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b35155e9b101534e43f60d44fdd148cb39cdd996ab067da6cfbb0ae177437858"
     },
     {
       "ticker": "6274",
@@ -4633,7 +4753,9 @@
       "monthly_eps_yoy_text": "276.1%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3c3e6461c02c017c5d5e1e78c64b8bb5346ea2595fc88b3ae9a76bbc402e3fdd"
     },
     {
       "ticker": "8089",
@@ -4656,7 +4778,9 @@
       "monthly_eps": null,
       "monthly_eps_yoy": null,
       "monthly_eps_yoy_text": null,
-      "eps": null
+      "eps": null,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f6fe80a6f35ff069265797a9c17afece115c28adfbc7767bb674c572d2127ff1"
     },
     {
       "market": "twse",
@@ -4680,7 +4804,9 @@
       "monthly_eps_yoy_text": "94.77%",
       "quarter_eps_yoy_text": "179.09%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "698f1ae164aad592f06cb068d025f01babdc83fc805111bccd577c203571e31d"
     },
     {
       "ticker": "6418",
@@ -4703,7 +4829,9 @@
       "monthly_eps_yoy_text": "87.50%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "10a1f224e8d22c69682ea7a998d56bd6af5513c2ab50aa213727ecb2423ffa36"
     },
     {
       "ticker": "6751",
@@ -4725,7 +4853,9 @@
       "monthly_eps_yoy_text": "387%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "01fb5b27557def6bfc731cc603300de020d9b3cded6007baa963096038da225b"
     },
     {
       "market": "twse",
@@ -4748,7 +4878,9 @@
       "monthly_eps_yoy_text": "-15%",
       "quarter_eps_yoy_text": "-23%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "66a5beb85a79d66b21a0f48d85d6c5563f2f046ded50e1c568f9a61356779715"
     },
     {
       "ticker": "3441",
@@ -4771,7 +4903,9 @@
       "monthly_eps_yoy_text": "+250.00%",
       "quarter_eps_yoy_text": "+215.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "43d3466be5c013a986f3f26d762ec8f3c12ee51dfb433a5973638a252d3a7ac2"
     },
     {
       "market": "twse",
@@ -4794,7 +4928,9 @@
       "monthly_eps_yoy_text": "1,080.00%",
       "quarter_eps_yoy_text": "203.45%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "33efbced3048281b126559aca4fa71b6ad4f33b52109b26ae25025c376a2d12f"
     },
     {
       "market": "twse",
@@ -4818,7 +4954,9 @@
       "monthly_eps_yoy_text": "8500%",
       "quarter_eps_yoy_text": "-1%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5c9b4bad33d338ee9309678125750c03dd80cf249eef7339e774f67edb3592ec"
     },
     {
       "market": "twse",
@@ -4841,7 +4979,9 @@
       "monthly_eps_yoy_text": "-15%",
       "quarter_eps_yoy_text": "-23%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3e77b79399714bb4feb8cd871ccab2220d34e1c5e7ee993cba4f07f71dd06e60"
     },
     {
       "market": "twse",
@@ -4865,7 +5005,9 @@
       "monthly_eps_yoy_text": "910.43%",
       "quarter_eps_yoy_text": "749.98%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1cc1fc22ccec30bcbd7037d4ce93d123a7abdcb5ff48edadc77a8a854283981e"
     },
     {
       "ticker": "5340",
@@ -4882,13 +5024,15 @@
       "monthly_eps": 0.25,
       "monthly_eps_yoy": 56.0,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.11,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.54,
+      "quarter_eps_yoy": 391.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "+56.00%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+391%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "6f756be3ccb62498b7253bd8cdf6993951a8572831f7f4cfd9b7a738c9e11082"
     },
     {
       "market": "twse",
@@ -4912,7 +5056,9 @@
       "monthly_eps_yoy_text": "6025.00%",
       "quarter_eps_yoy_text": "2368.97%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "604a0a56c71040341eb6d806d7d72b6ad2fdd97f460d77fb79bcf216908cc91f"
     },
     {
       "ticker": "6925",
@@ -4935,7 +5081,9 @@
       "quarter_eps_yoy_text": "-",
       "eps_parse_status": "parsed",
       "quarter_eps_yoy": null,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "8e2dc99dbcdfe38c991a59953c7c9ee08ef50dbc2215fe8ea5d22fb98846d4d0"
     },
     {
       "ticker": "4960",
@@ -4958,7 +5106,9 @@
       "quarter_eps_yoy_text": "0.00%",
       "eps_parse_status": "parsed",
       "market": "twse",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b424761a0185697e25cd7eb9c5ca01cfa544f6387e998cf6a327331e40924f3d"
     },
     {
       "ticker": "6756",
@@ -4982,30 +5132,9 @@
       "quarter_eps_yoy_text": "76%",
       "eps_parse_status": "parsed",
       "market": "twse",
-      "eps_parse_reason": ""
-    },
-    {
-      "ticker": "4960",
-      "name": "誠美材",
-      "publish_date": "2026-10-21",
-      "publish_time": "16:12:10",
-      "subject": "4960 誠美材 115/10/21 16:12:10 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
-      "detail": "公開資訊觀測站 本資料由 (上市公司) 4960 誠美材 公司提供 序號 2 發言日期 115/10/21 發言時間 16:12:10 發言人 楊朝智 發言人職稱 財務處長 發言人電話 (06)5889988 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/10/21 說明 1.事實發生日:115/10/21 2.發生緣由:依據臺灣證券交易所股份有限公司指示辦理。 3.財務業務資訊: 期間 月 季 最近四季累計 ＝＝＝＝ ＝＝＝＝＝＝＝＝＝＝＝ ＝＝＝＝＝＝＝＝＝＝＝ ＝＝＝＝＝＝＝ 最近一月 與去年 最近一季 與去年 114年第4季 科目 115年09月 同期增減% 115年第3季 同期增減% 至115年第3季 (合併自結數) (合併自結數) (合併自結或 查核/核閱數) ＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝ ＝＝＝＝＝＝＝ 營業收入 613 -14.92% 1,861 -13.85% 7,984 (百萬) 稅前淨利 -89 -26.84% -223 27.11% -806 (百萬) 歸屬母公司 業主淨利 -89 -46.26% -223 1.55% -823 (百萬) 每股盈餘 -0.16 -44.83% -0.39 0.00% -1.45 (元) 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 7.其他應敘明事項: 註1：以上115年9月及去年同期比較數之財務資料係本公司採IFRS會計準則編製之 合併數，未經會計師核閱，僅供投資人參考。 註2：最近一季115年第3季係指單季數字，非為最近財務報告中之累計數字，且係 本公司採IFRS下編製之合併數，尚未經會計師核閱，僅供投資人參考。 註3：最近四季累計係本公司114年第4季至115年第3季採IFRS編製之合併數，其中 114年第4季至115年第2季業經會計師核閱或查核，115年第3季尚未經會計師 核閱，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
-      "source": "mops_ajax",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4960&SPOKE_DATE=20261021&SPOKE_TIME=161210&SEQ_NO=2&skey=4960202610212",
-      "match_reason": "attention_trading",
-      "eps": -0.16,
-      "monthly_eps": -0.16,
-      "monthly_eps_yoy": -44.83,
-      "monthly_period": "2026-09",
-      "quarter_eps": -0.39,
-      "quarter_eps_yoy": 0.0,
-      "quarter_period": "2026-Q3",
-      "monthly_eps_yoy_text": "-44.83%",
-      "quarter_eps_yoy_text": "0.00%",
-      "eps_parse_status": "parsed",
-      "market": "twse",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "93c8b24e02b09969fd8eead701016215867029563a811fd7a3d3b652e4fcf85c"
     },
     {
       "ticker": "3354",
@@ -5027,7 +5156,9 @@
       "monthly_eps_yoy_text": "-243%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "6ada5560868658f61ad13d7e54aeaaffb9d1faaedee83d5e09d4ba5f61c895ab"
     },
     {
       "ticker": "6148",
@@ -5043,13 +5174,15 @@
       "monthly_eps": 0.12,
       "monthly_eps_yoy": -33.33,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.28,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.1,
+      "quarter_eps_yoy": -64.29,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-33.33%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "-64.29%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "caef05a97061816e20dc8138390a00f0a532dd10189b0a8d6b104f6e104d8049"
     },
     {
       "ticker": "8437",
@@ -5072,7 +5205,9 @@
       "monthly_eps_yoy_text": "-85.71%",
       "quarter_eps_yoy_text": "-95%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "c119c57edfaef34acc08bb7c504b032a066cff3efd05af5f3240a5f72fad6a8f"
     },
     {
       "ticker": "6269",
@@ -5095,7 +5230,9 @@
       "quarter_eps_yoy_text": "-18.44%",
       "eps_parse_status": "parsed",
       "market": "twse",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1c32d0232d8bba7b1ec5072db5430230cbeb745864b13dc9e546d61358e233da"
     },
     {
       "ticker": "8358",
@@ -5111,13 +5248,15 @@
       "monthly_eps": 0.8,
       "monthly_eps_yoy": 90.5,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.66,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 2.16,
+      "quarter_eps_yoy": 227.3,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "90.5%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+227.3%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "752b9a0dd36525e2feeed9a78b7c5a5562817e1ae4d6966f365a90cc234a24d1"
     },
     {
       "ticker": "6716",
@@ -5140,7 +5279,9 @@
       "monthly_eps_yoy_text": "11.11%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "50c2bbd6d9ae40ef41d05da277df7614063138b37862a98364d93252ed1201a8"
     },
     {
       "ticker": "4542",
@@ -5162,7 +5303,9 @@
       "monthly_eps_yoy_text": "-373%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f2fea30f8bf2ac3c56d2af5c1ae0fc5467f6cff7d393f3f5075645a828dc2892"
     },
     {
       "ticker": "3230",
@@ -5185,7 +5328,9 @@
       "monthly_eps_yoy_text": "21.74%",
       "quarter_eps_yoy_text": "-3.57%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "9b7cc657bba7937961621c8ea4d03e3a4273f044dae368b2423b3de1b64f2264"
     },
     {
       "ticker": "3455",
@@ -5207,7 +5352,9 @@
       "monthly_eps_yoy_text": "-16%",
       "quarter_eps_yoy_text": "127%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "fa4e8aa3399b0f114e31a9d5342a3710f3cf0b0cdec322732cdbaf165466efe7"
     },
     {
       "ticker": "3287",
@@ -5229,7 +5376,9 @@
       "quarter_eps_yoy_text": "由虧轉盈",
       "eps_parse_status": "parsed",
       "quarter_eps_yoy": null,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ffa76511caeb56ffb671cf8f4e755fef9515c73f5971a8a7bb482a2b63e37892"
     },
     {
       "ticker": "2221",
@@ -5245,13 +5394,15 @@
       "monthly_eps": 0.72,
       "monthly_eps_yoy": 176.92,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.49,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 1.17,
+      "quarter_eps_yoy": 138.78,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "176.92%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+138.78%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "de6354b79d382a7bf6f4fa1de625bfcdbade58eca1c7c823c7141ffacf452877"
     },
     {
       "ticker": "1815",
@@ -5267,13 +5418,15 @@
       "monthly_eps": 0.56,
       "monthly_eps_yoy": 273.33,
       "monthly_period": "2026-09",
-      "quarter_eps": -0.06,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 1.45,
+      "quarter_eps_yoy": 2517.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "273.33%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+2517%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "23b9686e525cd26dbdf6f9d138643686cdeef5bda6adbca11a010bd971334c7f"
     },
     {
       "ticker": "6531",
@@ -5296,7 +5449,9 @@
       "monthly_eps_yoy_text": "+13.00%",
       "quarter_eps_yoy_text": "+224.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "65e293c8f88c72c656d442d004267636c0e578e026dba020387fe0640356bc35"
     },
     {
       "ticker": "6217",
@@ -5309,16 +5464,18 @@
       "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=6217&SPOKE_DATE=20261016&SPOKE_TIME=150328&SEQ_NO=2&skey=6217202610162",
       "match_reason": "attention_trading",
       "monthly_period": "2026-09",
-      "quarter_eps": -0.71,
-      "quarter_eps_yoy": null,
+      "quarter_eps": -0.3,
+      "quarter_eps_yoy": 57.75,
       "quarter_period": "2026-Q2",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+57.75%",
       "eps_parse_status": "parsed",
       "eps_parse_reason": "",
       "monthly_eps": -0.3,
       "monthly_eps_yoy": null,
       "monthly_eps_yoy_text": null,
-      "eps": -0.3
+      "eps": -0.3,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "bede59f8aa4a4a23ac4001b3d478821104fcdf07e3f2d52d93d66a744bf6eae5"
     },
     {
       "market": "twse",
@@ -5342,7 +5499,9 @@
       "monthly_eps_yoy_text": "240.04%",
       "quarter_eps_yoy_text": "113.19%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ae67811c6b75bd03ca3d6db5565d43a52e1ae9a9b0e9c70c95725de00b2c9d74"
     },
     {
       "market": "twse",
@@ -5366,7 +5525,9 @@
       "monthly_eps_yoy_text": "-133.33%",
       "quarter_eps_yoy_text": "-14.29%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ac32e02c99b030967992f0950e491c12f7e99a00940c1bfb85c9216146738a9c"
     },
     {
       "market": "twse",
@@ -5390,7 +5551,9 @@
       "monthly_eps_yoy_text": "50.00%",
       "quarter_eps_yoy_text": "44.57%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "285fa7897b7158ec75a7260c1cf5e598cb69555468b76da8ee2a31edf37f75b0"
     },
     {
       "market": "twse",
@@ -5414,7 +5577,9 @@
       "monthly_eps_yoy_text": "47.19%",
       "quarter_eps_yoy_text": "68.29%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "941fb9df6527a53671273728c71ba2ca1f55cb286ebef95aaf56ba8694769a35"
     },
     {
       "market": "twse",
@@ -5437,7 +5602,9 @@
       "quarter_eps_yoy": 37.1,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": 0.43
+      "eps": 0.43,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ba0cbf9b843633db672d37b99f19eaa81464a589fde247a423e412eee9f1b637"
     },
     {
       "market": "twse",
@@ -5460,7 +5627,9 @@
       "monthly_eps_yoy_text": "515.90%",
       "quarter_eps_yoy_text": "206.53%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "e47e0565e575398ff0cd874e6881aae81f2347889a1eaa79d51b4d710b863413"
     },
     {
       "market": "twse",
@@ -5483,7 +5652,9 @@
       "quarter_eps_yoy": 16.6,
       "monthly_eps_yoy_text": null,
       "quarter_eps_yoy_text": null,
-      "eps": 0.43
+      "eps": 0.43,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "02db87e5e9f3ff398ab326d5359bcec47ad455843346d6b532242129fad5dbf5"
     },
     {
       "ticker": "6187",
@@ -5505,7 +5676,9 @@
       "monthly_eps_yoy_text": "46%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "b211b6b822a67fb4dc4cb12ead00c4f35b0c7fac907ca57b8a848bea38dba331"
     },
     {
       "ticker": "3564",
@@ -5527,7 +5700,9 @@
       "monthly_eps_yoy_text": "51.71%",
       "quarter_eps_yoy_text": "20.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "32358f934a08e3080e2c4ffb298c98ab9549d71f4ec7984fb2d63c6a4d222f99"
     },
     {
       "market": "twse",
@@ -5550,7 +5725,9 @@
       "monthly_eps_yoy_text": "+4700.00%",
       "quarter_eps_yoy_text": "+312.96%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "4007d172f65a651b45d4fe1272be34748fe55e04212646c85b9ead89289bceeb"
     },
     {
       "market": "twse",
@@ -5573,7 +5750,9 @@
       "monthly_eps_yoy_text": "-36.99%",
       "quarter_eps_yoy_text": "6.98%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3a40effb7c21fcfc86d0e7726f90cc4d59c8402a7ee3fe40f3c336d63f5c2f30"
     },
     {
       "ticker": "4979",
@@ -5589,13 +5768,15 @@
       "monthly_eps": 0.72,
       "monthly_eps_yoy": 111.76,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.67,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 1.29,
+      "quarter_eps_yoy": 92.54,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "111.76%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+92.54%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "cb40fa848605e1820f45b235ff2d6206ee89db7afacf22f86e2490d864030e2f"
     },
     {
       "ticker": "3265",
@@ -5611,13 +5792,15 @@
       "monthly_eps": 0.74,
       "monthly_eps_yoy": 117.6,
       "monthly_period": "2026-09",
-      "quarter_eps": 0.66,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 2.09,
+      "quarter_eps_yoy": 216.7,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "117.6%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+216.7%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "5420c38f2fa8afdf90885f7349327a2ac36f824f8f4c7b9c1709a4408cb7e0e9"
     },
     {
       "ticker": "7772",
@@ -5639,7 +5822,9 @@
       "monthly_eps_yoy_text": "200.00%",
       "quarter_eps_yoy_text": "-114.29%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "dfa6a092e57e73d9d08d22a071002e760fe3200cf8d18fc5f2a819d40aa43d77"
     },
     {
       "ticker": "3362",
@@ -5662,7 +5847,9 @@
       "monthly_eps": -1.38,
       "monthly_eps_yoy": null,
       "monthly_eps_yoy_text": null,
-      "eps": -1.38
+      "eps": -1.38,
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "497a540a034ca56c4c37f9b71a479fa86f1e15a578ee13d84cb2b53c540942d5"
     },
     {
       "ticker": "3597",
@@ -5685,7 +5872,9 @@
       "monthly_eps_yoy_text": "2200.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "14eb01ce44f3ac9d3daf6b337e109e18d452999a68735700c5675ae51b307344"
     },
     {
       "ticker": "5475",
@@ -5701,13 +5890,15 @@
       "monthly_eps": 0.97,
       "monthly_eps_yoy": 8550.18,
       "monthly_period": "2026-09",
-      "quarter_eps": -0.12,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.95,
+      "quarter_eps_yoy": 891.51,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "+8550.18%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+891.51%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "9ffce0732dd04da2d7c8cc25118e83746e6878458f2b226de135306d7ccf63bc"
     },
     {
       "market": "twse",
@@ -5731,7 +5922,9 @@
       "monthly_eps_yoy_text": "-32.1%",
       "quarter_eps_yoy_text": "133.3%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "17212218b7cb1b729b736e0d971e6f91a0c0ae144e777a5b480eab98dc95585f"
     },
     {
       "ticker": "6174",
@@ -5754,7 +5947,9 @@
       "monthly_eps_yoy_text": "+2000.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "110ee54b5ebc7b7210d596ecb224e85a9f71864157520f974d18c1d7d667b05b"
     },
     {
       "market": "twse",
@@ -5777,7 +5972,9 @@
       "monthly_eps_yoy_text": "59.79%",
       "quarter_eps_yoy_text": "836.36%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "3280d51dd0275832c8bfd5bb3108e1b56ab8ad026d150003646086585b60106b"
     },
     {
       "market": "twse",
@@ -5801,7 +5998,9 @@
       "monthly_eps_yoy_text": "-97.19%",
       "quarter_eps_yoy_text": "155.68%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f503e6632c1903686a3c4ca8555f7bd00894a3694926530a640727e55032cd07"
     },
     {
       "ticker": "4991",
@@ -5823,7 +6022,9 @@
       "monthly_eps_yoy_text": "133.33%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "108430e3e75a65542795d283d272d233b129b06cfb717558df073269a7560794"
     },
     {
       "ticker": "4760",
@@ -5840,13 +6041,15 @@
       "monthly_eps": 1.14,
       "monthly_eps_yoy": 54.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.47,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 2.71,
+      "quarter_eps_yoy": 477.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "54%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+477%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "da8f12d846f6147e20550b215f0352bb9a7d28b820b60a6a1d3fe2848a994b11"
     },
     {
       "ticker": "8111",
@@ -5862,13 +6065,15 @@
       "monthly_eps": 0.02,
       "monthly_eps_yoy": -89.47,
       "monthly_period": "2026-08",
-      "quarter_eps": -0.54,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.26,
+      "quarter_eps_yoy": 148.15,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "-89.47%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+148.15%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "8de928eb667bac2dd89f2bcd9e770343787ca503b68e14494a47a3d31cbb571c"
     },
     {
       "market": "twse",
@@ -5892,7 +6097,9 @@
       "monthly_eps_yoy_text": "-30%",
       "quarter_eps_yoy_text": "-250%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "0636c6928746901ec4e8723b0fdfbaf460edacdb5482e18de0e8161663b268e2"
     },
     {
       "market": "twse",
@@ -5916,7 +6123,9 @@
       "monthly_eps_yoy_text": "330.16%",
       "quarter_eps_yoy_text": "475.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "7b56dbdf2809a81028e3ae5ba721f898f23ada41964ee8198f75316392e67487"
     },
     {
       "ticker": "4556",
@@ -5939,7 +6148,9 @@
       "monthly_eps_yoy_text": "325.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "998388832918600a3f72ec8fc4781f8b1bdc76ef0988ff9f37ae715aad915b15"
     },
     {
       "market": "twse",
@@ -5962,7 +6173,9 @@
       "monthly_eps_yoy_text": "-38%",
       "quarter_eps_yoy_text": "192%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "54a67916459a70eaca7bbc256a148a462d1a2c4664ed1fe844e32dd8c94bc7bb"
     },
     {
       "market": "twse",
@@ -5985,7 +6198,9 @@
       "monthly_eps_yoy_text": "263%",
       "quarter_eps_yoy_text": "-3%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "dd22b35f9a6ad785c6c02a61462cdfb66f27b3d9575ecd4abe51fea3e829b357"
     },
     {
       "market": "twse",
@@ -6009,7 +6224,9 @@
       "monthly_eps_yoy_text": "+28.00%",
       "quarter_eps_yoy_text": "+54.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a5eac98600319f3117c123d059db5630156b1fea40184e38fc01c105168f1347"
     },
     {
       "market": "twse",
@@ -6032,7 +6249,9 @@
       "monthly_eps_yoy_text": "368.5%",
       "quarter_eps_yoy_text": "414.3%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "641d84438e05014314a5a8a12f7797cb24b708cb24a41d4c8cd5ce538cff0523"
     },
     {
       "market": "twse",
@@ -6055,7 +6274,9 @@
       "monthly_eps_yoy_text": "212.33%",
       "quarter_eps_yoy_text": "1,053.18%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "70a1a5ae895cc95d861a86fafd70b8d8d32ad2bc5e34878a01f08566917e45eb"
     },
     {
       "ticker": "5013",
@@ -6072,13 +6293,15 @@
       "monthly_eps": 0.56,
       "monthly_eps_yoy": 155.0,
       "monthly_period": "2026-08",
-      "quarter_eps": 0.22,
-      "quarter_eps_yoy": null,
+      "quarter_eps": 0.98,
+      "quarter_eps_yoy": 345.0,
       "quarter_period": "2026-Q2",
       "monthly_eps_yoy_text": "155%",
-      "quarter_eps_yoy_text": null,
+      "quarter_eps_yoy_text": "+345%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a68f42b7b139969ee92c40d77d9dc40d285eb1a494eb068d2dc95a855b5fe33e"
     },
     {
       "ticker": "4174",
@@ -6101,7 +6324,9 @@
       "monthly_eps_yoy_text": "+8.99%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f616b824f374bab2515b94ddc03571086927106cf0784ef555789d81507f8d88"
     },
     {
       "market": "twse",
@@ -6124,7 +6349,9 @@
       "monthly_eps_yoy_text": "-78.12%",
       "quarter_eps_yoy_text": "48.84%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "bd25e192eb81d82bb8152d607f75af42c1a396875b13cbadf54b4936f0007ee4"
     },
     {
       "market": "twse",
@@ -6147,7 +6374,9 @@
       "monthly_eps_yoy_text": "-17%",
       "quarter_eps_yoy_text": "-350%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "180c20c8cdce44e016c8c324fdde9cfe6b2592f7915e56722e4547a6616c499d"
     },
     {
       "market": "twse",
@@ -6171,30 +6400,9 @@
       "monthly_eps_yoy_text": "-48.65%",
       "quarter_eps_yoy_text": "195.52%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
-    },
-    {
-      "market": "twse",
-      "ticker": "2340",
-      "name": "台亞",
-      "publish_date": "2026-10-05",
-      "publish_time": "15:50:15",
-      "subject": "2340 台亞 115/10/05 15:50:15 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
-      "detail": "公開資訊觀測站 本資料由 (上市公司) 2340 台亞 公司提供 序號 1 發言日期 115/10/05 發言時間 15:50:15 發言人 賴文聰 發言人職稱 協理 發言人電話 (03)5638951 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊標準， 故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/10/05 說明 1.事實發生日:115/10/05 2.發生緣由:依臺灣證券交易所股份有限公司通知辦理 3.財務業務資訊: 公司最近期財務資訊如下:(單位:百萬元) 最近一月 與去年同期 最近一季 與去年同期 最近四季累計 期間 115年8月 增減% 115年第2季 增減% 114年第3季至 115年第2季 科目 (IFRS合併自結數) (IFRS合併核閱數) (IFRS合併核閱數) ============================================================================= 營業收入 474 -21.89% 1,209 5.08% 4,372 稅前淨利 -70 -207.75% -200 50.47% - 960 歸屬母公司 -64 -78.12% -193 48.65% - 951 業主淨利 每股盈餘(元) -0.15 78.12% -0.44 48.84% -2.17 4.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 6.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告:無。 7.其他應敘明事項: 本期稅前淨利較去年同期變動幅度大，主係受外幣匯率波動及認列金融資產評價損失 所致，連帶影響歸屬於母公司業主淨利及每股盈餘。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
-      "source": "mops_ajax",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=2340&SPOKE_DATE=20261005&SPOKE_TIME=155015&SEQ_NO=1&skey=2340202610051",
-      "match_reason": "attention_trading",
-      "eps": -0.15,
-      "monthly_eps": -0.15,
-      "monthly_eps_yoy": 78.12,
-      "monthly_period": "2026-08",
-      "quarter_eps": -0.44,
-      "quarter_eps_yoy": 48.84,
-      "quarter_period": "2026-Q2",
-      "monthly_eps_yoy_text": "78.12%",
-      "quarter_eps_yoy_text": "48.84%",
-      "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ef5d16045c7b635894a89e4ae9b2813d288a825fb70eeb022cdb3cdbc82fd376"
     },
     {
       "market": "twse",
@@ -6218,7 +6426,9 @@
       "monthly_eps_yoy_text": "-46.26%",
       "quarter_eps_yoy_text": "-71.43%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "94b73dbc972840075fca3883cbd92f9fcfcea87000165c34d93cfb1a283352bf"
     },
     {
       "market": "twse",
@@ -6241,7 +6451,9 @@
       "monthly_eps_yoy_text": "286.23%",
       "quarter_eps_yoy_text": "275.81%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "444c02851c7b71edd309eccc6d781f31add1de07dc6f3e763d2000f6ef5ea797"
     },
     {
       "ticker": "6244",
@@ -6263,7 +6475,9 @@
       "monthly_eps_yoy_text": "00.00%",
       "quarter_eps_yoy_text": "3300.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "6fde050d74e353a80c396d53400bd458218da72210cbc4db860f155fb428be2b"
     },
     {
       "ticker": "6708",
@@ -6285,7 +6499,9 @@
       "monthly_eps_yoy_text": "75.00%",
       "quarter_eps_yoy_text": "583.33%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "61ffbd763e65d3543201fc75a25ca4367e611d7c5fd8c4ec5b96c9dcd6074ae7"
     },
     {
       "market": "twse",
@@ -6309,7 +6525,9 @@
       "monthly_eps_yoy_text": "3.58%",
       "quarter_eps_yoy_text": "102.47%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1fc1d01b04e60e8238bcd06a8eb30fcf4d507a290713527703f579cc83ac5fba"
     },
     {
       "ticker": "6533",
@@ -6331,7 +6549,9 @@
       "monthly_eps_yoy_text": "-248%",
       "quarter_eps_yoy_text": "76%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a93d2f1fc6b59a4e01942931a9aa7112079052e0b3eea586710f6b013f039590"
     },
     {
       "ticker": "8046",
@@ -6354,7 +6574,9 @@
       "quarter_eps_yoy_text": "-",
       "eps_parse_status": "parsed",
       "quarter_eps_yoy": null,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "d22aaecb36a9ae9962d39887d6b7b92b68311244e6e1f545a59022472d581d45"
     },
     {
       "ticker": "6643",
@@ -6377,7 +6599,9 @@
       "eps_parse_status": "parsed",
       "monthly_eps_yoy": null,
       "quarter_eps_yoy": null,
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "16827ce45d35587723e43f12911b0b4b1d686338d15f91f83a55b082b714ff73"
     },
     {
       "ticker": "3455",
@@ -6400,7 +6624,9 @@
       "monthly_eps_yoy_text": "-48%",
       "quarter_eps_yoy_text": "127%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "501177ee03dae83949c466cfe9d5b1c712426abbb15c989e7a565c98fcb68cf3"
     },
     {
       "ticker": "8201",
@@ -6423,7 +6649,9 @@
       "monthly_eps_yoy_text": "-184.88%",
       "quarter_eps_yoy_text": "102.72%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1c366bf0b7679e1b261262940cfc7f6c4d21ab949a2677331f0aaa470e7d818a"
     },
     {
       "ticker": "6672",
@@ -6445,7 +6673,9 @@
       "monthly_eps_yoy_text": "471.43%",
       "quarter_eps_yoy_text": "138.71%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "8484be9750390d0705223722fa9a277b5a3098f443ff4e51589354db16a848fd"
     },
     {
       "ticker": "3219",
@@ -6467,7 +6697,9 @@
       "monthly_eps_yoy_text": "55.56%",
       "quarter_eps_yoy_text": "144.94%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "84477c2a68ea38754f9ec3e5e4c368f17aa147ccaf19f077905f001a30b18928"
     },
     {
       "market": "twse",
@@ -6490,7 +6722,9 @@
       "monthly_eps_yoy_text": "-62.67%",
       "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "016c603579ed38305ab5a46a3fd374e7f97af743e026b9bff9496ec58afc1f18"
     },
     {
       "market": "twse",
@@ -6514,7 +6748,9 @@
       "monthly_eps_yoy_text": "-62.67%",
       "quarter_eps_yoy_text": "77.17%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "fcc19a45a92b1798866a412ecde617f5e8bdcf99f854515323e26e24d1d23839"
     },
     {
       "market": "twse",
@@ -6538,7 +6774,9 @@
       "monthly_eps_yoy_text": "2500%",
       "quarter_eps_yoy_text": "533%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "ed983266d1df646ca9efae2ae53b7a260a2c721e7ec57283be21c3eb6133d95a"
     },
     {
       "market": "twse",
@@ -6562,7 +6800,9 @@
       "monthly_eps_yoy_text": "-125.00%",
       "quarter_eps_yoy_text": "137.14%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "9a76fcd7d7c87579de814e9a097088d243e3436759a3e4c357c1840bba7757b5"
     },
     {
       "market": "twse",
@@ -6586,7 +6826,9 @@
       "monthly_eps_yoy_text": "+337.50%",
       "quarter_eps_yoy_text": "-200.00%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "238e8b7ea88b820f4c18f8c607ca29044a5cde803ae9545cee2d1f496e3dc116"
     },
     {
       "market": "twse",
@@ -6610,7 +6852,9 @@
       "monthly_eps_yoy_text": "153%",
       "quarter_eps_yoy_text": "203%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "8893ac9833b2b30f16030e311fc4b94a717a3361bfad5477ae2faf8ee74cd028"
     },
     {
       "market": "twse",
@@ -6634,7 +6878,9 @@
       "monthly_eps_yoy_text": "+44.27%",
       "quarter_eps_yoy_text": "+61.19%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "06473e64d5ed23400dc267784535c76c382338e8e932cbba36ded3bb15c831c7"
     },
     {
       "ticker": "7792",
@@ -6656,7 +6902,9 @@
       "monthly_eps_yoy_text": "184.18%",
       "quarter_eps_yoy_text": "145.19%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a7f15ad9f2a39ed5a1d8b1a8a9763883bdab8735e064e15b7134f1bf58d0e5dd"
     },
     {
       "market": "twse",
@@ -6678,7 +6926,9 @@
       "monthly_eps_yoy_text": "121.4%",
       "quarter_eps_yoy_text": "270.7%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a28f3fb56b02f4e9eace765eeb02e3b16134743792905cd80ff74b015344bf78"
     },
     {
       "market": "twse",
@@ -6700,7 +6950,9 @@
       "monthly_eps_yoy_text": "95%",
       "quarter_eps_yoy_text": "101%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f810fe1481a7e42bc876200bdc435a628f4d61df09feb60354ef17d1873fed1b"
     },
     {
       "market": "twse",
@@ -6722,7 +6974,9 @@
       "monthly_eps_yoy_text": "-25.4%",
       "quarter_eps_yoy_text": "13.1%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "556212dec04692b05df3c6a31d6e98e5f3ffe810b60bd1b89bd6bf7fc3cde954"
     },
     {
       "market": "twse",
@@ -6744,7 +6998,9 @@
       "monthly_eps_yoy_text": "508%",
       "quarter_eps_yoy_text": "527%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "f7a7f16be1194296ef40a3b394d3b0fa956cd7b27b363ebc9cd106ec00f9145f"
     },
     {
       "ticker": "6488",
@@ -6766,7 +7022,9 @@
       "monthly_eps_yoy_text": "145.00%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "c0773f9d91f9defaac844836932e22669fb623bb19989153c5a89b36ea8ee725"
     },
     {
       "ticker": "4542",
@@ -6789,7 +7047,9 @@
       "monthly_eps_yoy_text": "22%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "008284a8cb792901c50d7dea5a68098d55edcc83053ab79f3d6236ad1f095700"
     },
     {
       "market": "twse",
@@ -6811,7 +7071,9 @@
       "monthly_eps_yoy_text": "285.04%",
       "quarter_eps_yoy_text": "179.09%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "1cb95597c84770bc4f5422cd32f64d38982808be9922c69db9fb08092104e616"
     },
     {
       "ticker": "5465",
@@ -6833,7 +7095,9 @@
       "monthly_eps_yoy_text": "-6%",
       "quarter_eps_yoy_text": "1375%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": ""
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "aaa1805dd364390f0ab90181561c4cc32d7c98a5768b11ff2044205e04ced3f2"
     }
   ]
 }
