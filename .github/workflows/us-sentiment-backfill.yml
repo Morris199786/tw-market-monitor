@@ -21,22 +21,22 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check 'yfinance>=0.2.50,<2' 'pandas>=2.0,<3'
-      - name: Download and validate historical data
+      - name: Download and verify IG and VIX alongside all prior historical sources
         run: python scripts/update_us_sentiment_history.py
-      - name: Upload source audit (including failures)
+      - name: Upload audit (even if source check fails)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: us-sentiment-fetch-audit
           path: data/us_sentiment_fetch_audit.json
           if-no-files-found: warn
-      - name: Commit validated JSON only
+      - name: Commit validated history JSON only
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/us_sentiment_history.json
           if ! git diff --cached --quiet; then
-            git commit -m 'data: backfill US sentiment history since 2011'
+            git commit -m 'data: complete IG history and VIX recent close'
             git push
           else
             echo 'No data changes'
