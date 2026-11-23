@@ -1,219 +1,252 @@
 #!/usr/bin/env python3
-"""Independent US market sentiment historical data collector (2011+).
+"""US sentiment historical data collector, 2011 onward.
 
-Writes ONLY data/us_sentiment_history.json. Never touches FINRA or web files.
-Run: python scripts/update_us_sentiment_history.py
-Requires: pip install yfinance pandas
+Standalone: only writes data/us_sentiment_history.json and audit JSON.
+Does not touch FINRA, other market data, JS, HTML, or CSS.
+Dependencies: yfinance, pandas. Run from repo: python scripts/update_us_sentiment_history.py
 """
 import csv
 import io
 import json
 import math
-import os
 import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 START = '2011-01-01'
 ROOT = Path(__file__).resolve().parents[1] if Path(__file__).resolve().parent.name == 'scripts' else Path.cwd()
-OUT = ROOT / 'data' / 'us_sentiment_history.json'
-BASE = 'https://raw.githubusercontent.com/whit3rabbit/fear-greed-data/main/fear-greed.csv'
+OUT = ROOT / 'data/us_sentiment_history.json'
+AUDIT = ROOT / 'data/us_sentiment_fetch_audit.json'
+CNN = 'https://raw.githubusercontent.com/whit3rabbit/fear-greed-data/main/fear-greed.csv'
 HY_ARCHIVE = ('https://raw.githubusercontent.com/maaurocp/Trading_Protocol/'
               'bf64e83fa4c2a6e72c37d3883476dc81bd9d2e31/data/raw/fred_BAMLH0A0HYM2.csv')
+IG_ARCHIVE = ('https://raw.githubusercontent.com/SimoneFarinelli10/'
+              'hierarchical-copula-aggregation/main/BAMLC0A0CM.csv')
 FRED = 'https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}&cosd=2011-01-01'
-PRICE_SYMBOLS = {'sp500': '^GSPC', 'nasdaq_composite': '^IXIC', 'vix_yahoo': '^VIX'}
+SYMBOLS = {'sp500': '^GSPC', 'nasdaq_composite': '^IXIC', 'vix_yahoo': '^VIX'}
 
 
 def download(url):
-    request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; MarketMonitor/1.0)',
-                                                   'Accept': 'text/csv,text/plain,*/*'})
+    req = urllib.request.Request(url, headers={
+        'User-Agent': 'Mozilla/5.0 (compatible; MarketMonitor/1.0)',
+        'Accept': 'text/csv,text/plain,*/*'})
     error = None
     for i in range(3):
         try:
-            with urllib.request.urlopen(request, timeout=45) as response:
-                content = response.read(15_000_000)
-                if not content or b'<html' in content[:200].lower():
-                    raise ValueError('Invalid/HTML response')
-                return content.decode('utf-8-sig')
+            with urllib.request.urlopen(req, timeout=45) as response:
+                raw = response.read(15_000_001)
+            if len(raw) > 15_000_000 or not raw or b'<html' in raw[:300].lower():
+                raise ValueError('Invalid or HTML response')
+            return raw.decode('utf-8-sig')
         except (TimeoutError, OSError, urllib.error.URLError, ValueError) as exc:
             error = exc
-            if i != 2:
+            if i < 2:
                 time.sleep(i + 1)
     raise RuntimeError(f'{url}: {error}')
 
 
 def finite(value):
     try:
-        x = float(str(value).strip())
-        return round(x, 7) if math.isfinite(x) else None
-    except (ValueError, TypeError):
+        n = float(str(value).strip())
+        return round(n, 7) if math.isfinite(n) else None
+    except (TypeError, ValueError):
         return None
 
 
-def parse_csv(content, date_column, value_column, minimum=None, maximum=None):
-    output = {}
-    for row in csv.DictReader(io.StringIO(content)):
-        date = (row.get(date_column) or '').strip()[:10]
-        if date < START or len(date) != 10:
+def parse_csv(blob, date_col, value_col, lo=0, hi=None):
+    rows = {}
+    for row in csv.DictReader(io.StringIO(blob)):
+        date = (row.get(date_col) or '').strip()[:10]
+        if len(date) != 10 or date < START:
             continue
         try:
             datetime.strptime(date, '%Y-%m-%d')
         except ValueError:
             continue
-        val = finite(row.get(value_column))
-        if val is None or (minimum is not None and val < minimum) or (maximum is not None and val > maximum):
+        value = finite(row.get(value_col))
+        if value is None or value < lo or (hi is not None and value > hi):
             continue
-        output[date] = val
-    return output
+        rows[date] = value
+    return rows
 
 
-def fetch_fred(series_id):
-    return parse_csv(download(FRED.format(id=series_id)), 'observation_date', series_id, minimum=0)
+def fetch_fred(sid):
+    return parse_csv(download(FRED.format(id=sid)), 'observation_date', sid)
 
 
 def fetch_prices():
     import yfinance as yf
-    # Download symbols individually: one bad ticker cannot corrupt others.
-    results = {}
-    errors = {}
-    for name, ticker in PRICE_SYMBOLS.items():
+    data, errors = {}, {}
+    for key, ticker in SYMBOLS.items():
         try:
-            frame = yf.download(ticker, start=START, auto_adjust=False, progress=False,
-                                threads=False, timeout=45)
-            if frame is None or frame.empty:
-                raise RuntimeError('Empty Yahoo price history')
-            close = frame['Close']
-            # yfinance sometimes returns a 2-level column index.
+            df = yf.download(ticker, start=START, auto_adjust=False,
+                             progress=False, threads=False, timeout=45)
+            if df is None or df.empty:
+                raise ValueError('Empty Yahoo history')
+            close = df['Close']
             if hasattr(close, 'columns'):
                 close = close.iloc[:, 0]
             rows = {}
-            for date, value in close.items():
-                number = finite(value)
-                if number is not None and number > 0:
-                    rows[str(date)[:10]] = number
-            if len(rows) < 1000:
-                raise RuntimeError(f'Too few rows: {len(rows)}')
-            results[name] = rows
+            for stamp, val in close.items():
+                n = finite(val)
+                if n is not None and n > 0:
+                    rows[str(stamp)[:10]] = n
+            if len(rows) < 3000:
+                raise ValueError(f'Only {len(rows)} valid prices')
+            data[key] = rows
         except Exception as exc:
-            errors[name] = str(exc)[:250]
-    return results, errors
+            errors[key] = str(exc)[:300]
+    return data, errors
 
 
 def coverage(rows):
-    days = sorted(rows)
-    return {'rows': len(days), 'start': days[0] if days else None, 'end': days[-1] if days else None}
+    dates = sorted(rows)
+    return {'rows': len(dates), 'start': dates[0] if dates else None,
+            'end': dates[-1] if dates else None}
 
 
-def recent_enough(rows, max_calendar_days=14):
+def fresh(rows, days=14):
     if not rows:
         return False
-    latest = datetime.strptime(max(rows), '%Y-%m-%d').date()
-    return (datetime.now(timezone.utc).date() - latest).days <= max_calendar_days
+    last = datetime.strptime(max(rows), '%Y-%m-%d').date()
+    return (datetime.now(timezone.utc).date() - last).days <= days
+
+
+def overlap_quality(archive, fred):
+    common = sorted(set(archive) & set(fred))
+    diffs = [(day, archive[day], fred[day], round(abs(archive[day] - fred[day]), 5))
+             for day in common if abs(archive[day] - fred[day]) > 0.02]
+    return {'overlap_dates': len(common), 'difference_over_2bp_count': len(diffs),
+            'difference_examples': diffs[:12]}
 
 
 def main():
-    sources = {}
-    data = {}
-    problems = []
-    def record(name, action, url, min_count, freshness_days=14):
+    sources, raw, issues = {}, {}, []
+
+    def get(name, action, url, minimum, max_age=14):
         try:
             rows = action()
-            if len(rows) < min_count:
-                raise ValueError(f'Only {len(rows)} valid rows, expected >= {min_count}')
-            state = 'ok' if recent_enough(rows, freshness_days) else 'stale'
-            if state != 'ok':
-                problems.append(f'{name}: latest {max(rows)} is stale')
-            data[name] = rows
-            sources[name] = {'status': state, 'url': url, **coverage(rows)}
+            if len(rows) < minimum:
+                raise ValueError(f'Only {len(rows)} rows (minimum {minimum})')
+            status = 'ok' if fresh(rows, max_age) else 'stale'
+            sources[name] = {'status': status, 'url': url, **coverage(rows)}
+            raw[name] = rows
+            if status == 'stale':
+                issues.append(f'{name}: stale at {max(rows)}')
         except Exception as exc:
             sources[name] = {'status': 'failed', 'url': url, 'error': str(exc)[:500]}
-            problems.append(f'{name}: {exc}')
+            issues.append(f'{name}: {exc}')
 
-    record('cnn_fear_greed', lambda: parse_csv(download(BASE), 'Date', 'Fear Greed', 0, 100), BASE, 3500)
-    record('hy_oas_archive', lambda: parse_csv(download(HY_ARCHIVE), 'date', 'BAMLH0A0HYM2', 0),
-           HY_ARCHIVE, 3000, freshness_days=10000)
-    record('hy_oas_fred', lambda: fetch_fred('BAMLH0A0HYM2'), FRED.format(id='BAMLH0A0HYM2'), 300)
-    record('ig_oas_fred', lambda: fetch_fred('BAMLC0A0CM'), FRED.format(id='BAMLC0A0CM'), 300)
-    record('vix_fred', lambda: fetch_fred('VIXCLS'), FRED.format(id='VIXCLS'), 300)
+    get('cnn_fear_greed', lambda: parse_csv(download(CNN), 'Date', 'Fear Greed', 0, 100), CNN, 3500)
+    get('hy_oas_archive', lambda: parse_csv(download(HY_ARCHIVE), 'date', 'BAMLH0A0HYM2'),
+        HY_ARCHIVE, 3000, 10000)
+    get('ig_oas_archive', lambda: parse_csv(download(IG_ARCHIVE), 'observation_date', 'BAMLC0A0CM'),
+        IG_ARCHIVE, 3000, 10000)
+    for key, sid in [('hy_oas_fred', 'BAMLH0A0HYM2'),
+                     ('ig_oas_fred', 'BAMLC0A0CM'), ('vix_fred', 'VIXCLS')]:
+        # FRED recent rows are deliberately an overlay; older CSV archive supplies IG/HY history.
+        get(key, lambda sid=sid: fetch_fred(sid), FRED.format(id=sid),
+            300 if key != 'vix_fred' else 300)
 
-    try:
-        prices, errs = fetch_prices()
-        for name, ticker in PRICE_SYMBOLS.items():
-            key = name.replace('_yahoo', '')
-            if name in prices and len(prices[name]) >= 3000:
-                data[key] = prices[name]
-                state = 'ok' if recent_enough(prices[name]) else 'stale'
-                sources[key] = {'status': state, 'url': 'Yahoo Finance: ' + ticker,
-                                **coverage(prices[name])}
-                if state == 'stale':
-                    problems.append(f'{key}: latest {max(prices[name])} stale')
-            else:
-                error = errs.get(name, 'Incomplete data')
-                sources[key] = {'status': 'failed', 'url': 'Yahoo Finance: ' + ticker, 'error': error}
-                problems.append(f'{key}: {error}')
-    except Exception as exc:
-        for key in ('sp500', 'nasdaq_composite', 'vix'):
-            sources[key] = {'status': 'failed', 'error': str(exc)[:300]}
-            problems.append(f'{key}: {exc}')
+    prices, price_errors = fetch_prices()
+    for name, ticker in SYMBOLS.items():
+        key = 'vix_yahoo' if name == 'vix_yahoo' else name
+        if name not in prices:
+            sources[key] = {'status': 'failed', 'url': 'Yahoo Finance: ' + ticker,
+                            'error': price_errors.get(name, 'Empty data')}
+            issues.append(key + ': ' + price_errors.get(name, 'Empty data'))
+            continue
+        raw[key] = prices[name]
+        status = 'ok' if fresh(prices[name]) else 'stale'
+        sources[key] = {'status': status, 'url': 'Yahoo Finance: ' + ticker,
+                        **coverage(prices[name])}
+        if status != 'ok':
+            issues.append(f'{key}: stale')
 
-    # Never fill missing days with stale observations. Distinguish market holidays
-    # from missing data by keeping all original dates and sparse values.
-    hy = {**data.get('hy_oas_archive', {}), **data.get('hy_oas_fred', {})}
-    vix = data.get('vix_fred') or data.get('vix', {})
+    # Archives fill historical dates only; FRED wins on overlapping observations.
+    hy = {**raw.get('hy_oas_archive', {}), **raw.get('hy_oas_fred', {})}
+    ig = {**raw.get('ig_oas_archive', {}), **raw.get('ig_oas_fred', {})}
+
+    # Preserve FRED historical VIX and add Yahoo completed US trading sessions
+    # only when FRED does not yet have the same observation. Avoid intraday data.
+    vix = dict(raw.get('vix_fred', {}))
+    us_today = datetime.now(ZoneInfo('America/New_York')).date().isoformat()
+    vix_added = []
+    for day, value in sorted(raw.get('vix_yahoo', {}).items()):
+        if day < us_today and day not in vix:
+            vix[day] = value
+            vix_added.append(day)
+
+    comparisons = {
+        'ig_archive_vs_fred': overlap_quality(raw.get('ig_oas_archive', {}), raw.get('ig_oas_fred', {})),
+        'hy_archive_vs_fred': overlap_quality(raw.get('hy_oas_archive', {}), raw.get('hy_oas_fred', {})),
+        'vix_yahoo_dates_added': vix_added[-15:],
+        'vix_yahoo_dates_added_count': len(vix_added),
+    }
+    # Historical providers should have a sizable exact-date overlap.
+    if comparisons['ig_archive_vs_fred']['overlap_dates'] < 100:
+        issues.append('IG: historical archive and FRED lack sufficient overlap for validation')
+    if comparisons['ig_archive_vs_fred']['difference_over_2bp_count'] > 20:
+        issues.append('IG: excessive archive/FRED mismatches; inspect audit')
+
     series = {
-        'cnn_fear_greed': data.get('cnn_fear_greed', {}),
-        'sp500': data.get('sp500', {}),
-        'nasdaq_composite': data.get('nasdaq_composite', {}),
+        'cnn_fear_greed': raw.get('cnn_fear_greed', {}),
+        'sp500': raw.get('sp500', {}),
+        'nasdaq_composite': raw.get('nasdaq_composite', {}),
         'vix': vix,
         'hy_oas_pct': hy,
-        'ig_oas_pct': data.get('ig_oas_fred', {}),
+        'ig_oas_pct': ig,
     }
     for name, rows in series.items():
         sources['merged_' + name] = coverage(rows)
 
-    # Guardrails: refuse to publish partial historical coverage as complete.
-    mandatory = ('cnn_fear_greed', 'sp500', 'nasdaq_composite', 'vix', 'hy_oas_pct')
     checks = {'cnn_under_10_days': sum(v < 10 for v in series['cnn_fear_greed'].values()),
               'cnn_under_10_segments': 0, 'mandatory_historical_coverage': {}}
-    previous_low = False
-    for date in sorted(series['cnn_fear_greed']):
-        low = series['cnn_fear_greed'][date] < 10
-        if low and not previous_low:
+    was_low = False
+    for day in sorted(series['cnn_fear_greed']):
+        low = series['cnn_fear_greed'][day] < 10
+        if low and not was_low:
             checks['cnn_under_10_segments'] += 1
-        previous_low = low
-    for name in mandatory:
-        info = coverage(series[name]); checks['mandatory_historical_coverage'][name] = info
+        was_low = low
+    for name, rows in series.items():
+        info = coverage(rows)
+        checks['mandatory_historical_coverage'][name] = info
         if info['rows'] < 3000 or not info['start'] or info['start'] > '2011-03-01':
-            problems.append(f'{name}: insufficient 2011+ historical coverage')
-        if not recent_enough(series[name]):
-            problems.append(f'{name}: no recent data')
+            issues.append(f'{name}: inadequate 2011+ coverage ({info})')
+        if not fresh(rows):
+            issues.append(f'{name}: latest data not recent')
+    if checks['cnn_under_10_days'] < 100 or checks['cnn_under_10_segments'] < 30:
+        issues.append('CNN extreme fear history unexpectedly reduced')
 
-    payload = {'schema_version': 1, 'start_requested': START,
-               'checked_at_utc': datetime.now(timezone.utc).isoformat(timespec='seconds'),
-               'complete': not problems, 'issues': sorted(set(problems)),
-               'units': {'cnn_fear_greed':'0-100', 'sp500':'index_points',
-                         'nasdaq_composite':'index_points', 'vix':'index_points',
-                         'hy_oas_pct':'percentage_points', 'ig_oas_pct':'percentage_points'},
-               'sources': sources, 'checks': checks,
-               'series': {key: dict(sorted(values.items())) for key, values in series.items()}}
-    report = {'complete': payload['complete'], 'sources': sources, 'checks': checks, 'issues': payload['issues']}
-    print(json.dumps(report, indent=2, ensure_ascii=False))
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    (OUT.parent / 'us_sentiment_fetch_audit.json').write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + '\n')
-    # Don't replace a prior valid file if any critical input is broken.
-    if not payload['complete']:
-        print('ERROR: Incomplete source coverage; existing JSON kept unchanged.', file=sys.stderr)
+    payload = {
+        'schema_version': 2, 'start_requested': START,
+        'checked_at_utc': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+        'complete': not issues, 'issues': sorted(set(issues)),
+        'units': {'cnn_fear_greed': '0-100', 'sp500': 'index_points',
+                  'nasdaq_composite': 'index_points', 'vix': 'index_points',
+                  'hy_oas_pct': 'percentage_points', 'ig_oas_pct': 'percentage_points'},
+        'sources': sources, 'checks': checks, 'comparisons': comparisons,
+        'series': {name: dict(sorted(rows.items())) for name, rows in series.items()},
+    }
+    audit = {k: payload[k] for k in ('checked_at_utc', 'complete', 'issues',
+                                      'sources', 'checks', 'comparisons')}
+    AUDIT.parent.mkdir(parents=True, exist_ok=True)
+    AUDIT.write_text(json.dumps(audit, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+    print(json.dumps(audit, indent=2, ensure_ascii=False))
+    if issues:
+        print('ERROR: source verification failed; existing history JSON preserved.', file=sys.stderr)
         return 1
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    temp = OUT.with_name(OUT.name + '.tmp')
-    temp.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':'), allow_nan=False) + '\n')
+    temp = OUT.with_suffix('.json.tmp')
+    temp.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':'),
+                               allow_nan=False) + '\n')
     temp.replace(OUT)
-    print(f'SUCCESS wrote {OUT}, {OUT.stat().st_size:,} bytes')
+    print(f'SUCCESS: {OUT}, {OUT.stat().st_size:,} bytes')
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())
