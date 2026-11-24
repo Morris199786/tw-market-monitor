@@ -223,8 +223,37 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
 </main>
 
 <script>window.__brokerReportsRenderer="v3";</script>
-<link rel="stylesheet" href="./assets/ai_portfolio.css?v=20261124-sox-k20-v1">
+<link rel="stylesheet" href="./assets/ai_portfolio.css?v=20261125-exposure-fold-v1">
 <script src="./assets/ai_portfolio.js?v=20261124-sox-k20-v1"></script>
+<script id="ai-exposure-disclosure-v1">
+(()=>{'use strict';
+  const root=document.getElementById('aiPortfolioRoot');
+  const page=document.getElementById('ai');
+  if(!root||!page)return;
+  function fold(){
+    const card=root.querySelector('.ap-waterfall');
+    if(!card||card.querySelector('.ap-waterfall-fold'))return;
+    const value=card.querySelector('.ap-waterfall-figures>div:first-child>strong');
+    if(!value)return;
+    const details=document.createElement('details');
+    details.className='ap-waterfall-fold';
+    const summary=document.createElement('summary');
+    const label=document.createElement('span');
+    const caption=document.createElement('span');
+    caption.className='ap-fold-label';caption.textContent='目前持股水位';
+    const amount=value.cloneNode(true);amount.className='ap-fold-value';
+    label.append(caption,amount);
+    const arrow=document.createElement('span');arrow.className='ap-fold-arrow';arrow.setAttribute('aria-hidden','true');
+    summary.append(label,arrow);
+    const body=document.createElement('div');body.className='ap-fold-body';
+    while(card.firstChild)body.appendChild(card.firstChild);
+    details.append(summary,body);card.appendChild(details);
+  }
+  new MutationObserver(fold).observe(root,{childList:true,subtree:true});
+  new MutationObserver(()=>{if(!page.classList.contains('active')){const d=root.querySelector('.ap-waterfall-fold');if(d)d.open=false;}}).observe(page,{attributes:true,attributeFilter:['class']});
+  fold();
+})();
+</script>
 <script src="./assets/app.js?v=20261123-yesterday-batch-v1"></script>
 <script src="./assets/margin_lending.js?v=20260929-short-sale-v5"></script>
 <script src="./assets/ui_v2.js?v=20261113-stock-links-v2"></script>
