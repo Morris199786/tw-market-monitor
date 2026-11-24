@@ -31,6 +31,8 @@ jobs:
         run: |
           git fetch origin main
           git reset --hard origin/main
+      - name: Install Python dependencies
+        run: python -m pip install pandas
       - name: Verify portfolio accounting
         run: python -m unittest discover -s tests -p 'test_ai*.py' -q
       - name: Refresh AI-only full-market quotes and official financials
