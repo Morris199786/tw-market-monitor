@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-24T20:29+08:00",
+  "updated_at": "2026-11-24T21:39+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2568,33 +2568,26 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 163,
+          "rows": 170,
           "hits": 17
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 163,
+          "rows": 170,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 163,
+          "rows": 170,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
           "rows": 0,
           "hits": 0
@@ -2615,17 +2608,23 @@
         },
         {
           "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 163,
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 0,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 163,
+          "rows": 170,
           "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x738099f54b60>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2638,7 +2637,7 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7fa34d0a4410>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x738098b8c7d0>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2651,7 +2650,8 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x7fa34d0a4f20>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "openapi_rescue_pool",
@@ -2712,7 +2712,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1472",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2720,10 +2720,9 @@
         {
           "mode": "company_rescue",
           "ticker": "1504",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectTimeout"
         },
         {
           "mode": "company_rescue",
@@ -2880,7 +2879,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2383",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3304,7 +3303,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8454",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3613,7 +3612,7 @@
       "monthly_eps_yoy_text": "-98%",
       "quarter_eps_yoy_text": "-548%",
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_label_not_found",
+      "eps_parse_reason": "",
       "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
       "_eps_parse_fingerprint": "b7fcbcc20a024605193613f375b57a942a7c145b2a7337b0fde94d99b5d82f68"
     },
@@ -3743,7 +3742,7 @@
       "monthly_eps_yoy_text": "275.51%",
       "quarter_eps_yoy_text": null,
       "eps_parse_status": "parsed",
-      "eps_parse_reason": "eps_label_not_found",
+      "eps_parse_reason": "",
       "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
       "_eps_parse_fingerprint": "006ebe6f71093b757f0ab08685a889f35ff28a5d107068fd4756bcafde8a3b5b"
     },
