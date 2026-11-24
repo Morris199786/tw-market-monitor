@@ -27,12 +27,17 @@ def initial(config,now):
 def migrate(state,config,now):
     if state.get('strategy')==VERSION:
         if state['config']!=config:
-            allowed={'max_positions','min_exposure','max_stock_weight'}
+            # Explicit migration for the requested cap increase; retain the old migration path.
+            allowed={'max_positions','min_exposure','max_stock_weight','max_sector_weight'}
             changed={k for k in set(state['config'])|set(config) if state['config'].get(k)!=config.get(k)}
-            if not changed<=allowed or any(config.get(k)!=v for k,v in {'max_positions':8,'min_exposure':0,'max_stock_weight':.3}.items()):
+            profile=(config.get('max_stock_weight'),config.get('max_sector_weight'))
+            prior=(state['config'].get('max_stock_weight'),state['config'].get('max_sector_weight'))
+            approved=(profile==(.5,.5) and prior in ((.15,.35),(.3,.35),(.5,.5))) or (profile==(.3,.35) and prior in ((.15,.35),(.3,.35)))
+            if not changed<=allowed or not approved or config.get('max_positions')!=8 or config.get('min_exposure')!=0:
                 raise ValueError('Account configuration changed; explicit versioned migration required')
             state=deepcopy(state)
-            state.setdefault('configuration_events',[]).append(dict(at=now,reason='User allocation limits: 8 positions, 0% minimum, 30% stock cap; smooth 0–100% exposure',previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
+            reason=f'User allocation limits: 8 positions, 0% minimum, {profile[0]:.0%} stock cap, {profile[1]:.0%} sector cap; smooth 0–100% exposure'
+            state.setdefault('configuration_events',[]).append(dict(at=now,reason=reason,previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
             state['config']=deepcopy(config)
         return state,None
     if state.get('strategy')!='three-pillar-paper-v1':raise ValueError('Unknown previous account version')
