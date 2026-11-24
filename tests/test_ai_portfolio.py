@@ -60,7 +60,45 @@ class Accounting(unittest.TestCase):
     def test_overweight_rejected(self):
         with self.assertRaises(ValueError):frozen_decision(self.s,plan('2026-11-13',[target(weight=.5)]))
 
+    def test_migrate_30_to_50_preserves_account(self):
+        self.start()
+        old=deepcopy(self.s)
+        old['config'].update(max_positions=8,min_exposure=0,max_stock_weight=.3,max_sector_weight=.35)
+        cfg={**old['config'],'max_stock_weight':.5,'max_sector_weight':.5}
+        before=deepcopy(old)
+        new,archive=migrate(old,cfg,'2026-11-17T18:00:00+08:00')
+        self.assertIsNone(archive)
+        self.assertEqual(old,before)
+        self.assertEqual(new['config'],cfg)
+        for key in before:
+            if key not in ('config','configuration_events'):self.assertEqual(new[key],before[key])
+        self.assertEqual(len(new['configuration_events']),len(before['configuration_events'])+1)
+        self.assertEqual(migrate(new,cfg,'2026-11-18T18:00:00+08:00'),(new,None))
+        with self.assertRaises(ValueError):migrate(old,{**cfg,'initial_cash':1},'2026-11-17T18:00:00+08:00')
+        with self.assertRaises(ValueError):migrate(old,{**cfg,'max_sector_weight':.35},'2026-11-17T18:00:00+08:00')
+    def test_new_stock_cap_accepts_50_rejects_above(self):
+        cfg={**DEFAULTS,'max_positions':8,'min_exposure':0,'max_stock_weight':.5,'max_sector_weight':.5}
+        state=initial(cfg,'2026-11-13T18:00:00+08:00')
+        self.assertTrue(frozen_decision(state,plan('2026-11-13',[target(weight=.5)])))
+        with self.assertRaises(ValueError):frozen_decision(state,plan('2026-11-16',[target(weight=.5001)]))
+        with self.assertRaises(ValueError):frozen_decision(state,plan('2026-11-17',[target(weight=.26,asset='etf')]))
+
 class Model(unittest.TestCase):
+    def test_50_percent_allocation_and_sector_cap(self):
+        cfg={**DEFAULTS,'max_positions':8,'min_exposure':0,'max_stock_weight':.5,'max_sector_weight':.5}
+        out=allocate([target(score=95)],.8,cfg)
+        self.assertAlmostEqual(out[0]['weight'],.5,places=5)
+        xs=[target('1000',score=95,sector='A'),target('1001',score=85,sector='A'),target('1002',score=70,sector='B')]
+        out=allocate(xs,.8,cfg)
+        weights={x['ticker']:x['weight'] for x in out}
+        self.assertGreater(weights['1000'],weights['1001'])
+        self.assertLessEqual(weights['1000']+weights['1001'],.500001)
+        self.assertLessEqual(sum(weights.values()),.800001)
+        self.assertLessEqual(allocate([target(asset='etf')],.8,cfg)[0]['weight'],.25)
+        discovery=target();discovery['discovery']=True
+        self.assertLessEqual(allocate([discovery],.8,cfg)[0]['weight'],.05)
+        self.assertLessEqual(allocate([target()],.2,cfg)[0]['weight'],.2)
+
     def test_weights_differ_and_caps_hold(self):
         xs=[target(str(1000+i),score=90-i*2,sector=str(i%4)) for i in range(10)]+[target('00981A',asset='etf',score=91)]
         out=allocate(xs,.9,DEFAULTS);w={x['ticker']:x['weight'] for x in out};self.assertNotEqual(w['1000'],w['1007']);self.assertLessEqual(sum(w.values()),.9)
