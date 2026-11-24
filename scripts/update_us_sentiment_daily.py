@@ -24,6 +24,22 @@ SERIES = ('cnn_fear_greed', 'sp500', 'nasdaq_composite', 'vix', 'hy_oas_pct', 'i
 DAYS = 35  # 30+ calendar days: cover delayed releases, weekends and holidays.
 
 
+def daily_window(now=None):
+    """Use an exclusive end date, allowing today's NY data after 17:30 ET.
+
+    The conservative cutoff covers regular and early-close sessions, including
+    the later VIX close. It also leaves time for providers to publish closes.
+    Missing observations are never fabricated; weekends/holidays retain the
+    provider's actual dates. No extra exchange-calendar dependency is needed.
+    """
+    ny = ZoneInfo('America/New_York')
+    now = datetime.now(ny) if now is None else now.astimezone(ny)
+    today_ny = now.date()
+    after_buffer = (now.hour, now.minute) >= (17, 30)
+    end = today_ny + timedelta(days=1) if after_buffer and now.weekday() < 5 else today_ny
+    return (today_ny - timedelta(days=DAYS)).isoformat(), end.isoformat()
+
+
 def number(value):
     try:
         n = float(str(value).strip())
@@ -116,9 +132,7 @@ def main():
         print('US_DAILY_BAD_ARCHIVE: existing 2011+ history missing/incomplete; refusing overwrite', file=sys.stderr)
         return 1
 
-    today_ny = datetime.now(ZoneInfo('America/New_York')).date()
-    before = today_ny.isoformat()  # never save partial current NY trading day
-    since = (today_ny - timedelta(days=DAYS)).isoformat()
+    since, before = daily_window()
     updates, provider_status = {}, {}
     def collect(label, action):
         try:
