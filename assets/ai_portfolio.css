@@ -139,3 +139,13 @@ html[data-theme="dark"] #aiPortfolioRoot .ap-risk-green{background:#1c4338;color
  #aiPortfolioRoot .ap-inventory tr.ap-position-detail>td{display:block!important;white-space:normal!important;padding:14px!important;border:0!important}
  #aiPortfolioRoot .ap-inventory tr.ap-position-detail .ap-meta{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* H2 + T6: daily signal and exposure breakdown */
+#aiPortfolioRoot .ap-risk-tags{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#aiPortfolioRoot .ap-trial-chip{background:#e4f4ee;color:#16845e;border:1px solid #b9dfd0}
+#aiPortfolioRoot .ap-t6-details{display:grid;gap:7px;margin-top:13px;font-size:12px;color:var(--ap-muted)}
+#aiPortfolioRoot .ap-t6-details>div{display:flex;justify-content:space-between;gap:12px}
+#aiPortfolioRoot .ap-t6-details b{color:var(--ink);font-weight:650}
+#aiPortfolioRoot .ap-t6-details .ap-trial-value{color:#16845e}
+html[data-theme="dark"] #aiPortfolioRoot .ap-trial-chip{background:#1c4338;color:#95dcc3;border-color:#346452}
+html[data-theme="dark"] #aiPortfolioRoot .ap-t6-details .ap-trial-value{color:#95dcc3}
