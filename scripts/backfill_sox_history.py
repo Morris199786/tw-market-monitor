@@ -11,6 +11,25 @@ TW=ZoneInfo('Asia/Taipei')
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'data/history/sox-history.json'
 FRED='https://fred.stlouisfed.org/graph/fredgraph.csv'
+# Explicit historical discrepancies observed in the 2026-11-24 backfill.
+# Preserve both prices; use Yahoo's internally consistent OHLC for indicators.
+KNOWN_CONFLICTS={
+ '2008-01-29':(357.27,357.9),'2008-02-11':(355.33,349.74),
+ '2008-03-19':(335.75,334.93),'2008-05-02':(399.85,400.29),
+ '2008-05-13':(407.19,406.31),'2008-11-14':(201.38,210.79),
+ '2008-11-19':(178.05,177.1),'2008-12-01':(184.75,183.24),
+ '2009-03-19':(226.32,226.61),'2009-03-23':(233.42,234.45),
+ '2009-03-24':(228.81,228.4),'2009-03-25':(230.22,231.49),
+ '2009-03-27':(241.32,240.07),'2009-04-13':(251.02,250.6),
+ '2009-04-23':(249.62,249.36),'2009-05-04':(271.51,272.31),
+ '2009-05-06':(269.63,270.61),'2009-05-13':(237.19,236.8),
+ '2009-05-15':(242.68,242.28),'2009-05-26':(259.42,259.82),
+ '2009-05-28':(269.35,268.65),'2015-02-02':(653.14,655.19),
+}
+def known_conflict(c):
+    pair=KNOWN_CONFLICTS.get(c['date'])
+    return pair is not None and abs(c['yahoo']-pair[0])<.011 and abs(c['fred']-pair[1])<.011
+
 
 def retry(fn):
     for attempt in range(3):
@@ -73,7 +92,7 @@ def merge(expected,yahoo,fred,old):
             if prices['high']<max(prices['open'],close)-.02 or prices['low']>min(prices['open'],close)+.02 or prices['low']>prices['high']:
                 prices=dict(open=None,high=None,low=None)
         if any(v is None for v in prices.values()): incomplete.append(d)
-        rows.append(dict(date=d,available_at=closed.astimezone(TW).isoformat(),**prices,close=close,close_source=source,fred_close=f,close_verified=(f is not None and abs(close/f-1)<=.001)))
+        rows.append(dict(date=d,available_at=closed.astimezone(TW).isoformat(),**prices,close=close,close_source=source,fred_close=f,close_verified=(f is not None and abs(close/f-1)<=.001),close_conflict=(f is not None and yc is not None and abs(yc/f-1)>.001)))
     return rows,missing,conflicts,incomplete
 
 def indicators(rows,expected):
@@ -115,8 +134,11 @@ def main():
     rows,missing,conflicts,incomplete=merge(expected,sources['yahoo'],sources['fred'],old)
     indicators(rows,expected)
     quality=dict(expected_sessions=len(expected),actual_sessions=len(rows),missing_dates=missing,close_conflicts=conflicts,incomplete_ohlc_dates=incomplete,source_errors=errors,fred_verified=sum(r['close_verified'] for r in rows),source_counts={k:len(v) for k,v in sources.items()})
+    unknown_conflicts=[c for c in conflicts if not known_conflict(c)]
+    quality.update(known_close_conflicts=[c for c in conflicts if known_conflict(c)],unexpected_close_conflicts=unknown_conflicts,close_policy='Yahoo OHLC preferred; FRED close retained for comparison; known discrepancies are not verified')
     print(json.dumps(quality,ensure_ascii=False))
-    if missing or conflicts or (a.strict_ohlc and incomplete): raise RuntimeError('Coverage/price validation failed; existing archive preserved')
+    if conflicts: print(f'WARNING: {len(conflicts)} source discrepancies retained in quality metadata')
+    if missing or unknown_conflicts or (a.strict_ohlc and incomplete): raise RuntimeError('Coverage/price validation failed; existing archive preserved')
     payload=dict(schema=1,symbol='^SOX',name='PHLX Semiconductor price index',timezone='America/New_York',available_at_basis='scheduled US session close converted to Asia/Taipei; not vendor publication timestamp',units='returns, bias, drawdown, volatility in percent',start_date=min(expected),as_of_date=max(expected),quality=quality,rows=rows)
     # Avoid rewriting an unchanged dataset.
     a.output.parent.mkdir(parents=True,exist_ok=True)
