@@ -1,13 +1,26 @@
 {
-  "updated_at": "2026-11-24T13:06+08:00",
+  "updated_at": "2026-11-24T14:02+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 391,
+    "candidate_count": 392,
     "parsed_count": 174,
-    "parse_failed_count": 196,
+    "parse_failed_count": 197,
     "parse_failed": [
+      {
+        "ticker": "3162",
+        "name": "精確",
+        "publish_date": "2026-11-24",
+        "publish_time": "13:53:20",
+        "subject": "3162 精確 115/11/24 13:53:20 本公司有價證券近期多次達公布注意交易資訊標準， 故公告相關訊息，以利投資人區別暸解。",
+        "source": "mops_ajax",
+        "source_error": "https://mopsov.twse.com.tw:ReadTimeout;https://mops.twse.com.tw:detail_validation_failed",
+        "eps_parse_status": "unrecognized_layout",
+        "eps_parse_reason": "eps_label_not_found",
+        "monthly_eps": null,
+        "quarter_eps": null
+      },
       {
         "ticker": "3226",
         "name": "龍鋒",
@@ -2561,28 +2574,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 0,
-      "self_reports": 0,
+      "rows": 1,
+      "self_reports": 1,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 11,
+          "rows": 20,
+          "hits": 1
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 20,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 11,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 11,
+          "rows": 20,
           "hits": 0
         },
         {
@@ -2617,14 +2630,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 11,
+          "rows": 20,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 11,
+          "rows": 20,
           "hits": 0
         },
         {
@@ -2674,7 +2687,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1104",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2826,7 +2839,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2314",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2858,7 +2871,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2355",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2866,7 +2879,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2357",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3114,7 +3127,7 @@
         {
           "mode": "company_rescue",
           "ticker": "5285",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3250,7 +3263,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6887",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3290,15 +3303,14 @@
         {
           "mode": "company_rescue",
           "ticker": "7610",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
           "ticker": "7769",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3306,7 +3318,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8104",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3314,7 +3326,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8454",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3322,7 +3334,7 @@
         {
           "mode": "company_rescue",
           "ticker": "8499",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3361,7 +3373,7 @@
     },
     "tpex": {
       "ok": true,
-      "rows": 2,
+      "rows": 63,
       "self_reports": 0,
       "error": ""
     }
