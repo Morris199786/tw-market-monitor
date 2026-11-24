@@ -5,7 +5,7 @@ from unittest.mock import patch
 from datetime import datetime,timedelta
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from ai_portfolio_engine import *
-from ai_allocation import allocate,market_regime,fundamentals,decay,ensure_floor
+from ai_allocation import t6_exposure,allocate,market_regime,fundamentals,decay,ensure_floor
 from collect_ai_universe import parse_quotes,finance_rows
 from update_ai_portfolio import run,write
 
@@ -82,6 +82,66 @@ class Accounting(unittest.TestCase):
         self.assertTrue(frozen_decision(state,plan('2026-11-13',[target(weight=.5)])))
         with self.assertRaises(ValueError):frozen_decision(state,plan('2026-11-16',[target(weight=.5001)]))
         with self.assertRaises(ValueError):frozen_decision(state,plan('2026-11-17',[target(weight=.26,asset='etf')]))
+
+class T6Model(unittest.TestCase):
+    def setUp(self):
+        self.cfg={**DEFAULTS,**{'exposure_model': 'H2+T6', 'exposure_down_alpha': 0.5, 'exposure_up_alpha': 0.8, 'exposure_down_band': 0.05, 'exposure_up_band': 0.15, 'trial_risk_max': 70, 'trial_extra': 0.275, 'trial_sessions': 20, 'trial_exit_points': 5}}
+    def rows(self,scores,trials=()):
+        return [dict(date=(datetime(2026,1,1)+timedelta(days=i)).date().isoformat(),score=v,trial=i in trials) for i,v in enumerate(scores)]
+    def test_trial_activation_and_expiry(self):
+        a=t6_exposure(self.rows([60]*20,[0]),self.cfg)
+        self.assertTrue(a['trial_active']);self.assertFalse(a['trial_today']);self.assertEqual(a['trial_remaining'],1)
+        self.assertAlmostEqual(a['trial_extra'],.275)
+        self.assertFalse(t6_exposure(self.rows([60]*21,[0]),self.cfg)['trial_active'])
+    def test_trial_risk_and_exit(self):
+        self.assertFalse(t6_exposure(self.rows([70],[0]),self.cfg)['trial_active'])
+        self.assertFalse(t6_exposure(self.rows([60,65],[0]),self.cfg)['trial_active'])
+        self.assertTrue(t6_exposure(self.rows([60,30,50],[0]),self.cfg)['trial_active'])
+    def test_asymmetric_smoothing(self):
+        self.assertAlmostEqual(t6_exposure(self.rows([0,100]),self.cfg)['smoothed_exposure'],.5)
+        self.assertAlmostEqual(t6_exposure(self.rows([100,0]),self.cfg)['smoothed_exposure'],.8)
+    def test_cap_and_daily_tag(self):
+        a=t6_exposure(self.rows([0],[0]),self.cfg)
+        self.assertEqual(a['target_exposure'],1);self.assertTrue(a['trial_today'])
+    def test_below_buy_band_stays_cash(self):
+        state=initial({**self.cfg,'min_exposure':0},'2026-11-13T18:00:00+08:00')
+        p=plan('2026-11-13',[target(weight=.1)],.1)
+        p['regime'].update(exposure_model='H2+T6',exposure_up_band=.15,exposure_down_band=.05)
+        frozen_decision(state,p);session(state,'2026-11-16',{'1815':bar()},{'1815':100})
+        self.assertFalse(state['trades']);self.assertFalse(state['exposure_execution'][-1]['adjust'])
+
+    def test_migration_preserves_existing_ledger(self):
+        oldcfg={**DEFAULTS,'max_positions':8,'min_exposure':0,'max_stock_weight':.5,'max_sector_weight':.5}
+        state=initial(oldcfg,'2026-11-13T18:00:00+08:00')
+        frozen_decision(state,plan('2026-11-13',[target(weight=.2)]))
+        session(state,'2026-11-16',{'1815':bar()},{'1815':100})
+        before=deepcopy(state);newcfg={**self.cfg,**{k:oldcfg[k] for k in ('max_positions','min_exposure','max_stock_weight','max_sector_weight')}}
+        updated,archive=migrate(state,newcfg,'2026-11-16T18:00:00+08:00')
+        self.assertIsNone(archive);self.assertEqual(state,before)
+        for k in ('cash','positions','equity','trades','decisions','started_at','processed_sessions'):
+            self.assertEqual(updated[k],before[k])
+        self.assertEqual(migrate(updated,newcfg,'2026-11-17T18:00:00+08:00'),(updated,None))
+    def test_buy_and_sell_bands(self):
+        state=initial({**self.cfg,'min_exposure':0,'max_stock_weight':.5},'2026-11-13T18:00:00+08:00')
+        def decision(day,w):
+            p=plan(day,[target(weight=w)] if w else [],w)
+            p['regime'].update(exposure_model='H2+T6',exposure_up_band=.15,exposure_down_band=.05)
+            frozen_decision(state,p)
+        decision('2026-11-13',.25);session(state,'2026-11-16',{'1815':bar()},{'1815':100})
+        self.assertTrue(state['exposure_execution'][-1]['adjust']);self.assertEqual(len(state['trades']),1)
+        decision('2026-11-16',.22);session(state,'2026-11-17',{'1815':bar()},{'1815':100})
+        self.assertFalse(state['exposure_execution'][-1]['adjust']);self.assertEqual(len(state['trades']),1)
+        decision('2026-11-17',.10);session(state,'2026-11-18',{'1815':bar()},{'1815':100})
+        self.assertTrue(state['exposure_execution'][-1]['adjust']);self.assertEqual(state['trades'][-1]['side'],'sell')
+    def test_duplicate_history_rejected(self):
+        rows=self.rows([50,60]);rows[1]['date']=rows[0]['date']
+        with self.assertRaises(ValueError):t6_exposure(rows,self.cfg)
+    def test_retrigger_replaces_window_without_stacking(self):
+        rows=self.rows([50]*12,[0,11]);a=t6_exposure(rows,self.cfg)
+        self.assertEqual(a['trial_remaining'],20);self.assertAlmostEqual(a['trial_extra'],.275)
+    def test_ineligible_retrigger_ends_previous_trial(self):
+        a=t6_exposure(self.rows([69]*11+[70],[0,11]),self.cfg)
+        self.assertTrue(a['trial_today']);self.assertFalse(a['trial_active'])
 
 class Model(unittest.TestCase):
     def test_50_percent_allocation_and_sector_cap(self):
