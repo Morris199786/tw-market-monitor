@@ -86,11 +86,18 @@ def v12_market_signal(data,day):
     if(end<0)throw Error('V12 JS function boundary missing');
     const context={};vm.runInNewContext(source.slice(0,end),context,{timeout:15000});
     if(typeof context.buildTwRisk!=='function'||typeof context.applyCombinedMargin!=='function')throw Error('V12 engine not found');
-    const funds=context.applyCombinedMargin(input.funds,input.otc);
-    const result=context.buildTwRisk(funds,input.breadth).get(input.day);
+    const funds=context.applyCombinedMargin(input.funds.filter(x=>x.date<=input.day),input.otc);
+    const breadth=input.breadth.filter(x=>x.date<=input.day);
+    const risks=context.buildTwRisk(funds,breadth);
+    if(typeof context.buildTwRecovery!=='function')throw Error('Trial engine not found');
+    const recovery=context.buildTwRecovery(funds,breadth,risks);
+    const result=risks.get(input.day);
+    const history=funds.filter(x=>risks.has(x.date)).map(x=>({date:x.date,score:risks.get(x.date).score,trial:recovery.states.get(x.date)?.trigger===true}));
+    // Missing risk in the latest 20 sessions invalidates the trial/session clock.
+    if(funds.slice(-20).some(x=>!risks.has(x.date)||!Number.isFinite(x.relative5)))throw Error('Recent T6 history incomplete');
     const valid=!!result&&result.valid===true&&Number.isFinite(result.score);
     process.stdout.write(JSON.stringify({date:input.day,valid,score:valid?result.score:null,
-      level:valid?result.level:null,reason:valid?result.reason:'V12 signal missing'}));
+      history:valid?history:[],level:valid?result.level:null,reason:valid?result.reason:'V12 signal missing'}));
     """
     payload=dict(js=str(js_path),day=day,
                  funds=funds_archive+monitor.get('rows',[]),
@@ -140,7 +147,7 @@ def _proposal(data,cfg,now,protected=()):
     if missing:=sorted(set(protected)-set(history)):attempt['errors'].append('已持有／前次目標行情不足：'+','.join(missing))
     breadth=average([1 if x>0 else 0 for t,x in mom20.items() if stocks[t]['asset_type']=='stock'],0)
     risk=v12_market_signal(data,day)
-    regime=market_regime(monitor,day,breadth,risk);attempt['regime']=regime
+    regime=market_regime(monitor,day,breadth,risk,cfg);attempt['regime']=regime
     if not risk.get('valid') and risk.get('error'):attempt['errors'].append(risk['error'])
     if not regime['valid']:attempt['errors'].extend(regime['reasons'])
     # Institutional daily data: same-date full archive preferred; ranked absence stays neutral.
@@ -326,7 +333,7 @@ def run(root,now,preview=False):
         limitations=['整數股可含零股；以普通交易開盤價加滑價作模擬代理，非真實零股9:10撮合價。',
         '含費稅的價格損益口徑，尚未自動匯入股利、配股與減資；疑似公司行動保留標記待確認。',
         '每次成交上限為決策時已知5日均量的1%，未成交部分等待後續可驗證交易日。',
-        '波動率僅揭露，不直接扣分或降權；高波動不等於高預期報酬。大盤與半衰期尚未經績效最佳化；ETF與個股可能重疊。',
+        '波動率僅揭露，不直接扣分或降權；高波動不等於高預期報酬。H2＋T6 經指數收盤代理回測，隔日開盤及個股組合尚未驗證；半衰期尚未經績效最佳化；ETF與個股可能重疊。',
         '完整上市上櫃名冊都掃描；不足21日行情、新上市、資料不齊標的會揭露覆蓋並暫不交易。'])
     output=root/'preview' if preview else data
     if archive is not None:

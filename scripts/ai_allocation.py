@@ -37,7 +37,31 @@ def _legacy_market_regime_for_compat(monitor,day,breadth):
         ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,reasons=[],
         note='Legacy compatibility only; not used in AI production execution')
 
-def market_regime(monitor,day,breadth,v12=None):
+def t6_exposure(history,cfg):
+    """Causal replay of H2 + T6 over unique, ordered trading sessions."""
+    if not history:raise ValueError('T6 history missing')
+    smooth=None;active=-1;trigger_score=None;trigger_date=None;previous=''
+    for i,row in enumerate(history):
+        day=row['date'];risk=number(row.get('score'))
+        if day<=previous or risk is None or type(row.get('trial')) is not bool:
+            raise ValueError('T6 invalid historical signal')
+        previous=day
+        t=max(0.,min(1.,risk/100));raw=1-3*t*t+2*t*t*t
+        smooth=raw if smooth is None else smooth+(raw-smooth)*(cfg['exposure_down_alpha'] if raw<smooth else cfg['exposure_up_alpha'])
+        if row['trial']:
+            active=i+cfg['trial_sessions']-1 if risk<cfg['trial_risk_max'] else -1
+            trigger_score=risk;trigger_date=day
+        if i<=active and risk-trigger_score>=cfg['trial_exit_points']:active=-1
+    on=i<=active
+    final=min(1.,max(0.,smooth+(cfg['trial_extra'] if on else 0.)))
+    return dict(raw_exposure=round(raw,6),smoothed_exposure=round(smooth,6),
+                target_exposure=round(final,6),trial_today=row['trial'],trial_active=on,
+                trial_extra=round(final-smooth,6) if on else 0.,trial_remaining=active-i+1 if on else 0,
+                trial_trigger_date=trigger_date if on else None,trial_trigger_score=trigger_score if on else None,
+                exposure_down_band=cfg['exposure_down_band'],exposure_up_band=cfg['exposure_up_band'],
+                exposure_model='H2+T6')
+
+def market_regime(monitor,day,breadth,v12=None,cfg=None):
     """Use the website's exact V12 result for AI production allocations.
 
     V12 is calculated by executing the site's own buildTwRisk JS, not by
@@ -71,6 +95,15 @@ def market_regime(monitor,day,breadth,v12=None):
     # There is no forced minimum allocation and no upper 90% ceiling.
     t=max(0.0,min(1.0,risk/100.0))
     exposure=round(max(0.0,min(1.0,1-(3*t*t-2*t*t*t))),6)
+    overlay={}
+    if cfg and cfg.get('exposure_model')=='H2+T6':
+        try:
+            history=v12.get('history',[])
+            if not history or history[-1]['date']!=day or history[-1]['score']!=risk:raise ValueError('T6 日期／分數不一致')
+            overlay=t6_exposure(history,cfg)
+            exposure=overlay['target_exposure']
+        except (ValueError,KeyError,TypeError) as exc:
+            return dict(valid=False,date=day,label='T6 資料待補',target_exposure=0,reasons=[str(exc)])
     labels=('綠燈','黃燈','橘燈','紅燈')
     levels=('積極','注意風險','防禦','高度防禦')
     label=levels[level]+' · '+labels[level]
@@ -82,11 +115,18 @@ def market_regime(monitor,day,breadth,v12=None):
              f'指數 {closes[-1]:,.2f}；20日均線 {ma20:,.2f}；60日均線 {ma60:,.2f}',
              f'5日漲跌 {ret5:+.2f}%；距20日高點 {dd20:.2f}%；外資近5日 {sum(foreign):+.2f} 億',
              '持股曲線依 V12 原始分數連續換算，燈號變化不會造成固定級距跳躍']
-    return dict(valid=True,date=day,label=label,target_exposure=exposure,cash_floor=1-exposure,
+    if overlay:
+        reasons.append(f"H2 原始 {overlay['raw_exposure']:.1%}／平滑 {overlay['smoothed_exposure']:.1%}；試單額外 {overlay['trial_extra']:.1%}，剩餘 {overlay['trial_remaining']} 日")
+        reasons.append('總水位減碼門檻5pp、加碼門檻15pp；實際於下一開盤依持倉及配置限制執行')
+    result=dict(valid=True,date=day,label=label,target_exposure=exposure,cash_floor=1-exposure,
                 score=legacy_score,risk_score=risk,risk_level=level,risk_light=labels[level],
                 model='V12 JS 原始風險分數 + smoothstep 持股曲線 v2：0～100%',
                 ma20=ma20,ma60=ma60,return5=ret5,drawdown20=dd20,breadth=breadth,
                 reasons=reasons,note='持股水位0%～100%連續調整；V12 超過100分時建議0%（全現金），V12 為0分時建議100%。不設最低20%或最高90%限制；單檔與產業上限、2%調倉帶維持。此曲線尚未完成歷史績效最佳化；當日缺V12資料會暫停發布新名單。')
+
+    if overlay:
+        result.update(overlay,model='V12 + H2 + T6',note='原始曲線0～100%；H2 平滑減碼50%、加碼80%；試單低於70分加27.5pp，最長20交易日，較觸發分數惡化5分退出。未驗證隔日開盤的長期個股績效。')
+    return result
 
 def fundamentals(t,row,official,opm,reports,now,calendar,content_cache=None):
     from ai_signal_model import quarter_signal,research_signal,weighted,clip

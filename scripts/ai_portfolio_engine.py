@@ -29,6 +29,9 @@ def migrate(state,config,now):
         if state['config']!=config:
             # Explicit migration for the requested cap increase; retain the old migration path.
             allowed={'max_positions','min_exposure','max_stock_weight','max_sector_weight'}
+            t6_config={'exposure_model': 'H2+T6', 'exposure_down_alpha': 0.5, 'exposure_up_alpha': 0.8, 'exposure_down_band': 0.05, 'exposure_up_band': 0.15, 'trial_risk_max': 70, 'trial_extra': 0.275, 'trial_sessions': 20, 'trial_exit_points': 5}
+            if all(config.get(k)==v for k,v in t6_config.items()):
+                allowed.update(t6_config)
             changed={k for k in set(state['config'])|set(config) if state['config'].get(k)!=config.get(k)}
             profile=(config.get('max_stock_weight'),config.get('max_sector_weight'))
             prior=(state['config'].get('max_stock_weight'),state['config'].get('max_sector_weight'))
@@ -38,6 +41,7 @@ def migrate(state,config,now):
             state=deepcopy(state)
             reason=f'User allocation limits: 8 positions, 0% minimum, {profile[0]:.0%} stock cap, {profile[1]:.0%} sector cap; smooth 0–100% exposure'
             state.setdefault('configuration_events',[]).append(dict(at=now,reason=reason,previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
+            if config.get('exposure_model')=='H2+T6':state['configuration_events'][-1]['reason']+='; H2+T6 water level'
             state['config']=deepcopy(config)
         return state,None
     if state.get('strategy')!='three-pillar-paper-v1':raise ValueError('Unknown previous account version')
@@ -96,7 +100,33 @@ def session(state,day,bars,closes):
     opening_equity=state['cash']+sum(p['shares']*(p['mark'] if p.get('valuation_blocked') else number((bars.get(t) or {}).get('open')) or p['mark']) for t,p in pos.items())
     targets={x['ticker']:x for x in decision['targets']} if decision else None
     if targets is not None:
-        desired={};force=(sum(p['shares']*(number((bars.get(t) or {}).get('open')) or p['mark']) for t,p in pos.items())/opening_equity)>decision['regime']['target_exposure']+.03
+        current_weight=sum(p['shares']*(p['mark'] if p.get('valuation_blocked') else number((bars.get(t) or {}).get('open')) or p['mark']) for t,p in pos.items())/opening_equity
+        desired={};force=current_weight>decision['regime']['target_exposure']+.03
+        regime=decision['regime']
+        if regime.get('exposure_model')=='H2+T6':
+            goal=regime['target_exposure'];diff=goal-current_weight
+            band=regime['exposure_up_band'] if diff>=0 else regime['exposure_down_band']
+            move=abs(diff)>=band-1e-10
+            # No aggregate increase/decrease below the band; stock selection still rotates.
+            # Scale only when the model, not a shortage of eligible candidates, limits exposure.
+            if not move and goal>0:
+                scale=current_weight/goal
+                adjusted={};sector_used={};etf_used=0.
+                for t,x in targets.items():
+                    cap=cfg['max_etf_weight'] if x.get('asset_type')=='etf' else cfg['max_stock_weight']
+                    if x.get('discovery'):cap=min(cap,cfg['discovery_weight'])
+                    sector=x.get('sector','unknown')
+                    room=.5-etf_used if x.get('asset_type')=='etf' else cfg['max_sector_weight']-sector_used.get(sector,0.)
+                    w=max(0.,min(x['weight']*scale,cap,room))
+                    if w>0:adjusted[t]={**x,'weight':w}
+                    if x.get('asset_type')=='etf':etf_used+=w
+                    else:sector_used[sector]=sector_used.get(sector,0.)+w
+                targets=adjusted
+            elif not move and goal==0:
+                # A zero model target below the sell band is not a new liquidation order.
+                targets={t:dict(p,ticker=t,weight=p['shares']*(number((bars.get(t) or {}).get('open')) or p['mark'])/opening_equity) for t,p in pos.items()}
+            force=move
+            state.setdefault('exposure_execution',[]).append(dict(date=day,decision_date=decision['date'],opening_exposure=current_weight,model_target=goal,band=band,adjust=move,effective_target=sum(x['weight'] for x in targets.values())))
         for t in sorted(set(pos)|set(targets)):
             p=pos.get(t);target=targets.get(t);op=number((bars.get(t) or {}).get('open'))
             if target is None:desired[t]=0;continue
