@@ -246,4 +246,56 @@ class Integration(unittest.TestCase):
                 self.assertEqual(s['decisions'][0]['coverage']['usable_stocks'],1100);self.assertTrue(list((data/'ai_portfolio_archives').glob('*.json')))
                 self.assertAlmostEqual(s['decisions'][0]['regime']['target_exposure'],.896)
                 again=run(root,stamp('2026-11-14T13:05:00+08:00'));self.assertEqual(again['decisions'],s['decisions']);self.assertFalse(again['trades'])
+
+class SOXK20(unittest.TestCase):
+    def fixture(self,ret,base=.25):
+        from ai_allocation import sox_k20
+        now=stamp('2026-11-24T08:00:00+08:00');d='2026-11-23'
+        rows=[dict(date=f'2026-10-{i:02d}',close=100.) for i in range(1,21)]+[dict(date=d,available_at='2026-11-24T05:00:00+08:00',observed_at='2026-11-24T07:00:00+08:00',close_source='yahoo',return20=ret,close=100+ret)]
+        archive=dict(symbol='^SOX',rows=rows,daily_calendar=dict(valid_from='2026-11-23T00:00:00+08:00',valid_until='2026-11-30T00:00:00+08:00',sessions=[dict(date=d,closed_at='2026-11-24T05:00:00+08:00',ready_at='2026-11-24T06:15:00+08:00')]))
+        regime=dict(valid=True,exposure_model='H2+T6',target_exposure=base,reasons=[])
+        return sox_k20,regime,archive,now
+    def test_boundaries(self):
+        for ret,base,want in [(1,.39,.59),(1,.4,1),(1,.1,.3),(1,.95,1),(-8,.9,.7),(-8,.1,0),(.99,.5,.5),(-7.99,.5,.5)]:
+            f,r,a,n=self.fixture(ret,base);self.assertAlmostEqual(f(r,a,n)['target_exposure'],want)
+    def test_fallback(self):
+        for mode in ('missing','future','conflict','old','stale_calendar'):
+            f,r,a,n=self.fixture(3)
+            if mode=='missing':a['rows'].pop()
+            if mode=='future':a['rows'][-1]['observed_at']='2026-11-24T09:00:00+08:00'
+            if mode=='conflict':a['rows'][-1]['close_conflict']=True
+            if mode=='old':a['rows'][-1]['observed_at']='2026-11-24T05:01:00+08:00'
+            if mode=='stale_calendar':a['daily_calendar']['valid_until']='2026-11-24T07:00:00+08:00'
+            got=f(r,a,n);self.assertEqual(got['target_exposure'],.25);self.assertEqual(got['sox_status'],'unavailable')
+    def test_migration(self):
+        cfg={**DEFAULTS,'max_positions':8,'min_exposure':0,'max_stock_weight':.5,'max_sector_weight':.5,'exposure_model':'H2+T6','exposure_down_alpha':.5,'exposure_up_alpha':.8,'exposure_down_band':.05,'exposure_up_band':.15,'trial_risk_max':70,'trial_extra':.275,'trial_sessions':20,'trial_exit_points':5}
+        old=initial(cfg,'2026-11-23T18:00:00+08:00');old['equity']=[{'date':'2026-11-23','equity':20000000}]
+        new,_=migrate(old,{**cfg,'sox_overlay':'K20'},'2026-11-24T08:00:00+08:00');self.assertEqual(new['equity'],old['equity']);self.assertEqual(new['config']['sox_overlay'],'K20')
+
+class SOXDailyRefresh(unittest.TestCase):
+    def test_incremental_append_repeat_and_missing(self):
+        import types
+        import pandas as pd
+        from update_sox_daily import refresh
+        from datetime import timezone
+        from zoneinfo import ZoneInfo
+        ny=ZoneInfo('America/New_York');tw=ZoneInfo('Asia/Taipei')
+        def schedule(start_date,end_date):
+            days=pd.bdate_range(start_date,end_date)
+            return pd.DataFrame({'market_close':[pd.Timestamp(d.date().isoformat()+'T16:00:00',tz=ny).tz_convert('UTC') for d in days]},index=days)
+        fake=types.SimpleNamespace(get_calendar=lambda name:types.SimpleNamespace(schedule=schedule))
+        now=datetime(2026,11,24,7,tzinfo=tw)
+        dates=[d.date().isoformat() for d in pd.bdate_range(end='2026-11-20',periods=80)]
+        rows=[dict(date=d,close=100+i,open=100+i,high=101+i,low=99+i,close_source='yahoo') for i,d in enumerate(dates)]
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'sox.json';path.write_text(json.dumps(dict(schema=1,symbol='^SOX',rows=rows,quality={})))
+            def yahoo(a,b):
+                self.assertGreaterEqual(a.isoformat(),'2026-11-17')
+                return {d:dict(open=c,high=c+1,low=c-1,close=c) for d,c in [(r['date'],r['close']) for r in rows]+[('2026-11-23',180)] if a.isoformat()<=d<=b.isoformat()}
+            with patch.dict(sys.modules,{'pandas_market_calendars':fake}),patch('update_sox_daily.fetch_yahoo',side_effect=yahoo),patch('update_sox_daily.fetch_fred',return_value={}):
+                result=refresh(path,now);self.assertEqual(len(result['rows']),81);self.assertEqual(result['rows'][0],rows[0]);self.assertEqual(result['as_of_date'],'2026-11-23');self.assertAlmostEqual(result['rows'][-1]['return20'],12.5)
+                before=path.read_bytes();refresh(path,now+timedelta(hours=1));self.assertEqual(path.read_bytes(),before)
+                with patch('update_sox_daily.fetch_yahoo',return_value={}):
+                    with self.assertRaises(RuntimeError):refresh(path,now+timedelta(days=1))
+                self.assertEqual(path.read_bytes(),before)
 if __name__=='__main__':unittest.main()
