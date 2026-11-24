@@ -35,11 +35,35 @@ jobs:
       - name: Install incremental US sentiment dependencies
         if: ${{ !cancelled() }}
         continue-on-error: true
-        run: python -m pip install --disable-pip-version-check 'yfinance>=0.2.50,<2' 'pandas>=2.0,<3'
+        run: python -m pip install --disable-pip-version-check 'yfinance>=0.2.50,<2' 'pandas>=2.0,<3' 'pandas-market-calendars>=5,<6' 'requests>=2.32,<3'
       - name: Refresh US sentiment, VIX, indices and credit spreads (incremental)
         if: ${{ !cancelled() }}
         continue-on-error: true
         run: python scripts/update_us_sentiment_daily.py
+      - name: Refresh SOX daily close (incremental only)
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python scripts/update_sox_daily.py
+      # Publish SOX before slow Taiwan breadth/TPEx jobs so the morning AI run
+      # can read it without waiting for the entire dashboard refresh.
+      - name: Publish SOX archive early
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/history/sox-history.json
+          if git diff --cached --quiet; then echo 'SOX_UNCHANGED'; exit 0; fi
+          git commit -m 'data: refresh SOX daily close'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git -c rebase.autoStash=true rebase origin/main
+            if git push origin HEAD:main; then echo 'SOX_PUBLISHED'; exit 0; fi
+            sleep "$attempt"
+          done
+          exit 1
       - name: Refresh TWSE index, foreign investment and listed margin
         if: ${{ !cancelled() }}
         run: python scripts/update_market_monitor.py
@@ -107,7 +131,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json data/twse_credit_dashboard.json data/us_sentiment_history.json; do
+          for f in data/market_monitor.json data/market_breadth.json data/us_market_monitor.json data/twse_credit_dashboard.json data/us_sentiment_history.json data/history/sox-history.json; do
             if test -f "$f"; then git add -- "$f"; fi
           done
           if git diff --cached --quiet; then echo 'MARKET_DATA_UNCHANGED'; exit 0; fi
