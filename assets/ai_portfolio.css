@@ -160,3 +160,14 @@ html[data-theme="dark"] #aiPortfolioRoot .ap-t6-details .ap-trial-value{color:#9
 #aiPortfolioRoot .ap-sox-details .ap-down{color:#118367}
 html[data-theme="dark"] #aiPortfolioRoot .ap-sox-details .ap-up{color:#ffb1b6}
 html[data-theme="dark"] #aiPortfolioRoot .ap-sox-details .ap-down{color:#83e0c5}
+
+/* Portfolio exposure disclosure — only the current exposure is visible initially. */
+#aiPortfolioRoot .ap-waterfall-fold>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;list-style:none;min-height:44px;color:var(--ink);padding:0;}
+#aiPortfolioRoot .ap-waterfall-fold>summary::-webkit-details-marker{display:none}
+#aiPortfolioRoot .ap-fold-label{display:block;color:var(--ap-muted);font-size:12px;line-height:1.5}
+#aiPortfolioRoot .ap-fold-value{display:block;font-size:clamp(25px,6.2vw,35px);font-weight:730;letter-spacing:-.9px;line-height:1.25;margin-top:4px}
+#aiPortfolioRoot .ap-fold-value small{font-size:.56em!important;margin-left:2px}
+#aiPortfolioRoot .ap-fold-arrow{width:10px;height:10px;border:solid var(--ap-muted);border-width:0 2px 2px 0;transform:rotate(45deg);margin-right:5px;flex:none}
+#aiPortfolioRoot .ap-waterfall-fold[open]>summary .ap-fold-arrow{transform:rotate(225deg)}
+#aiPortfolioRoot .ap-waterfall-fold:not([open])>.ap-fold-body{display:none!important}
+#aiPortfolioRoot .ap-fold-body{border-top:1px solid var(--line);padding-top:18px;margin-top:16px}
