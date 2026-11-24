@@ -61,6 +61,45 @@ def t6_exposure(history,cfg):
                 exposure_down_band=cfg['exposure_down_band'],exposure_up_band=cfg['exposure_up_band'],
                 exposure_model='H2+T6')
 
+def sox_k20(regime, archive, now):
+    """Post-H2/T6 overlay. Fail closed to base when freshness is unprovable."""
+    if not regime.get('valid') or regime.get('exposure_model')!='H2+T6':return regime
+    base=regime['target_exposure'];result=dict(regime)
+    result['reasons']=list(regime.get('reasons',[]))
+    meta=dict(sox_model='K20',sox_base_exposure=base,sox_adjustment=0.,sox_requested_adjustment=0.,sox_status='unavailable',sox_date=None,sox_return20=None)
+    try:
+        if archive.get('symbol')!='^SOX':raise ValueError('費半資料格式異常')
+        schedule=archive['daily_calendar']; cut=stamp(schedule['valid_until'])
+        if now>cut:raise ValueError('費半交易日曆過期')
+        if now<stamp(schedule['valid_from']):raise ValueError('費半交易日曆尚未生效')
+        completed=[x for x in schedule['sessions'] if stamp(x['closed_at'])<=now]
+        if not completed:raise ValueError('無法確認最新美股交易日')
+        expected=max(completed,key=lambda x:x['date']);meta['sox_expected_date']=expected['date']
+        if now<stamp(expected['ready_at']):raise ValueError('費半收盤修正期間，暫不採用')
+        rows=[x for x in archive['rows'] if x['date']<=expected['date']]
+        if len(rows)<21 or rows[-1]['date']!=expected['date']:raise ValueError('費半最新收盤尚未更新')
+        last=rows[-1];meta['sox_date']=last['date']
+        window=rows[-21:];days=[x['date'] for x in window]
+        closes=[number(x.get('close')) for x in window]
+        if days!=sorted(set(days)) or any(x is None or x<=0 for x in closes):raise ValueError('費半20日行情不完整')
+        if last.get('close_conflict') or last.get('close_source') not in ('yahoo','fred'):raise ValueError('費半收盤價未通過來源檢查')
+        if stamp(last['available_at'])>now or stamp(last['observed_at'])>now:raise ValueError('費半行情尚不可用')
+        if stamp(last['observed_at'])<stamp(expected['ready_at']):raise ValueError('費半行情抓取早於收盤修正截止')
+        ret=number(last.get('return20'))
+        if ret is None or abs(ret-100*(closes[-1]/closes[0]-1))>1e-5:raise ValueError('費半20日報酬缺漏或不一致')
+        meta['sox_return20']=ret;meta['sox_source']=last['close_source']
+        change=(.20 if base<.40 else .60) if ret>=1 else -.20 if ret<=-8 else 0.
+        final=round(max(0.,min(1.,base+change)),6)
+        meta.update(sox_status='ready',sox_requested_adjustment=change,sox_adjustment=round(final-base,6),sox_available_at=last['observed_at'])
+        result.update(target_exposure=final,cash_floor=round(1-final,6))
+        msg=f"費半 {last['date']} 近20交易日 {ret:+.2f}%；H2＋T6 {base:.1%} → K20 {final:.1%}（實際 {100*(final-base):+.1f}pp）"
+    except (ValueError,KeyError,TypeError,AttributeError,IndexError) as exc:
+        msg=f'費半未採用：{exc}；維持 H2＋T6 原始水位 {base:.1%}'
+    result.update(meta,model='V12 + H2 + T6 + SOX K20')
+    result['reasons'].append(msg)
+    result['note']=regime.get('note','')+' K20：費半20日≥+1%時，原始水位低於40%加20pp，否則加60pp；≤−8%減20pp；限制0～100%。40%存在跳躍；收盤代理回測，尚未完成開盤實盤驗證。'
+    return result
+
 def market_regime(monitor,day,breadth,v12=None,cfg=None):
     """Use the website's exact V12 result for AI production allocations.
 

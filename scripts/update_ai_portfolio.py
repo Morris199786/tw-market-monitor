@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from ai_portfolio_engine import DEFAULTS,VERSION,TZ,number,stamp,initial,migrate,frozen_decision,session
-from ai_allocation import average,market_regime,fundamentals,allocate,decay,age_days,ensure_floor
+from ai_allocation import sox_k20,average,market_regime,fundamentals,allocate,decay,age_days,ensure_floor
 from ai_reference_data import CAPTURE,record,digest,reference_snapshot,merge_earnings,research_index,holder_values
 from ai_content_research import load_sources
 from ai_signal_model import monthly_bonus,mixed_flow_score
@@ -147,7 +147,13 @@ def _proposal(data,cfg,now,protected=()):
     if missing:=sorted(set(protected)-set(history)):attempt['errors'].append('已持有／前次目標行情不足：'+','.join(missing))
     breadth=average([1 if x>0 else 0 for t,x in mom20.items() if stocks[t]['asset_type']=='stock'],0)
     risk=v12_market_signal(data,day)
-    regime=market_regime(monitor,day,breadth,risk,cfg);attempt['regime']=regime
+    regime=market_regime(monitor,day,breadth,risk,cfg)
+    if cfg.get('sox_overlay')=='K20' and regime.get('valid'):
+        try:sox=read(data/'history/sox-history.json')
+        except (ValueError,OSError):sox={}
+        regime=sox_k20(regime,sox,now)
+        if regime.get('sox_status')!='ready':attempt.setdefault('warnings',[]).append(regime['reasons'][-1])
+    attempt['regime']=regime
     if not risk.get('valid') and risk.get('error'):attempt['errors'].append(risk['error'])
     if not regime['valid']:attempt['errors'].extend(regime['reasons'])
     # Institutional daily data: same-date full archive preferred; ranked absence stays neutral.
@@ -319,6 +325,7 @@ def proposal(data,cfg,now,protected=()):
 
 def run(root,now,preview=False):
     data=root/'data';cfg={**DEFAULTS,**read(root/'config/ai_portfolio.json')}
+    if cfg.get('exposure_model')=='H2+T6':cfg.setdefault('sox_overlay','K20')
     if cfg['initial_cash']<=0 or cfg['max_positions']<1 or not 0<cfg['max_stock_weight']<=1 or not 0<cfg['max_etf_weight']<=1:raise ValueError('Invalid configuration')
     path=data/'ai_portfolio.json';old=read(path) if path.exists() else None
     state,archive=migrate(old,cfg,now.isoformat(timespec='seconds')) if old else (initial(cfg,now.isoformat(timespec='seconds')),None)
@@ -333,7 +340,7 @@ def run(root,now,preview=False):
         limitations=['整數股可含零股；以普通交易開盤價加滑價作模擬代理，非真實零股9:10撮合價。',
         '含費稅的價格損益口徑，尚未自動匯入股利、配股與減資；疑似公司行動保留標記待確認。',
         '每次成交上限為決策時已知5日均量的1%，未成交部分等待後續可驗證交易日。',
-        '波動率僅揭露，不直接扣分或降權；高波動不等於高預期報酬。H2＋T6 經指數收盤代理回測，隔日開盤及個股組合尚未驗證；半衰期尚未經績效最佳化；ETF與個股可能重疊。',
+        '波動率僅揭露，不直接扣分或降權；高波動不等於高預期報酬。H2＋T6＋SOX K20 經指數收盤代理回測，最新版本隔日開盤及個股組合尚未驗證；半衰期尚未經績效最佳化；ETF與個股可能重疊。',
         '完整上市上櫃名冊都掃描；不足21日行情、新上市、資料不齊標的會揭露覆蓋並暫不交易。'])
     output=root/'preview' if preview else data
     if archive is not None:

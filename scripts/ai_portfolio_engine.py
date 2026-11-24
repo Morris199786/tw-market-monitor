@@ -32,6 +32,7 @@ def migrate(state,config,now):
             t6_config={'exposure_model': 'H2+T6', 'exposure_down_alpha': 0.5, 'exposure_up_alpha': 0.8, 'exposure_down_band': 0.05, 'exposure_up_band': 0.15, 'trial_risk_max': 70, 'trial_extra': 0.275, 'trial_sessions': 20, 'trial_exit_points': 5}
             if all(config.get(k)==v for k,v in t6_config.items()):
                 allowed.update(t6_config)
+                if config.get('sox_overlay')=='K20':allowed.add('sox_overlay')
             changed={k for k in set(state['config'])|set(config) if state['config'].get(k)!=config.get(k)}
             profile=(config.get('max_stock_weight'),config.get('max_sector_weight'))
             prior=(state['config'].get('max_stock_weight'),state['config'].get('max_sector_weight'))
@@ -42,6 +43,7 @@ def migrate(state,config,now):
             reason=f'User allocation limits: 8 positions, 0% minimum, {profile[0]:.0%} stock cap, {profile[1]:.0%} sector cap; smooth 0–100% exposure'
             state.setdefault('configuration_events',[]).append(dict(at=now,reason=reason,previous_config=deepcopy(state['config']),new_config=deepcopy(config)))
             if config.get('exposure_model')=='H2+T6':state['configuration_events'][-1]['reason']+='; H2+T6 water level'
+            if config.get('sox_overlay')=='K20':state['configuration_events'][-1]['reason']+='; SOX K20 overlay'
             state['config']=deepcopy(config)
         return state,None
     if state.get('strategy')!='three-pillar-paper-v1':raise ValueError('Unknown previous account version')
