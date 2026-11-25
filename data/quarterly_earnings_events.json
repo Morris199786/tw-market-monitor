@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-25T08:06+08:00",
+  "updated_at": "2026-11-25T08:57+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28105,6 +28105,7 @@
   ],
   "diagnostics": {
     "source_errors": [
+      "detail/4583/2026-10-27",
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
       "announcement_scan/2026-11-01~2026-11-25:ValueError:announcement schema unavailable",
@@ -28117,38 +28118,14 @@
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 10,
+      "attempted": 2,
       "fields_filled": 0,
       "targets": 12,
       "errors": [
         {
-          "key": "6405|2026-Q2",
+          "key": "3712|2026-Q2",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-          ]
-        },
-        {
-          "key": "6405|2026-Q3",
-          "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-          ]
-        },
-        {
-          "key": "8291|2026-Q2",
-          "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
-          ]
-        },
-        {
-          "key": "8291|2026-Q3",
-          "notes": [
-            "SSLError:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLErro"
-          ]
-        },
-        {
-          "key": "3718|2026-Q2",
-          "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
+            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
           ]
         }
       ]
