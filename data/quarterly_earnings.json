@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-25T08:57+08:00",
+  "updated_at": "2026-11-25T13:11+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28105,11 +28105,14 @@
   ],
   "diagnostics": {
     "source_errors": [
-      "detail/4583/2026-10-27",
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
+      "detail/7918/2026-10-30",
+      "planned_date/7918/2026-10-30:unavailable",
       "announcement_scan/2026-11-01~2026-11-25:ValueError:announcement schema unavailable",
-      "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable"
+      "daily_mops:ConnectTimeout",
+      "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable",
+      "mops_board_schedule:2026-Q2/otc:TimeoutError:The read operation timed out"
     ],
     "historical_errors": [],
     "coverage": {
@@ -28121,14 +28124,7 @@
       "attempted": 2,
       "fields_filled": 0,
       "targets": 12,
-      "errors": [
-        {
-          "key": "3712|2026-Q2",
-          "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
-          ]
-        }
-      ]
+      "errors": []
     }
   },
   "retention_note": "依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3"
