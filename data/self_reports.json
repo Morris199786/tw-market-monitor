@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-11-25T15:13+08:00",
+  "updated_at": "2026-11-25T16:27+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
   "diagnostics": {
-    "candidate_count": 411,
-    "parsed_count": 193,
+    "candidate_count": 413,
+    "parsed_count": 195,
     "parse_failed_count": 197,
     "parse_failed": [
       {
@@ -2574,28 +2574,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 4,
-      "self_reports": 3,
+      "rows": 7,
+      "self_reports": 5,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 57,
-          "hits": 4
+          "rows": 110,
+          "hits": 7
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 57,
+          "rows": 110,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 57,
+          "rows": 110,
           "hits": 1
         },
         {
@@ -2729,7 +2729,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2233",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2754,7 +2754,7 @@
           "mode": "company_rescue",
           "ticker": "2330",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2801,7 +2801,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2395",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2890,7 +2890,7 @@
           "mode": "company_rescue",
           "ticker": "2891",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2914,7 +2914,7 @@
           "mode": "company_rescue",
           "ticker": "3037",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -2945,7 +2945,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3593",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2953,7 +2953,7 @@
         {
           "mode": "company_rescue",
           "ticker": "3596",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3041,7 +3041,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6225",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3113,7 +3113,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6949",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3121,7 +3121,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6988",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3130,7 +3130,7 @@
           "mode": "company_rescue",
           "ticker": "6994",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 4,
           "hits": 0,
           "error": ""
         },
@@ -3178,6 +3178,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "8291 尚茂 115/11/25 13:51:41 公告115年10月自結個別財務報告之流動比率、速動比率及 負債比率"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "911868 同方友友-DR 115/11/25 15:28:37 係因有價證券於集中交易市場達公布注意交易資訊標準，故公布基本資料及相關財務業務 等 重大訊息，以利投資人區別瞭解。"
         }
       ],
       "error": ""
@@ -3196,6 +3201,58 @@
     }
   },
   "items": [
+    {
+      "market": "",
+      "ticker": "7827",
+      "name": "漢康-KY創",
+      "publish_date": "2026-11-25",
+      "publish_time": "15:56:53",
+      "subject": "7827 漢康-KY創 115/11/25 15:56:53 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解。",
+      "detail": "公開資訊觀測站 本資料由 (上市公司) 7827 漢康-KY創 公司提供 序號 1 發言日期 115/11/25 發言時間 15:56:53 發言人 曾木增 發言人職稱 財務長 發言人電話 02-27921366#617 主旨 係因本公司有價證券於集中交易市場達公布注意交易資訊 標準，故公布相關財務業務等重大訊息，以利投資人區別瞭解。 符合條款 第 51 款 事實發生日 115/11/25 說明 1.事實發生日:115/11/25 2.發生緣由:依據臺灣證券交易所股份有限公司指示辦理。 3.公司每股面額（元）:10元 4.財務業務資訊（倘公司股票每股面額非10元，每股盈餘、每股淨值及每股股利等，與 其他每股面額10元之公司可能無法直接比較，建議投資人參考公開資訊觀測站公佈之 財務比率分析資料，包含股價淨值比、股東權益報酬率、股利殖利率及本益比等，以 保障自身權益）: 期間 月 ==== ============== 科目 最近一月 與去年 115年9月 同期增減% (合併財報核閱數) ==== =============== 營業收入 0 -100% (百萬) 稅前淨利 -258 -239% (百萬) 歸屬母公司 -243 -251% 業主淨利 (百萬) 每股盈餘 -1.73 -231% (元) 期間 季 ======== =============== 科目 最近一季 與去年 115年第3季 同期增減% (合併財報核閱數) ======== =============== 營業收入 18 -94% (百萬) 稅前淨利 -430 -514% (百萬) 歸屬母公司 -365 -618% 業主淨利 (百萬) 每股盈餘 -2.54 -538% (元) 期間 最近四季累計 ======== =============== 科目 114年第4季 至115年第3季 (合併財報核閱數) ======== =============== 營業收入 28 (百萬) 稅前淨利 -1,256 (百萬) 歸屬母公司 -1,008 業主淨利 (百萬) 每股盈餘 -7.51 (元) 5.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第4條所列重大訊息之情事（如「有」，請說明）:無。 6.有無「臺灣證券交易所股份有限公司對有價證券上市公司重大訊息之查證暨公開處理 程序」第11條所列重大訊息說明記者會之情事:無。 7.完整財務資訊請至公開資訊觀測站查閱，路徑如下： (1)近期營業收入及損益資訊：基本資料?精華版 (2)歷史每月營業收入：營運概況?每月營收?採用IFRSs後之月營業收入資訊 (3)歷史損益(會計師查核/核閱數)：財務報表?採IFRSs後?合併/個別報表?綜合損益表 (4)歷史損益(自願性公告自結數)：營運概況?自結損益公告: 8.其他應敘明事項: (1)民國115年第三季營業收入較去年同期減少，主係本年為 臨床藥品銷貨收入，去年同期則為授權相關履約義務 已經達成而認列相關授權收入。 (2)民國115年第三季稅前淨利較去年同期減少，主係營業收入減少、 研發費用增加、 庫藏股、現金增資及員工認股權、 限制員工權利新股酬勞成本增加所致。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7827&SPOKE_DATE=20261125&SPOKE_TIME=155653&SEQ_NO=1&skey=7827202611251",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": -1.73,
+      "monthly_eps": -1.73,
+      "monthly_eps_yoy": -231.0,
+      "monthly_period": "2026-09",
+      "quarter_eps": -2.54,
+      "quarter_eps_yoy": -538.0,
+      "quarter_period": "2026-Q3",
+      "monthly_eps_yoy_text": null,
+      "quarter_eps_yoy_text": null,
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "a4f93ed0a3f3ce5c66acefae5af6630ffdfe9f65ad048718e26d6952733108c3"
+    },
+    {
+      "market": "",
+      "ticker": "4542",
+      "name": "科嶠",
+      "publish_date": "2026-11-25",
+      "publish_time": "15:09:58",
+      "subject": "4542 科嶠 115/11/25 15:09:58 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解。",
+      "detail": "公開資訊觀測站 本資料由 (上櫃公司) 4542 科嶠 公司提供 序號 1 發言日期 115/11/25 發言時間 15:09:58 發言人 吳明致 發言人職稱 董事長 發言人電話 (03)359-1777 主旨 本公司有價證券近期多次達公布注意交易資訊標準，故公告 相關訊息，以利投資人區別暸解。 符合條款 第 53 款 事實發生日 115/11/25 說明 1.事實發生日:115/11/25 2.發生緣由:依據證券櫃檯買賣中心通知辦理。 3.公司每股面額(元):10 4.財務業務資訊（倘公司股票每股面額非10元，每股盈餘、每股淨值 及每股股利等，與其他每股面額10元之公司可能無法直接比較，建議 投資人參考公開資訊觀測站公佈之財務比率分析資料，包含股價淨值比 、股東權益報酬率、股利殖利率及本益比等，以保障自身權益）: (一)最近一月單月(自結數) 115年10月 / 114年10月 / 與去年同期之增減% --------- ---------- ------------------ 營業收入(百萬元) 70 / 39 / 79% 稅前淨利(百萬元) -4 / 0 / N/A 歸屬母公司業主淨利(百萬元) -4 / -4 / 0% 每股盈餘(元) -0.12 / -0.11 / -9% (二)單季(核閱數) 115年第3季 / 114年第3季 / 與去年同期之增減% ----------- ------------ ------------------ 營業收入(百萬元) 312 / 176 / 77% 稅前淨利(百萬元) 37 / 27 / 37% 歸屬母公司業主淨利(百萬元) 29 / 15 / 93% 每股盈餘(元) 0.81 / 0.47 / 72% (三)最近四季累計(核閱數) 114年第4季至115年第3季 ----------------------- 營業收入(百萬元) 1,009 稅前淨利(百萬元) 125 歸屬母公司業主淨利(百萬元) 90 每股盈餘(元) 2.63 (四)公司每股面額：10元 5.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序 」第4條所列重大訊息之情事（如 「有」，請說明）: 無。 6.有無「財團法人中華民國證券櫃檯買賣中心對有價證券上櫃公司 重大訊息之查證暨公開處理程序」第11條所列重大訊息說明記者會 之情事: 無。 7.其他應敘明事項: (1)以上115年10月及去年同期比較數之財務資料係本公司採IFRS會計準則編製之 合併數，未經會計師查核(閱)，僅供投資人參考。 (2)最近一季115年第3季係指單季數字，非為最近財務報告中之累計數字，且係 本公司採IFRS下編製之合併數，業經會計師查核(閱)，僅供投資人參考。 (3)最近四季累計係本公司114年第4季至115年第3季採IFRS編製之合併數，業經 會計師查核(閱)，僅供投資人參考。 以上資料均由各公司依發言當時所屬市場別之規定申報後，由本系統對外公佈，資料如有虛偽不實，均由該公司負責. try { if(!document.querySelector('#table01')){ var table01 = document.createElement(\"div\"); table01.id = \"table01\"; document.body.appendChild(table01); if(document.querySelector(\"#div01\")){ table01.appendChild(div01); }; }; if (document.autoForm!=null && document.autoForm!=undefined && document.autoForm.run.value==''){ ajax1(document.autoForm,'div01'); document.querySelector('form[name=autoForm]').remove(); }; if (document.autoForm1!=null && document.autoForm1!=undefined && document.autoForm1.run.value==''){ ajax1(document.autoForm1,'div01'); document.querySelector('form[name=autoForm1]').remove(); }; if (document.autoRunScript!=null && document.autoRunScript!=undefined && document.autoRunScript.run!=null && document.autoRunScript.run.value!=''){ let s = document.autoRunScript.run.value; let script = document.createElement(\"script\"); script.innerText = s; document.body.appendChild(script); document.querySelector('form[name=autoRunScript] > input[name=run]').remove(); }; if (document.autoRunScript1!=null && document.autoRunScript1!=undefined){ if (document.autoRunScript1.count!=null && document.autoRunScript1.count!=undefined && document.autoRunScript1.count.value!=''){ var count = parseInt(document.autoRunScript1.count.value); for (var i=0;i input[name=run]').remove(); }; }; } catch (error) { console.error(\"Script Error:\", error); };",
+      "source": "mops_ajax",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=4542&SPOKE_DATE=20261125&SPOKE_TIME=150958&SEQ_NO=1&skey=4542202611251",
+      "source_error": "",
+      "match_reason": "attention_trading",
+      "eps": -0.12,
+      "monthly_eps": -0.12,
+      "monthly_eps_yoy": -9.0,
+      "monthly_period": "2026-10",
+      "quarter_eps": 0.47,
+      "quarter_eps_yoy": null,
+      "quarter_period": "2026-Q3",
+      "monthly_eps_yoy_text": "-9%",
+      "quarter_eps_yoy_text": null,
+      "eps_parse_status": "parsed",
+      "eps_parse_reason": "",
+      "_eps_parse_revision": "2026-11-23-mops-blocks-v3",
+      "_eps_parse_fingerprint": "c37efe4224cc7c2a0c3c75854f4c922d24b26600c6d0b22a839d85ea59b5d746"
+    },
     {
       "market": "",
       "ticker": "3287",
