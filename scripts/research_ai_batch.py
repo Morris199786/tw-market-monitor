@@ -15,6 +15,8 @@ import sys
 import urllib.request
 import urllib.error
 import time
+import signal
+from contextlib import contextmanager
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / 'data/research_ai_cache.json'
@@ -61,7 +63,7 @@ def checkpoint(cache):
         return
 
     def git(*args):
-        return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True)
+        return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True, timeout=120)
 
     def checked(args, label):
         result = git(*args)
@@ -456,9 +458,26 @@ def run_yingbang_only(args):
     publish_yingbang(record)
 
 
+@contextmanager
+def article_deadline(seconds=720):
+    """Bound parsing and validation; preserve durable response-ID claims."""
+    if not hasattr(signal, 'SIGALRM'):
+        yield
+        return
+    def expired(signum, frame):
+        raise TimeoutError('ARTICLE_DEADLINE: processing exceeded 720 seconds')
+    old = signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, old)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--limit', type=int, default=10)
+    parser.add_argument('--limit', type=int, default=0, help='0 = all eligible pending articles; 1..250 = explicit cap')
     parser.add_argument('--category', choices=['all','morning','meeting','industry'], default='all')
     parser.add_argument('--mode', choices=['pending','failed','rerun_three','retry_mediatek','yingbang_only'], default='pending')
     parser.add_argument('--model', default=os.getenv('RESEARCH_AI_MODEL', 'gpt-5.6-luna'))
@@ -467,8 +486,10 @@ def main():
     args = parser.parse_args()
     if args.mode == 'yingbang_only':
         return run_yingbang_only(args)
-    if not 1 <= args.limit <= 250:
-        sys.exit('limit must be 1..250')
+    if not 0 <= args.limit <= 250:
+        sys.exit('limit must be 0..250')
+    if args.limit == 0 and args.mode != 'pending':
+        args.limit = 10
     cache = load(CACHE, {})
     history = load(AUDIT, [])
     manifest = load(ROOT / 'data/research_manifest.json', {})
@@ -560,7 +581,8 @@ def main():
     entries.sort(key=lambda x: (x[0].get('date',''),x[0].get('id','')), reverse=True)
     stats['eligible'] = len(entries)
     print('BATCH_DIAGNOSTICS ' + json.dumps(stats, ensure_ascii=False, sort_keys=True))
-    selected = entries[:args.limit]
+    selected = entries if args.limit == 0 else entries[:args.limit]
+    print(f'BATCH_SELECTED {len(selected)}/{len(entries)}', flush=True)
     if args.article_id and (args.mode != 'pending' or args.limit != 1):
         sys.exit('TARGET_SAFETY: requires --mode pending --limit 1')
     if args.article_id and not selected:
@@ -587,8 +609,15 @@ def main():
     run = {'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
            'category':args.category,'mode':args.mode,'limit':args.limit,
            'model':args.model,'results':[]}
-    for row, raw, fp in selected:
+    batch_started = time.monotonic()
+    for n, (row, raw, fp) in enumerate(selected, 1):
+        # Leave time for final publication and Telegram before the workflow timeout.
+        if time.monotonic() - batch_started >= 300 * 60:
+            print('BATCH_TIME_BUDGET reached; remaining articles stay pending', flush=True)
+            break
+        started = time.monotonic()
         rid = row['id']
+        print(f'[AI {n}/{len(selected)}] Analyzing {rid} | {row.get("company", "")} {row.get("ticker", "")}', flush=True)
         trial = args.mode in ('rerun_three','retry_mediatek','failed')
         previous = cache.get(rid)
         key = (rid + MEDIATEK_RETRY_SUFFIX if args.mode == 'retry_mediatek' else
@@ -602,10 +631,11 @@ def main():
                       'attempt_count':2 if args.mode == 'failed' else 1}
         checkpoint(cache)
         try:
-            result, usage = parse(raw, args.model,
-                lambda response_id: remember_response(cache, key, response_id),
-                response_id=(previous or {}).get('response_id') if args.mode == 'failed' else None)
-            check = audit(result, row)
+            with article_deadline():
+                result, usage = parse(raw, args.model,
+                    lambda response_id: remember_response(cache, key, response_id),
+                    response_id=(previous or {}).get('response_id') if args.mode == 'failed' else None)
+                check = audit(result, row)
             status = 'success'
             cache[key].update({'status':status,'schema':SCHEMA,'result':result,
                                'audit':check,'usage':usage})
@@ -624,12 +654,12 @@ def main():
             cache[key]['retry_exhausted'] = True
             cache[rid] = {**cache[key], 'previous_version':previous}
         checkpoint(cache)
-        print(f"{rid}: {cache[key]['status']}" + (' (trial)' if trial else ''))
+        print(f'[AI {n}/{len(selected)}] {rid}: {cache[key]["status"]} | {time.monotonic()-started:.1f}s | success={sum(x["status"] == "success" for x in run["results"])} | elapsed={time.monotonic()-batch_started:.1f}s', flush=True)
     history.append(run)
     write(AUDIT, history)
     if args.mode == 'retry_mediatek' and any(x['status'] != 'success' for x in run['results']):
         sys.exit('MEDIATEK_RETRY_FAILED: see research_ai_cache.json; no other report retried')
-    print(json.dumps({'processed':len(selected),
+    print(json.dumps({'processed':len(run['results']), 'remaining_selected':len(selected)-len(run['results']),
                       'status_counts':{s:sum(x['status']==s for x in run['results'])
                                        for s in ('success','needs_review','failed')}},
                      ensure_ascii=False))
