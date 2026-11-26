@@ -59,11 +59,33 @@ class DateAndFallbackTest(unittest.TestCase):
         count=ai.run(rows,saved,DAY,lambda:[drive(x) for x in rows],extract,analyzer,persist,lambda:DAY)
         self.assertEqual(count,1); self.assertEqual({x['id'] for x in saved},{'old','a'});self.assertEqual(analyzer.call_count,2);persist.assert_called_once()
         self.assertEqual([x['id'] for x in ai.pending(rows,saved,DAY)],['b','c'])
-    def test_worker_down_no_other_calls(self):
-        rows=[row('a'),row('b')]; saved=[]
-        analyzer=Mock(side_effect=RuntimeError('SSH'))
-        self.assertEqual(ai.run(rows,saved,DAY,lambda:[drive(x) for x in rows],lambda x:'source',analyzer,Mock(),lambda:DAY),0)
-        analyzer.assert_called_once();self.assertFalse(saved)
+    def test_worker_error_does_not_block_later_reports(self):
+        rows=[row('a'),row('b'),row('c')]; saved=[]
+        analyzer=Mock(side_effect=[RuntimeError('SSH'), ValueError('bad report'), result(rows[2])])
+        persist=Mock()
+        self.assertEqual(ai.run(rows,saved,DAY,lambda:[drive(x) for x in rows],lambda x:'source',analyzer,persist,lambda:DAY),1)
+        self.assertEqual(analyzer.call_count,3)
+        self.assertEqual(saved,[result(rows[2])])
+        persist.assert_called_once()
+        self.assertEqual([x['id'] for x in ai.pending(rows,saved,DAY)],['a','b'])
+
+    def test_sanitized_diagnostic_survives_child_boundary(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            inp,out=Path(tmp)/'input.json',Path(tmp)/'output.json'
+            inp.write_text(json.dumps({'row':row('a'),'text':'private'}))
+            with patch.object(ai,'broker_analyzer',return_value=Mock(side_effect=ValueError('company name/ticker conflict: private'))):
+                ai.child_analyze(inp,out)
+            self.assertEqual(json.loads(out.read_text()),{'status':'rejected','reason':'ISSUER_TICKER_CONFLICT'})
+            self.assertEqual(ai.error_reason(ai.ReportRejected('ISSUER_TICKER_CONFLICT')),'ISSUER_TICKER_CONFLICT')
+            self.assertEqual(ai.error_reason(ai.ReportWorkerError('private arbitrary text')),'ReportWorkerError')
+            try:
+                try:
+                    raise RuntimeError('Private report worker failed (exit 255, SSH_CONNECTION_RESET)')
+                except RuntimeError as cause:
+                    raise RuntimeError('Private report worker unavailable') from cause
+            except RuntimeError as exc:
+                self.assertEqual(ai.error_reason(exc),'SSH_CONNECTION_RESET')
     def test_pdf_failure_only_skips_one(self):
         rows=[row('a'),row('b')]; saved=[]
         extract=Mock(side_effect=[ValueError('scan'),'text']); analyzer=Mock(return_value=result(rows[1]));persist=Mock()
