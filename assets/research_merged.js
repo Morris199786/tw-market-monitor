@@ -245,8 +245,8 @@ const broker = () => category === '券商報告';
 const marketOf = r => String(r.market || 'TW').toUpperCase();
 const originalType = r => clean(r.original_type).toLowerCase();
 function reportCategory(r) {
- if(r.source_kind==='business')return '券商報告';
   if (marketOf(r) === 'US') return '美股';
+  if(r.source_kind==='business')return '券商報告';
   if (r.source_kind === 'broker') {
     const type=clean(r._liveBroker?.report_type || r.report_type).toLowerCase();
     return ['sector','theme'].includes(type) || (!type && clean(r.category)==='產業研究')
