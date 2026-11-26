@@ -449,6 +449,7 @@ def main():
                'date': dt, 'date_source': source, 'created_time': created,
                'parser_version': PARSER_VERSION, 'ticker': ticker, 'company': company,
                'broker': broker, 'modified_time': f.get('modifiedTime', ''),
+               'source_fingerprint': fingerprint(f),
                'url': f'https://drive.google.com/file/d/{fid}/view',
                'preview_url': f'https://drive.google.com/file/d/{fid}/preview'}
         if broker == '凱基投顧' and KGI_FILE.fullmatch(name):

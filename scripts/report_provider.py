@@ -41,7 +41,25 @@ def plan_request(payload):
     return json.loads(proc.stdout)
 
 
+def complete_plan_report(payload):
+    """Subscription only; never falls back to API, even if an API key exists."""
+    try:
+        result = plan_request(payload)
+    except Exception as exc:
+        raise RuntimeError("Private report worker unavailable") from exc
+    if not isinstance(result, dict):
+        raise RuntimeError("Invalid private report worker response")
+    if result.get("status") == "plan_limit":
+        raise NoReportCapacity("Codex plan limit reached")
+    if result.get("status") == "ok" and isinstance(result.get("text"), str) and result["text"].strip():
+        print("Business report provider: ChatGPT plan")
+        return result["text"]
+    raise RuntimeError("Private report worker did not complete the request")
+
+
 def complete_report(payload):
+    if os.environ.get("REPORT_AI_ROUTE") == "plan-only":
+        return complete_plan_report(payload)
     if os.environ.get("REPORT_AI_ROUTE") == "plan-first":
         result = plan_request(payload)
         if result.get("status") == "ok" and isinstance(result.get("text"), str) and result["text"].strip():
