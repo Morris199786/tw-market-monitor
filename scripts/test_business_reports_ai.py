@@ -48,6 +48,14 @@ class ProviderTest(unittest.TestCase):
         post.assert_called_once()
 
 class DateAndFallbackTest(unittest.TestCase):
+    def test_business_day_cutoff_and_pinned_run(self):
+        from datetime import datetime
+        for stamp, expected in [('2026-11-26T23:59:59+08:00', DAY), ('2026-11-27T00:00:00+08:00', DAY), ('2026-11-27T01:59:59+08:00', DAY), ('2026-11-27T02:00:00+08:00', '2026-11-27')]:
+            self.assertEqual(ai.today(datetime.fromisoformat(stamp)), expected)
+        with patch.dict(os.environ, {'BUSINESS_REPORT_DAY': DAY}):
+            self.assertEqual(ai.processing_day(), DAY)
+            self.assertEqual(telegram.processing_day(), DAY)
+
     def test_today_only_and_dedupe(self):
         r=row('done'); a=row('today'); old=row('old',YESTERDAY); changed=row('done',fp='v2'); invitation=dict(row('invite'),filename='邀請.pdf')
         self.assertEqual([x['id'] for x in ai.pending([r,a,a,old,changed,invitation],[result(r)],DAY)],['today','done'])
