@@ -117,7 +117,7 @@
     container.querySelectorAll(':scope > .brv-root').forEach(n=>n.remove());
     if(!Array.isArray(visualizations)||!visualizations.length)return 0;
     const root=document.createElement('section');root.className='brv-root';let count=0;
-    visualizations.slice(0,8).forEach(raw=>{const item=normalized(raw);if(!item)return;const card=document.createElement('section');card.className='brv-card';const title=document.createElement('h4');title.textContent=String(item.title||'數據視覺化');card.appendChild(title);const before=card.childElementCount;
+    visualizations.forEach(raw=>{const item=normalized(raw);if(!item)return;const card=document.createElement('section');card.className='brv-card';const title=document.createElement('h4');title.textContent=String(item.title||'數據視覺化');card.appendChild(title);const before=card.childElementCount;
       if(item.type==='table')table(card,item);else if(item.type==='kpi')kpi(card,item);else if(item.type==='pie')pie(card,item);else if(item.type==='stacked_bar')stackedBar(card,item);else if(item.type==='waterfall')waterfall(card,item);else if(item.type==='dual_axis')dualAxis(card,item);else if(item.type==='timeline')timeline(card,item);else if(item.type==='flow')flow(card,item);else if(item.type==='scatter')scatter(card,item);else if(item.type==='heatmap')heatmap(card,item);else chart(card,item);
       if(card.childElementCount===before)return;
       if(item.note){const p=document.createElement('p');p.className='brv-note';p.textContent=String(item.note);card.appendChild(p);}root.appendChild(card);count++;
