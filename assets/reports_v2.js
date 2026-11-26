@@ -1064,7 +1064,8 @@
             ${listHtml("重點數據／邏輯", r.key_points, r)}
             ${listHtml("財測調整", r.forecast_changes, r)}
             ${listHtml("風險", r.risks, r)}
-            ${brokerVisuals(r)}`}
+            `}
+            ${brokerVisuals(r)}
 
             ${
               r.source_url
