@@ -2205,6 +2205,11 @@ async function setupPageUpdateMeta(
     );
   }
 
+  if (id === "reports") {
+    meta.innerHTML = `<span><b>最後更新</b> ${formatUpdateTime(actual)}</span>`;
+    return;
+  }
+
   meta.innerHTML = `
     <span class="page-update-dot"></span>
 
