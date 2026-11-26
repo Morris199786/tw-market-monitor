@@ -9,9 +9,9 @@ on:
         options: [check, sync, recover_85, ai, failed, rerun_three, retry_mediatek, yingbang_only]
         default: check
       max_reports:
-        description: 'ai模式本次最多解析文章數（1–250）；Codex先行，限額時API備援'
+        description: 'ai模式：0=全部待解析；1–250=指定上限；failed預設10；Codex先行，限額時API備援'
         required: true
-        default: '10'
+        default: '0'
         type: string
 permissions:
   contents: write
