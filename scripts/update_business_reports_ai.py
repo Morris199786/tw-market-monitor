@@ -11,6 +11,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from unittest.mock import patch
 import urllib.parse
+import urllib.error
+import time
 
 import update_business_reports as index
 from report_provider import complete_plan_report, NoReportCapacity
@@ -118,43 +120,91 @@ def broker_analyzer():
     return analyze
 
 
+def error_reason(exc):
+    # Never print PDF text, authentication headers or raw model responses.
+    if isinstance(exc, urllib.error.HTTPError):
+        return f'HTTP {exc.code}'
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return 'subprocess timeout'
+    if isinstance(exc, ValueError) and str(exc) in {
+        'Not a PDF', 'PDF changed during download', 'PDF has no usable text; retain PDF preview',
+        'Incomplete analysis; retain PDF preview', 'PDF exceeds download limit'}:
+        return str(exc)
+    return type(exc).__name__
+
+
+def refreshable_drive_request(credentials, transport, original):
+    """Use ADC to refresh Drive credentials only during the download phase."""
+    def request(url, max_bytes=None):
+        for attempt in range(2):
+            headers = {}
+            credentials.before_request(transport, 'GET', url, headers)
+            index.TOKEN = credentials.token
+            try:
+                return original(url, max_bytes=max_bytes)
+            except urllib.error.HTTPError as exc:
+                if exc.code != 401 or attempt:
+                    raise
+                print('Drive HTTP 401; refreshing credentials and retrying once', flush=True)
+                credentials.refresh(transport)
+    return request
+
+
 def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
-    """Save every success; stop on capacity/worker failures, skip bad individual PDFs."""
+    """Prepare private local text before Codex; no Drive requests during analysis."""
     todo = list(pending(rows, saved, day))
-    if not todo:
+    total = len(todo)
+    if not total:
         return 0
+    started = time.monotonic()
+    count = failed = download_failed = 0
+    print(f'Business reports pending: {total}; phase 1: prepare PDFs', flush=True)
     files = {f['id']: f for f in get_files()}
-    count = 0
-    for row in todo:
-        if clock() != day:  # Prevent cross-midnight historical backfill.
-            break
-        file = files.get(row['id'])
-        if not file or index.fingerprint(file) != key(row)[1]:
-            print('Business PDF changed or missing; retain preview:', row['id'])
-            continue
-        try:
-            text = extract(file)
-        except Exception as exc:
-            print('Business PDF extraction skipped:', row['id'], type(exc).__name__)
-            continue
-        if clock() != day:
-            break
-        try:
-            result = analyze(row, text)
-        except NoReportCapacity:
-            print('Codex plan exhausted; remaining reports keep PDF preview.')
-            break
-        except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
-            # SSH, worker or Codex unavailable. Do not call API or loop through all PDFs.
-            print('Business Codex unavailable; remaining reports keep PDF preview:', type(exc).__name__)
-            break
-        except Exception as exc:
-            print('Business analysis rejected; retain PDF preview:', row['id'], type(exc).__name__)
-            continue
-        # Keep the prior successful version until a new version has succeeded.
-        saved[:] = [r for r in saved if r.get('id') != row['id']] + [result]
-        persist(saved)
-        count += 1
+    with tempfile.TemporaryDirectory(prefix='business-prefetch-') as tmp:
+        prepared = []
+        for n, row in enumerate(todo, 1):
+            if clock() != day:
+                print('Taipei date changed; stop preparation', flush=True)
+                break
+            file = files.get(row['id'])
+            if not file or index.fingerprint(file) != key(row)[1]:
+                download_failed += 1
+                print(f'[PDF {n}/{total}] Changed or missing; retain preview: {row["id"]}', flush=True)
+                continue
+            try:
+                text = extract(file)
+                path = Path(tmp) / f'{n}.txt'
+                path.write_text(text, encoding='utf-8')
+                prepared.append((row, path))
+                print(f'[PDF {n}/{total}] Ready: {row.get("filename", row["id"])}', flush=True)
+            except Exception as exc:
+                download_failed += 1
+                print(f'[PDF {n}/{total}] Failed: {row.get("filename", row["id"])} | {error_reason(exc)}', flush=True)
+        print(f'PDF preparation complete: {len(prepared)}/{total}; failed={download_failed}; phase 2: Codex', flush=True)
+        for n, (row, path) in enumerate(prepared, 1):
+            if clock() != day:
+                print('Taipei date changed; stop analysis', flush=True)
+                break
+            label = row.get('filename') or row['id']
+            t = time.monotonic()
+            print(f'[AI {n}/{len(prepared)}] Analyzing: {label} | success={count} failed={failed}', flush=True)
+            try:
+                result = analyze(row, path.read_text(encoding='utf-8'))
+            except NoReportCapacity:
+                print('Codex plan exhausted; remaining reports keep PDF preview.', flush=True)
+                break
+            except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
+                print(f'Business Codex unavailable: {error_reason(exc)}; remaining reports keep PDF preview', flush=True)
+                break
+            except Exception as exc:
+                failed += 1
+                print(f'[AI {n}/{len(prepared)}] Rejected: {label} | {error_reason(exc)} | {time.monotonic()-t:.1f}s', flush=True)
+                continue
+            saved[:] = [r for r in saved if r.get('id') != row['id']] + [result]
+            persist(saved)
+            count += 1
+            print(f'[AI {n}/{len(prepared)}] Success: {label} | {time.monotonic()-t:.1f}s | success={count}/{total} failed={failed} | elapsed={time.monotonic()-started:.1f}s', flush=True)
+    print(f'Business progress: success={count}/{total}, PDF failures={download_failed}, AI rejected={failed}, other uncompleted={total-count-download_failed-failed}, elapsed={time.monotonic()-started:.1f}s', flush=True)
     return count
 
 
@@ -168,7 +218,16 @@ def main():
     analyze = broker_analyzer()
     def persist(items):
         index.write_json(OUTPUT, {'items': sorted(items, key=lambda x: (x.get('group_date',''),x.get('id','')), reverse=True)})
-    count = run(rows, saved, day, index.list_files, extract_text, analyze, persist)
+    # The workflow provides a freshly generated token and an ADC credential file.
+    # Keep refresh local to this process; the existing index and broker jobs are unchanged.
+    if os.environ.get('BUSINESS_DRIVE_REFRESH') == '1':
+        import google.auth
+        from google.auth.transport.requests import Request
+        credentials, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
+        with patch.object(index, 'request', refreshable_drive_request(credentials, Request(), index.request)):
+            count = run(rows, saved, day, index.list_files, extract_text, analyze, persist)
+    else:
+        count = run(rows, saved, day, index.list_files, extract_text, analyze, persist)
     print('Business reports newly analyzed:', count)
 
 

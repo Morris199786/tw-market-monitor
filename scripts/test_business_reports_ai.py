@@ -78,6 +78,32 @@ class DateAndFallbackTest(unittest.TestCase):
     def test_empty_pending_does_not_access_drive(self):
         r=row('old',YESTERDAY); files=Mock();self.assertEqual(ai.run([r],[],DAY,files,Mock(),Mock(),Mock(),lambda:DAY),0);files.assert_not_called()
 
+class PrefetchTest(unittest.TestCase):
+    def test_all_downloads_before_ai(self):
+        rows=[row('a'),row('b')]; order=[]
+        def extract(f):
+            order.append('download:'+f['id']); return f['id']
+        def analyze(r, text):
+            self.assertEqual(r['id'],text); order.append('ai:'+text); return result(r)
+        self.assertEqual(ai.run(rows,[],DAY,lambda:[drive(r) for r in rows],extract,analyze,Mock(),lambda:DAY),2)
+        self.assertEqual(order,['download:a','download:b','ai:a','ai:b'])
+    def test_refresh_401_once(self):
+        from urllib.error import HTTPError
+        c=Mock(); c.token='dummy'; transport=Mock()
+        original=Mock(side_effect=[HTTPError('https://example.org',401,'expired',{},None),b'PDF'])
+        with patch.object(ai.index,'TOKEN','original'):
+            self.assertEqual(ai.refreshable_drive_request(c,transport,original)('https://example.org'),b'PDF')
+        c.refresh.assert_called_once_with(transport)
+        self.assertEqual(original.call_count,2)
+    def test_no_refresh_for_403(self):
+        from urllib.error import HTTPError
+        c=Mock(); c.token='dummy'; transport=Mock()
+        original=Mock(side_effect=HTTPError('https://example.org',403,'forbidden',{},None))
+        with patch.object(ai.index,'TOKEN','original'), self.assertRaises(HTTPError):
+            ai.refreshable_drive_request(c,transport,original)('https://example.org')
+        c.refresh.assert_not_called()
+        self.assertEqual(original.call_count,1)
+
 class BrokerReuseTest(unittest.TestCase):
     def test_existing_analyzer_financial_prompt_and_no_raw_publication(self):
         broker=ModuleType('update_reports_ai'); eps=ModuleType('update_reports_ai_eps'); pipeline=ModuleType('broker_eps_pipeline'); identity=ModuleType('report_identity')
