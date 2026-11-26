@@ -98,8 +98,10 @@ def broker_analyzer():
     def normalize(obj, src):
         print("[AI stage] normalize and audit", flush=True)
         result = original_normalize(obj, src)
+        print('[AI stage] normalized; financial extraction', flush=True)
         result['quarterly_eps'] = broker_eps_pipeline.normalize(obj.get('quarterly_eps'))
         result['financial_forecasts'] = eps.normalize_financial(obj.get('financial_forecasts'))
+        print('[AI stage] financial extraction complete; issuer audit next', flush=True)
         return result
 
     def analyze(row, text):
@@ -111,6 +113,7 @@ def broker_analyzer():
              patch.object(broker, 'normalize_report', normalize), \
              patch.object(broker, 'COMPANIES', companies):
             result = broker.analyze_report(src)
+        print('[AI stage] issuer audit complete', flush=True)
         if not result.get('summary') or not (result.get('research_sections') or result.get('industry_sections') or result.get('detail')):
             raise ValueError('Incomplete analysis; retain PDF preview')
         # The normalized broker result excludes raw PDF text. Whitelist public fields.
@@ -128,6 +131,9 @@ def broker_analyzer():
 
 def error_reason(exc):
     # Never print PDF text, authentication headers or raw model responses.
+    if isinstance(exc, (ReportWorkerError, ReportRejected)):
+        code = str(exc)
+        return code if code in {'RuntimeError', 'ValueError', 'OSError', 'TypeError', 'KeyError', 'INVALID_JSON', 'ISSUER_TICKER_CONFLICT', 'ISSUER_AMBIGUOUS', 'COVER_ISSUER_CONFLICT', 'TARGET_PRICE_CONFLICT', 'SOURCE_TEXT_MISSING', 'INPUT_LIMIT', 'RESULT_IDENTITY_MISMATCH', 'INVALID_WORKER_RESPONSE', 'WORKER_INCOMPLETE', 'WORKER_FAILED', 'Incomplete analysis; retain PDF preview'} or code in {'SSH_PRIVATE_KEY_PERMISSIONS', 'SSH_PRIVATE_KEY_FORMAT', 'SSH_KEY_FORMAT', 'SSH_HOST_KEY_CHECK', 'SSH_LOGIN_DENIED', 'SSH_TARGET_NAME', 'SSH_TIMEOUT', 'SSH_CONNECTION_REFUSED', 'SSH_NO_ROUTE', 'SSH_CONNECTION_RESET', 'SSH_CONNECTION_CLOSED', 'SSH_UNCLASSIFIED'} else type(exc).__name__
     if isinstance(exc, ReportTimeout):
         return str(exc)
     if isinstance(exc, urllib.error.HTTPError):
@@ -138,6 +144,34 @@ def error_reason(exc):
         'Not a PDF', 'PDF changed during download', 'PDF has no usable text; retain PDF preview',
         'Incomplete analysis; retain PDF preview', 'PDF exceeds download limit'}:
         return str(exc)
+    # Only emit fixed diagnostic categories, never arbitrary exception text.
+    if isinstance(exc, json.JSONDecodeError):
+        return 'INVALID_JSON'
+    message = str(exc)
+    for prefix, code in (
+        ('company name/ticker conflict:', 'ISSUER_TICKER_CONFLICT'),
+        ('unsupported or ambiguous Taiwan identity:', 'ISSUER_AMBIGUOUS'),
+        ('cover and generated issuer conflict', 'COVER_ISSUER_CONFLICT'),
+        ('conflicting current target prices', 'TARGET_PRICE_CONFLICT'),
+        ('source text unavailable', 'SOURCE_TEXT_MISSING'),
+        ('Report exceeds safe input limit', 'INPUT_LIMIT'),
+        ('isolated result identity mismatch', 'RESULT_IDENTITY_MISMATCH'),
+    ):
+        if message.startswith(prefix):
+            return code
+    if isinstance(exc, RuntimeError):
+        # Provider diagnostics already consist of allowlisted labels.
+        import re
+        cause = exc
+        while cause is not None:
+            match = re.fullmatch(r'Private report worker failed \(exit \d+, ((?:SSH_[A-Z_]+|WORKER_FAILED))\)', str(cause))
+            if match:
+                return match.group(1)
+            if str(cause) == 'Invalid private report worker response':
+                return 'INVALID_WORKER_RESPONSE'
+            if str(cause) == 'Private report worker did not complete the request':
+                return 'WORKER_INCOMPLETE'
+            cause = cause.__cause__
     return type(exc).__name__
 
 
@@ -157,6 +191,14 @@ def refreshable_drive_request(credentials, transport, original):
                 credentials.refresh(transport)
     return request
 
+
+
+class ReportWorkerError(RuntimeError):
+    """Isolated worker failure with a sanitized diagnostic category."""
+
+
+class ReportRejected(ValueError):
+    """Isolated report validation failure with a sanitized category."""
 
 
 class ReportTimeout(ValueError):
@@ -215,11 +257,11 @@ def isolated_analyze(row, text, limit=720, heartbeat=30):
         if status == 'limit':
             raise NoReportCapacity('Codex plan limit reached')
         if status == 'worker_error':
-            raise RuntimeError('Private report worker unavailable')
+            raise ReportWorkerError(str(reply.get('reason', 'unknown'))) 
         if status == 'timeout':
             raise ReportTimeout('SSH/Codex request timeout')
         if status != 'ok':
-            raise ValueError('isolated analysis rejected: '+str(reply.get('reason','unknown')))
+            raise ReportRejected(str(reply.get('reason', 'unknown')))
         result = reply['result']
         if key(result) != key(row) or result.get('status') != 'ready':
             raise ValueError('isolated result identity mismatch')
@@ -284,8 +326,9 @@ def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
                 print('Codex plan exhausted; remaining reports keep PDF preview.', flush=True)
                 break
             except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
-                print(f'Business Codex unavailable: {error_reason(exc)}; remaining reports keep PDF preview', flush=True)
-                break
+                failed += 1
+                print(f'[AI {n}/{len(prepared)}] Worker failure; retain PDF and continue: {label} | {error_reason(exc)} | {time.monotonic()-t:.1f}s', flush=True)
+                continue
             except Exception as exc:
                 failed += 1
                 print(f'[AI {n}/{len(prepared)}] Rejected: {label} | {error_reason(exc)} | {time.monotonic()-t:.1f}s', flush=True)
