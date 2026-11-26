@@ -47,6 +47,27 @@ class ProviderTest(unittest.TestCase):
         self.assertEqual(provider.complete_report({}), 'fallback')
         post.assert_called_once()
 
+class TechnologyFilterTest(unittest.TestCase):
+    def test_classification(self):
+        curated = {'1802','2618'}
+        industries = {'2330':'24','2723':'16','7562':'31','9999':'其他電子業'}
+        for code, expected in [('2330','tech'),('1802','tech'),('2618','nontech'),('2723','nontech'),('7562','tech'),('9999','tech'),('DELL','tech'),('DKS','nontech'),('ZZZZ','unknown')]:
+            self.assertEqual(ai.technology_decision({'ticker':code},curated,industries),expected)
+        self.assertEqual(ai.technology_decision({'ticker':'','company':''},curated,industries),'research')
+
+    def test_limit_after_filter_and_dedupe(self):
+        rows=[dict(row(str(i)),ticker='2330') for i in range(30)]
+        rows.insert(0,dict(row('nontech'),ticker='2618'))
+        with patch.object(ai,'technology_catalog',return_value=({'2330'},{})):
+            selected=ai.eligible_pending(rows,[result(rows[1])],DAY)
+        self.assertEqual(len(selected),25)
+        self.assertEqual(selected[0]['id'],'1')
+        self.assertNotIn('nontech',[r['id'] for r in selected])
+        saved=[]
+        analyzer=Mock(side_effect=lambda r,t:result(r))
+        ai.run(rows[1:],saved,DAY,lambda:[drive(r) for r in rows[1:]],lambda f:'text',analyzer,Mock(),lambda:DAY)
+        self.assertEqual(analyzer.call_count,25)
+
 class DateAndFallbackTest(unittest.TestCase):
     def test_business_day_cutoff_and_pinned_run(self):
         from datetime import datetime
