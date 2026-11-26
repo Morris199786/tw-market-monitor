@@ -238,11 +238,15 @@ def _target_matches(page):
 
 def _issuer_for_target(page, match, companies):
     head = page[:match.start()]
-    for ids in (explicit_tickers(head) & set(companies),
-                explicit_tickers(page[:1800]) & set(companies),
-                explicit_tickers(page) & set(companies),
-                alias_hits(head, companies) & set(companies),
-                alias_hits(page[:1800], companies) & set(companies)):
+    # Preserve the original evidence priority, but do not eagerly scan aliases
+    # if an earlier ticker check already identifies a unique issuer.
+    valid = set(companies)
+    for lookup, fragment in ((explicit_tickers, head),
+                             (explicit_tickers, page[:1800]),
+                             (explicit_tickers, page),
+                             (alias_hits, head),
+                             (alias_hits, page[:1800])):
+        ids = (lookup(fragment, companies) if lookup is alias_hits else lookup(fragment)) & valid
         if len(ids) == 1:
             return next(iter(ids))
     return None
