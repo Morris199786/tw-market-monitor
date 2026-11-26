@@ -62,6 +62,91 @@ def pending(rows, saved, day):
         yield row
 
 
+MAX_REPORTS_PER_RUN = 25
+# Include the site's curated technology supply chains even where exchange
+# classifications are traditional industry (materials, equipment, power).
+TECH_INDUSTRIES = {'24','25','26','27','28','29','30','31','35',
+    '半導體業','電腦及週邊設備業','電腦及周邊設備業','光電業','通信網路業',
+    '電子零組件業','電子通路業','資訊服務業','其他電子業','數位雲端'}
+FOREIGN_TECH = set('SPCX SPACEX DELL AAPL SNDK INTC VRT FLEX MU MRVL LRCX AMAT KLAC ASML TER ADI TXN MPWR ON IFX STM GFS AAOI LITE COHR AXTI TTMI VICR AMKR HPE PLTR NVDA AMD AVGO MSFT GOOGL GOOG META AMZN TSM ARM QCOM ANET SMCI ORCL IBM WDC STX CRDO ALAB NOW CRM SNOW DDOG NET'.split())
+FOREIGN_NONTECH = set('DKS VFC NKE MCD SBUX WMT COST TGT DAL UAL AAL JPM BAC GS KO PEP'.split())
+# Explicit user exclusions take precedence over any supply-chain mapping.
+NONTECH_TW = {'2618','2723','2727','2645','1101','2501','2884','4105','6782'}
+
+
+def technology_catalog():
+    """One public metadata lookup per invocation; no AI/API credits."""
+    import csv
+    import io
+    import urllib.request
+    curated = set()
+    try:
+        obj = json.loads((DATA / 'sectors.json').read_text(encoding='utf-8'))
+        curated = {str(stock['ticker']) for sector in obj['sectors'] for stock in sector['stocks']}
+    except (OSError, ValueError, KeyError, TypeError):
+        print('Technology supply-chain catalog unavailable', flush=True)
+    industries = {}
+    for market in ('L','O','R'):
+        try:
+            url = 'https://mopsfin.twse.com.tw/opendata/t187ap03_' + market + '.csv'
+            with urllib.request.urlopen(url, timeout=20) as response:
+                raw = response.read()
+            try:
+                text = raw.decode('utf-8-sig')
+            except UnicodeDecodeError:
+                text = raw.decode('cp950')
+            rows = list(csv.DictReader(io.StringIO(text)))
+            entries = {str(row.get('公司代號') or '').strip(): str(row.get('產業別') or '').strip() for row in rows}
+            entries = {code: value for code,value in entries.items() if code and value}
+            if not entries:
+                raise ValueError('empty industry catalog')
+            industries.update(entries)
+        except Exception as exc:
+            print(f'Technology industry catalog {market} unavailable: {type(exc).__name__}', flush=True)
+    return curated, industries
+
+
+def technology_decision(row, curated, industries):
+    """Keep non-stock research; unknown individual stocks are deferred, not guessed."""
+    import re
+    codes = [c.strip().upper() for c in re.split(r'[、,;/]+', str(row.get('ticker') or '')) if c.strip()]
+    if not codes:
+        label = str(row.get('company') or '').strip()
+        if label:
+            return 'unknown'
+        return 'research'
+    decisions = []
+    for code in codes:
+        if code in NONTECH_TW or code in FOREIGN_NONTECH:
+            decisions.append('nontech')
+        elif code in curated or code in FOREIGN_TECH:
+            decisions.append('tech')
+        elif code in industries:
+            value = industries[code]
+            decisions.append('tech' if value in TECH_INDUSTRIES or value.lstrip('0') in TECH_INDUSTRIES else 'nontech')
+        else:
+            decisions.append('unknown')
+    if 'tech' in decisions:
+        return 'tech'
+    return 'unknown' if 'unknown' in decisions else 'nontech'
+
+
+def eligible_pending(rows, saved, day):
+    candidates = list(pending(rows, saved, day))
+    if not candidates:
+        return []
+    curated, industries = technology_catalog()
+    selected = []
+    for row in candidates:
+        decision = technology_decision(row, curated, industries)
+        if decision in ('tech', 'research'):
+            selected.append(row)
+        else:
+            print(f'[filter] {decision}; retain PDF: {row.get("filename", row["id"])}', flush=True)
+    print(f'Technology filter: {len(selected)}/{len(candidates)} eligible; per-run cap {MAX_REPORTS_PER_RUN}', flush=True)
+    return selected[:MAX_REPORTS_PER_RUN]
+
+
 def extract_text(file):
     """Same layout-aware PDF extraction as the broker pipeline, no AI/OCR."""
     raw = index.request(index.API + '/' + urllib.parse.quote(file['id'], safe='') + '?alt=media',
@@ -287,7 +372,7 @@ def publish_checkpoint():
 
 def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
     """Prepare private local text before Codex; no Drive requests during analysis."""
-    todo = list(pending(rows, saved, day))
+    todo = list(pending(rows, saved, day))[:MAX_REPORTS_PER_RUN]
     total = len(todo)
     if not total:
         return 0
@@ -352,8 +437,9 @@ def main():
     day = processing_day()
     rows = read_items(INDEX)
     saved = read_items(OUTPUT)
-    if not list(pending(rows, saved, day)):
-        print('No unparsed business reports for', day)
+    rows = eligible_pending(rows, saved, day)
+    if not rows:
+        print('No eligible unparsed business reports for', day)
         return
     analyze = isolated_analyze
     def persist(items):
