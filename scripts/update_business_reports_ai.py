@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from unittest.mock import patch
 import urllib.parse
@@ -26,8 +26,15 @@ OUTPUT = DATA / 'business_reports_ai.json'
 TZ = ZoneInfo('Asia/Taipei')
 
 
-def today():
-    return datetime.now(TZ).date().isoformat()
+def today(now=None):
+    """Taipei business day changes at 02:00, not midnight."""
+    local = datetime.now(TZ) if now is None else now.astimezone(TZ)
+    return (local - timedelta(hours=2)).date().isoformat()
+
+
+def processing_day():
+    """Use the workflow's pinned business day throughout a single run."""
+    return os.environ.get('BUSINESS_REPORT_DAY') or today()
 
 
 def read_items(path):
@@ -342,7 +349,7 @@ def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
 
 
 def main():
-    day = today()
+    day = processing_day()
     rows = read_items(INDEX)
     saved = read_items(OUTPUT)
     if not list(pending(rows, saved, day)):
@@ -359,9 +366,9 @@ def main():
         from google.auth.transport.requests import Request
         credentials, _ = google.auth.default(scopes=['https://www.googleapis.com/auth/drive.readonly'])
         with patch.object(index, 'request', refreshable_drive_request(credentials, Request(), index.request)):
-            count = run(rows, saved, day, index.list_files, extract_text, analyze, persist)
+            count = run(rows, saved, day, index.list_files, extract_text, analyze, persist, clock=lambda: day)
     else:
-        count = run(rows, saved, day, index.list_files, extract_text, analyze, persist)
+        count = run(rows, saved, day, index.list_files, extract_text, analyze, persist, clock=lambda: day)
     print('Business reports newly analyzed:', count)
 
 
