@@ -17,3 +17,26 @@
 #usnCalendar .rm-cal-foot button{border:1px solid #dce3eb;padding:6px 12px}
 #usnCalendar .rm-cal-foot button:last-child{background:#151b27;color:#fff}
 #researchMergedPanel #usnCalendar{width:100%;max-width:440px;box-sizing:border-box}#researchMergedPanel #usnQuery{min-width:0;flex:1;background:#fff;color:#243246;border:1px solid #d4dce7;border-radius:10px;padding:10px 12px;font-size:16px}#researchMergedPanel #usnClear,#researchMergedPanel #usDailyNews select{border:1px solid #d4dce7;background:#fff;color:#243246;border-radius:10px;padding:9px 12px;font:inherit}#researchMergedPanel #usDailyNews .rm-date-tools{flex-wrap:wrap}#researchMergedPanel #usDailyNews .rm-date-group{margin:0 0 10px}#researchMergedPanel #usDailyNews .rm-card{margin:10px 0}#researchMergedPanel #usDailyNews .report-date-arrow{display:inline-block}html[data-theme=dark] #researchMergedPanel #usnCalendar,html[data-theme=dark] #researchMergedPanel #usnQuery,html[data-theme=dark] #researchMergedPanel #usnClear,html[data-theme=dark] #researchMergedPanel #usDailyNews select,html[data-theme=dark] #researchMergedPanel #usDailyNews .rm-date-tools button{background:#22272e;color:#e5e8ec;border-color:#414a55}html[data-theme=dark] #researchMergedPanel #usnCalendar button{color:#e5e8ec}html[data-theme=dark] #researchMergedPanel #usnCalendar button.selected{background:#151b27;color:#fff}
+
+
+/* Compact research database navigation; scoped to reports only. */
+@media(max-width:600px){
+#reports > .hero{min-height:0!important;padding:12px 14px!important;margin-bottom:8px!important;gap:4px!important}
+#reports > .hero .kicker,#reports > .hero p,#reports > .hero > .badge{display:none!important}
+#reports > .hero h1{font-size:21px!important;line-height:1.3!important;margin:0!important}
+#reports .report-mode-tabs{gap:5px!important;margin:8px 0!important;padding:0!important}
+#reports .report-mode-tabs .report-mode-tab{min-height:36px!important;padding:7px 8px!important;font-size:13px!important;border-radius:10px!important}
+#researchMergedPanel .rm-toolbar{gap:8px!important;margin-bottom:10px!important}
+#researchMergedPanel .rm-cats{flex-wrap:wrap!important;overflow:visible!important;gap:5px!important;padding:0!important}
+#researchMergedPanel .rm-chip{min-height:34px!important;padding:6px 10px!important;font-size:13px!important;border-radius:9px!important}
+#researchMergedPanel #usNewsTabs{display:flex;gap:0!important;padding:3px!important;background:#9ca3af20;border-radius:10px}
+#researchMergedPanel #usNewsTabs .rm-chip{flex:1!important;border:0!important;background:transparent;color:inherit}
+#researchMergedPanel #usNewsTabs .rm-chip.active{background:#141924;color:#fff}
+#researchMergedPanel .rm-date-tools{gap:6px!important}
+#researchMergedPanel .rm-date-tools button,#researchMergedPanel #usDailyNews select{min-height:36px!important;padding:6px 9px!important;font-size:13px!important}
+#researchMergedPanel .rm-search{gap:6px!important}
+#researchMergedPanel .rm-search input{min-height:38px!important;padding:8px 10px!important;font-size:16px!important}
+#researchMergedPanel .rm-search button{min-height:38px!important;padding:6px 10px!important;font-size:13px!important}
+#researchMergedPanel .rm-date-group>.report-date-head{min-height:44px!important;padding:9px 12px!important}
+#researchMergedPanel .rm-date-group>.report-date-head b{font-size:15px!important}
+}
