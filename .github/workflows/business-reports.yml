@@ -2,6 +2,12 @@ name: Sync business reports index and Codex analysis
 
 on:
   workflow_dispatch:
+    inputs:
+      oidc_diagnostic:
+        description: "Diagnose OIDC claims only (no report processing)"
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: write
@@ -12,7 +18,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  oidc-diagnostic:
+    if: inputs.oidc_diagnostic == true
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Print selected GitHub OIDC claims (never print token)
+        env:
+          EXPECTED_AUDIENCE: ${{ secrets.TS_BUSINESS_AUDIENCE }}
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import os, json, base64, urllib.request, urllib.parse
+          audience = os.environ['EXPECTED_AUDIENCE']
+          if not audience:
+              raise SystemExit('TS_BUSINESS_AUDIENCE is missing')
+          url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']
+          url += ('&' if '?' in url else '?') + urllib.parse.urlencode({'audience': audience})
+          req = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+          with urllib.request.urlopen(req, timeout=30) as response:
+              token = json.load(response)['value']
+          payload = token.split('.')[1]
+          claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+          for key in ('iss', 'sub', 'workflow_ref'):
+              print(f'{key}: {json.dumps(claims.get(key), ensure_ascii=True)}')
+          aud = claims.get('aud')
+          print('aud matches TS_BUSINESS_AUDIENCE:', aud == audience or (isinstance(aud, list) and audience in aud))
+          PYCODE
   sync:
+    if: inputs.oidc_diagnostic != true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
