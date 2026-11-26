@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-26T18:59+08:00",
+  "updated_at": "2026-11-26T20:04+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2581,28 +2581,29 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 188,
+          "rows": 193,
           "hits": 6
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 188,
+          "rows": 193,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 188,
+          "rows": 193,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mopsov.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mopsov.twse.com.tw', port=443) at 0x727ca839cb60>, 'Connection to mopsov.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2629,14 +2630,14 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 188,
+          "rows": 193,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 188,
+          "rows": 193,
           "hits": 0
         },
         {
@@ -2686,14 +2687,15 @@
         {
           "mode": "company_rescue",
           "ticker": "1210",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
+          "error": ""
         },
         {
           "mode": "company_rescue",
           "ticker": "1225",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2813,7 +2815,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2327",
-          "base": "https://mops.twse.com.tw",
+          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2869,7 +2871,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2382",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2917,7 +2919,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2609",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2989,8 +2991,8 @@
         {
           "mode": "company_rescue",
           "ticker": "2890",
-          "base": "https://mops.twse.com.tw",
-          "rows": 0,
+          "base": "https://mopsov.twse.com.tw",
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -3134,7 +3136,7 @@
           "mode": "company_rescue",
           "ticker": "3712",
           "base": "https://mopsov.twse.com.tw",
-          "rows": 0,
+          "rows": 3,
           "hits": 0,
           "error": ""
         },
@@ -3325,7 +3327,7 @@
         {
           "mode": "company_rescue",
           "ticker": "7760",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
