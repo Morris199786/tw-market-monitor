@@ -60,11 +60,16 @@ function financialHtml(a){
  const other=rows.filter(r=>!used.has(r));if(other.length)html+='<details class="br-fin-extra"><summary>其他財務及營運數據（'+other.length+' 筆）</summary>'+table(['期間','指標','數值','單位','性質','來源','範圍'],other.map(r=>[r.period,r.label,fmt(r.value),r.unit,types[r.type]||r.type,sources[r.source]||r.source,r.scope==='company'?'公司':r.scope]))+'</details>';
  return html?'<div class="br-fin-note">E：券商預估｜pp：百分點｜—：未提供；不同單位不合併</div>'+html:'';
 }
-function detailsHtml(a){ let detail='';
+function terminologyReviewed(a){
+ if(String(a?.id)!=='1AuYWmlmEHHcZCQqRlj-OCs7Kw28cc3OD')return a;
+ const review=v=>typeof v==='string'?v.replace(/NPU\s*可能(?:先於|早於)\s*CPU/g,'NPU 可能先於 CPU（華南原文用詞，術語待核對；富邦 11/19 原文另指 NPO 先於 CPO）'):Array.isArray(v)?v.map(review):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,k==='emphasis'?x.filter?.(w=>! /NPU|CPU/i.test(String(w)))||[]:review(x)])):v;
+ return review(a);
+}
+function detailsHtml(a){ a=terminologyReviewed(a);let detail='';
  if(list(a.industry_sections).length){detail=list(a.industry_sections).map(s=>section(s.heading||'研究內容',list(s.blocks).map(b=>b.type==='paragraph'?(window.IndustrySummary?.prose(b.text,v=>marked(v,a.emphasis))||'<p>'+marked(b.text,a.emphasis)+'</p>'):b.type==='bullets'?bullets(b.items,a):b.type==='table'?(b.title?'<h5>'+esc(b.title)+'</h5>':'')+table(b.headers,b.rows)+(b.note?'<p>'+esc(b.note)+'</p>':''):'').join(''))).join('');}
  else {detail=window.IndustrySummary?.research(a,esc)|| (a.detail?'<p class="br-ai-detail-text">'+marked(a.detail,a.emphasis)+'</p>':'');}
  const beneficiaries=list(a.beneficiaries).map(r=>[r.name,r.ticker,r.reason].filter(Boolean).join('｜'));
- return section('關鍵數據與依據',bullets(a.key_points,a))+section('財測調整',bullets(a.forecast_changes,a))+detail+section('受惠／關注公司',bullets(beneficiaries,a))+section('風險',bullets(a.risks,a))+section('財務與營運數據',financialHtml(a))+'<div class="br-ai-visuals"></div>';
+ return (String(a.id)==='1AuYWmlmEHHcZCQqRlj-OCs7Kw28cc3OD'?'<p style="border-left:3px solid #b7791f;padding-left:12px"><strong>術語待核對：</strong>11/25 華南 memo 原文寫 NPU 可能先於 CPU；11/19 富邦 memo 原文明確寫 scale-up 端預期 3Q27–4Q27 放量，NPO 先於 CPO。兩組縮寫不同，尚未確認是否為同一產品，不應混為一談。</p>':'')+section('關鍵數據與依據',bullets(a.key_points,a))+section('財測調整',bullets(a.forecast_changes,a))+detail+section('受惠／關注公司',bullets(beneficiaries,a))+section('風險',bullets(a.risks,a))+section('財務與營運數據',financialHtml(a))+'<div class="br-ai-visuals"></div>';
 }
 function businessHeader(r){
  const a=r.ai;if(!a)return '<div class="rm-title">'+esc(r.title)+'</div><div class="rm-sub">'+esc([r.company,r.ticker,r.broker,r.date].filter(Boolean).join('・'))+'</div>';
