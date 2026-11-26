@@ -39,13 +39,13 @@
       "ticker": "3664",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-25T23:14:23+08:00"
+      "checked_at": "2026-11-26T08:38:36+08:00"
     },
     "3712|2026-Q2": {
       "ticker": "3712",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-25T22:35:16+08:00"
+      "checked_at": "2026-11-26T08:38:36+08:00"
     },
     "3712|2026-Q3": {
       "ticker": "3712",
@@ -165,7 +165,7 @@
       "ticker": "3718",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-25T21:42:31+08:00"
+      "checked_at": "2026-11-26T08:38:36+08:00"
     },
     "8084|2026-Q3": {
       "ticker": "8084",
@@ -210,7 +210,7 @@
       "notes": []
     },
     "3664|2026-Q2": {
-      "at": "2026-11-25T23:14:23+08:00",
+      "at": "2026-11-26T08:38:36+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -219,7 +219,7 @@
       "notes": []
     },
     "3712|2026-Q2": {
-      "at": "2026-11-25T22:35:16+08:00",
+      "at": "2026-11-26T08:38:36+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -427,7 +427,7 @@
       "notes": []
     },
     "3718|2026-Q2": {
-      "at": "2026-11-25T21:42:31+08:00",
+      "at": "2026-11-26T08:38:36+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -481,44 +481,22 @@
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-26T08:06:28+08:00",
+  "updated_at": "2026-11-26T08:38:36+08:00",
   "last_run": {
-    "attempted": 9,
+    "attempted": 3,
     "fields_filled": 0,
     "targets": 12,
     "errors": [
       {
-        "key": "6405|2026-Q2",
+        "key": "3718|2026-Q2",
         "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+          "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
         ]
       },
       {
-        "key": "6405|2026-Q3",
+        "key": "3712|2026-Q2",
         "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-        ]
-      },
-      {
-        "key": "8291|2026-Q2",
-        "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
-        ]
-      },
-      {
-        "key": "8291|2026-Q3",
-        "notes": [
-          "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
-        ]
-      },
-      {
-        "key": "6895|2026-Q2",
-        "notes": [
-          "TimeoutError:backup_time_budget",
-          "TimeoutError:financial_news_company_page",
-          "TimeoutError:financial_news_discovery",
-          "TimeoutError:financial_news_discovery",
-          "TimeoutError:news_discovery"
+          "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
         ]
       }
     ]
