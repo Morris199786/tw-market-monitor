@@ -775,7 +775,10 @@ function dateRank(value) {
   return /^\d{4}-\d{2}(?:-\d{2})?$/.test(d) ? Number(d.replaceAll('-','').padEnd(8,'0')) : 0;
 }
 function compareReportDate(a,b) {
-  return dateRank(b.date)-dateRank(a.date) || String(a.id||'').localeCompare(String(b.id||''));
+  // Date always wins. Only within the same date, move PDF-only business
+  // reports behind all existing research and successfully analyzed reports.
+  const pdfOnly = r => Number(r.source_kind === 'business' && !r._business?.ai);
+  return dateRank(b.date)-dateRank(a.date) || pdfOnly(a)-pdfOnly(b) || String(a.id||'').localeCompare(String(b.id||''));
 }
 function dateLabel(day) {
   return day.replaceAll('-','/')+(/^\d{4}-\d{2}$/.test(day)?'（日期未詳）':'');
