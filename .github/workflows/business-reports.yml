@@ -103,7 +103,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y poppler-utils
-          python -m pip install 'PyMuPDF>=1.24,<2' requests
+          python -m pip install 'PyMuPDF>=1.24,<2' requests 'google-auth>=2.35,<3'
 
       - name: Index Drive PDFs and retain private original text
         id: index
@@ -156,15 +156,27 @@ jobs:
           printf '%s\n' "$WORKER_HOST_KEY" >> ~/.ssh/known_hosts
           PYTHONPATH=scripts python -c 'from report_provider import plan_request; assert plan_request({"check": True}) == {"status": "ready"}'
 
-      - name: Analyze only today's PDFs using Codex subscription (no API)
-        id: ai
+      - name: Refresh Google Drive credentials before PDF preparation
+        id: ai_auth
         if: steps.worker.outcome == 'success'
         continue-on-error: true
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+
+      - name: Analyze only today's PDFs using Codex subscription (no API)
+        id: ai
+        if: steps.ai_auth.outcome == 'success'
+        continue-on-error: true
         env:
-          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          ACCESS_TOKEN: ${{ steps.ai_auth.outputs.access_token }}
+          BUSINESS_DRIVE_REFRESH: "1"
           REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
           REPORT_AI_ROUTE: plan-only
-        run: python scripts/update_business_reports_ai.py
+        run: python -u scripts/update_business_reports_ai.py
 
       - name: Publish successful AI summaries (no original full text)
         run: '"$RUNNER_TEMP/publish-business" "Update business report AI summaries" data/business_reports_ai.json'
