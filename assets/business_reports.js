@@ -4,7 +4,7 @@ const root=document.getElementById('researchMergedPanel');if(!root)return;
 const cats=root.querySelector('.rm-cats'),cards=root.querySelector('#rmCards'),meta=root.querySelector('#rmMeta'),query=root.querySelector('#rmQuery'),clear=root.querySelector('#rmClear'),dateToggle=root.querySelector('#rmDateToggle'),dateLabel=root.querySelector('#rmDateLabel'),latest=root.querySelector('#rmLatest'),calendar=root.querySelector('#rmCalendar'),more=root.querySelector('#rmMore');
 if(!cats||!cards||!query)return;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const button=document.createElement('button');button.type='button';button.className='rm-chip';button.dataset.businessCategory='1';button.textContent='業務報告';const us=[...cats.querySelectorAll('button')].find(b=>b.textContent.trim()==='美股');cats.insertBefore(button,us||null);
+const button=document.createElement('button');button.type='button';button.className='rm-chip';button.dataset.businessCategory='1';button.textContent='業務報告';const us=[...cats.querySelectorAll('button')].find(b=>b.textContent.trim()==='美股');
 const dateNote=document.createElement('small');dateNote.textContent='檔案歸類日期採建檔日可能與原始報告日期不同';dateNote.style.cssText='font-size:12px;color:#8a909c;line-height:1.5;flex:1 1 220px';dateNote.hidden=true;latest.insertAdjacentElement('afterend',dateNote);
 let active=false,items=[],ready=false,mode='all',day='',month='',text='',pageSize=30;
 const css=document.createElement('style');css.textContent=`#researchMergedPanel .rm-chip[data-business-category].active{background:#141924;border-color:#141924;color:#fff}#researchMergedPanel .br-name{overflow-wrap:anywhere;color:#64748b;font-size:12px;margin-top:5px}#researchMergedPanel .br-open{display:inline-flex;align-items:center;justify-content:center;padding:10px 15px;border:0;border-radius:10px;background:#eaf1ff;color:#2058bb;font:inherit;font-weight:700;cursor:pointer}html[data-theme=dark] #researchMergedPanel .rm-chip[data-business-category].active{background:#10151e;color:#fff}body.br-modal-open{overflow:hidden!important}#brFullscreen{position:fixed!important;inset:0!important;width:100vw;height:100dvh;z-index:2147483647;background:#fff;display:flex;flex-direction:column;overflow:hidden}#brFullscreen[hidden]{display:none!important}#brFullscreen .br-toolbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 10px;background:#111827;color:#fff;min-height:54px;box-sizing:border-box}#brFullscreen .br-heading{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700}#brFullscreen .br-toolbar button,#brFullscreen .br-toolbar a{display:inline-flex;align-items:center;justify-content:center;border:1px solid #4b5563;border-radius:9px;padding:9px 12px;color:#fff;background:#374151;font:inherit;font-size:14px;text-decoration:none;white-space:nowrap;cursor:pointer}#brFullscreen iframe{display:block;flex:1;min-height:0;width:100%;border:0;background:#fff}#brFullscreen .br-foot{flex:0 0 auto;background:#111827;color:#cbd5e1;text-align:center;padding:5px 10px calc(env(safe-area-inset-bottom,0px) + 5px);font-size:11px}@supports not (height:100dvh){#brFullscreen{height:100vh}}`;document.head.appendChild(css);
@@ -47,55 +47,17 @@ async function load(){if(ready)return;if(loading)return loading;loading=(async()
  // PDF cards render immediately, even if the optional AI data cannot be fetched.
  if(active)draw();
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
- try{const ar=await fetch('./data/business_reports_ai.json?v='+Date.now(),{cache:'no-store',signal:controller.signal});if(ar.ok){const ao=await ar.json();const ai=new Map(list(ao.items).filter(r=>r&&r.status==='ready'&&list(r.summary).length&&r.id&&r.source_fingerprint).map(r=>[aiKey(r),r]));items.forEach(r=>{if(r.source_fingerprint)r.ai=ai.get(aiKey(r));});if(active)draw();else if(allSelected())scheduleAllRender();}}catch(e){console.warn('Optional business AI data unavailable; PDF preview retained',e);}finally{clearTimeout(timer);}
+ try{const ar=await fetch('./data/business_reports_ai.json?v='+Date.now(),{cache:'no-store',signal:controller.signal});if(ar.ok){const ao=await ar.json();const ai=new Map(list(ao.items).filter(r=>r&&r.status==='ready'&&list(r.summary).length&&r.id&&r.source_fingerprint).map(r=>[aiKey(r),r]));items.forEach(r=>{if(r.source_fingerprint)r.ai=ai.get(aiKey(r));});if(active)draw();}}catch(e){console.warn('Optional business AI data unavailable; PDF preview retained',e);}finally{clearTimeout(timer);}
  })();try{await loading;}finally{loading=null;}}
 
 function filtered(){const q=text.trim().toLocaleLowerCase();return items.filter(r=>(!q||[r.company,r.ticker,r.title,r.filename,r.broker].join(' ').toLocaleLowerCase().includes(q))&&(mode!=='selected'||r.date===day));}
 function draw(){if(!active)return;const found=filtered(),dates=[...new Set(found.map(r=>r.date))].sort().reverse(),shown=mode==='latest'?found.filter(r=>r.date===dates[0]):found;meta.textContent=`找到 ${shown.length} 份｜共 ${items.length} 份業務報告（AI 解析 ${shown.filter(r=>r.ai).length} 份｜其餘 PDF）`;dateLabel.textContent=mode==='selected'?day.replaceAll('-','/'):'全部日期';latest.classList.toggle('active',mode==='latest');const totals=new Map();shown.forEach(r=>totals.set(r.date,(totals.get(r.date)||0)+1));const groups=new Map();shown.slice(0,pageSize).forEach(r=>{if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r)});cards.innerHTML=groups.size?[...groups].map(([d,rs],i)=>`<details class="rm-date-group" ${i===0||text?'open':''}><summary class="report-date-head"><span><b>${esc(d.replaceAll('-','/'))}</b><small>${totals.get(d)} 份報告</small></span><span class="report-date-arrow">⌄</span></summary><div class="report-date-body">${rs.map(r=>`<article class="rm-card"><div class="rm-title">${esc(r.title)}</div><div class="rm-sub">${esc([r.company,r.ticker,r.broker,r.date].filter(Boolean).join('・'))}</div><div class="br-name">${esc(r.filename)}</div>${aiHtml(r)}<button type="button" class="br-open" data-br-pdf="${esc(r.id)}">全螢幕閱讀 PDF ↗</button></article>`).join('')}</div></details>`).join(''):'<div class="rm-empty">目前沒有符合條件的業務報告</div>';more.hidden=shown.length<=pageSize;more.textContent='顯示更多';cards.querySelectorAll('[data-br-pdf]').forEach(b=>b.addEventListener('click',()=>openPdf(b.dataset.brPdf)));bindAi(cards);}
 function calendarDraw(){const dates=new Set(items.map(r=>r.date));if(!month)month=(items.find(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date))?.date||new Date().toISOString().slice(0,10)).slice(0,7);const [y,m]=month.split('-').map(Number),offset=new Date(y,m-1,1).getDay(),n=new Date(y,m,0).getDate();let cells='<span></span>'.repeat(offset);for(let d=1;d<=n;d++){const k=month+'-'+String(d).padStart(2,'0');cells+=`<button type="button" data-br-day="${k}" class="${day===k&&mode==='selected'?'selected':''}">${d}${dates.has(k)?'<i></i>':''}</button>`}calendar.innerHTML=`<div class="rm-cal-head"><button data-br-month="-1">❮</button><strong>${y} 年 ${m} 月</strong><button data-br-month="1">❯</button></div><div class="rm-cal-grid">${['日','一','二','三','四','五','六'].map(x=>'<b>'+x+'</b>').join('')}${cells}</div><div class="rm-cal-foot"><button data-br-action="today">今天</button><button data-br-action="clear">清除</button><button data-br-action="done">完成</button></div>`;}
 function activate(){if(active)return;active=true;dateNote.hidden=false;button.classList.add('active');cats.querySelectorAll('.rm-chip').forEach(b=>{if(b!==button)b.classList.remove('active')});cards.innerHTML='';more.hidden=true;query.value=text;query.placeholder='搜尋公司、股票代號或 PDF 檔名';dateLabel.textContent='全部日期';calendar.hidden=true;load().then(draw).catch(e=>{console.error(e);cards.innerHTML='<div class="rm-empty">業務報告清單尚未建立或讀取失敗</div>';meta.textContent=e.message;});}
-button.addEventListener('click',e=>{e.stopImmediatePropagation();activate();},true);
-cats.addEventListener('click',e=>{if(e.target.closest('[data-business-category]'))return;if(active){closePdf();active=false;dateNote.hidden=true;button.classList.remove('active');query.value='';query.placeholder='搜尋公司、代號、主題或內文';mode='all';day='';calendar.hidden=true;setTimeout(()=>query.dispatchEvent(new Event('input',{bubbles:true})),0);}},true);
-query.addEventListener('input',e=>{if(!active)return;e.stopImmediatePropagation();text=query.value;pageSize=30;draw()},true);
-clear.addEventListener('click',e=>{if(!active)return;e.stopImmediatePropagation();text='';query.value='';pageSize=30;draw()},true);
-dateToggle.addEventListener('click',e=>{if(!active)return;e.stopImmediatePropagation();calendar.hidden=!calendar.hidden;if(!calendar.hidden)calendarDraw();},true);
-latest.addEventListener('click',e=>{if(!active)return;e.stopImmediatePropagation();mode=mode==='latest'?'all':'latest';day='';calendar.hidden=true;pageSize=30;draw();},true);
-calendar.addEventListener('click',e=>{if(!active)return;const b=e.target.closest('button');if(!b)return;e.stopImmediatePropagation();if(b.dataset.brMonth){const [y,m]=month.split('-').map(Number);const d=new Date(y,m-1+Number(b.dataset.brMonth),1);month=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');calendarDraw()}else if(b.dataset.brDay){mode='selected';day=b.dataset.brDay;calendarDraw();draw()}else if(b.dataset.brAction==='today'){day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Taipei'}).format(new Date());month=day.slice(0,7);mode='selected';calendarDraw();draw()}else if(b.dataset.brAction==='clear'){mode='all';day='';calendarDraw();draw()}else if(b.dataset.brAction==='done'){calendar.hidden=true}},true);
-more.addEventListener('click',e=>{if(!active)return;e.stopImmediatePropagation();pageSize+=30;draw()},true);
-// 原本 research_merged.js 的非同步渲染可能覆寫卡片；僅在業務報告啟用時恢復自身畫面。
-// 全部：既有研究搜尋維持原邏輯；將業務報告符合檔名／券商／代號的結果併入。
-const allSelected=()=>!!cats.querySelector('[data-category="全部"].active')&&!active;
-function allBusinessMatches(){
- const q=query.value.trim().toLocaleLowerCase();
- if(!q)return [];
- const terms=q.split(/\s+/).filter(Boolean);
- return items.filter(r=>terms.every(t=>[r.filename,r.company,r.ticker,r.broker,r.title].join(' ').toLocaleLowerCase().includes(t)));
-}
-function renderAllBusiness(){
- if(!ready||!allSelected())return;
- const old=cards.querySelector('#brAllSearchResults');if(old)old.remove();
- const hits=allBusinessMatches();if(!hits.length)return;
- const box=document.createElement('section');box.id='brAllSearchResults';
- box.innerHTML=`<div class="rm-date" style="margin:16px 0 8px">業務報告｜${hits.length} 份符合</div>`+
- hits.map(r=>`<article class="rm-card"><div class="rm-title">${esc(r.title)}</div><div class="br-name">${esc(r.filename)}</div><div class="rm-sub">${esc(r.date)} · ${esc(r.broker)} · <span class="rm-type">業務報告</span></div>${aiHtml(r)}<button type="button" class="br-open" data-br-pdf="${esc(r.id)}">全螢幕閱讀 PDF ↗</button></article>`).join('');
- cards.appendChild(box);
- box.querySelectorAll('[data-br-pdf]').forEach(b=>b.addEventListener('click',()=>openPdf(b.dataset.brPdf)));
- bindAi(box);
-}
-let allRenderQueued=false;
-function scheduleAllRender(){
- if(allRenderQueued)return;allRenderQueued=true;
- queueMicrotask(()=>{allRenderQueued=false;renderAllBusiness()});
-}
-// 在「全部」搜尋時預先載入業務索引；不干涉原本券商／產業／法說的全文搜尋。
-query.addEventListener('input',()=>{if(!active&&allSelected())load().then(scheduleAllRender).catch(console.error)},false);
-cats.addEventListener('click',e=>{
- if(e.target.closest('[data-category="全部"]'))setTimeout(()=>load().then(scheduleAllRender).catch(console.error),0);
-},false);
-const observer=new MutationObserver(()=>{
- if(active){if(!cards.querySelector('.rm-date-group,.rm-empty')&&ready)queueMicrotask(draw);return;}
- if(allSelected()&&ready&&query.value.trim()&&!cards.querySelector('#brAllSearchResults'))scheduleAllRender();
-});observer.observe(cards,{childList:true});
 
+window.MergedBusinessReports={load,rows:()=>items.map(r=>({id:'business-'+r.id,date:r.date,company:r.company,ticker:r.ticker,title:r.title,source:r.broker,source_kind:'business',market:'TW',_business:r})),renderCard:(card,r)=>{
+card.innerHTML='<div class="rm-title">'+esc(r.title)+'</div><div class="rm-sub">'+esc([r.company,r.ticker,r.broker,r.date].filter(Boolean).join('・'))+'</div><div class="br-name">'+esc(r.filename)+'</div>'+aiHtml(r)+'<button type="button" class="br-open">全螢幕閱讀 PDF ↗</button>';
+card.querySelector('.br-open').onclick=()=>openPdf(r.id);bindAi(card);
+}};
+document.dispatchEvent(new Event('merged-business-ready'));
 })();
-
