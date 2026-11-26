@@ -604,7 +604,7 @@ function renderAiDirect(entry, reportId=''){
   const ai=entry?.content;
   // Exact report-ID source discrepancy; preserve original Excel and cached AI.
   const terminologyNote=String(reportId)==='line-ce9ff786e7a4de5b68a4'
-    ? '<p class="rm-ai-paragraph" style="border-left:3px solid #b7791f;padding-left:12px"><strong>術語待核對：</strong>11/25 華南 memo（11/26 入庫）原文寫 NPU 可能先於 CPU；11/19 富邦 memo 摘要則寫 NPO 時程先於 CPO。兩組縮寫意義不同，尚無法確認是否指同一產品。不得將華南的 NPU／CPU 順序視為 NPO／CPO 已獲確認的出貨順序。</p>' : '';
+    ? '<p class="rm-ai-paragraph" style="border-left:3px solid #b7791f;padding-left:12px"><strong>術語待核對：</strong>11/25 華南 memo（11/26 入庫）原文寫 NPU 可能先於 CPU；11/19 富邦 memo 原文則明確寫 scale-up 端預期 3Q27–4Q27 放量，NPO 先於 CPO。兩組縮寫意義不同，尚無法確認是否指同一產品。不得將華南的 NPU／CPU 順序視為 NPO／CPO 已獲確認的出貨順序。</p>' : '';
   const reviewText=value=>String(reportId)==='line-ce9ff786e7a4de5b68a4' && typeof value==='string'
     ? value.replace(/NPU\s*可能(?:早於|先於)\s*CPU/g,'華南 memo 原文稱 NPU 可能先於 CPU（術語待核對）') : value;
   if(!ai || typeof ai!=='object')return '';
