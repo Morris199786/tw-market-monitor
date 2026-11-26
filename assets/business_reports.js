@@ -61,9 +61,8 @@ function financialHtml(a){
  return html?'<div class="br-fin-note">E：券商預估｜pp：百分點｜—：未提供；不同單位不合併</div>'+html:'';
 }
 function detailsHtml(a){ let detail='';
- if(list(a.industry_sections).length){detail=list(a.industry_sections).map(s=>section(s.heading||'研究內容',list(s.blocks).map(b=>b.type==='paragraph'?'<p>'+marked(b.text,a.emphasis)+'</p>':b.type==='bullets'?bullets(b.items,a):b.type==='table'?(b.title?'<h5>'+esc(b.title)+'</h5>':'')+table(b.headers,b.rows)+(b.note?'<p>'+esc(b.note)+'</p>':''):'').join(''))).join('');}
- else if(list(a.research_sections).length){detail=list(a.research_sections).map(s=>section(s.heading||'研究內容',list(s.paragraphs).map(p=>'<p>'+marked(p,a.emphasis)+'</p>').join(''))).join('');}
- else if(a.detail){detail='<p class="br-ai-detail-text">'+marked(a.detail,a.emphasis)+'</p>';}
+ if(list(a.industry_sections).length){detail=list(a.industry_sections).map(s=>section(s.heading||'研究內容',list(s.blocks).map(b=>b.type==='paragraph'?(window.IndustrySummary?.prose(b.text,v=>marked(v,a.emphasis))||'<p>'+marked(b.text,a.emphasis)+'</p>'):b.type==='bullets'?bullets(b.items,a):b.type==='table'?(b.title?'<h5>'+esc(b.title)+'</h5>':'')+table(b.headers,b.rows)+(b.note?'<p>'+esc(b.note)+'</p>':''):'').join(''))).join('');}
+ else {detail=window.IndustrySummary?.research(a,esc)|| (a.detail?'<p class="br-ai-detail-text">'+marked(a.detail,a.emphasis)+'</p>':'');}
  const beneficiaries=list(a.beneficiaries).map(r=>[r.name,r.ticker,r.reason].filter(Boolean).join('｜'));
  return section('關鍵數據與依據',bullets(a.key_points,a))+section('財測調整',bullets(a.forecast_changes,a))+detail+section('受惠／關注公司',bullets(beneficiaries,a))+section('風險',bullets(a.risks,a))+section('財務與營運數據',financialHtml(a))+'<div class="br-ai-visuals"></div>';
 }
