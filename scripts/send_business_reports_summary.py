@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 from report_presentation import complete_reason, upside_text
-from update_business_reports_ai import read_items, key, INDEX, OUTPUT, DATA, ROOT
+from update_business_reports_ai import read_items, key, INDEX, OUTPUT, DATA, ROOT, processing_day
 from update_business_reports import write_json
 
 STATE = DATA / 'business_reports_sent.json'
@@ -156,7 +156,7 @@ def send_batches(messages, ledger, save, post, stamp):
 
 
 def main():
-    day = datetime.now(TZ).date().isoformat()
+    day = processing_day()
     if not OUTPUT.exists() or not INDEX.exists():
         return
     ledger = json.loads(STATE.read_text(encoding='utf-8'))['reports'] if STATE.exists() else {}
