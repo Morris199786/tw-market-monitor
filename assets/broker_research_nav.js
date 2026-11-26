@@ -14,7 +14,7 @@
       status.hidden=true;
       status.style.display='none';
     },{once:true});
-    frame.setAttribute('scrolling','no');frame.src='./broker_research.html?v=20261126-business-visual-v2';
+    frame.setAttribute('scrolling','no');frame.src='./broker_research.html?v=20261127-search-ky-clear-v1';
   }
   new MutationObserver(loadOnce).observe(section,{attributes:true,attributeFilter:['hidden']});
   document.addEventListener('research-mode-change',loadOnce);
