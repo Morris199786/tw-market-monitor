@@ -100,8 +100,8 @@ jobs:
         continue-on-error: true
         uses: tailscale/github-action@v4
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
+          oauth-client-id: ${{ secrets.TS_BUSINESS_CLIENT_ID }}
+          audience: ${{ secrets.TS_BUSINESS_AUDIENCE }}
           tags: tag:github-reports
 
       - name: Check private Codex worker
