@@ -1,55 +1,20 @@
 name: US daily news
 on:
-  workflow_dispatch:
-    inputs:
-      session:
-        description: News session
-        type: choice
-        options: [auto, pre, post]
-        default: auto
+  push:
+    branches: [main]
+    paths: [data/us_daily_news.json]
 permissions:
-  contents: write
-concurrency:
-  group: research-report-processing
-  cancel-in-progress: false
+  contents: read
 jobs:
   news:
     runs-on: ubuntu-latest
-    env:
-      REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
-      NEWS_SESSION: ${{ inputs.session }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
-      - uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
-          tags: tag:github-reports
-      - name: Configure private worker
+      - name: Validate and send Telegram
         env:
-          WORKER_KEY: ${{ secrets.REPORT_PLAN_SSH_KEY }}
-          WORKER_HOST_KEY: ${{ secrets.REPORT_PLAN_KNOWN_HOSTS }}
-        run: |
-          umask 077
-          mkdir -p ~/.ssh
-          printf '%s\n' "$WORKER_KEY" > ~/.ssh/report_worker
-          printf '%s\n' "$WORKER_HOST_KEY" >> ~/.ssh/known_hosts
-          PYTHONPATH=scripts python -c 'from report_provider import plan_request; assert plan_request({"check": True}) == {"status": "ready"}'
-      - run: python scripts/update_us_daily_news.py
-      - name: Publish
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/us_daily_news.json
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Update US daily news'
-          git pull --rebase origin main
-          git push origin HEAD:main
-      - name: Telegram
-        env:
+          NEWS_BEFORE: ${{ github.event.before }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/send_us_daily_news.py
