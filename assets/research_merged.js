@@ -245,6 +245,7 @@ const broker = () => category === '券商報告';
 const marketOf = r => String(r.market || 'TW').toUpperCase();
 const originalType = r => clean(r.original_type).toLowerCase();
 function reportCategory(r) {
+ if(r.source_kind==='business')return '券商報告';
   if (marketOf(r) === 'US') return '美股';
   if (r.source_kind === 'broker') {
     const type=clean(r._liveBroker?.report_type || r.report_type).toLowerCase();
@@ -412,6 +413,7 @@ function topicText(r) {
 }
 function matching(r) {
   if (!inCategory(r) || (selectedDay && r.date!==selectedDay)) return false;
+  if(r._business){const b=r._business;const hay=normalizeSearch([b.company,b.ticker,b.title,b.filename,b.broker,JSON.stringify(b.ai||{})].join(' '));return searchTerms().every(t=>hay.includes(t)||[...(companyAliases.get(t)||[])].some(code=>hay.includes(code)));}
   const subjects=reportCompanies(r);
   const metadata=topicText(r);
   return searchTerms().every(term=>{
@@ -481,6 +483,7 @@ function render() {
     const body=document.createElement('div');body.className='report-date-body';
     for (const m of group) {
       const card=document.createElement('article');card.className='rm-card report-v2-card';
+      if(m._business){window.MergedBusinessReports.renderCard(card,m._business);body.appendChild(card);continue;}
       const story=readableText(matchedSummary(m),m);
       const snippet=topicSnippet(m);
       const hitHTML=snippet?`<div class="rm-story"><strong>關鍵字相關內文</strong><br>${highlight(snippet)}</div>`:'';
@@ -777,6 +780,9 @@ function compareReportDate(a,b) {
 function dateLabel(day) {
   return day.replaceAll('-','/')+(/^\d{4}-\d{2}$/.test(day)?'（日期未詳）':'');
 }
+let businessMerged=false;
+async function mergeBusiness(){if(!loaded||businessMerged||!window.MergedBusinessReports)return;businessMerged=true;try{await window.MergedBusinessReports.load();rows=rows.filter(r=>r.source_kind!=='business').concat(window.MergedBusinessReports.rows()).sort(compareReportDate);render();drawCalendar();sync();}catch(e){businessMerged=false;console.warn('Business reports unavailable',e);meta.textContent+='｜部分 PDF 報告載入失敗';}}
+document.addEventListener('merged-business-ready',mergeBusiness);
 async function init(){
   if(loaded||loading)return;loading=true;
   try{
@@ -805,7 +811,7 @@ async function init(){
     rows=rows.map(r=>({...r,original_date:r.original_date||r.date,date:r.source_kind==='broker'&&!r._liveBroker?window.ReportDates.group(r):brokerDay(r.date)}));
     rows.sort(compareReportDate);
     buildCompanyAliases(registry);
-    loaded=true;render();drawCalendar();if(query)fullTextSearch();
+    loaded=true;render();drawCalendar();if(query)fullTextSearch();mergeBusiness();
     // Homepage memo metric counts 法說會 / call memo, not all reports.
     // 首頁三項統計由 index.html 統一讀取來源資料，不在此覆寫。
 
@@ -819,14 +825,14 @@ async function init(){
   }catch(e){meta.textContent='研究索引載入失敗：'+e.message}
   finally{loading=false}
 }
-function sync(){const rating=document.getElementById('twRatingsPanel');const visual=document.getElementById('brokerResearch');const active=root.classList.contains('active');const ratingOn=Boolean(rating&&!rating.hidden);const visualOn=Boolean(visual&&!visual.hidden);const brokerMode=active&&!ratingOn&&broker()&&!query.trim();panel.hidden=!active||ratingOn||visualOn;legacy.hidden=visualOn || (active&&!ratingOn?!brokerMode:Boolean(ratingOn));cards.hidden=brokerMode;panel.querySelector('.rm-search').hidden=brokerMode;panel.querySelector('.rm-date-tools').hidden=brokerMode;panel.querySelector('#rmCalendar').hidden=brokerMode || panel.querySelector('#rmCalendar').hidden;meta.hidden=brokerMode;more.hidden=brokerMode || cards.querySelectorAll('.rm-date-group').length < limit;if(active&&!ratingOn&&!visualOn)init()}
+function sync(){const rating=document.getElementById('twRatingsPanel');const visual=document.getElementById('brokerResearch');const active=root.classList.contains('active');const ratingOn=Boolean(rating&&!rating.hidden);const visualOn=Boolean(visual&&!visual.hidden);const brokerMode=false;panel.hidden=!active||ratingOn||visualOn;legacy.hidden=visualOn || (active&&!ratingOn?!brokerMode:Boolean(ratingOn));cards.hidden=brokerMode;panel.querySelector('.rm-search').hidden=brokerMode;panel.querySelector('.rm-date-tools').hidden=brokerMode;panel.querySelector('#rmCalendar').hidden=brokerMode || panel.querySelector('#rmCalendar').hidden;meta.hidden=brokerMode;more.hidden=brokerMode || cards.querySelectorAll('.rm-date-group').length < limit;if(active&&!ratingOn&&!visualOn)init()}
 const observer=new MutationObserver(sync);observer.observe(root,{attributes:true,attributeFilter:['class']});const rating=document.getElementById('twRatingsPanel');if(rating)observer.observe(rating,{attributes:true,attributeFilter:['hidden']});const visual=document.getElementById('brokerResearch');if(visual)observer.observe(visual,{attributes:true,attributeFilter:['hidden']});document.addEventListener('research-mode-change',sync);
 panel.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{category=(category===b.dataset.category && category!=='全部')?'全部':b.dataset.category;selectedDay='';limit=30;render();drawCalendar();sync();panel.querySelector(`[data-category="${category}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});}));
 input.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{query=clean(input.value);limit=30;fullTextSearch();sync()},250)});
 panel.querySelector('#rmClear').addEventListener('click',()=>{input.value='';query='';searchHits=null;searchSeq++;clearTimeout(searchTimer);limit=30;render();sync()});
 more.addEventListener('click',()=>{limit+=30;render()});
 panel.querySelector('#rmDateToggle').addEventListener('click',()=>{const el=panel.querySelector('#rmCalendar');el.hidden=!el.hidden;if(!el.hidden)drawCalendar()});
-panel.querySelector('#rmLatest').addEventListener('click',()=>{selectedDay='';query='';input.value='';searchHits=null;searchSeq++;clearTimeout(searchTimer);limit=30;calendarMonth='';panel.querySelector('#rmCalendar').hidden=true;render();drawCalendar();sync();const target=broker()?document.querySelector('#reportCardsV3 .report-date-group'):cards.querySelector('.rm-date-group');if(target){target.open=true;target.scrollIntoView({behavior:'smooth',block:'start'});}else{panel.querySelector('.rm-date-tools').scrollIntoView({behavior:'smooth',block:'start'});}});
+panel.querySelector('#rmLatest').addEventListener('click',()=>{selectedDay='';query='';input.value='';searchHits=null;searchSeq++;clearTimeout(searchTimer);limit=30;calendarMonth='';panel.querySelector('#rmCalendar').hidden=true;render();drawCalendar();sync();const target=cards.querySelector('.rm-date-group');if(target){target.open=true;target.scrollIntoView({behavior:'smooth',block:'start'});}else{panel.querySelector('.rm-date-tools').scrollIntoView({behavior:'smooth',block:'start'});}});
 panel.querySelector('#rmCalendar').addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
  if(b.dataset.rmMonth){const [y,m]=calendarMonth.split('-').map(Number);const d=new Date(y,m-1+Number(b.dataset.rmMonth),1);calendarMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;drawCalendar()}
