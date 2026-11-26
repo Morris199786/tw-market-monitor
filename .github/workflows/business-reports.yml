@@ -74,8 +74,8 @@ jobs:
           for file in "$@"; do
             if [[ -f "$file" ]]; then git add -- "$file"; fi
           done
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "$message"
+          if ! git diff --cached --quiet; then git commit -m "$message"; fi
+          if [[ -z $(git log origin/main..HEAD -- "$@") ]]; then exit 0; fi
           for attempt in 1 2 3 4 5; do
             git fetch origin main
             base=$(git merge-base HEAD origin/main)
@@ -174,6 +174,7 @@ jobs:
         env:
           ACCESS_TOKEN: ${{ steps.ai_auth.outputs.access_token }}
           BUSINESS_DRIVE_REFRESH: "1"
+          BUSINESS_CHECKPOINT_PUBLISHER: ${{ runner.temp }}/publish-business
           REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
           REPORT_AI_ROUTE: plan-only
         run: python -u scripts/update_business_reports_ai.py
