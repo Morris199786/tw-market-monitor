@@ -56,7 +56,17 @@ function draw(){if(!active)return;const found=filtered(),dates=[...new Set(found
 function calendarDraw(){const dates=new Set(items.map(r=>r.date));if(!month)month=(items.find(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date))?.date||new Date().toISOString().slice(0,10)).slice(0,7);const [y,m]=month.split('-').map(Number),offset=new Date(y,m-1,1).getDay(),n=new Date(y,m,0).getDate();let cells='<span></span>'.repeat(offset);for(let d=1;d<=n;d++){const k=month+'-'+String(d).padStart(2,'0');cells+=`<button type="button" data-br-day="${k}" class="${day===k&&mode==='selected'?'selected':''}">${d}${dates.has(k)?'<i></i>':''}</button>`}calendar.innerHTML=`<div class="rm-cal-head"><button data-br-month="-1">❮</button><strong>${y} 年 ${m} 月</strong><button data-br-month="1">❯</button></div><div class="rm-cal-grid">${['日','一','二','三','四','五','六'].map(x=>'<b>'+x+'</b>').join('')}${cells}</div><div class="rm-cal-foot"><button data-br-action="today">今天</button><button data-br-action="clear">清除</button><button data-br-action="done">完成</button></div>`;}
 function activate(){if(active)return;active=true;dateNote.hidden=false;button.classList.add('active');cats.querySelectorAll('.rm-chip').forEach(b=>{if(b!==button)b.classList.remove('active')});cards.innerHTML='';more.hidden=true;query.value=text;query.placeholder='搜尋公司、股票代號或 PDF 檔名';dateLabel.textContent='全部日期';calendar.hidden=true;load().then(draw).catch(e=>{console.error(e);cards.innerHTML='<div class="rm-empty">業務報告清單尚未建立或讀取失敗</div>';meta.textContent=e.message;});}
 
-window.MergedBusinessReports={load,rows:()=>items.map(r=>({id:'business-'+r.id,date:r.date,company:r.company,ticker:r.ticker,title:r.title,source:r.broker,source_kind:'business',market:'TW',_business:r})),renderCard:(card,r)=>{
+function businessMarket(r, knownUS){
+ const f=String(r.filename||''), t=String(r.ticker||'').trim().toUpperCase(), a=String(r.ai?.ticker||'').trim().toUpperCase();
+ if(/_US(?:\.pdf)?$/i.test(f))return 'US';
+ if(/_TW(?:\.pdf)?$/i.test(f)||/^\d{4,6}(?:\.(?:TW|TWO))?$/.test(t)||/\b\d{4,6}\s*\.?\s*(?:TT|TWO|TW)\b/i.test(f))return 'TW';
+ if(/(?:^|[^A-Z0-9])(?:NASDAQ|NYSE|AMEX)\s*[:：]/i.test(f)||/[（(][A-Z][A-Z0-9.-]{0,9}\s+US[）)]/i.test(f)||/美股(?:周報|週報|日報|月報|晨報|策略|市場)/.test(f))return 'US';
+ if(knownUS.has(t)||knownUS.has(a))return 'US';
+ if(/(?:新聞評析\s*[-－–—:：]\s*DELL\b|^GFHK\s*-\s*Dell\s+preview\b|黃仁勳重新執掌NVIDIA)/i.test(f))return 'US';
+ return 'TW';
+}
+function businessRows(){const knownUS=new Set(items.filter(r=>/_US(?:\.pdf)?$/i.test(r.filename)||/[（(][A-Z][A-Z0-9.-]{0,9}\s+US[）)]/i.test(r.filename)).map(r=>String(r.ticker||'').trim().toUpperCase()).filter(t=>/^[A-Z][A-Z0-9.-]{0,9}$/.test(t)));return items.map(r=>({id:'business-'+r.id,date:r.date,company:r.company,ticker:r.ticker,title:r.title,source:r.broker,source_kind:'business',market:businessMarket(r,knownUS),_business:r}));}
+window.MergedBusinessReports={load,rows:businessRows,renderCard:(card,r)=>{
 card.innerHTML='<div class="rm-title">'+esc(r.title)+'</div><div class="rm-sub">'+esc([r.company,r.ticker,r.broker,r.date].filter(Boolean).join('・'))+'</div><div class="br-name">'+esc(r.filename)+'</div>'+aiHtml(r)+'<button type="button" class="br-open">全螢幕閱讀 PDF ↗</button>';
 card.querySelector('.br-open').onclick=()=>openPdf(r.id);bindAi(card);
 }};
