@@ -11,7 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          sparse-checkout: |
+            data/us_daily_news.json
+            scripts/send_us_daily_news.py
+          sparse-checkout-cone-mode: false
+      - name: Fetch previous commit
+        env:
+          NEWS_BEFORE: ${{ github.event.before }}
+        run: |
+          if [[ -n "$NEWS_BEFORE" && ! "$NEWS_BEFORE" =~ ^0+$ ]]; then
+            git fetch --no-tags --depth=1 origin "$NEWS_BEFORE"
+          fi
       - name: Validate and send Telegram
         env:
           NEWS_BEFORE: ${{ github.event.before }}
