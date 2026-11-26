@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-25T23:14+08:00",
+  "updated_at": "2026-11-26T08:06+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28107,20 +28107,61 @@
     "source_errors": [
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
-      "announcement_scan/2026-11-01~2026-11-25:ValueError:announcement schema unavailable",
+      "detail/4577/2026-10-28",
+      "planned_date/4577/2026-10-28:unavailable",
+      "detail/6548/2026-10-29",
+      "planned_date/6548/2026-10-29:unavailable",
+      "detail/7918/2026-10-30",
+      "planned_date/7918/2026-10-30:unavailable",
+      "announcement_scan/2026-11-01~2026-11-26:ValueError:announcement schema unavailable",
       "targeted_mops/2401/2026-Q3:ValueError:announcement schema unavailable"
     ],
     "historical_errors": [],
     "coverage": {
       "2026-10-24~2026-10-31": "ok",
-      "2026-11-01~2026-11-25": "failed"
+      "2026-11-01~2026-11-26": "failed"
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 1,
+      "attempted": 9,
       "fields_filled": 0,
       "targets": 12,
-      "errors": []
+      "errors": [
+        {
+          "key": "6405|2026-Q2",
+          "notes": [
+            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+          ]
+        },
+        {
+          "key": "6405|2026-Q3",
+          "notes": [
+            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+          ]
+        },
+        {
+          "key": "8291|2026-Q2",
+          "notes": [
+            "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
+          ]
+        },
+        {
+          "key": "8291|2026-Q3",
+          "notes": [
+            "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
+          ]
+        },
+        {
+          "key": "6895|2026-Q2",
+          "notes": [
+            "TimeoutError:backup_time_budget",
+            "TimeoutError:financial_news_company_page",
+            "TimeoutError:financial_news_discovery",
+            "TimeoutError:financial_news_discovery",
+            "TimeoutError:news_discovery"
+          ]
+        }
+      ]
     }
   },
   "retention_note": "依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3"
