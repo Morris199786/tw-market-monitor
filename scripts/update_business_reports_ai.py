@@ -13,6 +13,8 @@ from unittest.mock import patch
 import urllib.parse
 import urllib.error
 import time
+import signal
+import sys
 
 import update_business_reports as index
 from report_provider import complete_plan_report, NoReportCapacity
@@ -86,11 +88,15 @@ def broker_analyzer():
     def complete(payload):
         # Reuse the exact financial extraction instructions, with ONE subscription call.
         payload['input'][0]['content'][0]['text'] += eps.EPS_INSTRUCTION
-        return complete_plan_report(payload)
+        print("[AI stage] Codex request", flush=True)
+        value = complete_plan_report(payload)
+        print("[AI stage] Codex returned; decoding/validation", flush=True)
+        return value
 
     original_normalize = broker.normalize_report
 
     def normalize(obj, src):
+        print("[AI stage] normalize and audit", flush=True)
         result = original_normalize(obj, src)
         result['quarterly_eps'] = broker_eps_pipeline.normalize(obj.get('quarterly_eps'))
         result['financial_forecasts'] = eps.normalize_financial(obj.get('financial_forecasts'))
@@ -122,6 +128,8 @@ def broker_analyzer():
 
 def error_reason(exc):
     # Never print PDF text, authentication headers or raw model responses.
+    if isinstance(exc, ReportTimeout):
+        return str(exc)
     if isinstance(exc, urllib.error.HTTPError):
         return f'HTTP {exc.code}'
     if isinstance(exc, subprocess.TimeoutExpired):
@@ -148,6 +156,84 @@ def refreshable_drive_request(credentials, transport, original):
                 print('Drive HTTP 401; refreshing credentials and retrying once', flush=True)
                 credentials.refresh(transport)
     return request
+
+
+
+class ReportTimeout(ValueError):
+    """One report exceeded the local end-to-end deadline."""
+
+
+def bounded_process(cmd, limit, heartbeat=30, label='report'):
+    """Linux runner: separate process group, inherited live stdout, no pipe deadlock."""
+    started = time.monotonic()
+    proc = subprocess.Popen(cmd, start_new_session=True)
+    try:
+        while True:
+            remaining = limit - (time.monotonic() - started)
+            if remaining <= 0:
+                raise ReportTimeout(f'{label} exceeded {limit}s')
+            try:
+                return proc.wait(timeout=min(heartbeat, remaining))
+            except subprocess.TimeoutExpired:
+                print(f'[heartbeat] {label} | elapsed={time.monotonic()-started:.0f}s', flush=True)
+    finally:
+        if proc.poll() is None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait(timeout=5)
+
+
+def child_analyze(input_path, output_path):
+    """Only whitelisted result crosses the process boundary; never print raw text."""
+    try:
+        request = json.loads(Path(input_path).read_text(encoding='utf-8'))
+        result = broker_analyzer()(request['row'], request['text'])
+        reply = {'status': 'ok', 'result': result}
+    except NoReportCapacity:
+        reply = {'status': 'limit'}
+    except (RuntimeError, subprocess.SubprocessError, OSError) as exc:
+        cause = exc
+        while cause is not None and not isinstance(cause, subprocess.TimeoutExpired):
+            cause = cause.__cause__
+        reply = {'status': 'timeout' if cause is not None else 'worker_error', 'reason': error_reason(exc)}
+    except Exception as exc:
+        reply = {'status': 'rejected', 'reason': error_reason(exc)}
+    Path(output_path).write_text(json.dumps(reply, ensure_ascii=False), encoding='utf-8')
+
+
+def isolated_analyze(row, text, limit=720, heartbeat=30):
+    with tempfile.TemporaryDirectory(prefix='business-single-') as tmp:
+        inp, out = Path(tmp)/'input.json', Path(tmp)/'output.json'
+        inp.write_text(json.dumps({'row':row,'text':text}, ensure_ascii=False), encoding='utf-8')
+        rc = bounded_process([sys.executable, '-u', str(Path(__file__).resolve()), '--single', str(inp), str(out)], limit, heartbeat, 'single report')
+        if rc != 0 or not out.exists():
+            raise ValueError(f'isolated report exited {rc}')
+        reply = json.loads(out.read_text(encoding='utf-8'))
+        status = reply.get('status')
+        if status == 'limit':
+            raise NoReportCapacity('Codex plan limit reached')
+        if status == 'worker_error':
+            raise RuntimeError('Private report worker unavailable')
+        if status == 'timeout':
+            raise ReportTimeout('SSH/Codex request timeout')
+        if status != 'ok':
+            raise ValueError('isolated analysis rejected: '+str(reply.get('reason','unknown')))
+        result = reply['result']
+        if key(result) != key(row) or result.get('status') != 'ready':
+            raise ValueError('isolated result identity mismatch')
+        return result
+
+
+def publish_checkpoint():
+    publisher = os.environ.get('BUSINESS_CHECKPOINT_PUBLISHER')
+    if not publisher:
+        return
+    rc = bounded_process([publisher, 'Update business report AI checkpoint', 'data/business_reports_ai.json'], 120, 30, 'publish checkpoint')
+    if rc:
+        raise RuntimeError(f'checkpoint publishing failed (exit {rc})')
+    print('[checkpoint] published to GitHub', flush=True)
 
 
 def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
@@ -190,6 +276,10 @@ def run(rows, saved, day, get_files, extract, analyze, persist, clock=today):
             print(f'[AI {n}/{len(prepared)}] Analyzing: {label} | success={count} failed={failed}', flush=True)
             try:
                 result = analyze(row, path.read_text(encoding='utf-8'))
+            except ReportTimeout as exc:
+                failed += 1
+                print(f'[AI {n}/{len(prepared)}] Timeout; retain PDF: {label} | {error_reason(exc)}', flush=True)
+                continue
             except NoReportCapacity:
                 print('Codex plan exhausted; remaining reports keep PDF preview.', flush=True)
                 break
@@ -215,9 +305,10 @@ def main():
     if not list(pending(rows, saved, day)):
         print('No unparsed business reports for', day)
         return
-    analyze = broker_analyzer()
+    analyze = isolated_analyze
     def persist(items):
         index.write_json(OUTPUT, {'items': sorted(items, key=lambda x: (x.get('group_date',''),x.get('id','')), reverse=True)})
+        publish_checkpoint()
     # The workflow provides a freshly generated token and an ADC credential file.
     # Keep refresh local to this process; the existing index and broker jobs are unchanged.
     if os.environ.get('BUSINESS_DRIVE_REFRESH') == '1':
@@ -232,4 +323,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 4 and sys.argv[1] == '--single':
+        child_analyze(sys.argv[2], sys.argv[3])
+    else:
+        main()
