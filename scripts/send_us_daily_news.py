@@ -25,7 +25,9 @@ def main():
     if len(new)!=1: raise ValueError('Expected one new session per commit')
     r=new[0]; label='盤前' if r['session']=='pre' else '盤後'
     lines=[f'🇺🇸 美股每日新聞｜{label}',r['date'],f"新增 {len(r['events'])} 則"]
-    for e in r['events'][:12]: lines.append(f"{e['impact']}｜{', '.join(e['tickers'])}：{e['title']}")
+    for e in r['events'][:12]:
+        lines.append(f"{e['impact']}｜{', '.join(e['tickers'])}：{e['title']}")
+        lines.append(' '.join(e['analysis'].split())[:180])
     msg='\n'.join(lines)[:1700]+'\n完整研究及圖表：https://tw-market-monitor.pages.dev/?page=reports&usnews=1'
     if '--dry-run' in sys.argv: print(msg); return
     token=os.environ['TELEGRAM_BOT_TOKEN']; body=json.dumps({'chat_id':os.environ['TELEGRAM_CHAT_ID'],'text':msg}).encode()
