@@ -600,17 +600,22 @@ function researchPoint(text, index=0) {
   return index<2 && value.length<=80 && !html.includes('<mark')
     ? `<span class="research-emphasis">${html}</span>` : html;
 }
-function renderAiDirect(entry){
+function renderAiDirect(entry, reportId=''){
   const ai=entry?.content;
+  // Exact report-ID source discrepancy; preserve original Excel and cached AI.
+  const terminologyNote=String(reportId)==='line-ce9ff786e7a4de5b68a4'
+    ? '<p class="rm-ai-paragraph" style="border-left:3px solid #b7791f;padding-left:12px"><strong>術語待核對：</strong>11/25 華南 memo（11/26 入庫）原文寫 NPU 可能先於 CPU；11/19 富邦 memo 摘要則寫 NPO 時程先於 CPO。兩組縮寫意義不同，尚無法確認是否指同一產品。不得將華南的 NPU／CPU 順序視為 NPO／CPO 已獲確認的出貨順序。</p>' : '';
+  const reviewText=value=>String(reportId)==='line-ce9ff786e7a4de5b68a4' && typeof value==='string'
+    ? value.replace(/NPU\s*可能(?:早於|先於)\s*CPU/g,'華南 memo 原文稱 NPU 可能先於 CPU（術語待核對）') : value;
   if(!ai || typeof ai!=='object')return '';
   const blocks=Array.isArray(ai.blocks)?ai.blocks:null;
   if(blocks){
     const html=blocks.map(b=>{
       if(!b||typeof b!=='object')return '';
       if(b.type==='heading')return `<h3 class="rm-ai-heading">${highlight(b.text||'')}</h3>`;
-      if(b.type==='paragraph')return `<p class="rm-ai-paragraph">${highlight(b.text||'')}</p>`;
+      if(b.type==='paragraph')return `<p class="rm-ai-paragraph">${highlight(reviewText(b.text||''))}</p>`;
       if(b.type==='quote')return `<blockquote class="rm-ai-quote">${highlight(b.text||'')}</blockquote>`;
-      if(b.type==='bullets')return `<ul class="rm-ai-list">${(Array.isArray(b.items)?b.items:[]).map((t,i)=>`<li>${researchPoint(t,i)}</li>`).join('')}</ul>`;
+      if(b.type==='bullets')return `<ul class="rm-ai-list">${(Array.isArray(b.items)?b.items:[]).map((t,i)=>`<li>${researchPoint(reviewText(t),i)}</li>`).join('')}</ul>`;
       if(b.type==='chart'){
         const advanced=['pie','kpi','stacked_bar','waterfall','dual_axis','timeline','flow','scatter','heatmap'];
         if(advanced.includes(b.chart_type)){
@@ -646,7 +651,7 @@ function renderAiDirect(entry){
       }
       return '';
     }).join('');
-    return html?section('AI 完整研究整理',html):'';
+    return html?section('AI 完整研究整理',terminologyNote+html):'';
   }
   // Old AI schema has no authored full article. Never synthesize tables or
   // invent an article from old extracted facts; wait for the user's paid rerun.
@@ -679,9 +684,9 @@ function detail(r,m,direct={}) {
   // The sync job stores the actual AI-authored article in each immutable shard.
   // A missing/stale/oversized global render JSON must not hide this paid article.
   // Never invent or rewrite research content: render only a saved AI result.
-  const directHtml=renderAiDirect(direct[r.id]);
+  const directHtml=renderAiDirect(direct[r.id],r.id);
   const shardHtml=(r.ai_research && typeof r.ai_research==='object')
-    ? renderAiDirect({content:r.ai_research}) : '';
+    ? renderAiDirect({content:r.ai_research},r.id) : '';
   const modelHtml=(marketOf(r)==='US' && r.source_kind==='line') ? renderPythonResearch(r) : (shardHtml || directHtml);
   const missing=section('AI 研究整理',`<p class="rm-ai-paragraph">${m.ai_processed?'AI 全文資料暫時無法載入，請重新整理頁面。':'這篇尚未完成 AI 解析；可查看下方 Excel 原文。'}</p>`);
   const original=raw.length?`<details class="rm-source-details"><summary>查看 Excel 研究原文</summary>${raw.map((t,i)=>section(raw.length>1?`原文 ${i+1}`:'研究原文',`<div class="rm-original-text">${highlight(readableProse(t,r))}</div>`)).join('')}</details>`:'';
@@ -702,8 +707,8 @@ function attachReportSpeech(card,m){
    }
    let r=null,html='';
    try{r=(await shard(m.file)).find(x=>String(x.id)===String(m.id));}catch(error){console.warn('[speech] source shard unavailable',m.id);}
-   if(r?.ai_research)html=renderAiDirect({content:r.ai_research});
-   if(!html){const direct=await loadAiDirect();html=renderAiDirect(direct[String(m.id)]);}
+   if(r?.ai_research)html=renderAiDirect({content:r.ai_research},r.id);
+   if(!html){const direct=await loadAiDirect();html=renderAiDirect(direct[String(m.id)],m.id);}
    const full=tts.textFromHTML(html);
    if(!full)throw Error('這篇尚無可朗讀的解析全文，請先完成解析或稍後重試。');
    const meeting=r?.meeting_date||m.meeting_date;
@@ -734,7 +739,7 @@ async function openReader(m) {
     if(r){
       body.innerHTML=detail(r,m,direct);
     }else{
-      const aiHtml=renderAiDirect(direct[String(m.id)]);
+      const aiHtml=renderAiDirect(direct[String(m.id)],m.id);
       const info=`<div class="rm-info">${esc(m.date)} · ${esc(m.source)} · ${esc(m.original_type||'')}</div>`;
       const fallback=section('原始研究資料暫時無法載入',
         `<p class="rm-ai-paragraph">${shardResult.status==='rejected'?'原始資料讀取失敗':'原始資料中找不到這篇報告'}；不影響已完成的 AI 內容。</p>`+
@@ -743,7 +748,7 @@ async function openReader(m) {
     }
   }catch(e){
     console.error('[research reader] rendering failed',m.id,e);
-    const aiHtml=renderAiDirect(direct[String(m.id)]);
+    const aiHtml=renderAiDirect(direct[String(m.id)],m.id);
     body.innerHTML=(aiHtml||section('研究內容顯示失敗',`<p class="rm-ai-paragraph">${esc(e.message)}</p>`));
   }
   // Render only newly added chart types after the reader DOM has been mounted.
