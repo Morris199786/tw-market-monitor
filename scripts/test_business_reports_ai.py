@@ -150,4 +150,40 @@ class TelegramTest(unittest.TestCase):
         self.assertEqual(ledger[k]['status'],'claimed')
         ledger={}; telegram.send_batches([('x',[k])],ledger,Mock(),Mock(return_value=Mock(ok=False,json=lambda:{'ok':False})),lambda:'now');self.assertEqual(ledger,{})
 
+class IsolationTest(unittest.TestCase):
+    def test_process_deadline_and_success(self):
+        import time
+        t=time.monotonic()
+        with self.assertRaises(ai.ReportTimeout):
+            ai.bounded_process([sys.executable,'-c','import time; time.sleep(30)'], .3, .1)
+        self.assertLess(time.monotonic()-t, 5)
+        self.assertEqual(ai.bounded_process([sys.executable,'-c','pass'], 3, .2),0)
+
+    def test_timeout_does_not_block_next_report(self):
+        a,b=row('a'),row('b'); saved=[]
+        analyzer=Mock(side_effect=[ai.ReportTimeout('deadline'),result(b)])
+        persist=Mock()
+        self.assertEqual(ai.run([a,b],saved,DAY,lambda:[drive(a),drive(b)],lambda f:'text',analyzer,persist,lambda:DAY),1)
+        self.assertEqual(saved,[result(b)])
+        persist.assert_called_once()
+
+    def test_checkpoint_publisher(self):
+        with patch.dict(os.environ,{'BUSINESS_CHECKPOINT_PUBLISHER':'/test/publisher'}), patch.object(ai,'bounded_process',return_value=0) as process:
+            ai.publish_checkpoint()
+            self.assertEqual(process.call_args.args[0][-1],'data/business_reports_ai.json')
+            process.return_value=1
+            with self.assertRaises(RuntimeError): ai.publish_checkpoint()
+
+    def test_isolated_child_status(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            inp,out=Path(tmp)/'input.json',Path(tmp)/'output.json'
+            r=row('a');inp.write_text(json.dumps({'row':r,'text':'test'}))
+            with patch.object(ai,'broker_analyzer',return_value=Mock(return_value=result(r))):
+                ai.child_analyze(inp,out)
+            self.assertEqual(json.loads(out.read_text())['result'],result(r))
+            with patch.object(ai,'broker_analyzer',return_value=Mock(side_effect=provider.NoReportCapacity('limit'))):
+                ai.child_analyze(inp,out)
+            self.assertEqual(json.loads(out.read_text())['status'],'limit')
+
 if __name__=='__main__': unittest.main()
