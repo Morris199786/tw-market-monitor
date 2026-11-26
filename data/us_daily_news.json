@@ -2,22 +2,220 @@
   "reports": [
     {
       "date": "2026-11-26",
-      "session": "post",
-      "updated_at": "2026-11-26T13:46:37.937Z",
+      "session": "pre",
+      "updated_at": "2026-11-26T13:50:57.694Z",
       "events": [
         {
           "tickers": [
-            "MU"
+            "CRWV"
           ],
-          "sector": "測試",
-          "kind": "測試",
-          "impact": "測試",
-          "title": "【背景複測】自動寫入驗證",
-          "analysis": "測試資料，非投資資訊。純合成測試。",
+          "sector": "NeoCloud／AI 算力",
+          "kind": "公司催化：信用風險",
+          "impact": "重大利空",
+          "title": "CoreWeave 信用風險升高",
+          "analysis": "五年期 CDS 報價達 1,314 bps，2031 年債券殖利率約18%。融資壓力可能拖慢算力擴張，進而影響硬體供應鏈；尚無證據證明訂單取消。不同時點 CDS 報價可能不同。",
+          "metrics": [
+            {
+              "label": "五年期 CDS",
+              "value": 1314,
+              "unit": "bps",
+              "context": "Reuters 11/25 報導"
+            },
+            {
+              "label": "2031 債券殖利率",
+              "value": 17.92,
+              "unit": "%",
+              "context": "Outlier 11/25"
+            }
+          ],
+          "comparison": [
+            {
+              "label": "五年期 CDS（不同時點報價）",
+              "before": 1245,
+              "after": 1314,
+              "unit": "bps"
+            }
+          ],
           "sources": [
             {
-              "title": "測試連結",
-              "url": "https://github.com/Morris199786/tw-market-monitor"
+              "title": "Reuters 11/25 轉載",
+              "url": "https://mediaselangor.com/en/2026/11/409089"
+            },
+            {
+              "title": "Outlier 11/25 市場研究",
+              "url": "https://www.outliertechnology.co.uk/ai-market-watch/2026-11-25"
+            }
+          ]
+        },
+        {
+          "tickers": [
+            "NVDA"
+          ],
+          "sector": "AI 運算／AI 晶片",
+          "kind": "公司催化",
+          "impact": "利空",
+          "title": "S&P 將 NVIDIA 信評列入負面觀察",
+          "analysis": "可能下調信用評等，尚非正式降評，也不是股票投資評等。11/25 股價跌約3.9%。",
+          "metrics": [
+            {
+              "label": "11/25 收盤漲跌",
+              "value": -3.91,
+              "unit": "%",
+              "context": "收盤"
+            }
+          ],
+          "sources": [
+            {
+              "title": "AP 11/26",
+              "url": "https://apnews.com/article/320cd8c9c286a7773797bf2f478ef314"
+            },
+            {
+              "title": "Outlier 11/25 市場研究",
+              "url": "https://www.outliertechnology.co.uk/ai-market-watch/2026-11-25"
+            }
+          ]
+        },
+        {
+          "tickers": [
+            "MU",
+            "MRVL",
+            "AMD",
+            "LRCX",
+            "ORCL"
+          ],
+          "sector": "半導體／AI 基礎設施",
+          "kind": "族群帶動",
+          "impact": "利空",
+          "title": "AI 融資疑慮升高，科技股尾盤收斂跌幅",
+          "analysis": "AI 投資報酬及融資疑慮壓抑市場。原研究未取得上述半導體公司新增砍單或下修財測的證據。11/25 美股尾盤反彈不代表修正結束。",
+          "tables": [
+            {
+              "title": "11/25 收盤表現",
+              "columns": [
+                "個股",
+                "漲跌幅"
+              ],
+              "rows": [
+                [
+                  "NVDA",
+                  "-3.91%"
+                ],
+                [
+                  "MU",
+                  "-4.53%"
+                ],
+                [
+                  "ORCL",
+                  "-5.13%"
+                ],
+                [
+                  "CRWV",
+                  "-0.08%"
+                ]
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "MarketWatch 11/25",
+              "url": "https://www.marketwatch.com/story/oracles-stock-sinks-toward-a-3-year-low-as-the-ai-trade-continues-to-unravel-d4698d77"
+            },
+            {
+              "title": "Outlier 11/25 市場研究",
+              "url": "https://www.outliertechnology.co.uk/ai-market-watch/2026-11-25"
+            }
+          ]
+        },
+        {
+          "tickers": [
+            "ASML"
+          ],
+          "sector": "半導體設備／測試",
+          "kind": "族群帶動",
+          "impact": "情緒改善",
+          "title": "歐洲科技股反彈，留意設備股情緒",
+          "analysis": "原盤前報告提及 ASML 反彈，但本次未能重開其個別報價來源，因此不刊登 +3.1% 數字。AP 確認歐洲市場及科技股改善；尚未確認 ASML 新訂單或財測上修。",
+          "sources": [
+            {
+              "title": "AP 11/26",
+              "url": "https://apnews.com/article/320cd8c9c286a7773797bf2f478ef314"
+            }
+          ]
+        },
+        {
+          "tickers": [
+            "MU",
+            "LITE",
+            "COHR",
+            "AAOI",
+            "MRVL",
+            "CRDO",
+            "ALAB",
+            "LRCX",
+            "AMAT",
+            "KLAC",
+            "ASML",
+            "VICR",
+            "ADI",
+            "TXN",
+            "AMKR"
+          ],
+          "sector": "AI 供應鏈",
+          "kind": "產業傳導分析",
+          "impact": "觀察",
+          "title": "下一交易日觀察：信用風險是否傳導至資本支出",
+          "analysis": "11/26 美國感恩節休市。觀察 CDS、費半反彈延續性與客戶實際資本支出。原盤前報告為部分更新，非全清單逐檔查核；以下是風險觀察，不代表公司已公告利空。",
+          "tables": [
+            {
+              "title": "各族群觀察重點",
+              "columns": [
+                "族群",
+                "觀察"
+              ],
+              "rows": [
+                [
+                  "記憶體",
+                  "HBM、DRAM 訂單及價格"
+                ],
+                [
+                  "光通訊",
+                  "客戶資本支出及光模組訂單"
+                ],
+                [
+                  "高速傳輸",
+                  "AI 網路建置速度"
+                ],
+                [
+                  "設備",
+                  "晶圓廠設備支出"
+                ],
+                [
+                  "電源",
+                  "伺服器出貨及電源需求"
+                ],
+                [
+                  "類比",
+                  "工業需求及庫存"
+                ],
+                [
+                  "封測",
+                  "先進封裝利用率"
+                ]
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "Reuters 11/25 轉載",
+              "url": "https://mediaselangor.com/en/2026/11/409089"
+            },
+            {
+              "title": "AP 11/26",
+              "url": "https://apnews.com/article/320cd8c9c286a7773797bf2f478ef314"
+            },
+            {
+              "title": "Outlier 11/25 市場研究",
+              "url": "https://www.outliertechnology.co.uk/ai-market-watch/2026-11-25"
             }
           ]
         }
