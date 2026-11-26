@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-26T21:31+08:00",
+  "updated_at": "2026-11-26T22:45+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2581,33 +2581,26 @@
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 195,
+          "rows": 196,
           "hits": 6
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 195,
+          "rows": 196,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 195,
+          "rows": 196,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算",
-          "rows": 0,
-          "hits": 0
-        },
-        {
-          "mode": "direct_self_report_keyword",
-          "base": "https://mops.twse.com.tw",
           "keyword": "自行結算",
           "rows": 0,
           "hits": 0
@@ -2628,16 +2621,23 @@
         },
         {
           "mode": "direct_self_report_keyword",
-          "base": "https://mopsov.twse.com.tw",
-          "keyword": "自行結算損益",
-          "rows": 195,
+          "base": "https://mops.twse.com.tw",
+          "keyword": "自行結算",
+          "rows": 0,
           "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 195,
+          "rows": 196,
+          "hits": 0
+        },
+        {
+          "mode": "direct_self_report_keyword",
+          "base": "https://mopsov.twse.com.tw",
+          "keyword": "自行結算損益",
+          "rows": 196,
           "hits": 0
         },
         {
@@ -2651,7 +2651,8 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x75d5be8a8a10>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "direct_self_report_keyword",
@@ -2664,7 +2665,8 @@
           "mode": "direct_self_report_keyword",
           "base": "https://mops.twse.com.tw",
           "keyword": "自行結算損益",
-          "error": "ConnectTimeout(MaxRetryError(\"HTTPSConnectionPool(host='mops.twse.com.tw', port=443): Max retries exceeded with url: /mops/web/ajax_t05st01 (Caused by ConnectTimeoutError(<HTTPSConnection(host='mops.twse.com.tw', port=443) at 0x75d5be8a9550>, 'Connection to mops.twse.com.tw timed out. (connect timeout=45)'))\"))"
+          "rows": 0,
+          "hits": 0
         },
         {
           "mode": "openapi_rescue_pool",
@@ -2877,7 +2879,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2439",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2917,7 +2919,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2609",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2925,7 +2927,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2753",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3005,7 +3007,7 @@
         {
           "mode": "company_rescue",
           "ticker": "2906",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
