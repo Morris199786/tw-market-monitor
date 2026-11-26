@@ -50,6 +50,18 @@ jobs:
     if: inputs.oidc_diagnostic != true
     runs-on: ubuntu-latest
     steps:
+      - name: Pin Taipei business day (02:00 cutoff)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+          day = (datetime.now(ZoneInfo('Asia/Taipei')) - timedelta(hours=2)).date().isoformat()
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write('BUSINESS_REPORT_DAY=' + day + '\n')
+          print('Business report day:', day)
+          PY
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -124,7 +136,7 @@ jobs:
           PYTHONPATH=scripts python - <<'PY'
           import os
           import update_business_reports_ai as ai
-          pending = bool(list(ai.pending(ai.read_items(ai.INDEX), ai.read_items(ai.OUTPUT), ai.today())))
+          pending = bool(list(ai.pending(ai.read_items(ai.INDEX), ai.read_items(ai.OUTPUT), ai.processing_day())))
           with open(os.environ['GITHUB_OUTPUT'],'a') as f:
               f.write('pending='+str(pending).lower()+'\n')
           PY
