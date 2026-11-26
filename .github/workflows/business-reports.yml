@@ -1,8 +1,6 @@
-name: Sync business reports index
+name: Sync business reports index and Codex analysis
 
 on:
-  schedule:
-    - cron: "15,45 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +14,6 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +24,38 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Sync latest state and prepare publisher
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cat > "$RUNNER_TEMP/publish-business" <<'BASH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          message=$1; shift
+          for file in "$@"; do
+            if [[ -f "$file" ]]; then git add -- "$file"; fi
+          done
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "$message"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            base=$(git merge-base HEAD origin/main)
+            if [[ -n $(git diff --name-only "$base" origin/main -- "$@") ]]; then
+              echo 'Concurrent business report data modification; refusing to overwrite.' >&2
+              exit 1
+            fi
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          exit 1
+          BASH
+          chmod +x "$RUNNER_TEMP/publish-business"
+
       - uses: google-github-actions/auth@v3
         id: auth
         with:
@@ -35,10 +64,13 @@ jobs:
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
 
-      - name: Install PDF text extractor
-        run: python -m pip install 'PyMuPDF>=1.24,<2'
+      - name: Install PDF and report tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install 'PyMuPDF>=1.24,<2' requests
 
-      - name: Index Drive PDFs without AI
+      - name: Index Drive PDFs and retain private original text
         id: index
         continue-on-error: true
         env:
@@ -47,41 +79,70 @@ jobs:
           MARKET_ASSISTANT_ADMIN_PASSWORD: ${{ secrets.MARKET_ASSISTANT_ADMIN_PASSWORD }}
         run: python scripts/update_business_reports.py
 
-      - name: Commit public metadata only; PDF text stays private
+      - name: Publish original PDF metadata independently of Codex
+        run: '"$RUNNER_TEMP/publish-business" "Update business reports index" data/business_reports.json'
+
+      - name: Check for unparsed reports dated today in Taipei
+        id: pending
         shell: bash
         run: |
-          set -euo pipefail
+          PYTHONPATH=scripts python - <<'PY'
+          import os
+          import update_business_reports_ai as ai
+          pending = bool(list(ai.pending(ai.read_items(ai.INDEX), ai.read_items(ai.OUTPUT), ai.today())))
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('pending='+str(pending).lower()+'\n')
+          PY
 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - name: Connect to existing private Codex worker
+        id: tailscale
+        if: steps.pending.outputs.pending == 'true'
+        continue-on-error: true
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:github-reports
 
-          git add data/business_reports.json
+      - name: Check private Codex worker
+        id: worker
+        if: steps.pending.outputs.pending == 'true' && steps.tailscale.outcome == 'success'
+        continue-on-error: true
+        env:
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
+          WORKER_KEY: ${{ secrets.REPORT_PLAN_SSH_KEY }}
+          WORKER_HOST_KEY: ${{ secrets.REPORT_PLAN_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -eu
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$WORKER_KEY" > ~/.ssh/report_worker
+          printf '%s\n' "$WORKER_HOST_KEY" >> ~/.ssh/known_hosts
+          PYTHONPATH=scripts python -c 'from report_provider import plan_request; assert plan_request({"check": True}) == {"status": "ready"}'
 
-          if git diff --cached --quiet; then
-            echo 'Business reports index unchanged.'
-            exit 0
-          fi
+      - name: Analyze only today's PDFs using Codex subscription (no API)
+        id: ai
+        if: steps.worker.outcome == 'success'
+        continue-on-error: true
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          REPORT_PLAN_SSH_TARGET: ${{ secrets.REPORT_PLAN_SSH_TARGET }}
+          REPORT_AI_ROUTE: plan-only
+        run: python scripts/update_business_reports_ai.py
 
-          git commit -m 'Update business reports index'
+      - name: Publish successful AI summaries (no original full text)
+        run: '"$RUNNER_TEMP/publish-business" "Update business report AI summaries" data/business_reports_ai.json'
 
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            git rebase origin/main
+      - name: Send grouped Telegram summary for newly analyzed reports
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPORT_SITE_URL: https://morris199786.github.io/tw-market-monitor/
+        run: python scripts/send_business_reports_summary.py
 
-            if git push origin HEAD:main; then
-              echo 'Business reports index pushed successfully.'
-              exit 0
-            fi
-
-            echo "Push conflict due to concurrent updates; retry ${attempt}/5"
-            sleep 3
-          done
-
-          echo 'Unable to push after 5 attempts.' >&2
-          exit 1
-
-      - name: Report text sync failure after publishing PDF index
+      - name: Report private text sync failure after PDF publication
         if: steps.index.outcome == 'failure'
         run: |
-          echo '::error::Original PDF index was preserved; inspect private text sync errors and rerun.'
+          echo '::error::Inspect private PDF text sync errors; original PDF index is preserved.'
           exit 1
