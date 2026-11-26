@@ -153,7 +153,7 @@
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden){e.preventDefault();closeModal()}});
   function sections(ai){
     let h='';const list=[['研究摘要','summary'],['核心投資觀點','push_reason'],['研究重點','key_points'],['完整研究分析','detail'],['財測調整','forecast_changes'],['風險因素','risks']];
-    for(const [label,key] of list){const v=ai[key];if(!valid(v)||Array.isArray(v)&&!v.length)continue;
+    for(const [label,key] of list){const v=ai[key];if(key==='detail'){const structured=window.IndustrySummary?.research(ai,esc);if(structured){h+='<h3>'+label+'</h3>'+structured;continue;}}if(!valid(v)||Array.isArray(v)&&!v.length)continue;
       const body=Array.isArray(v)?`<ul>${v.map(x=>`<li>${esc(clean(x))}</li>`).join('')}</ul>`:`<p>${esc(clean(v))}</p>`;
       h+=`<h3>${label}</h3>${body}`;
     }
