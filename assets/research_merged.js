@@ -579,6 +579,7 @@ function drawCalendar(){
 async function fetchJSON(url) {
   // Resolve paths against the site root rather than the current browser URL.
   const target = new URL(url, document.baseURI).href;
+  if (['./data/reports.json','./data/research_meta.json'].includes(url) && window.fetchSharedJson) return window.fetchSharedJson(url);
   let response;
   try { response = await fetch(target, {cache:'no-cache'}); }
   catch (e) { throw Error(`網路讀取失敗 (${url}): ${e.message}`); }
