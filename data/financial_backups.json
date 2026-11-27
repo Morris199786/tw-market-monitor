@@ -93,31 +93,31 @@
       "ticker": "6405",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "6405|2026-Q3": {
       "ticker": "6405",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "7812|2026-Q2": {
       "ticker": "7812",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "3259|2026-Q3": {
       "ticker": "3259",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "3623|2026-Q2": {
       "ticker": "3623",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "4904|2026-Q3": {
       "ticker": "4904",
@@ -129,13 +129,13 @@
       "ticker": "8291",
       "period": "2026-Q2",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "8291|2026-Q3": {
       "ticker": "8291",
       "period": "2026-Q3",
       "metrics": {},
-      "checked_at": "2026-11-27T08:09:52+08:00"
+      "checked_at": "2026-11-27T15:05:18+08:00"
     },
     "4908|2026-Q3": {
       "ticker": "4908",
@@ -301,7 +301,7 @@
       "notes": []
     },
     "6405|2026-Q2": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -312,7 +312,7 @@
       ]
     },
     "6405|2026-Q3": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -323,7 +323,7 @@
       ]
     },
     "7812|2026-Q2": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -334,7 +334,7 @@
       "notes": []
     },
     "3259|2026-Q3": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -343,7 +343,7 @@
       "notes": []
     },
     "3623|2026-Q2": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -363,7 +363,7 @@
       ]
     },
     "8291|2026-Q2": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -374,7 +374,7 @@
       ]
     },
     "8291|2026-Q3": {
-      "at": "2026-11-27T08:09:52+08:00",
+      "at": "2026-11-27T15:05:18+08:00",
       "version": "quarter-missing-fields-v1",
       "status": "pending",
       "missing": [
@@ -479,11 +479,40 @@
     }
   },
   "version": "quarter-missing-fields-v1",
-  "updated_at": "2026-11-27T14:08:12+08:00",
+  "updated_at": "2026-11-27T15:05:18+08:00",
   "last_run": {
-    "attempted": 0,
+    "attempted": 7,
     "fields_filled": 0,
     "targets": 12,
-    "errors": []
+    "errors": [
+      {
+        "key": "6405|2026-Q2",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+        ]
+      },
+      {
+        "key": "6405|2026-Q3",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+        ]
+      },
+      {
+        "key": "8291|2026-Q2",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
+        ]
+      },
+      {
+        "key": "8291|2026-Q3",
+        "notes": [
+          "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr",
+          "TimeoutError:financial_news_company_page",
+          "TimeoutError:financial_news_discovery",
+          "TimeoutError:financial_news_discovery",
+          "TimeoutError:news_discovery"
+        ]
+      }
+    ]
   }
 }
