@@ -481,6 +481,9 @@ function render() {
     head.innerHTML=`<span><b>${esc(dateLabel(day))}</b> <small>${group.length} 份報告</small></span><span class="report-date-arrow">⌄</span>`;
     details.appendChild(head);
     const body=document.createElement('div');body.className='report-date-body';
+    const fillGroup=()=>{
+    if(body.dataset.rendered)return;
+    body.dataset.rendered='1';
     for (const m of group) {
       const card=document.createElement('article');card.className='rm-card report-v2-card';
       if(m._business){window.MergedBusinessReports.renderCard(card,m._business);body.appendChild(card);continue;}
@@ -511,6 +514,9 @@ function render() {
       card.innerHTML=`<div class="rm-title">${highlight(heading(m))}</div><div class="rm-sub">${esc(m.date)} · ${highlight(m.source)} · <span class="rm-type">${esc(classify(m))}</span></div>${companyList(m)}<div class="rm-story">${highlight(story)}</div>${hitHTML}<button type="button" class="rm-open">閱讀全文 →</button>`;
       card.querySelector('button').addEventListener('click',()=>openReader(m));attachReportSpeech(card,m);body.appendChild(card);
     }
+    };
+    if(details.open)fillGroup();
+    else details.addEventListener('toggle',()=>{if(details.open)fillGroup();});
     details.appendChild(body);cards.appendChild(details);n++;
   }
   more.hidden=grouped.size<=limit;
@@ -803,15 +809,24 @@ function dateLabel(day) {
 let businessMerged=false;
 async function mergeBusiness(){if(!loaded||businessMerged||!window.MergedBusinessReports)return;businessMerged=true;try{await window.MergedBusinessReports.load();rows=rows.filter(r=>r.source_kind!=='business').concat(window.MergedBusinessReports.rows()).sort(compareReportDate);render();drawCalendar();sync();}catch(e){businessMerged=false;console.warn('Business reports unavailable',e);meta.textContent+='｜部分 PDF 報告載入失敗';}}
 document.addEventListener('merged-business-ready',mergeBusiness);
-async function init(){
-  if(loaded||loading)return;loading=true;
-  try{
-    const [mf,idx,live,registry]=await Promise.all([
+let researchPrefetch=null;
+function loadResearchSources(){
+  if(researchPrefetch && Date.now()-researchPrefetch.at<60000)return researchPrefetch.promise;
+  const task=Promise.all([
       fetchJSON('./data/research_manifest.json'),
       fetchJSON('./data/research_meta.json'),
       fetchJSON('./data/reports.json').catch(e=>{console.warn('券商即時資料載入失敗',e);return null}),
       fetchJSON('./data/report_company_registry.json').catch(()=>({}))
     ]);
+  researchPrefetch={at:Date.now(),promise:task};
+  task.catch(()=>{if(researchPrefetch?.promise===task)researchPrefetch=null;});
+  return task;
+}
+async function init(){
+  if(loaded||loading)return;loading=true;
+  try{
+    const [mf,idx,live,registry]=await loadResearchSources();
+    researchPrefetch=null;
     if(!Array.isArray(idx))throw Error('研究索引格式錯誤');
     manifest=mf;indexRows=idx;
     const brokerItems=Array.isArray(live?.items)?live.items:[];
@@ -868,6 +883,9 @@ window.StockNavResearch={
  open:async code=>{const epoch=++stockNavEpoch;clearTimeout(searchTimer);await init();for(let i=0;loading&&i<200;i++)await new Promise(r=>setTimeout(r,100));if(epoch!==stockNavEpoch)return;if(!loaded)throw Error('研究資料暫時無法載入，請重試');category='全部';selectedDay='';calendarMonth='';query=code;input.value=query;limit=30;searchHits=null;await fullTextSearch();sync();}
 };
 sync();
+const prefetchResearch=()=>{if(!loaded&&!loading&&!document.hidden&&!navigator.connection?.saveData)loadResearchSources().catch(()=>{});};
+if(typeof requestIdleCallback==='function')requestIdleCallback(prefetchResearch,{timeout:4000});
+else setTimeout(prefetchResearch,1800);
 })();
 
 
