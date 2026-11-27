@@ -76,9 +76,8 @@ async function loadBuyTop5(){
  const latest=meta.funds.map(f=>f.latest).filter(Boolean).sort().at(-1);
  if(!latest)return {date:null,covered:0,total:meta.funds.length,leaders:[]};
  const eligible=meta.funds.filter(f=>f.latest===latest);
- const prices=await getMarketPrices();
- // Use the same official daily average prices as the ETF change amounts.
- const responses=await Promise.allSettled(eligible.map(f=>get('etfs/'+f.code+'.json')));
+ // Prices and holdings are independent; calculation still waits for both.
+ const [prices,responses]=await Promise.all([getMarketPrices(),Promise.allSettled(eligible.map(f=>get('etfs/'+f.code+'.json')))]);
  const succeeded=responses.filter(r=>r.status==='fulfilled').map(r=>r.value);
  const buys=new Map();let covered=0;
  for(const etf of succeeded){
@@ -372,7 +371,7 @@ window.StockNavETF={
  open:async code=>{const epoch=++stockNavEpoch;await boot();for(let i=0;!meta&&i<150;i++)await new Promise(r=>setTimeout(r,100));if(epoch!==stockNavEpoch)return;if(!meta)throw Error('ETF資料尚未載入');state.stock=code;state.tab='stock';state.region='ALL';state.filter='all';state.stockPage=10;state.page=80;await render();}
 };
 // Lazy load only when the existing navigation opens this section.
-let started=false;async function boot(){if(started||!root.classList.contains('active'))return;started=true;root.innerHTML='<p class="ef-note">載入主動式 ETF 資料…</p>';try{const r=await fetch('./data/etf-flow-v2/manifest.json',{cache:'no-store'});if(!r.ok)throw Error('manifest HTTP '+r.status);const m=await r.json();if(m.schema!==2||!/^versions\/[a-f0-9]{12}\/$/.test(m.path))throw Error('不支援的資料版本');base='./data/etf-flow-v2/'+m.path;meta=await get('meta.json');await loadMarketStockNames();render();}catch(e){root.innerHTML=empty('ETF資料尚未就緒：'+e.message+'。請確認已上傳 data/etf-flow-v2 資料夾。');started=false;}}
+let started=false;async function boot(){if(started||!root.classList.contains('active'))return;started=true;root.innerHTML='<p class="ef-note">載入主動式 ETF 資料…</p>';try{const r=await fetch('./data/etf-flow-v2/manifest.json',{cache:'no-store'});if(!r.ok)throw Error('manifest HTTP '+r.status);const m=await r.json();if(m.schema!==2||!/^versions\/[a-f0-9]{12}\/$/.test(m.path))throw Error('不支援的資料版本');base='./data/etf-flow-v2/'+m.path;const [nextMeta]=await Promise.all([get('meta.json'),loadMarketStockNames()]);meta=nextMeta;render();}catch(e){root.innerHTML=empty('ETF資料尚未就緒：'+e.message+'。請確認已上傳 data/etf-flow-v2 資料夾。');started=false;}}
 new MutationObserver(boot).observe(root,{attributes:true,attributeFilter:['class']});boot();
 })();
 
