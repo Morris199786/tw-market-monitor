@@ -48,3 +48,9 @@ html[data-theme="dark"] .broker-inline-compact .broker-compact-source { color:#b
 .ec-table .ec-current .broker-inline-compact > summary { align-items:flex-end; text-align:right; gap:0; line-height:1.25; }
 .ec-table .ec-current .broker-inline-detail { text-align:right; }
 .broker-inline-quarter,.broker-inline-self { gap:5px; }
+
+/* Avoid multiline broker names expanding the quarterly row. */
+.ec-table .ec-current .broker-inline-compact { width:100%; }
+.ec-table .ec-current .broker-inline-compact > summary { align-items:flex-end; padding:0; margin:0; }
+.ec-table .ec-current .broker-compact-source { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; font-size:10px; line-height:1.2; }
+.ec-table .ec-current .broker-inline-quarter { margin-top:3px; padding-top:3px; border-top:0; }

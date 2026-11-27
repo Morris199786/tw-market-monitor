@@ -160,9 +160,9 @@ def compare(root=ROOT):
 
 def parse_quarter(value):
     """Recognize explicit *quarter* periods only; never turn an annual figure into a quarter."""
-    value = str(value or '').strip().upper().replace(' ', '')
+    value = str(value or '').strip().upper().replace(' ', '').replace("'", '').replace('’', '')
     patterns = (
-        r'(20\d{2})-Q([1-4])(?:E|F)?',   # 2026-Q4 / 2026-Q4E
+        r'(20\d{2})-?Q([1-4])(?:E|F)?',   # 2026-Q4 / 2026-Q4E
         r'([1-4])Q(20\d{2}|\d{2})(?:E|F)?', # 3Q26 / 4Q2026E
         r'Q([1-4])(20\d{2}|\d{2})(?:E|F)?', # Q326 / Q4'26 (without apostrophe)
         r'(20\d{2})\u5e74\u7b2c?([\u4e00-\u56db1-4])\u5b63(?:\u5ea6)?',
@@ -261,181 +261,144 @@ def table_gm_forecasts(report):
                     yield period, v, f'table:{table.get("title") or ""}'
 
 
-def compare_gross_margin(root=ROOT):
-    """Compare only QUARTERLY actual gross margins to same-quarter broker AI estimates.
 
-    One-shot AI forecasts are already persisted in reports.json. This function
-    never opens PDFs or calls any external service. Existing EPS output is untouched.
-    """
-    from broker_eps_pipeline import saved_reports
-    data = root / 'data'
-    by_key = {}
-    seen_forecasts = set()
-    report_count = 0
-    ambiguous = 0
-    table_candidates = 0
-    for report in saved_reports(data):
-        if not isinstance(report, dict):
-            continue
-        rid = str(report.get('source_file_id') or report.get('id') or '')
-        ticker = str(report.get('ticker') or '')
-        broker = str(report.get('broker') or '')
-        report_day = gm_valid_date(report.get('date'))
-        if not rid or not TICKER.fullmatch(ticker) or not broker or not report_day:
-            continue
-        candidates = {}
-        conflicts = set()
-        for r in report.get('financial_forecasts') or []:
-            if not isinstance(r, dict):
-                continue
-            if str(r.get('metric') or '').lower() != 'gross_margin':
-                continue
-            if str(r.get('type') or '').lower() != 'forecast' or str(r.get('source') or '').lower() != 'broker':
-                continue
-            if str(r.get('scope') or 'company').lower() != 'company':
-                continue
-            period = str(r.get('period') or '')
-            unit = str(r.get('unit') or '').strip().lower()
-            value = number(r.get('value'))
-            if not QUARTER.fullmatch(period) or value is None or not 0 <= value <= 100:
-                continue
-            # Gross margin is a percentage. Reject fractional or currency units
-            # rather than silently rescaling them.
-            if unit and '%' not in unit and '百分' not in unit and 'percent' not in unit and 'pct' not in unit:
-                continue
-            if period in candidates and abs(candidates[period] - value) > 0.01:
-                conflicts.add(period)
-            else:
-                candidates[period] = value
-        # Use saved tables only to fill structured forecast gaps. On disagreement
-        # between two saved AI fields, omit the ambiguous report-quarter.
-        table_added = 0
-        for period, value, evidence in table_gm_forecasts(report):
-            if period in candidates:
-                if abs(candidates[period] - value) > 0.011:
-                    conflicts.add(period)
-            else:
-                candidates[period] = value
-                table_added += 1
-        table_candidates += table_added
-        for period, estimate in candidates.items():
-            if period in conflicts:
-                ambiguous += 1
-                continue
-            ident = (rid, period)
-            if ident in seen_forecasts:
-                continue
-            seen_forecasts.add(ident)
-            by_key.setdefault((ticker, period), []).append((report, rid, report_day, estimate))
-            report_count += 1
+METRIC_ALIASES = {
+    'gross_margin': r'毛利率|gross\s*(?:profit\s*)?margin|\bGPM\b|\bGM\b',
+    'operating_margin': r'營業利益率|營業利潤率|營益率|營利率|operating\s*(?:profit\s*)?margin|\bOPM\b|\bOP\s*margin\b',
+    'eps': r'每股盈餘|每股純益|\bEPS\b',
+}
+FORECAST_MARK = re.compile(r'預估|預測|估計|forecast|estimate|projection|(?:\d|季)[EF]\b', re.I)
+NON_BROKER = re.compile(r'共識|consensus|公司指引|公司預估|管理層|guidance|management|前次|原估|previous|old estimate|實績|實際|actual|歷史', re.I)
 
-    matches = {}
-    seen_actuals = set()
-    dated_actuals = 0
-    excluded_late = 0
-    for source in ('quarterly_earnings.json', 'quarterly_earnings_announcements_history.json'):
-        key = 'reports' if source == 'quarterly_earnings.json' else 'items'
-        for actual in load(data / source, {}).get(key, []):
-            ticker = str(actual.get('ticker') or '')
-            period = str(actual.get('period') or '')
-            day = valid_date(actual.get('publish_date'))
-            margin = number(actual.get('gross_margin'))
-            if not TICKER.fullmatch(ticker) or not QUARTER.fullmatch(period) or not day or margin is None or not 0 <= margin <= 100:
+def saved_metric_rows(report, metric):
+    """Read existing structured rows and explicitly dated forecast tables/text only."""
+    pattern = METRIC_ALIASES[metric]
+    def value_of(v):
+        return number(str(v).strip().replace(',', '').rstrip('%').strip()) if not isinstance(v, bool) else None
+    for row in report.get('financial_forecasts') or []:
+        if not isinstance(row, dict):
+            continue
+        label = str(row.get('metric') or '').replace('_', ' ')
+        if not re.fullmatch(pattern, label, re.I):
+            continue
+        if str(row.get('type') or '').lower() not in ('forecast','estimate','projection'):
+            continue
+        if str(row.get('source') or '').lower() not in ('broker','analyst','research',''):
+            continue
+        if str(row.get('scope') or 'company').lower() not in ('company','consolidated'):
+            continue
+        unit = str(row.get('unit') or '').lower()
+        if metric != 'eps' and unit and not any(x in unit for x in ('%','百分','percent','pct')):
+            continue
+        period = parse_quarter(row.get('period')) or quarter_mentions(row.get('period'))
+        v = value_of(row.get('value'))
+        if period and v is not None:
+            yield period, v, 'structured'
+    for table in report.get('visualizations') or []:
+        if not isinstance(table, dict) or table.get('type') != 'table':
+            continue
+        headers = table.get('headers') or []
+        rows = table.get('rows') or []
+        if not isinstance(headers, list) or not isinstance(rows, list):
+            continue
+        title = str(table.get('title') or '')
+        context = title + ' ' + str(table.get('description') or '')
+        for row in rows:
+            if not isinstance(row,list) or not row:
                 continue
-            actual_key = (ticker, period, day, margin)
-            if actual_key in seen_actuals:
-                continue
-            seen_actuals.add(actual_key)
-            dated_actuals += 1
-            for report, rid, report_day, estimate in by_key.get((ticker, period), []):
-                if report_day > day:
-                    excluded_late += 1
+            label = str(row[0])
+            for i, header in enumerate(headers[1:],1):
+                if i >= len(row):
                     continue
-                key = (ticker, period, day, margin, rid)
-                matches[key] = {
-                    'ticker': ticker, 'name': actual.get('name') or report.get('name') or '',
-                    'period': period, 'actual_kind': 'quarterly',
-                    'announcement_date': day, 'actual_gross_margin': margin,
-                    'broker': report.get('broker') or '', 'report_date': report_day,
-                    'report_id': rid, 'forecast_gross_margin': estimate,
-                    'difference_pp': round(margin - estimate, 2),
-                    'source_url': report.get('source_url') or '',
-                    'actual_source': source,
-                }
-    output = {
-        'version': 1,
-        'metric': 'gross_margin',
-        'unit': '%',
-        'difference_unit': 'percentage_points',
-        'items': sorted(matches.values(), key=lambda x: (
-            x['ticker'], x['period'], x['announcement_date'], x['report_date'], x['report_id'])),
-    }
-    dest = data / 'broker_gross_margin_comparisons.json'
-    content = json.dumps(output, ensure_ascii=False, indent=2) + '\n'
-    if not dest.exists() or dest.read_text(encoding='utf-8') != content:
-        dest.write_text(content, encoding='utf-8')
-    print('Gross margin audit:', json.dumps({
-        'broker_quarter_forecasts': report_count, 'ambiguous_forecasts': ambiguous,
-        'table_forecast_candidates': table_candidates,
-        'dated_quarterly_actuals': dated_actuals, 'excluded_late': excluded_late,
-        'matches': len(output['items'])}, ensure_ascii=False))
-    return output
+                header = str(header)
+                if re.search(pattern, header, re.I):
+                    period = parse_quarter(label) or quarter_mentions(label)
+                    hint = label + ' ' + header
+                elif re.search(pattern,label,re.I):
+                    period = parse_quarter(header) or quarter_mentions(header) or quarter_mentions(title)
+                    hint = header + ' ' + label
+                else:
+                    continue
+                if not period or NON_BROKER.search(hint) or NON_BROKER.search(context):
+                    continue
+                if not FORECAST_MARK.search(hint+' '+context):
+                    continue
+                if re.search(r'年增|季增|變動|調整幅度|差異|change|growth|delta|bps|pp\b',hint,re.I):
+                    continue
+                v = value_of(row[i])
+                if v is not None:
+                    yield period, v, 'table:'+title
+    # Text fallback: only a single explicit quarter and a forecast marker in the same clause.
+    for field in ('summary','detail','key_points','forecast_changes'):
+        raw=report.get(field)
+        chunks=raw if isinstance(raw,list) else [raw]
+        for chunk in chunks:
+            if not isinstance(chunk,str):
+                continue
+            for clause in re.split(r'[。；;\n]',chunk):
+                period=quarter_mentions(clause)
+                if not period or not FORECAST_MARK.search(clause) or NON_BROKER.search(clause):
+                    continue
+                if re.search(r'年增|季增|上修|下修|調升|調降|由.+至|從.+到|區間|range|同比|環比',clause,re.I):
+                    continue
+                suffix=r'\s*%' if metric!='eps' else r'\s*(?:元|NTD|TWD)?'
+                for m in re.finditer('(?:'+pattern+r')\s*(?:預估|預測|估計|estimate|forecast)?\s*(?:為|達|約|:|：|=|of|at)?\s*([+-]?\d+(?:\.\d+)?)'+suffix,clause,re.I):
+                    v=number(m.group(1))
+                    if v is not None:
+                        yield period,v,'text:'+field
 
-
-def compare_operating_margin(root=ROOT):
+def compare_margin_metric(root, metric):
     from broker_eps_pipeline import saved_reports
-    data = root / 'data'
-    forecasts = {}
+    data=root/'data'
+    forecasts={}
+    audit={'candidates':0,'conflicting_report_quarters':0,'excluded_late':0,'matches':0}
     for report in saved_reports(data):
-        rid = str(report.get('source_file_id') or report.get('id') or '')
-        ticker = str(report.get('ticker') or '')
-        broker = str(report.get('broker') or '')
-        day = gm_valid_date(report.get('date'))
+        rid=str(report.get('source_file_id') or report.get('id') or '')
+        ticker=str(report.get('ticker') or '')
+        broker=str(report.get('broker') or '')
+        day=gm_valid_date(report.get('date'))
         if not rid or not TICKER.fullmatch(ticker) or not broker or not day:
             continue
-        values, conflicts = {}, set()
-        for row in report.get('financial_forecasts') or []:
-            if not isinstance(row, dict) or row.get('metric') != 'operating_margin':
-                continue
-            if row.get('type') != 'forecast' or row.get('source') != 'broker' or row.get('scope', 'company') != 'company':
-                continue
-            period = str(row.get('period') or '')
-            value = number(row.get('value'))
-            unit = str(row.get('unit') or '').lower()
-            if not QUARTER.fullmatch(period) or value is None or not -1000 <= value <= 100:
-                continue
-            if not any(x in unit for x in ('%', '百分', 'percent', 'pct')):
-                continue
-            if period in values and abs(values[period] - value) > 0.011:
-                conflicts.add(period)
-            else:
-                values[period] = value
-        for period, value in values.items():
-            if period not in conflicts:
-                forecasts.setdefault((ticker, period), []).append((rid, broker, day, value, report.get('source_url') or ''))
-    matches = {}
-    for source, key in (('quarterly_earnings.json', 'reports'), ('quarterly_earnings_announcements_history.json', 'items')):
-        for actual in load(data / source, {}).get(key, []):
-            ticker = str(actual.get('ticker') or '')
-            period = str(actual.get('period') or '')
-            day = valid_date(actual.get('publish_date'))
-            value = number(actual.get('operating_margin'))
+        values={}
+        for period,value,evidence in saved_metric_rows(report,metric):
+            values.setdefault(period,{})
+            existing=next((v for v in values[period] if abs(v-value)<=0.011),None)
+            if existing is None:
+                values[period][value]=evidence
+        for period, estimates in values.items():
+            conflict=len(estimates)>1
+            audit['conflicting_report_quarters']+=int(conflict)
+            for value,evidence in estimates.items():
+                audit['candidates']+=1
+                forecasts.setdefault((ticker,period),[]).append((rid,broker,day,value,report.get('source_url') or '',evidence,conflict))
+    matches={}
+    for source,key in (('quarterly_earnings.json','reports'),('quarterly_earnings_announcements_history.json','items')):
+        for actual in load(data/source,{}).get(key,[]):
+            ticker=str(actual.get('ticker') or '')
+            period=str(actual.get('period') or '')
+            day=valid_date(actual.get('publish_date'))
+            value=number(actual.get(metric))
             if not day or value is None:
                 continue
-            for rid, broker, report_day, estimate, url in forecasts.get((ticker, period), []):
-                if report_day > day:
+            for rid,broker,report_day,estimate,url,evidence,conflict in forecasts.get((ticker,period),[]):
+                if report_day>day:
+                    audit['excluded_late']+=1
                     continue
-                matches[(ticker, period, day, value, rid)] = dict(ticker=ticker, period=period, announcement_date=day,
-                    actual_kind='quarterly', actual_operating_margin=value, forecast_operating_margin=estimate,
-                    difference_pp=round(value-estimate, 2), broker=broker, report_date=report_day, report_id=rid,
-                    source_url=url, actual_source=source)
-    output = {'version': 1, 'metric': 'operating_margin', 'items': [matches[k] for k in sorted(matches)]}
-    dest = data / 'broker_operating_margin_comparisons.json'
-    content = json.dumps(output, ensure_ascii=False, indent=2) + '\n'
-    if not dest.exists() or dest.read_text(encoding='utf-8') != content:
-        dest.write_text(content, encoding='utf-8')
-    print('Operating margin matches:', len(matches))
+                matches[(ticker,period,day,value,rid,estimate)]=dict(ticker=ticker,name=actual.get('name') or '',period=period,announcement_date=day,actual_kind='quarterly',broker=broker,report_date=report_day,report_id=rid,source_url=url,actual_source=source,evidence=evidence,needs_review=conflict,difference_pp=round(value-estimate,2),**{'actual_'+metric:value,'forecast_'+metric:estimate})
+    output={'version':2,'metric':metric,'unit':'%','items':[matches[k] for k in sorted(matches)]}
+    audit['matches']=len(matches)
+    dest=data/('broker_'+metric+'_comparisons.json')
+    content=json.dumps(output,ensure_ascii=False,indent=2)+'\n'
+    if not dest.exists() or dest.read_text(encoding='utf-8')!=content:
+        dest.write_text(content,encoding='utf-8')
+    print(metric+' audit:',json.dumps(audit,ensure_ascii=False))
     return output
+
+def compare_gross_margin(root=ROOT):
+    return compare_margin_metric(root,'gross_margin')
+
+def compare_operating_margin(root=ROOT):
+    return compare_margin_metric(root,'operating_margin')
 
 
 if __name__ == '__main__':

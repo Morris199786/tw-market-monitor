@@ -43,10 +43,12 @@
       const tone=delta>0?'above':delta<0?'below':'flat';
       const aliases={'GF Securities':'廣發','CLSA':'里昂','Morgan Stanley':'摩根士丹利','Goldman Sachs':'高盛','J.P. Morgan':'摩根大通','JP Morgan':'摩根大通','UBS':'瑞銀','Citi':'花旗','Daiwa':'大和','BofA':'美銀'};
       const raw=String(r.broker||'');
-      const short=aliases[raw]||raw.replace(/投顧$|證券$/g,'');
+      const clean=raw.replace(/\([^)]*\)|（[^）]*）/g,'').replace(/\s+/g,' ').trim().replace(/\s+(?:Brokerage|Research|Limited|Ltd\.?|Inc\.?|Co\.?)$/i,'').trim();
+      const alias=Object.entries(aliases).find(([k])=>clean.toLowerCase()===k.toLowerCase()||clean.toLowerCase().startsWith(k.toLowerCase()+' '));
+      const short=alias?.[1]||clean.replace(/(?:證券投資顧問|投資顧問|證券研究部|證期研究部|投顧|證券)$/g,'').trim();
       const source=esc(date(r.report_date).slice(5).replace('-','/')+' '+short);
-      const visible=rate||result;
-      const detail=esc(date(r.report_date))+' '+link+'｜預估 '+estimate.toFixed(2)+unit+(metric==='eps'?'':'｜差 '+sign+delta.toFixed(2)+'pp');
+      const visible=(rate||result)+(r.needs_review?' ※':'');
+      const detail=(r.needs_review?'同份報告數值不一致，待確認｜':'')+esc(date(r.report_date))+' '+link+'｜預估 '+estimate.toFixed(2)+unit+(metric==='eps'?'':'｜差 '+sign+delta.toFixed(2)+'pp');
       return '<details class="broker-inline-compact"><summary aria-label="'+esc(raw+' '+date(r.report_date)+' '+result)+'"><span class="broker-compact-source">'+source+'</span><span class="broker-inline-rate '+tone+'">'+esc(visible)+'</span></summary><div class="broker-inline-detail">'+detail+'</div></details>';
     }).join('');
     el.innerHTML=html;
