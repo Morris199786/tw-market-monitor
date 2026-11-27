@@ -8,7 +8,12 @@ const date=r=>/^\d{4}-\d{2}-\d{2}$/.test(r.meeting_date||'')?r.meeting_date:Stri
 const label=r=>r.meeting_date?'會議日期':'資料日期（會議日期未確認）';
 const link=r=>'./index.html?page=reports&research_id='+encodeURIComponent(r.id);
 const paragraphs=r=>String(r.story||'').split(/\n+/).filter(Boolean);
-const card=r=>'<article class="meeting-card"><small>法說／訪談 · '+esc(label(r))+' '+esc(date(r))+' · '+esc(r.source||'來源未標示')+'</small><h3>'+esc(r.title||r.company)+'</h3>'+paragraphs(r).map(x=>'<p>'+esc(x)+'</p>').join('')+'<a href="'+esc(link(r))+'" target="_top">查看完整法說／訪談 ↗</a></article>';
+function meetingTable(r){
+ const rows=window.SharedFinancialCatalog?.meetingFacts?.(r.id,codes(r)[0])||[];
+ if(!rows.length||codes(r).length!==1)return '';
+ return '<details><summary>共用資料庫財務摘錄（來源性質待確認）</summary><div style="overflow-x:auto"><table><thead><tr><th>期間</th><th>指標</th><th>數值</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(x.period)+'</td><td>'+esc(x.metric_name||x.metric)+'</td><td>'+esc(x.value)+' '+esc(x.unit)+'</td></tr>').join('')+'</tbody></table></div><p class="meeting-note">保留原報告歸屬，不列入券商統計或正式公司指引。</p></details>';
+}
+const card=r=>'<article class="meeting-card"><small>法說／訪談 · '+esc(label(r))+' '+esc(date(r))+' · '+esc(r.source||'來源未標示')+'</small><h3>'+esc(r.title||r.company)+'</h3>'+paragraphs(r).map(x=>'<p>'+esc(x)+'</p>').join('')+meetingTable(r)+'<a href="'+esc(link(r))+'" target="_top">查看完整法說／訪談 ↗</a></article>';
 const style=document.createElement('style');style.textContent='.meeting-research{margin:14px 0 20px}.meeting-research h2{margin:0 0 8px}.meeting-research .meeting-note{font-size:13px;color:#64748b;line-height:1.6}.meeting-card{padding:14px;border:1px solid #dce4ef;border-radius:12px;background:#fff;margin:10px 0;color:#243040;overflow-wrap:anywhere}.meeting-card small{color:#64748b;font-size:12px}.meeting-card h3{font-size:15px;margin:8px 0}.meeting-card p{font-size:14px;line-height:1.7;margin:8px 0}.meeting-card a{font-size:13px;font-weight:650}.meeting-research details>summary{cursor:pointer;font-weight:650;color:#245c91}.meeting-history-tag{color:#245c91;font-weight:700;font-size:12px}';document.head.append(style);
 function ensureOptions(){
  const select=$('ticker'),list=$('stocks');if(!select||!select.options.length)return;
@@ -48,5 +53,5 @@ let timer;function schedule(){clearTimeout(timer);timer=setTimeout(render,150)}
  $('ticker')?.addEventListener('change',schedule);document.addEventListener('broker-reports-ready',schedule);
  document.querySelectorAll('.research-tab').forEach(b=>b.addEventListener('click',schedule));
  const target=$('reports');if(target)new MutationObserver(records=>{if(records.some(m=>[...m.removedNodes,...m.addedNodes].some(n=>n.nodeType===1&&!n.hasAttribute('data-meeting-history'))))schedule()}).observe(target,{childList:true});
- Promise.all([fetch('./data/research_meta.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error(r.status);return r.json()}),fetch('./data/report_company_registry.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({}))]).then(([data,reg])=>{if(!Array.isArray(data))throw Error('invalid meeting index');registry=reg;meetings=[...new Map(data.filter(r=>r.source_kind==='line'&&r.category==='法說／訪談'&&r.ai_processed===true&&r.id&&codes(r).length&&r.story).map(r=>[r.id,r])).values()];loaded=true;render();setTimeout(schedule,1200)}).catch(e=>{failed=true;console.warn('Meeting research unavailable',e);render()});
+ Promise.all([window.SharedFinancialCatalog?.load?.()||Promise.resolve(null),fetch('./data/research_meta.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error(r.status);return r.json()}),fetch('./data/report_company_registry.json',{cache:'no-store'}).then(r=>r.json()).catch(()=>({}))]).then(([shared,data,reg])=>{if(!Array.isArray(data))throw Error('invalid meeting index');registry=reg;meetings=[...new Map(data.filter(r=>r.source_kind==='line'&&r.category==='法說／訪談'&&r.ai_processed===true&&r.id&&codes(r).length&&r.story).map(r=>[r.id,r])).values()];loaded=true;render();setTimeout(schedule,1200)}).catch(e=>{failed=true;console.warn('Meeting research unavailable',e);render()});
 })();

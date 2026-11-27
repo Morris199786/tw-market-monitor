@@ -59,7 +59,7 @@ def build(data):
             for row in report.get('financial_forecasts') or []:add(rid,report,row,'structured',kind)
             # Add saved table/text evidence; never reparse PDF or call AI.
             from shared_margin_extract import saved_metric_rows
-            for metric in ('gross_margin','operating_margin'):
+            for metric in (('gross_margin','operating_margin') if report.get('report_type')=='company' and re.fullmatch(r'\d{4}',str(report.get('ticker') or '')) else ()):
                 for period,value,evidence in saved_metric_rows(report,metric):
                     if evidence=='structured':continue
                     add(rid,report,dict(period=period,metric=metric,value=value,unit='%',type='forecast',source='broker',scope='company',evidence=evidence),'saved_margin_fallback',kind)

@@ -26,9 +26,20 @@ def payload(data):
         if len({(r['value'],r['unit'],r['report_date']) for r in rows})!=1:continue
         r=rows[0]
         safe.append({k:r[k] for k in ('report_id','ticker','report_date','period','metric','value','unit','type','source','scope','evidence','needs_review','origin')})
+    # Meeting figures remain separately typed and never enter broker consensus.
+    meeting=[]
+    meta_path=data/'research_meta.json'
+    if meta_path.exists():
+        meta=json.loads(meta_path.read_text(encoding='utf-8'))
+        by_id={str(r.get('id')):r for r in meta if r.get('source_kind')=='line' and r.get('category')=='法說／訪談' and r.get('ai_processed') is True}
+        for r in catalog['items']:
+            if r['origin']!='meeting_saved' or r['needs_review'] or not r['unit'] or not r['evidence']:continue
+            m=by_id.get(r['report_id'])
+            if not m or str(m.get('ticker'))!=r['ticker'] or not r['ticker'].isdigit():continue
+            meeting.append({k:r[k] for k in ('report_id','ticker','report_date','period','metric','metric_name','value','unit','type','source','evidence')})
     safe.sort(key=lambda r:(r['report_id'],r['period'],r['metric']))
     # Comparisons remain explicitly marked as shadow until actual values and UI are reconciled.
-    return {'schema':1,'mode':'verified_additive','comparison_mode':'shadow','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe)}
+    return {'schema':1,'mode':'verified_additive','comparison_mode':'shadow','items':safe,'meeting_items':meeting,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe),'meeting_facts':len(meeting)}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--output',type=Path,required=True)
