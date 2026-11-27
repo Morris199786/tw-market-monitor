@@ -30,6 +30,22 @@ const shortNames = {};
 
 const jsonCache = new Map();
 const jsonInflight = new Map();
+// Share only concurrent downloads, not mutable parsed objects or stale responses.
+const sharedJsonDownloads = new Map();
+window.fetchSharedJson = async function(path) {
+  const key = new URL(path, document.baseURI).href;
+  let task = sharedJsonDownloads.get(key);
+  if (!task) {
+    task = fetch(key, {cache:'no-store'}).then(r=>{
+      if (!r.ok) throw new Error('HTTP '+r.status+' ('+path+')');
+      return r.text();
+    });
+    sharedJsonDownloads.set(key,task);
+    const clear=()=>{if(sharedJsonDownloads.get(key)===task)sharedJsonDownloads.delete(key);};
+    task.then(clear,clear);
+  }
+  return JSON.parse(await task);
+};
 
 function jsonTtl(p) {
   if (p.includes("sectors.json")) return 10 * 60 * 1000;
