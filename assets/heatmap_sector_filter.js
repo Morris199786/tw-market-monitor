@@ -153,10 +153,11 @@
     if (stockDetailData) return stockDetailData;
     if (stockDetailPromise) return stockDetailPromise;
 
-    stockDetailPromise = fetchJson(
-      "./data/stock_detail.json"
-    )
+    stockDetailPromise = (typeof window.J === "function"
+      ? window.J("./data/stock_detail.json")
+      : fetchJson("./data/stock_detail.json"))
       .then(data => {
+        if (!data || !Object.keys(data).length) throw new Error("個股明細暫時無法載入");
         stockDetailData = data;
         return data;
       })
