@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-11-27T18:42+08:00",
+  "updated_at": "2026-11-27T19:19+08:00",
   "monitor_start_date": "2026-09-26",
   "filter_version": "2026-11-23-v42-mops-blocks-and-corrections",
   "source_mode": "MOPS daily broad primary + direct self-report keyword + official feed ticker company-rescue additive fallback; Telegram only",
@@ -2600,28 +2600,28 @@
   "source_status": {
     "mops": {
       "ok": true,
-      "rows": 9,
+      "rows": 10,
       "self_reports": 5,
       "debug": [
         {
           "mode": "daily_broad",
           "base": "https://mopsov.twse.com.tw",
           "payload": 1,
-          "rows": 183,
-          "hits": 9
+          "rows": 190,
+          "hits": 10
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算",
-          "rows": 183,
+          "rows": 190,
           "hits": 1
         },
         {
           "mode": "direct_self_report_keyword",
           "base": "https://mopsov.twse.com.tw",
           "keyword": "自行結算損益",
-          "rows": 183,
+          "rows": 190,
           "hits": 1
         },
         {
@@ -2731,7 +2731,7 @@
         {
           "mode": "company_rescue",
           "ticker": "1752",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2795,15 +2795,14 @@
         {
           "mode": "company_rescue",
           "ticker": "2330",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
           "ticker": "2351",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -2811,10 +2810,9 @@
         {
           "mode": "company_rescue",
           "ticker": "2357",
-          "base": "https://mopsov.twse.com.tw",
           "rows": 0,
           "hits": 0,
-          "error": ""
+          "error": "https://mopsov.twse.com.tw:ConnectionError;https://mops.twse.com.tw:ConnectionError"
         },
         {
           "mode": "company_rescue",
@@ -3139,7 +3137,7 @@
         {
           "mode": "company_rescue",
           "ticker": "6873",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3179,7 +3177,7 @@
         {
           "mode": "company_rescue",
           "ticker": "7788",
-          "base": "https://mopsov.twse.com.tw",
+          "base": "https://mops.twse.com.tw",
           "rows": 0,
           "hits": 0,
           "error": ""
@@ -3243,6 +3241,11 @@
           "keyword": "daily_broad",
           "reason": "candidate_row_rejected",
           "text": "6462 神盾 115/11/27 16:06:12 公告本公司115年10月份自結個體財務報告之流動比率、 速動比率及銀行可使用融資額度情形"
+        },
+        {
+          "keyword": "daily_broad",
+          "reason": "candidate_row_rejected",
+          "text": "4804 大略-KY 115/11/27 19:09:56 公告本公司115年10月份自結財務報表之自結負債比率、 自結流動比率及自結速動比率"
         }
       ],
       "error": ""
