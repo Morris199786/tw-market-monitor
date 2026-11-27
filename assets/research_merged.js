@@ -636,32 +636,11 @@ function renderAiDirect(entry, reportId=''){
       if(b.type==='quote')return `<blockquote class="rm-ai-quote">${highlight(b.text||'')}</blockquote>`;
       if(b.type==='bullets')return `<ul class="rm-ai-list">${(Array.isArray(b.items)?b.items:[]).map((t,i)=>`<li>${researchPoint(reviewText(t),i)}</li>`).join('')}</ul>`;
       if(b.type==='chart'){
-        const advanced=['pie','kpi','stacked_bar','waterfall','dual_axis','timeline','flow','scatter','heatmap'];
-        if(advanced.includes(b.chart_type)){
-          const id='rm-chart-'+(window.__rmChartSerial=(window.__rmChartSerial||0)+1);
-          const payload={...b,type:b.chart_type,items:b.kpi_items,headers:b.columns,rows:b.chart_type==='heatmap'?b.heatmap_rows:b.rows};
-          (window.__rmPendingCharts ||= new Map()).set(id,payload);
-          return `<div class="rm-shared-chart" data-rm-chart-id="${id}"></div>`;
-        }
-        const labels=Array.isArray(b.labels)?b.labels:[], values=Array.isArray(b.values)?b.values:[];
-        if(!labels.length||labels.length!==values.length||values.some(v=>typeof v!=='number'||!Number.isFinite(v)))return '';
-        const type=['bar','line','donut'].includes(b.chart_type)?b.chart_type:'bar';
-        const unit=String(b.unit||'');
-        const colors=['#3969b2','#3e9a8e','#b38b46','#8362ae','#c56c74','#688ca5'];
-        const max=Math.max(1,...values.map(v=>Math.abs(v)));
-        let graphic='';
-        if(type==='donut'&&values.every(v=>v>=0)&&values.reduce((a,v)=>a+v,0)>0){
-          const total=values.reduce((a,v)=>a+v,0);let angle=0;
-          const stops=values.map((v,i)=>{const start=angle;angle+=v/total*100;return `${colors[i%colors.length]} ${start}% ${angle}%`});
-          graphic=`<div class="rm-ai-donut" style="background:conic-gradient(${stops.join(',')})" aria-hidden="true"></div>`;
-        }else if(type==='line'&&values.length>=2){
-          const lo=Math.min(0,...values),hi=Math.max(...values),span=hi-lo||1;
-          const points=values.map((v,i)=>`${10+i*280/(values.length-1)},${120-(v-lo)/span*100}`).join(' ');
-          graphic=`<svg class="rm-ai-line" viewBox="0 0 300 140" role="img" aria-label="${esc(b.title||'趨勢圖')}"><polyline points="${points}" fill="none" stroke="#3969b2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-        }else{
-          graphic=`<div class="rm-ai-bars">${labels.map((l,i)=>`<div class="rm-ai-barrow"><span>${esc(l)}</span><div class="rm-ai-track"><i style="width:${Math.max(2,Math.abs(values[i])/max*100)}%;background:${colors[i%colors.length]}"></i></div><strong>${esc(values[i])}${esc(unit)}</strong></div>`).join('')}</div>`;
-        }
-        return `<figure class="rm-ai-chart"><figcaption>${esc(b.title||'數據比較')}</figcaption>${graphic}<div class="rm-ai-legend">${labels.map((l,i)=>`<span><i style="background:${colors[i%colors.length]}"></i>${esc(l)}：${esc(values[i])}${esc(unit)}</span>`).join('')}</div>${b.note?`<small>${esc(b.note)}</small>`:''}</figure>`;
+        const type=b.chart_type||'bar';
+        const id='rm-chart-'+(window.__rmChartSerial=(window.__rmChartSerial||0)+1);
+        const payload={...b,type,items:b.kpi_items||b.items,headers:b.columns||b.headers,rows:type==='heatmap'?(b.heatmap_rows||b.rows):b.rows};
+        (window.__rmPendingCharts ||= new Map()).set(id,payload);
+        return `<div class="rm-shared-chart" data-rm-chart-id="${id}"></div>`;
       }
       if(b.type==='table'){
         const cols=Array.isArray(b.columns)?b.columns:[];
@@ -770,11 +749,18 @@ async function openReader(m) {
     const aiHtml=renderAiDirect(direct[String(m.id)],m.id);
     body.innerHTML=(aiHtml||section('研究內容顯示失敗',`<p class="rm-ai-paragraph">${esc(e.message)}</p>`));
   }
-  // Render only newly added chart types after the reader DOM has been mounted.
+  // Render all saved chart types through the shared report chart engine.
   body.querySelectorAll('[data-rm-chart-id]').forEach(el=>{
     const id=el.dataset.rmChartId, item=window.__rmPendingCharts?.get(id);
-    if(item && window.BrokerReportCharts?.render) window.BrokerReportCharts.render(el,[item]);
-    window.__rmPendingCharts?.delete(id);
+    try {
+      if(item && window.BrokerReportCharts?.render) window.BrokerReportCharts.render(el,[item]);
+      else el.textContent='圖表暫時無法載入';
+    } catch(error) {
+      console.warn('[research reader] chart rendering failed',id,error);
+      el.textContent='圖表暫時無法顯示';
+    } finally {
+      window.__rmPendingCharts?.delete(id);
+    }
   });
 }
 
