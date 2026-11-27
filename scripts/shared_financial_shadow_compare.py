@@ -21,6 +21,15 @@ def reconcile(catalog,data):
     for key,rows in groups.items():
         ticker,period,metric,rid=key
         vals={r['value'] for r in rows}
+        # A precise saved table and explicitly rounded narrative may agree.
+        # Only accept the precise table when the structured narrative rounds to it.
+        if metric in ('gross_margin','operating_margin') and len(vals)==2 and not any(r['needs_review'] for r in rows):
+            from decimal import Decimal, ROUND_HALF_UP
+            tables=[r for r in rows if r['origin']=='saved_margin_fallback' and r['evidence'].startswith('table:')]
+            texts=[r for r in rows if r['origin']=='structured']
+            if len(tables)==1 and texts and all(Decimal(str(tables[0]['value'])).quantize(Decimal('0.1'),rounding=ROUND_HALF_UP)==Decimal(str(r['value'])) for r in texts):
+                rows=tables
+                vals={r['value'] for r in rows}
         dates={r['report_date'] for r in rows}
         if len(vals)!=1 or len(dates)!=1 or any(r['needs_review'] for r in rows):
             quarantined.append({'key':key,'rows':rows,'reason':'conflicting_value_or_date'})
@@ -56,6 +65,7 @@ def reconcile(catalog,data):
     actual_conflicts=[]
     from shared_actual_eps import explicit_quarter, select_disclosure
     direct={}
+    invalid_quarters=set()
     for filename in ('self_reports.json','self_reports_history.json'):
         for r in load(data/filename,{}).get('items',[]):
             ticker=str(r.get('ticker') or ''); period=str(r.get('quarter_period') or '')
@@ -63,12 +73,20 @@ def reconcile(catalog,data):
             if not TICKER.fullmatch(ticker) or not QUARTER.fullmatch(period) or not day:continue
             if r.get('source')!='mops_ajax' or not str(r.get('source_url') or '').startswith('https://mopsov.twse.com.tw/'):continue
             value=explicit_quarter(r.get('detail'),period)
-            if value is None:continue
+            if value is None:
+                # Cumulative-only announcements cannot establish a single quarter.
+                import re
+                subject=str(r.get('subject') or '')
+                if re.search(r'前[三3]季|前[二2]季|上半年|累計',subject) and not re.search(r'單季|最近一季',str(r.get('detail') or '')):
+                    invalid_quarters.add((ticker,period,day))
+                continue
             direct.setdefault((ticker,period),[]).append(dict(value=value,date=day,time=str(r.get('publish_time') or ''),correction=bool(__import__('re').search(r'主旨\s*(?:\(?更正\)?|更新)|(?:^|\s)(?:更新|\(更正\))因',str(r.get('subject') or ''))),source=filename,url=r.get('source_url') or ''))
     resolved=[]
     for metric in METRICS:
         by_period=collections.defaultdict(list)
         for row in actual_rows[metric]:
+            if metric=='eps' and row['kind']=='quarterly' and row['actual_source'].startswith('self_reports') and (row['ticker'],row['actual_period'],row['announcement_date']) in invalid_quarters:
+                continue
             by_period[(row['ticker'],row['kind'],row['actual_period'])].append(row)
         clean=[]
         for key,records in by_period.items():

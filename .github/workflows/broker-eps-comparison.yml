@@ -53,6 +53,16 @@ jobs:
         run: |
           PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_shared_*.py'
           python scripts/publish_shared_financial.py --output data
+      - name: Verify shared catalog and preserve legacy comparisons
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('data/shared_financial_v1.json').read_text())
+          assert j['schema']==1 and j['items']
+          assert all(r['source']=='broker' for r in j['items'])
+          assert j['comparison_mode']=='shadow'
+          PY
       - name: Commit only changed financial data
         run: |
           set -euo pipefail
