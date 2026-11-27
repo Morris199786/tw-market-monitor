@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/broker-eps-comparison.yml'
+      - 'assets/broker_financial_comparison.js'
       - 'scripts/publish_shared_financial.py'
       - 'scripts/shared_actual_eps.py'
       - 'scripts/test_shared_actual_eps.py'
@@ -42,6 +43,7 @@ jobs:
       - run: python scripts/publish_shared_financial.py --output /tmp/shared-financial-shadow
       - run: node --check assets/shared_financial_catalog.js
       - run: node scripts/test_shared_financial_catalog_adapter.cjs
+      - run: node --check assets/broker_financial_comparison.js
       - name: Verify publication contract
         run: |
           python - <<'PY'
