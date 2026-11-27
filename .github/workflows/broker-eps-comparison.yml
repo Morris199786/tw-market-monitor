@@ -49,14 +49,18 @@ jobs:
           PY
       - name: Publish EPS data offline (zero API calls, zero PDF reparse)
         run: python scripts/broker_eps_safe_publish.py
-      - name: Commit only changed EPS data
+      - name: Validate and publish shared financial catalog
+        run: |
+          PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_shared_*.py'
+          python scripts/publish_shared_financial.py --output data
+      - name: Commit only changed financial data
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json data/broker_operating_margin_comparisons.json data/broker_eps_compare_audit.json
+          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json data/broker_operating_margin_comparisons.json data/broker_eps_compare_audit.json data/shared_financial_v1.json data/shared_financial_status.json
           if git diff --cached --quiet; then echo 'No EPS changes'; exit 0; fi
-          git commit -m 'Publish broker EPS comparisons offline'
+          git commit -m 'Publish broker comparisons and shared financial catalog offline'
           # The publisher may touch other tracked files. Those uncommitted
           # changes must not block rebase or accidentally enter the commit.
           git restore --worktree .

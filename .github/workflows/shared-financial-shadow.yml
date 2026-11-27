@@ -3,6 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - '.github/workflows/broker-eps-comparison.yml'
       - 'scripts/publish_shared_financial.py'
       - 'scripts/shared_actual_eps.py'
       - 'scripts/test_shared_actual_eps.py'
@@ -41,6 +42,23 @@ jobs:
       - run: python scripts/publish_shared_financial.py --output /tmp/shared-financial-shadow
       - run: node --check assets/shared_financial_catalog.js
       - run: node scripts/test_shared_financial_catalog_adapter.cjs
+      - name: Verify publication contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/shared-financial-shadow')
+          j=json.loads((p/'shared_financial_v1.json').read_text())
+          assert j['schema']==1 and j['mode']=='verified_additive'
+          assert j['comparison_mode']=='shadow'
+          assert len(j['items'])>0
+          assert set(j['comparisons'])=={'eps','gross_margin','operating_margin'}
+          a=json.loads((p/'comparison-audit.json').read_text())
+          for r in a['unresolved_actual_records']:
+              print('UNRESOLVED_ACTUAL',r['key'],[(x['actual_'+r['metric']],x['announcement_date'],x['actual_source']) for x in r['records']])
+          for r in a['quarantined']:
+              print('QUARANTINED_FORECAST',r['key'],[(x['value'],x['report_date'],x['origin'],x.get('evidence','')[:220]) for x in r['rows']])
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: shared-financial-shadow
