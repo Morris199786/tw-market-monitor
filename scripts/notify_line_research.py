@@ -37,26 +37,24 @@ def category(row):
 def published(root):
     cache = read(root, 'data/research_ai_cache.json')
     rendered = read(root, 'data/research_ai_render.json').get('items', {})
-    from meeting_identity import event_index, event_key
+    from export_research_metrics import eligible_line, successful_results
     rows = read(root, 'data/research_meta.json')
-    events = event_index(root, cache, rows)
-    ledger = read(root, LEDGER) if (root / LEDGER).exists() else {'deliveries': {}}
-    known = {cache[rid].get('meeting_event_key') for rid in ledger['deliveries'] if rid in cache and isinstance(cache[rid], dict)}
-    delivered_meetings = {event_key(r) for r in rows if str(r.get('id')) in ledger['deliveries'] and event_key(r)}
+    successes = successful_results(cache)
     result = {}
+    missing = []
     for row in rows:
-        key = event_key(row)
-        if key and (key in known or any(__import__('meeting_identity')._same_event(key, k) for k in delivered_meetings)):
+        if not eligible_line(row):
             continue
-        rid = str(row.get('id', ''))
-        if not rid.startswith('line-') or not category(row):
+        rid = str(row['id'])
+        if not (row.get('ai_processed') or rid in successes):
             continue
-        entries = [cache.get(k, {}) for k in (rid + '::gpt-5.6-luna-full-article-v2', rid, rid + '::gpt-5.6-luna-trial-v1')]
         content = rendered.get(rid, {}).get('content', {})
-        if any(isinstance(e, dict) and e.get('status') == 'success' and e.get('result') == content for e in entries) and (content.get('blocks') or content.get('companies')):
+        if any(e['result'] == content for e in successes.get(rid, [])):
             result[rid] = dict(row, telegram_summary=content.get("summary", []))
-            if key:
-                known.add(key)
+        else:
+            missing.append(rid)
+    if missing:
+        raise RuntimeError('RESEARCH_TELEGRAM_EXPORT_MISSING: ' + ','.join(missing))
     return result
 
 
@@ -146,7 +144,7 @@ def digest_entry(rid, row, number):
 
 def batches(rows, state):
     pending = [(rid, row) for rid, row in rows.items() if rid not in state['deliveries']]
-    meetings = [(rid, row) for rid, row in pending if category(row) == '法說／訪談']
+    meetings = pending
     chunks, current = [], []
     for rid, row in meetings:
         entry = digest_entry(rid, row, len(current) + 1)
@@ -159,7 +157,8 @@ def batches(rows, state):
     if current:
         chunks.append(current)
     for i, chunk in enumerate(chunks, 1):
-        heading = f'📊 法說／訪談彙整｜新增 {len(meetings)} 篇'
+        label = '法說／訪談' if all(category(row) == '法說／訪談' for _, row in meetings) else '研究報告'
+        heading = f'📊 {label}彙整｜新增 {len(meetings)} 篇'
         if len(chunks) > 1:
             heading += f'（{i}/{len(chunks)}）'
         yield [x[0] for x in chunk], heading + '\n\n' + '\n\n'.join(x[1] for x in chunk), SITE + '#reports'
@@ -212,6 +211,11 @@ def main():
     if not os.environ.get('TELEGRAM_BOT_TOKEN') or not os.environ.get('TELEGRAM_CHAT_ID'):
         raise RuntimeError('Telegram secrets missing; no delivery claims created')
     deliver(rows, state, checkpoint, send_telegram)
+    unresolved = {rid: state['deliveries'].get(rid, {}).get('status', 'missing')
+                  for rid in rows if state['deliveries'].get(rid, {}).get('status') not in ('sent', 'baseline')}
+    print('RESEARCH_TELEGRAM_AUDIT', json.dumps({'eligible': len(rows), 'sent': sum(state['deliveries'].get(rid, {}).get('status') == 'sent' for rid in rows), 'baseline': sum(state['deliveries'].get(rid, {}).get('status') == 'baseline' for rid in rows), 'unresolved': unresolved}, ensure_ascii=False))
+    if unresolved:
+        raise RuntimeError('RESEARCH_TELEGRAM_UNCONFIRMED: ' + json.dumps(unresolved, ensure_ascii=False))
 
 
 if __name__ == '__main__':
