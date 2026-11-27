@@ -355,6 +355,16 @@ def saved_metric_rows(report, metric):
                     continue
                 if re.search(r'年增|季增|上修|下修|調升|調降|由.+至|從.+到|區間|range|同比|環比',clause,re.I):
                     continue
+                # Parallel metric/value lists must be paired by position, never nearest label.
+                both = re.search(r'(毛利率|營業利益率|營益率|營業利潤率)\s*(?:與|及|和|、)\s*(毛利率|營業利益率|營益率|營業利潤率)\s*(?:分別)?\s*(?:為|預估為|約)?\s*([+-]?\d+(?:\.\d+)?)\s*%\s*(?:與|及|和|、)\s*([+-]?\d+(?:\.\d+)?)\s*%',clause)
+                if both:
+                    for label,raw_value in ((both.group(1),both.group(3)),(both.group(2),both.group(4))):
+                        if re.fullmatch(pattern,label,re.I):
+                            yield period,float(raw_value),'text:'+field
+                    continue
+                # Unresolved multi-metric lists are not safe to interpret.
+                if re.search(r'毛利率\s*(?:與|及|和|、)\s*(?:營業利益率|營益率|營業利潤率)|(?:營業利益率|營益率|營業利潤率)\s*(?:與|及|和|、)\s*毛利率',clause):
+                    continue
                 suffix=r'\s*%' if metric!='eps' else r'\s*(?:元|NTD|TWD)?'
                 for m in re.finditer('(?:'+pattern+r')\s*(?:預估|預測|估計|estimate|forecast)?\s*(?:為|達|約|:|：|=|of|at)?\s*([+-]?\d+(?:\.\d+)?)'+suffix,clause,re.I):
                     prefix=clause[:m.start()]
