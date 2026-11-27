@@ -52,6 +52,12 @@ def build(data):
             if not rid: rejected['missing_report_id']+=1;continue
             coverage[kind]+=1
             for row in report.get('financial_forecasts') or []:add(rid,report,row,'structured',kind)
+            # Add saved table/text evidence; never reparse PDF or call AI.
+            from shared_margin_extract import saved_metric_rows
+            for metric in ('gross_margin','operating_margin'):
+                for period,value,evidence in saved_metric_rows(report,metric):
+                    if evidence=='structured':continue
+                    add(rid,report,dict(period=period,metric=metric,value=value,unit='%',type='forecast',source='broker',scope='company',evidence=evidence),'saved_margin_fallback',kind)
             for row in report.get('quarterly_eps') or []:
                 if isinstance(row,dict):add(rid,report,{**row,'metric':'eps','value':row.get('eps'),'unit':'元/股','scope':row.get('scope') or 'company'},'saved_quarterly_eps',kind)
     for rid,report in read(data/'research_financial_forecasts.json').get('reports',{}).items():

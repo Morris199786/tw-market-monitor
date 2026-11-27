@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'scripts/shared_financial_catalog.py'
+      - 'scripts/shared_margin_extract.py'
+      - 'scripts/test_shared_margin_extract.py'
       - 'scripts/test_shared_financial_catalog.py'
       - '.github/workflows/shared-financial-shadow.yml'
       - 'scripts/shared_financial_shadow_compare.py'
@@ -20,6 +22,7 @@ jobs:
           python-version: '3.12'
       - run: python -m py_compile scripts/shared_financial_catalog.py scripts/test_shared_financial_catalog.py
       - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_financial_catalog.py
+      - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_margin_extract.py
       - run: python scripts/shared_financial_catalog.py --output /tmp/shared-financial-shadow
       - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_financial_shadow_compare.py
       - run: python scripts/shared_financial_shadow_compare.py --output /tmp/shared-financial-shadow
