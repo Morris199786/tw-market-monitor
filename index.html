@@ -446,6 +446,7 @@ html[data-theme="dark"] #marketMonitor .mm-logic-content{background:#22272e!impo
     return seen.size;
   }
   async function getJson(url) {
+    if(window.fetchSharedJson && ['./data/reports.json','./data/research_meta.json'].includes(url))return window.fetchSharedJson(url);
     const response = await fetch(url, {cache:'no-store'});
     if (!response.ok) throw new Error(url + ' HTTP ' + response.status);
     return response.json();
