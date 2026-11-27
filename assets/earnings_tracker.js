@@ -327,6 +327,9 @@ async function load(force = false) {
     return loadingPromise;
   }
 
+  // Independent supplements download concurrently; merge precedence stays unchanged.
+  const recoveredRequest = fetch('./data/quarterly_earnings_recovered.json', {cache:'no-store'}).catch(error=>{console.warn('歷史公告補回資料讀取失敗',error);return null;});
+  const opmRequest = fetch('./data/quarterly_opm.json?v=' + Date.now(), {cache:'no-store'}).catch(error=>{console.warn('OPM 補充資料暫不可用',error);return null;});
   loadingPromise =
     fetch(
       `./data/quarterly_earnings.json?v=${Date.now()}`,
@@ -349,8 +352,8 @@ async function load(force = false) {
 
       // Recover previously captured announcements; current records always win.
       try {
-        const response = await fetch('./data/quarterly_earnings_recovered.json', {cache:'no-store'});
-        if (response.ok) {
+        const response = await recoveredRequest;
+        if (response?.ok) {
           const seed = await response.json();
           const merged = new Map();
           for (const row of [...(seed.reports||[]), ...(d.reports||[])]) {
@@ -364,8 +367,8 @@ async function load(force = false) {
 
       // OPM is additive: never replace existing EPS/GM or announcement records.
       try {
-        const response = await fetch('./data/quarterly_opm.json?v=' + Date.now(), {cache:'no-store'});
-        if (response.ok) {
+        const response = await opmRequest;
+        if (response?.ok) {
           const opm = await response.json();
           if (opm.schema === 1 && opm.metrics) {
             const prevPeriod = p => {const m=String(p||'').match(/^(\d{4})-Q([1-4])$/);return m ? (+m[2]>1 ? `${m[1]}-Q${+m[2]-1}` : `${+m[1]-1}-Q4`) : '';};
