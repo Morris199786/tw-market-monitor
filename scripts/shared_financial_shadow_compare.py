@@ -54,7 +54,7 @@ def reconcile(catalog,data):
     # Do not choose among conflicting disclosed EPS values automatically.
     # Retain all source records in the audit, suppress ambiguous comparisons.
     actual_conflicts=[]
-    from shared_actual_eps import explicit_quarter
+    from shared_actual_eps import explicit_quarter, select_disclosure
     direct={}
     for filename in ('self_reports.json','self_reports_history.json'):
         for r in load(data/filename,{}).get('items',[]):
@@ -64,7 +64,7 @@ def reconcile(catalog,data):
             if r.get('source')!='mops_ajax' or not str(r.get('source_url') or '').startswith('https://mopsov.twse.com.tw/'):continue
             value=explicit_quarter(r.get('detail'),period)
             if value is None:continue
-            direct.setdefault((ticker,period),[]).append(dict(value=value,date=day,source=filename,url=r.get('source_url') or ''))
+            direct.setdefault((ticker,period),[]).append(dict(value=value,date=day,time=str(r.get('publish_time') or ''),correction=bool(__import__('re').search(r'主旨\s*(?:\(?更正\)?|更新)|(?:^|\s)(?:更新|\(更正\))因',str(r.get('subject') or ''))),source=filename,url=r.get('source_url') or ''))
     resolved=[]
     for metric in METRICS:
         by_period=collections.defaultdict(list)
@@ -77,7 +77,7 @@ def reconcile(catalog,data):
                 actual_conflicts.append({'metric':metric,'key':key,'records':records})
                 if metric=='eps' and key[1]=='quarterly':
                     official=merged.get((key[0],key[2]),{})
-                    explicit=direct.get((key[0],key[2]),[])
+                    explicit=select_disclosure(direct.get((key[0],key[2]),[]))
                     values={x['value'] for x in explicit}
                     basis=official.get('eps_basis')
                     # Direct official single-quarter report is preferred. Otherwise a
