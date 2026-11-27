@@ -99,7 +99,6 @@ jobs:
             fi
           fi
       - name: Notify newly published LINE research on Telegram
-        continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -284,7 +283,6 @@ jobs:
           fi
       - name: Notify newly published LINE research on Telegram
         if: ${{ inputs.run_mode != 'check' }}
-        continue-on-error: true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
