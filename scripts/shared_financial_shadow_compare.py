@@ -54,6 +54,17 @@ def reconcile(catalog,data):
     # Do not choose among conflicting disclosed EPS values automatically.
     # Retain all source records in the audit, suppress ambiguous comparisons.
     actual_conflicts=[]
+    from shared_actual_eps import explicit_quarter
+    direct={}
+    for filename in ('self_reports.json','self_reports_history.json'):
+        for r in load(data/filename,{}).get('items',[]):
+            ticker=str(r.get('ticker') or ''); period=str(r.get('quarter_period') or '')
+            day=valid_date(r.get('publish_date'))
+            if not TICKER.fullmatch(ticker) or not QUARTER.fullmatch(period) or not day:continue
+            value=explicit_quarter(r.get('detail'),period)
+            if value is None:continue
+            direct.setdefault((ticker,period),[]).append(dict(value=value,date=day,source=filename,url=r.get('source_url') or ''))
+    resolved=[]
     for metric in METRICS:
         by_period=collections.defaultdict(list)
         for row in actual_rows[metric]:
@@ -63,6 +74,22 @@ def reconcile(catalog,data):
             vals={round(r['actual_'+metric],6) for r in records}
             if len(vals)>1:
                 actual_conflicts.append({'metric':metric,'key':key,'records':records})
+                if metric=='eps' and key[1]=='quarterly':
+                    official=merged.get((key[0],key[2]),{})
+                    explicit=direct.get((key[0],key[2]),[])
+                    values={x['value'] for x in explicit}
+                    basis=official.get('eps_basis')
+                    # Direct official single-quarter report is preferred. Otherwise a
+                    # unique directly stated quarter from saved company disclosure.
+                    chosen=number(official.get('eps')) if basis=='reported_single' else next(iter(values)) if len(values)==1 else None
+                    if chosen is not None:
+                        day=valid_date(official.get('publish_date')) if basis=='reported_single' else min(x['date'] for x in explicit if x['value']==chosen)
+                        # Do not backdate later direct disclosures to an earlier estimated figure.
+                        if day:
+                            source=official.get('_source','quarterly_earnings.json') if basis=='reported_single' else 'direct_mops_quarter'
+                            item=dict(ticker=key[0],kind='quarterly',actual_period=key[2],period=key[2],announcement_date=day,actual_eps=chosen,actual_source=source)
+                            clean.append(item)
+                            resolved.append(dict(key=key,value=chosen,date=day,basis=source,evidence=explicit,records=records))
                 continue
             # Earliest verified disclosure prevents look-ahead and duplicate events.
             clean.append(min(records,key=lambda r:r['announcement_date']))
@@ -88,7 +115,7 @@ def reconcile(catalog,data):
         # Old EPS stays separately available; differences are not permission to delete.
         results[metric]={'items':list(matches.values()),'added':added,'removed_or_changed':removed}
         stats[metric]={'actual_rows':len(actual_rows[metric]),'previous':len(old),'shadow':len(matches),'unchanged':len(matches.keys()&old.keys()),'added':len(added),'removed_or_changed':len(removed),'excluded_same_day':same,'excluded_late':late}
-    return results,{'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined,'actual_conflict_count':len(actual_conflicts),'actual_conflicts':actual_conflicts}
+    return results,{'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined,'actual_conflict_count':len(actual_conflicts),'actual_conflicts':actual_conflicts,'resolved_actual_conflicts':len(resolved),'resolved_actual_records':resolved}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--data',type=Path,default=Path(__file__).resolve().parents[1]/'data')
@@ -100,5 +127,5 @@ def main():
     a.output.mkdir(parents=True,exist_ok=True)
     for name,obj in [('comparison-shadow.json',results),('comparison-audit.json',audit)]:
         (a.output/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
-    print(json.dumps({k:v for k,v in audit.items() if k not in ('quarantined','actual_conflicts')},ensure_ascii=False,indent=2))
+    print(json.dumps({k:v for k,v in audit.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records')},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()
