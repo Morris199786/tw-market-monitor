@@ -1,10 +1,10 @@
 /* Additive financial catalog. Missing/stale/invalid input leaves original data unchanged. */
 (function(root){
 'use strict';
-const id=r=>String(r?.source_file_id||r?.id||'');
+const id=r=>String(r?.source_file_id||r?.report_id||r?.id||'');
 const day=r=>String(r?.date||r?.report_date||'').slice(0,10).replaceAll('/','-');
 const key=r=>[r.period,r.metric].join('|');
-const safe=r=>r&&r.type==='forecast'&&r.source==='broker'&&r.scope==='company'&&r.needs_review===false&&typeof r.value==='number'&&Number.isFinite(r.value)&&typeof r.unit==='string'&&r.unit&&typeof r.evidence==='string'&&r.evidence&&/^20\d{2}(?:-Q[1-4])?$/.test(r.period);
+const safe=r=>r&&r.type==='forecast'&&r.source==='broker'&&r.scope==='company'&&r.needs_review===false&&typeof r.value==='number'&&Number.isFinite(r.value)&&typeof r.unit==='string'&&r.unit&&((typeof r.evidence==='string'&&r.evidence)||(r.origin==='legacy_eps'&&r.trust==='legacy_baseline'&&typeof r.source_url==='string'&&r.source_url.startsWith('https://')))&&/^20\d{2}(?:-Q[1-4])?$/.test(r.period);
 function index(j){
  if(j?.schema!==1||j.mode!=='verified_additive'||!Array.isArray(j.items))return null;
  const m=new Map();

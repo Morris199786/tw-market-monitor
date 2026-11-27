@@ -31,6 +31,31 @@ def payload(data):
             rows=tables
         r=rows[0]
         safe.append({k:r[k] for k in ('report_id','ticker','report_date','period','metric','value','unit','type','source','scope','evidence','needs_review','origin')})
+    # Include the historical EPS forecasts actually used by comparison, with explicit
+    # legacy status and provenance, never present them as newly source-verified.
+    by_key={(r['report_id'],r['ticker'],r['period'],r['metric']):r for r in safe}
+    raw={}
+    for r in catalog['items']:
+        if r['comparison_candidate'] and not r['needs_review']:
+            raw.setdefault((r['report_id'],r['ticker'],r['period'],r['metric'],r['value']),[]).append(r)
+    for metric,result in results.items():
+        for row in result['items']:
+            k=(row['report_id'],row['ticker'],row['period'],metric)
+            value=row['forecast_'+metric]
+            if k in by_key:
+                if by_key[k]['value']!=value:raise ValueError('Forecast consumer mismatch: '+str(k))
+                continue
+            candidates=raw.get((*k,value),[])
+            if not candidates:raise ValueError('Comparison missing source fact: '+str(k))
+            r=next((x for x in candidates if x['origin']!='legacy_eps' and x['evidence']),candidates[0])
+            fact={k:r[k] for k in ('report_id','ticker','report_date','period','metric','value','unit','type','source','scope','evidence','needs_review','origin')}
+            fact['source_url']=r['source_url']
+            fact['trust']='legacy_baseline' if r['origin']=='legacy_eps' else 'comparison_candidate'
+            if fact['trust']=='legacy_baseline' and not fact['source_url']:raise ValueError('Legacy forecast without source')
+            safe.append(fact)
+            by_key[k]=fact
+    for r in safe:
+        r.setdefault('trust','verified_report')
     safe.sort(key=lambda r:(r['report_id'],r['period'],r['metric']))
     # Comparisons remain explicitly marked as shadow until actual values and UI are reconciled.
     return {'schema':1,'mode':'verified_additive','comparison_mode':'shadow','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe)}
