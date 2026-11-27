@@ -251,11 +251,12 @@ async function optional(path){try{const res=await fetch(path,{cache:'no-store'})
 async function sources(){if(!cached)cached=Promise.all([optional('./data/business_reports_ai.json'),optional('./data/business_reports.json')]).then(([a,i])=>businessRows(a,i));return cached;}
 async function required(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw Error(path+' HTTP '+r.status);return r.json()}
 function originalEPS(){return baseEps ||= required('./data/broker_eps_forecasts.json')}
-function reports(){return mergedReports ||= Promise.all([required('./data/reports.json'),sources(),originalEPS().catch(()=>({items:[]}))]).then(([r,b,e])=>mergeReports(r,b,e))}
+function reports(){return mergedReports ||= Promise.all([required('./data/reports.json'),sources(),originalEPS().catch(()=>({items:[]})),root.SharedFinancialCatalog?.load?.()||Promise.resolve(null)]).then(([r,b,e,m])=>{const merged=mergeReports(r,b,e);return {...merged,items:merged.items.map(x=>root.SharedFinancialCatalog?.adapt?.(x,m)||x)};})}
 async function eps(){const j=await originalEPS();try{return mergeEPS(j,(await reports()).items)}catch(e){console.warn('Business EPS unavailable; keeping existing EPS',e);return j}}
 root.BusinessVisualMerge={reports,eps,businessRows,mergeReports,mergeEPS};
 })(typeof window==='undefined'?globalThis:window);
 </script>
+<script src="./assets/shared_financial_catalog.js?v=20261127-v1"></script>
 </head><body>
 <script id="broker-resize-v2">(()=>{'use strict';
  let raf=0,last=0;

@@ -43,7 +43,8 @@ def build(data):
             typ={'A':'actual','E':'forecast','F':'forecast'}.get(str(row.get('status') or '').upper(),'unknown')
             source='unknown' # meeting/Excel status alone does not establish author
         eligible=(kind in ('broker','business','legacy_eps') and bool(re.fullmatch(r'\d{4}',ticker)) and bool(re.fullmatch(r'20\d{2}-\d{2}-\d{2}',day)) and bool(broker) and typ=='forecast' and source=='broker' and scope in ('company','consolidated') and '-Q' in period and metric in ('eps','gross_margin','operating_margin') and (bool(evidence) or origin=='legacy_eps') and (metric=='eps' or unit in ('%','百分比','percent','pct')))
-        rows.append(dict(report_id=rid,report_kind=kind,origin=origin,ticker=ticker,company=report.get('name') or report.get('company') or '',report_date=day,broker=broker,source_url=report.get('source_url') or report.get('url') or '',period=period,metric=metric,metric_name=str(row.get('metric_name') or ''),value=value,unit=unit,type=typ or 'unknown',source=source or 'unknown',scope=scope or 'unknown',evidence=evidence,comparison_candidate=eligible))
+        rows.append(dict(report_id=rid,report_kind=kind,origin=origin,ticker=ticker,company=report.get('name') or report.get('company') or '',report_date=day,broker=broker,source_url=report.get('source_url') or report.get('url') or '',period=period,metric=metric,metric_name=str(row.get('metric_name') or ''),value=value,unit=unit,type=typ or 'unknown',source=source or 'unknown',scope=scope or 'unknown',evidence=evidence,verified_report=bool(report.get('shared_verified')),comparison_candidate=eligible))
+    current_business={str(r.get('id') or ''):str(r.get('source_fingerprint') or r.get('modified_time') or '') for r in read(data/'business_reports.json').get('items',[])} if (data/'business_reports.json').exists() else {}
     for filename,kind in [('reports.json','broker'),('business_reports_ai.json','business')]:
         for report in read(data/filename).get('items',[]):
             if not isinstance(report,dict):continue
@@ -51,6 +52,10 @@ def build(data):
             rid=str(report.get('source_file_id') or report.get('id') or '')
             if not rid: rejected['missing_report_id']+=1;continue
             coverage[kind]+=1
+            verified=(report.get('validation_status')=='verified' and report.get('report_type')=='company')
+            if kind=='business':
+                verified=verified and bool(report.get('source_fingerprint')) and current_business.get(str(report.get('id') or ''))==str(report.get('source_fingerprint'))
+            report={**report,'shared_verified':verified}
             for row in report.get('financial_forecasts') or []:add(rid,report,row,'structured',kind)
             # Add saved table/text evidence; never reparse PDF or call AI.
             from shared_margin_extract import saved_metric_rows
@@ -79,7 +84,7 @@ def build(data):
         for value in sorted(values):
             same=[r for r in group if r['value']==value]
             item=dict(same[0])
-            item['provenance']=[{k:r[k] for k in ('origin','report_kind','evidence','source_url')} for r in same]
+            item['provenance']=[{k:r[k] for k in ('origin','report_kind','evidence','source_url','verified_report')} for r in same]
             item['needs_review']=conflict
             item['comparison_candidate']=not conflict and any(r['comparison_candidate'] for r in same)
             output.append(item)

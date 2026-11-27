@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict');
+const {index,adapt}=require('../assets/shared_financial_catalog.js');
+const r={id:'one',ticker:'1590',date:'2026-10-12',validation_status:'verified',report_type:'company',financial_forecasts:[],visualizations:[{type:'line'}]};
+const fact={report_id:'one',ticker:'1590',report_date:'2026-10-12',period:'2026-Q3',metric:'operating_margin',value:14.5,unit:'%',type:'forecast',source:'broker',scope:'company',needs_review:false,evidence:'saved text',origin:'saved_margin_fallback'};
+const m=rows=>index({schema:1,mode:'verified_additive',items:rows});
+assert.equal(adapt(r,null),r);
+assert.equal(adapt(r,m([{...fact,ticker:'9999'}])),r);
+assert.equal(adapt(r,m([{...fact,report_date:'2026-10-11'}])),r);
+assert.equal(adapt(r,m([fact,{...fact,value:48.5}])),r);
+const a=adapt(r,m([fact]));
+assert.equal(a.financial_forecasts[0].value,14.5);
+assert.equal(a.visualizations,r.visualizations);
+assert.equal(r.financial_forecasts.length,0);
+const prior={...r,financial_forecasts:[{...fact,value:15}]};
+assert.equal(adapt(prior,m([fact])),prior);
+console.log('Additive catalog adapter tests passed');

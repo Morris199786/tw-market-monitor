@@ -3,6 +3,11 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'scripts/publish_shared_financial.py'
+      - 'assets/shared_financial_catalog.js'
+      - 'broker_research.html'
+      - 'index.html'
+      - 'assets/business_reports.js'
       - 'scripts/shared_financial_catalog.py'
       - 'assets/shared_financial_preview.js'
       - 'scripts/test_shared_financial_preview.cjs'
@@ -30,6 +35,9 @@ jobs:
       - run: python scripts/shared_financial_shadow_compare.py --output /tmp/shared-financial-shadow
       - run: node --check assets/shared_financial_preview.js
       - run: node scripts/test_shared_financial_preview.cjs
+      - run: python scripts/publish_shared_financial.py --output /tmp/shared-financial-shadow
+      - run: node --check assets/shared_financial_catalog.js
+      - run: node scripts/test_shared_financial_catalog_adapter.cjs
       - uses: actions/upload-artifact@v4
         with:
           name: shared-financial-shadow
