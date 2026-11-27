@@ -30,9 +30,13 @@ def precise_equivalent(group):
 
 def build(data):
     rows=[]
+    raw_records=[]
     rejected=collections.Counter()
     coverage=collections.Counter()
     def add(rid,report,row,origin,kind):
+        # Preserve exact AI output before normalization, including ranges and unknown periods.
+        if origin in ('structured','saved_quarterly_eps'):
+            raw_records.append(dict(report_id=rid,report_kind=kind,ticker=report.get('ticker'),company=report.get('name') or report.get('company'),report_date=report.get('date') or report.get('report_date'),broker=report.get('broker'),source_url=report.get('source_url') or report.get('url'),origin=origin,record=row))
         if not isinstance(row,dict):
             rejected['invalid_row']+=1;return
         period=str(row.get('period') or '').strip().upper()
@@ -43,7 +47,7 @@ def build(data):
             if isinstance(row.get('value'),bool) or not math.isfinite(value): raise ValueError()
         except (ValueError,TypeError):
             rejected['invalid_number']+=1;return
-        if not PERIOD.fullmatch(period) or not metric:
+        if not period or not metric:
             rejected['missing_period_or_metric']+=1;return
         typ=str(row.get('type') or '').lower()
         source=str(row.get('source') or '').lower()
@@ -59,7 +63,7 @@ def build(data):
         if origin=='meeting_saved':
             typ={'A':'actual','E':'forecast','F':'forecast'}.get(str(row.get('status') or '').upper(),'unknown')
             source='unknown' # meeting/Excel status alone does not establish author
-        eligible=(kind in ('broker','business','legacy_eps') and bool(re.fullmatch(r'\d{4}',ticker)) and bool(re.fullmatch(r'20\d{2}-\d{2}-\d{2}',day)) and bool(broker) and typ=='forecast' and source=='broker' and scope in ('company','consolidated') and '-Q' in period and metric in ('eps','gross_margin','operating_margin') and (bool(evidence) or origin=='legacy_eps') and (metric=='eps' or unit in ('%','百分比','percent','pct')))
+        eligible=(kind in ('broker','business','legacy_eps') and bool(re.fullmatch(r'\d{4}',ticker)) and bool(re.fullmatch(r'20\d{2}-\d{2}-\d{2}',day)) and bool(broker) and typ=='forecast' and source=='broker' and scope in ('company','consolidated') and bool(re.fullmatch(r'20\d{2}-Q[1-4]',period)) and metric in ('eps','gross_margin','operating_margin') and (bool(evidence) or origin=='legacy_eps') and (metric=='eps' or unit in ('%','百分比','percent','pct')))
         rows.append(dict(report_id=rid,report_kind=kind,origin=origin,ticker=ticker,company=report.get('name') or report.get('company') or '',report_date=day,broker=broker,source_url=report.get('source_url') or report.get('url') or '',period=period,metric=metric,metric_name=str(row.get('metric_name') or ''),value=value,unit=unit,type=typ or 'unknown',source=source or 'unknown',scope=scope or 'unknown',evidence=evidence,verified_report=bool(report.get('shared_verified')),comparison_candidate=eligible))
     current_business={str(r.get('id') or ''):str(r.get('source_fingerprint') or r.get('modified_time') or '') for r in read(data/'business_reports.json').get('items',[])} if (data/'business_reports.json').exists() else {}
     for filename,kind in [('reports.json','broker'),('business_reports_ai.json','business')]:
@@ -114,8 +118,8 @@ def build(data):
             item['comparison_candidate']=not conflict and any(r['comparison_candidate'] for r in same)
             output.append(item)
     output.sort(key=lambda r:(r['report_id'],r['period'],r['metric'],r['type'],r['value']))
-    audit=dict(input_reports=dict(coverage),raw_rows=len(rows),catalog_rows=len(output),conflict_groups=conflicts,precision_resolved=precision_resolved,rejected=dict(rejected),metrics=dict(collections.Counter(r['metric'] for r in output)),comparison_candidates=dict(collections.Counter(r['metric'] for r in output if r['comparison_candidate'])),origins=dict(collections.Counter(r['origin'] for r in output)))
-    return {'schema':1,'mode':'shadow','items':output},audit
+    audit=dict(input_reports=dict(coverage),raw_rows=len(rows),catalog_rows=len(output),raw_ai_records=len(raw_records),conflict_groups=conflicts,precision_resolved=precision_resolved,rejected=dict(rejected),metrics=dict(collections.Counter(r['metric'] for r in output)),comparison_candidates=dict(collections.Counter(r['metric'] for r in output if r['comparison_candidate'])),origins=dict(collections.Counter(r['origin'] for r in output)))
+    return {'schema':1,'mode':'shadow','items':output,'raw_records':raw_records},audit
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--data',type=Path,default=ROOT/'data')
