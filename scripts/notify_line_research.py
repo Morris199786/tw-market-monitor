@@ -190,8 +190,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', choices=['init', 'send', 'preview'])
     args = parser.parse_args()
-    rows = published(ROOT)
     path = ROOT / LEDGER
+    # Existing baseline initialization must not inspect unpublished content.
+    # Export and delivery validation run later, after the workflow publishes.
+    if args.mode == 'init' and path.exists():
+        state = read(ROOT, LEDGER)
+        if state.get('version') != 1 or not isinstance(state.get('deliveries'), dict):
+            raise RuntimeError('Invalid Telegram ledger; refusing to send')
+        print('TELEGRAM_BASELINE_EXISTS', len(state['deliveries']))
+        return
+    rows = published(ROOT)
     if args.mode == 'preview':
         state = read(ROOT, LEDGER) if path.exists() else {'deliveries': {}}
         for ids, text, url in batches(rows, state):
