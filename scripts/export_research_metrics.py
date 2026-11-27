@@ -18,11 +18,34 @@ def load(path, default):
     return json.loads(path.read_text(encoding='utf-8')) if path.is_file() else default
 
 
+def eligible_line(row):
+    # Source/market scope only; a successfully parsed report is not filtered by category.
+    return bool(row.get('id') and row.get('source_kind') == 'line'
+                and str(row.get('market', 'TW')).upper() != 'US')
+
+
+def successful_results(cache):
+    """Index all successful cache versions once; keep existing preference."""
+    results = {}
+    for key, rec in cache.items():
+        if not isinstance(rec, dict) or rec.get('status') != 'success':
+            continue
+        rid = key.split('::', 1)[0]
+        content = rec.get('result')
+        if not isinstance(content, dict) or not (content.get('blocks') or content.get('companies')):
+            continue
+        rank = 0 if key == rid + TRIAL_V2 else 1 if key == rid else 2 if key == rid + TRIAL_V1 else 3
+        results.setdefault(rid, []).append((rank, key, rec))
+    return {rid: [v[2] for v in sorted(vals, key=lambda v: (v[0], v[1]))]
+            for rid, vals in results.items()}
+
+
 def publish_ai():
     manifest = load(ROOT / 'data/research_manifest.json', {})
     if not manifest.get('shards'):
         raise RuntimeError('Research manifest missing; refusing empty publish')
     cache = load(ROOT / 'data/research_ai_cache.json', {})
+    successes = successful_results(cache)
     out = {}
     for shard in manifest['shards']:
         filename = shard.get('file', '')
@@ -33,24 +56,19 @@ def publish_ai():
             raise RuntimeError('Missing shard: ' + filename)
         for row in load(path, {}).get('items', []):
             rid = row.get('id')
-            if not rid or row.get('source_kind') != 'line':
+            if not eligible_line(row):
                 continue
-            typ = str(row.get('original_type') or row.get('type') or '').strip().casefold()
-            # Match the canonical category used by Telegram, including recordings.
-            category = row.get('category', '')
-            if str(row.get('market', 'TW')).upper() == 'US':
-                continue
-            if category != '法說／訪談' and (category or typ not in ('call memo', '法說會')):
-                continue
-            # Preserve existing paid AI output; prefer completed V2 when it exists.
-            for key in (rid + TRIAL_V2, rid, rid + TRIAL_V1):
-                rec = cache.get(key)
-                if not isinstance(rec, dict) or rec.get('status') != 'success':
-                    continue
-                result = rec.get('result')
-                if isinstance(result, dict) and (isinstance(result.get('blocks'), list) or isinstance(result.get('companies'), list)):
-                    out[rid] = {'model': rec.get('model'), 'content': result}
-                    break
+            records = successes.get(rid, [])
+            if records:
+                rec = records[0]
+                out[rid] = {'model': rec.get('model'), 'content': rec['result']}
+    # Fail loudly if an indexed success cannot be published from its shard.
+    meta = load(ROOT / 'data/research_meta.json', [])
+    missing = [str(row['id']) for row in meta if eligible_line(row)
+               and (row.get('ai_processed') or row['id'] in successes)
+               and row['id'] not in out]
+    if missing:
+        raise RuntimeError('RESEARCH_EXPORT_MISSING: ' + ','.join(missing))
     dest = ROOT / 'data/research_ai_render.json'
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_text(json.dumps({'schema': 'research-ai-direct-v2', 'items': out}, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf-8')
