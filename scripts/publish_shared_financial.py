@@ -16,7 +16,7 @@ def payload(data):
         if not r['verified_report'] or r['needs_review'] or r['type']!='forecast' or r['source']!='broker' or r['scope']!='company':continue
         if r['origin'] not in ('structured','saved_margin_fallback'):continue
         if not r['ticker'] or not r['report_date'] or not r['evidence']:continue
-        if r['metric'] not in ('gross_margin','operating_margin','eps','revenue','net_income','operating_profit'):continue
+        if r['metric'] not in ('gross_margin','operating_margin','eps','revenue','net_income','operating_profit','operating_income','net_margin','capex','capital_expenditure'):continue
         if r['metric'] in ('gross_margin','operating_margin') and r['unit'] not in ('%','百分比','percent','pct'):continue
         key=(r['report_id'],r['ticker'],r['period'],r['metric'])
         groups.setdefault(key,[]).append(r)

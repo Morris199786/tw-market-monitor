@@ -256,7 +256,7 @@ async function eps(){const j=await originalEPS();try{return mergeEPS(j,(await re
 root.BusinessVisualMerge={reports,eps,businessRows,mergeReports,mergeEPS};
 })(typeof window==='undefined'?globalThis:window);
 </script>
-<script src="./assets/shared_financial_catalog.js?v=20261127-v1"></script>
+<script src="./assets/shared_financial_catalog.js?v=20261127-v2"></script>
 </head><body>
 <script id="broker-resize-v2">(()=>{'use strict';
  let raf=0,last=0;
@@ -619,7 +619,7 @@ function summaryFinanceFallback(out,r){
   const x=group[0];if(!hasExisting(x.met,x.period))add(out,r,x.met,x.period,x.value,'summary_text',x.unit);
  }
 }
-function extract(r){const out=[];
+function extractLegacy(r){const out=[];
  if(r.source_kind==='business'){
   for(const x of r.financial_forecasts||[])add(out,r,x.metric,x.period,x.value,'structured',x.unit);
   for(const q of r.quarterly_eps||[])if(!(r.financial_forecasts||[]).some(x=>x.metric==='eps'&&x.period===q.period))add(out,r,'eps',q.period,q.eps,'structured','元/股');
@@ -649,6 +649,13 @@ function extract(r){const out=[];
  for(const v of (Array.isArray(r.visualizations)?r.visualizations:[])){if(v.type==='table')fromTable(out,r,v);else if(['bar','line'].includes(v.type)&&Array.isArray(v.labels)){let mk=metric(v.title||v.unit||'');if(mk){v.labels.forEach((p,i)=>add(out,r,mk,p,v.values?.[i],'chart',[v.unit,v.title].filter(Boolean).join(' ')));for(const series of (v.series||[])){let sm=metric(series.name);if(sm)v.labels.forEach((p,i)=>add(out,r,sm,p,series.values?.[i],'chart',[v.unit,series.name,v.title].filter(Boolean).join(' ')))}}}}
  summaryFinanceFallback(out,r);
  return out.filter(x=>x.ticker&&x.broker&&x.date);
+}
+function extract(r){
+ const old=extractLegacy(r), rows=window.SharedFinancialCatalog?.facts?.(r)||[];
+ const verified=[];
+ for(const x of rows){const mk=x.metric==='operating_profit'?'operating_income':x.metric;add(verified,r,mk,x.period,x.value,'structured',x.unit);}
+ const keys=new Set(verified.map(x=>[x.metric,x.period,x.kind].join('|')));
+ return [...verified,...old.filter(x=>!keys.has([x.metric,x.period,x.kind].join('|')))];
 }
 function uniqueReports(rows){let map=new Map();for(const r of rows){let id=String(r.source_file_id||r.report_id||r.id||'');let key=(id&&/^[\w-]{15,}$/.test(id))?id:[code(r.ticker),r.broker,date(r.date||r.report_date),r.source_url||r.title||''].join('|');if(!map.has(key))map.set(key,r)}return [...map.values()]}
 function reportRows(t){let list=uniqueReports(all.filter(r=>code(r.ticker||r.stock_code||r.code)===t&&r.broker));let known=new Set(list.map(r=>String(r.source_file_id||r.report_id||r.id||'')));for(const r of extraEPS.filter(x=>code(x.ticker)===t)){if(known.has(r.report_id))continue;known.add(r.report_id);list.push({...r,date:r.report_date,source_file_id:r.report_id})}return list.sort((a,b)=>date(b.date||b.report_date).localeCompare(date(a.date||a.report_date)))}
