@@ -147,6 +147,7 @@ ${(data.limitations||[]).map(x=>`<p>${esc(x)}</p>`).join('')}</details><p class=
     const id=++request;
     if(!data)root.innerHTML='<p role="status">正在載入模擬投資組合…</p>';
     try {
+      const marketRequest=fetch('./data/market_monitor.json?v='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).catch(()=>null);
       const response=await fetch('./data/ai_portfolio.json?v='+Date.now(),{cache:'no-store'});
       if(!response.ok)throw Error('portfolio not ready');
       let next=await response.json();
@@ -159,8 +160,7 @@ ${(data.limitations||[]).map(x=>`<p>${esc(x)}</p>`).join('')}</details><p class=
         next=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
       }
       if(![1,2].includes(next.schema)||!next.config||!Array.isArray(next.decisions))throw Error('invalid portfolio');
-      const marketResponse=await fetch('./data/market_monitor.json?v='+Date.now(),{cache:'no-store'}).catch(()=>null);
-      const nextMarket=marketResponse?.ok?await marketResponse.json().catch(()=>null):null;
+      const nextMarket=await marketRequest;
       if(id!==request)return;data=next;marketData=nextMarket;render();
     } catch(e) {
       if(id!==request)return;
