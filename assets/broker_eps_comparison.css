@@ -6,3 +6,18 @@ html[data-theme="dark"] .broker-eps-entry { color:#b6c1d1; }
 html[data-theme="dark"] .broker-eps-rate { color:#5eead4; }
 .earnings-detail .broker-eps-comparison { font-size:12px; }
 @media(max-width:520px) { .broker-eps-comparison { font-size:11px; } .broker-eps-entry { column-gap:4px; } }
+
+/* Forecasts directly beneath their own metric, not a separate card. */
+.ec-table tr.broker-inline-row > td { padding:6px 12px 9px; text-align:left; background:rgba(128,140,155,.045); }
+.broker-inline-body,.broker-inline-self { display:flex; flex-direction:column; gap:4px; }
+.broker-inline-self { margin-top:8px; padding-top:6px; border-top:1px solid rgba(128,140,155,.18); }
+.broker-inline-entry { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 8px; font-size:12px; line-height:1.45; font-weight:500; color:#64748b; }
+.broker-inline-source { overflow-wrap:anywhere; min-width:0; }
+.broker-inline-source a { color:inherit; text-decoration:underline; text-underline-offset:2px; }
+.broker-inline-rate { font-size:inherit; color:inherit; font-weight:700; }
+.broker-inline-rate.above { color:#b33343; }
+.broker-inline-rate.below { color:#087c60; }
+html[data-theme="dark"] .broker-inline-entry { color:#b6c1d1; }
+html[data-theme="dark"] .broker-inline-rate.above { color:#fda4af; }
+html[data-theme="dark"] .broker-inline-rate.below { color:#6ee7b7; }
+@media(max-width:520px){.broker-inline-entry{font-size:11px}.ec-table tr.broker-inline-row > td{padding:5px 8px 8px}.broker-inline-self .broker-inline-source{flex-basis:100%}}

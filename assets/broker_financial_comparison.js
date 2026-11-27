@@ -24,47 +24,48 @@
       if(seen.has(id))return false;seen.add(id);return true;
     });
   }
-  function panel(card, groups) {
-    const old=card.querySelector(':scope > .broker-financial-panel');
-    groups=groups.filter(g=>g.rows.length);
-    if(!groups.length){old?.remove();return;}
-    const signature=JSON.stringify(groups);
+  function paint(host, metric, unit, kind, rows, tableRow=false) {
+    if(!host)return;
+    const old=tableRow ? (host.nextElementSibling?.dataset.brokerFor===metric ? host.nextElementSibling : null) : host.querySelector(':scope > .broker-inline');
+    if(!rows.length){old?.remove();return;}
+    const signature=JSON.stringify(rows);
     if(old?.dataset.signature===signature)return;
-    const el=old||document.createElement('details');
-    el.className='broker-financial-panel broker-eps-comparison';
+    const el=old||document.createElement(tableRow?'tr':'div');
+    el.className=tableRow?'broker-inline broker-inline-row':'broker-inline broker-inline-self';
     el.dataset.signature=signature;
-    const count=groups.reduce((n,g)=>n+g.rows.length,0);
-    el.innerHTML='<summary>券商預估比對（'+count+' 筆）</summary>'+groups.map(g=>{
-      const eps=g.metric==='eps';
-      return '<section style="margin-top:8px"><strong>'+esc(g.label)+'</strong>'+g.rows.map(r=>{
-        const actual=Number(r['actual_'+g.metric]), estimate=Number(r['forecast_'+g.metric]);
-        const delta=actual-estimate;
-        const sign=delta>0?'+':'';
-        let result=eps?(estimate>0?(g.kind==='monthly'?'單月／季預估比 ':'季度達成率 ')+(actual/estimate*100).toFixed(1)+'%':'差 '+sign+delta.toFixed(2)+' 元'):'差 '+sign+delta.toFixed(2)+' 個百分點';
-        const url=String(r.source_url||'');
-        const name=esc(r.broker);
-        const link=/^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+name+'</a>':name;
-        return '<div class="broker-eps-entry" style="display:flex;flex-wrap:wrap;gap:4px 10px"><span>'+esc(date(r.report_date))+'</span><span>'+link+'</span><span>預估 '+estimate.toFixed(2)+g.unit+'</span><span class="broker-eps-rate">'+esc(result)+'</span></div>';
-      }).join('')+'</section>';
+    if(tableRow)el.dataset.brokerFor=metric;
+    const html=rows.map(r=>{
+      const actual=Number(r['actual_'+metric]), estimate=Number(r['forecast_'+metric]);
+      const delta=actual-estimate, sign=delta>0?'+':'';
+      const rate=estimate>0 ? (actual/estimate*100).toFixed(1)+'%' : '';
+      const result=metric==='eps' ? (rate?(kind==='monthly'?'單月／季達成率 ':'達成率 ')+rate:'差 '+sign+delta.toFixed(2)+' 元') :
+        (rate?'達成率 '+rate+'｜':'')+'差 '+sign+delta.toFixed(2)+'pp';
+      const url=String(r.source_url||''), name=esc(r.broker);
+      const link=/^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+name+'</a>':name;
+      const tone=delta>0?'above':delta<0?'below':'flat';
+      return '<div class="broker-inline-entry"><span class="broker-inline-source">'+esc(date(r.report_date).slice(5).replace('-','/'))+' '+link+'</span><span class="broker-inline-estimate">預估 '+estimate.toFixed(2)+unit+'</span><strong class="broker-inline-rate '+tone+'">'+esc(result)+'</strong></div>';
     }).join('');
-    if(!old)card.appendChild(el);
+    el.innerHTML=tableRow?'<td colspan="4"><div class="broker-inline-body">'+html+'</div></td>':html;
+    if(!old){if(tableRow)host.after(el);else host.appendChild(el);}
   }
   function render() {
     document.querySelectorAll('#quarterlyEarningsCards .earnings-comparison-card').forEach(card=>{
       const t=card.dataset.brokerTicker,p=card.dataset.brokerPeriod,d=card.dataset.brokerDate;
-      panel(card,specs.map(([metric,,label,unit])=>{
-        const cell=card.querySelector('[data-earnings-metric="'+metric+'"] .ec-current strong');
+      card.querySelector(':scope > .broker-financial-panel')?.remove();
+      specs.forEach(([metric,,label,unit])=>{
+        const row=card.querySelector('[data-earnings-metric="'+metric+'"]');
+        const cell=row?.querySelector('.ec-current strong');
         const v=num(cell?.textContent.replace(/元|%|,/g,'').trim());
-        return {metric,label,unit,kind:'quarterly',rows:lookup(metric,t,p,d,'quarterly',v)};
-      }));
+        paint(row,metric,unit,'quarterly',lookup(metric,t,p,d,'quarterly',v),true);
+      });
     });
     document.querySelectorAll('#selfReportCards .self-report-card').forEach(card=>{
       const t=card.querySelector('.titleline span')?.textContent.trim(),d=date(card.querySelector('.eyebrow')?.textContent);
-      panel(card,[...card.querySelectorAll('[data-broker-kind]')].map(el=>{
+      card.querySelector(':scope > .broker-financial-panel')?.remove();
+      card.querySelectorAll('[data-broker-kind]').forEach(el=>{
         const kind=el.dataset.brokerKind==='monthly'?'monthly':'quarterly';
-        return {metric:'eps',label:kind==='monthly'?'當月 EPS':'上一季 EPS',unit:'元',kind,
-          rows:lookup('eps',t,el.dataset.brokerPeriod,d,kind,num(el.dataset.brokerValue))};
-      }));
+        paint(el,'eps','元',kind,lookup('eps',t,el.dataset.brokerPeriod,d,kind,num(el.dataset.brokerValue)));
+      });
     });
   }
   async function load(){
@@ -86,7 +87,7 @@
     const root=document.querySelector('#selfReports');
     if(!root)return;
     new MutationObserver(changes=>{
-      if(changes.every(x=>x.target.closest?.('.broker-financial-panel')))return;
+      if(changes.every(x=>x.target.closest?.('.broker-inline')))return;
       clearTimeout(timer);timer=setTimeout(render,120);
     }).observe(root,{subtree:true,childList:true});
     load();document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
