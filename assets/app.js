@@ -3614,6 +3614,14 @@ async function init() {
    */
   loadCurrentPage();
 
+  // Warm only heatmap data, without rendering or changing live refresh cadence.
+  const warmHeatmap = () => {
+    if (document.hidden || navigator.connection?.saveData || document.querySelector('#heat.active')) return;
+    void Promise.all([J('./data/heatmap.json'), J('./data/stock_detail.json')]);
+  };
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(warmHeatmap, {timeout: 3500});
+  else setTimeout(warmHeatmap, 1200);
+
   /*
    * 股票簡稱背景載入
    */
