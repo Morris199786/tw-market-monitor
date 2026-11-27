@@ -65,23 +65,14 @@
       return detailPromise;
     }
 
-    detailPromise = fetch(
-      "./data/stock_detail.json?v=" +
-        Date.now(),
-      {
-        cache: "no-store"
-      }
-    )
-      .then(r => {
-        if (!r.ok) {
-          throw new Error(
-            "HTTP " + r.status
-          );
-        }
-
-        return r.json();
-      })
+    detailPromise = (typeof window.J === "function"
+      ? window.J("./data/stock_detail.json")
+      : fetch("./data/stock_detail.json?v=" + Date.now(), {cache:"no-store"}).then(r=>{
+          if(!r.ok)throw new Error("HTTP "+r.status);
+          return r.json();
+        }))
       .then(d => {
+        if (!d || !Object.keys(d).length) throw new Error("個股明細暫時無法載入");
         detailData = d;
         return d;
       })
