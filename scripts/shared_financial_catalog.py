@@ -65,9 +65,6 @@ def build(data):
                     add(rid,report,dict(period=period,metric=metric,value=value,unit='%',type='forecast',source='broker',scope='company',evidence=evidence),'saved_margin_fallback',kind)
             for row in report.get('quarterly_eps') or []:
                 if isinstance(row,dict):add(rid,report,{**row,'metric':'eps','value':row.get('eps'),'unit':'元/股','scope':row.get('scope') or 'company'},'saved_quarterly_eps',kind)
-    for rid,report in read(data/'research_financial_forecasts.json').get('reports',{}).items():
-        coverage['meeting_saved']+=1
-        for row in report.get('forecasts') or []:add(rid,report,row,'meeting_saved','meeting')
     for row in read(data/'broker_eps_forecasts.json').get('items',[]):
         rid=str(row.get('report_id') or '')
         if rid:add(rid,row,{**row,'metric':'eps','value':row.get('eps')},'legacy_eps','legacy_eps')

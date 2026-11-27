@@ -28,12 +28,12 @@ function additions(report,m){
  return [...grouped.values()].filter(g=>g.every(x=>x.value===g[0].value&&x.unit===g[0].unit)).map(g=>g[0]);
 }
 function adapt(report,m){const rows=additions(report,m);return rows.length?{...report,financial_forecasts:[...(report.financial_forecasts||[]),...rows]}:report;}
-let pending,current=null,meetingItems=[];
-async function load(){if(!pending)pending=(async()=>{try{const res=await fetch('./data/shared_financial_v1.json',{cache:'no-store'});if(!res.ok)return null;const payload=await res.json();current=index(payload);meetingItems=current&&Array.isArray(payload.meeting_items)?payload.meeting_items:[];return current;}catch(e){return null;}})();return pending;}
+let pending,current=null;
+async function load(){if(!pending)pending=(async()=>{try{const res=await fetch('./data/shared_financial_v1.json',{cache:'no-store'});if(!res.ok)return null;const payload=await res.json();current=index(payload);return current;}catch(e){return null;}})();return pending;}
 function facts(report,m=current){
  if(!report||!(m instanceof Map))return [];
  return (m.get(id(report))||[]).filter(r=>String(r.ticker)===String(report.ticker)&&r.report_date===day(report));
 }
-root.SharedFinancialCatalog={index,adapt,additions,facts,load,current:()=>current,meetingFacts:(id,ticker)=>meetingItems.filter(r=>r.report_id===String(id)&&r.ticker===String(ticker))};
+root.SharedFinancialCatalog={index,adapt,additions,facts,load,current:()=>current};
 if(typeof module!=='undefined')module.exports=root.SharedFinancialCatalog;
 })(typeof globalThis!=='undefined'?globalThis:this);
