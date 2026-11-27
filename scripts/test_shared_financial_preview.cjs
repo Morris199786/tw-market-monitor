@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const {indexCatalog,adapt}=require('../assets/shared_financial_preview.js');
+const row={report_id:'a',ticker:'3665',period:'2026-Q3',metric:'gross_margin',value:32,unit:'%',type:'forecast',source:'broker',scope:'company',needs_review:false};
+const report={id:'a',ticker:'3665',financial_forecasts:[row],visualizations:[{type:'line'}]};
+const index=rows=>indexCatalog({schema:1,mode:'shadow',items:rows});
+assert.equal(adapt(report,null),report);
+assert.equal(adapt(report,index([])),report);
+assert.equal(adapt(report,index([{...row,ticker:'9999'}])),report);
+assert.equal(adapt(report,index([{...row,needs_review:true}])),report);
+assert.equal(adapt(report,index([{...row,value:33}])),report);
+const out=adapt(report,index([row,{...row,metric:'operating_margin',value:20}]));
+assert.equal(out.financial_forecasts.length,2);
+assert.equal(out.visualizations,report.visualizations);
+assert.equal(report.financial_forecasts.length,1);
+console.log('Preview fallback and original chart preservation passed');

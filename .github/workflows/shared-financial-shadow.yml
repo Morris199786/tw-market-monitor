@@ -1,0 +1,73 @@
+name: Shared financial catalog shadow audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/broker-eps-comparison.yml'
+      - 'assets/broker_financial_comparison.js'
+      - 'scripts/publish_shared_financial.py'
+      - 'scripts/shared_actual_eps.py'
+      - 'scripts/test_shared_actual_eps.py'
+      - 'assets/shared_financial_catalog.js'
+      - 'broker_research.html'
+      - 'index.html'
+      - 'assets/business_reports.js'
+      - 'scripts/shared_financial_catalog.py'
+      - 'assets/shared_financial_preview.js'
+      - 'scripts/test_shared_financial_preview.cjs'
+      - 'scripts/shared_margin_extract.py'
+      - 'scripts/test_shared_margin_extract.py'
+      - 'scripts/test_shared_financial_catalog.py'
+      - '.github/workflows/shared-financial-shadow.yml'
+      - 'scripts/shared_financial_shadow_compare.py'
+      - 'scripts/test_shared_financial_shadow_compare.py'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m py_compile scripts/shared_financial_catalog.py scripts/test_shared_financial_catalog.py
+      - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_financial_catalog.py
+      - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_margin_extract.py
+      - run: python scripts/shared_financial_catalog.py --output /tmp/shared-financial-shadow
+      - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_financial_shadow_compare.py
+      - run: python scripts/shared_financial_shadow_compare.py --output /tmp/shared-financial-shadow
+      - run: node --check assets/shared_financial_preview.js
+      - run: node scripts/test_shared_financial_preview.cjs
+      - run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_shared_actual_eps.py
+      - run: python scripts/publish_shared_financial.py --output /tmp/shared-financial-shadow
+      - run: node --check assets/shared_financial_catalog.js
+      - run: node scripts/test_shared_financial_catalog_adapter.cjs
+      - run: node --check assets/broker_financial_comparison.js
+      - run: node --check assets/broker_meeting_research.js
+      - name: Verify publication contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/shared-financial-shadow')
+          j=json.loads((p/'shared_financial_v1.json').read_text())
+          assert j['schema']==1 and j['mode']=='verified_additive'
+          assert j['comparison_mode']=='production'
+          assert len(j['items'])>0
+          assert set(j['comparisons'])=={'eps','gross_margin','operating_margin'}
+          facts={(r['report_id'],r['ticker'],r['period'],r['metric'],r['value']) for r in j['items']}
+          for metric,rows in j['comparisons'].items():
+              assert all((r['report_id'],r['ticker'],r['period'],metric,r['forecast_'+metric]) in facts for r in rows), metric
+          assert all(r.get('trust')!='legacy_baseline' or r.get('source_url') for r in j['items'])
+          print('Verified exact shared forecast identities for all comparisons')
+          a=json.loads((p/'comparison-audit.json').read_text())
+          for r in a['unresolved_actual_records']:
+              print('UNRESOLVED_ACTUAL',r['key'],[(x['actual_'+r['metric']],x['announcement_date'],x['actual_source']) for x in r['records']])
+          for r in a['quarantined']:
+              print('QUARANTINED_FORECAST',r['key'],[(x['value'],x['report_date'],x['origin'],x.get('evidence','')[:220]) for x in r['rows']])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-financial-shadow
+          path: /tmp/shared-financial-shadow

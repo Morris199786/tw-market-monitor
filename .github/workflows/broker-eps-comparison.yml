@@ -1,6 +1,14 @@
 name: Publish broker EPS comparison
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/publish_shared_financial.py'
+      - 'scripts/shared_financial_catalog.py'
+      - 'scripts/shared_financial_shadow_compare.py'
+      - 'scripts/shared_actual_eps.py'
+      - '.github/workflows/broker-eps-comparison.yml'
   workflow_run:
     workflows: ["Broker reports Drive inbox", "Sync business reports index and Codex analysis", "Self reports update"]
     types: [completed]
@@ -49,14 +57,31 @@ jobs:
           PY
       - name: Publish EPS data offline (zero API calls, zero PDF reparse)
         run: python scripts/broker_eps_safe_publish.py
-      - name: Commit only changed EPS data
+      - name: Validate and publish shared financial catalog
+        run: |
+          PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_shared_*.py'
+          python scripts/publish_shared_financial.py --output data
+      - name: Verify shared catalog and preserve legacy comparisons
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('data/shared_financial_v1.json').read_text())
+          assert j['schema']==1 and j['items']
+          assert all(r['source']=='broker' for r in j['items'])
+          assert j['comparison_mode']=='production'
+          facts={(r['report_id'],r['ticker'],r['period'],r['metric'],r['value']) for r in j['items']}
+          for metric,rows in j['comparisons'].items():
+              assert all((r['report_id'],r['ticker'],r['period'],metric,r['forecast_'+metric]) in facts for r in rows)
+          PY
+      - name: Commit only changed financial data
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json data/broker_operating_margin_comparisons.json data/broker_eps_compare_audit.json
+          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json data/broker_operating_margin_comparisons.json data/broker_eps_compare_audit.json data/shared_financial_v1.json data/shared_financial_status.json
           if git diff --cached --quiet; then echo 'No EPS changes'; exit 0; fi
-          git commit -m 'Publish broker EPS comparisons offline'
+          git commit -m 'Publish broker comparisons and shared financial catalog offline'
           # The publisher may touch other tracked files. Those uncommitted
           # changes must not block rebase or accidentally enter the commit.
           git restore --worktree .

@@ -114,19 +114,34 @@
       });
     });
   }
+  // The catalog is authoritative only after an explicit publication-mode switch.
+  // A shadow result must never silently replace the live financial comparison.
+  function sharedRows(j,metric){
+    if(j?.schema!==1||j.comparison_mode!=='production'||!Array.isArray(j.comparisons?.[metric]))return null;
+    const rows=j.comparisons[metric];
+    if(rows.some(r=>!r||!r.ticker||!date(r.announcement_date)||!date(r.report_date)||!r.actual_kind||!r.actual_period||num(r['actual_'+metric])===null||num(r['forecast_'+metric])===null))return null;
+    return rows;
+  }
   async function load(){
     if(loading)return loading;
-    loading=Promise.allSettled(specs.map(async ([metric,file])=>{
-      const res=await fetch('./data/'+file+'?v='+Math.floor(Date.now()/60000),{cache:'no-store'});
-      if(!res.ok)throw Error(file+' '+res.status);
-      const j=await res.json(), map=new Map();
-      for(const r of j.items||[]){
+    loading=(async()=>{
+      let shared=null;
+      try{const res=await fetch('./data/shared_financial_v1.json',{cache:'no-store'});if(res.ok)shared=await res.json();}catch(e){console.warn('[Shared financial catalog unavailable]',e);}
+      return Promise.allSettled(specs.map(async ([metric,file])=>{
+      let rows=sharedRows(shared,metric);
+      if(rows===null){
+        const res=await fetch('./data/'+file+'?v='+Math.floor(Date.now()/60000),{cache:'no-store'});
+        if(!res.ok)throw Error(file+' '+res.status);
+        const j=await res.json();rows=j.items||[];
+      }
+      const map=new Map();
+      for(const r of rows){
         const k=key(r.ticker,r.actual_period||r.period,r.announcement_date,r.actual_kind);
         if(!map.has(k))map.set(k,[]);map.get(k).push(r);
       }
       for(const rows of map.values())rows.sort((a,b)=>String(b.report_date).localeCompare(String(a.report_date)));
       maps.set(metric,map);
-    })).then(results=>{results.forEach(x=>{if(x.status==='rejected')console.warn('[Broker comparison]',x.reason);});render();}).finally(()=>{loading=null;});
+    }));})().then(results=>{results.forEach(x=>{if(x.status==='rejected')console.warn('[Broker comparison]',x.reason);});render();}).finally(()=>{loading=null;});
     return loading;
   }
   function init(){
