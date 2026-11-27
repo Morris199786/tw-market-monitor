@@ -4,22 +4,37 @@
   const frame=document.getElementById('brokerResearchFrame');
   const status=document.getElementById('brokerResearchLoadStatus');
   if(!section||!frame||!status)return;
-  let started=false;
-  function loadOnce(){
-    if(started||section.hidden || !document.getElementById('reports')?.classList.contains('active'))return;
+  let started=false,scheduled=false;
+  const reports=document.getElementById('reports');
+  function loadOnce(warm=false){
+    const visible=!section.hidden&&reports?.classList.contains('active');
+    if(started){
+      if(visible)requestAnimationFrame(()=>{try{frame.contentWindow?.__resizeBrokerFrame?.()}catch{}});
+      return;
+    }
+    if(!visible&&!warm)return;
+    if(warm&&(!reports?.classList.contains('active')||document.hidden||navigator.connection?.saveData))return;
     started=true;
     status.hidden=true;status.textContent='';status.style.display='none';
     frame.addEventListener('load',()=>{
-      status.textContent='';
-      status.hidden=true;
-      status.style.display='none';
+      status.textContent='';status.hidden=true;status.style.display='none';
+      if(!section.hidden)requestAnimationFrame(()=>{try{frame.contentWindow?.__resizeBrokerFrame?.()}catch{}});
     },{once:true});
-    frame.setAttribute('scrolling','no');frame.src='./broker_research.html?v=20261127-meeting-v1';
+    frame.loading='eager';
+    frame.setAttribute('scrolling','no');frame.src='./broker_research.html?v=20261127-topic-v2';
   }
-  new MutationObserver(loadOnce).observe(section,{attributes:true,attributeFilter:['hidden']});
-  document.addEventListener('research-mode-change',loadOnce);
-  new MutationObserver(loadOnce).observe(document.getElementById('reports'),{attributes:true,attributeFilter:['class']});
-  loadOnce();
+  function check(){
+    loadOnce();
+    if(started||scheduled||!reports?.classList.contains('active'))return;
+    scheduled=true;
+    const warm=()=>{scheduled=false;loadOnce(true)};
+    if(typeof requestIdleCallback==='function')requestIdleCallback(warm,{timeout:2500});
+    else setTimeout(warm,1200);
+  }
+  new MutationObserver(check).observe(section,{attributes:true,attributeFilter:['hidden']});
+  document.addEventListener('research-mode-change',check);
+  new MutationObserver(check).observe(reports,{attributes:true,attributeFilter:['class']});
+  check();
 })();
 
 /* iPhone / mobile: keep global overview and back-to-top buttons fixed
