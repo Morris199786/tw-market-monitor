@@ -445,6 +445,7 @@
   }
 
   async function fetchJson(path) {
+    if(path==='./data/reports.json' && window.fetchSharedJson)return window.fetchSharedJson(path);
     const response = await fetch(
       path + "?v=" + Date.now(),
       { cache: "no-store" }
