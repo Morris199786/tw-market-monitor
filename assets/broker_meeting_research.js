@@ -36,7 +36,9 @@ function render(){
  if(!loaded){views.textContent=failed?'法說／訪談資料暫時無法載入':'載入法說／訪談…';return;}
  ensureOptions();
  const rows=meetings.filter(r=>codes(r).includes(t)).sort((a,b)=>date(b).localeCompare(date(a))||String(a.id).localeCompare(String(b.id)));
- views.innerHTML='<h2>法說／訪談研究觀點</h2><p class="meeting-note">依現有解析呈現，可能同時包含管理層說法及券商解讀，依原文歸屬，不計入下方跨券商統計。</p>'+(rows.length?card(rows[0])+(rows.length>1?'<details><summary>其他法說／訪談（'+(rows.length-1)+' 份）</summary>'+rows.slice(1).map(card).join('')+'</details>':''):'<p class="meeting-note">目前沒有此公司的已解析法說／訪談。</p>');
+ const wasOpen=views.querySelector('details.meeting-fold')?.open||false;
+ views.hidden=!rows.length;
+ views.innerHTML=rows.length?'<details class="meeting-fold" '+(wasOpen?'open':'')+'><summary>法說／訪談研究觀點（'+rows.length+' 份）</summary><p class="meeting-note">保留原文歸屬，不列入券商共識。</p>'+card(rows[0])+(rows.length>1?'<details><summary>其他法說／訪談（'+(rows.length-1)+' 份）</summary>'+rows.slice(1).map(card).join('')+'</details>':'')+'</details>':'';
  // Keep whole source paragraphs and ranges; never transform ambiguous
  // financial extraction into management-issued numerical forecasts.
  const explicit=rows.flatMap(r=>paragraphs(r).filter(p=>/(公司|管理層|董事長|總經理|財務長).{0,18}(預估|預期|指引|展望|目標|估計|看好|預計|規劃|預測)|公司指引|管理層指引/.test(p)&&/營收|毛利|營益|獲利|EPS|資本支出|淨利|成長率|產能/.test(p)).map(p=>({r,p})));
