@@ -36,6 +36,8 @@ jobs:
           assert ai_eps_rows({'financial_forecasts':[{'period':'2027-Q1','metric':'eps','value':2.5,'type':'forecast','source':'broker'},{'period':'2027','metric':'eps','value':42.1,'type':'forecast','source':'broker'},{'period':'2027-Q2','metric':'eps','value':99,'type':'forecast','source':'consensus'}]})[0] == [{'period':'2027-Q1','eps':2.5}]
           print('Offline AI forecast publication validated; no API calls or PDF reparse')
           PY
+      - name: Test margin extraction and OPM source
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p test_broker_margin_regression.py
       - name: Refuse unsealed baseline
         run: |
           python - <<'PY'

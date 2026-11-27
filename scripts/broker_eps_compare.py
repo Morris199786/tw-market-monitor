@@ -324,7 +324,15 @@ def saved_metric_rows(report, metric):
                 # A comparison-table title does not identify which cell is a forecast.
                 # Require explicit forecast label on the actual row/column.
                 axis = label if re.search(pattern, header, re.I) else header
-                explicit = FORECAST_MARK.search(axis) or re.search(r'(?:[EF])
+                explicit = FORECAST_MARK.search(axis) or re.search(r'(?:[EF])$',axis.strip(),re.I)
+                broker_name = str(report.get('broker') or '').strip()
+                named = bool(broker_name and broker_name.lower() in axis.lower())
+                if not (explicit or named):
+                    pure = bool(re.search(r'財務預測|財務預估|獲利預測|獲利預覽|financial forecasts|earnings preview',title,re.I))
+                    if not (pure and parse_quarter(axis) and not NON_BROKER.search(context) and not re.search(r'比較|vs\.?|comparison|業績|財報',title,re.I)):
+                        continue
+                if NON_BROKER.search(axis) or re.search(r'差異|達成率|surprise|variance|差距',axis,re.I):
+                    continue
                 if re.search(r'年增|季增|變動|調整幅度|差異|change|growth|delta|bps|pp\b',hint,re.I):
                     continue
                 v = value_of(row[i])
@@ -411,97 +419,6 @@ def compare_margin_metric(root, metric):
                 continue
             for rid,broker,report_day,estimate,url,evidence,conflict in forecasts.get((ticker,period),[]):
                 if report_day>=day:
-                    audit['excluded_late']+=1
-                    continue
-                matches[(ticker,period,day,value,rid,estimate)]=dict(ticker=ticker,name=actual.get('name') or '',period=period,announcement_date=day,actual_kind='quarterly',broker=broker,report_date=report_day,report_id=rid,source_url=url,actual_source=source,evidence=evidence,needs_review=conflict,difference_pp=round(value-estimate,2),**{'actual_'+metric:value,'forecast_'+metric:estimate})
-    output={'version':2,'metric':metric,'unit':'%','items':[matches[k] for k in sorted(matches)]}
-    audit['matches']=len(matches)
-    dest=data/('broker_'+metric+'_comparisons.json')
-    content=json.dumps(output,ensure_ascii=False,indent=2)+'\n'
-    if not dest.exists() or dest.read_text(encoding='utf-8')!=content:
-        dest.write_text(content,encoding='utf-8')
-    print(metric+' audit:',json.dumps(audit,ensure_ascii=False))
-    return output
-
-def compare_gross_margin(root=ROOT):
-    return compare_margin_metric(root,'gross_margin')
-
-def compare_operating_margin(root=ROOT):
-    return compare_margin_metric(root,'operating_margin')
-
-
-if __name__ == '__main__':
-    compare()
-,axis.strip(),re.I)
-                broker_name = str(report.get('broker') or '').strip()
-                named = bool(broker_name and broker_name.lower() in axis.lower())
-                if not (explicit or named):
-                    # Quarter columns in a pure forecast table are allowed only
-                    # when every quarter column is explicitly forecast-marked by context.
-                    pure = bool(re.search(r'財務預測|財務預估|獲利預測|獲利預覽|financial forecasts|earnings preview',title,re.I))
-                    if not (pure and parse_quarter(axis) and not NON_BROKER.search(context) and not re.search(r'比較|vs\.?|comparison|業績|財報',title,re.I)):
-                        continue
-                if NON_BROKER.search(axis) or re.search(r'差異|達成率|surprise|variance|差距',axis,re.I):
-                    continue
-                if re.search(r'年增|季增|變動|調整幅度|差異|change|growth|delta|bps|pp\b',hint,re.I):
-                    continue
-                v = value_of(row[i])
-                if v is not None:
-                    yield period, v, 'table:'+title
-    # Text fallback: only a single explicit quarter and a forecast marker in the same clause.
-    for field in ('summary','detail','key_points','forecast_changes'):
-        raw=report.get(field)
-        chunks=raw if isinstance(raw,list) else [raw]
-        for chunk in chunks:
-            if not isinstance(chunk,str):
-                continue
-            for clause in re.split(r'[。；;\n]',chunk):
-                period=quarter_mentions(clause)
-                if not period or not FORECAST_MARK.search(clause) or NON_BROKER.search(clause):
-                    continue
-                if re.search(r'年增|季增|上修|下修|調升|調降|由.+至|從.+到|區間|range|同比|環比',clause,re.I):
-                    continue
-                suffix=r'\s*%' if metric!='eps' else r'\s*(?:元|NTD|TWD)?'
-                for m in re.finditer('(?:'+pattern+r')\s*(?:預估|預測|估計|estimate|forecast)?\s*(?:為|達|約|:|：|=|of|at)?\s*([+-]?\d+(?:\.\d+)?)'+suffix,clause,re.I):
-                    v=number(m.group(1))
-                    if v is not None:
-                        yield period,v,'text:'+field
-
-def compare_margin_metric(root, metric):
-    from broker_eps_pipeline import saved_reports
-    data=root/'data'
-    forecasts={}
-    audit={'candidates':0,'conflicting_report_quarters':0,'excluded_late':0,'matches':0}
-    for report in saved_reports(data):
-        rid=str(report.get('source_file_id') or report.get('id') or '')
-        ticker=str(report.get('ticker') or '')
-        broker=str(report.get('broker') or '')
-        day=gm_valid_date(report.get('date'))
-        if not rid or not TICKER.fullmatch(ticker) or not broker or not day:
-            continue
-        values={}
-        for period,value,evidence in saved_metric_rows(report,metric):
-            values.setdefault(period,{})
-            existing=next((v for v in values[period] if abs(v-value)<=0.011),None)
-            if existing is None:
-                values[period][value]=evidence
-        for period, estimates in values.items():
-            conflict=len(estimates)>1
-            audit['conflicting_report_quarters']+=int(conflict)
-            for value,evidence in estimates.items():
-                audit['candidates']+=1
-                forecasts.setdefault((ticker,period),[]).append((rid,broker,day,value,report.get('source_url') or '',evidence,conflict))
-    matches={}
-    for source,key in (('quarterly_earnings.json','reports'),('quarterly_earnings_announcements_history.json','items')):
-        for actual in load(data/source,{}).get(key,[]):
-            ticker=str(actual.get('ticker') or '')
-            period=str(actual.get('period') or '')
-            day=valid_date(actual.get('publish_date'))
-            value=number(actual.get(metric))
-            if not day or value is None:
-                continue
-            for rid,broker,report_day,estimate,url,evidence,conflict in forecasts.get((ticker,period),[]):
-                if report_day>day:
                     audit['excluded_late']+=1
                     continue
                 matches[(ticker,period,day,value,rid,estimate)]=dict(ticker=ticker,name=actual.get('name') or '',period=period,announcement_date=day,actual_kind='quarterly',broker=broker,report_date=report_day,report_id=rid,source_url=url,actual_source=source,evidence=evidence,needs_review=conflict,difference_pp=round(value-estimate,2),**{'actual_'+metric:value,'forecast_'+metric:estimate})
