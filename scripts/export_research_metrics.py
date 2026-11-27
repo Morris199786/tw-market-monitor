@@ -36,7 +36,11 @@ def publish_ai():
             if not rid or row.get('source_kind') != 'line':
                 continue
             typ = str(row.get('original_type') or row.get('type') or '').strip().casefold()
-            if typ not in ('call memo', '法說會'):
+            # Match the canonical category used by Telegram, including recordings.
+            category = row.get('category', '')
+            if str(row.get('market', 'TW')).upper() == 'US':
+                continue
+            if category != '法說／訪談' and (category or typ not in ('call memo', '法說會')):
                 continue
             # Preserve existing paid AI output; prefer completed V2 when it exists.
             for key in (rid + TRIAL_V2, rid, rid + TRIAL_V1):
