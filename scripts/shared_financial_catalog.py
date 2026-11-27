@@ -11,6 +11,23 @@ PERIOD=re.compile(r'^20\d{2}(?:-Q[1-4])?$')
 ALIASES={'gm':'gross_margin','gpm':'gross_margin','毛利率':'gross_margin','opm':'operating_margin','營益率':'operating_margin','營業利益率':'operating_margin'}
 def read(path):
     return json.loads(path.read_text(encoding='utf-8'))
+def precise_equivalent(group):
+    """Same-report table and rounded narrative: retain precision, never guess units."""
+    from decimal import Decimal, ROUND_HALF_UP
+    if not group or len({tuple(r.get(k) for k in ('report_id','ticker','period','metric','type','source','scope','unit','report_date')) for r in group})!=1:return None
+    if group[0]['type']!='forecast' or group[0]['source']!='broker':return None
+    tables=[r for r in group if r.get('origin')=='saved_margin_fallback' and str(r.get('evidence','')).startswith('table:')]
+    texts=[r for r in group if r.get('origin')=='structured']
+    if not tables or not texts or len(tables)+len(texts)!=len(group) or len({r['value'] for r in tables})!=1:return None
+    chosen=tables[0]
+    precise=Decimal(str(chosen['value']))
+    for r in texts:
+        rounded=Decimal(str(r['value']))
+        if rounded==precise:continue
+        if rounded.as_tuple().exponent<=precise.as_tuple().exponent:return None
+        if precise.quantize(Decimal(1).scaleb(rounded.as_tuple().exponent),rounding=ROUND_HALF_UP)!=rounded:return None
+    return chosen
+
 def build(data):
     rows=[]
     rejected=collections.Counter()
@@ -74,9 +91,20 @@ def build(data):
         groups[key].append(row)
     output=[]
     conflicts=0
+    precision_resolved=0
     for group in groups.values():
         values={r['value'] for r in group}
         conflict=len(values)>1
+        chosen=precise_equivalent(group) if conflict else None
+        if chosen is not None:
+            item=dict(chosen)
+            item['provenance']=[{**{k:r[k] for k in ('origin','report_kind','evidence','source_url','verified_report')},'original_value':r['value']} for r in group]
+            item['needs_review']=False
+            item['comparison_candidate']=any(r['comparison_candidate'] for r in group)
+            item['verified_report']=any(r['verified_report'] for r in group)
+            output.append(item)
+            precision_resolved+=1
+            continue
         conflicts+=int(conflict)
         for value in sorted(values):
             same=[r for r in group if r['value']==value]
@@ -86,7 +114,7 @@ def build(data):
             item['comparison_candidate']=not conflict and any(r['comparison_candidate'] for r in same)
             output.append(item)
     output.sort(key=lambda r:(r['report_id'],r['period'],r['metric'],r['type'],r['value']))
-    audit=dict(input_reports=dict(coverage),raw_rows=len(rows),catalog_rows=len(output),conflict_groups=conflicts,rejected=dict(rejected),metrics=dict(collections.Counter(r['metric'] for r in output)),comparison_candidates=dict(collections.Counter(r['metric'] for r in output if r['comparison_candidate'])),origins=dict(collections.Counter(r['origin'] for r in output)))
+    audit=dict(input_reports=dict(coverage),raw_rows=len(rows),catalog_rows=len(output),conflict_groups=conflicts,precision_resolved=precision_resolved,rejected=dict(rejected),metrics=dict(collections.Counter(r['metric'] for r in output)),comparison_candidates=dict(collections.Counter(r['metric'] for r in output if r['comparison_candidate'])),origins=dict(collections.Counter(r['origin'] for r in output)))
     return {'schema':1,'mode':'shadow','items':output},audit
 def main():
     parser=argparse.ArgumentParser()

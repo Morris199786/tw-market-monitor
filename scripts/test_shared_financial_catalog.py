@@ -4,6 +4,26 @@ import unittest
 from pathlib import Path
 from shared_financial_catalog import build
 class CatalogTest(unittest.TestCase):
+    def test_precision_merge(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            row=dict(period='2026-Q4',metric='gross_margin',value=32.4,unit='%',type='forecast',source='broker',scope='company',evidence='上修毛利率預期至32.4%')
+            report=dict(id='one',ticker='3037',date='2026-10-28',broker='Test',report_type='company',validation_status='verified',financial_forecasts=[row],visualizations=[dict(type='table',headers=['項目','3Q26實際','4Q26預估'],rows=[['毛利率（%）',28.85,32.37]])])
+            def put(n,o): (p/n).write_text(json.dumps(o),encoding='utf-8')
+            put('reports.json',{'items':[report]})
+            put('business_reports_ai.json',{'items':[]})
+            put('broker_eps_forecasts.json',{'items':[]})
+            catalog,audit=build(p)
+            self.assertEqual(audit['precision_resolved'],1)
+            self.assertEqual(audit['conflict_groups'],0)
+            self.assertEqual([r['value'] for r in catalog['items']],[32.37])
+            self.assertTrue(catalog['items'][0]['comparison_candidate'])
+            self.assertEqual({r['original_value'] for r in catalog['items'][0]['provenance']},{32.37,32.4})
+            report['financial_forecasts'][0]['value']=32.5
+            put('reports.json',{'items':[report]})
+            catalog,audit=build(p)
+            self.assertEqual(audit['conflict_groups'],1)
+            self.assertFalse(any(r['comparison_candidate'] for r in catalog['items']))
     def test_shadow_classification(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)

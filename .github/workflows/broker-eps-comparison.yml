@@ -70,6 +70,7 @@ jobs:
           assert j['schema']==1 and j['items']
           assert all(r['source']=='broker' for r in j['items'])
           assert j['comparison_mode']=='production'
+          assert any(r['ticker']=='3037' and r['period']=='2026-Q4' and r['metric']=='gross_margin' and r['report_id']=='1RrSEy9rgYJNH3AUgfmnAvEkomrdhiUSm' and r['value']==32.37 for r in j['items'])
           facts={(r['report_id'],r['ticker'],r['period'],r['metric'],r['value']) for r in j['items']}
           for metric,rows in j['comparisons'].items():
               assert all((r['report_id'],r['ticker'],r['period'],metric,r['forecast_'+metric]) in facts for r in rows)
