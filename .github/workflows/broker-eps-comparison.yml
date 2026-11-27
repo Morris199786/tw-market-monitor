@@ -1,6 +1,14 @@
 name: Publish broker EPS comparison
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/publish_shared_financial.py'
+      - 'scripts/shared_financial_catalog.py'
+      - 'scripts/shared_financial_shadow_compare.py'
+      - 'scripts/shared_actual_eps.py'
+      - '.github/workflows/broker-eps-comparison.yml'
   workflow_run:
     workflows: ["Broker reports Drive inbox", "Sync business reports index and Codex analysis", "Self reports update"]
     types: [completed]
@@ -61,7 +69,10 @@ jobs:
           j=json.loads(Path('data/shared_financial_v1.json').read_text())
           assert j['schema']==1 and j['items']
           assert all(r['source']=='broker' for r in j['items'])
-          assert j['comparison_mode']=='shadow'
+          assert j['comparison_mode']=='production'
+          facts={(r['report_id'],r['ticker'],r['period'],r['metric'],r['value']) for r in j['items']}
+          for metric,rows in j['comparisons'].items():
+              assert all((r['report_id'],r['ticker'],r['period'],metric,r['forecast_'+metric]) in facts for r in rows)
           PY
       - name: Commit only changed financial data
         run: |

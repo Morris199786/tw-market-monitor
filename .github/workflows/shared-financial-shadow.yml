@@ -53,7 +53,7 @@ jobs:
           p=Path('/tmp/shared-financial-shadow')
           j=json.loads((p/'shared_financial_v1.json').read_text())
           assert j['schema']==1 and j['mode']=='verified_additive'
-          assert j['comparison_mode']=='shadow'
+          assert j['comparison_mode']=='production'
           assert len(j['items'])>0
           assert set(j['comparisons'])=={'eps','gross_margin','operating_margin'}
           facts={(r['report_id'],r['ticker'],r['period'],r['metric'],r['value']) for r in j['items']}

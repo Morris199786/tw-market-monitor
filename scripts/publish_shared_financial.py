@@ -57,8 +57,8 @@ def payload(data):
     for r in safe:
         r.setdefault('trust','verified_report')
     safe.sort(key=lambda r:(r['report_id'],r['period'],r['metric']))
-    # Comparisons remain explicitly marked as shadow until actual values and UI are reconciled.
-    return {'schema':1,'mode':'verified_additive','comparison_mode':'shadow','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe)}
+    # Only reconciled comparisons are published; unresolved records stay quarantined.
+    return {'schema':1,'mode':'verified_additive','comparison_mode':'production','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe)}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--output',type=Path,required=True)
