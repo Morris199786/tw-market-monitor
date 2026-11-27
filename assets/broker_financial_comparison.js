@@ -37,12 +37,12 @@
       const actual=Number(r['actual_'+metric]), estimate=Number(r['forecast_'+metric]);
       const delta=actual-estimate, sign=delta>0?'+':'';
       const rate=estimate>0 ? (actual/estimate*100).toFixed(1)+'%' : '';
-      const result=metric==='eps' ? (rate?(kind==='monthly'?'單月／季達成率 ':'達成率 ')+rate:'差 '+sign+delta.toFixed(2)+' 元') :
-        (rate?'達成率 '+rate+'｜':'')+'差 '+sign+delta.toFixed(2)+'pp';
+      const result=rate?'達成率 '+rate:'差 '+sign+delta.toFixed(2)+(metric==='eps'?' 元':'pp');
       const url=String(r.source_url||''), name=esc(r.broker);
       const link=/^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+name+'</a>':name;
       const tone=delta>0?'above':delta<0?'below':'flat';
-      return '<div class="broker-inline-entry"><span class="broker-inline-source">'+esc(date(r.report_date).slice(5).replace('-','/'))+' '+link+'</span><span class="broker-inline-estimate">預估 '+estimate.toFixed(2)+unit+'</span><strong class="broker-inline-rate '+tone+'">'+esc(result)+'</strong></div>';
+      const detail=esc(date(r.report_date))+' '+link+'｜預估 '+estimate.toFixed(2)+unit+(metric==='eps'?'':'｜差 '+sign+delta.toFixed(2)+'pp');
+      return '<details class="broker-inline-compact"><summary class="broker-inline-rate '+tone+'" title="'+esc(kind==='monthly'?'單月 EPS／整季預估':'實際／預估')+'">'+esc(result)+'</summary><div class="broker-inline-detail">'+detail+'</div></details>';
     }).join('');
     el.innerHTML=html;
     if(!old)host.appendChild(el);

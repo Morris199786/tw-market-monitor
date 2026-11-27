@@ -29,3 +29,12 @@ html[data-theme="dark"] .broker-inline-rate.below { color:#6ee7b7; }
 .ec-table .ec-current .broker-inline-rate.below { color:#087c60; }
 html[data-theme="dark"] .ec-table .ec-current .broker-inline-rate.above { color:#fda4af; }
 html[data-theme="dark"] .ec-table .ec-current .broker-inline-rate.below { color:#6ee7b7; }
+
+.broker-inline-compact { min-width:0; max-width:100%; font-size:11px; line-height:1.45; }
+.broker-inline-compact > summary { display:block; list-style:none; cursor:pointer; white-space:normal; overflow-wrap:anywhere; font-size:inherit; }
+.broker-inline-compact > summary::-webkit-details-marker { display:none; }
+.broker-inline-compact > summary:focus-visible { outline:1px solid currentColor; }
+.broker-inline-detail { font-size:10px; font-weight:400; overflow-wrap:anywhere; white-space:normal; color:#64748b; }
+.broker-inline-detail a { color:inherit; text-decoration:underline; }
+html[data-theme="dark"] .broker-inline-detail { color:#b6c1d1; }
+.ec-table .ec-current .broker-inline-compact > summary { font-size:11px; line-height:1.45; }
