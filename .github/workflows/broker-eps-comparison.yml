@@ -2,7 +2,7 @@ name: Publish broker EPS comparison
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Broker reports Drive inbox"]
+    workflows: ["Broker reports Drive inbox", "Sync business reports index and Codex analysis", "Self reports update"]
     types: [completed]
 permissions:
   contents: write
@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json
+          git add data/broker_eps_forecasts.json data/broker_eps_processed.json data/broker_eps_review_queue.json data/broker_eps_comparisons.json data/broker_gross_margin_comparisons.json data/broker_operating_margin_comparisons.json data/broker_eps_compare_audit.json
           if git diff --cached --quiet; then echo 'No EPS changes'; exit 0; fi
           git commit -m 'Publish broker EPS comparisons offline'
           # The publisher may touch other tracked files. Those uncommitted

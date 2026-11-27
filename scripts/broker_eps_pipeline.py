@@ -86,6 +86,22 @@ def ai_eps_rows(report):
     return [{'period': k, 'eps': v} for k, v in sorted(indexed.items())], disagreements
 
 
+def saved_reports(data):
+    """Read saved broker and successfully parsed business reports; no new AI calls."""
+    seen = set()
+    for filename in ('reports.json', 'business_reports_ai.json'):
+        for r in read(data / filename, {'items': []}).get('items', []):
+            if not isinstance(r, dict):
+                continue
+            if filename == 'business_reports_ai.json' and r.get('status') != 'ready':
+                continue
+            rid = str(r.get('source_file_id') or r.get('id') or '')
+            if not rid or rid in seen:
+                continue
+            seen.add(rid)
+            yield r
+
+
 def publish_new(root=ROOT):
     """Idempotently publish saved AI data, INCLUDING already-processed reports.
 
@@ -104,7 +120,7 @@ def publish_new(root=ROOT):
     added = 0
     new_ledger = 0
     added_review = 0
-    for r in read(data/'reports.json', {'items':[]}).get('items', []):
+    for r in saved_reports(data):
         if not isinstance(r, dict):
             continue
         rid = str(r.get('source_file_id') or r.get('id') or '')
@@ -113,11 +129,10 @@ def publish_new(root=ROOT):
         # A one-time sealed historical report stays sealed. Its saved output
         # is never reinterpreted or submitted to AI.
         previous = records.get(rid)
-        if previous and previous.get('status') == 'historical_sealed':
-            continue
+        # Sealed PDFs are never reopened; saved structured forecasts may fill gaps.
         ticker = str(r.get('ticker') or '')
         broker = str(r.get('broker') or '')
-        day = str(r.get('date') or '')[:10]
+        day = str(r.get('date') or '')[:10].replace('/', '-')
         valid_identity = bool(re.fullmatch(r'\d{4}', ticker) and broker and re.fullmatch(r'20\d\d-\d\d-\d\d', day))
         rows, disagreements = ai_eps_rows(r)
         if not valid_identity:

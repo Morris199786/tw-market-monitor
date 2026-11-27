@@ -91,14 +91,14 @@ def compare(root=ROOT):
     forecasts = list(load(data / 'broker_eps_forecasts.json', {'items': []}).get('items', []))
     known = {(str(x.get('report_id')), str(x.get('period'))) for x in forecasts}
     ai_added = 0
-    from broker_eps_pipeline import ai_eps_rows
-    for report in load(data / 'reports.json', {'items': []}).get('items', []):
+    from broker_eps_pipeline import ai_eps_rows, saved_reports
+    for report in saved_reports(data):
         if not isinstance(report, dict):
             continue
         rid = str(report.get('source_file_id') or report.get('id') or '')
         ticker = str(report.get('ticker') or '')
         broker = str(report.get('broker') or '')
-        report_day = valid_date(report.get('date'))
+        report_day = gm_valid_date(report.get('date'))
         if not rid or not TICKER.fullmatch(ticker) or not broker or not report_day:
             continue
         rows, _ = ai_eps_rows(report)
@@ -152,6 +152,7 @@ def compare(root=ROOT):
     print('EPS compare audit:', json.dumps(audit, ensure_ascii=False))
     gm_output = compare_gross_margin(root)
     print('Quarterly gross-margin matches:', len(gm_output['items']))
+    compare_operating_margin(root)
     print('API calls=0; PDF parses=0')
     return output
 
@@ -266,13 +267,14 @@ def compare_gross_margin(root=ROOT):
     One-shot AI forecasts are already persisted in reports.json. This function
     never opens PDFs or calls any external service. Existing EPS output is untouched.
     """
+    from broker_eps_pipeline import saved_reports
     data = root / 'data'
     by_key = {}
     seen_forecasts = set()
     report_count = 0
     ambiguous = 0
     table_candidates = 0
-    for report in load(data / 'reports.json', {'items': []}).get('items', []):
+    for report in saved_reports(data):
         if not isinstance(report, dict):
             continue
         rid = str(report.get('source_file_id') or report.get('id') or '')
@@ -377,6 +379,62 @@ def compare_gross_margin(root=ROOT):
         'table_forecast_candidates': table_candidates,
         'dated_quarterly_actuals': dated_actuals, 'excluded_late': excluded_late,
         'matches': len(output['items'])}, ensure_ascii=False))
+    return output
+
+
+def compare_operating_margin(root=ROOT):
+    from broker_eps_pipeline import saved_reports
+    data = root / 'data'
+    forecasts = {}
+    for report in saved_reports(data):
+        rid = str(report.get('source_file_id') or report.get('id') or '')
+        ticker = str(report.get('ticker') or '')
+        broker = str(report.get('broker') or '')
+        day = gm_valid_date(report.get('date'))
+        if not rid or not TICKER.fullmatch(ticker) or not broker or not day:
+            continue
+        values, conflicts = {}, set()
+        for row in report.get('financial_forecasts') or []:
+            if not isinstance(row, dict) or row.get('metric') != 'operating_margin':
+                continue
+            if row.get('type') != 'forecast' or row.get('source') != 'broker' or row.get('scope', 'company') != 'company':
+                continue
+            period = str(row.get('period') or '')
+            value = number(row.get('value'))
+            unit = str(row.get('unit') or '').lower()
+            if not QUARTER.fullmatch(period) or value is None or not -1000 <= value <= 100:
+                continue
+            if not any(x in unit for x in ('%', '百分', 'percent', 'pct')):
+                continue
+            if period in values and abs(values[period] - value) > 0.011:
+                conflicts.add(period)
+            else:
+                values[period] = value
+        for period, value in values.items():
+            if period not in conflicts:
+                forecasts.setdefault((ticker, period), []).append((rid, broker, day, value, report.get('source_url') or ''))
+    matches = {}
+    for source, key in (('quarterly_earnings.json', 'reports'), ('quarterly_earnings_announcements_history.json', 'items')):
+        for actual in load(data / source, {}).get(key, []):
+            ticker = str(actual.get('ticker') or '')
+            period = str(actual.get('period') or '')
+            day = valid_date(actual.get('publish_date'))
+            value = number(actual.get('operating_margin'))
+            if not day or value is None:
+                continue
+            for rid, broker, report_day, estimate, url in forecasts.get((ticker, period), []):
+                if report_day > day:
+                    continue
+                matches[(ticker, period, day, value, rid)] = dict(ticker=ticker, period=period, announcement_date=day,
+                    actual_kind='quarterly', actual_operating_margin=value, forecast_operating_margin=estimate,
+                    difference_pp=round(value-estimate, 2), broker=broker, report_date=report_day, report_id=rid,
+                    source_url=url, actual_source=source)
+    output = {'version': 1, 'metric': 'operating_margin', 'items': [matches[k] for k in sorted(matches)]}
+    dest = data / 'broker_operating_margin_comparisons.json'
+    content = json.dumps(output, ensure_ascii=False, indent=2) + '\n'
+    if not dest.exists() or dest.read_text(encoding='utf-8') != content:
+        dest.write_text(content, encoding='utf-8')
+    print('Operating margin matches:', len(matches))
     return output
 
 

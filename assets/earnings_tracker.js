@@ -668,7 +668,7 @@ function reportItem(x) {
   const news = x.eps_basis === "news_reported_single";
   const newsSource = x.eps_news_source || x;
   const isPublishedToday = dateOnly(x.publish_date) === new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  return `<article class="earnings-report-row earnings-comparison-card${isPublishedToday ? " earnings-published-today" : ""}">
+  return `<article class="earnings-report-row earnings-comparison-card${isPublishedToday ? " earnings-published-today" : ""}" data-broker-ticker="${esc(x.ticker)}" data-broker-period="${esc(x.period)}" data-broker-date="${esc(dateOnly(x.publish_date))}">
     <div class="earnings-result-head"><div class="earnings-company"><b>${esc(x.name || x.ticker)}</b><span>${esc(x.ticker)}</span></div>
     <span class="earnings-period">公布 ${esc(fmtFull(x.publish_date))}</span></div>
     ${earningsComparison(x)}

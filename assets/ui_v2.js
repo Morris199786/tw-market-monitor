@@ -730,6 +730,7 @@ function selfEpsMetric(x, kind, label) {
   return `
     <div
       class="metric-box"
+      data-broker-kind="${esc(kind)}" data-broker-period="${esc(period || '')}" data-broker-value="${numeric(value) ? esc(value) : ''}"
       style="min-width:0"
     >
       <small>
