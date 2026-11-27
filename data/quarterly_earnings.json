@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-27T08:09+08:00",
+  "updated_at": "2026-11-27T08:43+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -28107,10 +28107,10 @@
     "source_errors": [
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
+      "detail/8345/2026-11-04",
+      "planned_date/8345/2026-11-04:unavailable",
       "planned_date/6994/2026-11-05:unavailable",
       "planned_date/3149/2026-11-05:unavailable",
-      "detail/1229/2026-11-13",
-      "detail/7895/2026-11-13",
       "announcement_scan/2026-11-01~2026-11-27:ValueError:announcement schema unavailable"
     ],
     "historical_errors": [],
@@ -28120,36 +28120,20 @@
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 7,
+      "attempted": 5,
       "fields_filled": 0,
       "targets": 12,
       "errors": [
         {
-          "key": "6405|2026-Q2",
+          "key": "3718|2026-Q2",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
+            "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
           ]
         },
         {
-          "key": "6405|2026-Q3",
+          "key": "3712|2026-Q2",
           "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.onano-nm.com', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutError("
-          ]
-        },
-        {
-          "key": "8291|2026-Q2",
-          "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr"
-          ]
-        },
-        {
-          "key": "8291|2026-Q3",
-          "notes": [
-            "ConnectTimeout:HTTPSConnectionPool(host='www.shinemore.com.tw', port=443): Max retries exceeded with url: / (Caused by ConnectTimeoutEr",
-            "TimeoutError:financial_news_company_page",
-            "TimeoutError:financial_news_discovery",
-            "TimeoutError:financial_news_discovery",
-            "TimeoutError:news_discovery"
+            "HTTPError:403 Client Error: Forbidden for url: https://www.fit-holding.com/"
           ]
         }
       ]
