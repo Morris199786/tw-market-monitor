@@ -619,8 +619,22 @@ function researchPoint(text, index=0) {
   return index<2 && value.length<=80 && !html.includes('<mark')
     ? `<span class="research-emphasis">${html}</span>` : html;
 }
+// Presentation only: remove parenthetical audio references, not dates, durations or financial values.
+function cleanAudioReferences(value){
+  if(typeof value!=='string')return value;
+  const stamp=String.raw`\d{1,3}:\d{2}:\d{2}(?:\.\d+)?`;
+  const range=stamp+String.raw`(?:\s*[–—－~～至\-]\s*`+stamp+String.raw`)?`;
+  const refs=new RegExp('[（(]\\s*'+range+'(?:\\s*[、,，;；]\\s*'+range+')*\\s*[）)]','g');
+  return value.replace(refs,'').replace(/[ \t]+([。；，])/g,'$1').trim();
+}
+function cleanResearchDisplay(value){
+  if(typeof value==='string')return cleanAudioReferences(value);
+  if(Array.isArray(value))return value.map(cleanResearchDisplay);
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,cleanResearchDisplay(v)]));
+  return value;
+}
 function renderAiDirect(entry, reportId=''){
-  const ai=entry?.content;
+  const ai=cleanResearchDisplay(entry?.content);
   // Exact report-ID source discrepancy; preserve original Excel and cached AI.
   const terminologyNote=String(reportId)==='line-ce9ff786e7a4de5b68a4'
     ? '<p class="rm-ai-paragraph" style="border-left:3px solid #b7791f;padding-left:12px"><strong>術語待核對：</strong>11/25 華南 memo（11/26 入庫）原文寫 NPU 可能先於 CPU；11/19 富邦 memo 原文則明確寫 scale-up 端預期 3Q27–4Q27 放量，NPO 先於 CPO。兩組縮寫意義不同，尚無法確認是否指同一產品。不得將華南的 NPU／CPU 順序視為 NPO／CPO 已獲確認的出貨順序。</p>' : '';
