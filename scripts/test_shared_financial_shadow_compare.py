@@ -18,6 +18,18 @@ class ShadowCompareTest(unittest.TestCase):
             self.assertEqual(audit['quarantined_count'],1)
             self.assertEqual(audit['metrics']['operating_margin']['excluded_same_day'],1)
             self.assertEqual(audit['metrics']['operating_margin']['excluded_late'],1)
+    def test_rounded_table_and_text_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            (p/'quarterly_earnings.json').write_text(json.dumps({'reports':[{'ticker':'3037','period':'2026-Q4','publish_date':'2027-02-01','gross_margin':33}]}))
+            (p/'quarterly_opm.json').write_text(json.dumps({'schema':1,'metrics':{}}))
+            row=dict(ticker='3037',period='2026-Q4',metric='gross_margin',report_id='one',report_date='2026-10-28',value=32.37,unit='%',broker='Test',source_url='',provenance=[],comparison_candidate=True,needs_review=False,origin='saved_margin_fallback',evidence='table:')
+            other={**row,'value':32.4,'origin':'structured','evidence':'forecast 32.4%'}
+            result,audit=reconcile({'items':[row,other]},p)
+            self.assertEqual(result['gross_margin']['items'][0]['forecast_gross_margin'],32.37)
+            self.assertEqual(audit['quarantined_count'],0)
+            result,audit=reconcile({'items':[row,{**other,'report_date':'2026-10-29'}]},p)
+            self.assertEqual(audit['quarantined_count'],1)
     def test_conflicting_eps_is_not_published(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)

@@ -23,10 +23,10 @@ def reconcile(catalog,data):
         vals={r['value'] for r in rows}
         # A precise saved table and explicitly rounded narrative may agree.
         # Only accept the precise table when the structured narrative rounds to it.
-        if metric in ('gross_margin','operating_margin') and len(vals)==2 and not any(r['needs_review'] for r in rows):
+        if metric in ('gross_margin','operating_margin') and len(vals)==2 and len({r['report_date'] for r in rows})==1 and all(r.get('unit')=='%' for r in rows) and not any(r['needs_review'] for r in rows):
             from decimal import Decimal, ROUND_HALF_UP
-            tables=[r for r in rows if r['origin']=='saved_margin_fallback' and r['evidence'].startswith('table:')]
-            texts=[r for r in rows if r['origin']=='structured']
+            tables=[r for r in rows if r.get('origin')=='saved_margin_fallback' and str(r.get('evidence','')).startswith('table:')]
+            texts=[r for r in rows if r.get('origin')=='structured']
             if len(tables)==1 and texts and all(Decimal(str(tables[0]['value'])).quantize(Decimal('0.1'),rounding=ROUND_HALF_UP)==Decimal(str(r['value'])) for r in texts):
                 rows=tables
                 vals={r['value'] for r in rows}

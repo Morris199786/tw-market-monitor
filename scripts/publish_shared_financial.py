@@ -23,7 +23,12 @@ def payload(data):
     safe=[]
     for key,rows in groups.items():
         # Different units or values require review; no guessed conversion.
-        if len({(r['value'],r['unit'],r['report_date']) for r in rows})!=1:continue
+        if len({(r['value'],r['unit'],r['report_date']) for r in rows})!=1:
+            from decimal import Decimal, ROUND_HALF_UP
+            tables=[r for r in rows if r['origin']=='saved_margin_fallback' and r['evidence'].startswith('table:')]
+            texts=[r for r in rows if r['origin']=='structured']
+            if not (key[-1] in ('gross_margin','operating_margin') and len(tables)==1 and len(texts)==len(rows)-1 and texts and len({r['report_date'] for r in rows})==1 and all(r['unit']=='%' for r in rows) and all(Decimal(str(tables[0]['value'])).quantize(Decimal('0.1'),rounding=ROUND_HALF_UP)==Decimal(str(r['value'])) for r in texts)):continue
+            rows=tables
         r=rows[0]
         safe.append({k:r[k] for k in ('report_id','ticker','report_date','period','metric','value','unit','type','source','scope','evidence','needs_review','origin')})
     safe.sort(key=lambda r:(r['report_id'],r['period'],r['metric']))
