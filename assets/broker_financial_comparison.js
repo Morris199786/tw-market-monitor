@@ -24,16 +24,15 @@
       if(seen.has(id))return false;seen.add(id);return true;
     });
   }
-  function paint(host, metric, unit, kind, rows, tableRow=false) {
+  function paint(host, metric, unit, kind, rows, quarterCell=false) {
     if(!host)return;
-    const old=tableRow ? (host.nextElementSibling?.dataset.brokerFor===metric ? host.nextElementSibling : null) : host.querySelector(':scope > .broker-inline');
+    const old=host.querySelector(':scope > .broker-inline');
     if(!rows.length){old?.remove();return;}
     const signature=JSON.stringify(rows);
     if(old?.dataset.signature===signature)return;
-    const el=old||document.createElement(tableRow?'tr':'div');
-    el.className=tableRow?'broker-inline broker-inline-row':'broker-inline broker-inline-self';
+    const el=old||document.createElement('div');
+    el.className=quarterCell?'broker-inline broker-inline-quarter':'broker-inline broker-inline-self';
     el.dataset.signature=signature;
-    if(tableRow)el.dataset.brokerFor=metric;
     const html=rows.map(r=>{
       const actual=Number(r['actual_'+metric]), estimate=Number(r['forecast_'+metric]);
       const delta=actual-estimate, sign=delta>0?'+':'';
@@ -45,18 +44,20 @@
       const tone=delta>0?'above':delta<0?'below':'flat';
       return '<div class="broker-inline-entry"><span class="broker-inline-source">'+esc(date(r.report_date).slice(5).replace('-','/'))+' '+link+'</span><span class="broker-inline-estimate">預估 '+estimate.toFixed(2)+unit+'</span><strong class="broker-inline-rate '+tone+'">'+esc(result)+'</strong></div>';
     }).join('');
-    el.innerHTML=tableRow?'<td colspan="4"><div class="broker-inline-body">'+html+'</div></td>':html;
-    if(!old){if(tableRow)host.after(el);else host.appendChild(el);}
+    el.innerHTML=html;
+    if(!old)host.appendChild(el);
   }
   function render() {
     document.querySelectorAll('#quarterlyEarningsCards .earnings-comparison-card').forEach(card=>{
       const t=card.dataset.brokerTicker,p=card.dataset.brokerPeriod,d=card.dataset.brokerDate;
       card.querySelector(':scope > .broker-financial-panel')?.remove();
+      card.querySelectorAll('tr.broker-inline-row').forEach(row=>row.remove());
       specs.forEach(([metric,,label,unit])=>{
         const row=card.querySelector('[data-earnings-metric="'+metric+'"]');
-        const cell=row?.querySelector('.ec-current strong');
-        const v=num(cell?.textContent.replace(/元|%|,/g,'').trim());
-        paint(row,metric,unit,'quarterly',lookup(metric,t,p,d,'quarterly',v),true);
+        const cell=row?.querySelector('.ec-current');
+        const actual=cell?.querySelector('strong');
+        const v=num(actual?.textContent.replace(/元|%|,/g,'').trim());
+        paint(cell,metric,unit,'quarterly',lookup(metric,t,p,d,'quarterly',v),true);
       });
     });
     document.querySelectorAll('#selfReportCards .self-report-card').forEach(card=>{

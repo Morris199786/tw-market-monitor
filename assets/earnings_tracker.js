@@ -23,10 +23,7 @@ let metricOrder = loadMetricOrder();
 function reorderMetricTables() {
   document.querySelectorAll('.ec-table tbody').forEach(body => {
     const rows=new Map([...body.children].map(row => [row.dataset.earningsMetric,row]));
-    if(metricOrder.every(key => rows.has(key))) {
-      const comparisons=new Map([...body.querySelectorAll('tr[data-broker-for]')].map(row=>[row.dataset.brokerFor,row]));
-      metricOrder.forEach(key=>{body.appendChild(rows.get(key));if(comparisons.has(key))body.appendChild(comparisons.get(key));});
-    }
+    if(metricOrder.every(key => rows.has(key))) metricOrder.forEach(key => body.appendChild(rows.get(key)));
   });
 }
 function setupMetricOrder() {
