@@ -1,6 +1,74 @@
 {
   "reports": [
     {
+      "date": "2026-11-27",
+      "session": "pre",
+      "updated_at": "2026-11-27T13:02:16.134Z",
+      "events": [
+        {
+          "tickers": [
+            "SNDK",
+            "MU",
+            "WDC",
+            "STX",
+            "MRVL",
+            "AMD",
+            "BE",
+            "COHR",
+            "LITE",
+            "DELL",
+            "INTC",
+            "SMCI"
+          ],
+          "sector": "AI 供應鏈／記憶體／儲存",
+          "kind": "族群帶動",
+          "impact": "利多（情緒）",
+          "title": "感恩節後科技股盤前反彈，記憶體與 AI 基建領漲",
+          "analysis": "11/27 美國盤前出現廣泛風險偏好回升。Barron's 報導 Sandisk 約漲11%、Bloom Energy 約漲9%、Marvell 約漲8.6%；Reuters 同日亦確認 AI 股反彈及股指期貨走高。這是市場情緒催化，未取得上述公司同步上修財測或新增訂單的證據。記憶體價格、AI 客戶資本支出與信用風險仍須分開驗證。今日縮短交易，盤前漲幅不等於收盤表現。",
+          "metrics": [
+            {
+              "label": "SNDK 盤前漲幅",
+              "value": 11,
+              "unit": "%",
+              "context": "Barron's 11/27 盤前約值"
+            },
+            {
+              "label": "BE 盤前漲幅",
+              "value": 9,
+              "unit": "%",
+              "context": "Barron's 11/27 盤前約值"
+            },
+            {
+              "label": "MRVL 盤前漲幅",
+              "value": 8.6,
+              "unit": "%",
+              "context": "Barron's 11/27 盤前約值"
+            }
+          ],
+          "sources": [
+            {
+              "title": "Barron's 11/27 盤前個股",
+              "url": "https://www.barrons.com/articles/stock-movers-ac5937bf"
+            },
+            {
+              "title": "Reuters 11/27 全球市場",
+              "url": "https://www.reuters.com/world/china/global-markets-global-markets-2026-11-27/"
+            }
+          ],
+          "dedup_key": "2026-11-27-ai-premarket-rebound"
+        }
+      ],
+      "coverage": {
+        "watchlist_groups": 16,
+        "watchlist_tickers": 102,
+        "verified_events": 1,
+        "matched_tickers": 12,
+        "market_status": "11/26 感恩節休市；11/27 美東13:00提早收盤（台灣11/28 02:00）",
+        "market_status_source": "https://www.nyse.com/markets/hours-calendars",
+        "limitations": "按族群搜尋公開資料，非逐檔完整公告查核；僅收錄兩家媒體交叉支持且在時間窗內的新事件。SpaceX FCC 核准早於上一份報告時間；Rocket Lab 公告日期與內文矛盾；Cloud One 報導尚未獨立核實個別供應商責任，均不收錄。"
+      }
+    },
+    {
       "date": "2026-11-26",
       "session": "pre",
       "updated_at": "2026-11-26T13:50:57.694Z",
@@ -222,5 +290,7 @@
       ]
     }
   ],
-  "seen": []
+  "seen": [
+    "2026-11-27-ai-premarket-rebound"
+  ]
 }
