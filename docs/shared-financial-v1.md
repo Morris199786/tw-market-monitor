@@ -1,0 +1,3 @@
+# Shared financial catalog V1 (shadow only)
+
+Reads existing broker, ready business, saved meeting financial facts and legacy EPS. No AI/PDF/network calls. Does not overwrite original reports, comparison JSON or frontend. Unknown meeting attribution stays unknown; no automatic broker promotion. Conflicts retain evidence and are excluded from comparison candidates. Candidate means schema-eligible, not verified against original PDF or announcement date. The next phase must reconcile units, cross-source duplicates, report dates and actuals; audit table/text extraction before adding it; preserve legacy EPS; and test frontend fallback before any main merge or consumer switch.
