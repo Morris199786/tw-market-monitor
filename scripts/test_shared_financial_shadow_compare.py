@@ -18,4 +18,14 @@ class ShadowCompareTest(unittest.TestCase):
             self.assertEqual(audit['quarantined_count'],1)
             self.assertEqual(audit['metrics']['operating_margin']['excluded_same_day'],1)
             self.assertEqual(audit['metrics']['operating_margin']['excluded_late'],1)
+    def test_conflicting_eps_is_not_published(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            def put(n,o): (p/n).write_text(json.dumps(o),encoding='utf-8')
+            put('quarterly_earnings.json',{'reports':[{'ticker':'7717','period':'2026-Q3','publish_date':'2026-11-13','eps':2.34},{'ticker':'7717','period':'2026-Q3','publish_date':'2026-11-14','eps':1.45}]})
+            put('quarterly_opm.json',{'schema':1,'metrics':{}})
+            row=dict(ticker='7717',period='2026-Q3',metric='eps',report_id='one',report_date='2026-10-12',value=2,unit='元/股',broker='Test',source_url='',provenance=[],comparison_candidate=True,needs_review=False)
+            result,audit=reconcile({'items':[row]},p)
+            self.assertEqual(result['eps']['items'],[])
+            self.assertEqual(audit['actual_conflict_count'],1)
 if __name__=='__main__':unittest.main()

@@ -51,6 +51,22 @@ def reconcile(catalog,data):
             if val is None:val=number(r.get(metric))
             if val is not None:
                 actual_rows[metric].append(dict(ticker=ticker,period=period,actual_period=period,kind='quarterly',announcement_date=day,actual_source=source,**{'actual_'+metric:val}))
+    # Do not choose among conflicting disclosed EPS values automatically.
+    # Retain all source records in the audit, suppress ambiguous comparisons.
+    actual_conflicts=[]
+    for metric in METRICS:
+        by_period=collections.defaultdict(list)
+        for row in actual_rows[metric]:
+            by_period[(row['ticker'],row['kind'],row['actual_period'])].append(row)
+        clean=[]
+        for key,records in by_period.items():
+            vals={round(r['actual_'+metric],6) for r in records}
+            if len(vals)>1:
+                actual_conflicts.append({'metric':metric,'key':key,'records':records})
+                continue
+            # Earliest verified disclosure prevents look-ahead and duplicate events.
+            clean.append(min(records,key=lambda r:r['announcement_date']))
+        actual_rows[metric]=clean
     results={}
     stats={}
     for metric in METRICS:
@@ -72,7 +88,7 @@ def reconcile(catalog,data):
         # Old EPS stays separately available; differences are not permission to delete.
         results[metric]={'items':list(matches.values()),'added':added,'removed_or_changed':removed}
         stats[metric]={'actual_rows':len(actual_rows[metric]),'previous':len(old),'shadow':len(matches),'unchanged':len(matches.keys()&old.keys()),'added':len(added),'removed_or_changed':len(removed),'excluded_same_day':same,'excluded_late':late}
-    return results,{'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined}
+    return results,{'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined,'actual_conflict_count':len(actual_conflicts),'actual_conflicts':actual_conflicts}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--data',type=Path,default=Path(__file__).resolve().parents[1]/'data')
@@ -84,5 +100,5 @@ def main():
     a.output.mkdir(parents=True,exist_ok=True)
     for name,obj in [('comparison-shadow.json',results),('comparison-audit.json',audit)]:
         (a.output/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
-    print(json.dumps({k:v for k,v in audit.items() if k!='quarantined'},ensure_ascii=False,indent=2))
+    print(json.dumps({k:v for k,v in audit.items() if k not in ('quarantined','actual_conflicts')},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()
