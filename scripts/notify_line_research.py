@@ -51,9 +51,9 @@ def published(root):
         rid = str(row.get('id', ''))
         if not rid.startswith('line-') or not category(row):
             continue
-        entry = cache.get(rid, {})
+        entries = [cache.get(k, {}) for k in (rid + '::gpt-5.6-luna-full-article-v2', rid, rid + '::gpt-5.6-luna-trial-v1')]
         content = rendered.get(rid, {}).get('content', {})
-        if entry.get('status') == 'success' and content.get('blocks'):
+        if any(isinstance(e, dict) and e.get('status') == 'success' and e.get('result') == content for e in entries) and (content.get('blocks') or content.get('companies')):
             result[rid] = dict(row, telegram_summary=content.get("summary", []))
             if key:
                 known.add(key)
