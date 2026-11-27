@@ -61,6 +61,7 @@ def reconcile(catalog,data):
             ticker=str(r.get('ticker') or ''); period=str(r.get('quarter_period') or '')
             day=valid_date(r.get('publish_date'))
             if not TICKER.fullmatch(ticker) or not QUARTER.fullmatch(period) or not day:continue
+            if r.get('source')!='mops_ajax' or not str(r.get('source_url') or '').startswith('https://mopsov.twse.com.tw/'):continue
             value=explicit_quarter(r.get('detail'),period)
             if value is None:continue
             direct.setdefault((ticker,period),[]).append(dict(value=value,date=day,source=filename,url=r.get('source_url') or ''))
@@ -82,12 +83,16 @@ def reconcile(catalog,data):
                     # Direct official single-quarter report is preferred. Otherwise a
                     # unique directly stated quarter from saved company disclosure.
                     chosen=number(official.get('eps')) if basis=='reported_single' else next(iter(values)) if len(values)==1 else None
+                    # A direct official value that contradicts a second explicit disclosure
+                    # is itself ambiguous; do not silently choose either.
+                    if basis=='reported_single' and values and values!={chosen}:chosen=None
                     if chosen is not None:
                         day=valid_date(official.get('publish_date')) if basis=='reported_single' else min(x['date'] for x in explicit if x['value']==chosen)
                         # Do not backdate later direct disclosures to an earlier estimated figure.
                         if day:
                             source=official.get('_source','quarterly_earnings.json') if basis=='reported_single' else 'direct_mops_quarter'
-                            item=dict(ticker=key[0],kind='quarterly',actual_period=key[2],period=key[2],announcement_date=day,actual_eps=chosen,actual_source=source)
+                            cutoff=min([day]+[r['announcement_date'] for r in records])
+                            item=dict(ticker=key[0],kind='quarterly',actual_period=key[2],period=key[2],announcement_date=day,forecast_cutoff=cutoff,actual_eps=chosen,actual_source=source)
                             clean.append(item)
                             resolved.append(dict(key=key,value=chosen,date=day,basis=source,evidence=explicit,records=records))
                 continue
@@ -101,9 +106,10 @@ def reconcile(catalog,data):
         late=same=0
         for a in actual_rows[metric]:
             for f in forecasts.get((a['ticker'],a['period'],metric),[]):
-                if f['report_date']>=a['announcement_date']:
-                    same+=int(f['report_date']==a['announcement_date'])
-                    late+=int(f['report_date']>a['announcement_date'])
+                cutoff=a.get('forecast_cutoff',a['announcement_date'])
+                if f['report_date']>=cutoff:
+                    same+=int(f['report_date']==cutoff)
+                    late+=int(f['report_date']>cutoff)
                     continue
                 v=a['actual_'+metric]; est=f['value']
                 row=dict(ticker=a['ticker'],period=a['period'],actual_kind=a['kind'],actual_period=a['actual_period'],announcement_date=a['announcement_date'],report_id=f['report_id'],broker=f['broker'],report_date=f['report_date'],source_url=f['source_url'],actual_source=a['actual_source'],provenance=f['provenance'],ratio_pct=round(v/est*100,1) if est>0 else None,difference=round(v-est,6),**{'actual_'+metric:v,'forecast_'+metric:est})
@@ -115,7 +121,9 @@ def reconcile(catalog,data):
         # Old EPS stays separately available; differences are not permission to delete.
         results[metric]={'items':list(matches.values()),'added':added,'removed_or_changed':removed}
         stats[metric]={'actual_rows':len(actual_rows[metric]),'previous':len(old),'shadow':len(matches),'unchanged':len(matches.keys()&old.keys()),'added':len(added),'removed_or_changed':len(removed),'excluded_same_day':same,'excluded_late':late}
-    return results,{'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined,'actual_conflict_count':len(actual_conflicts),'actual_conflicts':actual_conflicts,'resolved_actual_conflicts':len(resolved),'resolved_actual_records':resolved}
+    resolved_keys={tuple(r['key']) for r in resolved}
+    unresolved=[r for r in actual_conflicts if tuple(r['key']) not in resolved_keys]
+    return results,{'unresolved_actual_conflicts':len(unresolved),'unresolved_actual_records':unresolved,'metrics':stats,'quarantined_count':len(quarantined),'quarantined':quarantined,'actual_conflict_count':len(actual_conflicts),'actual_conflicts':actual_conflicts,'resolved_actual_conflicts':len(resolved),'resolved_actual_records':resolved}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--data',type=Path,default=Path(__file__).resolve().parents[1]/'data')
@@ -127,5 +135,5 @@ def main():
     a.output.mkdir(parents=True,exist_ok=True)
     for name,obj in [('comparison-shadow.json',results),('comparison-audit.json',audit)]:
         (a.output/name).write_text(json.dumps(obj,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
-    print(json.dumps({k:v for k,v in audit.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records')},ensure_ascii=False,indent=2))
+    print(json.dumps({k:v for k,v in audit.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},ensure_ascii=False,indent=2))
 if __name__=='__main__':main()

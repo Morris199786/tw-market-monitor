@@ -28,7 +28,7 @@ def payload(data):
         safe.append({k:r[k] for k in ('report_id','ticker','report_date','period','metric','value','unit','type','source','scope','evidence','needs_review','origin')})
     safe.sort(key=lambda r:(r['report_id'],r['period'],r['metric']))
     # Comparisons remain a shadow audit until official actual conflicts are resolved.
-    return {'schema':1,'mode':'verified_additive','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records')},'published_facts':len(safe)}
+    return {'schema':1,'mode':'verified_additive','items':safe,'comparisons':{m:results[m]['items'] for m in results}}, {'catalog':audit,'comparison':{k:v for k,v in check.items() if k not in ('quarantined','actual_conflicts','resolved_actual_records','unresolved_actual_records')},'published_facts':len(safe)}
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--output',type=Path,required=True)

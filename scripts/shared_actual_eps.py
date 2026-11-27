@@ -1,10 +1,9 @@
 """Conservative explicit quarter-column reader for saved MOPS notices."""
 import re
 import unicodedata
-from datetime import date
 NUM=r'[+-]?(?:\d+(?:,\d{3})*|\d+)(?:\.\d+)?'
 TOKEN=re.compile(r'\(?'+NUM+r'\)?%?')
-EPS=re.compile(r'(?:稅後)?每股(?:盈餘|純益|獲利)(?:\s*\([^)]*\))*\s*')
+EPS=re.compile(r'(?:稅後)?每股(?:盈餘|純益|獲利)(?:\s*\((?:元(?:/股)?|虧損|除權後追溯調整|損益)\))*\s*')
 def explicit_quarter(detail,period):
     if not re.fullmatch(r'20\d{2}-Q[1-4]',str(period)):return None
     s=unicodedata.normalize('NFKC',str(detail or ''))
@@ -24,6 +23,7 @@ def explicit_quarter(detail,period):
         if not a or not b or a.start()>=b.start():continue
         tokens=TOKEN.findall(chunk[em.end():em.end()+100])
         if len(tokens)<2 or tokens[0].endswith('%') or tokens[1].endswith('%'):continue
+        if len(tokens)>=3 and not tokens[2].endswith('%') and '增減%' not in head and '增減 %' not in head:continue
         return parse(tokens[0])
     # Combined month/quarter table, with explicit YoY columns and current quarter.
     for m in re.finditer(r'最近一季',s):

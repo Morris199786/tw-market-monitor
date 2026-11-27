@@ -7,6 +7,8 @@ class ActualTest(unittest.TestCase):
         self.assertEqual(explicit_quarter('最近一月 與去年 最近一季 與去年 科目 115年09月 同期增減% 115年第3季 同期增減% 最近四季累計 (合併核閱數) 每股盈餘 1.85 213.56% 4.60 513.33% 9.79 (元)','2026-Q3'),4.6)
     def test_negative(self):
         self.assertEqual(explicit_quarter('單季 115年第3季 114年第3季 每股盈餘(元) (0.41) (0.95) 56.84%','2026-Q3'),-0.41)
+    def test_negative_without_unit(self):
+        self.assertEqual(explicit_quarter('單季 115年第3季 114年第3季 每股盈餘 (0.41) (0.95) 56.84%','2026-Q3'),-0.41)
     def test_no_prior_header(self):
         self.assertIsNone(explicit_quarter('單季 114年第3季 每股盈餘 1.45','2026-Q3'))
 if __name__=='__main__':unittest.main()
