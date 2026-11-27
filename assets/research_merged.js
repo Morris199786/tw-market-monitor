@@ -493,6 +493,14 @@ function render() {
         const bullet=Array.isArray(b.summary)?b.summary:[];
         const target=b.validation_status==='needs_review'?'':(b.target_price_new==null?'':`目標價 ${esc(b.target_price_old!=null?b.target_price_old+' → ':'')}${esc(b.target_price_new)}`);
         card.innerHTML=`<div class="report-broker">${highlight(b.broker||'券商研究')}</div><div class="report-title">${highlight((b.name||b.title||'券商報告')+(b.ticker?' '+b.ticker:''))}</div><div class="report-meta">${b.rating?`<span class="report-chip">${highlight(b.rating)}</span>`:''}${target?`<span class="report-chip report-target">${target}</span>`:''}<span class="report-chip">報告日期 ${esc(b.date||m.original_date||m.date)}</span></div>${bullet.length?`<ul class="report-summary">${bullet.map(x=>`<li>${highlight(x)}</li>`).join('')}</ul>`:''}<details class="report-details"><summary>查看完整摘要</summary><div class="report-details-body">${window.IndustrySummary?.applies(b) ? window.IndustrySummary.render(b, highlight) : `${window.IndustrySummary?.research(b,highlight) || (b.detail?`<p>${highlight(b.detail)}</p>`:'')}${['key_points','forecast_changes','risks'].map(k=>Array.isArray(b[k])&&b[k].length?`<ul>${b[k].map((x,i)=>`<li>${researchPoint(x,i)}</li>`).join('')}</ul>`:'').join('')}`}${b.source_url?`<a href="${esc(b.source_url)}" target="_blank" rel="noopener">查看原始報告</a>`:''}</div></details>`;
+        const detailBody=card.querySelector('.report-details-body');
+        const disclosure=card.querySelector('.report-details');
+        if(detailBody && disclosure && Array.isArray(b.visualizations) && b.visualizations.length){
+          const visual=document.createElement('div');visual.className='rm-broker-visuals';
+          detailBody.prepend(visual);
+          const draw=()=>{if(!disclosure.open||visual.dataset.drawn||!window.BrokerReportCharts?.render)return;try{window.BrokerReportCharts.render(visual,b.visualizations);visual.dataset.drawn='1';}catch(e){console.warn('Broker visuals unavailable',e);}};
+          disclosure.addEventListener('toggle',draw);draw();
+        }
         if(hitHTML)card.insertAdjacentHTML('beforeend',hitHTML);
         attachReportSpeech(card,m);body.appendChild(card);continue;
       }
