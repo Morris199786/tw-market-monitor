@@ -5,7 +5,7 @@
  */
 (function (global) {
   'use strict';
-  const TYPES = new Set(['table', 'bar', 'line', 'pie', 'kpi', 'stacked_bar', 'waterfall', 'dual_axis', 'timeline', 'flow', 'scatter', 'heatmap']);
+  const TYPES = new Set(['table', 'bar', 'line', 'pie', 'donut', 'kpi', 'stacked_bar', 'waterfall', 'dual_axis', 'timeline', 'flow', 'scatter', 'heatmap']);
   const NS = 'http://www.w3.org/2000/svg';
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const number = v => (typeof v === 'number' || (typeof v === 'string' && v.trim())) && Number.isFinite(Number(v)) ? Number(v) : null;
@@ -21,7 +21,7 @@
     if (!item || typeof item !== 'object' || !TYPES.has(item.type)) return null;
     const labels = Array.isArray(item.labels) ? item.labels.slice(0,32).map(String) : [];
     const values = Array.isArray(item.values) ? item.values.slice(0,32).map(number) : [];
-    const series = Array.isArray(item.series) ? item.series.slice(0,6).map(s => ({name:String(s.name||''), values:Array.isArray(s.values)?s.values.slice(0,32).map(number):[]})) : [];
+    const series = Array.isArray(item.series) ? item.series.slice(0,6).map(s => ({name:String(s.name||''), unit:String(s.unit||item.unit||''), values:Array.isArray(s.values)?s.values.slice(0,32).map(number):[]})) : [];
     return {...item, labels, values, series};
   }
   function table(box, item) {
@@ -67,7 +67,7 @@
     const sum=a.reduce((p,c)=>p+c,0);if(sum<=0)return;
     let cursor=-Math.PI/2;const svg=svgEl('svg',{viewBox:'0 0 440 270',role:'img','aria-label':item.title||'占比',style:'width:100%;max-width:440px;height:auto;display:block;margin:auto'});
     a.forEach((v,i)=>{if(v===0)return;const start=cursor,end=cursor+v/sum*Math.PI*2;cursor=end;const cx=155,cy=135,r=108;const pt=t=>[cx+r*Math.cos(t),cy+r*Math.sin(t)];const p1=pt(start),p2=pt(end),large=end-start>Math.PI?1:0;const path=v===sum?`M ${cx-r} ${cy} a ${r} ${r} 0 1 0 ${r*2} 0 a ${r} ${r} 0 1 0 ${-r*2} 0`:`M ${cx} ${cy} L ${p1[0]} ${p1[1]} A ${r} ${r} 0 ${large} 1 ${p2[0]} ${p2[1]} Z`;svg.appendChild(svgEl('path',{d:path,fill:palette[i%palette.length]}));});
-    box.appendChild(svg);const legend=document.createElement('div');legend.className='brv-legend';item.labels.forEach((lab,i)=>{const e=document.createElement('span');e.innerHTML=`<i style="background:${palette[i%palette.length]}"></i>${esc(lab)}：${(a[i]/sum*100).toFixed(1)}%`;legend.appendChild(e);});box.appendChild(legend);
+    if(item.type==='donut')svg.appendChild(svgEl('circle',{cx:155,cy:135,r:56,fill:'var(--card,#fff)'}));box.appendChild(svg);const legend=document.createElement('div');legend.className='brv-legend';item.labels.forEach((lab,i)=>{const e=document.createElement('span');e.innerHTML=`<i style="background:${palette[i%palette.length]}"></i>${esc(lab)}：${item.unit==='%'?fmt(a[i])+'%':(a[i]/sum*100).toFixed(1)+'%'}`;legend.appendChild(e);});box.appendChild(legend);
   }
 
   // Extended visualizations: all data must be explicitly supplied by the AI.
@@ -89,8 +89,8 @@
   }
   function dualAxis(box,item){
     const labs=item.labels,ss=item.series;if(!labs.length||ss.length!==2||ss.some(s=>s.values.length!==labs.length||s.values.some(v=>v===null)))return;
-    const svg=svgBase(item.title),left=70,right=690,top=35,base=270,x=i=>left+(right-left)*(i+.5)/labs.length;
-    ss.forEach((ser,j)=>{const a=ser.values,min=Math.min(0,...a),max=Math.max(1,...a),y=v=>base-(v-min)/(max-min||1)*(base-top);const pts=a.map((v,i)=>`${x(i)},${y(v)}`).join(' ');svg.appendChild(svgEl('polyline',{points:pts,fill:'none',stroke:palette[j], 'stroke-width':3}));a.forEach((v,i)=>svg.appendChild(svgEl('circle',{cx:x(i),cy:y(v),r:3,fill:palette[j]})));txt(svg,j?745:12,20,`${ser.name||'系列'} (${ser.unit||''})`,{'text-anchor':j?'end':'start'});});labs.forEach((lab,i)=>txt(svg,x(i),292,lab,{'text-anchor':'middle'}));box.appendChild(svg);legend(box,ss.map(s=>`${s.name}${s.unit?' ('+s.unit+')':''}`));
+    const svg=svgBase(item.title),left=90,right=670,top=35,base=270,x=i=>left+(right-left)*(i+.5)/labs.length;
+    ss.forEach((ser,j)=>{const a=ser.values,min=Math.min(0,...a),max=Math.max(1,...a),y=v=>base-(v-min)/(max-min||1)*(base-top);const axisX=j?right:left;line(svg,axisX,top,axisX,base,{stroke:palette[j],'stroke-opacity':'.7'});for(let k=0;k<=4;k++){const v=min+(max-min)*k/4;txt(svg,axisX+(j?8:-8),y(v)+4,fmt(v),{'text-anchor':j?'start':'end',fill:palette[j]});}const pts=a.map((v,i)=>`${x(i)},${y(v)}`).join(' ');svg.appendChild(svgEl('polyline',{points:pts,fill:'none',stroke:palette[j], 'stroke-width':3}));a.forEach((v,i)=>svg.appendChild(svgEl('circle',{cx:x(i),cy:y(v),r:3,fill:palette[j]})));txt(svg,j?745:12,20,`${ser.name||'系列'} (${ser.unit||''})`,{'text-anchor':j?'end':'start'});});labs.forEach((lab,i)=>txt(svg,x(i),292,lab,{'text-anchor':'middle'}));box.appendChild(svg);legend(box,ss.map(s=>`${s.name}${s.unit?' ('+s.unit+')':''}`));
   }
   function timeline(box,item){
     const events=Array.isArray(item.events)?item.events:[];if(!events.length)return;const list=document.createElement('ol');list.className='brv-timeline';events.slice(0,40).forEach(e=>{if(!e||!e.date||!e.label)return;const li=document.createElement('li'),date=document.createElement('time'),strong=document.createElement('strong');date.textContent=String(e.date);strong.textContent=String(e.label);li.append(date,strong);if(e.description){const p=document.createElement('p');p.textContent=String(e.description);li.append(p);}list.appendChild(li);});if(list.children.length)box.appendChild(list);
@@ -108,7 +108,7 @@
     a.forEach(p=>{const c=svgEl('circle',{cx:x(Number(p.x)),cy:y(Number(p.y)),r:5,fill:palette[0],opacity:.75});const t=svgEl('title',{},`${p.label||''}: (${fmt(p.x)}, ${fmt(p.y)})`);c.appendChild(t);svg.appendChild(c);});txt(svg,395,312,item.x_label||'X',{'text-anchor':'middle'});txt(svg,15,20,item.y_label||'Y');box.appendChild(svg);
   }
   function heatmap(box,item){
-    const cols=Array.isArray(item.columns)?item.columns:[],rows=Array.isArray(item.rows)?item.rows:[];if(!cols.length||!rows.length)return;const nums=rows.flatMap(r=>Array.isArray(r.values)?r.values.map(number).filter(v=>v!==null):[]);if(!nums.length)return;const lo=Math.min(...nums),hi=Math.max(...nums),table=document.createElement('table');table.className='brv-table brv-heatmap',thead=table.createTHead(),tr=thead.insertRow();tr.insertCell().textContent='';cols.slice(0,20).forEach(c=>{const th=document.createElement('th');th.textContent=String(c);tr.appendChild(th);});const tbody=table.createTBody();rows.slice(0,40).forEach(r=>{if(!r||!Array.isArray(r.values))return;const row=tbody.insertRow();row.insertCell().textContent=String(r.label||'');r.values.slice(0,cols.length).forEach(raw=>{const td=row.insertCell(),v=number(raw);td.textContent=v===null?'—':fmt(v);if(v!==null){const t=(v-lo)/(hi-lo||1);td.style.background=`rgba(37,99,235,${(.08+.5*t).toFixed(2)})`;}});});const wrap=document.createElement('div');wrap.className='brv-scroll';wrap.appendChild(table);box.appendChild(wrap);
+    const cols=Array.isArray(item.columns)?item.columns:[],rows=Array.isArray(item.rows)?item.rows:[];if(!cols.length||!rows.length)return;const nums=rows.flatMap(r=>Array.isArray(r.values)?r.values.map(number).filter(v=>v!==null):[]);if(!nums.length)return;const lo=Math.min(...nums),hi=Math.max(...nums),table=document.createElement('table');table.className='brv-table brv-heatmap';const thead=table.createTHead(),tr=thead.insertRow();tr.insertCell().textContent='';cols.slice(0,20).forEach(c=>{const th=document.createElement('th');th.textContent=String(c);tr.appendChild(th);});const tbody=table.createTBody();rows.slice(0,40).forEach(r=>{if(!r||!Array.isArray(r.values))return;const row=tbody.insertRow();row.insertCell().textContent=String(r.label||'');r.values.slice(0,cols.length).forEach(raw=>{const td=row.insertCell(),v=number(raw);td.textContent=v===null?'—':fmt(v);if(v!==null){const t=(v-lo)/(hi-lo||1);td.style.background=`rgba(37,99,235,${(.08+.5*t).toFixed(2)})`;}});});const wrap=document.createElement('div');wrap.className='brv-scroll';wrap.appendChild(table);box.appendChild(wrap);
   }
 
   function render(container,visualizations){
@@ -117,53 +117,54 @@
     container.querySelectorAll(':scope > .brv-root').forEach(n=>n.remove());
     if(!Array.isArray(visualizations)||!visualizations.length)return 0;
     const root=document.createElement('section');root.className='brv-root';let count=0;
-    visualizations.forEach(raw=>{const item=normalized(raw);if(!item)return;const card=document.createElement('section');card.className='brv-card';const title=document.createElement('h4');title.textContent=String(item.title||'數據視覺化');card.appendChild(title);const before=card.childElementCount;
-      if(item.type==='table')table(card,item);else if(item.type==='kpi')kpi(card,item);else if(item.type==='pie')pie(card,item);else if(item.type==='stacked_bar')stackedBar(card,item);else if(item.type==='waterfall')waterfall(card,item);else if(item.type==='dual_axis')dualAxis(card,item);else if(item.type==='timeline')timeline(card,item);else if(item.type==='flow')flow(card,item);else if(item.type==='scatter')scatter(card,item);else if(item.type==='heatmap')heatmap(card,item);else chart(card,item);
-      if(card.childElementCount===before)return;
+    visualizations.forEach(raw=>{try{const item=normalized(raw);if(!item)return;const card=document.createElement('section');card.className='brv-card';const title=document.createElement('h4');title.textContent=String(item.title||'數據視覺化')+(item.unit&&item.type!=='dual_axis'?'（'+item.unit+'）':'');card.appendChild(title);const before=card.childElementCount;
+      if(item.type==='table')table(card,item);else if(item.type==='kpi')kpi(card,item);else if(item.type==='pie'||item.type==='donut')pie(card,item);else if(item.type==='stacked_bar')stackedBar(card,item);else if(item.type==='waterfall')waterfall(card,item);else if(item.type==='dual_axis')dualAxis(card,item);else if(item.type==='timeline')timeline(card,item);else if(item.type==='flow')flow(card,item);else if(item.type==='scatter')scatter(card,item);else if(item.type==='heatmap')heatmap(card,item);else chart(card,item);
+      if(card.childElementCount===before){const notice=document.createElement('p');notice.className='brv-note';notice.textContent='圖表資料不足或格式不符，未繪製。';card.appendChild(notice);root.appendChild(card);return;}
       if(item.note){const p=document.createElement('p');p.className='brv-note';p.textContent=String(item.note);card.appendChild(p);}root.appendChild(card);count++;
+    }catch(error){console.warn('[report chart] rendering failed',raw?.type,error);const notice=document.createElement('p');notice.className='brv-note';notice.textContent=String(raw?.title||'圖表')+'：圖表暫時無法顯示';root.appendChild(notice);}
     });
-    if(count){
+    if(root.childElementCount){
       root.querySelectorAll('svg').forEach(svg=>{
         const wrap=document.createElement('div');wrap.className='brv-plot-scroll';
         svg.parentNode.insertBefore(wrap,svg);wrap.appendChild(svg);
-        if(svg.viewBox.baseVal.width>=700)svg.style.minWidth='540px';
+        if(Number(svg.getAttribute('viewBox')?.split(/\s+/)[2])>=700)svg.style.minWidth='540px';
       });
       container.appendChild(root);
     }return count;
   }
   const style=document.createElement('style');style.textContent=`
-    :is(#reports,#researchMergedPanel) .brv-root{display:grid;gap:14px;margin:18px 0}
-    :is(#reports,#researchMergedPanel) .brv-card{min-width:0;padding:16px;border:1px solid var(--line,#d9e0e8);border-radius:14px;background:var(--card,#fff);color:var(--ink,#17202b)}
-    :is(#reports,#researchMergedPanel) .brv-card h4{margin:0 0 14px;font-size:15px;font-weight:750}
-    :is(#reports,#researchMergedPanel) .brv-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    :is(#reports,#researchMergedPanel) .brv-table{width:100%;border-collapse:collapse;font-size:13px;min-width:380px}
-    :is(#reports,#researchMergedPanel) .brv-table th,:is(#reports,#researchMergedPanel) .brv-table td{padding:9px 11px;border-bottom:1px solid var(--line,#e5e7eb);text-align:right;white-space:nowrap}
-    :is(#reports,#researchMergedPanel) .brv-table th:first-child,:is(#reports,#researchMergedPanel) .brv-table td:first-child{text-align:left}
-    :is(#reports,#researchMergedPanel) .brv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px}
-    :is(#reports,#researchMergedPanel) .brv-kpi{padding:13px;border-radius:10px;background:var(--soft,#f2f5f8);display:grid;gap:6px}
-    :is(#reports,#researchMergedPanel) .brv-kpi small{font-size:12px;opacity:.7}:is(#reports,#researchMergedPanel) .brv-kpi strong{font-size:19px}
-    :is(#reports,#researchMergedPanel) .brv-legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:12px}
-    :is(#reports,#researchMergedPanel) .brv-legend span{display:inline-flex;gap:5px;align-items:center}
-    :is(#reports,#researchMergedPanel) .brv-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
-    :is(#reports,#researchMergedPanel) .brv-timeline{margin:0;padding-left:24px;border-left:2px solid var(--line,#d9e0e8);list-style:none}
-    :is(#reports,#researchMergedPanel) .brv-timeline li{position:relative;margin:0 0 16px;display:grid;gap:3px}
-    :is(#reports,#researchMergedPanel) .brv-timeline li:before{content:'';position:absolute;left:-31px;top:6px;width:11px;height:11px;border-radius:50%;background:#2563eb}
-    :is(#reports,#researchMergedPanel) .brv-timeline time{font-size:12px;color:var(--muted,#64748b)}
-    :is(#reports,#researchMergedPanel) .brv-timeline p{margin:0;font-size:13px;line-height:1.6}
-    :is(#reports,#researchMergedPanel) .brv-flow{display:flex;flex-wrap:wrap;gap:10px}
-    :is(#reports,#researchMergedPanel) .brv-flow-node{display:grid;gap:5px;padding:12px;border:1px solid var(--line,#d9e0e8);border-radius:10px;flex:1 1 150px;min-width:0}
-    :is(#reports,#researchMergedPanel) .brv-flow-node small{line-height:1.5;color:var(--muted,#64748b)}
-    :is(#reports,#researchMergedPanel) .brv-flow-links{font-size:13px;line-height:1.7;padding-left:20px}
-    :is(#reports,#researchMergedPanel) .brv-heatmap td{min-width:62px}
-    :is(#reports,#researchMergedPanel) .brv-note{font-size:12px;opacity:.75;line-height:1.6;margin:10px 0 0}
-    :is(#reports,#researchMergedPanel) .brv-root{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
-    :is(#reports,#researchMergedPanel) .brv-card{box-sizing:border-box;max-width:100%;overflow-wrap:anywhere}
-    :is(#reports,#researchMergedPanel) .brv-scroll,:is(#reports,#researchMergedPanel) .brv-plot-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
-    :is(#reports,#researchMergedPanel) .brv-table{width:max-content!important;min-width:0!important;max-width:none!important;table-layout:auto!important}
-    :is(#reports,#researchMergedPanel) .brv-table th,:is(#reports,#researchMergedPanel) .brv-table td{width:auto!important;min-width:64px;max-width:240px;white-space:normal!important;overflow-wrap:anywhere;vertical-align:top}
-    :is(#reports,#researchMergedPanel) .brv-legend span{min-width:0;overflow-wrap:anywhere}
-    :is(#reports,#researchMergedPanel) .brv-kpis{grid-template-columns:repeat(auto-fit,minmax(min(125px,100%),1fr))}
-    @media(max-width:650px){:is(#reports,#researchMergedPanel) .brv-card{padding:12px}:is(#reports,#researchMergedPanel) .brv-card h4{font-size:14px}}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-root{display:grid;gap:14px;margin:18px 0}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-card{min-width:0;padding:16px;border:1px solid var(--line,#d9e0e8);border-radius:14px;background:var(--card,#fff);color:var(--ink,#17202b)}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-card h4{margin:0 0 14px;font-size:15px;font-weight:750}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-table{width:100%;border-collapse:collapse;font-size:13px;min-width:380px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-table th,:is(#reports,#researchMergedPanel,#rmReader) .brv-table td{padding:9px 11px;border-bottom:1px solid var(--line,#e5e7eb);text-align:right;white-space:nowrap}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-table th:first-child,:is(#reports,#researchMergedPanel,#rmReader) .brv-table td:first-child{text-align:left}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-kpi{padding:13px;border-radius:10px;background:var(--soft,#f2f5f8);display:grid;gap:6px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-kpi small{font-size:12px;opacity:.7}:is(#reports,#researchMergedPanel,#rmReader) .brv-kpi strong{font-size:19px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;font-size:12px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-legend span{display:inline-flex;gap:5px;align-items:center}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-timeline{margin:0;padding-left:24px;border-left:2px solid var(--line,#d9e0e8);list-style:none}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-timeline li{position:relative;margin:0 0 16px;display:grid;gap:3px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-timeline li:before{content:'';position:absolute;left:-31px;top:6px;width:11px;height:11px;border-radius:50%;background:#2563eb}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-timeline time{font-size:12px;color:var(--muted,#64748b)}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-timeline p{margin:0;font-size:13px;line-height:1.6}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-flow{display:flex;flex-wrap:wrap;gap:10px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-flow-node{display:grid;gap:5px;padding:12px;border:1px solid var(--line,#d9e0e8);border-radius:10px;flex:1 1 150px;min-width:0}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-flow-node small{line-height:1.5;color:var(--muted,#64748b)}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-flow-links{font-size:13px;line-height:1.7;padding-left:20px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-heatmap td{min-width:62px}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-note{font-size:12px;opacity:.75;line-height:1.6;margin:10px 0 0}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-root{grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-card{box-sizing:border-box;max-width:100%;overflow-wrap:anywhere}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-scroll,:is(#reports,#researchMergedPanel,#rmReader) .brv-plot-scroll{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-table{width:max-content!important;min-width:0!important;max-width:none!important;table-layout:auto!important}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-table th,:is(#reports,#researchMergedPanel,#rmReader) .brv-table td{width:auto!important;min-width:64px;max-width:240px;white-space:normal!important;overflow-wrap:anywhere;vertical-align:top}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-legend span{min-width:0;overflow-wrap:anywhere}
+    :is(#reports,#researchMergedPanel,#rmReader) .brv-kpis{grid-template-columns:repeat(auto-fit,minmax(min(125px,100%),1fr))}
+    @media(max-width:650px){:is(#reports,#researchMergedPanel,#rmReader) .brv-card{padding:12px}:is(#reports,#researchMergedPanel,#rmReader) .brv-card h4{font-size:14px}}
   `;
   (document.head||document.documentElement).appendChild(style);
   global.BrokerReportCharts=Object.freeze({render});
