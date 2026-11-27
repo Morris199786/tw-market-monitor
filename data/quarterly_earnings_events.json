@@ -5578,7 +5578,7 @@
   "universe_scope": "上市上櫃科技普通股＋熱力圖成分股",
   "universe_count": 984,
   "version": "2026-11-09-official-ytd-margin-recovery",
-  "updated_at": "2026-11-27T16:14+08:00",
+  "updated_at": "2026-11-27T17:09+08:00",
   "upcoming": [],
   "reports": [
     {
@@ -6393,7 +6393,7 @@
       "publish_date": "2026-11-13",
       "publish_time": "14:42:49",
       "subject": "公告本公司董事會通過115年第3季合併財務報告",
-      "source_url": "https://mopsov.twse.com.tw/mops/web/ajax_t05sr01_1?firstin=true&TYPEK=all&step=1&COMPANY_ID=7792&SPOKE_DATE=20261113&SPOKE_TIME=144249&SEQ_NO=1&skey=7792202611131",
+      "source_url": "https://mopsov.twse.com.tw/mops/web/t05st01?co_id=7792&year=115",
       "retention_status": "reporting_quarter",
       "release_type": "financial_report",
       "source_label": "公開資訊觀測站",
@@ -28107,8 +28107,12 @@
     "source_errors": [
       "planned_date/4583/2026-10-27:unavailable",
       "planned_date/8131/2026-10-27:unavailable",
-      "announcement_scan/2026-11-01~2026-11-27:ValueError:announcement schema unavailable",
-      "daily_mops:HTTPError"
+      "detail/4565/2026-11-02",
+      "planned_date/4565/2026-11-02:unavailable",
+      "planned_date/6994/2026-11-05:unavailable",
+      "planned_date/3149/2026-11-05:unavailable",
+      "detail/7792/2026-11-13",
+      "announcement_scan/2026-11-01~2026-11-27:ValueError:announcement schema unavailable"
     ],
     "historical_errors": [],
     "coverage": {
@@ -28117,17 +28121,10 @@
     },
     "calendar_errors": [],
     "missing_field_backup": {
-      "attempted": 5,
+      "attempted": 0,
       "fields_filled": 0,
       "targets": 12,
-      "errors": [
-        {
-          "key": "3718|2026-Q2",
-          "notes": [
-            "HTTPError:403 Client Error: Forbidden for url: https://www.coreintelligence.com.tw/"
-          ]
-        }
-      ]
+      "errors": []
     }
   },
   "retention_note": "依季度保留：1–3月前一年Q4；4–6月Q1；7–9月Q2；10–12月Q3"
