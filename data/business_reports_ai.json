@@ -496,6 +496,413 @@
       "visualizations": [
         {
           "type": "bar",
+          "title": "EMIB-T 有效良率改善下的載板投入降幅（%）",
+          "labels": [
+            "有效良率升至60%",
+            "有效良率升至70%"
+          ],
+          "values": [
+            16.7,
+            28.6
+          ],
+          "note": "券商簡化模型，兩情境均以有效良率50%且良品需求相同為基準，數值為所需載板投入的約略減幅。"
+        },
+        {
+          "type": "line",
+          "title": "台積電與欣興年度 EPS（新台幣元／股）",
+          "labels": [
+            "2025歷史欄",
+            "2026券商預估",
+            "2027券商預估"
+          ],
+          "series": [
+            {
+              "name": "台積電（2330）",
+              "values": [
+                66.26,
+                110.83,
+                151.11
+              ]
+            },
+            {
+              "name": "欣興（3037）",
+              "values": [
+                4.38,
+                24.93,
+                43.15
+              ]
+            }
+          ],
+          "note": "原表僅對2026與2027加註 E。"
+        }
+      ],
+      "emphasis": [
+        "直流壓降約減少68%至80%",
+        "矽橋嵌入製程良率約20%至25%",
+        "對 Intel 的2027年營收與獲利貢獻有限",
+        "成熟良率、量產能力與既有客戶基礎"
+      ],
+      "date": "2026-11-27",
+      "broker": "Cathay Futures（國泰期貨）",
+      "report_type": "sector",
+      "title": "半導體產業：EMIB-T 技術取得進展，量產瓶頸仍在",
+      "action": "sector",
+      "ticker": "",
+      "name": "",
+      "rating": "",
+      "target_price_old": null,
+      "target_price_new": null,
+      "push_reason": "AI ASIC 採用多晶粒架構帶動局部矽橋需求，EMIB-T 的 ABF 矽橋嵌入良率僅約20%至25%，即使名目月產能預估於2027年底增至1.5萬至1.6萬片晶圓，有效出貨仍取決於良率改善與客戶驗證。",
+      "summary": [
+        "報告列台積電（2330）為強力買進、目標價新台幣3,320元，列欣興（3037）為買進、目標價新台幣1,000元。",
+        "AI 晶片轉向多晶粒與異質整合，推升局部矽橋需求，Intel 的 EMIB-T 可改善供電，但直接嵌入 ABF 載板的低良率仍限制有效產出與成本競爭力。",
+        "Google TPU v9 部分設計規劃採用 EMIB-T，規格與量產時程仍待正式驗證，券商預估 EMIB-T 對 Intel 的2027年營收與獲利貢獻有限，較有意義的成長有待2028年客戶放量。",
+        "台積電憑 CoWoS-L 的成熟良率、量產能力與既有客戶基礎承接 AI 封裝需求，券商看好其2027至2028年的成長，而欣興等既有 EMIB-T 載板供應商的效率改善取決於嵌入良率能否提升。"
+      ],
+      "key_points": [
+        "Intel 自2017年量產 EMIB，並於2025年推出 EMIB-T，在矽橋內加入穿矽通孔（TSV）與金屬－絕緣體－金屬（MIM）電容，在特定測試架構下相較傳統 EMIB 供電路徑，直流壓降約減少68%至80%，供電網路（PDN）交流阻抗改善逾82%。",
+        "截至2026年11月報告發布時，供應鏈調查顯示整體 EMIB 良率約50%至55%，ABF 載板的矽橋嵌入製程良率約20%至25%，兩者分屬整體與單一製程環節。",
+        "EMIB-T 的階段性良率目標為60%；券商簡化模型在良品需求相同且有效良率為50%的基準下，若良率升至60%或70%，所需載板投入分別約減少16.7%或28.6%。",
+        "供應鏈調查顯示，2026年11月 EMIB-T 名目月產能約5,000片晶圓，預期隨新產線與製程優化在2027年底達15,000至16,000片晶圓，新增產能初期優先用於客戶驗證、製程調校與良率改善。",
+        "Broadcom 設計的 WhaleFish 預計採用台積電 CoWoS-L，聯發科共同設計的 HumuFish 與 TriggerFish 部分規劃採用 Intel EMIB-T，正式規格與時程仍待驗證。",
+        "Google TPU v9 專案最早可能於2027年11月量產，但可能延至2028年；產品別正文估 HumuFish 於2028年上半年、TriggerFish 於2028年下半年或更晚量產，首頁文字則分別寫為2028年上半年後與下半年後。",
+        "台積電 CoWoS-L 已自2024年量產，券商認為其成熟製程及先進製程、CoWoS 與 SoIC 的整合能力可支援 NVIDIA、AMD 與雲端服務商自研 ASIC 的先進封裝需求。"
+      ],
+      "beneficiaries": [
+        {
+          "ticker": "2330",
+          "name": "台積電",
+          "reason": "CoWoS-L 的成熟良率、量產能力與客戶基礎可承接 NVIDIA、AMD 與雲端服務商自研 ASIC 的封裝需求，並透過先進製程、CoWoS 和 SoIC 的整合降低客戶開發與生產風險；WhaleFish 採用 CoWoS-L 為報告預期。"
+        },
+        {
+          "ticker": "3037",
+          "name": "欣興",
+          "reason": "報告列為 EMIB-T 台灣載板供應商，長期參與 EMIB 合作並持續投入次世代矽橋嵌入製程；若嵌入良率提升並帶動客戶放量，有望透過高精度載板製程累積優勢並改善生產效率。"
+        },
+        {
+          "ticker": "",
+          "name": "Ibiden",
+          "reason": "報告列為 EMIB-T 日本載板供應商，若良率學習順利，可累積高精度嵌入製程能力，並隨良率提高改善生產效率；效益取決於良率改善與客戶放量。"
+        },
+        {
+          "ticker": "",
+          "name": "Shinko Electric",
+          "reason": "報告列為 EMIB-T 日本載板供應商，若嵌入與增層製程趨於穩定，可在相同設備下提升良品產出並改善效率；良率改善放緩會拉長投資回收期。"
+        }
+      ],
+      "risks": [
+        "矽與有機載板的熱膨脹係數（CTE）不匹配，反覆熱壓與冷卻可能造成翹曲、矽橋位移、分層與對位偏差，封裝尺寸及矽橋數增加會使誤差更容易累積。",
+        "腔體深度、矽橋與黏著層厚度，以及微孔金屬化、電鍍和細間距接合的精度會影響良率；部分製程使用的非導電薄膜（NCF）可能產生氣泡或孔洞，並在熱循環後出現裂紋或分層。",
+        "低嵌入良率可能抵銷省去獨立 RDL 中介層的成本優勢，若缺陷出現在封裝後段，已使用的高價運算晶粒與 HBM 會放大損失。",
+        "若良率改善慢於預期，新增名目產能可能無法及時轉化為有效產出，導致成本偏高、供應商投資回收延長及客戶量產延後。",
+        "TPU v9 採用規格與量產時程仍待正式驗證，報告對專案最早量產月份與各設計的量產窗口有不同表述。",
+        "CoWoS-L 仍面臨模封材料與矽的熱膨脹係數差異、大面積 RDL 翹曲、模封收縮與多層 RDL 對位挑戰。"
+      ],
+      "forecast_changes": [],
+      "detail": "局部矽橋與垂直供電\nAI 訓練與推論提高運算、記憶體頻寬與能效要求，而先進製程晶圓成本、光罩曝光尺寸及單晶粒良率限制，促使 GPU 與客製 AI ASIC 以先進封裝整合不同製程的運算晶粒、I/O 晶粒與 HBM。大型 2.5D 矽中介層的尺寸、成本、供電和產能限制推動局部矽橋應用。傳統 EMIB 在矽橋覆蓋處需將部分電力繞經載板，較高電流會放大壓降與電流集中；EMIB-T 透過橋內 TSV 垂直供電，並結合 MIM 電容與電源網格，緩解暫態電壓波動和高頻雜訊，測試改善幅度限於原文所述特定架構。\n\n封裝架構與良品成本\nEMIB-T 把開腔、矽橋固定、介電增層、金屬化及晶粒接合的精度要求集中到 ABF 載板。矽與有機材料的熱膨脹差異、嵌入高度與共平面誤差，會連帶影響微孔金屬化與細間距接合；非導電薄膜的流動性、固化收縮、玻璃轉化溫度與熱膨脹特性也關係到熱循環可靠度。CoWoS-L 先將局部矽互連、模封與正反面 RDL 整合成獨立中介層，再接合至 ABF 載板，將部分精密製程與載板製造分開，但仍需控制模封收縮、翹曲與多層對位。Intel 增投載板有助累積失效分析與監控資料，再循腔體、接合、熱處理與電鍍等環節改善設備和材料。省去獨立中介層可降低部分名目成本，能否形成良品成本優勢仍須合併考量矽橋晶圓、ABF 與 RDL 製程、折舊、測試、重工、晶粒接合及最終良率，尤其是高價運算晶粒與 HBM 的後段報廢風險。\n\nTPU v9 驗證、產能及供應商回收\nWhaleFish 預計採用 CoWoS-L，HumuFish 與 TriggerFish 部分規劃採用 EMIB-T，順利量產才有助於後者建立高階外部 AI ASIC 的商用實績。報告所述2027年11月是專案最快可能量產的時間，產品別內文把 HumuFish 與 TriggerFish 分別放在2028年上半年及下半年或更晚，首頁對兩款採用更晚的文字表述，均仍待正式確認。Intel 已完成多項 EMIB-T 驗證，但新增名目產能初期優先支援驗證、調校及良率學習，券商預估2027年營收獲利貢獻有限，2028年成長有待客戶放量。欣興、Ibiden 與 Shinko Electric 為報告列名的載板供應商；Intel 以長期合作、採購承諾及定價機制支援供應商初期投入，供應商的良品產出及投資回收仍受良率爬坡速度影響。\n\nCoWoS-L 的量產與客戶優勢\n台積電的先進製程、CoWoS 與 SoIC 整合可同時提供晶圓製造、異質整合及封裝服務，降低客戶開發及生產風險。隨 AI 晶片朝更大的封裝、更多晶粒及更多 HBM 發展，台積電擴充 CoWoS 產能並推進更大封裝尺寸，承接 NVIDIA、AMD 與雲端服務商的先進封裝需求。報告認為 EMIB-T 中長期可望成為高階 AI ASIC 的另一種封裝選擇，短期競爭地位仍取決於嵌入良率、有效產能及最終良品成本。",
+      "research_sections": [
+        {
+          "heading": "局部矽橋因應多晶粒封裝與供電要求",
+          "paragraphs": [
+            "AI 訓練與推論拉高運算、記憶體頻寬和能效需求，先進製程成本、單晶粒尺寸及良率限制讓 GPU 與客製 AI ASIC 轉向異質整合。大型矽中介層同時面臨尺寸、成本、供電與產能壓力，提高局部矽橋的應用價值。",
+            "Intel 自2017年量產 EMIB，並於2025年推出 EMIB-T，以橋內 TSV 提供垂直供電，搭配 MIM 電容與電源網格減少傳統 EMIB 繞行載板產生的供電損失。在特定測試架構下，直流壓降約減少68%至80%，PDN 交流阻抗改善逾82%。"
+          ]
+        },
+        {
+          "heading": "嵌入良率決定有效產能與良品成本",
+          "paragraphs": [
+            "EMIB-T 直接將矽橋嵌入 ABF 載板，腔體深度、平整度、矽與有機材料的熱膨脹差異、非導電薄膜黏結、微孔電鍍與細間距接合相互牽動。2026年11月供應鏈調查顯示整體 EMIB 良率約50%至55%，矽橋嵌入環節約20%至25%。CoWoS-L 先在獨立模封 RDL 中介層完成部分精密製程，再接合至載板，仍需管理翹曲、模封收縮及 RDL 對位。",
+            "Intel 可透過增加投料取得失效分析資料，找出缺陷後再優化材料與設備。以良品需求相同的簡化模型，有效良率由50%提升至階段目標60%或假設70%時，載板需求分別約少16.7%或28.6%。省去獨立中介層能否轉化為成本優勢，取決於最終良率與從材料、折舊到測試及重工的完整成本，也要考量昂貴晶粒與 HBM 的後段報廢損失。"
+          ]
+        },
+        {
+          "heading": "TPU v9 驗證與載板供應商投資回收",
+          "paragraphs": [
+            "Broadcom 設計的 WhaleFish 預計採用 CoWoS-L，聯發科共同設計的 HumuFish 與 TriggerFish 部分規劃採用 EMIB-T。報告提到 TPU v9 最早可能於2027年11月量產，產品別內文則估 HumuFish 於2028年上半年、TriggerFish 於下半年或更晚，首頁對兩款另寫為各該半年度之後，規格與時程均待正式驗證。",
+            "EMIB-T 的名目月產能由2026年11月約5,000片晶圓，預期增至2027年底15,000至16,000片晶圓。初期增量優先用於客戶驗證、調校和良率改善，券商估 Intel 在2027年的營收獲利貢獻有限，2028年能否出現較有意義的成長取決於客戶放量。",
+            "欣興、Ibiden 與 Shinko Electric 為報告列名的 EMIB-T 載板供應商。Intel 的長期合作、採購承諾與定價機制支援初期投資，若嵌入良率爬坡不如預期，供應商可能面臨成本偏高及回收期延長，客戶量產也可能延後。"
+          ]
+        },
+        {
+          "heading": "台積電維持量產競爭優勢",
+          "paragraphs": [
+            "CoWoS-L 自2024年量產，成熟良率、既有產能及客戶基礎可承接 NVIDIA、AMD 與雲端服務商自研 ASIC 的封裝需求。台積電整合先進製程、CoWoS 與 SoIC，並持續擴產及推進更大封裝尺寸。券商看好台積電2027至2028年的成長與競爭地位，認為 EMIB-T 成為外部高階 AI ASIC 封裝選項仍取決於良率、有效產能與良品成本。",
+            "報告列台積電為強力買進，目標價為新台幣3,320元，欣興為買進，目標價為新台幣1,000元。"
+          ]
+        }
+      ],
+      "industry_sections": [
+        {
+          "heading": "多晶粒設計推升局部矽橋需求",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "局部矽橋的需求來自 AI 晶片擴大規模後的成本與供電壓力。先進製程晶圓成本、單晶粒的光罩曝光尺寸與良率限制，促使 GPU 和客製 ASIC 以異質封裝整合運算晶粒、I/O 晶粒及 HBM；大型 2.5D 矽中介層同時面臨尺寸、成本、供電與產能限制。"
+            },
+            {
+              "type": "paragraph",
+              "text": "Intel 自2017年量產 EMIB，應用於 FPGA、Xeon 伺服器處理器與 HPC 晶片，2025年推出 EMIB-T。傳統 EMIB 在矽橋覆蓋區域需將部分電力繞經載板，EMIB-T 改用橋內 TSV 垂直供電，並以 MIM 電容及電源網格緩解暫態波動與高頻雜訊。原文在特定測試架構下指出，直流壓降約減少68%至80%，PDN 交流阻抗改善逾82%。"
+            }
+          ]
+        },
+        {
+          "heading": "ABF 直接嵌入提高製程難度",
+          "blocks": [
+            {
+              "type": "table",
+              "title": "局部矽橋與供電架構比較",
+              "headers": [
+                "項目",
+                "Intel EMIB",
+                "Intel EMIB-T",
+                "台積電 CoWoS-L"
+              ],
+              "rows": [
+                [
+                  "矽橋及位置",
+                  "ABF 載板內的被動矽橋",
+                  "ABF 載板內的 TSV 矽橋",
+                  "模封 RDL 中介層內的局部矽互連（LSI）"
+                ],
+                [
+                  "高密度互連",
+                  "矽橋金屬層",
+                  "矽橋金屬層",
+                  "LSI 金屬層"
+                ],
+                [
+                  "垂直供電及電容",
+                  "主要繞經矽橋外部，電容依版本而定",
+                  "橋內 TSV，內建 MIM 電容",
+                  "利用 RDL 與垂直互連，可整合 eDTC"
+                ]
+              ],
+              "note": "依報告表1整理。"
+            },
+            {
+              "type": "paragraph",
+              "text": "EMIB-T 已完成多項驗證，量產瓶頸集中在 ABF 載板的精密嵌入。2026年11月供應鏈調查的整體 EMIB 良率約50%至55%，其中矽橋嵌入環節約20%至25%。矽與有機材料的熱膨脹差異可能導致翹曲、位移和分層，腔體深度、矽橋與黏著層厚度的偏差也會傳導到後續微孔金屬化及細間距接合，封裝增大與矽橋數增加可能使誤差累積。"
+            },
+            {
+              "type": "paragraph",
+              "text": "部分接合製程使用的非導電薄膜可能形成孔洞，材料流動性、固化收縮、玻璃轉化溫度和熱膨脹特性也會影響熱循環可靠度。CoWoS-L 先在獨立中介層完成局部矽互連、模封與正反面 RDL，再接合至 ABF 載板，降低載板承擔的精密製程負荷，但仍有模封與矽的熱膨脹差、模封收縮、大面積 RDL 翹曲和多層對位風險。"
+            }
+          ]
+        },
+        {
+          "heading": "良率提升才可能轉化為成本優勢",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Intel 可透過增加載板投入保障良品供應並累積失效分析資料，再針對腔體深度、非導電薄膜接合、熱處理、電鍍及晶粒接合優化設備和材料。在良品需求相同的簡化模型下，以有效良率50%為基準，升至階段目標60%可減少約16.7%的載板投入，若升至70%則可減少約28.6%。"
+            },
+            {
+              "type": "paragraph",
+              "text": "EMIB-T 省去獨立大型 RDL 中介層，可降低部分材料和製程成本，但嵌入、增層與細間距接合的低良率可能抵銷節省。成本比較須涵蓋矽橋晶圓、ABF 加工、RDL、折舊、測試與重工、晶粒接合和最終封裝良率；後段缺陷一旦涉及昂貴運算晶粒與 HBM，良品成本對缺陷尤其敏感。"
+            }
+          ]
+        },
+        {
+          "heading": "TPU v9 導入與名目產能爬坡",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Google TPU v9 是 EMIB-T 建立外部高階 AI ASIC 商用實績的潛在專案。Broadcom 設計的 WhaleFish 預計採用台積電 CoWoS-L，聯發科共同設計的 HumuFish 與 TriggerFish 部分規劃採用 EMIB-T。專案最快可能於2027年11月量產，產品別正文則分別估2028年上半年及下半年或更晚，首頁寫為各該半年度之後，規格、時程與量產仍待正式驗證。"
+            },
+            {
+              "type": "paragraph",
+              "text": "2026年11月 EMIB-T 名目月產能約5,000片晶圓，預期隨新線及製程優化於2027年底達15,000至16,000片晶圓。新增產能初期優先支援客戶驗證、製程調校及良率學習，實際良品產出受嵌入良率限制。券商預估 Intel 2027年營收與獲利貢獻有限，較有意義的成長有待2028年客戶放量。"
+            },
+            {
+              "type": "paragraph",
+              "text": "欣興、Ibiden 與 Shinko Electric 為報告列名的載板供應商。欣興長期參與 EMIB 並投資次世代橋接嵌入製程，Intel 透過長期合作、採購承諾及定價機制支援供應商初期投入。良率上升可提高相同設備的良品產出，改善不及預期則可能提高成本、延長投資回收並推遲客戶量產。"
+            }
+          ]
+        },
+        {
+          "heading": "台積電的量產優勢與本期評等",
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "CoWoS-L 自2024年量產，成熟良率、可穩定量產及既有客戶群使台積電能承接 NVIDIA、AMD 與雲端服務商自研 ASIC 的需求。先進製程、CoWoS 和 SoIC 的垂直整合有助降低客戶開發及生產風險，擴充產能與發展更大封裝尺寸則回應更高的晶粒及 HBM 整合需求。券商看好台積電2027至2028年的先進封裝成長，EMIB-T 中長期能否形成競爭取決於嵌入良率、有效產能與最終良品成本。"
+            },
+            {
+              "type": "table",
+              "title": "台股評等與年度 EPS",
+              "headers": [
+                "公司",
+                "評等",
+                "目標價（新台幣元）",
+                "2025 EPS",
+                "2026E EPS",
+                "2027E EPS"
+              ],
+              "rows": [
+                [
+                  "台積電（2330）",
+                  "強力買進",
+                  3320,
+                  66.26,
+                  110.83,
+                  151.11
+                ],
+                [
+                  "欣興（3037）",
+                  "買進",
+                  1000,
+                  4.38,
+                  24.93,
+                  43.15
+                ]
+              ],
+              "note": "EPS 按台股每股新台幣元呈現，2025欄未標 E，2026E 與2027E 為報告預估。"
+            }
+          ]
+        }
+      ],
+      "ai_layout_version": "ai-directed-v2",
+      "ai_processed_at": "2026-11-27T08:55+08:00",
+      "quarterly_eps": [],
+      "financial_forecasts": [
+        {
+          "period": "2025",
+          "metric": "eps",
+          "value": 66.26,
+          "unit": "元／股",
+          "type": "actual",
+          "source": "broker",
+          "scope": "台積電",
+          "evidence": "TSMC      2330 TT       66.26     110.83       151.11     46.4%       67.3%       36.4%"
+        },
+        {
+          "period": "2026",
+          "metric": "eps",
+          "value": 110.83,
+          "unit": "元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "台積電",
+          "evidence": "TSMC      2330 TT       66.26     110.83       151.11     46.4%       67.3%       36.4%"
+        },
+        {
+          "period": "2027",
+          "metric": "eps",
+          "value": 151.11,
+          "unit": "元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "台積電",
+          "evidence": "TSMC      2330 TT       66.26     110.83       151.11     46.4%       67.3%       36.4%"
+        },
+        {
+          "period": "2025",
+          "metric": "eps",
+          "value": 4.38,
+          "unit": "元／股",
+          "type": "actual",
+          "source": "broker",
+          "scope": "欣興",
+          "evidence": "Unimicron   3037 TT       4.38       24.93       43.15      31.3%       469.2%      73.1%"
+        },
+        {
+          "period": "2026",
+          "metric": "eps",
+          "value": 24.93,
+          "unit": "元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "欣興",
+          "evidence": "Unimicron   3037 TT       4.38       24.93       43.15      31.3%       469.2%      73.1%"
+        },
+        {
+          "period": "2027",
+          "metric": "eps",
+          "value": 43.15,
+          "unit": "元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "欣興",
+          "evidence": "Unimicron   3037 TT       4.38       24.93       43.15      31.3%       469.2%      73.1%"
+        },
+        {
+          "period": "2025",
+          "metric": "eps",
+          "value": -0.06,
+          "unit": "美元／股",
+          "type": "actual",
+          "source": "broker",
+          "scope": "Intel",
+          "evidence": "Intel     INTC US       -0.06      1.09         1.54         -           -        41.3%"
+        },
+        {
+          "period": "2026",
+          "metric": "eps",
+          "value": 1.09,
+          "unit": "美元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "Intel",
+          "evidence": "Intel     INTC US       -0.06      1.09         1.54         -           -        41.3%"
+        },
+        {
+          "period": "2027",
+          "metric": "eps",
+          "value": 1.54,
+          "unit": "美元／股",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "Intel",
+          "evidence": "Intel     INTC US       -0.06      1.09         1.54         -           -        41.3%"
+        },
+        {
+          "period": "2026-Q4",
+          "metric": "other",
+          "value": 5000.0,
+          "unit": "片晶圓／月",
+          "type": "actual",
+          "source": "broker",
+          "scope": "Intel EMIB-T",
+          "evidence": "According to supply chain checks, EMIB-T monthly capacity is currently approximately\n 5,000 wafers",
+          "metric_name": "EMIB-T monthly capacity"
+        },
+        {
+          "period": "2027-Q4",
+          "metric": "other",
+          "value": 15000.0,
+          "unit": "片晶圓／月",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "Intel EMIB-T",
+          "evidence": "5,000 wafers and is expected to reach 15,000–16,000 wafers by end-2027 with new lines\n and process optimization.",
+          "metric_name": "EMIB-T monthly capacity（年底預估區間下限）"
+        },
+        {
+          "period": "2027-Q4",
+          "metric": "other",
+          "value": 16000.0,
+          "unit": "片晶圓／月",
+          "type": "forecast",
+          "source": "broker",
+          "scope": "Intel EMIB-T",
+          "evidence": "5,000 wafers and is expected to reach 15,000–16,000 wafers by end-2027 with new lines\n and process optimization.",
+          "metric_name": "EMIB-T monthly capacity（年底預估區間上限）"
+        }
+      ],
+      "stock_views": [],
+      "validation_status": "verified",
+      "audit_version": "2026-11-22-optional-target-v2",
+      "id": "1fWLjnGgEcR6WSJdw8aK27VNx64jQz1ef",
+      "source_fingerprint": "028425a256d9626989c6c2b89fed3cbe",
+      "status": "ready",
+      "group_date": "2026-11-27",
+      "source_name": "【Cathay】Semiconductor Industry-EMIB-T Advances, Volume Bottlenecks Persist-20261127.pdf",
+      "source_url": "https://drive.google.com/file/d/1fWLjnGgEcR6WSJdw8aK27VNx64jQz1ef/view",
+      "provider": "codex-plan"
+    },
+    {
+      "visualizations": [
+        {
+          "type": "bar",
           "title": "凱基年度EPS預估（新台幣元／股）",
           "labels": [
             "2026年預估",
