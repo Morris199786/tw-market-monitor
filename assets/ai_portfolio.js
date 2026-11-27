@@ -149,7 +149,16 @@ ${(data.limitations||[]).map(x=>`<p>${esc(x)}</p>`).join('')}</details><p class=
     try {
       const response=await fetch('./data/ai_portfolio.json?v='+Date.now(),{cache:'no-store'});
       if(!response.ok)throw Error('portfolio not ready');
-      const next=await response.json();if(![1,2].includes(next.schema)||!next.config||!Array.isArray(next.decisions))throw Error('invalid portfolio');
+      let next=await response.json();
+      if(next.format==='portfolio-byte-parts-v1'){
+        if(!Array.isArray(next.parts)||!next.parts.length||!next.parts.every(p=>/^ai_portfolio_parts\/\d{5}\.bin$/.test(p))||!Number.isSafeInteger(next.bytes)||next.bytes<1)throw Error('invalid portfolio parts');
+        const stamp=Date.now();
+        const parts=await Promise.all(next.parts.map(async p=>{const res=await fetch('./data/'+p+'?v='+stamp,{cache:'no-store'});if(!res.ok)throw Error('portfolio part unavailable');return res.arrayBuffer()}));
+        const total=parts.reduce((n,p)=>n+p.byteLength,0);if(total!==next.bytes)throw Error('portfolio parts incomplete');
+        const bytes=new Uint8Array(total);let offset=0;for(const part of parts){bytes.set(new Uint8Array(part),offset);offset+=part.byteLength;}
+        next=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+      }
+      if(![1,2].includes(next.schema)||!next.config||!Array.isArray(next.decisions))throw Error('invalid portfolio');
       const marketResponse=await fetch('./data/market_monitor.json?v='+Date.now(),{cache:'no-store'}).catch(()=>null);
       const nextMarket=marketResponse?.ok?await marketResponse.json().catch(()=>null):null;
       if(id!==request)return;data=next;marketData=nextMarket;render();
