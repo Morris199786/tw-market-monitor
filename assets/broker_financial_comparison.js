@@ -41,8 +41,13 @@
       const url=String(r.source_url||''), name=esc(r.broker);
       const link=/^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(url)?'<a href="'+esc(url)+'" target="_blank" rel="noopener">'+name+'</a>':name;
       const tone=delta>0?'above':delta<0?'below':'flat';
+      const aliases={'GF Securities':'廣發','CLSA':'里昂','Morgan Stanley':'摩根士丹利','Goldman Sachs':'高盛','J.P. Morgan':'摩根大通','JP Morgan':'摩根大通','UBS':'瑞銀','Citi':'花旗','Daiwa':'大和','BofA':'美銀'};
+      const raw=String(r.broker||'');
+      const short=aliases[raw]||raw.replace(/投顧$|證券$/g,'');
+      const source=esc(date(r.report_date).slice(5).replace('-','/')+' '+short);
+      const visible=rate||result;
       const detail=esc(date(r.report_date))+' '+link+'｜預估 '+estimate.toFixed(2)+unit+(metric==='eps'?'':'｜差 '+sign+delta.toFixed(2)+'pp');
-      return '<details class="broker-inline-compact"><summary class="broker-inline-rate '+tone+'" title="'+esc(kind==='monthly'?'單月 EPS／整季預估':'實際／預估')+'">'+esc(result)+'</summary><div class="broker-inline-detail">'+detail+'</div></details>';
+      return '<details class="broker-inline-compact"><summary aria-label="'+esc(raw+' '+date(r.report_date)+' '+result)+'"><span class="broker-compact-source">'+source+'</span><span class="broker-inline-rate '+tone+'">'+esc(visible)+'</span></summary><div class="broker-inline-detail">'+detail+'</div></details>';
     }).join('');
     el.innerHTML=html;
     if(!old)host.appendChild(el);
