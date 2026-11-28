@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install requests pypdf
+      - run: pip install requests pypdf yfinance
       - name: Collect official data
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
@@ -66,3 +66,5 @@ jobs:
 # Collect current EDGAR filings after the latest bulk archive.
 
 # Retry after two SEC gateway timeouts with official attachment fallback.
+
+# Rebuild holdings with SEC manager names and split-adjusted comparisons.
