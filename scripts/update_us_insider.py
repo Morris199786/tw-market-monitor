@@ -151,8 +151,8 @@ def calc(rows,prices):
             result.append(dict(threshold=threshold,events=len(events),horizon=h,n=len(returns),mean=mean(returns) if returns else None,median=median(returns) if returns else None,win=100*sum(v>0 for v in returns)/len(returns) if returns else None))
     return result
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument("--days",type=int,default=92);args=parser.parse_args()
-    today=dt.datetime.now(dt.timezone.utc).date();start=(today-dt.timedelta(days=args.days)).isoformat();end=(today+dt.timedelta(days=1)).isoformat()
+    parser=argparse.ArgumentParser();parser.add_argument("--days",type=int,default=400);args=parser.parse_args()
+    today=dt.datetime.now(dt.timezone.utc).date();start=(today-dt.timedelta(days=max(args.days,400))).isoformat();end=(today+dt.timedelta(days=1)).isoformat()
     config=json.loads((ROOT/"watchlist.json").read_text());tickers=config["tickers"]
     mapping={x["ticker"].upper():x["cik_str"] for x in get(SEC+"/files/company_tickers.json").json().values()}
     raw=[];coverage={};prices={}
@@ -165,7 +165,7 @@ def main():
     import pandas as pd
     cal=xcals.get_calendar("XNYS")
     now=pd.Timestamp.now(tz="UTC")
-    sessions=cal.sessions_in_range(pd.Timestamp(today-dt.timedelta(days=14)),pd.Timestamp(today))
+    sessions=cal.sessions_in_range(pd.Timestamp(start),pd.Timestamp(today))
     expected=max(str(x.date()) for x in sessions if cal.session_close(x)<=now)
     prior_prices=previous.get("prices",{})
     for ticker in tickers:
@@ -220,7 +220,7 @@ def main():
     for r in rows:
         r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
     price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
     cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":2,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
     tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
 if __name__=="__main__":main()
