@@ -55,7 +55,7 @@ html[data-theme=dark] #usInsiderRoot .uii-warning{background:#382d1e;color:#f0c7
 @media(max-width:650px){#usInsiderRoot .uii-card{padding:12px;border-radius:15px}#usInsiderRoot .uii-tools{grid-template-columns:repeat(2,minmax(0,1fr))}#usInsiderRoot th,#usInsiderRoot td{padding:9px 4px}#usInsiderRoot .uii-rank table{width:100%;min-width:310px}#usInsiderRoot .uii-stocklink small{margin-right:1px}#usInsiderRoot h1{font-size:1.5em}#usInsiderRoot .uii-overview{padding:9px 10px}}
 
 /* Match the existing ETF controls, rather than the browser's oversized native select face. */
-#usInsiderRoot .uii-tools select,#usInsiderRoot .uii-tools input,#usInsiderRoot select[data-field=ticker]{font-family:inherit;font-size:14px;font-weight:500;line-height:1.4;letter-spacing:normal;-webkit-appearance:none;appearance:none}
+#usInsiderRoot select,#usInsiderRoot .uii-tools input{font-family:inherit;font-size:14px;font-weight:500;line-height:1.4;letter-spacing:normal;-webkit-appearance:none;appearance:none}
 #usInsiderRoot select{padding-right:30px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%237b8798' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 #usInsiderRoot select option{font-family:inherit;font-size:14px;font-weight:500}
 #usInsiderRoot .uii-tools select{padding-left:12px}
@@ -107,3 +107,7 @@ html[data-theme=dark] #usInsiderRoot .uii-warning{background:#382d1e;color:#f0c7
 #usInsiderRoot .uii-purchase-help strong{color:var(--uii-ink);font-weight:650}
 #usInsiderRoot .uii-help-head button{min-height:32px;min-width:32px;padding:0;border:0;background:transparent;color:var(--uii-muted);font-size:1.35em;line-height:1}
 @media(max-width:650px){#usInsiderRoot .uii-purchase-control select{font-size:clamp(11px,3.3vw,14px);padding-left:7px;padding-right:21px!important;background-position:right 4px center;background-size:13px}#usInsiderRoot .uii-purchase-help{padding:10px 12px}}
+
+/* Ownership and buyback filters: same native-control reset as insider filters. */
+#usInsiderRoot .uii-rank-controls select{font-family:inherit;font-size:14px;font-weight:500;line-height:1.4;-webkit-appearance:none;appearance:none;min-height:42px;min-width:0;box-sizing:border-box}
+#usInsiderRoot .uii-rank-controls select[data-field=extraTicker],#usInsiderRoot .uii-rank-controls select[data-field=extraPeriod]{flex:1 1 0;width:0;padding-left:12px}
