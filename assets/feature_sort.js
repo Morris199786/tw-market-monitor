@@ -16,6 +16,8 @@
     "reports",
     "selfReports",
     "flows",
+    "etfFlow",
+    "usInsider",
     "volume",
     "turnover",
     "marginLending",

@@ -1,0 +1,103 @@
+name: US Insider Monitor
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: SEC filing lookback (days)
+        default: '92'
+        required: true
+  pull_request:
+    paths:
+      - 'scripts/update_us_insider.py'
+      - 'tests/test_us_insider.py'
+      - '.github/workflows/us-insider.yml'
+      - 'assets/us_insider.js'
+permissions:
+  contents: read
+concurrency:
+  group: us-insider-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests yfinance exchange-calendars
+      - run: python -m unittest discover -s tests -p test_us_insider.py
+      - run: node --check assets/us_insider.js
+  update:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/us-insider-monitor')
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests yfinance exchange-calendars
+      - name: Check SEC endpoint access
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+        run: |
+          python - <<'PY'
+          import os, requests
+          if not os.environ.get('SEC_USER_AGENT'): raise SystemExit('SEC_USER_AGENT must contain an actual contact email; configure a repository secret or variable.')
+          for url in ('https://www.sec.gov/files/company_tickers.json','https://data.sec.gov/submissions/CIK0000820318.json','https://www.sec.gov/Archives/edgar/full-index/2026/QTR4/master.idx'):
+              try:
+                  r=requests.get(url,headers={'User-Agent':os.environ['SEC_USER_AGENT']},timeout=30,stream=True)
+                  print(r.status_code,url,flush=True);r.close()
+              except requests.RequestException as e: print(type(e).__name__,url,flush=True)
+          PY
+      - name: Fetch SEC filings and calculate returns
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+          LOOKBACK: ${{ inputs.days || '92' }}
+        run: python scripts/update_us_insider.py --days "$LOOKBACK"
+      - name: Check actual coverage
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data/us_insider/latest.json'))
+          print(d['coverage_note'])
+          print('Purchase rows:',len(d['transactions']))
+          print('Price histories:',len(d['prices']))
+          assert d['transactions'], 'No purchase rows: cannot validate'
+          assert d['prices'], 'No price histories: cannot validate'
+          assert d['schema_version']==2 and all(v['status']=='scanned' for v in d['coverage'].values())
+          assert all(v and v[-1]['date']<=d['expected_price_as_of'] for v in d['prices'].values())
+          assert set(d['stale_prices'])=={t for t,v in d['prices'].items() if v[-1]['date']!=d['expected_price_as_of']}
+          print('Expected market session:',d['expected_price_as_of'],'Actual:',d['price_as_of'],'Stale:',d['stale_prices'])
+          assert __import__('pathlib').Path('data/us_insider/filing_cache.json').exists()
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: us-insider-live-data
+          path: data/us_insider/latest.json
+      - name: Save data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/us_insider/latest.json data/us_insider/filing_cache.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Update US insider transactions"
+          branch="${{ github.head_ref || github.ref_name }}"
+          for attempt in 1 2 3; do
+            git fetch origin "$branch"
+            # Do not publish results computed against changed collector or watchlist.
+            if ! git diff --quiet HEAD "origin/$branch" -- scripts/update_us_insider.py data/us_insider/watchlist.json; then
+              echo "Collector or watchlist changed; refusing stale publication."
+              exit 1
+            fi
+            git rebase "origin/$branch" || { git rebase --abort; exit 1; }
+            git push origin HEAD:"$branch" && exit 0
+            sleep 3
+          done
+          exit 1
