@@ -7,6 +7,7 @@ on:
       - '.github/workflows/us-13f-rebuild.yml'
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: us-ownership-research
   cancel-in-progress: false
@@ -16,6 +17,15 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: 13f-source-snapshots
+          run-id: 46155113153
+          github-token: ${{ github.token }}
+          path: /tmp/13f-recovery
+        if: github.event_name == 'push'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -30,6 +40,7 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: |
           cp data/us_insider/institutional.json /tmp/previous.json
+          if [ '${{ github.event_name }}' = push ]; then export SEC_13F_SNAPSHOT_DIR=/tmp/13f-recovery; fi
           python scripts/update_us_institutional.py
           python - <<'PY'
           import json,hashlib
@@ -39,6 +50,8 @@ jobs:
           old=json.load(open('/tmp/previous.json'))
           assert set(old['coverage']) <= set(d['coverage'])
           assert d['latest_period'] >= old['latest_period']
+          assert d['row_count'] >= old['row_count']
+          if __import__('os').environ.get('SEC_13F_SNAPSHOT_DIR'): assert d['row_count']==704812
           assert d['manager_name_coverage']==d['row_count']
           assert sum(d['position_status_counts'].values())==d['row_count']
           n=0
@@ -53,23 +66,40 @@ jobs:
           print('Reconciliation:',d['reconciliation_audit'])
           print('Transitions:',d['position_status_counts'])
           for q,rr in d['summary'].items():
-           print(q,'estimated money coverage',sum(x.get('estimated_change_usd') is not None for x in rr),'/',len(rr))
+           nprice=sum(x.get('estimated_change_usd') is not None for x in rr)
+           print(q,'estimated money coverage',nprice,'/',len(rr))
+           assert nprice>=0.95*len(rr), 'Insufficient quarter price coverage'
           PY
       - uses: actions/upload-artifact@v4
         with:
           name: 13f-source-snapshots
-          path: data/us_insider/institutional_raw/*.json.gz
+          path: |
+            data/us_insider/institutional_raw/*.json.gz
+            data/us_insider/institutional.json
+            data/us_insider/institutional_stocks/*.json
           retention-days: 90
       - name: Publish validated output
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/us_insider/institutional.json data/us_insider/institutional_stocks
-          git diff --cached --quiet && exit 0
-          git commit -m "Publish reconciled 13F holdings"
+          mkdir -p /tmp/13f-publish
+          cp -a data/us_insider/institutional.json data/us_insider/institutional_stocks /tmp/13f-publish/
           for attempt in 1 2 3; do
             git fetch origin main
-            git rebase origin/main || { git rebase --abort; exit 1; }
+            git diff --quiet HEAD origin/main -- scripts/update_us_institutional.py scripts/us_13f_reconcile.py data/us_insider/watchlist.json || exit 1
+            git reset --hard origin/main
+            python - <<'PY'
+          import json
+          old=json.load(open('data/us_insider/institutional.json'))
+          new=json.load(open('/tmp/13f-publish/institutional.json'))
+          assert new['latest_period']>=old['latest_period']
+          assert set(old['coverage'])<=set(new['coverage'])
+          assert new['row_count']>=old['row_count']
+          PY
+            cp -a /tmp/13f-publish/institutional.json /tmp/13f-publish/institutional_stocks data/us_insider/
+            git add data/us_insider/institutional.json data/us_insider/institutional_stocks
+            git diff --cached --quiet && exit 0
+            git commit -m "Publish validated reconciled 13F holdings"
             git push origin HEAD:main && exit 0
             sleep 3
           done
