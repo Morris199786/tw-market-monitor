@@ -17,7 +17,7 @@ def table(z,name):
 def main():
  from probe_us_13f_sources import resolve_watchlist, positions as sample_positions
  watch=set(json.loads((ROOT/"watchlist.json").read_text())["tickers"])
- now=dt.date.today(); filings={}; positions=defaultdict(int); sources=[]
+ now=dt.date.today(); filings={}; positions=defaultdict(int); market_values=defaultdict(int); sources=[]
  # Use the same resolver that passed the 110/110 acceptance run.
  # The observed filing codes are candidates only; OpenFIGI must verify them.
  sample_base=SEC+"/Archives/edgar/data/1787596/"
@@ -54,7 +54,9 @@ def main():
    acc=x.get("ACCESSION_NUMBER");cusip=x.get("CUSIP","").strip().upper()
    if acc not in filings or (x.get("PUTCALL") or "").strip() or x.get("SSHPRNAMTTYPE")!="SH":continue
    if cusip not in candidates:continue
-   try:positions[(acc,cusip)]+=int(float(x["SSHPRNAMT"]))
+   try:
+    positions[(acc,cusip)]+=int(float(x["SSHPRNAMT"]))
+    if x.get("VALUE"):market_values[(acc,cusip)]+=int(float(x["VALUE"]))
    except (ValueError,KeyError):continue
  if len(sources)<2 or not positions:raise RuntimeError("No matched official holdings; preserve prior output")
  # Bridge the gap between published bulk archives and the current filing index.
@@ -110,14 +112,17 @@ def main():
      period=cover.findtext(".//periodOfReport") or cover.findtext(".//reportCalendarOrQuarter")
      if not period:raise ValueError("Missing reporting period")
      if not tables and form=="13F-HR":raise ValueError("Missing holdings table")
-     local=defaultdict(int)
+     local=defaultdict(int); local_values=defaultdict(int)
      for root in tables:
       for x in root.findall("infoTable"):
        if (x.findtext("putCall") or "").strip() or x.findtext("shrsOrPrnAmt/sshPrnamtType")!="SH":continue
        c=(x.findtext("cusip") or "").strip().upper()
-       if c in candidates:local[c]+=int(x.findtext("shrsOrPrnAmt/sshPrnamt"))
+       if c in candidates:
+        local[c]+=int(x.findtext("shrsOrPrnAmt/sshPrnamt"))
+        if x.findtext("value"):local_values[c]+=int(x.findtext("value"))
      filings[acc]=dict(cik=cik.zfill(10),period=period,filed=filed,form=form,manager_name=(cover.findtext(".//filingManager/name") or fields[1]).strip())
      for c,n in local.items():positions[(acc,c)]=n
+     for c,v in local_values.items():market_values[(acc,c)]=v
      bridge_ok+=1
     except Exception as e:
      bridge_failed.append((acc,str(e)[:180]))
@@ -148,10 +153,11 @@ def main():
    if n is not None:by[(ticker,cik,cusip)][p]=(n,d,acc)
  from update_us_insider import price_history
  from fractions import Fraction
- split_events={}
+ split_events={}; price_histories={}
  for ticker in sorted(watch):
   prices=price_history(ticker,cutoff,(now+dt.timedelta(days=1)).isoformat())
   if not prices:raise RuntimeError("Missing corporate action history: "+ticker)
+  price_histories[ticker]=prices
   split_events[ticker]=[(x["date"],Fraction(str(x["split"]))) for x in prices if x["split"]>0 and x["split"]!=1]
  rows=[]
  for (ticker,cik,cusip),hist in by.items():
@@ -164,7 +170,7 @@ def main():
     if prev[-1]<day<=p:factor*=ratio
    old=round(raw_old*factor)
    name=filings[acc].get("manager_name") or filings[hist[prev[-1]][2]].get("manager_name") or ""
-   rows.append(dict(ticker=ticker,cik=cik,manager_name=name,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,previous_shares_raw=raw_old,split_factor=float(factor),change=n-old,change_pct=(n-old)/old*100 if old else None,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+   rows.append(dict(ticker=ticker,cik=cik,manager_name=name,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,previous_shares_raw=raw_old,split_factor=float(factor),change=n-old,change_pct=(n-old)/old*100 if old else None,accession=acc,reported_value=market_values.get((acc,cusip)),previous_reported_value=market_values.get((hist[prev[-1]][2],cusip)),url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
  latest_expected=(dt.date(now.year,((now.month-1)//3)*3+1,1)-dt.timedelta(days=1))
  if now<latest_expected+dt.timedelta(days=45):
   latest_expected=dt.date(latest_expected.year,((latest_expected.month-1)//3)*3+1,1)-dt.timedelta(days=1)
@@ -193,10 +199,25 @@ def main():
   filename=ticker+".json";tmp=out/(filename+".tmp");tmp.write_bytes(blob);tmp.replace(out/filename)
   manifest[ticker]={"file":"institutional_stocks/"+filename,"count":len(stockrows),"sha256":hashlib.sha256(blob).hexdigest()}
   written+=len(stockrows)
-  agg=defaultdict(lambda:dict(up=0,down=0,flat=0,change=0))
+  agg=defaultdict(lambda:dict(up=0,down=0,flat=0,change=0,previous_shares=0,shares=0,increase_shares=0,decrease_shares=0))
   for r in stockrows:
-   g=agg[r["period"]];g["up" if r["change"]>0 else "down" if r["change"]<0 else "flat"]+=1;g["change"]+=r["change"]
-  for period,g in agg.items():summary[period].append(dict(ticker=ticker,**g))
+   g=agg[r["period"]];g["up" if r["change"]>0 else "down" if r["change"]<0 else "flat"]+=1;g["change"]+=r["change"];g["previous_shares"]+=r["previous_shares"];g["shares"]+=r["shares"];g["increase_shares"]+=max(0,r["change"]);g["decrease_shares"]+=max(0,-r["change"])
+  for period,g in agg.items():
+   # SEC reports quarter-end fair values in USD (2023 onward). Infer the
+   # quarter-end price only from consistent reported value/share ratios.
+   # Do not substitute today's price or combine incompatible share classes.
+   from statistics import median
+   ratios=[r["reported_value"]/r["shares"] for r in stockrows if r["period"]==period and r["shares"]>=100 and r.get("reported_value",0) and r["reported_value"]>0]
+   price=None
+   if len(ratios)>=3:
+    mid=median(ratios)
+    consistent=[v for v in ratios if abs(v-mid)<=max(.01,mid*.002)]
+    if len(consistent)/len(ratios)>=.95:price=round(median(consistent),4)
+   g["quarter_price"]=price
+   g["quarter_price_source"]="SEC reported quarter-end market value / shares (median)" if price is not None else None
+   g["estimated_change_usd"]=g["change"]*price if price is not None else None
+   g["change_pct"]=100*g["change"]/g["previous_shares"] if g["previous_shares"] else None
+   summary[period].append(dict(ticker=ticker,**g))
  assert written==len(rows)
  for file in out.glob("*.json"):
   if file.stem not in manifest:file.unlink()
