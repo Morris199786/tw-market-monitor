@@ -124,7 +124,7 @@ def main():
     cs=sorted(candidates)
     for i in range(0,len(cs),10):
         batch=cs[i:i+10]
-        items=mapping([{"idType":"ID_CUSIP","idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch])
+        items=mapping([{"idType":("ID_CINS" if c[0].isalpha() else "ID_CUSIP"),"idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch])
         for c,item in zip(batch,items):
             matches=set()
             for x in item.get("data",[]):
@@ -146,7 +146,7 @@ def main():
     cs=sorted(extra)
     for i in range(0,len(cs),10):
         batch=cs[i:i+10]
-        items=mapping([{"idType":"ID_CUSIP","idValue":c,"marketSecDes":"Equity"} for c in batch])
+        items=mapping([{"idType":("ID_CINS" if c[0].isalpha() else "ID_CUSIP"),"idValue":c,"marketSecDes":"Equity"} for c in batch])
         for c,item in zip(batch,items):
             matches=set()
             for x in item.get("data",[]):
@@ -155,10 +155,11 @@ def main():
                 matches.update(t for t in missing if ids & ticker_figis[t])
             if len(matches)==1:found[next(iter(matches))].add(c)
     print("Foreign fallback recovered:",sorted(missing & set(found)),flush=True)
+    print("International securities verified:",sorted(t for t in found if any(c[0].isalpha() for c in found[t])),flush=True)
     print("OpenFIGI returned security classes for watchlist:",dict(type_counts),flush=True)
     print("OpenFIGI verified tickers:",sorted(found),flush=True)
     print("Unmapped:",sorted(watch-set(found)),flush=True)
     print("Coverage:",len(found),"/",len(watch),flush=True)
     assert {"NVDA","AMD","MU","MSFT","AMZN"}<=set(found),"Core mapping failed"
-    assert len(found)>=100,"Coverage below acceptance threshold; do not publish"
+    assert len(found)==len(watch),"Full watchlist coverage required; investigate remaining tickers before publishing"
 if __name__=="__main__":main()
