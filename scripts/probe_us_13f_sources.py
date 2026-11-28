@@ -58,22 +58,53 @@ def main():
             if any(q and v and (q<=v or v<=q or len(q&v)>=2) for v in nt.values()):candidates.add(c)
     assert rows>1000,("PDF row count",rows)
     print("PDF pages/rows/candidates:",len(reader.pages),rows,len(candidates),flush=True)
-    found=defaultdict(set); errors=0
-    cs=sorted(candidates)
-    for i in range(0,len(cs),10):
-        batch=cs[i:i+10]
-        req=[{"idType":"ID_CUSIP","idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch]
-        for retry in range(3):
-            r=requests.post("https://api.openfigi.com/v3/mapping",json=req,timeout=45)
+    # Independently query each exact US ticker using OpenFIGI's ticker mapping.
+    # FIGI itself does not return CUSIP; use returned issuer names to improve
+    # PDF candidate selection and verify candidates by CUSIP in a second pass.
+    def mapping(jobs):
+        for retry in range(4):
+            r=requests.post("https://api.openfigi.com/v3/mapping",json=jobs,timeout=45)
             if r.status_code!=429:break
             time.sleep(65)
         r.raise_for_status()
-        items=r.json()
-        assert len(items)==len(batch)
-        for c,item in zip(batch,items):
-            matches={x["ticker"] for x in item.get("data",[]) if x.get("ticker") in watch and x.get("securityType2") in ("Common Stock","Depositary Receipt")}
-            if len(matches)==1:found[next(iter(matches))].add(c)
+        result=r.json()
+        assert len(result)==len(jobs)
         time.sleep(2.6)
+        return result
+    issuer_aliases={}
+    allowed={"Common Stock","Depositary Receipt","REIT","ETP","ETN","Closed-End Fund"}
+    for i in range(0,len(watch),10):
+        batch=sorted(watch)[i:i+10]
+        items=mapping([{"idType":"TICKER","idValue":t,"exchCode":"US","marketSecDes":"Equity"} for t in batch])
+        for t,item in zip(batch,items):
+            match=[x for x in item.get("data",[]) if x.get("ticker")==t and x.get("securityType2") in allowed]
+            issuer_aliases[t]={norm(x.get("name","")) for x in match if x.get("name")}
+    print("Exact ticker lookup results:",sum(bool(x) for x in issuer_aliases.values()),"/",len(watch),flush=True)
+    # Search only relevant securities; use normalized name prefixes and
+    # OpenFIGI issuer aliases as candidate hints, not identity proof.
+    prefixes={n for t in watch for n in ({norm(names.get(t,""))}|issuer_aliases.get(t,set())) if len(n)>=4}
+    for page in reader.pages:
+        for line in (page.extract_text(extraction_mode="layout") or "").splitlines():
+            m=re.match(r"^\s*([A-Z0-9]{6})\s+([A-Z0-9]{2})\s+([A-Z0-9])\s+(.+)",line)
+            if not m:continue
+            c="".join(m.group(i) for i in (1,2,3))
+            n=norm(re.split(r"\s{2,}",m.group(4).strip())[0])
+            if len(n)>=4 and any(n.startswith(p) or p.startswith(n) or (min(len(n),len(p))>=8 and n[:8]==p[:8]) for p in prefixes):candidates.add(c)
+    print("Expanded candidates:",len(candidates),flush=True)
+    found=defaultdict(set); type_counts=defaultdict(int)
+    cs=sorted(candidates)
+    for i in range(0,len(cs),10):
+        batch=cs[i:i+10]
+        items=mapping([{"idType":"ID_CUSIP","idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch])
+        for c,item in zip(batch,items):
+            matches=set()
+            for x in item.get("data",[]):
+                if x.get("ticker") in watch:
+                    type_counts[str((x.get("securityType"),x.get("securityType2")))]+=1
+                    if x.get("securityType2") in allowed or x.get("securityType") in ("Common Stock","ADR","Depositary Receipt","NY Reg Shrs","REIT"):
+                        matches.add(x["ticker"])
+            if len(matches)==1:found[next(iter(matches))].add(c)
+    print("OpenFIGI returned security classes for watchlist:",dict(type_counts),flush=True)
     print("OpenFIGI verified tickers:",sorted(found),flush=True)
     print("Unmapped:",sorted(watch-set(found)),flush=True)
     print("Coverage:",len(found),"/",len(watch),flush=True)
