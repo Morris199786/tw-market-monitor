@@ -101,6 +101,7 @@ def main():
         time.sleep(2.6)
         return result
     issuer_aliases={}
+    ticker_figis=defaultdict(set)
     allowed={"Common Stock","Depositary Receipt","REIT","ETP","ETN","Closed-End Fund"}
     for i in range(0,len(watch),10):
         batch=sorted(watch)[i:i+10]
@@ -108,6 +109,7 @@ def main():
         for t,item in zip(batch,items):
             match=[x for x in item.get("data",[]) if x.get("ticker")==t and x.get("securityType2") in allowed]
             issuer_aliases[t]={norm(x.get("name","")) for x in match if x.get("name")}
+            ticker_figis[t].update(x[k] for x in match for k in ("figi","shareClassFIGI","compositeFIGI") if x.get(k))
     print("Exact ticker lookup results:",sum(bool(x) for x in issuer_aliases.values()),"/",len(watch),flush=True)
     # Search only relevant securities; use normalized name prefixes and
     # OpenFIGI issuer aliases as candidate hints, not identity proof.
@@ -131,6 +133,28 @@ def main():
                     if x.get("securityType2") in allowed or x.get("securityType") in ("Common Stock","ADR","Depositary Receipt","NY Reg Shrs","REIT"):
                         matches.add(x["ticker"])
             if len(matches)==1:found[next(iter(matches))].add(c)
+    # Foreign securities often have non-US identifiers. Compare FIGI identities
+    # without assuming the country prefix or requiring a US exchange on lookup.
+    missing=watch-set(found)
+    hints={"ASML":["ASML"],"CRDO":["CREDO"],"FLEX":["FLEX"],"FN":["FABRINET"],"GFS":["GLOBALFOUNDRIES"],"ICHR":["ICHOR"],"NBIS":["NEBIUS"],"NXPI":["NXP"],"STX":["SEAGATE"],"TEL":["TE CONNECTIVITY"],"TSEM":["TOWER SEMICONDUCTOR","TOWER SEMICOND"]}
+    extra=set()
+    for c,n in records:
+        if any(any(norm(n).startswith(norm(h)) for h in hints.get(t,[])) for t in missing):extra.add(c)
+    # Actual filing sample supplies additional independently observed codes.
+    extra.update(set(a)|set(b))
+    print("Foreign-security fallback candidates:",len(extra),flush=True)
+    cs=sorted(extra)
+    for i in range(0,len(cs),10):
+        batch=cs[i:i+10]
+        items=mapping([{"idType":"ID_CUSIP","idValue":c,"marketSecDes":"Equity"} for c in batch])
+        for c,item in zip(batch,items):
+            matches=set()
+            for x in item.get("data",[]):
+                if x.get("securityType2") not in allowed and x.get("securityType") not in ("Common Stock","ADR","Depositary Receipt","NY Reg Shrs","REIT"):continue
+                ids={x[k] for k in ("figi","shareClassFIGI","compositeFIGI") if x.get(k)}
+                matches.update(t for t in missing if ids & ticker_figis[t])
+            if len(matches)==1:found[next(iter(matches))].add(c)
+    print("Foreign fallback recovered:",sorted(missing & set(found)),flush=True)
     print("OpenFIGI returned security classes for watchlist:",dict(type_counts),flush=True)
     print("OpenFIGI verified tickers:",sorted(found),flush=True)
     print("Unmapped:",sorted(watch-set(found)),flush=True)
