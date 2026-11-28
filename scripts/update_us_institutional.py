@@ -76,9 +76,27 @@ def main():
     if acc in filings:continue
     bridge_total+=1
     try:
-     raw=get(SEC+"/Archives/"+path)
-     if raw is None:raise ValueError("Missing complete filing")
-     docs=re.findall(r"<XML>\s*(.*?)\s*</XML>",raw.text,re.I|re.S)
+     try:
+      raw=get(SEC+"/Archives/"+path)
+      if raw is None:raise ValueError("Missing complete filing")
+      docs=re.findall(r"<XML>\s*(.*?)\s*</XML>",raw.text,re.I|re.S)
+     except requests.HTTPError as exc:
+      # A gateway timeout on a large complete submission can be avoided by
+      # reading its officially indexed XML attachments. Never retry a denial.
+      if exc.response is None or exc.response.status_code not in (502,503,504):raise
+      time.sleep(15)
+      base=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"
+      ix=get(base+"index.json")
+      if ix is None:raise ValueError("Missing official attachment index")
+      docs=[]
+      for item in ix.json()["directory"]["item"]:
+       name=item["name"]
+       if not name.lower().endswith(".xml"):continue
+       from urllib.parse import quote
+       attachment=get(base+quote(name))
+       if attachment is None:raise ValueError("Missing indexed XML attachment")
+       docs.append(attachment.text)
+
      cover=None;tables=[]
      for doc in docs:
       root=ET.fromstring(doc.strip())
