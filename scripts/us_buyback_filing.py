@@ -28,10 +28,10 @@ def extract_html(html):
   if el.find(["p","div","table"]):continue
   txt=norm(el.get_text(" ",strip=True))
   if len(txt)<25 or len(txt)>2200:continue
-  if not re.search(r"repurchas|buyback|buy.back",txt,re.I):continue
-  if re.search(r"authoriz|remaining|expir|did not repurchase|no (?:shares|stock) (?:were |was )?repurchased|not repurchase any|repurchased.{0,100}(?:million|billion|shares)",txt,re.I):
+  if not re.search(r"repurchas|buyback|buy.back|purchase of equity securities|purchase of own shares|treasury shares",txt,re.I):continue
+  if re.search(r"authoriz|remaining|expir|did not (?:repurchase|purchase)|no (?:shares|stock|purchases|repurchases)|not repurchase any|repurchased.{0,100}(?:million|billion|shares)|not applicable|treasury shares|purchase of equity securities",txt,re.I):
    evidence.append(txt)
- return {"tables":tables[:20],"passages":list(dict.fromkeys(evidence))[:50]}
+ return {"tables":tables,"passages":list(dict.fromkeys(evidence))}
 
 def scan(get,SEC,DSEC,cik,start):
  r=get(f"{DSEC}/submissions/CIK{int(cik):010d}.json")
