@@ -6,6 +6,10 @@ on:
         description: SEC filing lookback (days)
         default: '400'
         required: true
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-insider.yml'
   pull_request:
     paths:
       - 'scripts/update_us_insider.py'
@@ -64,7 +68,7 @@ jobs:
       - name: Check actual coverage
         run: |
           python - <<'PY'
-          import json,gzip
+          import json,gzip,pathlib,math
           d=json.load(gzip.open('data/us_insider/latest.json.gz','rt'))
           print(d['coverage_note'])
           print('Purchase rows:',len(d['transactions']))
@@ -73,7 +77,17 @@ jobs:
           assert d['prices'], 'No price histories: cannot validate'
           assert d['schema_version']==2 and all(v['status']=='scanned' for v in d['coverage'].values())
           assert all(v and v[-1]['date']<=d['expected_price_as_of'] for v in d['prices'].values())
-          assert set(d['stale_prices'])=={t for t,v in d['prices'].items() if v[-1]['date']!=d['expected_price_as_of']}
+          assert set(d['stale_prices'])=={t for t in {r['ticker'] for r in d['transactions']+d['sales']} if not d['prices'].get(t) or d['prices'][t][-1]['date']!=d['expected_price_as_of']}
+          assert len(d['coverage'])==110 and len(d['trading_sessions'])>=240
+          assert d['sales'] and all(r['side']=='buy' for r in d['transactions']) and all(r['side']=='sell' for r in d['sales'])
+          rows=d['transactions']+d['sales']
+          assert all(math.isclose(r['raw_price']*r['raw_shares'],r['amount'],rel_tol=1e-9) for r in rows)
+          assert len({(r['ticker'],r['accession'],r['row'],r['owner_id']) for r in rows})==len(rows)
+          cache=json.load(gzip.open('data/us_insider/filing_cache.json.gz','rt'))
+          assert cache['version']==2 and len(cache['entries'])==sum(v['filings'] for v in d['coverage'].values())
+          print('Sales:',len(d['sales']),'Quarantined:',len(d['quarantine']),'Verified unchanged:',d.get('amendment_verified_unchanged'),'Cache entries:',len(cache['entries']))
+          for p in pathlib.Path('data/us_insider').glob('*.json.gz'):
+              assert p.stat().st_size<24*1024*1024
           print('Expected market session:',d['expected_price_as_of'],'Actual:',d['price_as_of'],'Stale:',d['stale_prices'])
           assert __import__('pathlib').Path('data/us_insider/filing_cache.json.gz').exists()
           PY
