@@ -32,16 +32,6 @@ def main():
  # seed only; expand via verified public ISIN feed when available.
  # OpenFIGI accepts CUSIP but does not return CUSIP from ticker.
  candidates=set(cusips)
- for ticker in sorted(watch-set(cusips.values())):
-  try:
-   r=requests.get("https://query1.finance.yahoo.com/v1/finance/search",params={"q":ticker,"quotesCount":1,"newsCount":0},headers={"User-Agent":"Mozilla/5.0"},timeout=15)
-   # Yahoo search does not reliably return ISIN; do not guess if absent.
-   if not r.ok:continue
-   q=next((x for x in r.json().get("quotes",[]) if x.get("symbol")==ticker),{})
-   isin=q.get("isin","")
-   if re.fullmatch(r"US[A-Z0-9]{9}[0-9]",isin):
-    candidates.add(isin[2:11])
-  except (requests.RequestException,ValueError):continue
  # Additional mappings are obtained from SEC official list via exact CUSIP-to-ticker verification.
  # Candidate selection uses exact normalized issuer name, never sufficient by itself.
  def norm(x):return re.sub(r"[^A-Z0-9]","",x.upper())
@@ -50,11 +40,11 @@ def main():
  if listlinks:
   raw=get(listlinks[0]).text
   for line in raw.splitlines():
-   m=re.match(r"^\s*([A-Z0-9]{6})\s+([A-Z0-9]{2})\s+([A-Z0-9])\s+(.+)$",line)
+   m=re.match(r"^\s*([A-Z0-9]{6})\s*([A-Z0-9]{2})\s*([A-Z0-9])\s+(.+)$",line)
    if not m:continue
    cusip="".join(m.group(i) for i in (1,2,3));rest=m.group(4)
    issuer=re.split(r"\s{2,}",rest.strip())[0]
-   if norm(issuer) in names:candidates.add(cusip)
+   if norm(issuer) in names or any(norm(issuer).startswith(n) or n.startswith(norm(issuer)) for n in names if len(n)>7 and len(norm(issuer))>7):candidates.add(cusip)
  for batch_start in range(0,len(candidates),10):
   batch=sorted(candidates)[batch_start:batch_start+10]
   try:
@@ -102,15 +92,15 @@ def main():
   if (cik,p) in amendments:continue
   for cusip,ticker in cusips.items():
    n=positions.get((acc,cusip))
-   if n is not None:by[(ticker,cik)][p]=(n,d,acc)
+   if n is not None:by[(ticker,cik,cusip)][p]=(n,d,acc)
  rows=[]
- for (ticker,cik),hist in by.items():
+ for (ticker,cik,cusip),hist in by.items():
   dates=sorted(hist)
   for p in dates:
    n,d,acc=hist[p];prev=[x for x in dates if 80<=(dt.date.fromisoformat(p)-dt.date.fromisoformat(x)).days<=100]
    if not prev:continue
    old=hist[prev[-1]][0]
-   rows.append(dict(ticker=ticker,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+   rows.append(dict(ticker=ticker,cusip=cusip,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
  latest_expected=(dt.date(now.year,((now.month-1)//3)*3+1,1)-dt.timedelta(days=1))
  if now<latest_expected+dt.timedelta(days=45):
   latest_expected=dt.date(latest_expected.year,((latest_expected.month-1)//3)*3+1,1)-dt.timedelta(days=1)
