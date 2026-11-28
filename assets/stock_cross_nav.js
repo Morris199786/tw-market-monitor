@@ -6,7 +6,7 @@ const snapshots=new Map();let sequence=0,token=0,busy=false,scheduled=false,curr
 const activePage=()=>document.querySelector('.page.active')?.id||'home';
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function pageState(){const id=activePage();return {page:id,y:window.scrollY,etf:id==='etfFlow'?window.StockNavETF?.capture():null,research:id==='reports'?window.StockNavResearch?.capture():null,earnings:id==='selfReports'?window.StockNavEarnings?.capture():null,self:id==='selfReports'?window.StockNavSelf?.capture():null,chart:window.StockNavChart?.capture(),details:[...document.querySelectorAll(`#${id} details`)].map(d=>d.open),inputs:[...document.querySelectorAll(`#${id} input[id],#${id} select[id]`)].map(el=>({id:el.id,value:el.value,checked:el.checked})),scrolls:[...document.querySelectorAll(`#${id} .ef-table-scroll,#stockDetailBody,.stock-detail-sheet`)].map(el=>({el,left:el.scrollLeft,top:el.scrollTop})),focus:document.activeElement};}
+function pageState(){const id=activePage();return {page:id,y:window.scrollY,insider:id==='usInsider'?window.StockNavInsider?.capture():null,etf:id==='etfFlow'?window.StockNavETF?.capture():null,research:id==='reports'?window.StockNavResearch?.capture():null,earnings:id==='selfReports'?window.StockNavEarnings?.capture():null,self:id==='selfReports'?window.StockNavSelf?.capture():null,chart:window.StockNavChart?.capture(),details:[...document.querySelectorAll(`#${id} details`)].map(d=>d.open),inputs:[...document.querySelectorAll(`#${id} input[id],#${id} select[id]`)].map(el=>({id:el.id,value:el.value,checked:el.checked})),scrolls:[...document.querySelectorAll(`#${id} .ef-table-scroll,#stockDetailBody,.stock-detail-sheet`)].map(el=>({el,left:el.scrollLeft,top:el.scrollTop})),focus:document.activeElement};}
 function saveCurrent(){let id=history.state?.stockNavEntry;if(!id){id='stock-nav-'+(++sequence);history.replaceState({...history.state,stockNavEntry:id},'');}snapshots.set(id,pageState());return id;}
 function notice(context,error=''){
  currentContext=context||null;
@@ -22,10 +22,11 @@ function notice(context,error=''){
  if(inside){if(!modal.querySelector('[data-stock-nav-code]'))modal.querySelector('.stock-detail-head')?.after(bar);}
  else {const hero=page.querySelector(':scope>.hero');if(hero)hero.append(bar);else page.prepend(bar);}
 }
-function updateBackButton(){const b=document.getElementById('backHomeBtn');if(!b)return;const modalOpen=document.getElementById('stockDetailModal')?.classList.contains('open'),has=backStack.length>0||modalOpen;const frame=backStack.at(-1);b.classList.toggle('show',has||activePage()!=='home');b.setAttribute('aria-label',has?'返回上一頁':'返回總覽');b.title=frame?'返回'+(frame.context?.fromLabel||labels[frame.saved.page]||'上一頁'):modalOpen?'關閉個股資訊，返回原頁':'返回總覽';const spans=b.querySelectorAll('span'),label=has?'上一頁':'總覽';if(spans.length){const span=spans[spans.length-1];if(span.textContent!==label)span.textContent=label;}else if(b.textContent!=='← '+label)b.textContent='← '+label;}
+function updateBackButton(){const b=document.getElementById('backHomeBtn');if(!b)return;const modalOpen=document.getElementById('stockDetailModal')?.classList.contains('open'),has=backStack.length>0||modalOpen||Boolean(history.state?.twPreviousPage);const frame=backStack.at(-1);b.classList.toggle('show',has||activePage()!=='home');b.setAttribute('aria-label',has?'返回上一頁':'返回總覽');b.title=frame?'返回'+(frame.context?.fromLabel||labels[frame.saved.page]||'上一頁'):modalOpen?'關閉個股資訊，返回原頁':'返回總覽';const spans=b.querySelectorAll('span'),label=has?'上一頁':'總覽';if(spans.length){const span=spans[spans.length-1];if(span.textContent!==label)span.textContent=label;}else if(b.textContent!=='← '+label)b.textContent='← '+label;}
 async function goBack(){
  if(restoring)return;if(document.getElementById('stockDetailModal')?.classList.contains('open')&&currentContext?.kind!=='chart'){document.getElementById('stockDetailClose')?.click();updateBackButton();return;}const frame=backStack.pop();
- if(!frame){if(activePage()!=='home'&&typeof window.page==='function'){restoring=true;window.page('home');restoring=false;notice(null);}return;}
+ if(!frame){if(history.state?.twPreviousPage){history.back();return;}if(activePage()!=='home'&&typeof window.page==='function'){restoring=true;window.page('home');restoring=false;notice(null);}return;}
+ if(frame.browserEntry){backStack.push(frame);history.back();return;}
  ++token;busy=false;restoring=true;
  try{window.StockNavChart?.hide();
  // Set the page marker before calling the existing router, so its history
@@ -67,6 +68,7 @@ async function navigate(kind,code,name){
 async function restore(saved,context){
  const thisToken=++token;window.StockNavChart?.hide();
  try{
+  if(saved.insider)await window.StockNavInsider?.restore(saved.insider);
   if(saved.etf)await window.StockNavETF?.restore(saved.etf);
   if(saved.research)await window.StockNavResearch?.restore(saved.research);
   if(saved.earnings)await window.StockNavEarnings?.restore(saved.earnings);
@@ -120,7 +122,7 @@ window.addEventListener('popstate',e=>{
 // replace history.state; the independent stack keeps the back action available.
 if(typeof window.page==='function'){const original=window.page;window.page=function(id){
  if(!busy&&!restoring&&id!==activePage()&&document.getElementById(id)){
-  const from=saveCurrent(),saved=snapshots.get(from);backStack.push({from,saved,parentContext:currentContext,context:null});currentContext=null;
+  const from=saveCurrent(),saved=snapshots.get(from);backStack.push({from,saved,parentContext:currentContext,context:null,browserEntry:true});currentContext=null;
  }
  const result=original.apply(this,arguments);if(!busy&&!restoring)notice(currentContext);return result;
 };}
@@ -152,7 +154,8 @@ html[data-theme=dark] .stock-cross-menu{color:#b7c6d9}html[data-theme=dark] .sto
 @media(max-width:400px){.stock-cross-title-menu{margin-right:6px}.stock-cross-menu>summary{padding:6px 9px;font-size:12px}.stock-cross-card-menu{right:14px;top:14px}.stock-cross-card>h3{padding-right:105px}}
 `;
 document.head.append(style);mount();
-window.StockCrossNav={navigate,back:goBack};
+function recordView(){if(restoring||busy)return;const from=saveCurrent(),saved=snapshots.get(from);backStack.push({from,saved,parentContext:currentContext,context:null,browserEntry:true});const id=activePage();history.pushState({...history.state,twPage:id,twPreviousPage:id,stockNavEntry:'stock-nav-'+(++sequence)},'',location.href);updateBackButton();}
+window.StockCrossNav={navigate,back:goBack,recordView};
 })();
 
 
