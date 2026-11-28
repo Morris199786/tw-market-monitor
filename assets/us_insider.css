@@ -76,3 +76,14 @@ html[data-theme=dark] #usInsiderRoot .uii-warning{background:#382d1e;color:#f0c7
 #usInsiderRoot .uii-matrix-cell.few{background:var(--uii-soft)}
 #usInsiderRoot .uii-matrix .uii-return{font-variant-numeric:tabular-nums}
 @media(min-width:760px){#usInsiderRoot .uii-matrix table{font-size:14px}#usInsiderRoot .uii-matrix th,#usInsiderRoot .uii-matrix td{padding:14px 8px}}
+
+/* Backtest matrix: compact comparison, with samples beneath each result. */
+#usInsiderRoot .uii-test-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 13px}
+#usInsiderRoot .uii-test-tabs button{font-weight:650;font-size:13px;padding:8px 3px;min-height:38px;white-space:normal}
+#usInsiderRoot .uii-matrix table{table-layout:fixed;min-width:0;width:100%}
+#usInsiderRoot .uii-matrix th,#usInsiderRoot .uii-matrix td{padding:11px 4px;text-align:right;white-space:nowrap;vertical-align:middle;font-variant-numeric:tabular-nums}
+#usInsiderRoot .uii-matrix th:first-child,#usInsiderRoot .uii-matrix td:first-child{width:19%;text-align:left}
+#usInsiderRoot .uii-matrix th:nth-child(2),#usInsiderRoot .uii-matrix td:nth-child(2){width:11%;text-align:center;min-width:0;max-width:none}
+#usInsiderRoot .uii-matrix td small{margin-top:3px;font-size:.72em;font-weight:400;color:var(--uii-muted)}
+@media(max-width:650px){#usInsiderRoot .uii-matrix th,#usInsiderRoot .uii-matrix td{padding:10px 2px}#usInsiderRoot .uii-matrix table{font-size:12px}#usInsiderRoot .uii-test-tabs button{font-size:12px}}
+@media(max-width:360px){#usInsiderRoot .uii-matrix table{min-width:300px}}
