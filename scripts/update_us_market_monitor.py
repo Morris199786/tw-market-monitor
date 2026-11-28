@@ -107,6 +107,59 @@ def fetch(url):
             time.sleep(2 ** attempt)
 
 
+CFTC = 'https://publicreporting.cftc.gov/resource/gpe5-46if.json'
+CFTC_FIELDS = {
+    'leveraged_long':'lev_money_positions_long','leveraged_short':'lev_money_positions_short',
+    'asset_long':'asset_mgr_positions_long','asset_short':'asset_mgr_positions_short',
+    'small_long':'nonrept_positions_long_all','small_short':'nonrept_positions_short_all',
+    'open_interest':'open_interest_all',
+}
+def refresh_cftc(old, stamp):
+    from urllib.parse import urlencode
+    saved = old.get('rows', [])
+    latest = max((r['date'] for r in saved), default=None)
+    query = {'cftc_contract_market_code':'209742','$limit':5000,
+             '$order':'report_date_as_yyyy_mm_dd ASC',
+             '$select':','.join(['report_date_as_yyyy_mm_dd','cftc_contract_market_code','futonly_or_combined']+list(CFTC_FIELDS.values()))}
+    if latest:
+        from datetime import timedelta
+        start=(datetime.fromisoformat(latest)-timedelta(days=35)).date().isoformat()
+        query['$where']="report_date_as_yyyy_mm_dd >= '"+start+"T00:00:00'"
+    raw=json.loads(fetch(CFTC+'?'+urlencode(query)))
+    if not isinstance(raw,list) or not raw or len(raw)>=5000:
+        raise ValueError('CFTC response empty or truncated')
+    incoming={}
+    for item in raw:
+        if item['cftc_contract_market_code']!='209742' or item['futonly_or_combined']!='FutOnly':
+            raise ValueError('Unexpected CFTC contract/report')
+        day=item['report_date_as_yyyy_mm_dd'][:10]
+        datetime.strptime(day,'%Y-%m-%d')
+        if day>stamp[:10] or day in incoming:raise ValueError('Invalid/duplicate CFTC date')
+        row={'date':day}
+        for key,field in CFTC_FIELDS.items():
+            row[key]=int(item[field])
+            if row[key]<0:raise ValueError('Negative position')
+        oi=row['open_interest']
+        if oi<=0 or any(row[k]>oi for k in CFTC_FIELDS if k!='open_interest'):
+            raise ValueError('Invalid open interest')
+        for group in ('leveraged','asset','small'):
+            row[group+'_net']=row[group+'_long']-row[group+'_short']
+        row['leveraged_net_pct']=round(100*row['leveraged_net']/oi,6)
+        incoming[day]=row
+    if latest and max(incoming)<latest:raise ValueError('CFTC source regressed')
+    if not saved and (len(incoming)<900 or min(incoming)>'2007-01-01'):
+        raise ValueError('CFTC historical coverage incomplete')
+    merged={r['date']:r for r in saved}
+    merged.update(incoming)
+    rows=[merged[k] for k in sorted(merged)]
+    for i,row in enumerate(rows):
+        for key in ('leveraged_long','leveraged_short','leveraged_net','asset_net','small_net'):
+            row[key+'_change']=row[key]-rows[i-1][key] if i else None
+        row['leveraged_net_4report_change']=row['leveraged_net']-rows[i-4]['leveraged_net'] if i>=4 else None
+        window=rows[max(0,i-259):i+1]
+        row['leveraged_net_pct_percentile']=round(100*sum(x['leveraged_net_pct']<=row['leveraged_net_pct'] for x in window)/len(window),2) if len(window)>=52 else None
+    return {'source':CFTC,'contract_code':'209742','contract':'NASDAQ MINI','report':'TFF Futures Only','date_basis':'position_date_not_release_date','rows':rows,'as_of':rows[-1]['date'],'source_updated_at':stamp if rows!=saved else old.get('source_updated_at',stamp),'status':'ok'}
+
 def main():
     now = datetime.now(ZoneInfo('Asia/Taipei'))
     stamp, month = now.isoformat(timespec='seconds'), now.strftime('%Y-%m')
@@ -130,10 +183,18 @@ def main():
                 successful[name] = stamp
             except Exception as exc:
                 errors.append(f'{name}: {type(exc).__name__}: {exc}')
+    cftc = old.get('cftc', {})
+    try:
+        cftc = refresh_cftc(cftc, stamp)
+        successful['CFTC'] = stamp
+        print('CFTC:',len(cftc['rows']),'reports; latest',cftc['as_of'])
+    except Exception as exc:
+        cftc = dict(cftc, status='failed', error=str(exc)[:250])
+        errors.append('CFTC: '+str(exc))
     rows = rows_from(margin, prices, month)
     payload = {'schema_version': 1, 'checked_at': stamp, 'source_updated_at': successful,
                'as_of_month': rows[-1]['month'] if rows else None,
-               'sources': {'FINRA': FINRA, 'FRED': FRED}, 'errors': errors,
+               'sources': {'FINRA': FINRA, 'FRED': FRED, 'CFTC': CFTC}, 'errors': errors, 'cftc': cftc,
                'rows': rows, 'margin_history': margin, 'sp500_monthly': prices}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     temp = OUT.with_suffix('.tmp')
