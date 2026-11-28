@@ -54,9 +54,61 @@ def main():
    try:positions[(acc,cusip)]+=int(float(x["SSHPRNAMT"]))
    except (ValueError,KeyError):continue
  if len(sources)<2 or not positions:raise RuntimeError("No matched official holdings; preserve prior output")
+ # Bridge the gap between published bulk archives and the current filing index.
+ # Use complete submission text (one request per accession), not guessed XML names.
+ from xml.etree import ElementTree as ET
+ archive_last=archive_end(links[0])
+ idx_sources=[]
+ bridge_total=0; bridge_ok=0; bridge_failed=[]
+ if archive_last<now:
+  start=archive_last+dt.timedelta(days=1)
+  year,q=start.year,(start.month-1)//3+1
+  while (year,q)<=(now.year,(now.month-1)//3+1):
+   u=f"{SEC}/Archives/edgar/full-index/{year}/QTR{q}/master.idx"
+   r=get(u)
+   if r is None:raise RuntimeError("Missing current SEC filing index "+u)
+   idx_sources.append(u)
+   for line in r.text.splitlines():
+    fields=line.split("|")
+    if len(fields)!=5 or fields[2] not in ("13F-HR","13F-HR/A") or fields[3]<start.isoformat():continue
+    cik,name,form,filed,path=fields
+    acc=path.rsplit("/",1)[-1].removesuffix(".txt")
+    if acc in filings:continue
+    bridge_total+=1
+    try:
+     raw=get(SEC+"/Archives/"+path)
+     if raw is None:raise ValueError("Missing complete filing")
+     docs=re.findall(r"<XML>\s*(.*?)\s*</XML>",raw.text,re.I|re.S)
+     cover=None;tables=[]
+     for doc in docs:
+      root=ET.fromstring(doc.strip())
+      for e in root.iter():e.tag=e.tag.rsplit("}",1)[-1]
+      if root.tag=="edgarSubmission":cover=root
+      elif root.tag=="informationTable":tables.append(root)
+     if cover is None:raise ValueError("Missing cover")
+     period=cover.findtext(".//periodOfReport") or cover.findtext(".//reportCalendarOrQuarter")
+     if not period:raise ValueError("Missing reporting period")
+     if not tables and form=="13F-HR":raise ValueError("Missing holdings table")
+     local=defaultdict(int)
+     for root in tables:
+      for x in root.findall("infoTable"):
+       if (x.findtext("putCall") or "").strip() or x.findtext("shrsOrPrnAmt/sshPrnamtType")!="SH":continue
+       c=(x.findtext("cusip") or "").strip().upper()
+       if c in candidates:local[c]+=int(x.findtext("shrsOrPrnAmt/sshPrnamt"))
+     filings[acc]=dict(cik=cik.zfill(10),period=period,filed=filed,form=form)
+     for c,n in local.items():positions[(acc,c)]=n
+     bridge_ok+=1
+    except Exception as e:
+     bridge_failed.append((acc,str(e)[:180]))
+    if bridge_total%500==0:print("EDGAR bridge progress:",bridge_ok,"/",bridge_total,"failed:",len(bridge_failed),flush=True)
+   q+=1
+   if q==5:year+=1;q=1
+  print("EDGAR bridge:",bridge_ok,"/",bridge_total,"failed examples:",bridge_failed[:12],flush=True)
+  if bridge_failed:raise RuntimeError("Incomplete latest filing bridge; preserve published data")
+  sources.extend(idx_sources)
  # Do not infer new/closed positions from missing submissions. Amendments require reconciliation.
  def iso(s):
-  for fmt in ("%d-%b-%Y","%Y-%m-%d","%m/%d/%Y"):
+  for fmt in ("%d-%b-%Y","%Y-%m-%d","%m/%d/%Y","%m-%d-%Y"):
    try:return dt.datetime.strptime(s or "",fmt).date().isoformat()
    except ValueError:pass
   return None
@@ -88,6 +140,8 @@ def main():
  actual_coverage=sorted({r["ticker"] for r in rows})
  print("Verified identifiers:",len(set(cusips.values())),"actual historical holdings coverage:",len(actual_coverage),"rows:",len(rows),"latest:",max(r["period"] for r in rows),flush=True)
  payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
+ if payload["missing_expected_period"]:raise RuntimeError("Latest expected quarter absent; preserve published data")
+ payload["bridge_filing_count"]=bridge_ok
  if len(actual_coverage)<100:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
  # Publish a tiny index and lossless per-ticker shards. Keep every comparison row.
  from pathlib import Path
