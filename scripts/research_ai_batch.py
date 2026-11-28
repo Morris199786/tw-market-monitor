@@ -639,7 +639,8 @@ def main():
                     response_id=(previous or {}).get('response_id') if args.mode == 'failed' else None)
                 check = audit(result, row)
             status = 'success'
-            cache[key].update({'status':status,'schema':SCHEMA,'result':result,
+            completed_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            cache[key].update({'status':status,'completed_at':completed_at,'schema':SCHEMA,'result':result,
                                'audit':check,'usage':usage})
             # Promote structurally readable AI results; no Python content or chart review.
             # Keep the original version in the new record for audit and rollback.
@@ -647,7 +648,7 @@ def main():
                 promoted = dict(cache[key])
                 promoted['previous_version'] = cache.get(rid)
                 cache[rid] = promoted
-            run['results'].append({'id':rid,'status':status,'audit':check,'usage':usage,
+            run['results'].append({'id':rid,'status':status,'completed_at':completed_at,'audit':check,'usage':usage,
                                    'promoted':trial and status == 'success'})
         except Exception as exc:
             cache[key].update({'status':'failed','error':str(exc)[:1000]})
