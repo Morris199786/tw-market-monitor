@@ -10,7 +10,7 @@ def quarters(now):
   q-=1
   if q==0:y-=1;q=4
 def table(z,name):
- f=next((x for x in z.namelist() if x.rsplit("/",1)[-1].upper()==name),None)
+ f=next((x for x in z.namelist() if x.rsplit("/",1)[-1].upper()==name.upper()),None)
  if not f:raise ValueError("Missing "+name)
  return csv.DictReader(io.TextIOWrapper(z.open(f),encoding="utf-8-sig"),delimiter="\t")
 def main():
