@@ -28,7 +28,11 @@ def main():
  cfg=json.loads((ROOT/"watchlist.json").read_text())
  mapping={x["ticker"]:x["cik_str"] for x in get(SEC+"/files/company_tickers.json").json().values()}
  start=(dt.date.today()-dt.timedelta(days=730)).isoformat()
- coverage={}; rows=[]
+ coverage={}; rows=[]; evidence={}; audit={}
+ from us_buyback_filing import scan
+ prior_path=ROOT/"buybacks.json"
+ prior=json.loads(prior_path.read_text()) if prior_path.exists() else {}
+ scan_start=(dt.date.today()-dt.timedelta(days=460)).isoformat()
  for ticker in cfg["tickers"]:
   try:
    cik=mapping[ticker]; resp=get(f"{DSEC}/api/xbrl/companyfacts/CIK{cik:010d}.json")
@@ -36,8 +40,13 @@ def main():
    found=extract(resp.json()["facts"],ticker,cik,start)
    rows.extend(found);coverage[ticker]="tagged" if found else "no_supported_tags"
   except Exception as e:coverage[ticker]="failed";print(ticker,str(e),flush=True)
-  print(ticker,coverage[ticker],flush=True)
+  try:
+   evidence[ticker]=scan(get,SEC,DSEC,mapping[ticker],scan_start)
+   audit[ticker]="evidence_found" if evidence[ticker] else "no_matching_passage"
+  except Exception as e:
+   audit[ticker]="scan_failed";evidence[ticker]=prior.get("filing_evidence",{}).get(ticker,[]);print(ticker,"filing scan:",str(e),flush=True)
+  print(ticker,coverage[ticker],audit[ticker],flush=True)
  if not rows or "failed" in coverage.values():raise RuntimeError("Incomplete issuer facts; preserve prior data")
- payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),coverage=coverage,rows=rows,note="SEC US GAAP / IFRS 原始期間資料，保留原始幣別；未找到標籤不代表沒有回購。未包含回購授權及剩餘額度。")
+ payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),coverage=coverage,rows=rows,filing_evidence=evidence,filing_audit=audit,note="SEC US GAAP / IFRS 原始期間資料，保留原始幣別；未找到標籤不代表沒有回購。未包含回購授權及剩餘額度。")
  p=ROOT/"buybacks.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False));p.replace(ROOT/"buybacks.json")
 if __name__=="__main__":main()
