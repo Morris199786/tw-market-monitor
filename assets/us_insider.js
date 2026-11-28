@@ -84,10 +84,10 @@ function extraView(k){
   const duration=x=>Math.round((Date.parse(x.end)-Date.parse(x.start))/86400000)+1;
   const quarter=x=>duration(x)>=70&&duration(x)<=110;
   const grouped=new Map();
-  for(const x of rows){const key=x.ticker+"|"+x.start+"|"+x.end;if(!grouped.has(key))grouped.set(key,{ticker:x.ticker,start:x.start,end:x.end,items:{}});grouped.get(key).items[x.kind]=x}
+  for(const x of rows){const key=x.ticker+"|"+x.start+"|"+x.end;if(!grouped.has(key))grouped.set(key,{ticker:x.ticker,start:x.start,end:x.end,items:{}});const items=grouped.get(key).items,prev=items[x.kind];if(!prev||x.filed>prev.filed||(x.filed===prev.filed&&x.unit==="USD"))items[x.kind]=x}
   const groups=[...grouped.values()].sort((a,b)=>b.end.localeCompare(a.end)||a.start.localeCompare(b.start));
   const selected=tickers.filter(t=>!extraTicker||t===extraTicker);
-  const value=(x,kind)=>!x?"未取得":x.value===0?(kind==="price"?"$0":kind==="shares"?"0 股":"$0"):kind==="payments"?money(x.value):kind==="shares"?num(x.value,0)+" 股":"$"+num(x.value,2);
+  const value=(x,kind)=>!x?"未取得":kind==="shares"?num(x.value,0)+" 股":(x.unit==="USD"||x.unit==="USD/shares"?"$":esc(x.unit.split("/")[0])+" ")+(kind==="payments"?(x.value>=1e6?num(x.value/1e6)+"M":num(x.value,0)):num(x.value,2));
   const renderGroup=g=>{const a=g.items.payments,b=g.items.shares;const zero=a?.value===0||b?.value===0,positive=a?.value>0||b?.value>0;const state=zero&&positive?"揭露不一致":positive?"已回購":zero?"未回購":"未確認";
    const links=[...new Map(Object.values(g.items).map(x=>[x.url,x])).values()].sort((a,b)=>b.filed.localeCompare(a.filed));
    return '<tr><td><strong>'+esc(g.ticker)+'</strong><small>'+esc(g.end)+'</small><small>'+ (quarter(g)?"單季":"累計／其他")+'</small></td><td><strong>'+value(a,"payments")+'</strong><small>'+value(b,"shares")+'</small></td><td><span class="'+(positive&&!zero?"uii-inst-up":"")+'">'+state+'</span><small>'+links.map(x=>'<a href="'+esc(x.url)+'" target="_blank" rel="noopener">'+esc(x.filed)+'</a>').join(" ／ ")+'</small></td></tr>'};
