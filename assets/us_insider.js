@@ -89,7 +89,7 @@ function institutionShards(d){
  const names=Object.keys(d.shards||{}).sort(),periods=Object.keys(d.summary||{}).sort().reverse(),period=periods.includes(extraPeriod)?extraPeriod:periods[0];
  const opts='<select data-field="extraTicker"><option value="">全部已取得股票</option>'+names.map(t=>'<option '+(t===extraTicker?'selected':'')+'>'+esc(t)+'</option>').join("")+'</select>';
  const sel='<select data-field="extraPeriod">'+periods.map(t=>'<option '+(t===period?'selected':'')+'>'+esc(t)+'</option>').join("")+'</select>';
- const header='<section class="uii-card"><div class="uii-cardhead"><h2>機構持股變動</h2><span>13F · 季末</span></div><div class="uii-rank-controls">'+opts+sel+'</div><p class="uii-note">識別碼 '+(d.identifier_coverage||[]).length+' 檔；實際比較 '+names.length+' 檔／'+num(d.row_count,0)+' 筆。'+esc(d.note)+'</p>'+(d.missing_expected_period?'<p class="uii-warning">最新完整資料尚未補齊 '+esc(d.expected_period)+'；目前 '+esc(d.latest_period)+'</p>':'');
+ const header='<section class="uii-card"><div class="uii-cardhead"><h2>機構持股變動</h2><span>13F · 季末</span></div><div class="uii-rank-controls">'+opts+sel+'</div><details class="uii-stockhelp"><summary>資料範圍說明</summary><p>'+esc(d.note)+'</p></details>'+(d.missing_expected_period?'<p class="uii-warning">最新完整資料尚未補齊 '+esc(d.expected_period)+'；目前 '+esc(d.latest_period)+'</p>':'');
  const groups=(d.summary?.[period]||[]).filter(g=>!extraTicker||g.ticker===extraTicker).slice().sort((a,b)=>b.change-a.change);
  return header+groups.map(g=>{
  const key=d.updated_at+"|"+g.ticker,loaded=institutionCache.has(key),rr=institutionCache.get(key);
