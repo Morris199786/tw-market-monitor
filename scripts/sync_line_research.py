@@ -663,6 +663,15 @@ def main():
     from collections import defaultdict as _dd
     search_index = _dd(lambda: _dd(list))
     meta_rows = []
+    # Historical batches ran sequentially; preserve their actual result order
+    # without inventing per-report completion timestamps for legacy records.
+    history = load_json(ROOT / 'data/research_ai_batch_history.json')
+    analysis_order = {}
+    for batch in history if isinstance(history, list) else []:
+        for seq, result in enumerate(batch.get('results', []), 1):
+            if result.get('status') == 'success' and result.get('id'):
+                analysis_order[str(result['id'])] = (
+                    result.get('completed_at') or batch.get('at') or '', seq)
     # Content-addressed names allow safe caching and atomic manifest switch.
     for key in sorted(shards, reverse=True):
         items = shards[key]
@@ -692,6 +701,14 @@ def main():
                             'source':record.get('source') or record.get('broker') or '',
                             'story':clean_display((record.get('ai_research') or {}).get('summary') or record.get('story') or record.get('summary') or record.get('title') or ''),
                             'market':record.get('market','TW'), 'source_kind':record.get('source_kind','line')}
+                if metadata['ai_processed'] and metadata['source_kind'] == 'line':
+                    stamp, seq = analysis_order.get(rid, ('', 0))
+                    if not stamp:
+                        saved = resolve_cache(record, cache)
+                        if isinstance(saved, dict) and saved.get('status') == 'success':
+                            stamp = saved.get('completed_at') or saved.get('at') or ''
+                    metadata['ai_processed_at'] = stamp
+                    metadata['ai_processed_sequence'] = seq
                 meta_rows.append(metadata)
                 fields = ('company','name','ticker','stock_id','source','broker','source_name',
                           'summary','story','full_text','full_text_2','full_text_3',
