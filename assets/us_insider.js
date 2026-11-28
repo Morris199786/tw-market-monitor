@@ -100,7 +100,7 @@ function chart(p,g){
  ticks.map(i=>'<text x="'+X(i)+'" y="291" text-anchor="'+(i===0?'start':i===p.length-1?'end':'middle')+'" fill="currentColor" font-size="14">'+esc(dateLabel(p[i].date))+'</text>').join("")+
  '</svg><input type="range" data-chart min="0" max="'+(p.length-1)+'" value="'+idx+'" aria-label="查價線"><div class="uii-chart-readout" data-chart-readout><strong>'+esc(p[idx].date)+'</strong>　收盤 $'+num(p[idx].close)+(selected?'　買進 '+money(selected.amount)+' · 均價 $'+num(selected.price)+' · '+selected.n+'筆':'')+(filing.has(p[idx].date)?'　SEC申報日':'')+'</div></div>'
 }
-let testMetric="mean";
+
 function backtest(){
  const rows=data?.schema_version===2?data.backtest||[]:[];
  const horizons=[5,10,20,60], thresholds=[...new Set(rows.map(r=>r.threshold))].sort((a,b)=>a-b);
