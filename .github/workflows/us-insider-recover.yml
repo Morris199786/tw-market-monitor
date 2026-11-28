@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: actions/download-artifact@v4
         with:
           name: us-insider-live-data
@@ -28,14 +28,14 @@ jobs:
       - name: Validate and publish verified artifact
         run: |
           python - <<'PY'
-          import json, pathlib, subprocess
+          import json, pathlib, subprocess, gzip, hashlib
           root=pathlib.Path('data/us_insider')
-          for p in ('scripts/update_us_insider.py','data/us_insider/watchlist.json'):
-              assert subprocess.check_output(['git','rev-parse','HEAD:'+p])==subprocess.check_output(['git','rev-parse','77c590475c1ebbe30863b95c83d285175d058e9e:'+p]),p
+          for p,sha in [('scripts/update_us_insider.py','315877549785e3af27e17ab6872e60e35260f390'),('data/us_insider/watchlist.json','c7ebc7dc5c10abb95166d820325ee5c227f51ab8')]:
+              assert subprocess.check_output(['git','rev-parse','HEAD:'+p]).decode().strip()==sha,p
           files=list(pathlib.Path('/tmp/insider-recovery').rglob('latest.json'))
           assert len(files)==1
           raw=files[0].read_bytes()
-          d=json.loads(raw); old=json.loads((root/'latest.json').read_bytes())
+          d=json.loads(raw); old=json.loads(gzip.decompress((root/'latest.json.gz').read_bytes())) if (root/'latest.json.gz').exists() else json.loads((root/'latest.json').read_bytes())
           assert d['schema_version']==2 and d['transactions'] and d['prices']
           assert d.get('classification_version')==2 and isinstance(d.get('sales'),list) and d['sales']
           assert len(d.get('trading_sessions',[]))>=240
@@ -43,19 +43,22 @@ jobs:
           assert d['as_of']>=old['as_of']
           assert all(v and v[-1]['date']<=d['expected_price_as_of'] for v in d['prices'].values())
           assert set(d['stale_prices'])=={t for t,v in d['prices'].items() if v[-1]['date']!=d['expected_price_as_of']}
-          assert len(raw)<95*1024*1024,'GitHub file size safety limit'
+          compressed=gzip.compress(raw,compresslevel=6,mtime=0)
+          assert len(compressed)<24*1024*1024,'Static asset size safety limit'
+          assert hashlib.sha256(gzip.decompress(compressed)).digest()==hashlib.sha256(raw).digest()
+          print('Original bytes:',len(raw),'Compressed bytes:',len(compressed))
           print('Purchases:',len(d['transactions']),'Sales:',len(d['sales']),'Sessions:',len(d['trading_sessions']),'Coverage:',len(d['coverage']))
-          (root/'latest.json').write_bytes(raw)
+          (root/'latest.json.gz').write_bytes(compressed)
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/us_insider/latest.json
+          git add data/us_insider/latest.json.gz
           git diff --cached --quiet && exit 0
-          git commit -m "Recover verified insider data from run 19"
+          git commit -m "Recover verified insider data losslessly compressed from run 19"
           for attempt in 1 2 3; do
             git fetch origin main
             git diff --quiet HEAD origin/main -- scripts/update_us_insider.py data/us_insider/watchlist.json || exit 1
-            git diff --quiet HEAD^ origin/main -- data/us_insider/latest.json || exit 1
+            git diff --quiet HEAD^ origin/main -- data/us_insider/latest.json data/us_insider/latest.json.gz || exit 1
             git rebase origin/main || { git rebase --abort; exit 1; }
             git push origin HEAD:main && exit 0
             sleep 3
