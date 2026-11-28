@@ -102,6 +102,20 @@ def clean(rows):
         if k in seen:continue
         seen.add(k);out.append(x)
     return out,quarantine
+def classify(row):
+    notes=" ".join(row.get("footnotes",[]))
+    security=row.get("security","")
+    local=bool(re.search(r"\b\d{4}\.TW\b|\b\d{4}\.TWO\b|\b\d{6}\.KS\b",security,re.I))
+    adr=bool(re.search(r"american depositary|\bADR\b|\bADS\b",security,re.I))
+    employee=bool(re.search(r"employee stock purchase plan|\bESPP\b|long.term incentive.{0,30}bonus plan",notes,re.I))
+    plan=bool(row.get("plan_10b5") or re.search(r"(?:pursuant to|under|effected under|made under).{0,70}10b5.1",notes,re.I))
+    private=bool(re.search(r"private placement|privately negotiated|private transaction|subscription agreement",notes,re.I))
+    row["security_class"]="local_common" if local else "adr" if adr else "listed_equity"
+    row["purchase_class"]="employee_plan" if employee else "scheduled_plan" if plan else "private_purchase" if private else "discretionary_candidate"
+    row["price_comparable"]=not local
+    row["research_eligible"]=not (local or employee or plan or private or row.get("joint"))
+    return row
+
 def price_history(ticker,start,end):
     # yfinance public market data; unadjusted OHLC plus split events.
     import yfinance as yf
@@ -114,7 +128,9 @@ def price_history(ticker,start,end):
 def calc(rows,prices):
     # Aggregate disclosed events by ticker, owner, filing day; avoid using transaction-date entry.
     grouped=defaultdict(float)
-    for r in rows:grouped[(r["ticker"],r["owner_id"],r["filed"])]+=r["amount"]
+    for r in rows:
+        if not r.get("research_eligible",True):continue
+        grouped[(r["ticker"],r["owner_id"],r["filed"])]+=r["amount"]
     result=[]
     for threshold in (100000,250000,500000,1000000,2000000,5000000,10000000):
         events=[k for k,v in grouped.items() if v>=threshold]
@@ -146,7 +162,7 @@ def main():
         coverage[ticker]={"status":"partial" if errors else "scanned","filings":count,"errors":errors,"raw_purchase_rows":len(raw)-before}
         print(ticker,coverage[ticker]["status"],count,flush=True)
     rows,quarantine=clean(raw)
-    rows=[x for x in rows if start<=x["date"]<=today.isoformat()]
+    rows=[classify(x) for x in rows if start<=x["date"]<=today.isoformat()]
     for ticker in sorted({x["ticker"] for x in rows}):
         try:
             p=price_history(ticker,(today-dt.timedelta(days=max(args.days+15,370))).isoformat(),end)
@@ -158,10 +174,10 @@ def main():
         p=prices.get(r["ticker"],[])
         factor=1
         for x in p:
-            if x["date"]>r["date"] and x["split"]>0:factor*=x["split"]
+            if r["price_comparable"] and x["date"]>r["date"] and x["split"]>0:factor*=x["split"]
         r["raw_price"]=r["price"];r["raw_shares"]=r["shares"];r["price"]/=factor;r["shares"]*=factor
     n=sum(x["status"]=="scanned" for x in coverage.values())
     if n==0:raise RuntimeError("No successful SEC issuer scan; preserve previous output")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。",transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。",schema_version=2,transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
     tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
 if __name__=="__main__":main()
