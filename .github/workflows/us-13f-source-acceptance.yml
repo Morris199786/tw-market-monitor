@@ -1,0 +1,28 @@
+name: US 13F Source Acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-13f-source-acceptance.yml'
+permissions:
+  contents: read
+concurrency:
+  group: us-13f-source-acceptance
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pypdf
+      - name: Verify official sources without writing production data
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+        run: |
+          python -m py_compile scripts/probe_us_13f_sources.py
+          python -u scripts/probe_us_13f_sources.py
