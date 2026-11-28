@@ -43,9 +43,22 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install requests yfinance
+      - name: Check SEC endpoint access
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+        run: |
+          python - <<'PY'
+          import os, requests
+          if not os.environ.get('SEC_USER_AGENT'): raise SystemExit('SEC_USER_AGENT must contain an actual contact email; configure a repository secret or variable.')
+          for url in ('https://www.sec.gov/files/company_tickers.json','https://data.sec.gov/submissions/CIK0000820318.json','https://www.sec.gov/Archives/edgar/full-index/2026/QTR4/master.idx'):
+              try:
+                  r=requests.get(url,headers={'User-Agent':os.environ['SEC_USER_AGENT']},timeout=30,stream=True)
+                  print(r.status_code,url,flush=True);r.close()
+              except requests.RequestException as e: print(type(e).__name__,url,flush=True)
+          PY
       - name: Fetch SEC filings and calculate returns
         env:
-          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT || format('tw-market-monitor research {0}/{1}', 'https://github.com', github.repository) }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
           LOOKBACK: ${{ inputs.days || '92' }}
         run: python scripts/update_us_insider.py --days "$LOOKBACK"
       - name: Check actual coverage
