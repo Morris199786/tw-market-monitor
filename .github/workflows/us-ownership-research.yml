@@ -34,16 +34,19 @@ jobs:
         run: |
           python -m py_compile scripts/${{ matrix.script }}.py scripts/probe_us_13f_sources.py
           python scripts/${{ matrix.script }}.py
-          python -c "import json; d=json.load(open('data/us_insider/${{ matrix.output }}.json')); assert d['rows']; print(len(d['rows']))"
+          python -c "import json; d=json.load(open('data/us_insider/${{ matrix.output }}.json')); assert d.get('row_count',len(d['rows'])) > 0; print(d.get('row_count',len(d['rows'])))"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.output }}
-          path: data/us_insider/${{ matrix.output }}.json
+          path: |
+            data/us_insider/${{ matrix.output }}.json
+            data/us_insider/${{ matrix.output }}_stocks/*.json
       - name: Publish verified output
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/us_insider/${{ matrix.output }}.json
+          if [ "${{ matrix.output }}" = institutional ]; then git add -A data/us_insider/institutional_stocks; fi
           git diff --cached --quiet && exit 0
           git commit -m "Update US ownership research data"
           for attempt in 1 2 3; do
