@@ -29,7 +29,7 @@ jobs:
       - run: python -m unittest discover -s tests -p test_us_insider.py
       - run: node --check assets/us_insider.js
   update:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/us-insider-monitor')
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -37,15 +37,32 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install requests yfinance
       - name: Fetch SEC filings and calculate returns
         env:
-          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
-          LOOKBACK: ${{ inputs.days }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT || format('tw-market-monitor research {0}/{1}', 'https://github.com', github.repository) }}
+          LOOKBACK: ${{ inputs.days || '92' }}
         run: python scripts/update_us_insider.py --days "$LOOKBACK"
+      - name: Check actual coverage
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open('data/us_insider/latest.json'))
+          print(d['coverage_note'])
+          print('Purchase rows:',len(d['transactions']))
+          print('Price histories:',len(d['prices']))
+          assert d['transactions'], 'No purchase rows: cannot validate'
+          assert d['prices'], 'No price histories: cannot validate'
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: us-insider-live-data
+          path: data/us_insider/latest.json
       - name: Save data
         run: |
           git config user.name "github-actions[bot]"
@@ -53,4 +70,4 @@ jobs:
           git add data/us_insider/latest.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Update US insider transactions"
-          git push origin HEAD:"$GITHUB_REF_NAME"
+          git push origin HEAD:"${{ github.head_ref || github.ref_name }}"
