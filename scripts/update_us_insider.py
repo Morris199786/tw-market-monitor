@@ -207,8 +207,13 @@ def main():
     bad=[t for t in prices if coverage[t]["price_status"]!="ok"]
     bad += [t for t in {x["ticker"] for x in rows} if t not in prices]
     print(f"SEC cache hits={hits}, downloads={downloads}; expected price date={expected}; stale/missing={bad}",flush=True)
-    if bad:raise RuntimeError("Incomplete price data: "+",".join(bad))
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。",schema_version=2,price_as_of=expected,cache_stats={"hits":hits,"downloads":downloads},transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    # Publish SEC records independently of market-data freshness. Never represent stale quotes as current.
+    for t in bad:
+        coverage[t]["price_status"]="stale" if prices.get(t) else "missing"
+    for r in rows:
+        r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
+    price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
     cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":1,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
     tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
 if __name__=="__main__":main()
