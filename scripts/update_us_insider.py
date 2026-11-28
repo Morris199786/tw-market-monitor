@@ -1,5 +1,5 @@
 """SEC Form 4 purchase collector. No AI, no paid API. Run from repo root."""
-import argparse, datetime as dt, json, os, pathlib, re, time, xml.etree.ElementTree as ET
+import gzip, argparse, datetime as dt, json, os, pathlib, re, time, xml.etree.ElementTree as ET
 from collections import defaultdict
 from statistics import mean, median
 from urllib.parse import quote
@@ -156,9 +156,15 @@ def main():
     config=json.loads((ROOT/"watchlist.json").read_text());tickers=config["tickers"]
     mapping={x["ticker"].upper():x["cik_str"] for x in get(SEC+"/files/company_tickers.json").json().values()}
     raw=[];coverage={};prices={}
-    previous=json.loads((ROOT/"latest.json").read_text()) if (ROOT/"latest.json").exists() else {}
-    cache_path=ROOT/"filing_cache.json"
-    cache=json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    def read_saved(name):
+        compressed=ROOT/(name+".gz")
+        plain=ROOT/name
+        if compressed.exists():
+            with gzip.open(compressed,"rt",encoding="utf-8") as f:return json.load(f)
+        return json.loads(plain.read_text()) if plain.exists() else {}
+    previous=read_saved("latest.json")
+    cache_path=ROOT/"filing_cache.json.gz"
+    cache=read_saved("filing_cache.json")
     if cache.get("version")!=2:cache={"version":2,"entries":{}}
     entries=cache["entries"]; retained={}; hits=0; downloads=0
     import exchange_calendars as xcals
@@ -221,6 +227,15 @@ def main():
         r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
     price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
     payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
-    cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":2,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
-    tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
+    def save_compressed(path,obj):
+        tmp=path.with_suffix(".tmp")
+        with gzip.GzipFile(filename=str(tmp),mode="wb",mtime=0) as f:
+            f.write(json.dumps(obj,ensure_ascii=False,allow_nan=False,separators=(",",":")).encode("utf-8"))
+        if tmp.stat().st_size>=24*1024*1024:
+            raise RuntimeError(f"Compressed file exceeds static asset budget: {path.name}")
+        with gzip.open(tmp,"rt",encoding="utf-8") as f:
+            assert json.load(f)==obj
+        tmp.replace(path)
+    save_compressed(cache_path,{"version":2,"entries":retained})
+    save_compressed(ROOT/"latest.json.gz",payload)
 if __name__=="__main__":main()
