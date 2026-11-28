@@ -21,7 +21,18 @@ class TestInsider(unittest.TestCase):
  def test_duplicate(self):
   r=self.rows();self.assertEqual(len(clean(r+r)[0]),1)
  def test_amendment_quarantine(self):
-  r=self.rows()+self.rows(XML.replace(b">4<",b">4/A<"));self.assertEqual(len(clean(r)[0]),0)
+  r=self.rows()+[dict(x,accession="124") for x in self.rows(XML.replace(b">4<",b">4/A<"))];self.assertEqual(len(clean(r)[0]),0)
+ def test_distinct_rows_preserved(self):
+  r=self.rows()[0]; self.assertEqual(len(clean([r,dict(r,row=1)])[0]),2)
+ def test_unchanged_amendment(self):
+  r=self.rows()[0]; a=dict(r,accession="124",amendment=True,original_date=r["filed"],filed="2026-01-06")
+  out,q=clean([r,a]);self.assertEqual(len(out),1);self.assertFalse(q);self.assertTrue(out[0]["amendment_verified_unchanged"])
+ def test_changed_amendment(self):
+  r=self.rows()[0];a=dict(r,accession="124",amendment=True,original_date=r["filed"],shares=12000)
+  out,q=clean([r,a]);self.assertFalse(out);self.assertEqual(len(q),2)
+ def test_conflicting_classification(self):
+  r=self.rows()[0];r["footnotes"]=["Open market purchase pursuant to a private placement"]
+  self.assertEqual(classify(r)["purchase_class"],"plan_uncertain")
  def test_backtest_public_date(self):
   p={"TEST":[{"date":"2026-01-05","open":1,"close":1}]+[{"date":f"2026-01-{d:02d}","open":100,"close":110} for d in range(6,11)]}
   r=calc(self.rows(),p)[0];self.assertEqual(r["n"],1);self.assertAlmostEqual(r["mean"],10)
