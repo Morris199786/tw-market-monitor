@@ -1,10 +1,22 @@
 import unittest
-from scripts.update_us_insider import filing_rows,clean,calc
+from scripts.update_us_insider import filing_rows,clean,calc,classify
 XML=b"""<ownershipDocument><documentType>4</documentType><issuer><issuerCik>123</issuerCik></issuer><reportingOwner><reportingOwnerId><rptOwnerCik>456</rptOwnerCik><rptOwnerName>Test Owner</rptOwnerName></reportingOwnerId><reportingOwnerRelationship><isDirector>1</isDirector></reportingOwnerRelationship></reportingOwner><nonDerivativeTable><nonDerivativeTransaction><securityTitle><value>Common Stock</value></securityTitle><transactionDate><value>2026-01-02</value></transactionDate><transactionCoding><transactionCode>P</transactionCode></transactionCoding><transactionAmounts><transactionShares><value>10000</value></transactionShares><transactionPricePerShare><value>50</value></transactionPricePerShare><transactionAcquiredDisposedCode><value>A</value></transactionAcquiredDisposedCode></transactionAmounts><postTransactionAmounts><sharesOwnedFollowingTransaction><value>20000</value></sharesOwnedFollowingTransaction></postTransactionAmounts><ownershipNature><directOrIndirectOwnership><value>D</value></directOrIndirectOwnership></ownershipNature></nonDerivativeTransaction></nonDerivativeTable></ownershipDocument>"""
 class TestInsider(unittest.TestCase):
  def rows(self,xml=XML):return filing_rows(xml,"TEST","123","2026-01-05","https://www.sec.gov/test")
  def test_purchase(self):
   r=self.rows()[0];self.assertEqual(r["amount"],500000);self.assertEqual(r["role"],"董事")
+ def test_sale(self):
+  r=self.rows(XML.replace(b">P<",b">S<").replace(b">A<",b">D<"))[0]
+  self.assertEqual(r["side"],"sell");self.assertFalse(classify(r)["research_eligible"])
+ def test_classification_evidence(self):
+  r=self.rows()[0]
+  self.assertEqual(classify(r)["purchase_class"],"discretionary_candidate")
+  r["footnotes"]=["Purchased in the open market"]
+  self.assertEqual(classify(r)["purchase_class"],"confirmed_market")
+  r["footnotes"]=["Pursuant to a Rule 10b5-1 trading plan"]
+  self.assertEqual(classify(r)["purchase_class"],"scheduled_plan")
+  r["footnotes"]=[];r["plan_10b5"]=True
+  self.assertEqual(classify(r)["purchase_class"],"plan_uncertain")
  def test_award_excluded(self):self.assertEqual(self.rows(XML.replace(b">P<",b">A<")),[])
  def test_duplicate(self):
   r=self.rows();self.assertEqual(len(clean(r+r)[0]),1)
