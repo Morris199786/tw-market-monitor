@@ -1,6 +1,130 @@
 {
   "reports": [
     {
+      "date": "2026-11-28",
+      "session": "post",
+      "updated_at": "2026-11-28T00:08:20.930Z",
+      "events": [
+        {
+          "tickers": [
+            "MU",
+            "MRVL",
+            "SNDK",
+            "COHR",
+            "LITE",
+            "STX",
+            "AMZN",
+            "TSLA",
+            "AVGO",
+            "META"
+          ],
+          "sector": "AI 供應鏈／記憶體／光通訊／CSP",
+          "kind": "族群帶動：收盤更新",
+          "impact": "利多（情緒）",
+          "title": "黑色星期五科技股反彈延續至收盤，記憶體與光通訊領先",
+          "analysis": "11/27 美國縮短交易日收盤，科技股反彈延續。Reuters、AP 與 Yahoo Finance 對主要指數上漲方向一致，Nasdaq 收漲約 2.31%，S&P 500 約 1.60%，道瓊約 1.18%。這是上一份盤前報告之後的新收盤資訊，而非重複刊登盤前行情。\n\n記憶體方面，Sandisk 收漲約16%，Micron 收漲逾7%；光通訊方面，Coherent 與 Lumentum 亦明顯走強。這顯示反彈不限於單一晶片公司，但尚未取得同步上修財測、新增訂單或產品報價改善的證據。\n\n風險與後續觀察：縮短交易日的流動性可能放大波動。下個完整交易日需觀察記憶體及光通訊漲幅能否維持、半導體上漲廣度，以及雲端客戶資本支出與算力業者融資條件是否改善。結論：收盤確認風險偏好修復，但不能僅依單日反彈判定基本面反轉。",
+          "metrics": [
+            {
+              "label": "Nasdaq 收盤漲幅",
+              "value": 2.31,
+              "unit": "%",
+              "context": "Reuters 11/27"
+            },
+            {
+              "label": "S&P 500 收盤漲幅",
+              "value": 1.6,
+              "unit": "%",
+              "context": "Reuters、AP 11/27"
+            },
+            {
+              "label": "道瓊收盤漲幅",
+              "value": 1.18,
+              "unit": "%",
+              "context": "Reuters 11/27"
+            },
+            {
+              "label": "SNDK 收盤漲幅",
+              "value": 15.96,
+              "unit": "%",
+              "context": "WiseView、PreBell；Business Insider 約16%"
+            },
+            {
+              "label": "MU 收盤漲幅",
+              "value": 7.6,
+              "unit": "%",
+              "context": "WiseView、PreBell；Yahoo Finance 逾7%"
+            }
+          ],
+          "tables": [
+            {
+              "title": "追蹤標的收盤表現",
+              "columns": [
+                "代號",
+                "漲幅"
+              ],
+              "rows": [
+                [
+                  "SNDK",
+                  "+15.96%"
+                ],
+                [
+                  "COHR",
+                  "+14.07%"
+                ],
+                [
+                  "LITE",
+                  "+7.98%"
+                ],
+                [
+                  "STX",
+                  "+7.90%"
+                ],
+                [
+                  "MU",
+                  "+7.60%"
+                ]
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "title": "Reuters 11/27 收盤",
+              "url": "https://www.reuters.com/business/wall-st-futures-surge-investors-return-holiday-2026-11-27/"
+            },
+            {
+              "title": "AP 11/27 指數收盤",
+              "url": "https://apnews.com/article/04dab6079cf7f3dfe7285a3cc1f240a2"
+            },
+            {
+              "title": "Yahoo Finance 收盤報導",
+              "url": "https://finance.yahoo.com/markets/live/stock-market-today-firday-november-27-dow-sp-500-nasdaq-black-friday-holiday-091152065.html"
+            },
+            {
+              "title": "WiseView 個股收盤資料",
+              "url": "https://wiseview.ai/news/stock-market-close-2026-11-27"
+            },
+            {
+              "title": "PreBell 個股收盤資料",
+              "url": "https://prebell.site/en/p/recap-2026-11-27"
+            },
+            {
+              "title": "Business Insider 收盤報導",
+              "url": "https://www.businessinsider.com/stock-market-news-thanksgiving-ai-spending-tech-rates-regulation-2026-11"
+            }
+          ],
+          "dedup_key": "2026-11-27-ai-closing-rebound"
+        }
+      ],
+      "coverage": {
+        "watchlist_groups": 16,
+        "watchlist_tickers": 102,
+        "verified_events": 1,
+        "matched_tickers": 10,
+        "market_status": "11/27 美東13:00提早收盤（台灣11/28 02:00）",
+        "limitations": "本次以市場、半導體、記憶體、光通訊、雲端及其他AI相關公開新聞搜尋為主，未完成16族群逐一公告查核。收盤數據採相符來源；S&P 500 部分次級來源報價不一致，採Reuters及AP。NVIDIA東南亞出貨限制首發早於上一份正式報告，且多家媒體引用同一FT消息，不列為新事件。未獨立核實的公司消息不收錄；不能推論其他族群沒有新聞。"
+      }
+    },
+    {
       "date": "2026-11-27",
       "session": "pre",
       "updated_at": "2026-11-27T14:00:58.844Z",
@@ -314,6 +438,7 @@
     }
   ],
   "seen": [
-    "2026-11-27-ai-premarket-rebound"
+    "2026-11-27-ai-premarket-rebound",
+    "2026-11-27-ai-closing-rebound"
   ]
 }
