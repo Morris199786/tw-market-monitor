@@ -92,18 +92,38 @@ def download_xml(cik,acc,doc):
         if r is not None and b"ownershipDocument" in r.content:return r.content,base+quote(name)
     raise RuntimeError("No ownership XML "+acc)
 def clean(rows):
-    # Exact duplicate disclosures across reporting owners are counted once, not once per owner.
-    # Amendments are quarantined with potentially affected originals until manually reconciled.
+    # Preserve distinct rows within one filing; suppress only identical accession/row repeats.
+    unique={}
+    for x in rows:
+        k=(x["ticker"],x["accession"],x["row"],x["owner_id"])
+        unique[k]=x
+    rows=list(unique.values())
     amend=[x for x in rows if x["amendment"]]
+    originals=[x for x in rows if not x["amendment"]]
+    # Only reconcile unchanged economic rows with explicit original filing date,
+    # exact owner identity, and a unique one-to-one match. Changed economics
+    # require document-level review, not an assumed full replacement.
+    def economic(x):
+        return tuple(x.get(k) for k in ("ticker","issuer_cik","owner_id","date","security","shares","price","post_shares","ownership","side"))
+    matched=set();resolved=set()
+    for i,a in enumerate(amend):
+        if not a.get("original_date"):continue
+        candidates=[j for j,o in enumerate(originals) if o["filed"]==a["original_date"] and economic(o)==economic(a)]
+        peers=[z for z in amend if z.get("original_date")==a["original_date"] and economic(z)==economic(a)]
+        if len(candidates)==1 and len(peers)==1:
+            # Retain original transaction publication date and amendment evidence.
+            j=candidates[0];o=originals[j]
+            if o.get("plan_10b5")!=a.get("plan_10b5") or o.get("footnotes")!=a.get("footnotes"):continue
+            matched.add(j);resolved.add(i)
+    pending=[a for i,a in enumerate(amend) if i not in resolved]
     def affected(x):
-        return any(a["issuer_cik"]==x["issuer_cik"] and set(a["owner_ids"])&set(x["owner_ids"]) and (a["original_date"]==x["filed"] or a["date"]==x["date"]) for a in amend)
-    out=[];seen=set();quarantine=[]
-    for x in sorted(rows,key=lambda r:(r["filed"],r["accession"],r["row"])):
-        if x["amendment"] or affected(x):quarantine.append(x);continue
-        k=(x["issuer_cik"],x["date"],x["security"],x["shares"],x["price"],x["post_shares"],x["ownership"],x["owner_id"],x.get("side","buy"))
-        if k in seen:continue
-        seen.add(k);out.append(x)
-    return out,quarantine
+        return any(a["issuer_cik"]==x["issuer_cik"] and set(a["owner_ids"])&set(x["owner_ids"]) and (a["original_date"]==x["filed"] or a["date"]==x["date"]) for a in pending)
+    out=[];quarantine=list(pending)
+    for j,x in enumerate(originals):
+        if affected(x):quarantine.append(x);continue
+        if j in matched:x=dict(x,amendment_verified_unchanged=True)
+        out.append(x)
+    return sorted(out,key=lambda r:(r["filed"],r["accession"],r["row"])),quarantine
 def classify(row):
     notes=" ".join(row.get("footnotes",[]))
     security=row.get("security","")
@@ -114,8 +134,8 @@ def classify(row):
     plan=bool(re.search(r"(?:pursuant to|under|effected under|made under|in accordance with).{0,85}10b5.1",notes,re.I)) and not negative_plan
     private=bool(re.search(r"private placement|privately negotiated|private transaction|subscription agreement|registered direct offering|purchase agreement|sale agreement",notes,re.I))
     market=bool(re.search(r"open.market (?:purchase|sale|transaction)|(?:purchased|sold|acquired) (?:shares |stock )?(?:in|on|through) (?:the )?open market",notes,re.I))
-    ambiguous=bool(row.get("plan_10b5") and not plan and not negative_plan)
-    category="employee_plan" if employee else "scheduled_plan" if plan else "plan_uncertain" if ambiguous else "private_purchase" if private else "confirmed_market" if market else "discretionary_candidate"
+    ambiguous=bool((row.get("plan_10b5") and not plan and not negative_plan) or (plan and private) or (market and private))
+    category="employee_plan" if employee else "plan_uncertain" if ambiguous else "scheduled_plan" if plan else "private_purchase" if private else "confirmed_market" if market else "discretionary_candidate"
     row["security_class"]="local_common" if local else "adr" if adr else "listed_equity"
     row["purchase_class"]=category
     row["classification_basis"]="transaction_footnote" if employee or plan or private or market else "filing_plan_flag" if ambiguous else "P_or_S_code_only"
@@ -233,7 +253,7 @@ def main():
     for r in rows:
         r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
     price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,price_missing=[t for t in bad if t not in prices],prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,amendment_verified_unchanged=sum(bool(r.get("amendment_verified_unchanged")) for r in rows),trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,price_missing=[t for t in bad if t not in prices],prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
     def save_compressed(path,obj):
         tmp=path.with_suffix(".tmp")
         with gzip.GzipFile(filename=str(tmp),mode="wb",mtime=0) as f:
