@@ -35,8 +35,28 @@ def main():
     records=[l.split("|") for l in idx.text.splitlines() if "|13F-HR|" in l or "|13F-HR/A|" in l]
     assert records and any("1787596"==r[0] and r[3]=="2026-11-16" for r in records)
     print("EDGAR latest-quarter index records:",len(records),flush=True)
-    pdf=get(SEC+"/files/investment/13flist2026q3.pdf")
-    assert pdf is not None and pdf.content.startswith(b"%PDF")
+    return resolve_watchlist(set(a)|set(b), "2026q3")
+
+def resolve_watchlist(seed_codes=(), list_period=None):
+    from urllib.parse import urljoin
+    from html.parser import HTMLParser
+    class Links(HTMLParser):
+        def __init__(self):super().__init__();self.urls=[]
+        def handle_starttag(self,tag,attrs):
+            if tag=="a":self.urls.extend(v for k,v in attrs if k=="href" and v)
+    official=get(SEC+"/rules-regulations/staff-guidance/official-list-section-13f-securities")
+    if official is None:raise RuntimeError("SEC securities list page unavailable")
+    parser=Links();parser.feed(official.text)
+    urls=[urljoin(SEC,x) for x in parser.urls if "13flist" in x.lower()]
+    periods=sorted({m.group(0).lower() for x in urls for m in [re.search(r"20\d{2}q[1-4]",x,re.I)] if m},reverse=True)
+    if list_period is None:
+        if not periods:raise RuntimeError("No SEC list period found")
+        list_period=periods[0]
+    links=list(dict.fromkeys(x for x in urls if list_period in x.lower() and x.lower().endswith(".txt")))
+    pdf_url=next((x for x in urls if list_period in x.lower() and x.lower().endswith(".pdf")),None)
+    if not pdf_url:raise RuntimeError("Missing SEC PDF for "+list_period)
+    pdf=get(pdf_url)
+    if pdf is None or not pdf.content.startswith(b"%PDF"):raise RuntimeError("Invalid SEC PDF")
     reader=PdfReader(io.BytesIO(pdf.content))
     watch=set(json.loads((ROOT/"watchlist.json").read_text())["tickers"])
     names={x["ticker"]:x["title"] for x in get(SEC+"/files/company_tickers.json").json().values() if x["ticker"] in watch}
@@ -44,13 +64,7 @@ def main():
     def tokens(n):
         return set(re.findall(r"[A-Z0-9]+",n.upper()))-{"INC","CORP","CORPORATION","LTD","LIMITED","PLC","THE","CO","COMPANY","HOLDINGS","HLDGS","GROUP","NV","SA","AG","DE","CL","A","B","COM"}
     nt={t:tokens(n) for t,n in names.items()}
-    candidates=set(a)|set(b)
-    # SEC documents column 10 as the option indicator, NOT an option row.
-    # The actual instrument class appears in columns 41-67.
-    official=get(SEC+"/rules-regulations/staff-guidance/official-list-section-13f-securities").text
-    from urllib.parse import urljoin
-    links=[urljoin(SEC,x) for x in re.findall(r"""href=["']([^"']+\.txt)["']""",official,re.I) if "13flist" in x.lower()]
-    links=list(dict.fromkeys([SEC+"/files/investment/13flist2026q3-txt.txt"]+links))
+    candidates=set(seed_codes)
     records=[]
     def acceptable(desc,status):
         return "*D*" not in status and not re.match(r"^(CALL|PUT|RIGHT|UNIT|\*W|WARRANT|NOTE|BOND|DBCV|PFD)\b",desc.strip(),re.I)
@@ -141,7 +155,7 @@ def main():
     for c,n in records:
         if any(any(norm(n).startswith(norm(h)) for h in hints.get(t,[])) for t in missing):extra.add(c)
     # Actual filing sample supplies additional independently observed codes.
-    extra.update(set(a)|set(b))
+    extra.update(seed_codes)
     print("Foreign-security fallback candidates:",len(extra),flush=True)
     cs=sorted(extra)
     for i in range(0,len(cs),10):
@@ -162,4 +176,10 @@ def main():
     print("Coverage:",len(found),"/",len(watch),flush=True)
     assert {"NVDA","AMD","MU","MSFT","AMZN"}<=set(found),"Core mapping failed"
     assert len(found)==len(watch),"Full watchlist coverage required; investigate remaining tickers before publishing"
+    result={}
+    for ticker,codes in found.items():
+        for code in codes:
+            if code in result and result[code]!=ticker:raise RuntimeError("Ambiguous verified identifier")
+            result[code]=ticker
+    return result
 if __name__=="__main__":main()
