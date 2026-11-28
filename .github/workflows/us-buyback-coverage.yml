@@ -26,7 +26,8 @@ jobs:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: |
           cp data/us_insider/buybacks.json /tmp/buybacks-prior.json
-          python -m py_compile scripts/update_us_buybacks.py scripts/us_buyback_filing.py
+          python -m py_compile scripts/update_us_buybacks.py scripts/us_buyback_filing.py scripts/us_buyback_verify.py
+          python tests/test_us_buyback_verify.py
           python scripts/update_us_buybacks.py
           python - <<'PY'
           import json
@@ -37,6 +38,8 @@ jobs:
           assert {t for t,v in old['coverage'].items() if v=='tagged'} <= {t for t,v in new['coverage'].items() if v=='tagged'}
           assert new['rows']
           assert set(new['filing_audit']) == set(new['coverage'])
+          assert new['verification']['summary']['issuers'] == len(new['coverage'])
+          print('Verification:', new['verification']['summary'])
           print('Filing audit:', Counter(new['filing_audit'].values()))
           print(Counter(new['coverage'].values()))
           print('Remaining:', [t for t,v in new['coverage'].items() if v!='tagged'])
