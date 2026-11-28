@@ -89,5 +89,29 @@ def main():
  print("Verified identifiers:",len(set(cusips.values())),"actual historical holdings coverage:",len(actual_coverage),"rows:",len(rows),"latest:",max(r["period"] for r in rows),flush=True)
  payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
  if len(actual_coverage)<100:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
- p=ROOT/"institutional.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False));p.replace(ROOT/"institutional.json")
+ # Publish a tiny index and lossless per-ticker shards. Keep every comparison row.
+ from pathlib import Path
+ import hashlib
+ grouped=defaultdict(list)
+ for row in rows:grouped[row["ticker"]].append(row)
+ out=ROOT/"institutional_stocks";out.mkdir(exist_ok=True)
+ manifest={};summary=defaultdict(list);written=0
+ for ticker,stockrows in sorted(grouped.items()):
+  if not re.fullmatch(r"[A-Z0-9.\-]+",ticker):raise ValueError("Unsafe ticker")
+  blob=json.dumps({"ticker":ticker,"rows":stockrows},ensure_ascii=False,allow_nan=False,separators=(",",":")).encode()
+  if len(blob)>20*1024*1024:raise RuntimeError("Ticker shard exceeds deployment limit")
+  filename=ticker+".json";tmp=out/(filename+".tmp");tmp.write_bytes(blob);tmp.replace(out/filename)
+  manifest[ticker]={"file":"institutional_stocks/"+filename,"count":len(stockrows),"sha256":hashlib.sha256(blob).hexdigest()}
+  written+=len(stockrows)
+  agg=defaultdict(lambda:dict(up=0,down=0,flat=0,change=0))
+  for r in stockrows:
+   g=agg[r["period"]];g["up" if r["change"]>0 else "down" if r["change"]<0 else "flat"]+=1;g["change"]+=r["change"]
+  for period,g in agg.items():summary[period].append(dict(ticker=ticker,**g))
+ assert written==len(rows)
+ for file in out.glob("*.json"):
+  if file.stem not in manifest:file.unlink()
+ payload.pop("rows")
+ payload.update(schema_version=2,row_count=written,shards=manifest,summary=dict(summary),rows=[])
+ p=ROOT/"institutional.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));p.replace(ROOT/"institutional.json")
+ print("Published index and shards:",len(manifest),"rows:",written,"uncovered:",payload["uncovered_holdings"],flush=True)
 if __name__=="__main__":main()
