@@ -49,8 +49,10 @@ def filing_rows(blob,ticker,accession,filed,url):
     owner=" / ".join(x[1] for x in owners)
     role=" / ".join(dict.fromkeys(x[2] for x in owners))
     rows=[]
+    footnote_map={f.get("id"):f.text or "" for f in root.findall("footnotes/footnote")}
     for i,t in enumerate(root.findall("nonDerivativeTable/nonDerivativeTransaction")):
-        if val(t,"transactionCoding/transactionCode")!="P" or val(t,"transactionAmounts/transactionAcquiredDisposedCode/value")!="A":continue
+        code=val(t,"transactionCoding/transactionCode"); side=val(t,"transactionAmounts/transactionAcquiredDisposedCode/value")
+        if (code,side) not in (("P","A"),("S","D")):continue
         shares=positive(val(t,"transactionAmounts/transactionShares/value"))
         price=positive(val(t,"transactionAmounts/transactionPricePerShare/value"))
         date=val(t,"transactionDate/value")
@@ -58,7 +60,7 @@ def filing_rows(blob,ticker,accession,filed,url):
         if not shares or not price or not date:continue
         # Exclude non-common instruments; retain unclassified titles for manual review.
         if re.search(r"preferred|warrant|option|unit|convertible|restricted stock",security,re.I):continue
-        rows.append(dict(ticker=ticker,issuer_cik=val(root,"issuer/issuerCik"),accession=accession,row=i,date=date,filed=filed,owner=owner,owner_id=owner_id,owner_ids=[x[0] for x in owners],role=role,shares=shares,price=price,amount=shares*price,ownership=val(t,"ownershipNature/directOrIndirectOwnership/value"),security=security,post_shares=positive(val(t,"postTransactionAmounts/sharesOwnedFollowingTransaction/value")),url=url,amendment=val(root,"documentType")=="4/A",original_date=val(root,"dateOfOriginalSubmission"),joint=len(owners)>1,plan_10b5=truth(val(root,"aff10b5One")),footnotes=[(f.text or "") for f in root.findall("footnotes/footnote")]))
+        rows.append(dict(ticker=ticker,issuer_cik=val(root,"issuer/issuerCik"),accession=accession,row=i,date=date,filed=filed,owner=owner,owner_id=owner_id,owner_ids=[x[0] for x in owners],role=role,shares=shares,price=price,amount=shares*price,ownership=val(t,"ownershipNature/directOrIndirectOwnership/value"),security=security,post_shares=positive(val(t,"postTransactionAmounts/sharesOwnedFollowingTransaction/value")) if val(t,"postTransactionAmounts/sharesOwnedFollowingTransaction/value") not in ("0","0.0") else 0,url=url,amendment=val(root,"documentType")=="4/A",original_date=val(root,"dateOfOriginalSubmission"),joint=len(owners)>1,plan_10b5=truth(val(root,"aff10b5One")),transaction_code=code,side="buy" if code=="P" else "sell",footnotes=[footnote_map[f.get("id")] for f in t.iter("footnoteId") if f.get("id") in footnote_map],filing_footnotes=list(footnote_map.values())))
     return rows
 def get_filings(cik,start):
     r=get(f"{DSEC}/submissions/CIK{int(cik):010d}.json")
@@ -98,7 +100,7 @@ def clean(rows):
     out=[];seen=set();quarantine=[]
     for x in sorted(rows,key=lambda r:(r["filed"],r["accession"],r["row"])):
         if x["amendment"] or affected(x):quarantine.append(x);continue
-        k=(x["issuer_cik"],x["date"],x["security"],x["shares"],x["price"],x["post_shares"],x["ownership"],x["owner_id"])
+        k=(x["issuer_cik"],x["date"],x["security"],x["shares"],x["price"],x["post_shares"],x["ownership"],x["owner_id"],x.get("side","buy"))
         if k in seen:continue
         seen.add(k);out.append(x)
     return out,quarantine
@@ -108,12 +110,17 @@ def classify(row):
     local=bool(re.search(r"\b\d{4}\.TW\b|\b\d{4}\.TWO\b|\b\d{6}\.KS\b",security,re.I))
     adr=bool(re.search(r"american depositary|\bADR\b|\bADS\b",security,re.I))
     employee=bool(re.search(r"employee stock purchase plan|\bESPP\b|long.term incentive.{0,30}bonus plan",notes,re.I))
-    plan=bool(row.get("plan_10b5") or re.search(r"(?:pursuant to|under|effected under|made under).{0,70}10b5.1",notes,re.I))
-    private=bool(re.search(r"private placement|privately negotiated|private transaction|subscription agreement",notes,re.I))
+    negative_plan=bool(re.search(r"(?:not|outside|without).{0,45}(?:10b5.1|trading plan)",notes,re.I))
+    plan=bool(re.search(r"(?:pursuant to|under|effected under|made under|in accordance with).{0,85}10b5.1",notes,re.I)) and not negative_plan
+    private=bool(re.search(r"private placement|privately negotiated|private transaction|subscription agreement|registered direct offering|purchase agreement|sale agreement",notes,re.I))
+    market=bool(re.search(r"open.market (?:purchase|sale|transaction)|(?:purchased|sold|acquired) (?:shares |stock )?(?:in|on|through) (?:the )?open market",notes,re.I))
+    ambiguous=bool(row.get("plan_10b5") and not plan and not negative_plan)
+    category="employee_plan" if employee else "scheduled_plan" if plan else "plan_uncertain" if ambiguous else "private_purchase" if private else "confirmed_market" if market else "discretionary_candidate"
     row["security_class"]="local_common" if local else "adr" if adr else "listed_equity"
-    row["purchase_class"]="employee_plan" if employee else "scheduled_plan" if plan else "private_purchase" if private else "discretionary_candidate"
+    row["purchase_class"]=category
+    row["classification_basis"]="transaction_footnote" if employee or plan or private or market else "filing_plan_flag" if ambiguous else "P_or_S_code_only"
     row["price_comparable"]=not local
-    row["research_eligible"]=not (local or employee or plan or private or row.get("joint"))
+    row["research_eligible"]=row.get("side","buy")=="buy" and category in ("confirmed_market","discretionary_candidate") and not (local or row.get("joint"))
     return row
 
 def price_history(ticker,start,end):
@@ -152,7 +159,7 @@ def main():
     previous=json.loads((ROOT/"latest.json").read_text()) if (ROOT/"latest.json").exists() else {}
     cache_path=ROOT/"filing_cache.json"
     cache=json.loads(cache_path.read_text()) if cache_path.exists() else {}
-    if cache.get("version")!=1:cache={"version":1,"entries":{}}
+    if cache.get("version")!=2:cache={"version":2,"entries":{}}
     entries=cache["entries"]; retained={}; hits=0; downloads=0
     import exchange_calendars as xcals
     import pandas as pd
@@ -213,7 +220,7 @@ def main():
     for r in rows:
         r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
     price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
-    cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":1,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":2,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
     tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
 if __name__=="__main__":main()
