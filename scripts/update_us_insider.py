@@ -149,6 +149,18 @@ def main():
     config=json.loads((ROOT/"watchlist.json").read_text());tickers=config["tickers"]
     mapping={x["ticker"].upper():x["cik_str"] for x in get(SEC+"/files/company_tickers.json").json().values()}
     raw=[];coverage={};prices={}
+    previous=json.loads((ROOT/"latest.json").read_text()) if (ROOT/"latest.json").exists() else {}
+    cache_path=ROOT/"filing_cache.json"
+    cache=json.loads(cache_path.read_text()) if cache_path.exists() else {}
+    if cache.get("version")!=1:cache={"version":1,"entries":{}}
+    entries=cache["entries"]; retained={}; hits=0; downloads=0
+    import exchange_calendars as xcals
+    import pandas as pd
+    cal=xcals.get_calendar("XNYS")
+    now=pd.Timestamp.now(tz="UTC")
+    sessions=cal.sessions_in_range(pd.Timestamp(today-dt.timedelta(days=14)),pd.Timestamp(today))
+    expected=max(str(x.date()) for x in sessions if cal.session_close(x)<=now)
+    prior_prices=previous.get("prices",{})
     for ticker in tickers:
         cik=mapping.get(ticker)
         if not cik:coverage[ticker]={"status":"unmapped"};continue
@@ -156,7 +168,16 @@ def main():
         try:
             for form,filed,acc,doc in get_filings(cik,start):
                 try:
-                    blob,url=download_xml(cik,acc,doc);raw.extend(filing_rows(blob,ticker,acc,filed,url));count+=1
+                    key=ticker+":"+str(cik)+":"+acc
+                    entry=entries.get(key)
+                    if entry is not None and entry.get("filed")==filed and entry.get("doc")==doc:
+                        hits+=1
+                    else:
+                        blob,url=download_xml(cik,acc,doc)
+                        entry={"filed":filed,"doc":doc,"rows":filing_rows(blob,ticker,acc,filed,url)}
+                        downloads+=1
+                    retained[key]=entry
+                    raw.extend(dict(x) for x in entry["rows"]);count+=1
                 except Exception as e:errors.append(acc+": "+str(e))
         except Exception as e:errors.append(str(e))
         coverage[ticker]={"status":"partial" if errors else "scanned","filings":count,"errors":errors,"raw_purchase_rows":len(raw)-before}
@@ -166,8 +187,13 @@ def main():
     for ticker in sorted({x["ticker"] for x in rows}):
         try:
             p=price_history(ticker,(today-dt.timedelta(days=max(args.days+15,370))).isoformat(),end)
+            old=prior_prices.get(ticker,[])
+            if old and (not p or p[-1]["date"]<old[-1]["date"]):
+                p=old
+            p=[x for x in p if x["date"]<=expected]
             prices[ticker]=p
-            coverage[ticker]["price_status"]="ok" if p else "missing"
+            coverage[ticker]["price_as_of"]=p[-1]["date"] if p else None
+            coverage[ticker]["price_status"]="ok" if p and p[-1]["date"]==expected else "stale" if p else "missing"
         except Exception as e:coverage[ticker]["price_status"]="failed";coverage[ticker]["price_error"]=str(e)
     # SEC prices are as-traded; normalize to the latest share basis for chart comparison.
     for r in rows:
@@ -177,7 +203,12 @@ def main():
             if r["price_comparable"] and x["date"]>r["date"] and x["split"]>0:factor*=x["split"]
         r["raw_price"]=r["price"];r["raw_shares"]=r["shares"];r["price"]/=factor;r["shares"]*=factor
     n=sum(x["status"]=="scanned" for x in coverage.values())
-    if n==0:raise RuntimeError("No successful SEC issuer scan; preserve previous output")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。",schema_version=2,transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    if n!=len(tickers):raise RuntimeError(f"Incomplete SEC scan {n}/{len(tickers)}; preserve previous output")
+    bad=[t for t in prices if coverage[t]["price_status"]!="ok"]
+    bad += [t for t in {x["ticker"] for x in rows} if t not in prices]
+    print(f"SEC cache hits={hits}, downloads={downloads}; expected price date={expected}; stale/missing={bad}",flush=True)
+    if bad:raise RuntimeError("Incomplete price data: "+",".join(bad))
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。",schema_version=2,price_as_of=expected,cache_stats={"hits":hits,"downloads":downloads},transactions=rows,quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    cache_tmp=ROOT/"filing_cache.tmp";cache_tmp.write_text(json.dumps({"version":1,"entries":retained},ensure_ascii=False,allow_nan=False,separators=(",",":")));cache_tmp.replace(cache_path)
     tmp=ROOT/"latest.tmp";tmp.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False,separators=(",",":")));tmp.replace(ROOT/"latest.json")
 if __name__=="__main__":main()
