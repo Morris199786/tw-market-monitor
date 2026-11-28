@@ -591,13 +591,14 @@ function getTwBreadth() {
     </div>
     <section class="us-main-chart" data-us-chart-container>
       <div class="us-compare-controls">
-        <label>比較指標<select data-us-compare-metric aria-label="選擇要與股價比較的市場指標"><option value="cnn_fear_greed">CNN Fear &amp; Greed</option><option value="vix">VIX 恐慌指數</option><option value="hy_oas_pct">HY OAS 高收益債利差</option><option value="ig_oas_pct">IG OAS 投資級債利差</option></select></label>
+        <label>比較指標<select data-us-compare-metric aria-label="選擇要與股價比較的市場指標"><option value="cnn_fear_greed">CNN Fear &amp; Greed</option><option value="vix">VIX 恐慌指數</option><option value="hy_oas_pct">HY OAS 高收益債利差</option><option value="ig_oas_pct">IG OAS 投資級債利差</option><option value="cftc_net_pct">CFTC 槓桿基金淨部位占比</option><option value="cftc_net">CFTC 槓桿基金淨部位</option><option value="cftc_long">CFTC 槓桿基金多單</option><option value="cftc_short">CFTC 槓桿基金空單</option></select></label>
         <label>股價指數<select data-us-compare-price aria-label="選擇股價指數"><option value="nasdaq_composite">Nasdaq 綜合指數</option><option value="sp500">S&amp;P 500</option></select></label>
       </div>
       <div data-us-groups></div>
       <p class="us-chart-hint">左軸：股價指數點位｜右軸：所選指標原始數值。雙軸僅供比較時間關係，不代表兩者數值可直接比較；空缺日期不補零。</p>
     </section>
 
+    <section class="us-margin-section"><div class="us-section-title"><div><h3>CFTC｜Nasdaq 100 期貨籌碼</h3><p data-us-cftc-date>持倉統計日（非公布日）</p></div></div><div class="us-table-wrap"><table class="us-overview-table"><thead><tr><th>交易人</th><th>多單</th><th>空單</th><th>淨部位</th><th>較前次</th></tr></thead><tbody data-us-cftc-rows></tbody></table></div><p class="us-table-note" data-us-cftc-note></p><details class="us-month-chart-details"><summary>展開槓桿基金多空歷史圖</summary><div data-us-cftc-chart></div></details></section>
     <section class="us-margin-section">
       <div class="us-section-title"><div><h3>FINRA 融資監控</h3><p>月資料獨立檢視，不與每日情緒或信用利差混合。重點放在與 S&amp;P 500 的月度連動。</p></div></div>
       <div class="us-table-wrap us-table-wrap--margin">
@@ -883,12 +884,13 @@ function getTwBreadth() {
     const s=sentiment.series||{};
     const priceKey=us.querySelector('[data-us-compare-price]').value;
     const metricKey=us.querySelector('[data-us-compare-metric]').value;
-    const priceData=s[priceKey]||{},metricData=s[metricKey]||{};
+    const cftcField={cftc_net_pct:"leveraged_net_pct",cftc_net:"leveraged_net",cftc_long:"leveraged_long",cftc_short:"leveraged_short"}[metricKey];
+    const priceData=s[priceKey]||{},metricData=cftcField?Object.fromEntries((margin?.cftc?.rows||[]).map(r=>[r.date,r[cftcField]])):s[metricKey]||{};
     const priceName=priceKey==='nasdaq_composite'?'Nasdaq':'S&P 500';
-    const metricName=({cnn_fear_greed:'CNN Fear & Greed',vix:'VIX',hy_oas_pct:'HY OAS',ig_oas_pct:'IG OAS'})[metricKey];
-    const metricUnit=metricKey==='hy_oas_pct'||metricKey==='ig_oas_pct'?'%':'';
-    const metricDigits=metricKey==='cnn_fear_greed'?1:2;
-    const metricColor=chartColors[metricKey];
+    const metricName=({cnn_fear_greed:'CNN Fear & Greed',vix:'VIX',hy_oas_pct:'HY OAS',ig_oas_pct:'IG OAS',cftc_net_pct:'槓桿基金淨部位占比',cftc_net:'槓桿基金淨部位',cftc_long:'槓桿基金多單',cftc_short:'槓桿基金空單'})[metricKey];
+    const metricUnit=metricKey==='hy_oas_pct'||metricKey==='ig_oas_pct'||metricKey==='cftc_net_pct'?'%':cftcField?' 口':'';
+    const metricDigits=cftcField&&metricKey!=='cftc_net_pct'?0:metricKey==='cnn_fear_greed'?1:2;
+    const metricColor=chartColors[metricKey]||'#b77928';
     const latestDates=[...Object.keys(priceData),...Object.keys(metricData)].sort();
     if(!latestDates.length){groups.append(el('p','us-empty','缺少可以疊合的歷史資料'));return;}
     const from=rangeStart(latestDates.at(-1));
@@ -929,16 +931,16 @@ function getTwBreadth() {
       svg.append(svgEl('line',{x1:L,x2:W-R,y1:y,y2:y,class:'us-overlay-threshold'}));
       const label=svgEl('text',{x:W-R-5,y:y-6,'text-anchor':'end',class:'us-overlay-threshold-label'});label.textContent='極度恐懼 10';svg.append(label);
     }
-    const addPath=(values,yScale,color)=>{
+    const addPath=(values,yScale,color,connectSparse=false)=>{
       let path='',prevValid=false;
       dates.forEach((date,i)=>{
         const v=values[date];
-        if(!Number.isFinite(v)){prevValid=false;return;}
+        if(!Number.isFinite(v)){if(!connectSparse)prevValid=false;return;}
         path+=(prevValid?'L':'M')+xp(i).toFixed(2)+' '+yScale(v).toFixed(2)+' ';prevValid=true;
       });
       svg.append(svgEl('path',{d:path,fill:'none',stroke:color,'stroke-width':2.4,'stroke-linecap':'round','stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}));
     };
-    addPath(priceData,yp,chartColors[priceKey]);addPath(metricData,ym,metricColor);
+    addPath(priceData,yp,chartColors[priceKey]);addPath(metricData,ym,metricColor,!!cftcField);
     const line=svgEl('line',{y1:T,y2:H-B,class:'us-overlay-crosshair'});svg.append(line);
     const dotP=svgEl('circle',{r:5.8,fill:chartColors[priceKey],stroke:'white','stroke-width':2,'vector-effect':'non-scaling-stroke'});
     const dotM=svgEl('circle',{r:5.8,fill:metricColor,stroke:'white','stroke-width':2,'vector-effect':'non-scaling-stroke'});
@@ -961,6 +963,16 @@ function getTwBreadth() {
     groups.append(chart);
   }
 
+  function renderCftc(){
+    const c=margin?.cftc||{}, rows=c.rows||[], x=rows.at(-1), body=us.querySelector('[data-us-cftc-rows]'), chart=us.querySelector('[data-us-cftc-chart]');
+    body.replaceChildren();chart.replaceChildren();
+    const note=us.querySelector('[data-us-cftc-note]');
+    us.querySelector('[data-us-cftc-date]').textContent=x?'持倉統計日 '+x.date+'｜E-mini・口數':'尚未取得官方資料';
+    if(!x){note.textContent='等待 CFTC 官方資料更新';return;}
+    for(const [k,label] of [['leveraged','槓桿基金'],['asset','資產管理機構'],['small','非申報交易人']]){const tr=el('tr');tr.append(el('th','',label),el('td','',num(x[k+'_long'],0)),el('td','',num(x[k+'_short'],0)),el('td','',signed(x[k+'_net'],0)),el('td','',signed(x[k+'_net_change'],0)));body.append(tr);}
+    note.textContent='槓桿基金淨部位占未平倉量 '+signed(x.leveraged_net_pct,2,'%')+'｜近4次淨部位變動 '+signed(x.leveraged_net_4report_change,0,'口')+'｜近260次歷史百分位 '+num(x.leveraged_net_pct_percentile,1)+'%'+(c.status==='failed'?'｜本次來源更新失敗，保留舊資料':'')+'。期貨部位可能包含避險，不等於現貨買賣；日期為持倉統計日，不可直接用於無前視偏誤回測。';
+    chart.append(chartPanel('槓桿基金多空部位','CFTC TFF Futures Only・口數',[{key:'long',name:'多單',color:'#258653',digits:0,values:Object.fromEntries(rows.map(r=>[r.date,r.leveraged_long]))},{key:'short',name:'空單',color:'#c54848',digits:0,values:Object.fromEntries(rows.map(r=>[r.date,r.leveraged_short]))}]));
+  }
   function renderMargin(){
     marginSummaryBody.replaceChildren();
     const rows=[...(margin?.rows||[])].sort((a,b)=>a.month.localeCompare(b.month));
@@ -1007,7 +1019,7 @@ function getTwBreadth() {
   }
 
   function render(){
-    renderOverviewTable(); renderGroups(); renderMargin();
+    renderOverviewTable(); renderGroups(); renderMargin(); renderCftc();
     const cutoff=lastValue(sentiment?.series?.cnn_fear_greed)?.date || '尚無日資料';
     const month=margin?.as_of_month || '尚無月資料';
     status.textContent='每日市場資料截至 '+cutoff+'｜FINRA 融資截至 '+month+'｜圖表查價線以實際可得資料同步，不同來源可能有 1～數日公布落差。';
@@ -1033,7 +1045,7 @@ function getTwBreadth() {
   us.querySelectorAll('[data-us-range]').forEach(b=>b.addEventListener('click',()=>{
     range = b.dataset.usRange;
     us.querySelectorAll('[data-us-range]').forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
-    renderGroups(); renderMargin();
+    renderGroups(); renderMargin(); renderCftc();
   }));
   tabs.querySelectorAll('button').forEach((button,index)=>button.addEventListener('click',()=>{
     taiwan.hidden = index===1; us.hidden = index===0;
