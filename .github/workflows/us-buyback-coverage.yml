@@ -14,19 +14,19 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install requests
+      - run: pip install requests beautifulsoup4
       - name: Collect and verify
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
         run: |
           cp data/us_insider/buybacks.json /tmp/buybacks-prior.json
-          python -m py_compile scripts/update_us_buybacks.py
+          python -m py_compile scripts/update_us_buybacks.py scripts/us_buyback_filing.py
           python scripts/update_us_buybacks.py
           python - <<'PY'
           import json
@@ -36,6 +36,8 @@ jobs:
           assert set(old['coverage']) <= set(new['coverage'])
           assert {t for t,v in old['coverage'].items() if v=='tagged'} <= {t for t,v in new['coverage'].items() if v=='tagged'}
           assert new['rows']
+          assert set(new['filing_audit']) == set(new['coverage'])
+          print('Filing audit:', Counter(new['filing_audit'].values()))
           print(Counter(new['coverage'].values()))
           print('Remaining:', [t for t,v in new['coverage'].items() if v!='tagged'])
           PY
