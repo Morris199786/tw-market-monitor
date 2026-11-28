@@ -49,7 +49,7 @@ def main():
     # The actual instrument class appears in columns 41-67.
     official=get(SEC+"/rules-regulations/staff-guidance/official-list-section-13f-securities").text
     from urllib.parse import urljoin
-    links=[urljoin(SEC,x) for x in re.findall(r'href=["']([^"']+\.txt)["']',official,re.I) if "13flist" in x.lower()]
+    links=[urljoin(SEC,x) for x in re.findall(r"""href=["']([^"']+\.txt)["']""",official,re.I) if "13flist" in x.lower()]
     links=list(dict.fromkeys([SEC+"/files/investment/13flist2026q3-txt.txt"]+links))
     records=[]
     def acceptable(desc,status):
