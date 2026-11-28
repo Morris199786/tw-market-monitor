@@ -47,6 +47,9 @@ def main():
   for x in table(z,"SUBMISSION.tsv"):
    if x.get("SUBMISSIONTYPE") not in ("13F-HR","13F-HR/A"):continue
    acc=x.get("ACCESSION_NUMBER");filings[acc]=dict(cik=x.get("CIK"),period=x.get("PERIODOFREPORT"),filed=x.get("FILING_DATE"),form=x.get("SUBMISSIONTYPE"))
+  for x in table(z,"COVERPAGE.tsv"):
+   acc=x.get("ACCESSION_NUMBER")
+   if acc in filings:filings[acc]["manager_name"]=(x.get("FILINGMANAGER_NAME") or "").strip()
   for x in table(z,"INFOTABLE.tsv"):
    acc=x.get("ACCESSION_NUMBER");cusip=x.get("CUSIP","").strip().upper()
    if acc not in filings or (x.get("PUTCALL") or "").strip() or x.get("SSHPRNAMTTYPE")!="SH":continue
@@ -113,7 +116,7 @@ def main():
        if (x.findtext("putCall") or "").strip() or x.findtext("shrsOrPrnAmt/sshPrnamtType")!="SH":continue
        c=(x.findtext("cusip") or "").strip().upper()
        if c in candidates:local[c]+=int(x.findtext("shrsOrPrnAmt/sshPrnamt"))
-     filings[acc]=dict(cik=cik.zfill(10),period=period,filed=filed,form=form)
+     filings[acc]=dict(cik=cik.zfill(10),period=period,filed=filed,form=form,manager_name=(cover.findtext(".//filingManager/name") or fields[1]).strip())
      for c,n in local.items():positions[(acc,c)]=n
      bridge_ok+=1
     except Exception as e:
@@ -143,23 +146,38 @@ def main():
   for cusip,ticker in cusips.items():
    n=positions.get((acc,cusip))
    if n is not None:by[(ticker,cik,cusip)][p]=(n,d,acc)
+ from update_us_insider import price_history
+ from fractions import Fraction
+ split_events={}
+ for ticker in sorted(watch):
+  prices=price_history(ticker,cutoff,(now+dt.timedelta(days=1)).isoformat())
+  if not prices:raise RuntimeError("Missing corporate action history: "+ticker)
+  split_events[ticker]=[(x["date"],Fraction(str(x["split"]))) for x in prices if x["split"]>0 and x["split"]!=1]
  rows=[]
  for (ticker,cik,cusip),hist in by.items():
   dates=sorted(hist)
   for p in dates:
    n,d,acc=hist[p];prev=[x for x in dates if 80<=(dt.date.fromisoformat(p)-dt.date.fromisoformat(x)).days<=100]
    if not prev:continue
-   old=hist[prev[-1]][0]
-   rows.append(dict(ticker=ticker,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+   raw_old=hist[prev[-1]][0];factor=Fraction(1)
+   for day,ratio in split_events[ticker]:
+    if prev[-1]<day<=p:factor*=ratio
+   old=round(raw_old*factor)
+   name=filings[acc].get("manager_name") or filings[hist[prev[-1]][2]].get("manager_name") or ""
+   rows.append(dict(ticker=ticker,cik=cik,manager_name=name,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,previous_shares_raw=raw_old,split_factor=float(factor),change=n-old,change_pct=(n-old)/old*100 if old else None,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
  latest_expected=(dt.date(now.year,((now.month-1)//3)*3+1,1)-dt.timedelta(days=1))
  if now<latest_expected+dt.timedelta(days=45):
   latest_expected=dt.date(latest_expected.year,((latest_expected.month-1)//3)*3+1,1)-dt.timedelta(days=1)
  if not rows:raise RuntimeError('No comparable consecutive-quarter positions')
  actual_coverage=sorted({r["ticker"] for r in rows})
  print("Verified identifiers:",len(set(cusips.values())),"actual historical holdings coverage:",len(actual_coverage),"rows:",len(rows),"latest:",max(r["period"] for r in rows),flush=True)
- payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
+ payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；前季股數依 Yahoo Finance 股票分割事件調整；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
  if payload["missing_expected_period"]:raise RuntimeError("Latest expected quarter absent; preserve published data")
  payload["bridge_filing_count"]=bridge_ok
+ payload["split_adjusted"]=True
+ payload["split_events"]={t:[{"date":d,"ratio":float(f)} for d,f in v] for t,v in split_events.items() if v}
+ payload["manager_name_coverage"]=sum(bool(r["manager_name"]) for r in rows)
+ if payload["manager_name_coverage"]!=len(rows):raise RuntimeError("Missing SEC manager names; preserve published data")
  if len(actual_coverage)<100:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
  # Publish a tiny index and lossless per-ticker shards. Keep every comparison row.
  from pathlib import Path
