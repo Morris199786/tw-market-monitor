@@ -1,0 +1,55 @@
+name: US Ownership Research
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-ownership-research.yml'
+permissions:
+  contents: write
+concurrency:
+  group: us-ownership-research
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - script: update_us_buybacks
+            output: buybacks
+          - script: update_us_institutional
+            output: institutional
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Collect official data
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+        run: |
+          python -m py_compile scripts/${{ matrix.script }}.py
+          python scripts/${{ matrix.script }}.py
+          python -c "import json; d=json.load(open('data/us_insider/${{ matrix.output }}.json')); assert d['rows']; print(len(d['rows']))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}
+          path: data/us_insider/${{ matrix.output }}.json
+      - name: Publish verified output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/us_insider/${{ matrix.output }}.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update US ownership research data"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            git push origin HEAD:main && exit 0
+            sleep 3
+          done
+          exit 1
