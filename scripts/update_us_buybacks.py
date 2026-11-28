@@ -48,5 +48,8 @@ def main():
   print(ticker,coverage[ticker],audit[ticker],flush=True)
  if not rows or "failed" in coverage.values():raise RuntimeError("Incomplete issuer facts; preserve prior data")
  payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),coverage=coverage,rows=rows,filing_evidence=evidence,filing_audit=audit,note="SEC US GAAP / IFRS 原始期間資料，保留原始幣別；未找到標籤不代表沒有回購。未包含回購授權及剩餘額度。")
+ from us_buyback_verify import audit_payload
+ payload["verification"]=audit_payload(payload)
+ print("Common-share evidence audit:",payload["verification"]["summary"],flush=True)
  p=ROOT/"buybacks.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False));p.replace(ROOT/"buybacks.json")
 if __name__=="__main__":main()
