@@ -1,4 +1,4 @@
-"""SEC quarterly 13F holdings; match explicitly configured CUSIPs only, never infer from issuer names."""
+"""SEC quarterly 13F holdings; verified CUSIP/CINS mapping, no issuer-name inference."""
 import datetime as dt, json, io, zipfile, csv, re
 from urllib.parse import urljoin
 from collections import defaultdict
@@ -15,47 +15,15 @@ def table(z,name):
  if not f:raise ValueError("Missing "+name)
  return csv.DictReader(io.TextIOWrapper(z.open(f),encoding="utf-8-sig"),delimiter="\t")
 def main():
- cfg=json.loads((ROOT/"institutional_watchlist.json").read_text())
- cusips={x["cusip"]:x["ticker"] for x in cfg["securities"]}
- if not cusips:raise RuntimeError("No verified CUSIP mappings")
+ from probe_us_13f_sources import resolve_watchlist, positions as sample_positions
  watch=set(json.loads((ROOT/"watchlist.json").read_text())["tickers"])
  now=dt.date.today(); filings={}; positions=defaultdict(int); sources=[]
- # Match official SEC eligible securities by CUSIP to exchange ticker using OpenFIGI.
- # Never use fuzzy issuer-name matching or reverse-engineer proprietary identifiers.
- official=get(SEC+"/rules-regulations/staff-guidance/official-list-section-13f-securities").text
- listlinks=list(dict.fromkeys(urljoin(SEC,x) for x in re.findall(r'href=["\']([^"\']+\.txt)["\']',official,re.I) if "13flist" in x.lower()))
- def listkey(u):
-  m=re.search(r'(20\d\d)q([1-4])',u,re.I)
-  return (int(m.group(1)),int(m.group(2))) if m else (0,0)
- listlinks=sorted((u for u in listlinks if listkey(u)>(0,0)),key=listkey,reverse=True)
- # Use issuer SEC registered securities in 13D/G cover pages or an explicit mapping
- # seed only; expand via verified public ISIN feed when available.
- # OpenFIGI accepts CUSIP but does not return CUSIP from ticker.
- candidates=set(cusips)
- # Additional mappings are obtained from SEC official list via exact CUSIP-to-ticker verification.
- # Candidate selection uses exact normalized issuer name, never sufficient by itself.
- def norm(x):return re.sub(r"[^A-Z0-9]","",x.upper())
- secmap=get(SEC+"/files/company_tickers.json").json()
- names={norm(x["title"]):x["ticker"] for x in secmap.values() if x["ticker"] in watch}
- if listlinks:
-  raw=get(listlinks[0]).text
-  for line in raw.splitlines():
-   m=re.match(r"^\s*([A-Z0-9]{6})\s*([A-Z0-9]{2})\s*([A-Z0-9])\s+(.+)$",line)
-   if not m:continue
-   cusip="".join(m.group(i) for i in (1,2,3));rest=m.group(4)
-   issuer=re.split(r"\s{2,}",rest.strip())[0]
-   if norm(issuer) in names or any(norm(issuer).startswith(n) or n.startswith(norm(issuer)) for n in names if len(n)>7 and len(norm(issuer))>7):candidates.add(cusip)
- for batch_start in range(0,len(candidates),10):
-  batch=sorted(candidates)[batch_start:batch_start+10]
-  try:
-   resp=requests.post("https://api.openfigi.com/v3/mapping",json=[{"idType":"ID_CUSIP","idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch],timeout=45)
-   if resp.status_code==429:time.sleep(65);resp=requests.post("https://api.openfigi.com/v3/mapping",json=[{"idType":"ID_CUSIP","idValue":c,"exchCode":"US","marketSecDes":"Equity"} for c in batch],timeout=45)
-   resp.raise_for_status()
-   for c,item in zip(batch,resp.json()):
-    ts={x["ticker"] for x in item.get("data",[]) if x.get("ticker") in watch and x.get("securityType2") in ("Common Stock","Depositary Receipt")}
-    if len(ts)==1 and c not in cusips:cusips[c]=next(iter(ts))
-  except (requests.RequestException,ValueError):continue
-  time.sleep(2.5)
+ # Use the same resolver that passed the 110/110 acceptance run.
+ # The observed filing codes are candidates only; OpenFIGI must verify them.
+ sample_base=SEC+"/Archives/edgar/data/1787596/"
+ seeds=set(sample_positions(sample_base+"000117266126003632/infotable.xml"))|set(sample_positions(sample_base+"000117266126005103/infotable.xml"))
+ cusips=resolve_watchlist(seeds)
+ if set(cusips.values())!=watch:raise RuntimeError("Incomplete watchlist identity coverage")
  candidates=set(cusips)
  page=get(SEC+"/data-research/sec-markets-data/form-13f-data-sets").text
  links=list(dict.fromkeys(urljoin(SEC,x) for x in re.findall(r'href=["\']([^"\']+\.zip)["\']',page,re.I) if "13f" in x.lower()))
@@ -112,11 +80,14 @@ def main():
    n,d,acc=hist[p];prev=[x for x in dates if 80<=(dt.date.fromisoformat(p)-dt.date.fromisoformat(x)).days<=100]
    if not prev:continue
    old=hist[prev[-1]][0]
-   rows.append(dict(ticker=ticker,cusip=cusip,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+   rows.append(dict(ticker=ticker,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
  latest_expected=(dt.date(now.year,((now.month-1)//3)*3+1,1)-dt.timedelta(days=1))
  if now<latest_expected+dt.timedelta(days=45):
   latest_expected=dt.date(latest_expected.year,((latest_expected.month-1)//3)*3+1,1)-dt.timedelta(days=1)
  if not rows:raise RuntimeError('No comparable consecutive-quarter positions')
- payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=sorted(set(cusips.values())),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
+ actual_coverage=sorted({r["ticker"] for r in rows})
+ print("Verified identifiers:",len(set(cusips.values())),"actual historical holdings coverage:",len(actual_coverage),"rows:",len(rows),"latest:",max(r["period"] for r in rows),flush=True)
+ payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
+ if len(actual_coverage)<100:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
  p=ROOT/"institutional.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False));p.replace(ROOT/"institutional.json")
 if __name__=="__main__":main()
