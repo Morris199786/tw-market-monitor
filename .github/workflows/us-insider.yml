@@ -12,15 +12,11 @@ on:
       - 'tests/test_us_insider.py'
       - '.github/workflows/us-insider.yml'
       - 'assets/us_insider.js'
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/us-insider.yml'
 permissions:
   contents: read
 concurrency:
   group: us-insider-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -68,8 +64,8 @@ jobs:
       - name: Check actual coverage
         run: |
           python - <<'PY'
-          import json
-          d=json.load(open('data/us_insider/latest.json'))
+          import json,gzip
+          d=json.load(gzip.open('data/us_insider/latest.json.gz','rt'))
           print(d['coverage_note'])
           print('Purchase rows:',len(d['transactions']))
           print('Price histories:',len(d['prices']))
@@ -79,17 +75,19 @@ jobs:
           assert all(v and v[-1]['date']<=d['expected_price_as_of'] for v in d['prices'].values())
           assert set(d['stale_prices'])=={t for t,v in d['prices'].items() if v[-1]['date']!=d['expected_price_as_of']}
           print('Expected market session:',d['expected_price_as_of'],'Actual:',d['price_as_of'],'Stale:',d['stale_prices'])
-          assert __import__('pathlib').Path('data/us_insider/filing_cache.json').exists()
+          assert __import__('pathlib').Path('data/us_insider/filing_cache.json.gz').exists()
           PY
       - uses: actions/upload-artifact@v4
         with:
           name: us-insider-live-data
-          path: data/us_insider/latest.json
+          path: |
+            data/us_insider/latest.json.gz
+            data/us_insider/filing_cache.json.gz
       - name: Save data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/us_insider/latest.json data/us_insider/filing_cache.json
+          git add data/us_insider/latest.json.gz data/us_insider/filing_cache.json.gz
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Update US insider transactions"
           branch="${{ github.head_ref || github.ref_name }}"
