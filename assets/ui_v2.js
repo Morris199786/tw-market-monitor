@@ -249,7 +249,8 @@ function setupPageHistory() {
       if (current !== id) {
         history.pushState(
           {
-            twPage: id
+            twPage: id,
+            twPreviousPage: current || null
           },
           "",
           nextHash
