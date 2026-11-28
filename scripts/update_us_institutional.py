@@ -1,5 +1,6 @@
 """SEC quarterly 13F holdings; match explicitly configured CUSIPs only, never infer from issuer names."""
 import datetime as dt, json, io, zipfile, csv, re
+from urllib.parse import urljoin
 from collections import defaultdict
 from update_us_insider import get,SEC,ROOT
 def quarters(now):
@@ -17,14 +18,11 @@ def main():
  cusips={x["cusip"]:x["ticker"] for x in cfg["securities"]}
  if not cusips:raise RuntimeError("No verified CUSIP mappings")
  now=dt.date.today(); filings={}; positions=defaultdict(int); sources=[]
- for y,q in quarters(now):
-  months=("jan","apr","jul","oct");ends=("mar","jun","sep","dec")
-  url=f"{SEC}/files/structureddata/data/form-13f-data-sets/{y}q{q}_form13f.zip"
+ page=get(SEC+"/data-research/sec-markets-data/form-13f-data-sets").text
+ links=list(dict.fromkeys(urljoin(SEC,x) for x in re.findall(r'href=["\']([^"\']+\.zip)["\']',page,re.I) if "13f" in x.lower()))
+ for url in links[:4]:
   r=get(url)
-  if r is None:
-   url=f"{SEC}/files/structureddata/data/form-13f-data-sets/{months[q-1]}{y}-{ends[q-1]}{y}_form13f.zip"
-   r=get(url)
-  if r is None:continue
+  if r is None:raise RuntimeError("Missing advertised dataset "+url)
   z=zipfile.ZipFile(io.BytesIO(r.content));sources.append(url)
   for x in table(z,"SUBMISSION.tsv"):
    if x.get("SUBMISSIONTYPE") not in ("13F-HR","13F-HR/A"):continue
@@ -34,7 +32,7 @@ def main():
    if cusip not in cusips or acc not in filings or x.get("PUTCALL") or x.get("SSHPRNAMTTYPE")!="SH":continue
    try:positions[(acc,cusip)]+=int(float(x["SSHPRNAMT"]))
    except (ValueError,KeyError):continue
- if not sources or not positions:raise RuntimeError("No matched official holdings; preserve prior output")
+ if len(sources)<2 or not positions:raise RuntimeError("No matched official holdings; preserve prior output")
  # Do not infer new/closed positions from missing submissions. Amendments require reconciliation.
  def iso(s):
   for fmt in ("%d-%b-%Y","%Y-%m-%d","%m/%d/%Y"):
@@ -62,6 +60,7 @@ def main():
    if not prev:continue
    old=hist[prev[-1]][0]
    rows.append(dict(ticker=ticker,cik=cik,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,change=n-old,accession=acc,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+ if not rows:raise RuntimeError('No comparable consecutive-quarter positions')
  payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=list(cusips.values()),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
  p=ROOT/"institutional.tmp";p.write_text(json.dumps(payload,ensure_ascii=False,allow_nan=False));p.replace(ROOT/"institutional.json")
 if __name__=="__main__":main()
