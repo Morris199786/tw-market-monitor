@@ -93,3 +93,17 @@ html[data-theme=dark] #usInsiderRoot .uii-warning{background:#382d1e;color:#f0c7
 #usInsiderRoot button.uii-detail-link{background:transparent;border:0;min-height:28px;padding:2px 0;font-size:inherit;color:#2771b6;text-decoration:underline;text-underline-offset:3px}#usInsiderRoot #uiiEventDetail{scroll-margin-top:230px}#usInsiderRoot #uiiEventDetail .uii-person-body{padding:8px 12px;background:var(--uii-soft);border-radius:9px;font-size:.82em}#usInsiderRoot #uiiEventDetail .uii-person-body p{margin:6px 0;overflow-wrap:anywhere}
 
 #usInsiderRoot .uii-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:650px){#usInsiderRoot .uii-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}#usInsiderRoot .uii-tabs button{grid-column:span 2}#usInsiderRoot .uii-tabs button:nth-child(n+4){grid-column:span 3}}
+
+/* Purchase type help: compact inline disclosure, scoped to insider filters. */
+#usInsiderRoot .uii-purchase-control{display:flex;align-items:center;gap:3px;min-width:0}
+#usInsiderRoot .uii-purchase-control select{flex:1 1 0;min-width:0;width:0}
+#usInsiderRoot button.uii-help-toggle{flex:0 0 28px;width:28px;min-height:44px;padding:0;display:grid;place-items:center;background:transparent;border:0;color:var(--uii-muted);border-radius:8px}
+#usInsiderRoot .uii-help-toggle span{display:grid;place-items:center;width:18px;height:18px;border:1.4px solid currentColor;border-radius:50%;font-size:12px;font-weight:700;line-height:1}
+#usInsiderRoot .uii-help-toggle[aria-expanded=true]{color:var(--uii-ink)}
+#usInsiderRoot .uii-purchase-help{grid-column:1/-1;min-width:0;padding:12px 14px;background:var(--uii-card);border:1px solid var(--uii-border);border-radius:12px;font-size:.83em;line-height:1.65;color:var(--uii-muted)}
+#usInsiderRoot .uii-purchase-help[hidden]{display:none}
+#usInsiderRoot .uii-help-head{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--uii-ink)}
+#usInsiderRoot .uii-purchase-help p{margin:7px 0 0;overflow-wrap:anywhere}
+#usInsiderRoot .uii-purchase-help strong{color:var(--uii-ink);font-weight:650}
+#usInsiderRoot .uii-help-head button{min-height:32px;min-width:32px;padding:0;border:0;background:transparent;color:var(--uii-muted);font-size:1.35em;line-height:1}
+@media(max-width:650px){#usInsiderRoot .uii-purchase-control select{font-size:clamp(11px,3.3vw,14px);padding-left:7px;padding-right:21px!important;background-position:right 4px center;background-size:13px}#usInsiderRoot .uii-purchase-help{padding:10px 12px}}
