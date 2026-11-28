@@ -4,7 +4,7 @@ on:
     inputs:
       days:
         description: SEC filing lookback (days)
-        default: '365'
+        default: '400'
         required: true
   pull_request:
     paths:
@@ -63,7 +63,7 @@ jobs:
       - name: Fetch SEC filings and calculate returns
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
-          LOOKBACK: ${{ inputs.days || '365' }}
+          LOOKBACK: ${{ inputs.days || '400' }}
         run: python scripts/update_us_insider.py --days "$LOOKBACK"
       - name: Check actual coverage
         run: |
@@ -109,3 +109,5 @@ jobs:
 # Retry after verified source repairs (2026-11-28).
 
 # Rebuild transaction cache with row-level evidence and separate sales.
+
+# Publish exchange calendar for consolidated buy/sell research.
