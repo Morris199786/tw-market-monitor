@@ -1,0 +1,63 @@
+name: US Insider Recover Verified Data
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-insider-recover.yml'
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: us-insider-refs/heads/main
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: us-insider-live-data
+          run-id: 46153838205
+          github-token: ${{ github.token }}
+          path: /tmp/insider-recovery
+      - name: Validate and publish verified artifact
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess
+          root=pathlib.Path('data/us_insider')
+          for p in ('scripts/update_us_insider.py','data/us_insider/watchlist.json'):
+              assert subprocess.check_output(['git','rev-parse','HEAD:'+p])==subprocess.check_output(['git','rev-parse','77c590475c1ebbe30863b95c83d285175d058e9e:'+p]),p
+          files=list(pathlib.Path('/tmp/insider-recovery').rglob('latest.json'))
+          assert len(files)==1
+          raw=files[0].read_bytes()
+          d=json.loads(raw); old=json.loads((root/'latest.json').read_bytes())
+          assert d['schema_version']==2 and d['transactions'] and d['prices']
+          assert d.get('classification_version')==2 and isinstance(d.get('sales'),list) and d['sales']
+          assert len(d.get('trading_sessions',[]))>=240
+          assert set(old['coverage'])<=set(d['coverage']) and all(v['status']=='scanned' for v in d['coverage'].values())
+          assert d['as_of']>=old['as_of']
+          assert all(v and v[-1]['date']<=d['expected_price_as_of'] for v in d['prices'].values())
+          assert set(d['stale_prices'])=={t for t,v in d['prices'].items() if v[-1]['date']!=d['expected_price_as_of']}
+          assert len(raw)<95*1024*1024,'GitHub file size safety limit'
+          print('Purchases:',len(d['transactions']),'Sales:',len(d['sales']),'Sessions:',len(d['trading_sessions']),'Coverage:',len(d['coverage']))
+          (root/'latest.json').write_bytes(raw)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/us_insider/latest.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Recover verified insider data from run 19"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git diff --quiet HEAD origin/main -- scripts/update_us_insider.py data/us_insider/watchlist.json || exit 1
+            git diff --quiet HEAD^ origin/main -- data/us_insider/latest.json || exit 1
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            git push origin HEAD:main && exit 0
+            sleep 3
+          done
+          exit 1
