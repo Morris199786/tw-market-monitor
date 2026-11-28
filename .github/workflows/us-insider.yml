@@ -4,7 +4,7 @@ on:
     inputs:
       days:
         description: SEC filing lookback (days)
-        default: '92'
+        default: '365'
         required: true
   pull_request:
     paths:
@@ -12,6 +12,10 @@ on:
       - 'tests/test_us_insider.py'
       - '.github/workflows/us-insider.yml'
       - 'assets/us_insider.js'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-insider.yml'
 permissions:
   contents: read
 concurrency:
@@ -29,10 +33,10 @@ jobs:
       - run: python -m unittest discover -s tests -p test_us_insider.py
       - run: node --check assets/us_insider.js
   update:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/us-insider-monitor')
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feature/us-insider-monitor')
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -59,7 +63,7 @@ jobs:
       - name: Fetch SEC filings and calculate returns
         env:
           SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
-          LOOKBACK: ${{ inputs.days || '92' }}
+          LOOKBACK: ${{ inputs.days || '365' }}
         run: python scripts/update_us_insider.py --days "$LOOKBACK"
       - name: Check actual coverage
         run: |
