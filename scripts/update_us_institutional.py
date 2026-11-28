@@ -49,7 +49,13 @@ def main():
    acc=x.get("ACCESSION_NUMBER");filings[acc]=dict(cik=x.get("CIK"),period=x.get("PERIODOFREPORT"),filed=x.get("FILING_DATE"),form=x.get("SUBMISSIONTYPE"))
   for x in table(z,"COVERPAGE.tsv"):
    acc=x.get("ACCESSION_NUMBER")
-   if acc in filings:filings[acc]["manager_name"]=(x.get("FILINGMANAGER_NAME") or "").strip()
+   if acc in filings:
+    f=filings[acc];f["manager_name"]=(x.get("FILINGMANAGER_NAME") or "").strip()
+    f["amendment_type"]=x.get("AMENDMENTTYPE");f["amendment_number"]=x.get("AMENDMENTNO")
+    f["report_type"]=x.get("REPORTTYPE")
+  for x in table(z,"SUMMARYPAGE.tsv"):
+   acc=x.get("ACCESSION_NUMBER")
+   if acc in filings:filings[acc]["confidential"]=x.get("ISCONFIDENTIALOMITTED")
   for x in table(z,"INFOTABLE.tsv"):
    acc=x.get("ACCESSION_NUMBER");cusip=x.get("CUSIP","").strip().upper()
    if acc not in filings or (x.get("PUTCALL") or "").strip() or x.get("SSHPRNAMTTYPE")!="SH":continue
@@ -121,6 +127,7 @@ def main():
         local[c]+=int(x.findtext("shrsOrPrnAmt/sshPrnamt"))
         if x.findtext("value"):local_values[c]+=int(x.findtext("value"))
      filings[acc]=dict(cik=cik.zfill(10),period=period,filed=filed,form=form,manager_name=(cover.findtext(".//filingManager/name") or fields[1]).strip())
+     filings[acc].update(amendment_type=cover.findtext(".//amendmentType"),amendment_number=cover.findtext(".//amendmentNo"),report_type=cover.findtext(".//reportType"),confidential=cover.findtext(".//isConfidentialOmitted"))
      for c,n in local.items():positions[(acc,c)]=n
      for c,v in local_values.items():market_values[(acc,c)]=v
      bridge_ok+=1
@@ -138,19 +145,35 @@ def main():
    try:return dt.datetime.strptime(s or "",fmt).date().isoformat()
    except ValueError:pass
   return None
- amendments=set(); latest={}
+ from us_13f_reconcile import reconcile,compare
+ from pathlib import Path
+ import gzip
+ # Retain accession-level source records, including those without watchlist holdings.
+ raw_by_acc=defaultdict(dict)
+ for (acc,c),n in positions.items():raw_by_acc[acc][c]=[n,market_values.get((acc,c))]
+ rawdir=ROOT/"institutional_raw";rawdir.mkdir(exist_ok=True)
+ grouped_raw=defaultdict(list); entries=defaultdict(list)
  for acc,f in filings.items():
   p=iso(f["period"]);d=iso(f["filed"])
   if not p or not d or not f["cik"] or p<cutoff or p>now.isoformat():continue
-  k=(f["cik"],p)
-  if f["form"].endswith("/A"):amendments.add(k);continue
-  if k not in latest or d>latest[k][0]:latest[k]=(d,acc)
- by=defaultdict(dict)
- for (cik,p),(d,acc) in latest.items():
-  if (cik,p) in amendments:continue
-  for cusip,ticker in cusips.items():
-   n=positions.get((acc,cusip))
-   if n is not None:by[(ticker,cik,cusip)][p]=(n,d,acc)
+  cik=str(f["cik"]).zfill(10)
+  safe=str(f.get("report_type") or "").strip().upper()=="13F HOLDINGS REPORT" and str(f.get("confidential") or "").strip().upper() in ("N","NO","FALSE","0")
+  e=dict(f,accession=acc,cik=cik,period=p,filed=d,absence_safe=safe,positions=raw_by_acc.get(acc,{}))
+  grouped_raw[p].append(e);entries[(cik,p)].append(e)
+ # Deterministic compressed snapshots; kept outside the public web data directory by workflow artifact.
+ for p,es in grouped_raw.items():
+  with gzip.GzipFile(filename=str(rawdir/(p+".json.gz")),mode="wb",mtime=0) as out:
+   out.write(json.dumps(es,ensure_ascii=False,separators=(",",":")).encode())
+ effective={};audit=defaultdict(int)
+ for k,es in entries.items():
+  state,status=reconcile(es);audit[status]+=1
+  if state is not None:effective[k]=state
+ effective_by_period=defaultdict(list)
+ for (cik,p),state in effective.items():
+  effective_by_period[p].append(dict(cik=cik,period=p,**state))
+ for p,es in effective_by_period.items():
+  with gzip.GzipFile(filename=str(rawdir/("effective-"+p+".json.gz")),mode="wb",mtime=0) as out:
+   out.write(json.dumps(es,ensure_ascii=False,separators=(",",":")).encode())
  from update_us_insider import price_history
  from fractions import Fraction
  split_events={}; price_histories={}
@@ -160,31 +183,35 @@ def main():
   price_histories[ticker]=prices
   split_events[ticker]=[(x["date"],Fraction(str(x["split"]))) for x in prices if x["split"]>0 and x["split"]!=1]
  rows=[]
- for (ticker,cik,cusip),hist in by.items():
-  dates=sorted(hist)
-  for p in dates:
-   n,d,acc=hist[p];prev=[x for x in dates if 80<=(dt.date.fromisoformat(p)-dt.date.fromisoformat(x)).days<=100]
-   if not prev:continue
-   raw_old=hist[prev[-1]][0];factor=Fraction(1)
-   for day,ratio in split_events[ticker]:
-    if prev[-1]<day<=p:factor*=ratio
-   old=round(raw_old*factor)
-   name=filings[acc].get("manager_name") or filings[hist[prev[-1]][2]].get("manager_name") or ""
-   rows.append(dict(ticker=ticker,cik=cik,manager_name=name,period=p,previous_period=prev[-1],filed=d,shares=n,previous_shares=old,previous_shares_raw=raw_old,split_factor=float(factor),change=n-old,change_pct=(n-old)/old*100 if old else None,accession=acc,reported_value=market_values.get((acc,cusip)),previous_reported_value=market_values.get((hist[prev[-1]][2],cusip)),url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
+ for (cik,p),new in effective.items():
+  day=dt.date.fromisoformat(p);qstart=dt.date(day.year,((day.month-1)//3)*3+1,1);prev=(qstart-dt.timedelta(days=1)).isoformat()
+  oldstate=effective.get((cik,prev))
+  if oldstate is None:continue
+  for cusip in oldstate["positions"].keys()|new["positions"].keys():
+   pair=compare(oldstate,new,cusip)
+   if pair is None:continue
+   av,bv,status=pair;raw_old=av[0] if av else 0;n=bv[0] if bv else 0;ticker=cusips[cusip]
+   factor=Fraction(1)
+   for date,ratio in split_events[ticker]:
+    if prev<date<=p:factor*=ratio
+   old=round(raw_old*factor);f=new["last"];acc=f["accession"];name=f.get("manager_name") or oldstate["last"].get("manager_name") or ""
+   rows.append(dict(ticker=ticker,cik=cik,manager_name=name,period=p,previous_period=prev,filed=f["filed"],shares=n,previous_shares=old,previous_shares_raw=raw_old,split_factor=float(factor),change=n-old,change_pct=(n-old)/old*100 if old else None,position_status=status,accession=acc,reported_value=bv[1] if bv else None,previous_reported_value=av[1] if av else None,url=f"{SEC}/Archives/edgar/data/{int(cik)}/{acc.replace('-','')}/"))
  latest_expected=(dt.date(now.year,((now.month-1)//3)*3+1,1)-dt.timedelta(days=1))
  if now<latest_expected+dt.timedelta(days=45):
   latest_expected=dt.date(latest_expected.year,((latest_expected.month-1)//3)*3+1,1)-dt.timedelta(days=1)
  if not rows:raise RuntimeError('No comparable consecutive-quarter positions')
  actual_coverage=sorted({r["ticker"] for r in rows})
  print("Verified identifiers:",len(set(cusips.values())),"actual historical holdings coverage:",len(actual_coverage),"rows:",len(rows),"latest:",max(r["period"] for r in rows),flush=True)
- payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="僅比較同一申報機構連續兩季均有明確持股的普通股資料；前季股數依 Yahoo Finance 股票分割事件調整；未納入選擇權、修正申報、新建倉或清倉推論。13F 為季末持股，不是即時交易。")
+ payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),sources=sources,rows=rows,coverage=actual_coverage,identifier_coverage=sorted(set(cusips.values())),uncovered_holdings=sorted(watch-set(actual_coverage)),unmapped=sorted(watch-set(cusips.values())),expected_period=latest_expected.isoformat(),latest_period=max(x["period"] for x in rows),missing_expected_period=max(x["period"] for x in rows)<latest_expected.isoformat(),note="比較可核對的相鄰季度普通股公開申報；新申報與不再申報不等於實際從零買入或清倉。無法核對的修正申報、保密或不完整報告不推定零持股；拆股已調整。13F 非即時交易。")
  if payload["missing_expected_period"]:raise RuntimeError("Latest expected quarter absent; preserve published data")
  payload["bridge_filing_count"]=bridge_ok
+ payload["reconciliation_audit"]=dict(audit)
+ payload["position_status_counts"]={k:sum(r["position_status"]==k for r in rows) for k in ("paired","newly_reported","no_longer_reported")}
  payload["split_adjusted"]=True
  payload["split_events"]={t:[{"date":d,"ratio":float(f)} for d,f in v] for t,v in split_events.items() if v}
  payload["manager_name_coverage"]=sum(bool(r["manager_name"]) for r in rows)
  if payload["manager_name_coverage"]!=len(rows):raise RuntimeError("Missing SEC manager names; preserve published data")
- if len(actual_coverage)<100:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
+ if set(actual_coverage)!=watch:raise RuntimeError("Actual historical holdings coverage below 100; preserve prior file")
  # Publish a tiny index and lossless per-ticker shards. Keep every comparison row.
  from pathlib import Path
  import hashlib
