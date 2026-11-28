@@ -798,11 +798,18 @@ function dateRank(value) {
   const d=brokerDay(value);
   return /^\d{4}-\d{2}(?:-\d{2})?$/.test(d) ? Number(d.replaceAll('-','').padEnd(8,'0')) : 0;
 }
+function analysisOrder(r) {
+  const ai=r.source_kind==='business'?r._business?.ai:r.source_kind==='broker'?r._liveBroker:r;
+  const stamp=ai?.ai_processed_at || r.ai_processed_at || '';
+  const parsed=Date.parse(stamp);
+  const completed=r.source_kind==='business'?!!ai:r.source_kind==='broker'?
+    !!(ai && (ai.ai_processed_at || ai.ai_processed===true || (ai.validation_status!=='needs_review' && (ai.summary?.length || ai.detail)))) || r.ai_processed===true:
+    r.ai_processed===true;
+  return [Number(completed),Number.isFinite(parsed)?parsed:0,Number(r.ai_processed_sequence)||0];
+}
 function compareReportDate(a,b) {
-  // Date always wins. Only within the same date, move PDF-only business
-  // reports behind all existing research and successfully analyzed reports.
-  const pdfOnly = r => Number(r.source_kind === 'business' && !r._business?.ai);
-  return dateRank(b.date)-dateRank(a.date) || pdfOnly(a)-pdfOnly(b) || String(a.id||'').localeCompare(String(b.id||''));
+  const aa=analysisOrder(a),bb=analysisOrder(b);
+  return dateRank(b.date)-dateRank(a.date) || bb[0]-aa[0] || bb[1]-aa[1] || bb[2]-aa[2] || String(a.id||'').localeCompare(String(b.id||''));
 }
 function dateLabel(day) {
   return day.replaceAll('-','/')+(/^\d{4}-\d{2}$/.test(day)?'（日期未詳）':'');
