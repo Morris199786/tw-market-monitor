@@ -1,0 +1,76 @@
+name: US 13F Rebuild
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/us-13f-rebuild.yml'
+permissions:
+  contents: write
+concurrency:
+  group: us-ownership-research
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests pypdf yfinance
+      - name: Test reconciliation
+        run: |
+          python -m py_compile scripts/update_us_institutional.py scripts/us_13f_reconcile.py
+          python tests/test_us_13f_reconcile.py
+          node --check assets/us_insider.js
+      - name: Rebuild and validate
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT || vars.SEC_USER_AGENT }}
+        run: |
+          cp data/us_insider/institutional.json /tmp/previous.json
+          python scripts/update_us_institutional.py
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('data/us_insider')
+          d=json.loads((root/'institutional.json').read_text())
+          old=json.load(open('/tmp/previous.json'))
+          assert set(old['coverage']) <= set(d['coverage'])
+          assert d['latest_period'] >= old['latest_period']
+          assert d['manager_name_coverage']==d['row_count']
+          assert sum(d['position_status_counts'].values())==d['row_count']
+          n=0
+          for t,m in d['shards'].items():
+           b=(root/m['file']).read_bytes()
+           assert hashlib.sha256(b).hexdigest()==m['sha256']
+           rows=json.loads(b)['rows']
+           assert len(rows)==m['count']
+           assert all(r['shares']-r['previous_shares']==r['change'] for r in rows)
+           n+=len(rows)
+          assert n==d['row_count']
+          print('Reconciliation:',d['reconciliation_audit'])
+          print('Transitions:',d['position_status_counts'])
+          for q,rr in d['summary'].items():
+           print(q,'estimated money coverage',sum(x.get('estimated_change_usd') is not None for x in rr),'/',len(rr))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 13f-source-snapshots
+          path: data/us_insider/institutional_raw/*.json.gz
+          retention-days: 90
+      - name: Publish validated output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/us_insider/institutional.json data/us_insider/institutional_stocks
+          git diff --cached --quiet && exit 0
+          git commit -m "Publish reconciled 13F holdings"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; exit 1; }
+            git push origin HEAD:main && exit 0
+            sleep 3
+          done
+          exit 1
