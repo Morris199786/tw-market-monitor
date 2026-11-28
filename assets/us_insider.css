@@ -62,3 +62,17 @@ html[data-theme=dark] #usInsiderRoot .uii-warning{background:#382d1e;color:#f0c7
 #usInsiderRoot .uii-chart-readout{min-height:45px;padding:9px 10px;background:var(--uii-soft);border-radius:9px;font-size:.8em;line-height:1.65;font-variant-numeric:tabular-nums}
 #usInsiderRoot .uii-chart svg{touch-action:pan-y;min-height:0;margin:10px 0}
 #usInsiderRoot .uii-scroll:not(.uii-rank) td:nth-child(2){text-align:left;white-space:normal;min-width:110px;max-width:180px;overflow-wrap:anywhere}
+
+/* Compact backtest matrix: sample size always visible, no duplicated threshold rows. */
+#usInsiderRoot .uii-metric-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:12px 0 16px}
+#usInsiderRoot .uii-metric-tabs button{font-size:12px;font-weight:650;min-height:38px;padding:6px 2px;min-width:0}
+#usInsiderRoot .uii-matrix-caption{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:.83em}
+#usInsiderRoot .uii-matrix-caption span{color:var(--uii-muted);font-size:.86em}
+#usInsiderRoot .uii-matrix table{min-width:320px;table-layout:fixed;font-size:12px}
+#usInsiderRoot .uii-matrix th,#usInsiderRoot .uii-matrix td{text-align:center;padding:11px 3px;white-space:nowrap}
+#usInsiderRoot .uii-matrix th:first-child{width:19%;text-align:left;padding-left:5px}
+#usInsiderRoot .uii-matrix tbody th{background:transparent;color:var(--uii-ink);font-size:1em}
+#usInsiderRoot .uii-matrix small{display:block;color:var(--uii-muted);font-size:10px;line-height:1.5;font-weight:400;margin-top:3px}
+#usInsiderRoot .uii-matrix-cell.few{background:var(--uii-soft)}
+#usInsiderRoot .uii-matrix .uii-return{font-variant-numeric:tabular-nums}
+@media(min-width:760px){#usInsiderRoot .uii-matrix table{font-size:14px}#usInsiderRoot .uii-matrix th,#usInsiderRoot .uii-matrix td{padding:14px 8px}}
