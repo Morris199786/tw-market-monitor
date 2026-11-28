@@ -198,16 +198,24 @@ def main():
     rows,quarantine=clean(raw)
     rows=[classify(x) for x in rows if start<=x["date"]<=today.isoformat()]
     for ticker in sorted({x["ticker"] for x in rows}):
-        try:
-            p=price_history(ticker,(today-dt.timedelta(days=max(args.days+15,370))).isoformat(),end)
-            old=prior_prices.get(ticker,[])
-            if old and (not p or p[-1]["date"]<old[-1]["date"]):
-                p=old
-            p=[x for x in p if x["date"]<=expected]
-            prices[ticker]=p
-            coverage[ticker]["price_as_of"]=p[-1]["date"] if p else None
-            coverage[ticker]["price_status"]="ok" if p and p[-1]["date"]==expected else "stale" if p else "missing"
-        except Exception as e:coverage[ticker]["price_status"]="failed";coverage[ticker]["price_error"]=str(e)
+        old=prior_prices.get(ticker,[])
+        old=[x for x in old if x["date"]<=expected]
+        best=old
+        errors=[]
+        for attempt in range(3):
+            try:
+                candidate=price_history(ticker,(today-dt.timedelta(days=max(args.days+15,415))).isoformat(),end)
+                candidate=[x for x in candidate if x["date"]<=expected]
+                if candidate and (not best or candidate[-1]["date"]>=best[-1]["date"]):
+                    # Preserve one coherent price series rather than splice incompatible split bases.
+                    best=candidate
+                if best and best[-1]["date"]==expected:break
+            except Exception as e:errors.append(str(e))
+            if attempt<2:time.sleep(2**attempt)
+        if best:prices[ticker]=best
+        coverage[ticker]["price_as_of"]=best[-1]["date"] if best else None
+        coverage[ticker]["price_status"]="ok" if best and best[-1]["date"]==expected else "stale" if best else "missing"
+        if errors:coverage[ticker]["price_errors"]=errors
     # SEC prices are as-traded; normalize to the latest share basis for chart comparison.
     for r in rows:
         p=prices.get(r["ticker"],[])
@@ -217,8 +225,7 @@ def main():
         r["raw_price"]=r["price"];r["raw_shares"]=r["shares"];r["price"]/=factor;r["shares"]*=factor
     n=sum(x["status"]=="scanned" for x in coverage.values())
     if n!=len(tickers):raise RuntimeError(f"Incomplete SEC scan {n}/{len(tickers)}; preserve previous output")
-    bad=[t for t in prices if coverage[t]["price_status"]!="ok"]
-    bad += [t for t in {x["ticker"] for x in rows} if t not in prices]
+    bad=sorted(t for t in {x["ticker"] for x in rows} if coverage[t]["price_status"]!="ok")
     print(f"SEC cache hits={hits}, downloads={downloads}; expected price date={expected}; stale/missing={bad}",flush=True)
     # Publish SEC records independently of market-data freshness. Never represent stale quotes as current.
     for t in bad:
@@ -226,7 +233,7 @@ def main():
     for r in rows:
         r["quote_current"]=coverage[r["ticker"]].get("price_status")=="ok"
     price_note=("；行情未更新至 "+expected+"（"+",".join(bad)+"），報酬率僅截至行情日期" if bad else "")
-    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
+    payload=dict(updated_at=dt.datetime.now(dt.timezone.utc).isoformat(),as_of=today.isoformat(),start=start,coverage=coverage,coverage_note=f"SEC 掃描完成 {n}/{len(tickers)} 個已列代號；另有 ETF 與待確認代號。修正申報暫隔離 {len(quarantine)} 列；部分缺漏不能視為零。"+price_note,schema_version=2,expected_price_as_of=expected,price_as_of=min((p[-1]["date"] for p in prices.values() if p),default=None),stale_prices=bad,cache_stats={"hits":hits,"downloads":downloads},transactions=[r for r in rows if r.get("side")=="buy"],sales=[r for r in rows if r.get("side")=="sell"],classification_version=2,trading_sessions=[str(x.date()) for x in sessions if str(x.date())<=expected],quarantine=quarantine,price_missing=[t for t in bad if t not in prices],prices=prices,backtest=calc(rows,prices),unresolved=config["unresolved"],excluded_etf=config["excluded_etf"])
     def save_compressed(path,obj):
         tmp=path.with_suffix(".tmp")
         with gzip.GzipFile(filename=str(tmp),mode="wb",mtime=0) as f:
